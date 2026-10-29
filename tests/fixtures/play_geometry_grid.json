@@ -2131,8 +2131,8 @@
    "y": -42,
    "frequency": 293.66,
    "duration_ms": 373,
-   "balance": 0.994118,
-   "description": "neutral zone, right side"
+   "balance": 0.005882,
+   "description": "neutral zone, left side"
   },
   {
    "league": "NHL",
@@ -2140,8 +2140,8 @@
    "y": -35,
    "frequency": 329.63,
    "duration_ms": 367,
-   "balance": 0.911765,
-   "description": "neutral zone, right side"
+   "balance": 0.088235,
+   "description": "neutral zone, left side"
   },
   {
    "league": "NHL",
@@ -2149,8 +2149,8 @@
    "y": -28,
    "frequency": 329.63,
    "duration_ms": 361,
-   "balance": 0.829412,
-   "description": "neutral zone, right side"
+   "balance": 0.170588,
+   "description": "neutral zone, left side"
   },
   {
    "league": "NHL",
@@ -2158,8 +2158,8 @@
    "y": -21,
    "frequency": 329.63,
    "duration_ms": 357,
-   "balance": 0.747059,
-   "description": "neutral zone, right side"
+   "balance": 0.252941,
+   "description": "neutral zone, left side"
   },
   {
    "league": "NHL",
@@ -2167,7 +2167,7 @@
    "y": -14,
    "frequency": 392.0,
    "duration_ms": 353,
-   "balance": 0.664706,
+   "balance": 0.335294,
    "description": "neutral zone, centre"
   },
   {
@@ -2176,7 +2176,7 @@
    "y": -7,
    "frequency": 392.0,
    "duration_ms": 351,
-   "balance": 0.582353,
+   "balance": 0.417647,
    "description": "neutral zone, centre"
   },
   {
@@ -2194,7 +2194,7 @@
    "y": 7,
    "frequency": 392.0,
    "duration_ms": 351,
-   "balance": 0.417647,
+   "balance": 0.582353,
    "description": "neutral zone, centre"
   },
   {
@@ -2203,7 +2203,7 @@
    "y": 14,
    "frequency": 392.0,
    "duration_ms": 353,
-   "balance": 0.335294,
+   "balance": 0.664706,
    "description": "neutral zone, centre"
   },
   {
@@ -2212,8 +2212,8 @@
    "y": 21,
    "frequency": 329.63,
    "duration_ms": 357,
-   "balance": 0.252941,
-   "description": "neutral zone, left side"
+   "balance": 0.747059,
+   "description": "neutral zone, right side"
   },
   {
    "league": "NHL",
@@ -2221,8 +2221,8 @@
    "y": 28,
    "frequency": 329.63,
    "duration_ms": 361,
-   "balance": 0.170588,
-   "description": "neutral zone, left side"
+   "balance": 0.829412,
+   "description": "neutral zone, right side"
   },
   {
    "league": "NHL",
@@ -2230,8 +2230,8 @@
    "y": 35,
    "frequency": 329.63,
    "duration_ms": 367,
-   "balance": 0.088235,
-   "description": "neutral zone, left side"
+   "balance": 0.911765,
+   "description": "neutral zone, right side"
   },
   {
    "league": "NHL",
@@ -2239,8 +2239,8 @@
    "y": 42,
    "frequency": 293.66,
    "duration_ms": 373,
-   "balance": 0.005882,
-   "description": "neutral zone, left side"
+   "balance": 0.994118,
+   "description": "neutral zone, right side"
   },
   {
    "league": "NHL",
@@ -2248,8 +2248,8 @@
    "y": -42,
    "frequency": 261.63,
    "duration_ms": 390,
-   "balance": 0.994118,
-   "description": "neutral zone, right side"
+   "balance": 0.005882,
+   "description": "neutral zone, left side"
   },
   {
    "league": "NHL",
@@ -2257,8 +2257,8 @@
    "y": -35,
    "frequency": 261.63,
    "duration_ms": 384,
-   "balance": 0.911765,
-   "description": "neutral zone, right side"
+   "balance": 0.088235,
+   "description": "neutral zone, left side"
   },
   {
    "league": "NHL",
@@ -2266,8 +2266,8 @@
    "y": -28,
    "frequency": 293.66,
    "duration_ms": 379,
-   "balance": 0.829412,
-   "description": "neutral zone, right side"
+   "balance": 0.170588,
+   "description": "neutral zone, left side"
   },
   {
    "league": "NHL",
@@ -2275,8 +2275,8 @@
    "y": -21,
    "frequency": 293.66,
    "duration_ms": 375,
-   "balance": 0.747059,
-   "description": "neutral zone, right side"
+   "balance": 0.252941,
+   "description": "neutral zone, left side"
   },
   {
    "league": "NHL",
@@ -2284,7 +2284,7 @@
    "y": -14,
    "frequency": 293.66,
    "duration_ms": 372,
-   "balance": 0.664706,
+   "balance": 0.335294,
    "description": "neutral zone, centre"
   },
   {
@@ -2293,7 +2293,7 @@
    "y": -7,
    "frequency": 293.66,
    "duration_ms": 370,
-   "balance": 0.582353,
+   "balance": 0.417647,
    "description": "neutral zone, centre"
   },
   {
@@ -2311,7 +2311,7 @@
    "y": 7,
    "frequency": 293.66,
    "duration_ms": 370,
-   "balance": 0.417647,
+   "balance": 0.582353,
    "description": "neutral zone, centre"
   },
   {
@@ -2320,7 +2320,7 @@
    "y": 14,
    "frequency": 293.66,
    "duration_ms": 372,
-   "balance": 0.335294,
+   "balance": 0.664706,
    "description": "neutral zone, centre"
   },
   {
@@ -2329,8 +2329,8 @@
    "y": 21,
    "frequency": 293.66,
    "duration_ms": 375,
-   "balance": 0.252941,
-   "description": "neutral zone, left side"
+   "balance": 0.747059,
+   "description": "neutral zone, right side"
   },
   {
    "league": "NHL",
@@ -2338,8 +2338,8 @@
    "y": 28,
    "frequency": 293.66,
    "duration_ms": 379,
-   "balance": 0.170588,
-   "description": "neutral zone, left side"
+   "balance": 0.829412,
+   "description": "neutral zone, right side"
   },
   {
    "league": "NHL",
@@ -2347,8 +2347,8 @@
    "y": 35,
    "frequency": 261.63,
    "duration_ms": 384,
-   "balance": 0.088235,
-   "description": "neutral zone, left side"
+   "balance": 0.911765,
+   "description": "neutral zone, right side"
   },
   {
    "league": "NHL",
@@ -2356,8 +2356,8 @@
    "y": 42,
    "frequency": 261.63,
    "duration_ms": 390,
-   "balance": 0.005882,
-   "description": "neutral zone, left side"
+   "balance": 0.994118,
+   "description": "neutral zone, right side"
   },
   {
    "league": "NHL",

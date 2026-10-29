@@ -158,6 +158,10 @@ class TestHockeyGeometry:
         assert near.description.endswith("left side")
         assert far.pan == pytest.approx(-near.pan)
 
+    def test_sides_do_not_swap_at_the_red_line(self):
+        assert hockey_location(5, 30).pan == pytest.approx(hockey_location(-5, 30).pan)
+        assert hockey_location(-5, 30).description == "neutral zone, right side"
+
     def test_mirroring_leaves_the_raw_position_alone(self):
         # The venue tour plots field_x directly, so only pan and words flip.
         assert hockey_location(-70, 20).field_x == pytest.approx(20.0)

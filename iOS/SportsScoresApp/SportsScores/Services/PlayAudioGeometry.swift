@@ -145,7 +145,9 @@ enum PlayAudioGeometry {
         // Left and right as seen facing the goal at this end. The two ends face
         // opposite ways, so the same y is the right side at one end and the left
         // at the other; without the flip, mirror-image shots would sound alike.
-        let facingX = fieldY >= 0 ? fieldX : -fieldX
+        // The neutral zone faces no goal and keeps the far-end view, so the
+        // sides don't swap as play crosses the red line.
+        let facingX = fieldY < -25.0 ? -fieldX : fieldX
         let pan = Float(clamp(facingX / rinkHalfWidth, -1.0, 1.0))
         return PlayLocation(
             fieldX: fieldX,

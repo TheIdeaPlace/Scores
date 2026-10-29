@@ -148,8 +148,10 @@ def hockey_location(x: float, y: float) -> PlayLocation:
     distance = math.hypot(field_x, field_y - near_goal)
     # Left and right as seen facing the goal at this end. The two ends face
     # opposite ways, so the same y is the right side at one end and the left at
-    # the other; without the flip, mirror-image shots would sound alike.
-    facing_x = field_x if field_y >= 0 else -field_x
+    # the other; without the flip, mirror-image shots would sound alike. The
+    # neutral zone faces no goal and keeps the far-end view, so the sides don't
+    # swap as play crosses the red line.
+    facing_x = -field_x if field_y < -25.0 else field_x
     pan = _clamp(facing_x / _RINK_HALF_WIDTH, -1.0, 1.0)
     return PlayLocation(
         field_x=field_x,
