@@ -102,6 +102,60 @@ final class PitchAudioEngine: ObservableObject {
         dragTask = Task { await self.tone(frequency: freq, pan: pan, duration: 0.35) }
     }
 
+    // MARK: - Basketball and hockey play audio
+
+    /// Play the tone for one basketball or hockey play, and return what it said.
+    ///
+    /// Returns nil when the play has no location to play. That is not a failure:
+    /// roughly a third of basketball plays and six percent of hockey plays
+    /// arrive without coordinates — substitutions, timeouts, free throws, most
+    /// face-offs — so the caller tells the listener rather than playing a tone
+    /// that would be a guess. See `PlayAudioGeometry` for the mapping.
+    @discardableResult
+    func playLocatedPlay(_ play: GameDetails.Play, sport: Sport) -> String? {
+        guard let params = PlayAudioGeometry.audioParameters(for: sport, play: play)
+        else { return nil }
+
+        sequenceTask?.cancel()
+        statusMessage = [play.type.text, params.description]
+            .filter { !$0.isEmpty }
+            .joined(separator: " · ")
+        sequenceTask = Task {
+            await self.tone(frequency: params.frequency, pan: params.pan, duration: params.duration)
+        }
+        return params.description
+    }
+
+    /// Walk a period, playing every play in it that has a location.
+    ///
+    /// Returns how many were sonified, so the caller can say "12 of 31" rather
+    /// than leave the listener wondering about the silent ones.
+    @discardableResult
+    func playLocatedSequence(_ plays: [GameDetails.Play], sport: Sport) -> Int {
+        let located = plays.compactMap { play -> (GameDetails.Play, (frequency: Double, pan: Float, duration: Double, description: String))? in
+            guard let params = PlayAudioGeometry.audioParameters(for: sport, play: play)
+            else { return nil }
+            return (play, params)
+        }
+        guard !located.isEmpty else { return 0 }
+
+        sequenceTask?.cancel()
+        sequenceTask = Task {
+            for (index, entry) in located.enumerated() {
+                guard !Task.isCancelled else { break }
+                let (play, params) = entry
+                await MainActor.run {
+                    self.statusMessage =
+                        "Play \(index + 1) of \(located.count): \(play.type.text) · \(params.description)"
+                }
+                await self.tone(frequency: params.frequency, pan: params.pan, duration: params.duration)
+                try? await Task.sleep(nanoseconds: 180_000_000)   // 180 ms gap
+            }
+            await MainActor.run { self.statusMessage = "Sequence complete" }
+        }
+        return located.count
+    }
+
     /// Play a spatial tone mapped from real-world field coordinates (feet from home plate).
     /// Cancels any in-flight drag tone before starting — prevents engine pile-up.
     func playFieldCoordinate(fieldX: Double, fieldY: Double,

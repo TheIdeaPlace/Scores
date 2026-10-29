@@ -636,7 +636,50 @@ struct GenericPlaysView: View {
     let awayAbbr: String
     let homeAbbr: String
 
+    /// Set for basketball and hockey, whose plays carry court/rink coordinates;
+    /// nil for every other sport, which leaves the audio actions off entirely.
+    var sport: Sport?
+    var audio: PitchAudioEngine?
+
     @State private var expandedPeriods: Set<String> = []
+
+    /// True when this sport's plays can be sonified and an engine was handed in.
+    private var canPlayAudio: Bool {
+        guard let sport, audio != nil else { return false }
+        return PlayAudioGeometry.supports(sport)
+    }
+
+    /// Play one play's location — just the tone, with nothing spoken over it.
+    ///
+    /// The row's own accessibility label already said where the play happened,
+    /// so announcing it again would repeat what was just read and talk over the
+    /// sound it is describing.
+    private func playLocation(_ play: GameDetails.Play) {
+        guard let sport, let audio else { return }
+        if audio.playLocatedPlay(play, sport: sport) == nil {
+            // Normal rather than broken: a third of basketball plays and six
+            // percent of hockey plays have no coordinates. Worth saying, since
+            // no tone is coming.
+            TouchTourAnnouncementService.shared.announce("This play has no location")
+        }
+    }
+
+    /// Play every located play in a period, in order.
+    ///
+    /// Silent when there is something to hear: the period heading already says
+    /// how many plays have a location.
+    private func playPeriodLocations(_ period: PeriodGroup) {
+        guard let sport, let audio else { return }
+        if audio.playLocatedSequence(period.plays, sport: sport) == 0 {
+            TouchTourAnnouncementService.shared.announce(
+                "No plays in \(period.label) have a location"
+            )
+        }
+    }
+
+    private func locatedCount(_ period: PeriodGroup) -> Int {
+        period.plays.filter { $0.hasPlayLocation }.count
+    }
 
     private var periods: [PeriodGroup] {
         var order: [String] = []
@@ -687,6 +730,12 @@ struct GenericPlaysView: View {
             if scoringCount > 0 { parts.append("\(scoringCount) scoring") }
             if changeCount  > 0 { parts.append("\(changeCount) player change\(changeCount == 1 ? "" : "s")") }
             if let score = finalScore { parts.append("Score \(score)") }
+            // Say how many can be heard, so the Play locations action is not a
+            // shot in the dark — plenty of plays arrive with no coordinates.
+            if canPlayAudio {
+                let located = locatedCount(period)
+                if located > 0 { parts.append("\(located) with a location") }
+            }
             return parts.joined(separator: ", ")
         }()
 
@@ -726,6 +775,13 @@ struct GenericPlaysView: View {
             .buttonStyle(.plain)
             .accessibilityLabel(a11yHeader)
             .accessibilityHint(isOpen ? "Double tap to collapse." : "Double tap to expand.")
+            // Only where there is something to hear: football and soccer share
+            // this view and have no coordinates at all.
+            .accessibilityActions {
+                if canPlayAudio && period.plays.contains(where: { $0.hasPlayLocation }) {
+                    Button("Play locations") { playPeriodLocations(period) }
+                }
+            }
 
             if isOpen {
                 Divider().padding(.horizontal)
@@ -744,10 +800,13 @@ struct GenericPlaysView: View {
     private func genericPlayRow(_ play: GameDetails.Play) -> some View {
         let isPlayerChange = Self.isPlayerChangePlay(play)
         let playText = play.text.flatMap { $0.isEmpty ? nil : $0 } ?? play.type.text
+        // Where the play happened, when this sport has coordinates and this play
+        // carries them. Spoken as part of the row, not only played as a tone.
+        let location = sport.flatMap { PlayAudioGeometry.location(for: $0, play: play) }
         let a11yLabel = Self.playAccessibilityLabel(
             play: play, playText: playText,
             awayAbbr: awayAbbr, homeAbbr: homeAbbr
-        )
+        ) + (location.map { ", \($0.description)" } ?? "")
 
         return HStack(alignment: .top, spacing: 10) {
             // Icon column
@@ -795,6 +854,22 @@ struct GenericPlaysView: View {
         // Each play is a single VoiceOver stop — no individual Text elements
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(a11yLabel)
+        // Offered only on the plays that actually have somewhere to play, so the
+        // rotor is not full of actions that would answer "no location".
+        .accessibilityActions {
+            if canPlayAudio && play.hasPlayLocation {
+                Button("Play location") { playLocation(play) }
+            }
+        }
+        .accessibilityHint(
+            canPlayAudio && play.hasPlayLocation
+                ? "Actions available to hear where this play happened."
+                : ""
+        )
+        // Tapping the row does the same thing for anyone not using VoiceOver.
+        .onTapGesture {
+            if canPlayAudio && play.hasPlayLocation { playLocation(play) }
+        }
     }
 
     // MARK: - Helpers (static so they can be used from accessibility label builder)

@@ -79,6 +79,15 @@ except ImportError:
     AUDIO_AVAILABLE = False
     AudioPitchMapper = None
 
+# Spatial audio for basketball and hockey plays, the counterpart to the pitch
+# mapper above. Separate import so a failure here cannot take baseball with it.
+try:
+    from play_audio_mapper import PlayAudioMapper
+    PLAY_AUDIO_AVAILABLE = True
+except ImportError:
+    PLAY_AUDIO_AVAILABLE = False
+    PlayAudioMapper = None
+
 # Constants
 DETAIL_FIELDS = ["boxscore", "plays", "drives", "leaders", "standings", "odds", "injuries", "broadcasts", "news", "gameInfo"]
 BASEBALL_STAT_HEADERS = ["Player", "Position", "AB", "R", "H", "RBI", "BB", "SO", "AVG"]
@@ -2208,7 +2217,17 @@ class GameDetailsView(BaseView):
             except Exception as e:
                 print(f"Audio initialization failed: {e}")
                 self.audio_mapper = None
-        
+
+        # Basketball and hockey play audio
+        self.play_audio_mapper = None
+        if PLAY_AUDIO_AVAILABLE:
+            try:
+                self.play_audio_mapper = PlayAudioMapper(self)
+                self.play_audio_mapper.audio_error.connect(self._on_play_audio_error)
+            except Exception as e:
+                print(f"Play audio initialization failed: {e}")
+                self.play_audio_mapper = None
+
         self.setup_ui()
     
     def setup_ui(self):
@@ -2233,6 +2252,15 @@ class GameDetailsView(BaseView):
         """Handle audio errors"""
         print(f"Audio error: {error_message}")
         # Could show a non-intrusive error message if needed
+
+    def _on_play_audio_error(self, error_message):
+        """Basketball and hockey playback failed.
+
+        Successful playback says nothing, so a failure has to be spoken or it
+        sounds the same as a tone that played. The mapper reports once per run.
+        """
+        self._on_audio_error(error_message)
+        self._announce_play_audio("Couldn't play the sound")
     
     def keyPressEvent(self, event):
         """Handle key press events for game details view"""
@@ -2334,6 +2362,10 @@ class GameDetailsView(BaseView):
                     break
         elif field_name == "plays" and isinstance(field_data, list):
             self._add_plays_list_to_layout(layout, field_data)
+            # A period of play audio runs half a minute; don't let it outlive
+            # the dialog it belongs to.
+            if self.play_audio_mapper:
+                dlg.finished.connect(lambda _result: self.play_audio_mapper.stop())
         elif field_name == "drives" and isinstance(field_data, dict):
             self._add_drives_list_to_layout(layout, field_data)
         elif field_name == "officials" and isinstance(field_data, list):
@@ -3415,7 +3447,10 @@ class GameDetailsView(BaseView):
         
         # Detect sport type from data structure or current league
         sport_type = self._detect_sport_type(data)
-        
+        # The tree builders take only (tree, data), so stash the league here for
+        # the ones that tag their items for play audio.
+        self._plays_sport_type = sport_type
+
         # Add header info with export button
         header_layout = QHBoxLayout()
         info_label = QLabel(f"Play-by-Play ({len(data)} plays)")
@@ -3436,15 +3471,29 @@ class GameDetailsView(BaseView):
         export_btn.setMaximumWidth(150)
         header_layout.addWidget(export_btn)
         
-        # Add Pitch Audio button for baseball games
-        if sport_type == 'baseball':
+        # Add Pitch Audio button for baseball games. _detect_sport_type returns a
+        # league key, so this is "MLB" — it used to read 'baseball', which the
+        # detector never returns, so the button never appeared.
+        if sport_type == "MLB":
             pitch_audio_btn = QPushButton("Pitch Audio")
             pitch_audio_btn.setAccessibleName("Pitch Audio Button")
             pitch_audio_btn.setAccessibleDescription("Play audio for the currently selected pitch (Alt+P)")
             pitch_audio_btn.clicked.connect(lambda: self._play_current_pitch_audio(plays_tree))
             pitch_audio_btn.setMaximumWidth(120)
             header_layout.addWidget(pitch_audio_btn)
-        
+
+        # The same thing for the sports whose plays carry court/rink coordinates.
+        if self.play_audio_mapper and self.play_audio_mapper.supports(sport_type):
+            play_audio_btn = QPushButton("Play Audio")
+            play_audio_btn.setAccessibleName("Play Audio Button")
+            play_audio_btn.setAccessibleDescription(
+                "Play spatial audio for the currently selected play (Alt+P). "
+                "Alt+S plays every located play in the period."
+            )
+            play_audio_btn.clicked.connect(lambda: self._play_current_play_audio(plays_tree))
+            play_audio_btn.setMaximumWidth(120)
+            header_layout.addWidget(play_audio_btn)
+
         header_layout.addStretch()  # Push buttons to the left
         
         layout.addLayout(header_layout)
@@ -3485,21 +3534,11 @@ class GameDetailsView(BaseView):
                     self._show_pitch_context_menu(current_item, plays_tree.mapToGlobal(item_rect.center()))
                     event.accept()
                     return
-            elif event.key() == Qt.Key.Key_P and event.modifiers() == Qt.KeyboardModifier.AltModifier:
-                # Alt+P for pitch audio (only works on actual pitches)
-                if current_item and self._is_pitch_item(current_item):
-                    self._play_pitch_audio(current_item)
-                    event.accept()
-                    return
-            elif event.key() == Qt.Key.Key_S and event.modifiers() == Qt.KeyboardModifier.AltModifier:
-                # Alt+S for pitch sequence (works on pitches and at-bat items)
-                if current_item:
-                    is_pitch = self._is_pitch_item(current_item)
-                    is_at_bat = current_item.parent() is None  # Top-level item
-                    if is_pitch or is_at_bat:
-                        self._play_pitch_sequence(current_item)
-                        event.accept()
-                        return
+            elif current_item and self._handle_plays_audio_key(
+                current_item, event.key(), event.modifiers()
+            ):
+                event.accept()
+                return
             # Fall back to default behavior
             plays_tree.__class__.keyPressEvent(plays_tree, event)
         
@@ -4111,6 +4150,7 @@ class GameDetailsView(BaseView):
             period_item = QTreeWidgetItem([period_header])
             period_item.setExpanded(True)
             plays_tree.addTopLevelItem(period_item)
+            self._label_period_for_audio(period_item, plays_in_period)
 
             for play in plays_in_period:
                 play_text = play.get("text", "Unknown play")
@@ -4125,6 +4165,7 @@ class GameDetailsView(BaseView):
                 play_item = QTreeWidgetItem([formatted_text])
                 if play.get("scoringPlay", False) or (play.get("scoreValue", 0) or 0) > 0:
                     play_item.setBackground(0, QColor(220, 255, 220))
+                self._tag_play_for_audio(play_item, play)
                 period_item.addChild(play_item)
 
     def _build_basketball_tree(self, plays_tree, data):
@@ -4161,6 +4202,7 @@ class GameDetailsView(BaseView):
             period_item = QTreeWidgetItem([f"{period_label}{period_score}"])
             period_item.setExpanded(True)
             plays_tree.addTopLevelItem(period_item)
+            self._label_period_for_audio(period_item, plays_in_period)
 
             period_plays = sorted(
                 plays_in_period,
@@ -4178,6 +4220,7 @@ class GameDetailsView(BaseView):
 
                 play_item = QTreeWidgetItem([formatted_play])
                 self._apply_basketball_play_styling(play_item, play)
+                self._tag_play_for_audio(play_item, play)
                 period_item.addChild(play_item)
 
     def _ordinal_period_label(self, period_num, fallback_display=""):
@@ -4795,6 +4838,192 @@ class GameDetailsView(BaseView):
                 play_item.setBackground(0, QColor(255, 248, 235))
             parent_item.addChild(play_item)
 
+    # --- Basketball and hockey play audio -------------------------------------
+
+    def _tag_play_for_audio(self, tree_item, play):
+        """Attach a play's raw data to its tree item so Alt+P can sonify it.
+
+        Only done for the leagues whose plays carry coordinates, so items in
+        every other sport keep an empty UserRole as before. Baseball stores its
+        own dict with `is_pitch`, which this never overwrites because the
+        baseball tree has its own builder.
+        """
+        league = getattr(self, "_plays_sport_type", None)
+        if not self.play_audio_mapper or not self.play_audio_mapper.supports(league):
+            return
+        tree_item.setData(
+            0,
+            Qt.ItemDataRole.UserRole,
+            {"play_audio_league": league, "play": play},
+        )
+
+        # Say where the play happened as part of the item, so the location is
+        # heard on arrival rather than announced over the tone. AccessibleText
+        # leaves the visible column alone and falls back to the display text
+        # when it is not set, which is how accessible_table.py uses it too.
+        description = self.play_audio_mapper.describe_play(league, play)
+        if description:
+            tree_item.setData(
+                0,
+                Qt.ItemDataRole.AccessibleTextRole,
+                f"{tree_item.text(0)}, {description}",
+            )
+
+    def _label_period_for_audio(self, period_item, plays):
+        """Add "N with a location" to a period header for screen readers.
+
+        Alt+S on the header plays every located play in the period and says
+        nothing, so the count has to be available here or the listener has no
+        idea how many tones to expect — plenty of plays carry no coordinates.
+        """
+        league = getattr(self, "_plays_sport_type", None)
+        if not self.play_audio_mapper or not self.play_audio_mapper.supports(league):
+            return
+        located = sum(
+            1 for play in plays if self.play_audio_mapper.describe_play(league, play)
+        )
+        if not located:
+            return
+        period_item.setData(
+            0,
+            Qt.ItemDataRole.AccessibleTextRole,
+            f"{period_item.text(0)}, {located} with a location",
+        )
+
+    def _play_audio_league(self, tree_item):
+        """The league to sonify this item under, or None if it is not sonifiable.
+
+        A play item carries its own league. A period header carries nothing, so
+        it falls back to the league of the tree as a whole — that is what makes
+        Alt+S work on a period header.
+        """
+        if not tree_item or not self.play_audio_mapper:
+            return None
+        data = tree_item.data(0, Qt.ItemDataRole.UserRole)
+        if isinstance(data, dict) and data.get("play_audio_league"):
+            return data["play_audio_league"]
+        league = getattr(self, "_plays_sport_type", None)
+        return league if self.play_audio_mapper.supports(league) else None
+
+    def _announce_play_audio(self, message):
+        """Say something about the audio through the screen reader."""
+        self._on_audio_feedback(message)
+        helper = getattr(self, "notification_helper", None)
+        if helper is None:
+            helper = getattr(getattr(self, "parent_app", None), "notification_helper", None)
+        if helper is not None:
+            try:
+                helper.announce(message)
+            except Exception:
+                pass
+
+    def _play_play_audio(self, tree_item):
+        """Play the tone for one basketball or hockey play."""
+        league = self._play_audio_league(tree_item)
+        if not league:
+            return
+
+        data = tree_item.data(0, Qt.ItemDataRole.UserRole)
+        if not isinstance(data, dict) or "play" not in data:
+            # A period header on its own has no location to play.
+            self._announce_play_audio("No play selected")
+            return
+
+        play = data["play"]
+        # Nothing is spoken when a tone plays. The play's own tree label already
+        # said where it happened, so an announcement here would repeat it and
+        # talk over the audio.
+        if not self.play_audio_mapper.generate_play_audio(league, play):
+            # Substitutions, timeouts, free throws and most face-offs arrive
+            # without coordinates, which is normal rather than a failure. This
+            # is the one thing worth saying: no tone is coming.
+            self._announce_play_audio("This play has no location")
+
+    def _play_play_sequence(self, tree_item):
+        """Walk a period, playing every play in it that has a location."""
+        league = self._play_audio_league(tree_item)
+        if not league:
+            return
+
+        period_item = tree_item if tree_item.parent() is None else tree_item.parent()
+        plays = []
+        for index in range(period_item.childCount()):
+            data = period_item.child(index).data(0, Qt.ItemDataRole.UserRole)
+            if isinstance(data, dict) and "play" in data:
+                plays.append(data["play"])
+
+        if not plays:
+            self._announce_play_audio("No plays to play")
+            return
+
+        # Silent when there is something to hear, for the same reason as above.
+        if not self.play_audio_mapper.generate_play_sequence(league, plays):
+            self._announce_play_audio("No plays in this period have a location")
+
+    def _show_play_audio_context_menu(self, tree_item, global_position):
+        """Shift+F10 options for a basketball or hockey play."""
+        menu = QMenu(self)
+        menu.setAccessibleName("Play Audio Options")
+
+        data = tree_item.data(0, Qt.ItemDataRole.UserRole)
+        has_play = isinstance(data, dict) and "play" in data
+
+        if has_play:
+            play_action = QAction("Play This Location", self)
+            play_action.setShortcut("Alt+P")
+            play_action.setStatusTip("Play spatial audio for where this play happened")
+            play_action.triggered.connect(lambda: self._play_play_audio(tree_item))
+            menu.addAction(play_action)
+
+        sequence_action = QAction("Play Period Locations", self)
+        sequence_action.setShortcut("Alt+S")
+        sequence_action.setStatusTip(
+            "Play audio for every play in this period that has a location"
+        )
+        sequence_action.triggered.connect(lambda: self._play_play_sequence(tree_item))
+        menu.addAction(sequence_action)
+
+        menu.exec(global_position)
+
+    def _play_current_play_audio(self, plays_tree):
+        """Play Audio button: sonify whatever the tree has selected."""
+        current_item = plays_tree.currentItem()
+        if not current_item:
+            self._announce_play_audio("No play selected")
+            return
+        self._play_play_audio(current_item)
+
+    def _handle_plays_audio_key(self, current_item, key, modifiers):
+        """Alt+P and Alt+S on the plays tree. True if the key was handled."""
+        if modifiers != Qt.KeyboardModifier.AltModifier:
+            return False
+        if key == Qt.Key.Key_P:
+            # Basketball and hockey first. Their items are tagged explicitly
+            # by _tag_play_for_audio, whereas _is_pitch_item only matches on
+            # words in the text — and "Jump Ball" and "Personal Foul" both
+            # trip its "ball" and "foul" indicators.
+            if self._play_audio_league(current_item):
+                self._play_play_audio(current_item)
+                return True
+            # Alt+P for pitch audio (only works on actual pitches)
+            if self._is_pitch_item(current_item):
+                self._play_pitch_audio(current_item)
+                return True
+        elif key == Qt.Key.Key_S:
+            # Alt+S on a period header walks that period; on a play, the
+            # period it belongs to. Checked before the pitch branch for the
+            # same reason as Alt+P above.
+            if self._play_audio_league(current_item):
+                self._play_play_sequence(current_item)
+                return True
+            # Alt+S for pitch sequence (works on pitches and at-bat items)
+            is_pitch = self._is_pitch_item(current_item)
+            is_at_bat = current_item.parent() is None  # Top-level item
+            if is_pitch or is_at_bat:
+                self._play_pitch_sequence(current_item)
+                return True
+        return False
+
     def _is_pitch_item(self, tree_item):
         """Check if the tree item represents a pitch (for audio playback)"""
         if not tree_item:
@@ -4912,12 +5141,19 @@ class GameDetailsView(BaseView):
     
     def _show_pitch_context_menu(self, tree_item, global_position):
         """Show context menu for pitch-related audio options"""
+        # Basketball and hockey get their own options. Checked first for the
+        # same reason Alt+P is: _is_pitch_item matches on words in the text, and
+        # "Jump Ball" and "Personal Foul" trip its "ball" and "foul" indicators.
+        if self._play_audio_league(tree_item):
+            self._show_play_audio_context_menu(tree_item, global_position)
+            return
+
         if not self.audio_mapper:
             return
-            
+
         menu = QMenu(self)
         menu.setAccessibleName("Pitch Audio Options")
-        
+
         # Check if this is a pitch item or player/at-bat item
         is_pitch = self._is_pitch_item(tree_item)
         is_at_bat = tree_item.parent() is None  # Top-level item (at-bat)
@@ -5113,8 +5349,8 @@ class GameDetailsView(BaseView):
         if current_item and self._is_pitch_item(current_item):
             self._play_pitch_audio(current_item)
         else:
-            # Provide feedback if no pitch is selected
-            QMessageBox.information(None, "Pitch Audio", "Please select a pitch to play audio.")
+            # Spoken rather than a parentless modal box, the same as play audio.
+            self._announce_play_audio("Select a pitch to play its audio")
 
     def _export_game_log(self):
         """Export complete game log as HTML file"""

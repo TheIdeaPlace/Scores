@@ -326,10 +326,15 @@ struct GameDetailView: View {
                     )
                 }
             } else {
+                // Basketball and hockey plays carry court/rink coordinates, so
+                // they get the audio actions; PlayAudioGeometry.supports gates
+                // it, and every other sport falls through with sport nil.
                 GenericPlaysView(
                     plays: plays,
                     awayAbbr: game.awayTeam.abbreviation,
-                    homeAbbr: game.homeTeam.abbreviation
+                    homeAbbr: game.homeTeam.abbreviation,
+                    sport: PlayAudioGeometry.supports(sport) ? sport : nil,
+                    audio: PlayAudioGeometry.supports(sport) ? pitchAudio : nil
                 )
             }
         }

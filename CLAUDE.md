@@ -67,9 +67,11 @@ pytest tests/
 - `pitch_exploration_dialog.py` — Interactive dialog for exploring MLB pitch coordinates with audio feedback
 - `windows_notifications.py` — Windows UIA screen reader notifications
 
-### Audio System (MLB only)
+### Audio System
 
-- `simple_audio_mapper.py` — Maps pitch (x, y) coordinates to audio frequencies via `winsound`
+- `play_geometry.py` — Pure mapping from ESPN play coordinates to a note, a stereo balance and a spoken location, for basketball (NBA/WNBA/NCAAM/NCAAWB) and hockey (NHL/NCAAH/NCAAWH). No PyQt or winsound import, so it is unit-tested on any platform. **Its iOS twin is `Services/PlayAudioGeometry.swift`; the two must give identical output. `tests/fixtures/play_geometry_grid.json` is the shared reference grid; `tests/unit/test_play_geometry_parity.py` checks the Python side, and the Swift side has to be checked against the same file by hand until the iOS project has a test target. Change both in the same commit.** Football and soccer plays carry no coordinates, so they have no audio.
+- `play_audio_mapper.py` — `PlayAudioMapper`, the playback layer for the above. Alt+P plays one play, Alt+S the whole period. **Nothing is spoken while a tone plays, on either platform.** The location is part of the play's own accessible text (`AccessibleTextRole` on Windows, the row's accessibility label on iOS) and the located count is part of the period header's, so it is heard on arrival; an announcement at playback time would repeat it and talk over the audio. The only thing said at playback time is that there is nothing to play.
+- `simple_audio_mapper.py` — Maps pitch (x, y) coordinates to audio frequencies via `winsound` (MLB)
 - `stereo_audio_mapper.py` — Stereo variant with left/right channel positioning for pitch location
 
 ### Utilities
