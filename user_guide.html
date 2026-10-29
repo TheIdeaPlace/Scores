@@ -228,12 +228,34 @@
     <ul>
       <li><strong>Box score</strong> — player and team statistics</li>
       <li><strong>Plays</strong> (MLB) — play-by-play, inning by inning</li>
+      <li><strong>Plays</strong> (basketball, hockey) — play-by-play by period, with spatial audio (see below)</li>
       <li><strong>Drives</strong> (NFL) — drive-by-drive breakdown by quarter</li>
       <li><strong>Standings</strong> — current league standings</li>
       <li><strong>Leaders</strong> — top statistical performers</li>
       <li><strong>Injuries</strong> — injury reports for both teams</li>
       <li><strong>News</strong> — recent headlines for teams in the game</li>
     </ul>
+
+    <h3>Hearing where a play happened</h3>
+    <p>
+      In baseball, <kbd>Alt</kbd>+<kbd>P</kbd> on a pitch plays a tone for where it crossed the plate.
+      Basketball and hockey work the same way, using the shot and play locations ESPN reports.
+      A tone's note says how far from the basket or the goal the play was — close in is a high note —
+      and its left-right position says where across the court or the ice.
+      Your screen reader also announces the spot in words, for example
+      &ldquo;from three, left side&rdquo; or &ldquo;near end, in the slot&rdquo;.
+    </p>
+    <ul>
+      <li><kbd>Alt</kbd>+<kbd>P</kbd> — play the selected play's location</li>
+      <li><kbd>Alt</kbd>+<kbd>S</kbd> — play every located play in the period, in order</li>
+      <li><kbd>Shift</kbd>+<kbd>F10</kbd> — the same options as a menu</li>
+    </ul>
+    <p>
+      Not every play has a location. Substitutions, timeouts, free throws and most face-offs
+      arrive without one, so about a third of basketball plays and one in twenty hockey plays
+      are silent. The period heading says how many can be heard, and a play with no location
+      says so rather than playing a tone that would be a guess.
+    </p>
   </section>
 
   <section aria-labelledby="table-views">
@@ -412,6 +434,8 @@
         <tr><td><kbd>Alt</kbd>+<kbd>F</kbd></td><td>Switch to Full List view</td></tr>
         <tr><td><kbd>Alt</kbd>+<kbd>V</kbd></td><td>Cycle through table views</td></tr>
         <tr><td><kbd>Alt</kbd>+<kbd>H</kbd></td><td>Open Team Hub</td></tr>
+        <tr><td><kbd>Alt</kbd>+<kbd>P</kbd></td><td>Play the selected play's location (baseball, basketball, hockey)</td></tr>
+        <tr><td><kbd>Alt</kbd>+<kbd>S</kbd></td><td>Play a whole at-bat or period of locations</td></tr>
         <tr><td><kbd>Space</kbd></td><td>Mark a player drafted or available (Fantasy Cheatsheet)</td></tr>
       </tbody>
     </table>

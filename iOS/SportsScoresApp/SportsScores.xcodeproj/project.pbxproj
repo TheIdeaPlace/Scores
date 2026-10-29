@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		001A36C29D93596852E890C3 /* PlayAudioGeometry.swift in Sources */ = {isa = PBXBuildFile; fileRef = E30E82D0413A6836A6E34312 /* PlayAudioGeometry.swift */; };
 		02204E507D7434022AB59839 /* RacingHubView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5527896BC8638A1E72DE5823 /* RacingHubView.swift */; };
 		0628508F6916E0005D37835D /* CheatsheetPlayerDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 17E2EBBAD69446226C28DA4A /* CheatsheetPlayerDetailView.swift */; };
 		11745FDAA05A67412D2D514B /* TeamHubModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = B24C7FC69C8CFAB2F651990B /* TeamHubModels.swift */; };
@@ -246,6 +247,7 @@
 		DC0FB3FBA2C827983CC77114 /* RacingResultsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RacingResultsView.swift; sourceTree = "<group>"; };
 		DD62F7905FFCDC5D2AA616FB /* GameDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GameDetailView.swift; sourceTree = "<group>"; };
 		E20197AC616142E4CCBB6D0A /* WorldCup.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorldCup.swift; sourceTree = "<group>"; };
+		E30E82D0413A6836A6E34312 /* PlayAudioGeometry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlayAudioGeometry.swift; sourceTree = "<group>"; };
 		E5A708A7622868D80A976423 /* NewsViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NewsViewModel.swift; sourceTree = "<group>"; };
 		E79BB9E6383BF4BCD75D2452 /* TransactionTeamPickerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TransactionTeamPickerView.swift; sourceTree = "<group>"; };
 		E83EC93DC3EF01BEBDB5C228 /* SoccerHubViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SoccerHubViewModel.swift; sourceTree = "<group>"; };
@@ -297,6 +299,7 @@
 				0BDABE6B0F7E1B4B9FFD1A3C /* FantasyCheatsheetService.swift */,
 				403903D8B1E6F2AE0AC92E30 /* FieldAudioEngine.swift */,
 				F659A5D114F5225EE0FE626D /* PitchAudioEngine.swift */,
+				E30E82D0413A6836A6E34312 /* PlayAudioGeometry.swift */,
 				EE89454CB0F7EC17F5781490 /* ScheduleCacheStore.swift */,
 				943651E22D239C3E7FEF0132 /* TeamStatsStore.swift */,
 				4307499007DD0DE92B94347D /* TouchTourAnnouncementService.swift */,
@@ -581,6 +584,7 @@
 				EC7138C39AF0542F702095B6 /* PitchAudioEngine.swift in Sources */,
 				6C341E3F349F9C34917C0BA1 /* PitchMapView.swift in Sources */,
 				3B58834BFF1C6F8E735AF6CC /* PitchZoneExplorerView.swift in Sources */,
+				001A36C29D93596852E890C3 /* PlayAudioGeometry.swift in Sources */,
 				12D1B45EAF2BBCDCEBEB1005 /* PlaysView.swift in Sources */,
 				F8BF3E6E1722253CFF729BD8 /* PollsView.swift in Sources */,
 				1A468450657E6A4E5C798D40 /* PollsViewModel.swift in Sources */,

@@ -495,7 +495,8 @@ struct GameDetails: Codable {
              pitchType: PitchTypeInfo? = nil, pitchVelocity: Int? = nil,
              bats: BatterHand? = nil, atBatId: String? = nil,
              atBatPitchNumber: Int? = nil, resultCount: PitchCount? = nil,
-             outs: Int? = nil) {
+             outs: Int? = nil, coordinate: PlayCoordinate? = nil) {
+            self.coordinate = coordinate
             self.id = id; self.text = text; self.type = type
             self.scoreValue = scoreValue; self.period = period
             self.awayScore = awayScore; self.homeScore = homeScore
@@ -523,8 +524,15 @@ struct GameDetails: Codable {
         let resultCount: PitchCount?
         /// Outs at time of pitch.
         let outs: Int?
-        
+
+        // ── Court / rink location (basketball and hockey) ────────────────────
+        /// Where on the court or ice the play happened, when ESPN says.
+        let coordinate: PlayCoordinate?
+
         var isPitch: Bool { pitchCoordinate != nil }
+
+        /// True when this play has a location worth sonifying.
+        var hasPlayLocation: Bool { coordinate?.isUsable == true }
         
         struct PlayType: Codable {
             let text: String
@@ -547,6 +555,22 @@ struct GameDetails: Codable {
         struct PitchCoordinate: Codable {
             let x: Int
             let y: Int
+        }
+
+        /// Court or rink location, in the sport's own units. ESPN puts this on
+        /// basketball and hockey plays under `coordinate`; baseball uses
+        /// `pitchCoordinate` above, and football has no spatial coordinates at
+        /// all. See `PlayAudioGeometry` for what the numbers mean.
+        struct PlayCoordinate: Codable {
+            let x: Double
+            let y: Double
+
+            /// ESPN sends a scaled int32 minimum rather than null for a play
+            /// with no location — a substitution, a timeout, a free throw, most
+            /// face-offs — so this has to be checked by magnitude.
+            var isUsable: Bool {
+                abs(x) < 1_000_000 && abs(y) < 1_000_000
+            }
         }
         
         struct PitchTypeInfo: Codable {
