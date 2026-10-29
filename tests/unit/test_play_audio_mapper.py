@@ -1,8 +1,10 @@
 """Checks the basketball/hockey play audio mapper.
 
-winsound only exists on Windows, so `_play_stereo_tone` writes its WAV and then
-skips playback everywhere else. That is enough to verify the tone itself — the
-file it hands winsound is the whole output.
+The WAV is the whole output — it is the file handed to winsound — so these build
+it with `_write_tone_wav` and inspect it, and never call `_play_stereo_tone`.
+Playback needs a sound device: winsound exists on a Windows CI runner but
+`PlaySound` raises there, so keeping the two apart is what lets these run
+anywhere.
 """
 
 import os
@@ -97,8 +99,7 @@ class TestToneGeneration:
     """The WAV is the output, so check it directly."""
 
     def _render(self, mapper, frequency, duration, balance):
-        mapper._play_stereo_tone(frequency, duration, balance)
-        path = mapper.temp_files[-1]
+        path = mapper._write_tone_wav(frequency, duration, balance)
         assert os.path.exists(path)
         with wave.open(path, "rb") as w:
             assert w.getnchannels() == 2
@@ -153,7 +154,7 @@ class TestToneGeneration:
 class TestCleanup:
     def test_removes_its_temp_files(self):
         mapper = PlayAudioMapper()
-        mapper._play_stereo_tone(440.0, 0.05, 0.5)
+        mapper._write_tone_wav(440.0, 0.05, 0.5)
         paths = list(mapper.temp_files)
         assert paths and all(os.path.exists(p) for p in paths)
         mapper.cleanup()

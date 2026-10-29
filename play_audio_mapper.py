@@ -125,11 +125,21 @@ class PlayAudioMapper(QObject):
             self.audio_error.emit(str(e))
 
     def _play_stereo_tone(self, frequency, duration, balance):
-        """Write a stereo WAV for one tone and play it.
+        """Write the tone's WAV and play it."""
+        path = self._write_tone_wav(frequency, duration, balance)
+        if WINSOUND_AVAILABLE:
+            winsound.PlaySound(path, winsound.SND_FILENAME)
+
+    def _write_tone_wav(self, frequency, duration, balance):
+        """Write a stereo WAV for one tone and return its path.
 
         Mirrors `stereo_audio_mapper._play_stereo_beep`: constant-power panning
         so the tone keeps a steady loudness as it moves across the stereo field,
         and a short fade at each end so there is no click.
+
+        Kept separate from playback so the waveform can be checked without a
+        sound device. A Windows CI runner has winsound but no audio output, and
+        `PlaySound` raises there.
         """
         sample_rate = 44100
         samples = int(sample_rate * duration)
@@ -172,8 +182,7 @@ class PlayAudioMapper(QObject):
             wav_file.setframerate(sample_rate)
             wav_file.writeframes(b"".join(frames))
 
-        if WINSOUND_AVAILABLE:
-            winsound.PlaySound(temp_file.name, winsound.SND_FILENAME)
+        return temp_file.name
 
     def cleanup(self):
         """Remove the temporary WAV files this mapper wrote."""
