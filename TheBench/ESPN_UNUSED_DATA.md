@@ -7,6 +7,29 @@ implemented — this is a shopping list, roughly best-value first.
 
 For endpoints already in use see `ESPN_API_GUIDE.md`.
 
+Each item below is now tracked as an issue, filed 2026-10-29:
+
+| Item | Issue |
+|---|---|
+| 1 — `byteam` on Windows | [#94](https://github.com/TheIdeaPlace/Scores/issues/94) |
+| 1 — `byathlete` | [#95](https://github.com/TheIdeaPlace/Scores/issues/95) |
+| 2 — player splits | [#96](https://github.com/TheIdeaPlace/Scores/issues/96) |
+| 3 — `powerindex` | [#97](https://github.com/TheIdeaPlace/Scores/issues/97) |
+| 4 — `predictor` | [#98](https://github.com/TheIdeaPlace/Scores/issues/98) |
+| 5 — shot chart / rink map | [#99](https://github.com/TheIdeaPlace/Scores/issues/99) |
+| 6 — futures odds | [#100](https://github.com/TheIdeaPlace/Scores/issues/100) |
+| 7 — depth charts | [#101](https://github.com/TheIdeaPlace/Scores/issues/101) |
+| 7 — NHL `onIce` | [#102](https://github.com/TheIdeaPlace/Scores/issues/102) |
+| 7 — live `situation` | [#103](https://github.com/TheIdeaPlace/Scores/issues/103) |
+| 7 — `statisticslog`, extra polls, `attendance` | [#104](https://github.com/TheIdeaPlace/Scores/issues/104) |
+| 7 — iOS gaps Windows covers | [#105](https://github.com/TheIdeaPlace/Scores/issues/105) |
+
+Item 5's play-level audio shipped on both platforms (`play_geometry.py`,
+`Services/PlayAudioGeometry.swift`); [#99](https://github.com/TheIdeaPlace/Scores/issues/99)
+covers the explorable shot chart that is still missing, and
+[#106](https://github.com/TheIdeaPlace/Scores/issues/106) covers keeping the two
+mappings from drifting.
+
 ## 1. League-wide stat tables in one call — `statistics/byteam` and `statistics/byathlete`
 
 ```
