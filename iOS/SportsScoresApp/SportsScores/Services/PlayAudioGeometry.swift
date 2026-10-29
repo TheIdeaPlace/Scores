@@ -76,6 +76,10 @@ enum PlayAudioGeometry {
     private static let rinkHalfWidth = 42.5
     private static let rinkHalfLength = 100.0
     private static let goalLine = 89.0
+    // Behind the net is past the goal line within this many feet of centre; the
+    // corners are deeper than cornerDepth and wider than that.
+    private static let creaseSpan = 20.0
+    private static let cornerDepth = 75.0
     /// Centre ice to a goal mouth. A play behind the goal line measures a little
     /// more, which the clamp absorbs.
     private static let rinkMaxDistance = 95.0
@@ -138,13 +142,17 @@ enum PlayAudioGeometry {
         // the slot at either end of the ice.
         let nearGoal = fieldY >= 0 ? goalLine : -goalLine
         let distance = (pow(fieldX, 2) + pow(fieldY - nearGoal, 2)).squareRoot()
-        let pan = Float(clamp(fieldX / rinkHalfWidth, -1.0, 1.0))
+        // Left and right as seen facing the goal at this end. The two ends face
+        // opposite ways, so the same y is the right side at one end and the left
+        // at the other; without the flip, mirror-image shots would sound alike.
+        let facingX = fieldY >= 0 ? fieldX : -fieldX
+        let pan = Float(clamp(facingX / rinkHalfWidth, -1.0, 1.0))
         return PlayLocation(
             fieldX: fieldX,
             fieldY: fieldY,
             distanceFeet: distance,
             pan: pan,
-            description: hockeyDescription(fieldX: fieldX, fieldY: fieldY, distance: distance)
+            description: hockeyDescription(fieldX: facingX, fieldY: fieldY, distance: distance)
         )
     }
 
@@ -247,6 +255,16 @@ enum PlayAudioGeometry {
 
         if zone == "neutral zone" {
             return side == "middle" ? "neutral zone, centre" : "neutral zone, \(side) side"
+        }
+
+        // Past the goal line and in the corners first: both are close to the
+        // goal by distance, but nobody would call a battle behind the net "in
+        // the slot".
+        if abs(fieldY) > goalLine && abs(fieldX) <= creaseSpan {
+            return "\(zone), behind the net"
+        }
+        if abs(fieldY) > cornerDepth && abs(fieldX) > creaseSpan {
+            return "\(zone), in the \(side) corner"
         }
 
         let band: String

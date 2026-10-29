@@ -1,0 +1,3650 @@
+{
+ "_comment": "Expected output of play_geometry.audio_params over a grid of ESPN coordinates. PlayAudioGeometry.swift must produce the same values; regenerate it from audio_params only when the mapping is meant to change, on both platforms.",
+ "cases": [
+  {
+   "league": "NBA",
+   "x": 0,
+   "y": 0,
+   "frequency": 440.0,
+   "duration_ms": 333,
+   "balance": 0.0,
+   "description": "from three, left side"
+  },
+  {
+   "league": "NBA",
+   "x": 0,
+   "y": 4,
+   "frequency": 440.0,
+   "duration_ms": 333,
+   "balance": 0.0,
+   "description": "from three, left side"
+  },
+  {
+   "league": "NBA",
+   "x": 0,
+   "y": 8,
+   "frequency": 440.0,
+   "duration_ms": 335,
+   "balance": 0.0,
+   "description": "from three, left side"
+  },
+  {
+   "league": "NBA",
+   "x": 0,
+   "y": 12,
+   "frequency": 440.0,
+   "duration_ms": 340,
+   "balance": 0.0,
+   "description": "from three, left side"
+  },
+  {
+   "league": "NBA",
+   "x": 0,
+   "y": 16,
+   "frequency": 392.0,
+   "duration_ms": 347,
+   "balance": 0.0,
+   "description": "deep, 28 feet out"
+  },
+  {
+   "league": "NBA",
+   "x": 0,
+   "y": 20,
+   "frequency": 329.63,
+   "duration_ms": 356,
+   "balance": 0.0,
+   "description": "deep, 30 feet out"
+  },
+  {
+   "league": "NBA",
+   "x": 0,
+   "y": 24,
+   "frequency": 329.63,
+   "duration_ms": 367,
+   "balance": 0.0,
+   "description": "deep, 33 feet out"
+  },
+  {
+   "league": "NBA",
+   "x": 0,
+   "y": 28,
+   "frequency": 293.66,
+   "duration_ms": 379,
+   "balance": 0.0,
+   "description": "deep, 35 feet out"
+  },
+  {
+   "league": "NBA",
+   "x": 0,
+   "y": 32,
+   "frequency": 261.63,
+   "duration_ms": 392,
+   "balance": 0.0,
+   "description": "deep, 38 feet out"
+  },
+  {
+   "league": "NBA",
+   "x": 0,
+   "y": 36,
+   "frequency": 220.0,
+   "duration_ms": 400,
+   "balance": 0.0,
+   "description": "deep, 41 feet out"
+  },
+  {
+   "league": "NBA",
+   "x": 0,
+   "y": 40,
+   "frequency": 220.0,
+   "duration_ms": 400,
+   "balance": 0.0,
+   "description": "deep, 45 feet out"
+  },
+  {
+   "league": "NBA",
+   "x": 0,
+   "y": 44,
+   "frequency": 220.0,
+   "duration_ms": 400,
+   "balance": 0.0,
+   "description": "deep, 48 feet out"
+  },
+  {
+   "league": "NBA",
+   "x": 5,
+   "y": 0,
+   "frequency": 587.33,
+   "duration_ms": 311,
+   "balance": 0.1,
+   "description": "mid-range, left side"
+  },
+  {
+   "league": "NBA",
+   "x": 5,
+   "y": 4,
+   "frequency": 587.33,
+   "duration_ms": 310,
+   "balance": 0.1,
+   "description": "mid-range, left side"
+  },
+  {
+   "league": "NBA",
+   "x": 5,
+   "y": 8,
+   "frequency": 587.33,
+   "duration_ms": 313,
+   "balance": 0.1,
+   "description": "mid-range, left side"
+  },
+  {
+   "league": "NBA",
+   "x": 5,
+   "y": 12,
+   "frequency": 523.25,
+   "duration_ms": 319,
+   "balance": 0.1,
+   "description": "from three, left side"
+  },
+  {
+   "league": "NBA",
+   "x": 5,
+   "y": 16,
+   "frequency": 523.25,
+   "duration_ms": 327,
+   "balance": 0.1,
+   "description": "from three, left side"
+  },
+  {
+   "league": "NBA",
+   "x": 5,
+   "y": 20,
+   "frequency": 440.0,
+   "duration_ms": 338,
+   "balance": 0.1,
+   "description": "from three, left side"
+  },
+  {
+   "league": "NBA",
+   "x": 5,
+   "y": 24,
+   "frequency": 392.0,
+   "duration_ms": 350,
+   "balance": 0.1,
+   "description": "deep, 29 feet out"
+  },
+  {
+   "league": "NBA",
+   "x": 5,
+   "y": 28,
+   "frequency": 329.63,
+   "duration_ms": 364,
+   "balance": 0.1,
+   "description": "deep, 32 feet out"
+  },
+  {
+   "league": "NBA",
+   "x": 5,
+   "y": 32,
+   "frequency": 293.66,
+   "duration_ms": 379,
+   "balance": 0.1,
+   "description": "deep, 35 feet out"
+  },
+  {
+   "league": "NBA",
+   "x": 5,
+   "y": 36,
+   "frequency": 220.0,
+   "duration_ms": 394,
+   "balance": 0.1,
+   "description": "deep, 39 feet out"
+  },
+  {
+   "league": "NBA",
+   "x": 5,
+   "y": 40,
+   "frequency": 220.0,
+   "duration_ms": 400,
+   "balance": 0.1,
+   "description": "deep, 42 feet out"
+  },
+  {
+   "league": "NBA",
+   "x": 5,
+   "y": 44,
+   "frequency": 220.0,
+   "duration_ms": 400,
+   "balance": 0.1,
+   "description": "deep, 46 feet out"
+  },
+  {
+   "league": "NBA",
+   "x": 10,
+   "y": 0,
+   "frequency": 784.0,
+   "duration_ms": 289,
+   "balance": 0.2,
+   "description": "short mid-range, left side"
+  },
+  {
+   "league": "NBA",
+   "x": 10,
+   "y": 4,
+   "frequency": 784.0,
+   "duration_ms": 288,
+   "balance": 0.2,
+   "description": "short mid-range, left side"
+  },
+  {
+   "league": "NBA",
+   "x": 10,
+   "y": 8,
+   "frequency": 659.25,
+   "duration_ms": 291,
+   "balance": 0.2,
+   "description": "short mid-range, left side"
+  },
+  {
+   "league": "NBA",
+   "x": 10,
+   "y": 12,
+   "frequency": 659.25,
+   "duration_ms": 299,
+   "balance": 0.2,
+   "description": "mid-range, left side"
+  },
+  {
+   "league": "NBA",
+   "x": 10,
+   "y": 16,
+   "frequency": 587.33,
+   "duration_ms": 309,
+   "balance": 0.2,
+   "description": "mid-range, left side"
+  },
+  {
+   "league": "NBA",
+   "x": 10,
+   "y": 20,
+   "frequency": 523.25,
+   "duration_ms": 322,
+   "balance": 0.2,
+   "description": "from three, left side"
+  },
+  {
+   "league": "NBA",
+   "x": 10,
+   "y": 24,
+   "frequency": 440.0,
+   "duration_ms": 336,
+   "balance": 0.2,
+   "description": "from three, left side"
+  },
+  {
+   "league": "NBA",
+   "x": 10,
+   "y": 28,
+   "frequency": 392.0,
+   "duration_ms": 351,
+   "balance": 0.2,
+   "description": "deep, 29 feet out"
+  },
+  {
+   "league": "NBA",
+   "x": 10,
+   "y": 32,
+   "frequency": 329.63,
+   "duration_ms": 367,
+   "balance": 0.2,
+   "description": "deep, 33 feet out"
+  },
+  {
+   "league": "NBA",
+   "x": 10,
+   "y": 36,
+   "frequency": 261.63,
+   "duration_ms": 383,
+   "balance": 0.2,
+   "description": "deep, 36 feet out"
+  },
+  {
+   "league": "NBA",
+   "x": 10,
+   "y": 40,
+   "frequency": 220.0,
+   "duration_ms": 400,
+   "balance": 0.2,
+   "description": "deep, 40 feet out"
+  },
+  {
+   "league": "NBA",
+   "x": 10,
+   "y": 44,
+   "frequency": 220.0,
+   "duration_ms": 400,
+   "balance": 0.2,
+   "description": "deep, 44 feet out"
+  },
+  {
+   "league": "NBA",
+   "x": 15,
+   "y": 0,
+   "frequency": 880.0,
+   "duration_ms": 267,
+   "balance": 0.3,
+   "description": "short mid-range, left side"
+  },
+  {
+   "league": "NBA",
+   "x": 15,
+   "y": 4,
+   "frequency": 880.0,
+   "duration_ms": 265,
+   "balance": 0.3,
+   "description": "short mid-range, left side"
+  },
+  {
+   "league": "NBA",
+   "x": 15,
+   "y": 8,
+   "frequency": 880.0,
+   "duration_ms": 270,
+   "balance": 0.3,
+   "description": "short mid-range, left side"
+  },
+  {
+   "league": "NBA",
+   "x": 15,
+   "y": 12,
+   "frequency": 784.0,
+   "duration_ms": 281,
+   "balance": 0.3,
+   "description": "short mid-range, left side"
+  },
+  {
+   "league": "NBA",
+   "x": 15,
+   "y": 16,
+   "frequency": 659.25,
+   "duration_ms": 294,
+   "balance": 0.3,
+   "description": "mid-range, left side"
+  },
+  {
+   "league": "NBA",
+   "x": 15,
+   "y": 20,
+   "frequency": 587.33,
+   "duration_ms": 309,
+   "balance": 0.3,
+   "description": "mid-range, left side"
+  },
+  {
+   "league": "NBA",
+   "x": 15,
+   "y": 24,
+   "frequency": 523.25,
+   "duration_ms": 325,
+   "balance": 0.3,
+   "description": "from three, left side"
+  },
+  {
+   "league": "NBA",
+   "x": 15,
+   "y": 28,
+   "frequency": 440.0,
+   "duration_ms": 341,
+   "balance": 0.3,
+   "description": "from three, left side"
+  },
+  {
+   "league": "NBA",
+   "x": 15,
+   "y": 32,
+   "frequency": 329.63,
+   "duration_ms": 358,
+   "balance": 0.3,
+   "description": "deep, 31 feet out"
+  },
+  {
+   "league": "NBA",
+   "x": 15,
+   "y": 36,
+   "frequency": 293.66,
+   "duration_ms": 375,
+   "balance": 0.3,
+   "description": "deep, 34 feet out"
+  },
+  {
+   "league": "NBA",
+   "x": 15,
+   "y": 40,
+   "frequency": 261.63,
+   "duration_ms": 392,
+   "balance": 0.3,
+   "description": "deep, 38 feet out"
+  },
+  {
+   "league": "NBA",
+   "x": 15,
+   "y": 44,
+   "frequency": 220.0,
+   "duration_ms": 400,
+   "balance": 0.3,
+   "description": "deep, 42 feet out"
+  },
+  {
+   "league": "NBA",
+   "x": 20,
+   "y": 0,
+   "frequency": 1174.66,
+   "duration_ms": 246,
+   "balance": 0.4,
+   "description": "in the paint, middle"
+  },
+  {
+   "league": "NBA",
+   "x": 20,
+   "y": 4,
+   "frequency": 1174.66,
+   "duration_ms": 243,
+   "balance": 0.4,
+   "description": "in the paint, middle"
+  },
+  {
+   "league": "NBA",
+   "x": 20,
+   "y": 8,
+   "frequency": 1174.66,
+   "duration_ms": 252,
+   "balance": 0.4,
+   "description": "in the paint, middle"
+  },
+  {
+   "league": "NBA",
+   "x": 20,
+   "y": 12,
+   "frequency": 880.0,
+   "duration_ms": 266,
+   "balance": 0.4,
+   "description": "short mid-range, middle"
+  },
+  {
+   "league": "NBA",
+   "x": 20,
+   "y": 16,
+   "frequency": 784.0,
+   "duration_ms": 283,
+   "balance": 0.4,
+   "description": "short mid-range, middle"
+  },
+  {
+   "league": "NBA",
+   "x": 20,
+   "y": 20,
+   "frequency": 659.25,
+   "duration_ms": 300,
+   "balance": 0.4,
+   "description": "mid-range, middle"
+  },
+  {
+   "league": "NBA",
+   "x": 20,
+   "y": 24,
+   "frequency": 523.25,
+   "duration_ms": 317,
+   "balance": 0.4,
+   "description": "from three, middle"
+  },
+  {
+   "league": "NBA",
+   "x": 20,
+   "y": 28,
+   "frequency": 440.0,
+   "duration_ms": 335,
+   "balance": 0.4,
+   "description": "from three, middle"
+  },
+  {
+   "league": "NBA",
+   "x": 20,
+   "y": 32,
+   "frequency": 392.0,
+   "duration_ms": 352,
+   "balance": 0.4,
+   "description": "deep, 29 feet out"
+  },
+  {
+   "league": "NBA",
+   "x": 20,
+   "y": 36,
+   "frequency": 293.66,
+   "duration_ms": 370,
+   "balance": 0.4,
+   "description": "deep, 33 feet out"
+  },
+  {
+   "league": "NBA",
+   "x": 20,
+   "y": 40,
+   "frequency": 261.63,
+   "duration_ms": 388,
+   "balance": 0.4,
+   "description": "deep, 37 feet out"
+  },
+  {
+   "league": "NBA",
+   "x": 20,
+   "y": 44,
+   "frequency": 220.0,
+   "duration_ms": 400,
+   "balance": 0.4,
+   "description": "deep, 41 feet out"
+  },
+  {
+   "league": "NBA",
+   "x": 25,
+   "y": 0,
+   "frequency": 1318.51,
+   "duration_ms": 234,
+   "balance": 0.5,
+   "description": "at the rim"
+  },
+  {
+   "league": "NBA",
+   "x": 25,
+   "y": 4,
+   "frequency": 1567.98,
+   "duration_ms": 224,
+   "balance": 0.5,
+   "description": "at the rim"
+  },
+  {
+   "league": "NBA",
+   "x": 25,
+   "y": 8,
+   "frequency": 1174.66,
+   "duration_ms": 242,
+   "balance": 0.5,
+   "description": "in the paint, middle"
+  },
+  {
+   "league": "NBA",
+   "x": 25,
+   "y": 12,
+   "frequency": 1046.5,
+   "duration_ms": 260,
+   "balance": 0.5,
+   "description": "short mid-range, middle"
+  },
+  {
+   "league": "NBA",
+   "x": 25,
+   "y": 16,
+   "frequency": 784.0,
+   "duration_ms": 278,
+   "balance": 0.5,
+   "description": "short mid-range, middle"
+  },
+  {
+   "league": "NBA",
+   "x": 25,
+   "y": 20,
+   "frequency": 659.25,
+   "duration_ms": 296,
+   "balance": 0.5,
+   "description": "mid-range, middle"
+  },
+  {
+   "league": "NBA",
+   "x": 25,
+   "y": 24,
+   "frequency": 587.33,
+   "duration_ms": 314,
+   "balance": 0.5,
+   "description": "from three, middle"
+  },
+  {
+   "league": "NBA",
+   "x": 25,
+   "y": 28,
+   "frequency": 440.0,
+   "duration_ms": 332,
+   "balance": 0.5,
+   "description": "from three, middle"
+  },
+  {
+   "league": "NBA",
+   "x": 25,
+   "y": 32,
+   "frequency": 392.0,
+   "duration_ms": 350,
+   "balance": 0.5,
+   "description": "deep, 29 feet out"
+  },
+  {
+   "league": "NBA",
+   "x": 25,
+   "y": 36,
+   "frequency": 293.66,
+   "duration_ms": 368,
+   "balance": 0.5,
+   "description": "deep, 33 feet out"
+  },
+  {
+   "league": "NBA",
+   "x": 25,
+   "y": 40,
+   "frequency": 261.63,
+   "duration_ms": 386,
+   "balance": 0.5,
+   "description": "deep, 37 feet out"
+  },
+  {
+   "league": "NBA",
+   "x": 25,
+   "y": 44,
+   "frequency": 220.0,
+   "duration_ms": 400,
+   "balance": 0.5,
+   "description": "deep, 41 feet out"
+  },
+  {
+   "league": "NBA",
+   "x": 30,
+   "y": 0,
+   "frequency": 1174.66,
+   "duration_ms": 246,
+   "balance": 0.6,
+   "description": "in the paint, middle"
+  },
+  {
+   "league": "NBA",
+   "x": 30,
+   "y": 4,
+   "frequency": 1174.66,
+   "duration_ms": 243,
+   "balance": 0.6,
+   "description": "in the paint, middle"
+  },
+  {
+   "league": "NBA",
+   "x": 30,
+   "y": 8,
+   "frequency": 1174.66,
+   "duration_ms": 252,
+   "balance": 0.6,
+   "description": "in the paint, middle"
+  },
+  {
+   "league": "NBA",
+   "x": 30,
+   "y": 12,
+   "frequency": 880.0,
+   "duration_ms": 266,
+   "balance": 0.6,
+   "description": "short mid-range, middle"
+  },
+  {
+   "league": "NBA",
+   "x": 30,
+   "y": 16,
+   "frequency": 784.0,
+   "duration_ms": 283,
+   "balance": 0.6,
+   "description": "short mid-range, middle"
+  },
+  {
+   "league": "NBA",
+   "x": 30,
+   "y": 20,
+   "frequency": 659.25,
+   "duration_ms": 300,
+   "balance": 0.6,
+   "description": "mid-range, middle"
+  },
+  {
+   "league": "NBA",
+   "x": 30,
+   "y": 24,
+   "frequency": 523.25,
+   "duration_ms": 317,
+   "balance": 0.6,
+   "description": "from three, middle"
+  },
+  {
+   "league": "NBA",
+   "x": 30,
+   "y": 28,
+   "frequency": 440.0,
+   "duration_ms": 335,
+   "balance": 0.6,
+   "description": "from three, middle"
+  },
+  {
+   "league": "NBA",
+   "x": 30,
+   "y": 32,
+   "frequency": 392.0,
+   "duration_ms": 352,
+   "balance": 0.6,
+   "description": "deep, 29 feet out"
+  },
+  {
+   "league": "NBA",
+   "x": 30,
+   "y": 36,
+   "frequency": 293.66,
+   "duration_ms": 370,
+   "balance": 0.6,
+   "description": "deep, 33 feet out"
+  },
+  {
+   "league": "NBA",
+   "x": 30,
+   "y": 40,
+   "frequency": 261.63,
+   "duration_ms": 388,
+   "balance": 0.6,
+   "description": "deep, 37 feet out"
+  },
+  {
+   "league": "NBA",
+   "x": 30,
+   "y": 44,
+   "frequency": 220.0,
+   "duration_ms": 400,
+   "balance": 0.6,
+   "description": "deep, 41 feet out"
+  },
+  {
+   "league": "NBA",
+   "x": 35,
+   "y": 0,
+   "frequency": 880.0,
+   "duration_ms": 267,
+   "balance": 0.7,
+   "description": "short mid-range, right side"
+  },
+  {
+   "league": "NBA",
+   "x": 35,
+   "y": 4,
+   "frequency": 880.0,
+   "duration_ms": 265,
+   "balance": 0.7,
+   "description": "short mid-range, right side"
+  },
+  {
+   "league": "NBA",
+   "x": 35,
+   "y": 8,
+   "frequency": 880.0,
+   "duration_ms": 270,
+   "balance": 0.7,
+   "description": "short mid-range, right side"
+  },
+  {
+   "league": "NBA",
+   "x": 35,
+   "y": 12,
+   "frequency": 784.0,
+   "duration_ms": 281,
+   "balance": 0.7,
+   "description": "short mid-range, right side"
+  },
+  {
+   "league": "NBA",
+   "x": 35,
+   "y": 16,
+   "frequency": 659.25,
+   "duration_ms": 294,
+   "balance": 0.7,
+   "description": "mid-range, right side"
+  },
+  {
+   "league": "NBA",
+   "x": 35,
+   "y": 20,
+   "frequency": 587.33,
+   "duration_ms": 309,
+   "balance": 0.7,
+   "description": "mid-range, right side"
+  },
+  {
+   "league": "NBA",
+   "x": 35,
+   "y": 24,
+   "frequency": 523.25,
+   "duration_ms": 325,
+   "balance": 0.7,
+   "description": "from three, right side"
+  },
+  {
+   "league": "NBA",
+   "x": 35,
+   "y": 28,
+   "frequency": 440.0,
+   "duration_ms": 341,
+   "balance": 0.7,
+   "description": "from three, right side"
+  },
+  {
+   "league": "NBA",
+   "x": 35,
+   "y": 32,
+   "frequency": 329.63,
+   "duration_ms": 358,
+   "balance": 0.7,
+   "description": "deep, 31 feet out"
+  },
+  {
+   "league": "NBA",
+   "x": 35,
+   "y": 36,
+   "frequency": 293.66,
+   "duration_ms": 375,
+   "balance": 0.7,
+   "description": "deep, 34 feet out"
+  },
+  {
+   "league": "NBA",
+   "x": 35,
+   "y": 40,
+   "frequency": 261.63,
+   "duration_ms": 392,
+   "balance": 0.7,
+   "description": "deep, 38 feet out"
+  },
+  {
+   "league": "NBA",
+   "x": 35,
+   "y": 44,
+   "frequency": 220.0,
+   "duration_ms": 400,
+   "balance": 0.7,
+   "description": "deep, 42 feet out"
+  },
+  {
+   "league": "NBA",
+   "x": 40,
+   "y": 0,
+   "frequency": 784.0,
+   "duration_ms": 289,
+   "balance": 0.8,
+   "description": "short mid-range, right side"
+  },
+  {
+   "league": "NBA",
+   "x": 40,
+   "y": 4,
+   "frequency": 784.0,
+   "duration_ms": 288,
+   "balance": 0.8,
+   "description": "short mid-range, right side"
+  },
+  {
+   "league": "NBA",
+   "x": 40,
+   "y": 8,
+   "frequency": 659.25,
+   "duration_ms": 291,
+   "balance": 0.8,
+   "description": "short mid-range, right side"
+  },
+  {
+   "league": "NBA",
+   "x": 40,
+   "y": 12,
+   "frequency": 659.25,
+   "duration_ms": 299,
+   "balance": 0.8,
+   "description": "mid-range, right side"
+  },
+  {
+   "league": "NBA",
+   "x": 40,
+   "y": 16,
+   "frequency": 587.33,
+   "duration_ms": 309,
+   "balance": 0.8,
+   "description": "mid-range, right side"
+  },
+  {
+   "league": "NBA",
+   "x": 40,
+   "y": 20,
+   "frequency": 523.25,
+   "duration_ms": 322,
+   "balance": 0.8,
+   "description": "from three, right side"
+  },
+  {
+   "league": "NBA",
+   "x": 40,
+   "y": 24,
+   "frequency": 440.0,
+   "duration_ms": 336,
+   "balance": 0.8,
+   "description": "from three, right side"
+  },
+  {
+   "league": "NBA",
+   "x": 40,
+   "y": 28,
+   "frequency": 392.0,
+   "duration_ms": 351,
+   "balance": 0.8,
+   "description": "deep, 29 feet out"
+  },
+  {
+   "league": "NBA",
+   "x": 40,
+   "y": 32,
+   "frequency": 329.63,
+   "duration_ms": 367,
+   "balance": 0.8,
+   "description": "deep, 33 feet out"
+  },
+  {
+   "league": "NBA",
+   "x": 40,
+   "y": 36,
+   "frequency": 261.63,
+   "duration_ms": 383,
+   "balance": 0.8,
+   "description": "deep, 36 feet out"
+  },
+  {
+   "league": "NBA",
+   "x": 40,
+   "y": 40,
+   "frequency": 220.0,
+   "duration_ms": 400,
+   "balance": 0.8,
+   "description": "deep, 40 feet out"
+  },
+  {
+   "league": "NBA",
+   "x": 40,
+   "y": 44,
+   "frequency": 220.0,
+   "duration_ms": 400,
+   "balance": 0.8,
+   "description": "deep, 44 feet out"
+  },
+  {
+   "league": "NBA",
+   "x": 45,
+   "y": 0,
+   "frequency": 587.33,
+   "duration_ms": 311,
+   "balance": 0.9,
+   "description": "mid-range, right side"
+  },
+  {
+   "league": "NBA",
+   "x": 45,
+   "y": 4,
+   "frequency": 587.33,
+   "duration_ms": 310,
+   "balance": 0.9,
+   "description": "mid-range, right side"
+  },
+  {
+   "league": "NBA",
+   "x": 45,
+   "y": 8,
+   "frequency": 587.33,
+   "duration_ms": 313,
+   "balance": 0.9,
+   "description": "mid-range, right side"
+  },
+  {
+   "league": "NBA",
+   "x": 45,
+   "y": 12,
+   "frequency": 523.25,
+   "duration_ms": 319,
+   "balance": 0.9,
+   "description": "from three, right side"
+  },
+  {
+   "league": "NBA",
+   "x": 45,
+   "y": 16,
+   "frequency": 523.25,
+   "duration_ms": 327,
+   "balance": 0.9,
+   "description": "from three, right side"
+  },
+  {
+   "league": "NBA",
+   "x": 45,
+   "y": 20,
+   "frequency": 440.0,
+   "duration_ms": 338,
+   "balance": 0.9,
+   "description": "from three, right side"
+  },
+  {
+   "league": "NBA",
+   "x": 45,
+   "y": 24,
+   "frequency": 392.0,
+   "duration_ms": 350,
+   "balance": 0.9,
+   "description": "deep, 29 feet out"
+  },
+  {
+   "league": "NBA",
+   "x": 45,
+   "y": 28,
+   "frequency": 329.63,
+   "duration_ms": 364,
+   "balance": 0.9,
+   "description": "deep, 32 feet out"
+  },
+  {
+   "league": "NBA",
+   "x": 45,
+   "y": 32,
+   "frequency": 293.66,
+   "duration_ms": 379,
+   "balance": 0.9,
+   "description": "deep, 35 feet out"
+  },
+  {
+   "league": "NBA",
+   "x": 45,
+   "y": 36,
+   "frequency": 220.0,
+   "duration_ms": 394,
+   "balance": 0.9,
+   "description": "deep, 39 feet out"
+  },
+  {
+   "league": "NBA",
+   "x": 45,
+   "y": 40,
+   "frequency": 220.0,
+   "duration_ms": 400,
+   "balance": 0.9,
+   "description": "deep, 42 feet out"
+  },
+  {
+   "league": "NBA",
+   "x": 45,
+   "y": 44,
+   "frequency": 220.0,
+   "duration_ms": 400,
+   "balance": 0.9,
+   "description": "deep, 46 feet out"
+  },
+  {
+   "league": "NBA",
+   "x": 50,
+   "y": 0,
+   "frequency": 440.0,
+   "duration_ms": 333,
+   "balance": 1.0,
+   "description": "from three, right side"
+  },
+  {
+   "league": "NBA",
+   "x": 50,
+   "y": 4,
+   "frequency": 440.0,
+   "duration_ms": 333,
+   "balance": 1.0,
+   "description": "from three, right side"
+  },
+  {
+   "league": "NBA",
+   "x": 50,
+   "y": 8,
+   "frequency": 440.0,
+   "duration_ms": 335,
+   "balance": 1.0,
+   "description": "from three, right side"
+  },
+  {
+   "league": "NBA",
+   "x": 50,
+   "y": 12,
+   "frequency": 440.0,
+   "duration_ms": 340,
+   "balance": 1.0,
+   "description": "from three, right side"
+  },
+  {
+   "league": "NBA",
+   "x": 50,
+   "y": 16,
+   "frequency": 392.0,
+   "duration_ms": 347,
+   "balance": 1.0,
+   "description": "deep, 28 feet out"
+  },
+  {
+   "league": "NBA",
+   "x": 50,
+   "y": 20,
+   "frequency": 329.63,
+   "duration_ms": 356,
+   "balance": 1.0,
+   "description": "deep, 30 feet out"
+  },
+  {
+   "league": "NBA",
+   "x": 50,
+   "y": 24,
+   "frequency": 329.63,
+   "duration_ms": 367,
+   "balance": 1.0,
+   "description": "deep, 33 feet out"
+  },
+  {
+   "league": "NBA",
+   "x": 50,
+   "y": 28,
+   "frequency": 293.66,
+   "duration_ms": 379,
+   "balance": 1.0,
+   "description": "deep, 35 feet out"
+  },
+  {
+   "league": "NBA",
+   "x": 50,
+   "y": 32,
+   "frequency": 261.63,
+   "duration_ms": 392,
+   "balance": 1.0,
+   "description": "deep, 38 feet out"
+  },
+  {
+   "league": "NBA",
+   "x": 50,
+   "y": 36,
+   "frequency": 220.0,
+   "duration_ms": 400,
+   "balance": 1.0,
+   "description": "deep, 41 feet out"
+  },
+  {
+   "league": "NBA",
+   "x": 50,
+   "y": 40,
+   "frequency": 220.0,
+   "duration_ms": 400,
+   "balance": 1.0,
+   "description": "deep, 45 feet out"
+  },
+  {
+   "league": "NBA",
+   "x": 50,
+   "y": 44,
+   "frequency": 220.0,
+   "duration_ms": 400,
+   "balance": 1.0,
+   "description": "deep, 48 feet out"
+  },
+  {
+   "league": "NHL",
+   "x": -100,
+   "y": -42,
+   "frequency": 659.25,
+   "duration_ms": 302,
+   "balance": 0.994118,
+   "description": "near end, in the right corner"
+  },
+  {
+   "league": "NHL",
+   "x": -100,
+   "y": -35,
+   "frequency": 784.0,
+   "duration_ms": 290,
+   "balance": 0.911765,
+   "description": "near end, in the right corner"
+  },
+  {
+   "league": "NHL",
+   "x": -100,
+   "y": -28,
+   "frequency": 880.0,
+   "duration_ms": 277,
+   "balance": 0.829412,
+   "description": "near end, in the right corner"
+  },
+  {
+   "league": "NHL",
+   "x": -100,
+   "y": -21,
+   "frequency": 1046.5,
+   "duration_ms": 265,
+   "balance": 0.747059,
+   "description": "near end, in the right corner"
+  },
+  {
+   "league": "NHL",
+   "x": -100,
+   "y": -14,
+   "frequency": 1046.5,
+   "duration_ms": 254,
+   "balance": 0.664706,
+   "description": "near end, behind the net"
+  },
+  {
+   "league": "NHL",
+   "x": -100,
+   "y": -7,
+   "frequency": 1174.66,
+   "duration_ms": 245,
+   "balance": 0.582353,
+   "description": "near end, behind the net"
+  },
+  {
+   "league": "NHL",
+   "x": -100,
+   "y": 0,
+   "frequency": 1174.66,
+   "duration_ms": 241,
+   "balance": 0.5,
+   "description": "near end, behind the net"
+  },
+  {
+   "league": "NHL",
+   "x": -100,
+   "y": 7,
+   "frequency": 1174.66,
+   "duration_ms": 245,
+   "balance": 0.417647,
+   "description": "near end, behind the net"
+  },
+  {
+   "league": "NHL",
+   "x": -100,
+   "y": 14,
+   "frequency": 1046.5,
+   "duration_ms": 254,
+   "balance": 0.335294,
+   "description": "near end, behind the net"
+  },
+  {
+   "league": "NHL",
+   "x": -100,
+   "y": 21,
+   "frequency": 1046.5,
+   "duration_ms": 265,
+   "balance": 0.252941,
+   "description": "near end, in the left corner"
+  },
+  {
+   "league": "NHL",
+   "x": -100,
+   "y": 28,
+   "frequency": 880.0,
+   "duration_ms": 277,
+   "balance": 0.170588,
+   "description": "near end, in the left corner"
+  },
+  {
+   "league": "NHL",
+   "x": -100,
+   "y": 35,
+   "frequency": 784.0,
+   "duration_ms": 290,
+   "balance": 0.088235,
+   "description": "near end, in the left corner"
+  },
+  {
+   "league": "NHL",
+   "x": -100,
+   "y": 42,
+   "frequency": 659.25,
+   "duration_ms": 302,
+   "balance": 0.005882,
+   "description": "near end, in the left corner"
+  },
+  {
+   "league": "NHL",
+   "x": -90,
+   "y": -42,
+   "frequency": 659.25,
+   "duration_ms": 300,
+   "balance": 0.994118,
+   "description": "near end, in the right corner"
+  },
+  {
+   "league": "NHL",
+   "x": -90,
+   "y": -35,
+   "frequency": 784.0,
+   "duration_ms": 286,
+   "balance": 0.911765,
+   "description": "near end, in the right corner"
+  },
+  {
+   "league": "NHL",
+   "x": -90,
+   "y": -28,
+   "frequency": 880.0,
+   "duration_ms": 273,
+   "balance": 0.829412,
+   "description": "near end, in the right corner"
+  },
+  {
+   "league": "NHL",
+   "x": -90,
+   "y": -21,
+   "frequency": 1046.5,
+   "duration_ms": 260,
+   "balance": 0.747059,
+   "description": "near end, in the right corner"
+  },
+  {
+   "league": "NHL",
+   "x": -90,
+   "y": -14,
+   "frequency": 1174.66,
+   "duration_ms": 247,
+   "balance": 0.664706,
+   "description": "near end, behind the net"
+  },
+  {
+   "league": "NHL",
+   "x": -90,
+   "y": -7,
+   "frequency": 1318.51,
+   "duration_ms": 233,
+   "balance": 0.582353,
+   "description": "near end, behind the net"
+  },
+  {
+   "league": "NHL",
+   "x": -90,
+   "y": 0,
+   "frequency": 1567.98,
+   "duration_ms": 222,
+   "balance": 0.5,
+   "description": "near end, behind the net"
+  },
+  {
+   "league": "NHL",
+   "x": -90,
+   "y": 7,
+   "frequency": 1318.51,
+   "duration_ms": 233,
+   "balance": 0.417647,
+   "description": "near end, behind the net"
+  },
+  {
+   "league": "NHL",
+   "x": -90,
+   "y": 14,
+   "frequency": 1174.66,
+   "duration_ms": 247,
+   "balance": 0.335294,
+   "description": "near end, behind the net"
+  },
+  {
+   "league": "NHL",
+   "x": -90,
+   "y": 21,
+   "frequency": 1046.5,
+   "duration_ms": 260,
+   "balance": 0.252941,
+   "description": "near end, in the left corner"
+  },
+  {
+   "league": "NHL",
+   "x": -90,
+   "y": 28,
+   "frequency": 880.0,
+   "duration_ms": 273,
+   "balance": 0.170588,
+   "description": "near end, in the left corner"
+  },
+  {
+   "league": "NHL",
+   "x": -90,
+   "y": 35,
+   "frequency": 784.0,
+   "duration_ms": 286,
+   "balance": 0.088235,
+   "description": "near end, in the left corner"
+  },
+  {
+   "league": "NHL",
+   "x": -90,
+   "y": 42,
+   "frequency": 659.25,
+   "duration_ms": 300,
+   "balance": 0.005882,
+   "description": "near end, in the left corner"
+  },
+  {
+   "league": "NHL",
+   "x": -80,
+   "y": -42,
+   "frequency": 659.25,
+   "duration_ms": 301,
+   "balance": 0.994118,
+   "description": "near end, in the right corner"
+  },
+  {
+   "league": "NHL",
+   "x": -80,
+   "y": -35,
+   "frequency": 784.0,
+   "duration_ms": 288,
+   "balance": 0.911765,
+   "description": "near end, in the right corner"
+  },
+  {
+   "league": "NHL",
+   "x": -80,
+   "y": -28,
+   "frequency": 880.0,
+   "duration_ms": 276,
+   "balance": 0.829412,
+   "description": "near end, in the right corner"
+  },
+  {
+   "league": "NHL",
+   "x": -80,
+   "y": -21,
+   "frequency": 1046.5,
+   "duration_ms": 263,
+   "balance": 0.747059,
+   "description": "near end, in the right corner"
+  },
+  {
+   "league": "NHL",
+   "x": -80,
+   "y": -14,
+   "frequency": 1174.66,
+   "duration_ms": 252,
+   "balance": 0.664706,
+   "description": "near end, from the hash marks"
+  },
+  {
+   "league": "NHL",
+   "x": -80,
+   "y": -7,
+   "frequency": 1174.66,
+   "duration_ms": 242,
+   "balance": 0.582353,
+   "description": "near end, in the slot"
+  },
+  {
+   "league": "NHL",
+   "x": -80,
+   "y": 0,
+   "frequency": 1318.51,
+   "duration_ms": 237,
+   "balance": 0.5,
+   "description": "near end, in the slot"
+  },
+  {
+   "league": "NHL",
+   "x": -80,
+   "y": 7,
+   "frequency": 1174.66,
+   "duration_ms": 242,
+   "balance": 0.417647,
+   "description": "near end, in the slot"
+  },
+  {
+   "league": "NHL",
+   "x": -80,
+   "y": 14,
+   "frequency": 1174.66,
+   "duration_ms": 252,
+   "balance": 0.335294,
+   "description": "near end, from the hash marks"
+  },
+  {
+   "league": "NHL",
+   "x": -80,
+   "y": 21,
+   "frequency": 1046.5,
+   "duration_ms": 263,
+   "balance": 0.252941,
+   "description": "near end, in the left corner"
+  },
+  {
+   "league": "NHL",
+   "x": -80,
+   "y": 28,
+   "frequency": 880.0,
+   "duration_ms": 276,
+   "balance": 0.170588,
+   "description": "near end, in the left corner"
+  },
+  {
+   "league": "NHL",
+   "x": -80,
+   "y": 35,
+   "frequency": 784.0,
+   "duration_ms": 288,
+   "balance": 0.088235,
+   "description": "near end, in the left corner"
+  },
+  {
+   "league": "NHL",
+   "x": -80,
+   "y": 42,
+   "frequency": 659.25,
+   "duration_ms": 301,
+   "balance": 0.005882,
+   "description": "near end, in the left corner"
+  },
+  {
+   "league": "NHL",
+   "x": -70,
+   "y": -42,
+   "frequency": 587.33,
+   "duration_ms": 307,
+   "balance": 0.994118,
+   "description": "near end, from distance, right side"
+  },
+  {
+   "league": "NHL",
+   "x": -70,
+   "y": -35,
+   "frequency": 659.25,
+   "duration_ms": 295,
+   "balance": 0.911765,
+   "description": "near end, from the point, right side"
+  },
+  {
+   "league": "NHL",
+   "x": -70,
+   "y": -28,
+   "frequency": 784.0,
+   "duration_ms": 284,
+   "balance": 0.829412,
+   "description": "near end, from the point, right side"
+  },
+  {
+   "league": "NHL",
+   "x": -70,
+   "y": -21,
+   "frequency": 880.0,
+   "duration_ms": 274,
+   "balance": 0.747059,
+   "description": "near end, from the point, right side"
+  },
+  {
+   "league": "NHL",
+   "x": -70,
+   "y": -14,
+   "frequency": 1046.5,
+   "duration_ms": 265,
+   "balance": 0.664706,
+   "description": "near end, from the hash marks"
+  },
+  {
+   "league": "NHL",
+   "x": -70,
+   "y": -7,
+   "frequency": 1046.5,
+   "duration_ms": 258,
+   "balance": 0.582353,
+   "description": "near end, from the hash marks"
+  },
+  {
+   "league": "NHL",
+   "x": -70,
+   "y": 0,
+   "frequency": 1046.5,
+   "duration_ms": 256,
+   "balance": 0.5,
+   "description": "near end, from the hash marks"
+  },
+  {
+   "league": "NHL",
+   "x": -70,
+   "y": 7,
+   "frequency": 1046.5,
+   "duration_ms": 258,
+   "balance": 0.417647,
+   "description": "near end, from the hash marks"
+  },
+  {
+   "league": "NHL",
+   "x": -70,
+   "y": 14,
+   "frequency": 1046.5,
+   "duration_ms": 265,
+   "balance": 0.335294,
+   "description": "near end, from the hash marks"
+  },
+  {
+   "league": "NHL",
+   "x": -70,
+   "y": 21,
+   "frequency": 880.0,
+   "duration_ms": 274,
+   "balance": 0.252941,
+   "description": "near end, from the point, left side"
+  },
+  {
+   "league": "NHL",
+   "x": -70,
+   "y": 28,
+   "frequency": 784.0,
+   "duration_ms": 284,
+   "balance": 0.170588,
+   "description": "near end, from the point, left side"
+  },
+  {
+   "league": "NHL",
+   "x": -70,
+   "y": 35,
+   "frequency": 659.25,
+   "duration_ms": 295,
+   "balance": 0.088235,
+   "description": "near end, from the point, left side"
+  },
+  {
+   "league": "NHL",
+   "x": -70,
+   "y": 42,
+   "frequency": 587.33,
+   "duration_ms": 307,
+   "balance": 0.005882,
+   "description": "near end, from distance, left side"
+  },
+  {
+   "league": "NHL",
+   "x": -60,
+   "y": -42,
+   "frequency": 523.25,
+   "duration_ms": 317,
+   "balance": 0.994118,
+   "description": "near end, from distance, right side"
+  },
+  {
+   "league": "NHL",
+   "x": -60,
+   "y": -35,
+   "frequency": 587.33,
+   "duration_ms": 306,
+   "balance": 0.911765,
+   "description": "near end, from distance, right side"
+  },
+  {
+   "league": "NHL",
+   "x": -60,
+   "y": -28,
+   "frequency": 659.25,
+   "duration_ms": 296,
+   "balance": 0.829412,
+   "description": "near end, from the point, right side"
+  },
+  {
+   "league": "NHL",
+   "x": -60,
+   "y": -21,
+   "frequency": 784.0,
+   "duration_ms": 288,
+   "balance": 0.747059,
+   "description": "near end, from the point, right side"
+  },
+  {
+   "league": "NHL",
+   "x": -60,
+   "y": -14,
+   "frequency": 784.0,
+   "duration_ms": 281,
+   "balance": 0.664706,
+   "description": "near end, from the point"
+  },
+  {
+   "league": "NHL",
+   "x": -60,
+   "y": -7,
+   "frequency": 880.0,
+   "duration_ms": 277,
+   "balance": 0.582353,
+   "description": "near end, from the point"
+  },
+  {
+   "league": "NHL",
+   "x": -60,
+   "y": 0,
+   "frequency": 880.0,
+   "duration_ms": 275,
+   "balance": 0.5,
+   "description": "near end, from the point"
+  },
+  {
+   "league": "NHL",
+   "x": -60,
+   "y": 7,
+   "frequency": 880.0,
+   "duration_ms": 277,
+   "balance": 0.417647,
+   "description": "near end, from the point"
+  },
+  {
+   "league": "NHL",
+   "x": -60,
+   "y": 14,
+   "frequency": 784.0,
+   "duration_ms": 281,
+   "balance": 0.335294,
+   "description": "near end, from the point"
+  },
+  {
+   "league": "NHL",
+   "x": -60,
+   "y": 21,
+   "frequency": 784.0,
+   "duration_ms": 288,
+   "balance": 0.252941,
+   "description": "near end, from the point, left side"
+  },
+  {
+   "league": "NHL",
+   "x": -60,
+   "y": 28,
+   "frequency": 659.25,
+   "duration_ms": 296,
+   "balance": 0.170588,
+   "description": "near end, from the point, left side"
+  },
+  {
+   "league": "NHL",
+   "x": -60,
+   "y": 35,
+   "frequency": 587.33,
+   "duration_ms": 306,
+   "balance": 0.088235,
+   "description": "near end, from distance, left side"
+  },
+  {
+   "league": "NHL",
+   "x": -60,
+   "y": 42,
+   "frequency": 523.25,
+   "duration_ms": 317,
+   "balance": 0.005882,
+   "description": "near end, from distance, left side"
+  },
+  {
+   "league": "NHL",
+   "x": -50,
+   "y": -42,
+   "frequency": 523.25,
+   "duration_ms": 329,
+   "balance": 0.994118,
+   "description": "near end, from distance, right side"
+  },
+  {
+   "league": "NHL",
+   "x": -50,
+   "y": -35,
+   "frequency": 523.25,
+   "duration_ms": 319,
+   "balance": 0.911765,
+   "description": "near end, from distance, right side"
+  },
+  {
+   "league": "NHL",
+   "x": -50,
+   "y": -28,
+   "frequency": 587.33,
+   "duration_ms": 311,
+   "balance": 0.829412,
+   "description": "near end, from distance, right side"
+  },
+  {
+   "league": "NHL",
+   "x": -50,
+   "y": -21,
+   "frequency": 587.33,
+   "duration_ms": 304,
+   "balance": 0.747059,
+   "description": "near end, from the point, right side"
+  },
+  {
+   "league": "NHL",
+   "x": -50,
+   "y": -14,
+   "frequency": 659.25,
+   "duration_ms": 299,
+   "balance": 0.664706,
+   "description": "near end, from the point"
+  },
+  {
+   "league": "NHL",
+   "x": -50,
+   "y": -7,
+   "frequency": 659.25,
+   "duration_ms": 295,
+   "balance": 0.582353,
+   "description": "near end, from the point"
+  },
+  {
+   "league": "NHL",
+   "x": -50,
+   "y": 0,
+   "frequency": 659.25,
+   "duration_ms": 294,
+   "balance": 0.5,
+   "description": "near end, from the point"
+  },
+  {
+   "league": "NHL",
+   "x": -50,
+   "y": 7,
+   "frequency": 659.25,
+   "duration_ms": 295,
+   "balance": 0.417647,
+   "description": "near end, from the point"
+  },
+  {
+   "league": "NHL",
+   "x": -50,
+   "y": 14,
+   "frequency": 659.25,
+   "duration_ms": 299,
+   "balance": 0.335294,
+   "description": "near end, from the point"
+  },
+  {
+   "league": "NHL",
+   "x": -50,
+   "y": 21,
+   "frequency": 587.33,
+   "duration_ms": 304,
+   "balance": 0.252941,
+   "description": "near end, from the point, left side"
+  },
+  {
+   "league": "NHL",
+   "x": -50,
+   "y": 28,
+   "frequency": 587.33,
+   "duration_ms": 311,
+   "balance": 0.170588,
+   "description": "near end, from distance, left side"
+  },
+  {
+   "league": "NHL",
+   "x": -50,
+   "y": 35,
+   "frequency": 523.25,
+   "duration_ms": 319,
+   "balance": 0.088235,
+   "description": "near end, from distance, left side"
+  },
+  {
+   "league": "NHL",
+   "x": -50,
+   "y": 42,
+   "frequency": 523.25,
+   "duration_ms": 329,
+   "balance": 0.005882,
+   "description": "near end, from distance, left side"
+  },
+  {
+   "league": "NHL",
+   "x": -40,
+   "y": -42,
+   "frequency": 392.0,
+   "duration_ms": 342,
+   "balance": 0.994118,
+   "description": "near end, from distance, right side"
+  },
+  {
+   "league": "NHL",
+   "x": -40,
+   "y": -35,
+   "frequency": 440.0,
+   "duration_ms": 334,
+   "balance": 0.911765,
+   "description": "near end, from distance, right side"
+  },
+  {
+   "league": "NHL",
+   "x": -40,
+   "y": -28,
+   "frequency": 523.25,
+   "duration_ms": 327,
+   "balance": 0.829412,
+   "description": "near end, from distance, right side"
+  },
+  {
+   "league": "NHL",
+   "x": -40,
+   "y": -21,
+   "frequency": 523.25,
+   "duration_ms": 321,
+   "balance": 0.747059,
+   "description": "near end, from distance, right side"
+  },
+  {
+   "league": "NHL",
+   "x": -40,
+   "y": -14,
+   "frequency": 523.25,
+   "duration_ms": 317,
+   "balance": 0.664706,
+   "description": "near end, from distance"
+  },
+  {
+   "league": "NHL",
+   "x": -40,
+   "y": -7,
+   "frequency": 587.33,
+   "duration_ms": 314,
+   "balance": 0.582353,
+   "description": "near end, from distance"
+  },
+  {
+   "league": "NHL",
+   "x": -40,
+   "y": 0,
+   "frequency": 587.33,
+   "duration_ms": 313,
+   "balance": 0.5,
+   "description": "near end, from distance"
+  },
+  {
+   "league": "NHL",
+   "x": -40,
+   "y": 7,
+   "frequency": 587.33,
+   "duration_ms": 314,
+   "balance": 0.417647,
+   "description": "near end, from distance"
+  },
+  {
+   "league": "NHL",
+   "x": -40,
+   "y": 14,
+   "frequency": 523.25,
+   "duration_ms": 317,
+   "balance": 0.335294,
+   "description": "near end, from distance"
+  },
+  {
+   "league": "NHL",
+   "x": -40,
+   "y": 21,
+   "frequency": 523.25,
+   "duration_ms": 321,
+   "balance": 0.252941,
+   "description": "near end, from distance, left side"
+  },
+  {
+   "league": "NHL",
+   "x": -40,
+   "y": 28,
+   "frequency": 523.25,
+   "duration_ms": 327,
+   "balance": 0.170588,
+   "description": "near end, from distance, left side"
+  },
+  {
+   "league": "NHL",
+   "x": -40,
+   "y": 35,
+   "frequency": 440.0,
+   "duration_ms": 334,
+   "balance": 0.088235,
+   "description": "near end, from distance, left side"
+  },
+  {
+   "league": "NHL",
+   "x": -40,
+   "y": 42,
+   "frequency": 392.0,
+   "duration_ms": 342,
+   "balance": 0.005882,
+   "description": "near end, from distance, left side"
+  },
+  {
+   "league": "NHL",
+   "x": -30,
+   "y": -42,
+   "frequency": 329.63,
+   "duration_ms": 357,
+   "balance": 0.994118,
+   "description": "near end, from distance, right side"
+  },
+  {
+   "league": "NHL",
+   "x": -30,
+   "y": -35,
+   "frequency": 392.0,
+   "duration_ms": 350,
+   "balance": 0.911765,
+   "description": "near end, from distance, right side"
+  },
+  {
+   "league": "NHL",
+   "x": -30,
+   "y": -28,
+   "frequency": 392.0,
+   "duration_ms": 344,
+   "balance": 0.829412,
+   "description": "near end, from distance, right side"
+  },
+  {
+   "league": "NHL",
+   "x": -30,
+   "y": -21,
+   "frequency": 440.0,
+   "duration_ms": 339,
+   "balance": 0.747059,
+   "description": "near end, from distance, right side"
+  },
+  {
+   "league": "NHL",
+   "x": -30,
+   "y": -14,
+   "frequency": 440.0,
+   "duration_ms": 335,
+   "balance": 0.664706,
+   "description": "near end, from distance"
+  },
+  {
+   "league": "NHL",
+   "x": -30,
+   "y": -7,
+   "frequency": 440.0,
+   "duration_ms": 333,
+   "balance": 0.582353,
+   "description": "near end, from distance"
+  },
+  {
+   "league": "NHL",
+   "x": -30,
+   "y": 0,
+   "frequency": 440.0,
+   "duration_ms": 332,
+   "balance": 0.5,
+   "description": "near end, from distance"
+  },
+  {
+   "league": "NHL",
+   "x": -30,
+   "y": 7,
+   "frequency": 440.0,
+   "duration_ms": 333,
+   "balance": 0.417647,
+   "description": "near end, from distance"
+  },
+  {
+   "league": "NHL",
+   "x": -30,
+   "y": 14,
+   "frequency": 440.0,
+   "duration_ms": 335,
+   "balance": 0.335294,
+   "description": "near end, from distance"
+  },
+  {
+   "league": "NHL",
+   "x": -30,
+   "y": 21,
+   "frequency": 440.0,
+   "duration_ms": 339,
+   "balance": 0.252941,
+   "description": "near end, from distance, left side"
+  },
+  {
+   "league": "NHL",
+   "x": -30,
+   "y": 28,
+   "frequency": 392.0,
+   "duration_ms": 344,
+   "balance": 0.170588,
+   "description": "near end, from distance, left side"
+  },
+  {
+   "league": "NHL",
+   "x": -30,
+   "y": 35,
+   "frequency": 392.0,
+   "duration_ms": 350,
+   "balance": 0.088235,
+   "description": "near end, from distance, left side"
+  },
+  {
+   "league": "NHL",
+   "x": -30,
+   "y": 42,
+   "frequency": 329.63,
+   "duration_ms": 357,
+   "balance": 0.005882,
+   "description": "near end, from distance, left side"
+  },
+  {
+   "league": "NHL",
+   "x": -20,
+   "y": -42,
+   "frequency": 293.66,
+   "duration_ms": 373,
+   "balance": 0.994118,
+   "description": "neutral zone, right side"
+  },
+  {
+   "league": "NHL",
+   "x": -20,
+   "y": -35,
+   "frequency": 329.63,
+   "duration_ms": 367,
+   "balance": 0.911765,
+   "description": "neutral zone, right side"
+  },
+  {
+   "league": "NHL",
+   "x": -20,
+   "y": -28,
+   "frequency": 329.63,
+   "duration_ms": 361,
+   "balance": 0.829412,
+   "description": "neutral zone, right side"
+  },
+  {
+   "league": "NHL",
+   "x": -20,
+   "y": -21,
+   "frequency": 329.63,
+   "duration_ms": 357,
+   "balance": 0.747059,
+   "description": "neutral zone, right side"
+  },
+  {
+   "league": "NHL",
+   "x": -20,
+   "y": -14,
+   "frequency": 392.0,
+   "duration_ms": 353,
+   "balance": 0.664706,
+   "description": "neutral zone, centre"
+  },
+  {
+   "league": "NHL",
+   "x": -20,
+   "y": -7,
+   "frequency": 392.0,
+   "duration_ms": 351,
+   "balance": 0.582353,
+   "description": "neutral zone, centre"
+  },
+  {
+   "league": "NHL",
+   "x": -20,
+   "y": 0,
+   "frequency": 392.0,
+   "duration_ms": 351,
+   "balance": 0.5,
+   "description": "neutral zone, centre"
+  },
+  {
+   "league": "NHL",
+   "x": -20,
+   "y": 7,
+   "frequency": 392.0,
+   "duration_ms": 351,
+   "balance": 0.417647,
+   "description": "neutral zone, centre"
+  },
+  {
+   "league": "NHL",
+   "x": -20,
+   "y": 14,
+   "frequency": 392.0,
+   "duration_ms": 353,
+   "balance": 0.335294,
+   "description": "neutral zone, centre"
+  },
+  {
+   "league": "NHL",
+   "x": -20,
+   "y": 21,
+   "frequency": 329.63,
+   "duration_ms": 357,
+   "balance": 0.252941,
+   "description": "neutral zone, left side"
+  },
+  {
+   "league": "NHL",
+   "x": -20,
+   "y": 28,
+   "frequency": 329.63,
+   "duration_ms": 361,
+   "balance": 0.170588,
+   "description": "neutral zone, left side"
+  },
+  {
+   "league": "NHL",
+   "x": -20,
+   "y": 35,
+   "frequency": 329.63,
+   "duration_ms": 367,
+   "balance": 0.088235,
+   "description": "neutral zone, left side"
+  },
+  {
+   "league": "NHL",
+   "x": -20,
+   "y": 42,
+   "frequency": 293.66,
+   "duration_ms": 373,
+   "balance": 0.005882,
+   "description": "neutral zone, left side"
+  },
+  {
+   "league": "NHL",
+   "x": -10,
+   "y": -42,
+   "frequency": 261.63,
+   "duration_ms": 390,
+   "balance": 0.994118,
+   "description": "neutral zone, right side"
+  },
+  {
+   "league": "NHL",
+   "x": -10,
+   "y": -35,
+   "frequency": 261.63,
+   "duration_ms": 384,
+   "balance": 0.911765,
+   "description": "neutral zone, right side"
+  },
+  {
+   "league": "NHL",
+   "x": -10,
+   "y": -28,
+   "frequency": 293.66,
+   "duration_ms": 379,
+   "balance": 0.829412,
+   "description": "neutral zone, right side"
+  },
+  {
+   "league": "NHL",
+   "x": -10,
+   "y": -21,
+   "frequency": 293.66,
+   "duration_ms": 375,
+   "balance": 0.747059,
+   "description": "neutral zone, right side"
+  },
+  {
+   "league": "NHL",
+   "x": -10,
+   "y": -14,
+   "frequency": 293.66,
+   "duration_ms": 372,
+   "balance": 0.664706,
+   "description": "neutral zone, centre"
+  },
+  {
+   "league": "NHL",
+   "x": -10,
+   "y": -7,
+   "frequency": 293.66,
+   "duration_ms": 370,
+   "balance": 0.582353,
+   "description": "neutral zone, centre"
+  },
+  {
+   "league": "NHL",
+   "x": -10,
+   "y": 0,
+   "frequency": 293.66,
+   "duration_ms": 370,
+   "balance": 0.5,
+   "description": "neutral zone, centre"
+  },
+  {
+   "league": "NHL",
+   "x": -10,
+   "y": 7,
+   "frequency": 293.66,
+   "duration_ms": 370,
+   "balance": 0.417647,
+   "description": "neutral zone, centre"
+  },
+  {
+   "league": "NHL",
+   "x": -10,
+   "y": 14,
+   "frequency": 293.66,
+   "duration_ms": 372,
+   "balance": 0.335294,
+   "description": "neutral zone, centre"
+  },
+  {
+   "league": "NHL",
+   "x": -10,
+   "y": 21,
+   "frequency": 293.66,
+   "duration_ms": 375,
+   "balance": 0.252941,
+   "description": "neutral zone, left side"
+  },
+  {
+   "league": "NHL",
+   "x": -10,
+   "y": 28,
+   "frequency": 293.66,
+   "duration_ms": 379,
+   "balance": 0.170588,
+   "description": "neutral zone, left side"
+  },
+  {
+   "league": "NHL",
+   "x": -10,
+   "y": 35,
+   "frequency": 261.63,
+   "duration_ms": 384,
+   "balance": 0.088235,
+   "description": "neutral zone, left side"
+  },
+  {
+   "league": "NHL",
+   "x": -10,
+   "y": 42,
+   "frequency": 261.63,
+   "duration_ms": 390,
+   "balance": 0.005882,
+   "description": "neutral zone, left side"
+  },
+  {
+   "league": "NHL",
+   "x": 0,
+   "y": -42,
+   "frequency": 220.0,
+   "duration_ms": 400,
+   "balance": 0.005882,
+   "description": "neutral zone, left side"
+  },
+  {
+   "league": "NHL",
+   "x": 0,
+   "y": -35,
+   "frequency": 220.0,
+   "duration_ms": 400,
+   "balance": 0.088235,
+   "description": "neutral zone, left side"
+  },
+  {
+   "league": "NHL",
+   "x": 0,
+   "y": -28,
+   "frequency": 220.0,
+   "duration_ms": 397,
+   "balance": 0.170588,
+   "description": "neutral zone, left side"
+  },
+  {
+   "league": "NHL",
+   "x": 0,
+   "y": -21,
+   "frequency": 261.63,
+   "duration_ms": 393,
+   "balance": 0.252941,
+   "description": "neutral zone, left side"
+  },
+  {
+   "league": "NHL",
+   "x": 0,
+   "y": -14,
+   "frequency": 261.63,
+   "duration_ms": 391,
+   "balance": 0.335294,
+   "description": "neutral zone, centre"
+  },
+  {
+   "league": "NHL",
+   "x": 0,
+   "y": -7,
+   "frequency": 261.63,
+   "duration_ms": 389,
+   "balance": 0.417647,
+   "description": "neutral zone, centre"
+  },
+  {
+   "league": "NHL",
+   "x": 0,
+   "y": 0,
+   "frequency": 261.63,
+   "duration_ms": 389,
+   "balance": 0.5,
+   "description": "neutral zone, centre"
+  },
+  {
+   "league": "NHL",
+   "x": 0,
+   "y": 7,
+   "frequency": 261.63,
+   "duration_ms": 389,
+   "balance": 0.582353,
+   "description": "neutral zone, centre"
+  },
+  {
+   "league": "NHL",
+   "x": 0,
+   "y": 14,
+   "frequency": 261.63,
+   "duration_ms": 391,
+   "balance": 0.664706,
+   "description": "neutral zone, centre"
+  },
+  {
+   "league": "NHL",
+   "x": 0,
+   "y": 21,
+   "frequency": 261.63,
+   "duration_ms": 393,
+   "balance": 0.747059,
+   "description": "neutral zone, right side"
+  },
+  {
+   "league": "NHL",
+   "x": 0,
+   "y": 28,
+   "frequency": 220.0,
+   "duration_ms": 397,
+   "balance": 0.829412,
+   "description": "neutral zone, right side"
+  },
+  {
+   "league": "NHL",
+   "x": 0,
+   "y": 35,
+   "frequency": 220.0,
+   "duration_ms": 400,
+   "balance": 0.911765,
+   "description": "neutral zone, right side"
+  },
+  {
+   "league": "NHL",
+   "x": 0,
+   "y": 42,
+   "frequency": 220.0,
+   "duration_ms": 400,
+   "balance": 0.994118,
+   "description": "neutral zone, right side"
+  },
+  {
+   "league": "NHL",
+   "x": 10,
+   "y": -42,
+   "frequency": 261.63,
+   "duration_ms": 390,
+   "balance": 0.005882,
+   "description": "neutral zone, left side"
+  },
+  {
+   "league": "NHL",
+   "x": 10,
+   "y": -35,
+   "frequency": 261.63,
+   "duration_ms": 384,
+   "balance": 0.088235,
+   "description": "neutral zone, left side"
+  },
+  {
+   "league": "NHL",
+   "x": 10,
+   "y": -28,
+   "frequency": 293.66,
+   "duration_ms": 379,
+   "balance": 0.170588,
+   "description": "neutral zone, left side"
+  },
+  {
+   "league": "NHL",
+   "x": 10,
+   "y": -21,
+   "frequency": 293.66,
+   "duration_ms": 375,
+   "balance": 0.252941,
+   "description": "neutral zone, left side"
+  },
+  {
+   "league": "NHL",
+   "x": 10,
+   "y": -14,
+   "frequency": 293.66,
+   "duration_ms": 372,
+   "balance": 0.335294,
+   "description": "neutral zone, centre"
+  },
+  {
+   "league": "NHL",
+   "x": 10,
+   "y": -7,
+   "frequency": 293.66,
+   "duration_ms": 370,
+   "balance": 0.417647,
+   "description": "neutral zone, centre"
+  },
+  {
+   "league": "NHL",
+   "x": 10,
+   "y": 0,
+   "frequency": 293.66,
+   "duration_ms": 370,
+   "balance": 0.5,
+   "description": "neutral zone, centre"
+  },
+  {
+   "league": "NHL",
+   "x": 10,
+   "y": 7,
+   "frequency": 293.66,
+   "duration_ms": 370,
+   "balance": 0.582353,
+   "description": "neutral zone, centre"
+  },
+  {
+   "league": "NHL",
+   "x": 10,
+   "y": 14,
+   "frequency": 293.66,
+   "duration_ms": 372,
+   "balance": 0.664706,
+   "description": "neutral zone, centre"
+  },
+  {
+   "league": "NHL",
+   "x": 10,
+   "y": 21,
+   "frequency": 293.66,
+   "duration_ms": 375,
+   "balance": 0.747059,
+   "description": "neutral zone, right side"
+  },
+  {
+   "league": "NHL",
+   "x": 10,
+   "y": 28,
+   "frequency": 293.66,
+   "duration_ms": 379,
+   "balance": 0.829412,
+   "description": "neutral zone, right side"
+  },
+  {
+   "league": "NHL",
+   "x": 10,
+   "y": 35,
+   "frequency": 261.63,
+   "duration_ms": 384,
+   "balance": 0.911765,
+   "description": "neutral zone, right side"
+  },
+  {
+   "league": "NHL",
+   "x": 10,
+   "y": 42,
+   "frequency": 261.63,
+   "duration_ms": 390,
+   "balance": 0.994118,
+   "description": "neutral zone, right side"
+  },
+  {
+   "league": "NHL",
+   "x": 20,
+   "y": -42,
+   "frequency": 293.66,
+   "duration_ms": 373,
+   "balance": 0.005882,
+   "description": "neutral zone, left side"
+  },
+  {
+   "league": "NHL",
+   "x": 20,
+   "y": -35,
+   "frequency": 329.63,
+   "duration_ms": 367,
+   "balance": 0.088235,
+   "description": "neutral zone, left side"
+  },
+  {
+   "league": "NHL",
+   "x": 20,
+   "y": -28,
+   "frequency": 329.63,
+   "duration_ms": 361,
+   "balance": 0.170588,
+   "description": "neutral zone, left side"
+  },
+  {
+   "league": "NHL",
+   "x": 20,
+   "y": -21,
+   "frequency": 329.63,
+   "duration_ms": 357,
+   "balance": 0.252941,
+   "description": "neutral zone, left side"
+  },
+  {
+   "league": "NHL",
+   "x": 20,
+   "y": -14,
+   "frequency": 392.0,
+   "duration_ms": 353,
+   "balance": 0.335294,
+   "description": "neutral zone, centre"
+  },
+  {
+   "league": "NHL",
+   "x": 20,
+   "y": -7,
+   "frequency": 392.0,
+   "duration_ms": 351,
+   "balance": 0.417647,
+   "description": "neutral zone, centre"
+  },
+  {
+   "league": "NHL",
+   "x": 20,
+   "y": 0,
+   "frequency": 392.0,
+   "duration_ms": 351,
+   "balance": 0.5,
+   "description": "neutral zone, centre"
+  },
+  {
+   "league": "NHL",
+   "x": 20,
+   "y": 7,
+   "frequency": 392.0,
+   "duration_ms": 351,
+   "balance": 0.582353,
+   "description": "neutral zone, centre"
+  },
+  {
+   "league": "NHL",
+   "x": 20,
+   "y": 14,
+   "frequency": 392.0,
+   "duration_ms": 353,
+   "balance": 0.664706,
+   "description": "neutral zone, centre"
+  },
+  {
+   "league": "NHL",
+   "x": 20,
+   "y": 21,
+   "frequency": 329.63,
+   "duration_ms": 357,
+   "balance": 0.747059,
+   "description": "neutral zone, right side"
+  },
+  {
+   "league": "NHL",
+   "x": 20,
+   "y": 28,
+   "frequency": 329.63,
+   "duration_ms": 361,
+   "balance": 0.829412,
+   "description": "neutral zone, right side"
+  },
+  {
+   "league": "NHL",
+   "x": 20,
+   "y": 35,
+   "frequency": 329.63,
+   "duration_ms": 367,
+   "balance": 0.911765,
+   "description": "neutral zone, right side"
+  },
+  {
+   "league": "NHL",
+   "x": 20,
+   "y": 42,
+   "frequency": 293.66,
+   "duration_ms": 373,
+   "balance": 0.994118,
+   "description": "neutral zone, right side"
+  },
+  {
+   "league": "NHL",
+   "x": 30,
+   "y": -42,
+   "frequency": 329.63,
+   "duration_ms": 357,
+   "balance": 0.005882,
+   "description": "far end, from distance, left side"
+  },
+  {
+   "league": "NHL",
+   "x": 30,
+   "y": -35,
+   "frequency": 392.0,
+   "duration_ms": 350,
+   "balance": 0.088235,
+   "description": "far end, from distance, left side"
+  },
+  {
+   "league": "NHL",
+   "x": 30,
+   "y": -28,
+   "frequency": 392.0,
+   "duration_ms": 344,
+   "balance": 0.170588,
+   "description": "far end, from distance, left side"
+  },
+  {
+   "league": "NHL",
+   "x": 30,
+   "y": -21,
+   "frequency": 440.0,
+   "duration_ms": 339,
+   "balance": 0.252941,
+   "description": "far end, from distance, left side"
+  },
+  {
+   "league": "NHL",
+   "x": 30,
+   "y": -14,
+   "frequency": 440.0,
+   "duration_ms": 335,
+   "balance": 0.335294,
+   "description": "far end, from distance"
+  },
+  {
+   "league": "NHL",
+   "x": 30,
+   "y": -7,
+   "frequency": 440.0,
+   "duration_ms": 333,
+   "balance": 0.417647,
+   "description": "far end, from distance"
+  },
+  {
+   "league": "NHL",
+   "x": 30,
+   "y": 0,
+   "frequency": 440.0,
+   "duration_ms": 332,
+   "balance": 0.5,
+   "description": "far end, from distance"
+  },
+  {
+   "league": "NHL",
+   "x": 30,
+   "y": 7,
+   "frequency": 440.0,
+   "duration_ms": 333,
+   "balance": 0.582353,
+   "description": "far end, from distance"
+  },
+  {
+   "league": "NHL",
+   "x": 30,
+   "y": 14,
+   "frequency": 440.0,
+   "duration_ms": 335,
+   "balance": 0.664706,
+   "description": "far end, from distance"
+  },
+  {
+   "league": "NHL",
+   "x": 30,
+   "y": 21,
+   "frequency": 440.0,
+   "duration_ms": 339,
+   "balance": 0.747059,
+   "description": "far end, from distance, right side"
+  },
+  {
+   "league": "NHL",
+   "x": 30,
+   "y": 28,
+   "frequency": 392.0,
+   "duration_ms": 344,
+   "balance": 0.829412,
+   "description": "far end, from distance, right side"
+  },
+  {
+   "league": "NHL",
+   "x": 30,
+   "y": 35,
+   "frequency": 392.0,
+   "duration_ms": 350,
+   "balance": 0.911765,
+   "description": "far end, from distance, right side"
+  },
+  {
+   "league": "NHL",
+   "x": 30,
+   "y": 42,
+   "frequency": 329.63,
+   "duration_ms": 357,
+   "balance": 0.994118,
+   "description": "far end, from distance, right side"
+  },
+  {
+   "league": "NHL",
+   "x": 40,
+   "y": -42,
+   "frequency": 392.0,
+   "duration_ms": 342,
+   "balance": 0.005882,
+   "description": "far end, from distance, left side"
+  },
+  {
+   "league": "NHL",
+   "x": 40,
+   "y": -35,
+   "frequency": 440.0,
+   "duration_ms": 334,
+   "balance": 0.088235,
+   "description": "far end, from distance, left side"
+  },
+  {
+   "league": "NHL",
+   "x": 40,
+   "y": -28,
+   "frequency": 523.25,
+   "duration_ms": 327,
+   "balance": 0.170588,
+   "description": "far end, from distance, left side"
+  },
+  {
+   "league": "NHL",
+   "x": 40,
+   "y": -21,
+   "frequency": 523.25,
+   "duration_ms": 321,
+   "balance": 0.252941,
+   "description": "far end, from distance, left side"
+  },
+  {
+   "league": "NHL",
+   "x": 40,
+   "y": -14,
+   "frequency": 523.25,
+   "duration_ms": 317,
+   "balance": 0.335294,
+   "description": "far end, from distance"
+  },
+  {
+   "league": "NHL",
+   "x": 40,
+   "y": -7,
+   "frequency": 587.33,
+   "duration_ms": 314,
+   "balance": 0.417647,
+   "description": "far end, from distance"
+  },
+  {
+   "league": "NHL",
+   "x": 40,
+   "y": 0,
+   "frequency": 587.33,
+   "duration_ms": 313,
+   "balance": 0.5,
+   "description": "far end, from distance"
+  },
+  {
+   "league": "NHL",
+   "x": 40,
+   "y": 7,
+   "frequency": 587.33,
+   "duration_ms": 314,
+   "balance": 0.582353,
+   "description": "far end, from distance"
+  },
+  {
+   "league": "NHL",
+   "x": 40,
+   "y": 14,
+   "frequency": 523.25,
+   "duration_ms": 317,
+   "balance": 0.664706,
+   "description": "far end, from distance"
+  },
+  {
+   "league": "NHL",
+   "x": 40,
+   "y": 21,
+   "frequency": 523.25,
+   "duration_ms": 321,
+   "balance": 0.747059,
+   "description": "far end, from distance, right side"
+  },
+  {
+   "league": "NHL",
+   "x": 40,
+   "y": 28,
+   "frequency": 523.25,
+   "duration_ms": 327,
+   "balance": 0.829412,
+   "description": "far end, from distance, right side"
+  },
+  {
+   "league": "NHL",
+   "x": 40,
+   "y": 35,
+   "frequency": 440.0,
+   "duration_ms": 334,
+   "balance": 0.911765,
+   "description": "far end, from distance, right side"
+  },
+  {
+   "league": "NHL",
+   "x": 40,
+   "y": 42,
+   "frequency": 392.0,
+   "duration_ms": 342,
+   "balance": 0.994118,
+   "description": "far end, from distance, right side"
+  },
+  {
+   "league": "NHL",
+   "x": 50,
+   "y": -42,
+   "frequency": 523.25,
+   "duration_ms": 329,
+   "balance": 0.005882,
+   "description": "far end, from distance, left side"
+  },
+  {
+   "league": "NHL",
+   "x": 50,
+   "y": -35,
+   "frequency": 523.25,
+   "duration_ms": 319,
+   "balance": 0.088235,
+   "description": "far end, from distance, left side"
+  },
+  {
+   "league": "NHL",
+   "x": 50,
+   "y": -28,
+   "frequency": 587.33,
+   "duration_ms": 311,
+   "balance": 0.170588,
+   "description": "far end, from distance, left side"
+  },
+  {
+   "league": "NHL",
+   "x": 50,
+   "y": -21,
+   "frequency": 587.33,
+   "duration_ms": 304,
+   "balance": 0.252941,
+   "description": "far end, from the point, left side"
+  },
+  {
+   "league": "NHL",
+   "x": 50,
+   "y": -14,
+   "frequency": 659.25,
+   "duration_ms": 299,
+   "balance": 0.335294,
+   "description": "far end, from the point"
+  },
+  {
+   "league": "NHL",
+   "x": 50,
+   "y": -7,
+   "frequency": 659.25,
+   "duration_ms": 295,
+   "balance": 0.417647,
+   "description": "far end, from the point"
+  },
+  {
+   "league": "NHL",
+   "x": 50,
+   "y": 0,
+   "frequency": 659.25,
+   "duration_ms": 294,
+   "balance": 0.5,
+   "description": "far end, from the point"
+  },
+  {
+   "league": "NHL",
+   "x": 50,
+   "y": 7,
+   "frequency": 659.25,
+   "duration_ms": 295,
+   "balance": 0.582353,
+   "description": "far end, from the point"
+  },
+  {
+   "league": "NHL",
+   "x": 50,
+   "y": 14,
+   "frequency": 659.25,
+   "duration_ms": 299,
+   "balance": 0.664706,
+   "description": "far end, from the point"
+  },
+  {
+   "league": "NHL",
+   "x": 50,
+   "y": 21,
+   "frequency": 587.33,
+   "duration_ms": 304,
+   "balance": 0.747059,
+   "description": "far end, from the point, right side"
+  },
+  {
+   "league": "NHL",
+   "x": 50,
+   "y": 28,
+   "frequency": 587.33,
+   "duration_ms": 311,
+   "balance": 0.829412,
+   "description": "far end, from distance, right side"
+  },
+  {
+   "league": "NHL",
+   "x": 50,
+   "y": 35,
+   "frequency": 523.25,
+   "duration_ms": 319,
+   "balance": 0.911765,
+   "description": "far end, from distance, right side"
+  },
+  {
+   "league": "NHL",
+   "x": 50,
+   "y": 42,
+   "frequency": 523.25,
+   "duration_ms": 329,
+   "balance": 0.994118,
+   "description": "far end, from distance, right side"
+  },
+  {
+   "league": "NHL",
+   "x": 60,
+   "y": -42,
+   "frequency": 523.25,
+   "duration_ms": 317,
+   "balance": 0.005882,
+   "description": "far end, from distance, left side"
+  },
+  {
+   "league": "NHL",
+   "x": 60,
+   "y": -35,
+   "frequency": 587.33,
+   "duration_ms": 306,
+   "balance": 0.088235,
+   "description": "far end, from distance, left side"
+  },
+  {
+   "league": "NHL",
+   "x": 60,
+   "y": -28,
+   "frequency": 659.25,
+   "duration_ms": 296,
+   "balance": 0.170588,
+   "description": "far end, from the point, left side"
+  },
+  {
+   "league": "NHL",
+   "x": 60,
+   "y": -21,
+   "frequency": 784.0,
+   "duration_ms": 288,
+   "balance": 0.252941,
+   "description": "far end, from the point, left side"
+  },
+  {
+   "league": "NHL",
+   "x": 60,
+   "y": -14,
+   "frequency": 784.0,
+   "duration_ms": 281,
+   "balance": 0.335294,
+   "description": "far end, from the point"
+  },
+  {
+   "league": "NHL",
+   "x": 60,
+   "y": -7,
+   "frequency": 880.0,
+   "duration_ms": 277,
+   "balance": 0.417647,
+   "description": "far end, from the point"
+  },
+  {
+   "league": "NHL",
+   "x": 60,
+   "y": 0,
+   "frequency": 880.0,
+   "duration_ms": 275,
+   "balance": 0.5,
+   "description": "far end, from the point"
+  },
+  {
+   "league": "NHL",
+   "x": 60,
+   "y": 7,
+   "frequency": 880.0,
+   "duration_ms": 277,
+   "balance": 0.582353,
+   "description": "far end, from the point"
+  },
+  {
+   "league": "NHL",
+   "x": 60,
+   "y": 14,
+   "frequency": 784.0,
+   "duration_ms": 281,
+   "balance": 0.664706,
+   "description": "far end, from the point"
+  },
+  {
+   "league": "NHL",
+   "x": 60,
+   "y": 21,
+   "frequency": 784.0,
+   "duration_ms": 288,
+   "balance": 0.747059,
+   "description": "far end, from the point, right side"
+  },
+  {
+   "league": "NHL",
+   "x": 60,
+   "y": 28,
+   "frequency": 659.25,
+   "duration_ms": 296,
+   "balance": 0.829412,
+   "description": "far end, from the point, right side"
+  },
+  {
+   "league": "NHL",
+   "x": 60,
+   "y": 35,
+   "frequency": 587.33,
+   "duration_ms": 306,
+   "balance": 0.911765,
+   "description": "far end, from distance, right side"
+  },
+  {
+   "league": "NHL",
+   "x": 60,
+   "y": 42,
+   "frequency": 523.25,
+   "duration_ms": 317,
+   "balance": 0.994118,
+   "description": "far end, from distance, right side"
+  },
+  {
+   "league": "NHL",
+   "x": 70,
+   "y": -42,
+   "frequency": 587.33,
+   "duration_ms": 307,
+   "balance": 0.005882,
+   "description": "far end, from distance, left side"
+  },
+  {
+   "league": "NHL",
+   "x": 70,
+   "y": -35,
+   "frequency": 659.25,
+   "duration_ms": 295,
+   "balance": 0.088235,
+   "description": "far end, from the point, left side"
+  },
+  {
+   "league": "NHL",
+   "x": 70,
+   "y": -28,
+   "frequency": 784.0,
+   "duration_ms": 284,
+   "balance": 0.170588,
+   "description": "far end, from the point, left side"
+  },
+  {
+   "league": "NHL",
+   "x": 70,
+   "y": -21,
+   "frequency": 880.0,
+   "duration_ms": 274,
+   "balance": 0.252941,
+   "description": "far end, from the point, left side"
+  },
+  {
+   "league": "NHL",
+   "x": 70,
+   "y": -14,
+   "frequency": 1046.5,
+   "duration_ms": 265,
+   "balance": 0.335294,
+   "description": "far end, from the hash marks"
+  },
+  {
+   "league": "NHL",
+   "x": 70,
+   "y": -7,
+   "frequency": 1046.5,
+   "duration_ms": 258,
+   "balance": 0.417647,
+   "description": "far end, from the hash marks"
+  },
+  {
+   "league": "NHL",
+   "x": 70,
+   "y": 0,
+   "frequency": 1046.5,
+   "duration_ms": 256,
+   "balance": 0.5,
+   "description": "far end, from the hash marks"
+  },
+  {
+   "league": "NHL",
+   "x": 70,
+   "y": 7,
+   "frequency": 1046.5,
+   "duration_ms": 258,
+   "balance": 0.582353,
+   "description": "far end, from the hash marks"
+  },
+  {
+   "league": "NHL",
+   "x": 70,
+   "y": 14,
+   "frequency": 1046.5,
+   "duration_ms": 265,
+   "balance": 0.664706,
+   "description": "far end, from the hash marks"
+  },
+  {
+   "league": "NHL",
+   "x": 70,
+   "y": 21,
+   "frequency": 880.0,
+   "duration_ms": 274,
+   "balance": 0.747059,
+   "description": "far end, from the point, right side"
+  },
+  {
+   "league": "NHL",
+   "x": 70,
+   "y": 28,
+   "frequency": 784.0,
+   "duration_ms": 284,
+   "balance": 0.829412,
+   "description": "far end, from the point, right side"
+  },
+  {
+   "league": "NHL",
+   "x": 70,
+   "y": 35,
+   "frequency": 659.25,
+   "duration_ms": 295,
+   "balance": 0.911765,
+   "description": "far end, from the point, right side"
+  },
+  {
+   "league": "NHL",
+   "x": 70,
+   "y": 42,
+   "frequency": 587.33,
+   "duration_ms": 307,
+   "balance": 0.994118,
+   "description": "far end, from distance, right side"
+  },
+  {
+   "league": "NHL",
+   "x": 80,
+   "y": -42,
+   "frequency": 659.25,
+   "duration_ms": 301,
+   "balance": 0.005882,
+   "description": "far end, in the left corner"
+  },
+  {
+   "league": "NHL",
+   "x": 80,
+   "y": -35,
+   "frequency": 784.0,
+   "duration_ms": 288,
+   "balance": 0.088235,
+   "description": "far end, in the left corner"
+  },
+  {
+   "league": "NHL",
+   "x": 80,
+   "y": -28,
+   "frequency": 880.0,
+   "duration_ms": 276,
+   "balance": 0.170588,
+   "description": "far end, in the left corner"
+  },
+  {
+   "league": "NHL",
+   "x": 80,
+   "y": -21,
+   "frequency": 1046.5,
+   "duration_ms": 263,
+   "balance": 0.252941,
+   "description": "far end, in the left corner"
+  },
+  {
+   "league": "NHL",
+   "x": 80,
+   "y": -14,
+   "frequency": 1174.66,
+   "duration_ms": 252,
+   "balance": 0.335294,
+   "description": "far end, from the hash marks"
+  },
+  {
+   "league": "NHL",
+   "x": 80,
+   "y": -7,
+   "frequency": 1174.66,
+   "duration_ms": 242,
+   "balance": 0.417647,
+   "description": "far end, in the slot"
+  },
+  {
+   "league": "NHL",
+   "x": 80,
+   "y": 0,
+   "frequency": 1318.51,
+   "duration_ms": 237,
+   "balance": 0.5,
+   "description": "far end, in the slot"
+  },
+  {
+   "league": "NHL",
+   "x": 80,
+   "y": 7,
+   "frequency": 1174.66,
+   "duration_ms": 242,
+   "balance": 0.582353,
+   "description": "far end, in the slot"
+  },
+  {
+   "league": "NHL",
+   "x": 80,
+   "y": 14,
+   "frequency": 1174.66,
+   "duration_ms": 252,
+   "balance": 0.664706,
+   "description": "far end, from the hash marks"
+  },
+  {
+   "league": "NHL",
+   "x": 80,
+   "y": 21,
+   "frequency": 1046.5,
+   "duration_ms": 263,
+   "balance": 0.747059,
+   "description": "far end, in the right corner"
+  },
+  {
+   "league": "NHL",
+   "x": 80,
+   "y": 28,
+   "frequency": 880.0,
+   "duration_ms": 276,
+   "balance": 0.829412,
+   "description": "far end, in the right corner"
+  },
+  {
+   "league": "NHL",
+   "x": 80,
+   "y": 35,
+   "frequency": 784.0,
+   "duration_ms": 288,
+   "balance": 0.911765,
+   "description": "far end, in the right corner"
+  },
+  {
+   "league": "NHL",
+   "x": 80,
+   "y": 42,
+   "frequency": 659.25,
+   "duration_ms": 301,
+   "balance": 0.994118,
+   "description": "far end, in the right corner"
+  },
+  {
+   "league": "NHL",
+   "x": 90,
+   "y": -42,
+   "frequency": 659.25,
+   "duration_ms": 300,
+   "balance": 0.005882,
+   "description": "far end, in the left corner"
+  },
+  {
+   "league": "NHL",
+   "x": 90,
+   "y": -35,
+   "frequency": 784.0,
+   "duration_ms": 286,
+   "balance": 0.088235,
+   "description": "far end, in the left corner"
+  },
+  {
+   "league": "NHL",
+   "x": 90,
+   "y": -28,
+   "frequency": 880.0,
+   "duration_ms": 273,
+   "balance": 0.170588,
+   "description": "far end, in the left corner"
+  },
+  {
+   "league": "NHL",
+   "x": 90,
+   "y": -21,
+   "frequency": 1046.5,
+   "duration_ms": 260,
+   "balance": 0.252941,
+   "description": "far end, in the left corner"
+  },
+  {
+   "league": "NHL",
+   "x": 90,
+   "y": -14,
+   "frequency": 1174.66,
+   "duration_ms": 247,
+   "balance": 0.335294,
+   "description": "far end, behind the net"
+  },
+  {
+   "league": "NHL",
+   "x": 90,
+   "y": -7,
+   "frequency": 1318.51,
+   "duration_ms": 233,
+   "balance": 0.417647,
+   "description": "far end, behind the net"
+  },
+  {
+   "league": "NHL",
+   "x": 90,
+   "y": 0,
+   "frequency": 1567.98,
+   "duration_ms": 222,
+   "balance": 0.5,
+   "description": "far end, behind the net"
+  },
+  {
+   "league": "NHL",
+   "x": 90,
+   "y": 7,
+   "frequency": 1318.51,
+   "duration_ms": 233,
+   "balance": 0.582353,
+   "description": "far end, behind the net"
+  },
+  {
+   "league": "NHL",
+   "x": 90,
+   "y": 14,
+   "frequency": 1174.66,
+   "duration_ms": 247,
+   "balance": 0.664706,
+   "description": "far end, behind the net"
+  },
+  {
+   "league": "NHL",
+   "x": 90,
+   "y": 21,
+   "frequency": 1046.5,
+   "duration_ms": 260,
+   "balance": 0.747059,
+   "description": "far end, in the right corner"
+  },
+  {
+   "league": "NHL",
+   "x": 90,
+   "y": 28,
+   "frequency": 880.0,
+   "duration_ms": 273,
+   "balance": 0.829412,
+   "description": "far end, in the right corner"
+  },
+  {
+   "league": "NHL",
+   "x": 90,
+   "y": 35,
+   "frequency": 784.0,
+   "duration_ms": 286,
+   "balance": 0.911765,
+   "description": "far end, in the right corner"
+  },
+  {
+   "league": "NHL",
+   "x": 90,
+   "y": 42,
+   "frequency": 659.25,
+   "duration_ms": 300,
+   "balance": 0.994118,
+   "description": "far end, in the right corner"
+  },
+  {
+   "league": "NHL",
+   "x": 100,
+   "y": -42,
+   "frequency": 659.25,
+   "duration_ms": 302,
+   "balance": 0.005882,
+   "description": "far end, in the left corner"
+  },
+  {
+   "league": "NHL",
+   "x": 100,
+   "y": -35,
+   "frequency": 784.0,
+   "duration_ms": 290,
+   "balance": 0.088235,
+   "description": "far end, in the left corner"
+  },
+  {
+   "league": "NHL",
+   "x": 100,
+   "y": -28,
+   "frequency": 880.0,
+   "duration_ms": 277,
+   "balance": 0.170588,
+   "description": "far end, in the left corner"
+  },
+  {
+   "league": "NHL",
+   "x": 100,
+   "y": -21,
+   "frequency": 1046.5,
+   "duration_ms": 265,
+   "balance": 0.252941,
+   "description": "far end, in the left corner"
+  },
+  {
+   "league": "NHL",
+   "x": 100,
+   "y": -14,
+   "frequency": 1046.5,
+   "duration_ms": 254,
+   "balance": 0.335294,
+   "description": "far end, behind the net"
+  },
+  {
+   "league": "NHL",
+   "x": 100,
+   "y": -7,
+   "frequency": 1174.66,
+   "duration_ms": 245,
+   "balance": 0.417647,
+   "description": "far end, behind the net"
+  },
+  {
+   "league": "NHL",
+   "x": 100,
+   "y": 0,
+   "frequency": 1174.66,
+   "duration_ms": 241,
+   "balance": 0.5,
+   "description": "far end, behind the net"
+  },
+  {
+   "league": "NHL",
+   "x": 100,
+   "y": 7,
+   "frequency": 1174.66,
+   "duration_ms": 245,
+   "balance": 0.582353,
+   "description": "far end, behind the net"
+  },
+  {
+   "league": "NHL",
+   "x": 100,
+   "y": 14,
+   "frequency": 1046.5,
+   "duration_ms": 254,
+   "balance": 0.664706,
+   "description": "far end, behind the net"
+  },
+  {
+   "league": "NHL",
+   "x": 100,
+   "y": 21,
+   "frequency": 1046.5,
+   "duration_ms": 265,
+   "balance": 0.747059,
+   "description": "far end, in the right corner"
+  },
+  {
+   "league": "NHL",
+   "x": 100,
+   "y": 28,
+   "frequency": 880.0,
+   "duration_ms": 277,
+   "balance": 0.829412,
+   "description": "far end, in the right corner"
+  },
+  {
+   "league": "NHL",
+   "x": 100,
+   "y": 35,
+   "frequency": 784.0,
+   "duration_ms": 290,
+   "balance": 0.911765,
+   "description": "far end, in the right corner"
+  },
+  {
+   "league": "NHL",
+   "x": 100,
+   "y": 42,
+   "frequency": 659.25,
+   "duration_ms": 302,
+   "balance": 0.994118,
+   "description": "far end, in the right corner"
+  }
+ ]
+}

@@ -18,8 +18,15 @@ os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 from PyQt6.QtCore import Qt  # noqa: E402
 from PyQt6.QtWidgets import QApplication, QTreeWidget, QTreeWidgetItem  # noqa: E402
 
+import play_audio_mapper  # noqa: E402
 import scores  # noqa: E402
 from play_audio_mapper import PlayAudioMapper  # noqa: E402
+
+
+@pytest.fixture(autouse=True)
+def silent(monkeypatch):
+    """Queue nothing for real playback; these tests are about the wiring."""
+    monkeypatch.setattr(play_audio_mapper, "play_in_background", lambda fn, *args: None)
 
 
 @pytest.fixture(scope="module")
@@ -321,3 +328,50 @@ class TestPeriodHeaderCount:
         host = Host("NFL")
         _, period = build_period(host, [located(25, 3)])
         assert period.data(0, Qt.ItemDataRole.AccessibleTextRole) is None
+
+
+class KeyHost(Host):
+    """Host with the real key routing and the pitch path recorded, not run."""
+
+    _handle_plays_audio_key = scores.GameDetailsView._handle_plays_audio_key
+    _is_pitch_item = scores.GameDetailsView._is_pitch_item
+
+    def __init__(self, league):
+        super().__init__(league)
+        self.pitch_calls = []
+
+    def _play_pitch_audio(self, item):
+        self.pitch_calls.append(("pitch", item.text(0)))
+
+    def _play_pitch_sequence(self, item):
+        self.pitch_calls.append(("sequence", item.text(0)))
+
+
+ALT = Qt.KeyboardModifier.AltModifier
+
+
+class TestKeyRouting:
+    """Alt+P and Alt+S must reach play audio before the word-matching pitch check."""
+
+    @pytest.mark.parametrize("text", ["Jump Ball", "Personal Foul", "Shooting Foul"])
+    def test_alt_p_on_a_basketball_play_is_not_a_pitch(self, qapp, text):
+        host = KeyHost("NBA")
+        _, period = build_period(host, [located(25, 3, text)])
+        assert host._handle_plays_audio_key(period.child(0), Qt.Key.Key_P, ALT)
+        assert host.pitch_calls == []
+        assert len(host.play_audio_mapper.played) == 1
+
+    def test_alt_s_on_a_period_header_walks_the_period(self, qapp):
+        host = KeyHost("NHL")
+        _, period = build_period(host, [located(80, 0, "Shot")], label="1st Period")
+        assert host._handle_plays_audio_key(period, Qt.Key.Key_S, ALT)
+        assert host.pitch_calls == []
+        assert len(host.play_audio_mapper.sequences) == 1
+
+    def test_other_keys_are_left_alone(self, qapp):
+        host = KeyHost("NBA")
+        _, period = build_period(host, [located(25, 3)])
+        assert not host._handle_plays_audio_key(period.child(0), Qt.Key.Key_Q, ALT)
+        assert not host._handle_plays_audio_key(
+            period.child(0), Qt.Key.Key_P, Qt.KeyboardModifier.NoModifier
+        )

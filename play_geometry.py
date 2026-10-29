@@ -63,6 +63,10 @@ _GOAL_LINE = 89.0
 # Centre ice to a goal mouth. A play behind the goal line measures slightly more
 # than this, which the clamp absorbs.
 _RINK_MAX_DISTANCE = 95.0
+# Behind the net is past the goal line within this many feet of centre; the
+# corners are deeper than _CORNER_DEPTH and wider than that.
+_CREASE_SPAN = 20.0
+_CORNER_DEPTH = 75.0
 
 
 @dataclass(frozen=True)
@@ -142,13 +146,17 @@ def hockey_location(x: float, y: float) -> PlayLocation:
     # shot from the slot at either end.
     near_goal = _GOAL_LINE if field_y >= 0 else -_GOAL_LINE
     distance = math.hypot(field_x, field_y - near_goal)
-    pan = _clamp(field_x / _RINK_HALF_WIDTH, -1.0, 1.0)
+    # Left and right as seen facing the goal at this end. The two ends face
+    # opposite ways, so the same y is the right side at one end and the left at
+    # the other; without the flip, mirror-image shots would sound alike.
+    facing_x = field_x if field_y >= 0 else -field_x
+    pan = _clamp(facing_x / _RINK_HALF_WIDTH, -1.0, 1.0)
     return PlayLocation(
         field_x=field_x,
         field_y=field_y,
         distance_ft=distance,
         pan=pan,
-        description=_hockey_description(field_x, field_y, distance),
+        description=_hockey_description(facing_x, field_y, distance),
     )
 
 
@@ -246,6 +254,13 @@ def _hockey_description(field_x: float, field_y: float, distance: float) -> str:
         if side == "middle":
             return "neutral zone, centre"
         return f"neutral zone, {side} side"
+
+    # Past the goal line and in the corners first: both are close to the goal
+    # by distance, but nobody would call a battle behind the net "in the slot".
+    if abs(field_y) > _GOAL_LINE and abs(field_x) <= _CREASE_SPAN:
+        return f"{zone}, behind the net"
+    if abs(field_y) > _CORNER_DEPTH and abs(field_x) > _CREASE_SPAN:
+        return f"{zone}, in the {side} corner"
 
     if distance <= 12.0:
         band = "in the slot"

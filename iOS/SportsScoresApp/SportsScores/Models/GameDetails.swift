@@ -571,6 +571,23 @@ struct GameDetails: Codable {
             var isUsable: Bool {
                 abs(x) < 1_000_000 && abs(y) < 1_000_000
             }
+
+            /// Decoded leniently: one play with `{}` or a null x must not throw
+            /// and take the whole game's details down with it. A missing or
+            /// unreadable value decodes as the no-location sentinel instead.
+            init(from decoder: Decoder) throws {
+                let container = try decoder.container(keyedBy: CodingKeys.self)
+                x = (try? container.decodeIfPresent(Double.self, forKey: .x)) ?? Self.noLocation
+                y = (try? container.decodeIfPresent(Double.self, forKey: .y)) ?? Self.noLocation
+            }
+
+            init(x: Double, y: Double) {
+                self.x = x
+                self.y = y
+            }
+
+            private static let noLocation = -214_748_340.0
+            private enum CodingKeys: String, CodingKey { case x, y }
         }
         
         struct PitchTypeInfo: Codable {

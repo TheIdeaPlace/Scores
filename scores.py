@@ -2223,7 +2223,7 @@ class GameDetailsView(BaseView):
         if PLAY_AUDIO_AVAILABLE:
             try:
                 self.play_audio_mapper = PlayAudioMapper(self)
-                self.play_audio_mapper.audio_error.connect(self._on_audio_error)
+                self.play_audio_mapper.audio_error.connect(self._on_play_audio_error)
             except Exception as e:
                 print(f"Play audio initialization failed: {e}")
                 self.play_audio_mapper = None
@@ -2252,6 +2252,15 @@ class GameDetailsView(BaseView):
         """Handle audio errors"""
         print(f"Audio error: {error_message}")
         # Could show a non-intrusive error message if needed
+
+    def _on_play_audio_error(self, error_message):
+        """Basketball and hockey playback failed.
+
+        Successful playback says nothing, so a failure has to be spoken or it
+        sounds the same as a tone that played. The mapper reports once per run.
+        """
+        self._on_audio_error(error_message)
+        self._announce_play_audio("Couldn't play the sound")
     
     def keyPressEvent(self, event):
         """Handle key press events for game details view"""
@@ -2353,6 +2362,10 @@ class GameDetailsView(BaseView):
                     break
         elif field_name == "plays" and isinstance(field_data, list):
             self._add_plays_list_to_layout(layout, field_data)
+            # A period of play audio runs half a minute; don't let it outlive
+            # the dialog it belongs to.
+            if self.play_audio_mapper:
+                dlg.finished.connect(lambda _result: self.play_audio_mapper.stop())
         elif field_name == "drives" and isinstance(field_data, dict):
             self._add_drives_list_to_layout(layout, field_data)
         elif field_name == "officials" and isinstance(field_data, list):
@@ -3521,36 +3534,11 @@ class GameDetailsView(BaseView):
                     self._show_pitch_context_menu(current_item, plays_tree.mapToGlobal(item_rect.center()))
                     event.accept()
                     return
-            elif event.key() == Qt.Key.Key_P and event.modifiers() == Qt.KeyboardModifier.AltModifier:
-                # Basketball and hockey first. Their items are tagged explicitly
-                # by _tag_play_for_audio, whereas _is_pitch_item only matches on
-                # words in the text — and "Jump Ball" and "Personal Foul" both
-                # trip its "ball" and "foul" indicators.
-                if current_item and self._play_audio_league(current_item):
-                    self._play_play_audio(current_item)
-                    event.accept()
-                    return
-                # Alt+P for pitch audio (only works on actual pitches)
-                if current_item and self._is_pitch_item(current_item):
-                    self._play_pitch_audio(current_item)
-                    event.accept()
-                    return
-            elif event.key() == Qt.Key.Key_S and event.modifiers() == Qt.KeyboardModifier.AltModifier:
-                # Alt+S on a period header walks that period; on a play, the
-                # period it belongs to. Checked before the pitch branch for the
-                # same reason as Alt+P above.
-                if current_item and self._play_audio_league(current_item):
-                    self._play_play_sequence(current_item)
-                    event.accept()
-                    return
-                # Alt+S for pitch sequence (works on pitches and at-bat items)
-                if current_item:
-                    is_pitch = self._is_pitch_item(current_item)
-                    is_at_bat = current_item.parent() is None  # Top-level item
-                    if is_pitch or is_at_bat:
-                        self._play_pitch_sequence(current_item)
-                        event.accept()
-                        return
+            elif current_item and self._handle_plays_audio_key(
+                current_item, event.key(), event.modifiers()
+            ):
+                event.accept()
+                return
             # Fall back to default behavior
             plays_tree.__class__.keyPressEvent(plays_tree, event)
         
@@ -5005,6 +4993,37 @@ class GameDetailsView(BaseView):
             return
         self._play_play_audio(current_item)
 
+    def _handle_plays_audio_key(self, current_item, key, modifiers):
+        """Alt+P and Alt+S on the plays tree. True if the key was handled."""
+        if modifiers != Qt.KeyboardModifier.AltModifier:
+            return False
+        if key == Qt.Key.Key_P:
+            # Basketball and hockey first. Their items are tagged explicitly
+            # by _tag_play_for_audio, whereas _is_pitch_item only matches on
+            # words in the text — and "Jump Ball" and "Personal Foul" both
+            # trip its "ball" and "foul" indicators.
+            if self._play_audio_league(current_item):
+                self._play_play_audio(current_item)
+                return True
+            # Alt+P for pitch audio (only works on actual pitches)
+            if self._is_pitch_item(current_item):
+                self._play_pitch_audio(current_item)
+                return True
+        elif key == Qt.Key.Key_S:
+            # Alt+S on a period header walks that period; on a play, the
+            # period it belongs to. Checked before the pitch branch for the
+            # same reason as Alt+P above.
+            if self._play_audio_league(current_item):
+                self._play_play_sequence(current_item)
+                return True
+            # Alt+S for pitch sequence (works on pitches and at-bat items)
+            is_pitch = self._is_pitch_item(current_item)
+            is_at_bat = current_item.parent() is None  # Top-level item
+            if is_pitch or is_at_bat:
+                self._play_pitch_sequence(current_item)
+                return True
+        return False
+
     def _is_pitch_item(self, tree_item):
         """Check if the tree item represents a pitch (for audio playback)"""
         if not tree_item:
@@ -5330,8 +5349,8 @@ class GameDetailsView(BaseView):
         if current_item and self._is_pitch_item(current_item):
             self._play_pitch_audio(current_item)
         else:
-            # Provide feedback if no pitch is selected
-            QMessageBox.information(None, "Pitch Audio", "Please select a pitch to play audio.")
+            # Spoken rather than a parentless modal box, the same as play audio.
+            self._announce_play_audio("Select a pitch to play its audio")
 
     def _export_game_log(self):
         """Export complete game log as HTML file"""

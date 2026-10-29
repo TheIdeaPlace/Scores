@@ -18,6 +18,7 @@ import os
 import platform
 import struct
 import tempfile
+import time
 import wave
 
 from PyQt6.QtCore import QObject, pyqtSignal
@@ -34,6 +35,10 @@ if platform.system() == "Windows":
 else:
     WINSOUND_AVAILABLE = False
 
+# Silence after each tone in a period sequence; iOS's playLocatedSequence
+# leaves the same 180 ms.
+SEQUENCE_GAP_SECONDS = 0.18
+
 
 class PlayAudioMapper(QObject):
     """Spatial audio for a basketball or hockey play's location."""
@@ -48,6 +53,17 @@ class PlayAudioMapper(QObject):
         super().__init__(parent)
         self.enabled = True  # WAV generation works regardless of winsound
         self.temp_files = []
+        # Bumped by stop(). Each queued tone remembers the generation it was
+        # queued under and is skipped once that has moved on, so a new Alt+P or
+        # Alt+S, or closing the plays dialog, cuts off a period still playing
+        # instead of waiting 30 seconds behind it.
+        self._generation = 0
+        # One error report per playback run, not one per queued tone.
+        self._error_reported_for = None
+
+    def stop(self):
+        """Drop every tone still queued from earlier playback."""
+        self._generation += 1
 
     def supports(self, league):
         """True when this league's plays carry coordinates worth sonifying."""
@@ -78,9 +94,11 @@ class PlayAudioMapper(QObject):
             return None
 
         frequency, duration_ms, balance, description = params
+        self.stop()
+        generation = self._generation
         try:
             play_in_background(
-                self._play_stereo_tone_reporting, frequency, duration_ms / 1000.0, balance
+                self._play_queued_tone, generation, frequency, duration_ms / 1000.0, balance, 0.0
             )
             return description
         except Exception as e:
@@ -92,23 +110,34 @@ class PlayAudioMapper(QObject):
 
         `audio_queue` runs one sound at a time on a single worker thread, so the
         tones play in sequence without overlapping and without holding the UI.
-        Returns how many plays were sonified.
+        Each is followed by the same short gap iOS leaves, so two shots from the
+        same spot are heard as two tones rather than one long one. Returns how
+        many plays were queued.
         """
-        sonified = 0
+        located = []
         for play in plays:
             if not has_coordinate(play):
                 continue
             coord = play["coordinate"]
             params = audio_params(league, coord["x"], coord["y"])
-            if params is None:
-                continue
-            frequency, duration_ms, balance, _ = params
+            if params is not None:
+                located.append(params)
+
+        if not located:
+            return 0
+
+        self.stop()
+        generation = self._generation
+        sonified = 0
+        for frequency, duration_ms, balance, _ in located:
             try:
                 play_in_background(
-                    self._play_stereo_tone_reporting,
+                    self._play_queued_tone,
+                    generation,
                     frequency,
                     duration_ms / 1000.0,
                     balance,
+                    SEQUENCE_GAP_SECONDS,
                 )
                 sonified += 1
             except Exception as e:
@@ -117,15 +146,33 @@ class PlayAudioMapper(QObject):
 
         return sonified
 
-    def _play_stereo_tone_reporting(self, frequency, duration, balance):
-        """_play_stereo_tone on the audio thread, reporting failure by signal."""
+    def _play_queued_tone(self, generation, frequency, duration, balance, gap):
+        """Runs on the audio thread: play one tone unless it has been superseded."""
+        if generation != self._generation:
+            return
         try:
             self._play_stereo_tone(frequency, duration, balance)
         except Exception as e:
-            self.audio_error.emit(str(e))
+            # Report once per run. Success is silent, so without this a missing
+            # or busy output device would sound exactly like it worked.
+            if self._error_reported_for != generation:
+                self._error_reported_for = generation
+                self.audio_error.emit(str(e))
+            return
+        if gap and generation == self._generation:
+            time.sleep(gap)
 
     def _play_stereo_tone(self, frequency, duration, balance):
-        """Write a stereo WAV for one tone and play it.
+        """Write one tone's WAV, play it, and remove it."""
+        path = self._write_tone_wav(frequency, duration, balance)
+        try:
+            if WINSOUND_AVAILABLE:
+                winsound.PlaySound(path, winsound.SND_FILENAME)
+        finally:
+            self._remove_temp_file(path)
+
+    def _write_tone_wav(self, frequency, duration, balance):
+        """Write a stereo WAV for one tone and return its path.
 
         Mirrors `stereo_audio_mapper._play_stereo_beep`: constant-power panning
         so the tone keeps a steady loudness as it moves across the stereo field,
@@ -172,18 +219,23 @@ class PlayAudioMapper(QObject):
             wav_file.setframerate(sample_rate)
             wav_file.writeframes(b"".join(frames))
 
-        if WINSOUND_AVAILABLE:
-            winsound.PlaySound(temp_file.name, winsound.SND_FILENAME)
+        return temp_file.name
+
+    def _remove_temp_file(self, path):
+        try:
+            if os.path.exists(path):
+                os.unlink(path)
+        except OSError:
+            pass
+        try:
+            self.temp_files.remove(path)
+        except ValueError:
+            pass
 
     def cleanup(self):
-        """Remove the temporary WAV files this mapper wrote."""
-        for temp_file in self.temp_files:
-            try:
-                if os.path.exists(temp_file):
-                    os.unlink(temp_file)
-            except Exception:
-                pass
-        self.temp_files.clear()
+        """Remove any temporary WAV files this mapper still holds."""
+        for temp_file in list(self.temp_files):
+            self._remove_temp_file(temp_file)
 
     def __del__(self):
         self.cleanup()

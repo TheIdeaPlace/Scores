@@ -1,8 +1,9 @@
 """Checks the basketball/hockey play audio mapper.
 
-winsound only exists on Windows, so `_play_stereo_tone` writes its WAV and then
-skips playback everywhere else. That is enough to verify the tone itself — the
-file it hands winsound is the whole output.
+Nothing here makes a sound. The audio queue is replaced with a recorder, so the
+tests see exactly what would have been queued, and the tone itself is checked
+through `_write_tone_wav` — the file it hands winsound is the whole output. CI
+runs on Windows runners with no audio device, where PlaySound raises.
 """
 
 import os
@@ -10,6 +11,7 @@ import wave
 
 import pytest
 
+import play_audio_mapper
 from play_audio_mapper import PlayAudioMapper
 
 
@@ -24,6 +26,17 @@ def unlocated_play(text="Substitution"):
         "type": {"text": text},
         "coordinate": {"x": -214748340, "y": -214748365},
     }
+
+
+@pytest.fixture(autouse=True)
+def queued(monkeypatch):
+    """Record what would be queued for playback instead of playing it."""
+    calls = []
+    monkeypatch.setattr(
+        play_audio_mapper, "play_in_background", lambda fn, *args: calls.append((fn, args))
+    )
+    monkeypatch.setattr(play_audio_mapper, "WINSOUND_AVAILABLE", False)
+    return calls
 
 
 @pytest.fixture
@@ -97,8 +110,7 @@ class TestToneGeneration:
     """The WAV is the output, so check it directly."""
 
     def _render(self, mapper, frequency, duration, balance):
-        mapper._play_stereo_tone(frequency, duration, balance)
-        path = mapper.temp_files[-1]
+        path = mapper._write_tone_wav(frequency, duration, balance)
         assert os.path.exists(path)
         with wave.open(path, "rb") as w:
             assert w.getnchannels() == 2
@@ -150,10 +162,76 @@ class TestToneGeneration:
             assert max(abs(s) for s in samples) < 32767
 
 
+class TestCancellation:
+    """A new Alt+P or Alt+S, or closing the dialog, drops tones still queued."""
+
+    def _run(self, queued):
+        """Run every queued job the way the audio thread would, in order."""
+        for fn, args in list(queued):
+            fn(*args)
+
+    def test_stop_drops_a_queued_sequence(self, mapper, queued, monkeypatch):
+        played = []
+        monkeypatch.setattr(mapper, "_play_stereo_tone", lambda *a: played.append(a))
+        assert mapper.generate_play_sequence("NBA", [nba_play(25, 3), nba_play(10, 20)]) == 2
+        mapper.stop()
+        self._run(queued)
+        assert played == []
+
+    def test_a_new_play_supersedes_a_running_sequence(self, mapper, queued, monkeypatch):
+        played = []
+        monkeypatch.setattr(mapper, "_play_stereo_tone", lambda *a: played.append(a))
+        monkeypatch.setattr(play_audio_mapper, "SEQUENCE_GAP_SECONDS", 0)
+        mapper.generate_play_sequence("NBA", [nba_play(10, 20)] * 5)
+        mapper.generate_play_audio("NBA", nba_play(25, 3))
+        self._run(queued)
+        assert len(played) == 1
+
+    def test_sequence_plays_in_full_when_left_alone(self, mapper, queued, monkeypatch):
+        played = []
+        monkeypatch.setattr(mapper, "_play_stereo_tone", lambda *a: played.append(a))
+        monkeypatch.setattr(play_audio_mapper, "SEQUENCE_GAP_SECONDS", 0)
+        mapper.generate_play_sequence("NBA", [nba_play(10, 20), unlocated_play(), nba_play(25, 3)])
+        self._run(queued)
+        assert len(played) == 2
+
+    def test_sequence_tones_are_separated_by_a_gap(self, mapper, queued):
+        mapper.generate_play_sequence("NBA", [nba_play(10, 20)] * 2)
+        gaps = [args[-1] for _, args in queued]
+        assert gaps == [play_audio_mapper.SEQUENCE_GAP_SECONDS] * 2
+
+
+class TestErrors:
+    def test_a_failed_run_reports_once(self, mapper, queued, monkeypatch):
+        errors = []
+        mapper.audio_error.connect(errors.append)
+
+        def fail(*_):
+            raise RuntimeError("Failed to play sound")
+
+        monkeypatch.setattr(mapper, "_play_stereo_tone", fail)
+        monkeypatch.setattr(play_audio_mapper, "SEQUENCE_GAP_SECONDS", 0)
+        mapper.generate_play_sequence("NBA", [nba_play(10, 20)] * 4)
+        for fn, args in list(queued):
+            fn(*args)
+        assert errors == ["Failed to play sound"]
+
+        # A later run that also fails is reported again.
+        queued.clear()
+        mapper.generate_play_audio("NBA", nba_play(25, 3))
+        for fn, args in list(queued):
+            fn(*args)
+        assert len(errors) == 2
+
+
 class TestCleanup:
+    def test_a_played_tone_removes_its_wav(self, mapper):
+        mapper._play_stereo_tone(440.0, 0.05, 0.5)
+        assert mapper.temp_files == []
+
     def test_removes_its_temp_files(self):
         mapper = PlayAudioMapper()
-        mapper._play_stereo_tone(440.0, 0.05, 0.5)
+        mapper._write_tone_wav(440.0, 0.05, 0.5)
         paths = list(mapper.temp_files)
         assert paths and all(os.path.exists(p) for p in paths)
         mapper.cleanup()

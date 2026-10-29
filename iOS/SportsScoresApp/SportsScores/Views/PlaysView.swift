@@ -775,8 +775,12 @@ struct GenericPlaysView: View {
             .buttonStyle(.plain)
             .accessibilityLabel(a11yHeader)
             .accessibilityHint(isOpen ? "Double tap to collapse." : "Double tap to expand.")
-            .accessibilityAction(named: "Play locations") {
-                playPeriodLocations(period)
+            // Only where there is something to hear: football and soccer share
+            // this view and have no coordinates at all.
+            .accessibilityActions {
+                if canPlayAudio && period.plays.contains(where: { $0.hasPlayLocation }) {
+                    Button("Play locations") { playPeriodLocations(period) }
+                }
             }
 
             if isOpen {
@@ -852,8 +856,10 @@ struct GenericPlaysView: View {
         .accessibilityLabel(a11yLabel)
         // Offered only on the plays that actually have somewhere to play, so the
         // rotor is not full of actions that would answer "no location".
-        .accessibilityAction(named: "Play location") {
-            if canPlayAudio && play.hasPlayLocation { playLocation(play) }
+        .accessibilityActions {
+            if canPlayAudio && play.hasPlayLocation {
+                Button("Play location") { playLocation(play) }
+            }
         }
         .accessibilityHint(
             canPlayAudio && play.hasPlayLocation

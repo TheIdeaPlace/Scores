@@ -150,6 +150,33 @@ class TestHockeyGeometry:
     def test_descriptions(self, x, y, expected):
         assert hockey_location(x, y).description == expected
 
+    def test_left_and_right_are_mirrored_at_the_near_end(self):
+        # The same ESPN y is on opposite sides once you face each end's goal.
+        far = hockey_location(70, 20)
+        near = hockey_location(-70, 20)
+        assert far.description.endswith("right side")
+        assert near.description.endswith("left side")
+        assert far.pan == pytest.approx(-near.pan)
+
+    def test_mirroring_leaves_the_raw_position_alone(self):
+        # The venue tour plots field_x directly, so only pan and words flip.
+        assert hockey_location(-70, 20).field_x == pytest.approx(20.0)
+
+    @pytest.mark.parametrize(
+        "x,y,expected",
+        [
+            (95, 0, "far end, behind the net"),
+            (-95, 10, "near end, behind the net"),
+            (97, 35, "far end, in the right corner"),
+            (97, -35, "far end, in the left corner"),
+            (-97, 35, "near end, in the left corner"),
+            # In front of the goal line and wide is still a band, not a corner.
+            (70, 30, "far end, from the point, right side"),
+        ],
+    )
+    def test_behind_the_net_and_corners(self, x, y, expected):
+        assert hockey_location(x, y).description == expected
+
     def test_coordinates_beyond_the_boards_are_clamped(self):
         location = hockey_location(140, 60)
         assert location.field_y == pytest.approx(100.0)
