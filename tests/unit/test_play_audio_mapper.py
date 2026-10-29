@@ -67,11 +67,12 @@ class TestGeneratePlayAudio:
     def test_unsupported_league_returns_none(self, mapper):
         assert mapper.generate_play_audio("NFL", nba_play(25, 3)) is None
 
-    def test_emits_accessible_feedback(self, mapper):
-        messages = []
-        mapper.audio_generated.connect(messages.append)
-        mapper.generate_play_audio("NHL", {"coordinate": {"x": 85, "y": 0}})
-        assert messages == ["Audio: far end, in the slot"]
+    def test_says_nothing_when_a_tone_plays(self, mapper):
+        """The tone is the output. Speaking the location would talk over it."""
+        assert not hasattr(mapper, "audio_generated")
+        assert mapper.generate_play_audio("NHL", {"coordinate": {"x": 85, "y": 0}}) == (
+            "far end, in the slot"
+        )
 
 
 class TestGeneratePlaySequence:

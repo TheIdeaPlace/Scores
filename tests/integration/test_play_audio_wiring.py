@@ -28,6 +28,29 @@ def qapp():
     yield app
 
 
+class RecordingMapper(PlayAudioMapper):
+    """The real mapper, keeping a note of what it was asked to play.
+
+    Nothing is spoken when a tone plays, so the announcements on their own no
+    longer show that the right play was found. This does.
+    """
+
+    def __init__(self):
+        super().__init__()
+        self.played = []
+        self.sequences = []
+
+    def generate_play_audio(self, league, play):
+        result = super().generate_play_audio(league, play)
+        self.played.append((league, play, result))
+        return result
+
+    def generate_play_sequence(self, league, plays):
+        count = super().generate_play_sequence(league, plays)
+        self.sequences.append((league, plays, count))
+        return count
+
+
 class Host:
     """The four methods under test, on an object carrying only what they touch.
 
@@ -37,6 +60,7 @@ class Host:
     """
 
     _tag_play_for_audio = scores.GameDetailsView._tag_play_for_audio
+    _label_period_for_audio = scores.GameDetailsView._label_period_for_audio
     _play_audio_league = scores.GameDetailsView._play_audio_league
     _play_play_audio = scores.GameDetailsView._play_play_audio
     _play_play_sequence = scores.GameDetailsView._play_play_sequence
@@ -46,7 +70,7 @@ class Host:
 
     def __init__(self, league):
         self._plays_sport_type = league
-        self.play_audio_mapper = PlayAudioMapper()
+        self.play_audio_mapper = RecordingMapper()
         self.announced = []
 
     # Capture what the screen reader would have been told.
@@ -75,6 +99,7 @@ def build_period(host, plays, label="1st Quarter"):
         item = QTreeWidgetItem([play["text"]])
         host._tag_play_for_audio(item, play)
         period.addChild(item)
+    host._label_period_for_audio(period, plays)
     return tree, period
 
 
@@ -86,6 +111,23 @@ class TestTagging:
         data = item.data(0, Qt.ItemDataRole.UserRole)
         assert data["play_audio_league"] == "NBA"
         assert data["play"]["coordinate"] == {"x": 25, "y": 3}
+
+    def test_says_the_location_on_arrival(self, qapp):
+        """Nothing is spoken over the tone, so the item itself has to say it."""
+        host = Host("NBA")
+        item = QTreeWidgetItem(["Jump Shot - 11:38"])
+        host._tag_play_for_audio(item, located(3, 3))
+        assert item.data(0, Qt.ItemDataRole.AccessibleTextRole) == (
+            "Jump Shot - 11:38, from three, left side"
+        )
+        # The visible column is untouched.
+        assert item.text(0) == "Jump Shot - 11:38"
+
+    def test_unlocated_play_keeps_its_plain_text(self, qapp):
+        host = Host("NBA")
+        item = QTreeWidgetItem(["Substitution"])
+        host._tag_play_for_audio(item, unlocated())
+        assert item.data(0, Qt.ItemDataRole.AccessibleTextRole) is None
 
     @pytest.mark.parametrize("league", ["MLB", "NFL", "Soccer", None])
     def test_leaves_other_sports_untagged(self, qapp, league):
@@ -120,11 +162,16 @@ class TestLeagueLookup:
 
 
 class TestSinglePlay:
-    def test_announces_the_location(self, qapp):
+    def test_says_nothing_when_a_tone_plays(self, qapp):
+        """The tree label already said where it happened; don't repeat it."""
         host = Host("NBA")
         _, period = build_period(host, [located(25, 3, "Layup Shot")])
         host._play_play_audio(period.child(0))
-        assert host.announced == ["at the rim"]
+        assert host.announced == []
+        # Silent, but it did play the right play.
+        assert [p["coordinate"] for _, p, _ in host.play_audio_mapper.played] == [
+            {"x": 25, "y": 3}
+        ]
 
     def test_says_so_when_a_play_has_no_location(self, qapp):
         host = Host("NBA")
@@ -142,7 +189,8 @@ class TestSinglePlay:
         host = Host("NHL")
         _, period = build_period(host, [located(85, 0, "Goal")], "1st Period")
         host._play_play_audio(period.child(0))
-        assert host.announced == ["far end, in the slot"]
+        assert host.announced == []
+        assert host.play_audio_mapper.played[0][2] == "far end, in the slot"
 
 
 class TestSequence:
@@ -151,14 +199,18 @@ class TestSequence:
         plays = [located(25, 3), unlocated(), located(3, 3), located(25, 27)]
         _, period = build_period(host, plays)
         host._play_play_sequence(period)
-        assert host.announced == ["Playing 3 of 4 plays in 1st Quarter"]
+        assert host.announced == []
+        league, passed, count = host.play_audio_mapper.sequences[0]
+        assert (league, len(passed), count) == ("NBA", 4, 3)
 
     def test_walks_the_period_a_play_belongs_to(self, qapp):
         host = Host("NBA")
         plays = [located(25, 3), located(3, 3)]
         _, period = build_period(host, plays)
         host._play_play_sequence(period.child(1))
-        assert host.announced == ["Playing 2 of 2 plays in 1st Quarter"]
+        assert host.announced == []
+        # Alt+S from a play walks the period it belongs to, not just that play.
+        assert host.play_audio_mapper.sequences[0][2] == 2
 
     def test_period_with_no_located_plays(self, qapp):
         host = Host("NBA")
@@ -179,7 +231,9 @@ class TestButton:
         tree, period = build_period(host, [located(25, 3), located(3, 3)])
         tree.setCurrentItem(period.child(1))
         host._play_current_play_audio(tree)
-        assert host.announced == ["from three, left side"]
+        assert host.announced == []
+        # The button has to follow the selection, not play the first item.
+        assert host.play_audio_mapper.played[0][2] == "from three, left side"
 
     def test_nothing_selected(self, qapp):
         host = Host("NBA")
@@ -204,6 +258,7 @@ class TestTreeBuildersTagTheirPlays:
         "_format_basketball_play_entry",
         "_format_clock_play_entry",
         "_get_basketball_team_labels",
+        "_label_period_for_audio",
         "_ordinal_period_label",
         "_parse_basketball_clock",
         "_safe_int",
@@ -244,3 +299,25 @@ class TestTreeBuildersTagTheirPlays:
         data = period.child(0).data(0, Qt.ItemDataRole.UserRole)
         assert data is not None, f"{builder} did not tag its play items"
         assert data["play_audio_league"] == league
+
+
+class TestPeriodHeaderCount:
+    """Alt+S says nothing, so the header has to say how many will play."""
+
+    def test_counts_the_located_plays(self, qapp):
+        host = Host("NBA")
+        plays = [located(25, 3), unlocated(), located(3, 3), located(25, 27)]
+        _, period = build_period(host, plays)
+        assert period.data(0, Qt.ItemDataRole.AccessibleTextRole) == (
+            "1st Quarter, 3 with a location"
+        )
+
+    def test_silent_period_keeps_its_plain_text(self, qapp):
+        host = Host("NBA")
+        _, period = build_period(host, [unlocated(), unlocated("Full Timeout")])
+        assert period.data(0, Qt.ItemDataRole.AccessibleTextRole) is None
+
+    def test_other_sports_are_left_alone(self, qapp):
+        host = Host("NFL")
+        _, period = build_period(host, [located(25, 3)])
+        assert period.data(0, Qt.ItemDataRole.AccessibleTextRole) is None

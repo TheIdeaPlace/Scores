@@ -2223,7 +2223,6 @@ class GameDetailsView(BaseView):
         if PLAY_AUDIO_AVAILABLE:
             try:
                 self.play_audio_mapper = PlayAudioMapper(self)
-                self.play_audio_mapper.audio_generated.connect(self._on_audio_feedback)
                 self.play_audio_mapper.audio_error.connect(self._on_audio_error)
             except Exception as e:
                 print(f"Play audio initialization failed: {e}")
@@ -4163,6 +4162,7 @@ class GameDetailsView(BaseView):
             period_item = QTreeWidgetItem([period_header])
             period_item.setExpanded(True)
             plays_tree.addTopLevelItem(period_item)
+            self._label_period_for_audio(period_item, plays_in_period)
 
             for play in plays_in_period:
                 play_text = play.get("text", "Unknown play")
@@ -4214,6 +4214,7 @@ class GameDetailsView(BaseView):
             period_item = QTreeWidgetItem([f"{period_label}{period_score}"])
             period_item.setExpanded(True)
             plays_tree.addTopLevelItem(period_item)
+            self._label_period_for_audio(period_item, plays_in_period)
 
             period_plays = sorted(
                 plays_in_period,
@@ -4868,6 +4869,39 @@ class GameDetailsView(BaseView):
             {"play_audio_league": league, "play": play},
         )
 
+        # Say where the play happened as part of the item, so the location is
+        # heard on arrival rather than announced over the tone. AccessibleText
+        # leaves the visible column alone and falls back to the display text
+        # when it is not set, which is how accessible_table.py uses it too.
+        description = self.play_audio_mapper.describe_play(league, play)
+        if description:
+            tree_item.setData(
+                0,
+                Qt.ItemDataRole.AccessibleTextRole,
+                f"{tree_item.text(0)}, {description}",
+            )
+
+    def _label_period_for_audio(self, period_item, plays):
+        """Add "N with a location" to a period header for screen readers.
+
+        Alt+S on the header plays every located play in the period and says
+        nothing, so the count has to be available here or the listener has no
+        idea how many tones to expect — plenty of plays carry no coordinates.
+        """
+        league = getattr(self, "_plays_sport_type", None)
+        if not self.play_audio_mapper or not self.play_audio_mapper.supports(league):
+            return
+        located = sum(
+            1 for play in plays if self.play_audio_mapper.describe_play(league, play)
+        )
+        if not located:
+            return
+        period_item.setData(
+            0,
+            Qt.ItemDataRole.AccessibleTextRole,
+            f"{period_item.text(0)}, {located} with a location",
+        )
+
     def _play_audio_league(self, tree_item):
         """The league to sonify this item under, or None if it is not sonifiable.
 
@@ -4908,12 +4942,13 @@ class GameDetailsView(BaseView):
             return
 
         play = data["play"]
-        description = self.play_audio_mapper.generate_play_audio(league, play)
-        if description:
-            self._announce_play_audio(description)
-        else:
+        # Nothing is spoken when a tone plays. The play's own tree label already
+        # said where it happened, so an announcement here would repeat it and
+        # talk over the audio.
+        if not self.play_audio_mapper.generate_play_audio(league, play):
             # Substitutions, timeouts, free throws and most face-offs arrive
-            # without coordinates, which is normal rather than a failure.
+            # without coordinates, which is normal rather than a failure. This
+            # is the one thing worth saying: no tone is coming.
             self._announce_play_audio("This play has no location")
 
     def _play_play_sequence(self, tree_item):
@@ -4933,12 +4968,8 @@ class GameDetailsView(BaseView):
             self._announce_play_audio("No plays to play")
             return
 
-        count = self.play_audio_mapper.generate_play_sequence(league, plays)
-        if count:
-            self._announce_play_audio(
-                f"Playing {count} of {len(plays)} plays in {period_item.text(0)}"
-            )
-        else:
+        # Silent when there is something to hear, for the same reason as above.
+        if not self.play_audio_mapper.generate_play_sequence(league, plays):
             self._announce_play_audio("No plays in this period have a location")
 
     def _show_play_audio_context_menu(self, tree_item, global_position):

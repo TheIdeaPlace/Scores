@@ -38,7 +38,10 @@ else:
 class PlayAudioMapper(QObject):
     """Spatial audio for a basketball or hockey play's location."""
 
-    audio_generated = pyqtSignal(str)
+    # No "audio_generated" signal on purpose. The tone is the output here;
+    # speaking the location on top of it would only repeat what the screen
+    # reader already said when focus landed on the play, and talk over the
+    # sound it is describing.
     audio_error = pyqtSignal(str)
 
     def __init__(self, parent=None):
@@ -79,7 +82,6 @@ class PlayAudioMapper(QObject):
             play_in_background(
                 self._play_stereo_tone_reporting, frequency, duration_ms / 1000.0, balance
             )
-            self.audio_generated.emit(f"Audio: {description}")
             return description
         except Exception as e:
             self.audio_error.emit(f"Play audio failed: {str(e)}")
@@ -113,10 +115,6 @@ class PlayAudioMapper(QObject):
                 self.audio_error.emit(f"Play audio failed: {str(e)}")
                 break
 
-        if sonified:
-            self.audio_generated.emit(
-                f"Audio: {sonified} play{'s' if sonified != 1 else ''} with a location"
-            )
         return sonified
 
     def _play_stereo_tone_reporting(self, frequency, duration, balance):

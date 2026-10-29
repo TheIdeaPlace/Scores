@@ -649,27 +649,32 @@ struct GenericPlaysView: View {
         return PlayAudioGeometry.supports(sport)
     }
 
-    /// Play one play's location, and say what was played — or why nothing was.
+    /// Play one play's location — just the tone, with nothing spoken over it.
+    ///
+    /// The row's own accessibility label already said where the play happened,
+    /// so announcing it again would repeat what was just read and talk over the
+    /// sound it is describing.
     private func playLocation(_ play: GameDetails.Play) {
         guard let sport, let audio else { return }
-        if let description = audio.playLocatedPlay(play, sport: sport) {
-            TouchTourAnnouncementService.shared.announce(description)
-        } else {
+        if audio.playLocatedPlay(play, sport: sport) == nil {
             // Normal rather than broken: a third of basketball plays and six
-            // percent of hockey plays have no coordinates.
+            // percent of hockey plays have no coordinates. Worth saying, since
+            // no tone is coming.
             TouchTourAnnouncementService.shared.announce("This play has no location")
         }
     }
 
     /// Play every located play in a period, in order.
+    ///
+    /// Silent when there is something to hear: the period heading already says
+    /// how many plays have a location.
     private func playPeriodLocations(_ period: PeriodGroup) {
         guard let sport, let audio else { return }
-        let count = audio.playLocatedSequence(period.plays, sport: sport)
-        TouchTourAnnouncementService.shared.announce(
-            count > 0
-                ? "Playing \(count) of \(period.plays.count) plays in \(period.label)"
-                : "No plays in \(period.label) have a location"
-        )
+        if audio.playLocatedSequence(period.plays, sport: sport) == 0 {
+            TouchTourAnnouncementService.shared.announce(
+                "No plays in \(period.label) have a location"
+            )
+        }
     }
 
     private func locatedCount(_ period: PeriodGroup) -> Int {
