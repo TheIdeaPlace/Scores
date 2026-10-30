@@ -7,6 +7,36 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **Hear where a basketball or hockey play happened.** Alt+P on a play in the
+  play-by-play plays a tone for where it was: the note says how far from the
+  basket or the goal, and the stereo position says where across the court or the
+  ice. Alt+S walks a whole period, Shift+F10 offers the same as a menu, and a
+  Play Audio button does it with the mouse. Basketball (NBA, WNBA, NCAAM,
+  NCAAWB) and hockey (NHL, NCAAH, NCAAWH); football and soccer plays carry no
+  coordinates, so they have no audio.
+  - Every play reads its location as part of its entry — "from three, left
+    side", "near end, in the slot" — and each period heading says how many of
+    its plays can be heard. Nothing is spoken over the tone itself.
+  - Hockey sides are as seen facing the goal at that end, so mirror-image shots
+    at the two ends do not sound alike.
+  - Not every play has a location. Substitutions, timeouts, free throws and most
+    face-offs arrive without one, so about a third of basketball plays and one
+    in twenty hockey plays stay silent and say so.
+- **iPhone: the same play audio**, as the "Play location" and "Play locations"
+  VoiceOver actions on a play and on a period heading, or by tapping a play.
+
+### Fixed
+- **The MLB Pitch Audio button never appeared.** It was shown only when the
+  sport was `baseball`, but the check it was given returns league keys like
+  `MLB`, so the button was hidden on every game. Alt+P on a pitch had always
+  worked; the button now shows with it.
+
+### Changed
+- **Moved to the TheIdeaPlace/Scores repository**, including the in-app updater,
+  the installer and the docs.
+- Dependency updates: pytz, the PyQt group and the Python group.
+
 ### In Progress
 - **Game Wrap Up Feature**: ESPN text processing and game story extraction (under construction)
   - Core infrastructure implemented, text processing being refined
