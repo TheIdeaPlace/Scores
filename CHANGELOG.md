@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### In Progress
+- **Game Wrap Up Feature**: ESPN text processing and game story extraction (under construction)
+  - Core infrastructure implemented, text processing being refined
+  - Game story text placeholders currently under investigation
+
+## [1.0.0] - 2026-10-29
+
 ### Added
 - **Hear where a basketball or hockey play happened.** Alt+P on a play in the
   play-by-play plays a tone for where it was: the note says how far from the
@@ -36,11 +43,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Moved to the TheIdeaPlace/Scores repository**, including the in-app updater,
   the installer and the docs.
 - Dependency updates: pytz, the PyQt group and the Python group.
-
-### In Progress
-- **Game Wrap Up Feature**: ESPN text processing and game story extraction (under construction)
-  - Core infrastructure implemented, text processing being refined
-  - Game story text placeholders currently under investigation
 
 ## [0.9.9.1] - 2026-10-10
 
