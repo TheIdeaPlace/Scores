@@ -41,3 +41,23 @@ updates:
       pyqt:
         patterns:
           - "PyQt6*"
+
+  # TheBench/requirements.txt, shaped like the root entry above and for the
+  # same reason: PyQt6 is the UI toolkit, so it gets a PR of its own that
+  # someone drives the app with before merging, listed first so it never
+  # rides along with the routine group.
+  - package-ecosystem: pip
+    directory: "/TheBench"
+    schedule:
+      interval: weekly
+    commit-message:
+      prefix: deps
+    groups:
+      pyqt:
+        patterns:
+          - "PyQt6*"
+      python:
+        patterns:
+          - "*"
+        exclude-patterns:
+          - "PyQt6*"
