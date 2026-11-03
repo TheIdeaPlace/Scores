@@ -152,3 +152,51 @@ def test_standings_rows_line_up_with_headers(app, league, expanded, headers):
         assert cells["OTL"] == "2" and cells["Pts"] == "20" and cells["PCT"] == "0.714"
     else:
         assert cells["Conf"] == "3-1"
+
+
+class TestButtonKeys:
+    """Enter presses the focused button, and a list's Enter presses no button."""
+
+    @pytest.fixture
+    def dialog(self, app):
+        from PyQt6.QtWidgets import QDialog, QListWidget
+        dialog = QDialog()
+        layout = QVBoxLayout(dialog)
+        dialog.items = QListWidget()
+        dialog.items.addItem("row")
+        dialog.items.setCurrentRow(0)
+        dialog.button = QPushButton("Add to Favorites")
+        dialog.clicks = []
+        dialog.button.clicked.connect(lambda: dialog.clicks.append(1))
+        layout.addWidget(dialog.button)
+        layout.addWidget(dialog.items)
+        keys = accessible_table.ButtonKeys(dialog)
+        QApplication.instance().installEventFilter(keys)
+        yield dialog
+        QApplication.instance().removeEventFilter(keys)
+
+    @staticmethod
+    def enter(auto_repeat=False):
+        return QKeyEvent(QEvent.Type.KeyPress, Qt.Key.Key_Return, Qt.KeyboardModifier.NoModifier,
+                         "", auto_repeat)
+
+    def test_buttons_are_not_automatic_defaults(self, dialog):
+        dialog.show()
+        QApplication.processEvents()
+        assert not dialog.button.autoDefault()
+        dialog.close()
+
+    def test_enter_on_a_list_row_presses_no_button(self, dialog):
+        dialog.show()
+        QApplication.processEvents()
+        dialog.items.setFocus()
+        QApplication.sendEvent(dialog.items, self.enter())
+        assert dialog.clicks == []
+        dialog.close()
+
+    def test_enter_on_a_button_presses_it_once(self, dialog, monkeypatch):
+        monkeypatch.setattr(QApplication, "focusWidget", staticmethod(lambda: dialog.button))
+        QApplication.sendEvent(dialog.button, self.enter())
+        assert dialog.clicks == [1]
+        QApplication.sendEvent(dialog.button, self.enter(auto_repeat=True))
+        assert dialog.clicks == [1]

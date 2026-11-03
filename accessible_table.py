@@ -5,7 +5,7 @@ Provides consistent keyboard navigation and screen reader support.
 
 from PyQt6.QtWidgets import (
     QTableWidget, QTableWidgetItem, QHeaderView, QStackedWidget,
-    QListWidget, QListWidgetItem, QWidget, QVBoxLayout, QTabWidget, QToolButton, QApplication
+    QListWidget, QListWidgetItem, QWidget, QVBoxLayout, QTabWidget, QToolButton, QApplication, QPushButton
 )
 from PyQt6.QtCore import Qt, QEvent, QObject, QTimer
 from typing import List, Dict, Any, Optional
@@ -1056,6 +1056,29 @@ class InjuryTable(AccessibleTable):
             item.setAccessibleDescription(f"{player_name} expected return: {value}")
         else:
             item.setAccessibleDescription(f"{value}")
+
+
+class ButtonKeys(QObject):
+    """Application-wide: Enter presses the focused button, and only that.
+
+    Qt push buttons outside a dialog ignore Enter, though Windows users expect it to
+    press them and a screen reader has just said it's a button. Inside a dialog Qt does
+    the opposite: every button is an automatic default, so Enter on a list row runs the
+    row's action and then carries on up to the dialog, which presses its first button.
+    Opening a game from a team's schedule toggled the team as a favorite that way.
+    """
+
+    def eventFilter(self, obj, event):
+        event_type = event.type()
+        if event_type == QEvent.Type.Polish and isinstance(obj, QPushButton):
+            obj.setAutoDefault(False)
+        elif event_type == QEvent.Type.KeyPress and event.key() in (Qt.Key.Key_Return, Qt.Key.Key_Enter):
+            focused = QApplication.focusWidget()
+            if isinstance(focused, QPushButton) and obj is focused and focused.isEnabled():
+                if not event.isAutoRepeat():  # holding Enter presses once
+                    focused.click()
+                return True
+        return super().eventFilter(obj, event)
 
 
 class _TabBarViewKeys(QObject):

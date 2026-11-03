@@ -61,7 +61,7 @@ from models.news import NewsData
 import live_play_format
 from models.standings import StandingsData
 from windows_notifications import announce, set_notifier_window
-from accessible_table import AccessibleTable, StandingsTable, WildCardTable, LeadersTable, BoxscoreTable, InjuryTable, prepare_table_tabs
+from accessible_table import AccessibleTable, StandingsTable, WildCardTable, LeadersTable, BoxscoreTable, InjuryTable, prepare_table_tabs, ButtonKeys
 from box_score import build_box_tables
 from game_labels import scoreboard_today, basketball_period_label, football_period_label, football_period_sort_key, game_standings_tables
 
@@ -12665,7 +12665,8 @@ class SportsScoresApp(QWidget):
         self.config = {}
         self.view_stack = []  # Stack for navigation history
         self.monitored_games = set()  # live games with score alerts on, across views
-        QApplication.instance().installEventFilter(self)
+        self._button_keys = ButtonKeys(self)
+        QApplication.instance().installEventFilter(self._button_keys)
         # Without this, a native child makes its siblings native too, and those hold every view.
         QApplication.setAttribute(Qt.ApplicationAttribute.AA_DontCreateNativeWidgetSiblings)
         # Hidden and never focused: only here so announcements have a window to come from.
@@ -12929,17 +12930,6 @@ class SportsScoresApp(QWidget):
             QMessageBox.critical(self, "Startup Error", 
                                f"Failed to navigate to {action} for {league}: {str(e)}")
             self.show_home()
-
-    def eventFilter(self, obj, event):
-        # Qt push buttons outside a dialog ignore Enter. Windows users expect it to
-        # press them, and a screen reader has just told them it's a button.
-        if event.type() == QEvent.Type.KeyPress and event.key() in (Qt.Key.Key_Return, Qt.Key.Key_Enter):
-            focused = QApplication.focusWidget()
-            if isinstance(focused, QPushButton) and obj is focused and focused.isEnabled():
-                if not event.isAutoRepeat():
-                    focused.click()
-                return True
-        return super().eventFilter(obj, event)
 
     def go_back(self):
         if not self.view_stack:
