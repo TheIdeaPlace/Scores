@@ -1434,13 +1434,9 @@ def format_complex_data(key, value):
             return "No content data available"
         # Process other keys in the dict besides "header"
         content_keys = [k for k in value.keys() if k != "header"]
-        if content_keys:
-            # Use the first non-header key's data
-            actual_value = value[content_keys[0]]
-            return format_complex_data(key, actual_value)
-        return "No usable data found"
-    if isinstance(value, dict) and "header" in value and len(value) == 1:
-        return f"Available: {value['header']}"
+        # Use the first non-header key's data
+        actual_value = value[content_keys[0]]
+        return format_complex_data(key, actual_value)
     
     if key == "gameInfo" and isinstance(value, dict):
         info_parts = []
@@ -1478,8 +1474,6 @@ def format_complex_data(key, value):
     
     elif key == "news":
         if isinstance(value, list):
-            if not value:
-                return "No news available"
             headlines = []
             for item in value[:3]:  # Show first 3 items
                 if isinstance(item, dict):
@@ -1500,9 +1494,6 @@ def format_complex_data(key, value):
                         if headline:
                             headlines.append(f"• {headline}")
                 return "\n".join(headlines) if headlines else "No headlines found"
-            elif "header" in value:
-                # Just show that news is available
-                return "News headlines available (click to view)"
             else:
                 return "News section available"
         else:
@@ -1510,32 +1501,22 @@ def format_complex_data(key, value):
     
     elif key == "leaders":
         if isinstance(value, list):
-            if not value:
-                return "No leaders data available"
             leader_count = len(value)
             return f"Statistical leaders available ({leader_count} categories)"
         elif isinstance(value, dict):
-            if "header" in value:
-                category_count = len([k for k in value.keys() if k != "header"])
-                return f"Statistical leaders available ({category_count} categories)"
-            else:
-                category_count = len(value.keys())
-                return f"Statistical leaders available ({category_count} categories)"
+            category_count = len(value.keys())
+            return f"Statistical leaders available ({category_count} categories)"
         else:
             return "Leaders data available"
     
     elif key == "standings":
         if isinstance(value, list):
-            if not value:
-                return "No standings available"
             team_count = len(value)
             return f"Standings available for {team_count} teams"
         elif isinstance(value, dict):
             if "entries" in value and isinstance(value["entries"], list):
                 team_count = len(value["entries"])
                 return f"Standings available for {team_count} teams"
-            elif "header" in value:
-                return "Current standings available"
             else:
                 return "Standings data available"
         else:
@@ -1549,22 +1530,15 @@ def format_complex_data(key, value):
     
     elif key == "broadcasts":
         if isinstance(value, list):
-            if not value:
-                return "No broadcast info"
             networks = broadcast_names(value)
             return ", ".join(networks[:3]) if networks else "No networks listed"
         elif isinstance(value, dict):
-            if "header" in value:
-                return f"Broadcast info available: {value['header']}"
-            else:
-                return "Broadcast data available"
+            return "Broadcast data available"
         else:
             return "Broadcast section available"
     
     elif key == "odds":
         if isinstance(value, list):
-            if not value:
-                return "No odds available"
             odds_info = []
             for odd in value[:2]:  # Show first 2
                 if isinstance(odd, dict):
@@ -1577,10 +1551,7 @@ def format_complex_data(key, value):
                     odds_info.append(info)
             return "\n".join(odds_info) if odds_info else "No odds details"
         elif isinstance(value, dict):
-            if "header" in value:
-                return f"Odds available: {value['header']}"
-            else:
-                return "Odds data available"
+            return "Odds data available"
         else:
             return "Odds section available"
     
