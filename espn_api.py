@@ -1,5 +1,8 @@
 import json
 import requests
+from datetime import datetime
+from game_labels import (best_odds, broadcast_names, format_height, format_weight,
+                         injured_player_count, local_schedule_datetime)
 from timezone_utils import convert_espn_time_to_local
 
 # Every ESPN request gets a timeout. requests has none by default, so one
@@ -497,8 +500,7 @@ def get_team_schedule(league_key, team_id, days_ahead=30, days_behind=30, season
         event_date_str = event.get('date', '')
         if event_date_str:
             try:
-                event_date = datetime.fromisoformat(event_date_str.replace('Z', '+00:00'))
-                event_date = event_date.replace(tzinfo=None)
+                event_date = local_schedule_datetime(event_date_str, event.get('timeValid', True))
             except:
                 continue
         else:
@@ -674,8 +676,7 @@ def parse_schedule_from_api(url, team_id, today, season=None):
                     event_date_str = event.get("date", "")
                     if event_date_str:
                         try:
-                            event_date = datetime.fromisoformat(event_date_str.replace('Z', '+00:00'))
-                            event_date = event_date.replace(tzinfo=None)
+                            event_date = local_schedule_datetime(event_date_str, event.get('timeValid', True))
                         except:
                             event_date = today
                     else:
@@ -1579,8 +1580,13 @@ def get_scores(league_key, date=None, week=None, seasontype=None, season=None):
             home_away = competitor.get("homeAway", "")
             
             # For NCAA sports, use full team names (displayName) instead of nicknames
-            if league_key in ["NCAAF", "NCAAM"]:
+            # All of them: "Huskies 2 at Huskies 4" could be four different schools.
+            if league_key in ["NCAAF", "NCAAM", "NCAAWB", "NCAAH", "NCAAWH"]:
                 team_name = team.get("displayName", team.get("name", team.get("abbreviation", "Unknown")))
+                # ESPN uses 99 for unranked.
+                rank = (competitor.get("curatedRank") or {}).get("current")
+                if isinstance(rank, int) and 1 <= rank <= 25:
+                    team_name = f"#{rank} {team_name}"
             else:
                 team_name = team.get("name", team.get("abbreviation", "Unknown"))
 
@@ -1803,28 +1809,23 @@ def extract_meaningful_game_info(details):
         info['boxscore'] = _parse_boxscore_data(details['boxscore'])
     
     # Odds (if available)
-    if 'odds' in details and details['odds']:
-        odds = details['odds'][0] if details['odds'] else {}
-        if 'details' in odds:
-            info['betting_line'] = odds['details']
-        if 'overUnder' in odds:
-            info['over_under'] = f"O/U {odds['overUnder']}"
+    odds = best_odds(details)
+    if odds.get('details'):
+        info['betting_line'] = odds['details']
+    if odds.get('overUnder') is not None:
+        info['over_under'] = f"O/U {odds['overUnder']}"
     
-    # Broadcast information
-    if 'broadcasts' in details and details['broadcasts']:
-        networks = []
-        for broadcast in details['broadcasts']:
-            names = broadcast.get('names', [])
-            if names:
-                networks.extend(names)
-        if networks:
-            info['broadcast'] = ', '.join(networks)
-    
+    # Broadcast information. The summary's list can be empty when its header has one.
+    header_competitions = (details.get('header') or {}).get('competitions') or [{}]
+    networks = broadcast_names(details.get('broadcasts'), header_competitions[0].get('broadcasts'))
+    if networks:
+        info['broadcast'] = ', '.join(networks)
+
     # Injuries summary
     if 'injuries' in details:
-        injury_count = len(details['injuries'])
+        injury_count = injured_player_count(details['injuries'])
         if injury_count > 0:
-            info['injuries'] = f"{injury_count} injury report(s) available"
+            info['injuries'] = f"{injury_count} {'player' if injury_count == 1 else 'players'} listed"
     
     # Game articles/recaps (if available)
     if 'article' in details and details['article']:
@@ -2018,7 +2019,7 @@ def format_complex_data(key, value):
                 venue_name = venue.get("fullName", venue.get("displayName", "Unknown Venue"))
                 info_parts.append(f"Venue: {venue_name}")
         
-        if "attendance" in value:
+        if value.get("attendance"):
             info_parts.append(f"Attendance: {value['attendance']:,}")
         
         # Skip officials here - they're handled interactively in the main game details
@@ -2115,11 +2116,7 @@ def format_complex_data(key, value):
         if isinstance(value, list):
             if not value:
                 return "No broadcast info"
-            networks = []
-            for broadcast in value:
-                if isinstance(broadcast, dict):
-                    names = broadcast.get("names", [])
-                    networks.extend(names)
+            networks = broadcast_names(value)
             return ", ".join(networks[:3]) if networks else "No networks listed"
         elif isinstance(value, dict):
             if "header" in value:
@@ -2344,11 +2341,12 @@ def _get_mlb_standings_fast():
                 }
                 
                 standings.append(team_data)
-                
-                # Group by division for games back calculation
+
                 if division not in division_teams:
                     division_teams[division] = []
                 division_teams[division].append(team_data)
+                
+                # Group by division for games back calculation
         
         # Calculate games back for each division
         for division, teams in division_teams.items():
@@ -2479,7 +2477,7 @@ def _get_nfl_standings_fast():
                     "win_percentage": f"{win_pct:.3f}",
                     "games_back": "0.0",
                     "division": division,
-                    "streak": "",  # Can be enhanced later
+                    "streak": _standing_stat(stats, "streak").get("displayValue", ""),  # Can be enhanced later
                     "logo": team_info.get("logos", [{}])[0].get("href", "") if team_info.get("logos") else "",
                     "record_display": record_display,
                     # Expanded NFL data
@@ -2492,10 +2490,11 @@ def _get_nfl_standings_fast():
                 }
                 
                 standings.append(team_data)
-                
+
                 if division not in division_teams:
                     division_teams[division] = []
                 division_teams[division].append(team_data)
+                
         
         # Calculate games back for each division
         for division, teams in division_teams.items():
@@ -2607,7 +2606,7 @@ def _get_nba_standings_fast():
                     "win_percentage": f"{win_pct:.3f}",
                     "games_back": "0.0",
                     "division": division,
-                    "streak": "",
+                    "streak": _standing_stat(stats, "streak").get("displayValue", ""),
                     "logo": team_info.get("logos", [{}])[0].get("href", "") if team_info.get("logos") else "",
                     # Expanded NBA data
                     "avg_points_for": float(stats_dict.get('avgPointsFor', 0.0)),
@@ -2619,10 +2618,11 @@ def _get_nba_standings_fast():
                 }
                 
                 standings.append(team_data)
-                
+
                 if division not in division_teams:
                     division_teams[division] = []
                 division_teams[division].append(team_data)
+                
         
         # Calculate games back for each division
         for division, teams in division_teams.items():
@@ -2755,15 +2755,14 @@ def _get_nhl_standings_fast():
             "CAR": "Metropolitan", "CBJ": "Metropolitan", "NJ": "Metropolitan", "NYI": "Metropolitan",
             "NYR": "Metropolitan", "PHI": "Metropolitan", "PIT": "Metropolitan", "WSH": "Metropolitan",
             # Western Conference - Central
-            "ARI": "Central", "CHI": "Central", "COL": "Central", "DAL": "Central",
-            "MIN": "Central", "NSH": "Central", "STL": "Central", "WPG": "Central",
+            "CHI": "Central", "COL": "Central", "DAL": "Central", "MIN": "Central",
+            "NSH": "Central", "STL": "Central", "UTAH": "Central", "WPG": "Central",
             # Western Conference - Pacific
             "ANA": "Pacific", "CGY": "Pacific", "EDM": "Pacific", "LA": "Pacific",
             "SJ": "Pacific", "SEA": "Pacific", "VAN": "Pacific", "VGK": "Pacific"
         }
         
         # Process each conference
-        division_teams = {}
         for conference in data.get('children', []):
             conf_name = conference.get('name', '')
             conf_standings = conference.get('standings', {})
@@ -2804,9 +2803,9 @@ def _get_nhl_standings_fast():
                     "wins": wins,
                     "losses": losses,
                     "win_percentage": f"{point_pct:.3f}",
-                    "games_back": "0.0",
+                    "games_back": "",
                     "division": division,
-                    "streak": "",
+                    "streak": _standing_stat(stats, "streak").get("displayValue", ""),
                     "logo": team_info.get("logos", [{}])[0].get("href", "") if team_info.get("logos") else "",
                     # Expanded NHL data
                     "points": points,
@@ -2819,24 +2818,6 @@ def _get_nhl_standings_fast():
                 
                 standings.append(team_data)
                 
-                if division not in division_teams:
-                    division_teams[division] = []
-                division_teams[division].append(team_data)
-        
-        # Calculate games back for each division (based on points)
-        for division, teams in division_teams.items():
-            teams.sort(key=lambda x: (-x["points"], -x["wins"]))
-            
-            if teams:
-                leader = teams[0]
-                leader_points = leader["points"]
-                
-                for i, team in enumerate(teams):
-                    if i == 0:
-                        team["games_back"] = "—"
-                    else:
-                        points_back = (leader_points - team["points"]) / 2.0
-                        team["games_back"] = f"{points_back:.1f}" if points_back > 0 else "0.0"
         
         # Sort final standings by division, then by points
         standings.sort(key=lambda x: (x["division"], -x["points"], -x["wins"]))
@@ -2847,401 +2828,104 @@ def _get_nhl_standings_fast():
         print(f"Error in NHL standings: {e}")
         return _get_standings_original("NHL")
 
-def _get_ncaaf_standings_fast():
-    """Fast NCAAF standings using dedicated endpoint"""
+def _standing_stat(stats, stat_type):
+    """The stat with this `type`. ESPN repeats `name` once per split (home, away,
+    vs. conference...), so reading by name gets whichever split came last."""
+    for stat in stats or []:
+        if stat.get("type") == stat_type:
+            return stat
+    return {}
+
+
+def _record_parts(summary):
+    """"7-1" or "10-4-1" as a tuple of three ints; a missing part is 0."""
+    parts = []
+    for piece in str(summary or "").split("-")[:3]:
+        try:
+            parts.append(int(piece))
+        except ValueError:
+            parts.append(0)
+    parts += [0] * (3 - len(parts))
+    return tuple(parts)
+
+
+def _college_standing_row(entry, conference):
+    team_info = entry.get("team", {})
+    stats = entry.get("stats", [])
+    overall = _standing_stat(stats, "total")
+    wins, losses, ties = _record_parts(overall.get("summary") or overall.get("displayValue"))
+    games = wins + losses + ties
+    conf = _standing_stat(stats, "vsconf")
+    return {
+        "team_name": team_info.get("displayName", "Unknown"),
+        "team_id": str(team_info.get("id", "")),
+        "abbreviation": team_info.get("abbreviation", ""),
+        "wins": wins,
+        "losses": losses,
+        "ties": ties,
+        "win_percentage": f"{(wins + ties / 2) / games:.3f}" if games else "0.000",
+        "games_back": "—",
+        "conference_record": conf.get("summary") or conf.get("displayValue") or "",
+        "division": conference,
+        "streak": _standing_stat(stats, "streak").get("displayValue", ""),
+        "logo": team_info.get("logos", [{}])[0].get("href", "") if team_info.get("logos") else "",
+    }
+
+
+def parse_college_standings(data):
+    """Every team in a college /standings response. Conferences can nest (the Sun
+    Belt does) and a league can have no conferences at all, with its entries at
+    the root (women's college hockey)."""
+    rows = []
+
+    def walk(node, conference):
+        name = node.get("name") or conference
+        for entry in (node.get("standings") or {}).get("entries", []):
+            rows.append(_college_standing_row(entry, name))
+        for child in node.get("children") or []:
+            walk(child, name)
+
+    walk(data, "League")
+    rows.sort(key=lambda r: (r["division"], -float(r["win_percentage"]), -r["wins"], r["losses"]))
+    return rows
+
+
+def _fetch_college_standings(league, path):
     try:
-        url = "https://site.api.espn.com/apis/v2/sports/football/college-football/standings"
-        resp = _http_get(url)
-        
-        if resp.status_code != 200:
-            return []
-        
-        data = resp.json()
-        standings = []
-        
-        # Process each conference/group
-        for conference in data.get('children', []):
-            conf_name = conference.get('name', 'Independent')
-            conf_standings = conference.get('standings', {})
-            entries = conf_standings.get('entries', [])
-            
-            for entry in entries:
-                team_info = entry.get('team', {})
-                stats = entry.get('stats', [])
-                
-                # Create stats lookup
-                stats_dict = {}
-                for stat in stats:
-                    stats_dict[stat.get('name', '')] = stat.get('value', 0)
-                
-                # Extract team data
-                team_name = team_info.get('displayName', 'Unknown')
-                team_id = str(team_info.get('id', ''))
-                abbreviation = team_info.get('abbreviation', '')
-                
-                # Get wins/losses from stats
-                wins = int(stats_dict.get('wins', 0))
-                losses = int(stats_dict.get('losses', 0))
-                win_pct = stats_dict.get('winPercent', 0.0)
-                
-                team_data = {
-                    "team_name": team_name,
-                    "team_id": team_id,
-                    "abbreviation": abbreviation,
-                    "wins": wins,
-                    "losses": losses,
-                    "win_percentage": f"{win_pct:.3f}",
-                    "games_back": "—",  # College football doesn't use games back
-                    "division": conf_name,  # Conference name as division
-                    "streak": "",
-                    "logo": team_info.get("logos", [{}])[0].get("href", "") if team_info.get("logos") else ""
-                }
-                
-                standings.append(team_data)
-        
-        # Sort by conference, then by wins
-        standings.sort(key=lambda x: (x["division"], -x["wins"], x["losses"]))
-        
-        return standings
-        
+        resp = _http_get(f"https://site.api.espn.com/apis/v2/sports/{path}/standings")
+        if resp.status_code == 200:
+            rows = parse_college_standings(resp.json())
+            if rows:
+                return rows
     except Exception as e:
-        print(f"Error in fast NCAAF standings: {e}")
-        return _get_standings_original("NCAAF")
+        print(f"Error in {league} standings: {e}")
+    return _get_standings_original(league)
+
+
+def _get_ncaaf_standings_fast():
+    """College football standings, every conference."""
+    return _fetch_college_standings("NCAAF", "football/college-football")
+
 
 def _get_ncaam_standings_fast():
-    """Fast NCAA Men's Basketball standings using dedicated endpoint"""
-    try:
-        url = "https://site.api.espn.com/apis/v2/sports/basketball/mens-college-basketball/standings"
-        resp = _http_get(url)
-        
-        if resp.status_code != 200:
-            return []
-        
-        data = resp.json()
-        standings = []
-        
-        # Process each conference
-        for conference in data.get('children', []):
-            conf_name = conference.get('name', 'Independent')
-            conf_standings = conference.get('standings', {})
-            entries = conf_standings.get('entries', [])
-            
-            for entry in entries:
-                team_info = entry.get('team', {})
-                stats = entry.get('stats', [])
-                
-                # Create stats lookup
-                stats_dict = {}
-                for stat in stats:
-                    stats_dict[stat.get('name', '')] = stat.get('value', 0)
-                
-                # Extract team data
-                team_name = team_info.get('displayName', 'Unknown')
-                team_id = str(team_info.get('id', ''))
-                abbreviation = team_info.get('abbreviation', '')
-                
-                # Get wins/losses from stats
-                wins = int(stats_dict.get('wins', 0))
-                losses = int(stats_dict.get('losses', 0))
-                win_pct = stats_dict.get('winPercent', 0.0)
-                
-                team_data = {
-                    "team_name": team_name,
-                    "team_id": team_id,
-                    "abbreviation": abbreviation,
-                    "wins": wins,
-                    "losses": losses,
-                    "win_percentage": f"{win_pct:.3f}",
-                    "games_back": "—",  # College basketball doesn't use games back
-                    "division": conf_name,  # Conference name as division
-                    "streak": "",
-                    "logo": team_info.get("logos", [{}])[0].get("href", "") if team_info.get("logos") else ""
-                }
-                
-                standings.append(team_data)
-        
-        # Sort by conference, then by wins
-        standings.sort(key=lambda x: (x["division"], -x["wins"], x["losses"]))
-        
-        return standings
-        
-    except Exception as e:
-        print(f"Error in fast NCAAM standings: {e}")
-        return _get_standings_original("NCAAM")
+    """Men's college basketball standings, every conference."""
+    return _fetch_college_standings("NCAAM", "basketball/mens-college-basketball")
+
 
 def _get_ncaawb_standings_fast():
-    """Fast NCAA Women's Basketball standings using dedicated endpoint"""
-    try:
-        url = "https://site.api.espn.com/apis/v2/sports/basketball/womens-college-basketball/standings"
-        resp = _http_get(url)
-        
-        if resp.status_code != 200:
-            return []
-        
-        data = resp.json()
-        standings = []
-        
-        # Process each conference
-        for conference in data.get('children', []):
-            conf_name = conference.get('name', 'Independent')
-            conf_standings = conference.get('standings', {})
-            entries = conf_standings.get('entries', [])
-            
-            for entry in entries:
-                team_info = entry.get('team', {})
-                stats = entry.get('stats', [])
-                
-                # Create stats lookup
-                stats_dict = {}
-                for stat in stats:
-                    stats_dict[stat.get('name', '')] = stat.get('value', 0)
-                
-                # Extract team data
-                team_name = team_info.get('displayName', 'Unknown')
-                team_id = str(team_info.get('id', ''))
-                abbreviation = team_info.get('abbreviation', '')
-                
-                # Get wins/losses from stats
-                wins = int(stats_dict.get('wins', 0))
-                losses = int(stats_dict.get('losses', 0))
-                win_pct = stats_dict.get('winPercent', 0.0)
-                
-                team_data = {
-                    "team_name": team_name,
-                    "team_id": team_id,
-                    "abbreviation": abbreviation,
-                    "wins": wins,
-                    "losses": losses,
-                    "win_percentage": f"{win_pct:.3f}",
-                    "games_back": "—",  # College basketball doesn't use games back
-                    "division": conf_name,  # Conference name as division
-                    "streak": "",
-                    "logo": team_info.get("logos", [{}])[0].get("href", "") if team_info.get("logos") else ""
-                }
-                
-                standings.append(team_data)
-        
-        # Sort by conference, then by wins
-        standings.sort(key=lambda x: (x["division"], -x["wins"], x["losses"]))
-        
-        return standings
-        
-    except Exception as e:
-        print(f"Error in fast NCAAWB standings: {e}")
-        return _get_standings_original("NCAAWB")
+    """Women's college basketball standings, every conference."""
+    return _fetch_college_standings("NCAAWB", "basketball/womens-college-basketball")
+
 
 def _get_ncaah_standings_fast():
-    """Fast NCAA Men's Hockey standings with conference support"""
-    try:
-        # First, get conference name mapping from standings endpoint
-        standings_url = "https://site.api.espn.com/apis/v2/sports/hockey/mens-college-hockey/standings"
-        conf_map = {}
-        
-        resp = _http_get(standings_url)
-        if resp.status_code == 200:
-            data = resp.json()
-            conferences = data.get('children', [])
-            
-            # Build conference ID to name mapping
-            for conf in conferences:
-                conf_id = conf.get('id')
-                conf_name = conf.get('name', 'Unknown')
-                if conf_id:
-                    conf_map[str(conf_id)] = conf_name
-            
-            # Check if standings has meaningful data (more than just 1-2 teams)
-            total_entries = sum(len(conf.get('standings', {}).get('entries', [])) for conf in conferences)
-            
-            if total_entries > 10:  # If we have substantial standings data
-                standings = []
-                for conference in conferences:
-                    conf_name = conference.get('name', 'Independent')
-                    entries = conference.get('standings', {}).get('entries', [])
-                    
-                    for entry in entries:
-                        team_info = entry.get('team', {})
-                        stats_list = entry.get('stats', [])
-                        
-                        # Create stats lookup - handle both 'value' and 'displayValue'
-                        stats = {}
-                        for stat in stats_list:
-                            stat_name = stat.get('name', '')
-                            stat_value = stat.get('value', stat.get('displayValue', 0))
-                            stats[stat_name] = stat_value
-                        
-                        # Extract team data
-                        wins = int(float(stats.get('wins', 0)))
-                        losses = int(float(stats.get('losses', 0)))
-                        total_games = wins + losses
-                        win_pct = (wins / total_games) if total_games > 0 else 0.0
-                        
-                        team_data = {
-                            "team_name": team_info.get('displayName', 'Unknown'),
-                            "team_id": str(team_info.get('id', '')),
-                            "abbreviation": team_info.get('abbreviation', ''),
-                            "wins": wins,
-                            "losses": losses,
-                            "win_percentage": f"{win_pct:.3f}",
-                            "games_back": "—",
-                            "division": conf_name,
-                            "streak": "",
-                            "logo": team_info.get("logos", [{}])[0].get("href", "") if team_info.get("logos") else ""
-                        }
-                        standings.append(team_data)
-                
-                # Sort by conference, then by wins (descending), then losses (ascending)
-                standings.sort(key=lambda x: (x["division"], -x["wins"], x["losses"]))
-                return standings
-        
-        # Fall back to teams endpoint with conference lookup
-        # Note: ESPN's hockey data is incomplete - records not available in API
-        teams_url = "https://site.api.espn.com/apis/site/v2/sports/hockey/mens-college-hockey/teams?limit=200"
-        resp = _http_get(teams_url)
-        
-        if resp.status_code != 200:
-            return []
-        
-        data = resp.json()
-        teams = data.get("sports", [{}])[0].get("leagues", [{}])[0].get("teams", [])
-        
-        # Note: Due to ESPN API limitations, we show teams without records
-        # Conference grouping would require 50+ individual API calls which is too slow
-        # Teams are shown alphabetically in a single group
-        standings = []
-        for team_entry in teams:
-            team = team_entry.get("team", {})
-            team_id = str(team.get("id", ""))
-            
-            team_data = {
-                "team_name": team.get("displayName", "Unknown"),
-                "team_id": team_id,
-                "abbreviation": team.get("abbreviation", ""),
-                "wins": 0,
-                "losses": 0,
-                "win_percentage": "0.000",
-                "games_back": "—",
-                "division": "NCAA Men's Hockey",
-                "streak": "",
-                "logo": team.get("logos", [{}])[0].get("href", "") if team.get("logos") else ""
-            }
-            standings.append(team_data)
-        
-        # Sort by conference, then by team name
-        standings.sort(key=lambda x: (x["division"], x["team_name"]))
-        return standings
-        
-    except Exception as e:
-        print(f"Error in NCAAH standings: {e}")
-        import traceback
-        traceback.print_exc()
-        return []
+    """Men's college hockey standings, every conference."""
+    return _fetch_college_standings("NCAAH", "hockey/mens-college-hockey")
+
 
 def _get_ncaawh_standings_fast():
-    """Fast NCAA Women's Hockey standings with conference support"""
-    try:
-        # First, get conference name mapping from standings endpoint
-        standings_url = "https://site.api.espn.com/apis/v2/sports/hockey/womens-college-hockey/standings"
-        conf_map = {}
-        
-        resp = _http_get(standings_url)
-        if resp.status_code == 200:
-            data = resp.json()
-            conferences = data.get('children', [])
-            
-            # Build conference ID to name mapping
-            for conf in conferences:
-                conf_id = conf.get('id')
-                conf_name = conf.get('name', 'Unknown')
-                if conf_id:
-                    conf_map[str(conf_id)] = conf_name
-            
-            # Check if standings has meaningful data (more than just 1-2 teams)
-            total_entries = sum(len(conf.get('standings', {}).get('entries', [])) for conf in conferences)
-            
-            if total_entries > 10:  # If we have substantial standings data
-                standings = []
-                for conference in conferences:
-                    conf_name = conference.get('name', 'Independent')
-                    entries = conference.get('standings', {}).get('entries', [])
-                    
-                    for entry in entries:
-                        team_info = entry.get('team', {})
-                        stats_list = entry.get('stats', [])
-                        
-                        # Create stats lookup - handle both 'value' and 'displayValue'
-                        stats = {}
-                        for stat in stats_list:
-                            stat_name = stat.get('name', '')
-                            stat_value = stat.get('value', stat.get('displayValue', 0))
-                            stats[stat_name] = stat_value
-                        
-                        # Extract team data
-                        wins = int(float(stats.get('wins', 0)))
-                        losses = int(float(stats.get('losses', 0)))
-                        total_games = wins + losses
-                        win_pct = (wins / total_games) if total_games > 0 else 0.0
-                        
-                        team_data = {
-                            "team_name": team_info.get('displayName', 'Unknown'),
-                            "team_id": str(team_info.get('id', '')),
-                            "abbreviation": team_info.get('abbreviation', ''),
-                            "wins": wins,
-                            "losses": losses,
-                            "win_percentage": f"{win_pct:.3f}",
-                            "games_back": "—",
-                            "division": conf_name,
-                            "streak": "",
-                            "logo": team_info.get("logos", [{}])[0].get("href", "") if team_info.get("logos") else ""
-                        }
-                        standings.append(team_data)
-                
-                # Sort by conference, then by wins (descending), then losses (ascending)
-                standings.sort(key=lambda x: (x["division"], -x["wins"], x["losses"]))
-                return standings
-        
-        # Fall back to teams endpoint with conference lookup
-        # NOTE: Wisconsin Badgers women's hockey is missing from ESPN's teams endpoint (API limitation)
-        # NOTE: ESPN's hockey data is incomplete - records not available in API
-        teams_url = "https://site.api.espn.com/apis/site/v2/sports/hockey/womens-college-hockey/teams?limit=200"
-        resp = _http_get(teams_url)
-        
-        if resp.status_code != 200:
-            return []
-        
-        data = resp.json()
-        teams = data.get("sports", [{}])[0].get("leagues", [{}])[0].get("teams", [])
-        
-        # Note: Due to ESPN API limitations, we show teams without records
-        # Conference grouping would require 44+ individual API calls which is too slow
-        # Teams are shown alphabetically in a single group
-        standings = []
-        for team_entry in teams:
-            team = team_entry.get("team", {})
-            team_id = str(team.get("id", ""))
-            
-            team_data = {
-                "team_name": team.get("displayName", "Unknown"),
-                "team_id": team_id,
-                "abbreviation": team.get("abbreviation", ""),
-                "wins": 0,
-                "losses": 0,
-                "win_percentage": "0.000",
-                "games_back": "—",
-                "division": "NCAA Women's Hockey",
-                "streak": "",
-                "logo": team.get("logos", [{}])[0].get("href", "") if team.get("logos") else ""
-            }
-            standings.append(team_data)
-        
-        # Sort by conference, then by team name
-        standings.sort(key=lambda x: (x["division"], x["team_name"]))
-        return standings
-        
-    except Exception as e:
-        print(f"Error in NCAAWH standings: {e}")
-        import traceback
-        traceback.print_exc()
-        return []
+    """Women's college hockey standings. ESPN sends these at the root, with no conferences."""
+    return _fetch_college_standings("NCAAWH", "hockey/womens-college-hockey")
+
 
 def _get_standings_original(league_key):
     """Original standings method (slower but works for all leagues)"""
@@ -4018,13 +3702,10 @@ def get_statistics(league_key):
     print(f"Attempting to fetch team statistics for {league_key}")
     team_stats = _get_team_statistics(league_key)
     
-    # Always provide sample data when API fails to ensure UI functionality
-    print(f"Providing sample statistics data for {league_key} to ensure UI functionality")
     sample_data = _get_sample_statistics_data(league_key)
     
     if team_stats:
         print(f"Successfully retrieved {len(team_stats)} team stat categories")
-        # Combine team stats with sample player stats
         return {
             "player_stats": sample_data.get("player_stats", []),
             "team_stats": team_stats
@@ -4282,6 +3963,9 @@ def _parse_mlb_player_stats(leaders):
 
 def _parse_nfl_player_stats(leaders):
     """Parse NFL player statistics from leaders data"""
+    if isinstance(leaders, list):
+        # ESPN's statistics endpoint sends a list of categories now, not a dict.
+        return _parse_generic_player_stats(leaders)
     categories = []
     
     category_mapping = {
@@ -4481,6 +4165,9 @@ def _parse_generic_player_stats(leaders):
 
 def _parse_nhl_player_stats(leaders):
     """Parse NHL player statistics from leaders data"""
+    if isinstance(leaders, list):
+        # ESPN's statistics endpoint sends a list of categories now, not a dict.
+        return _parse_generic_player_stats(leaders)
     categories = []
     
     category_mapping = {
@@ -4557,174 +4244,9 @@ def _extract_stats_from_scoreboard(data, league_key):
     return {"player_stats": player_stats, "team_stats": team_stats}
 
 def _get_sample_statistics_data(league_key):
-    """Provide sample statistics data for testing and development"""
-    # Make case-insensitive
-    league_upper = league_key.upper()
-    
-    if league_upper == "MLB":
-        return {
-            "player_stats": [
-                {
-                    "category": "Hitting",
-                    "stats": [
-                        {"player_name": "Aaron Judge", "team": "NYY", "value": "62", "stat_name": "Home Runs"},
-                        {"player_name": "Jose Altuve", "team": "HOU", "value": "0.300", "stat_name": "Batting Average"}, 
-                        {"player_name": "Vladimir Guerrero Jr.", "team": "TOR", "value": "111", "stat_name": "RBIs"},
-                        {"player_name": "Ronald Acuna Jr.", "team": "ATL", "value": "41", "stat_name": "Stolen Bases"},
-                        {"player_name": "Freddie Freeman", "team": "LAD", "value": "199", "stat_name": "Hits"}
-                    ]
-                },
-                {
-                    "category": "Pitching", 
-                    "stats": [
-                        {"player_name": "Gerrit Cole", "team": "NYY", "value": "2.78", "stat_name": "ERA"},
-                        {"player_name": "Shane Bieber", "team": "CLE", "value": "198", "stat_name": "Strikeouts"},
-                        {"player_name": "Dylan Cease", "team": "CHW", "value": "14", "stat_name": "Wins"},
-                        {"player_name": "Emmanuel Clase", "team": "CLE", "value": "42", "stat_name": "Saves"},
-                        {"player_name": "Spencer Strider", "team": "ATL", "value": "1.08", "stat_name": "WHIP"}
-                    ]
-                }
-            ],
-            "team_stats": [
-                {
-                    "category": "Team Offense",
-                    "stats": [
-                        {"team_name": "Los Angeles Dodgers", "stats": {"Runs": 847, "Home Runs": 212, "Batting Average": 0.259}},
-                        {"team_name": "Houston Astros", "stats": {"Runs": 794, "Home Runs": 214, "Batting Average": 0.263}},
-                        {"team_name": "New York Yankees", "stats": {"Runs": 718, "Home Runs": 254, "Batting Average": 0.244}}
-                    ]
-                }
-            ]
-        }
-    elif league_upper == "NFL":
-        return {
-            "player_stats": [
-                {
-                    "category": "Passing",
-                    "stats": [
-                        {"player_name": "Josh Allen", "team": "BUF", "value": "4306", "stat_name": "Passing Yards"},
-                        {"player_name": "Patrick Mahomes", "team": "KC", "value": "38", "stat_name": "Passing TDs"},
-                        {"player_name": "Tua Tagovailoa", "team": "MIA", "value": "69.3", "stat_name": "Completion %"},
-                        {"player_name": "Aaron Rodgers", "team": "GB", "value": "107.0", "stat_name": "Passer Rating"},
-                        {"player_name": "Tom Brady", "team": "TB", "value": "5316", "stat_name": "Passing Yards"}
-                    ]
-                },
-                {
-                    "category": "Rushing",
-                    "stats": [
-                        {"player_name": "Derrick Henry", "team": "TEN", "value": "1538", "stat_name": "Rushing Yards"},
-                        {"player_name": "Jonathan Taylor", "team": "IND", "value": "18", "stat_name": "Rushing TDs"},
-                        {"player_name": "Nick Chubb", "team": "CLE", "value": "5.5", "stat_name": "Yards/Attempt"},
-                        {"player_name": "Austin Ekeler", "team": "LAC", "value": "12", "stat_name": "Rushing TDs"},
-                        {"player_name": "Josh Jacobs", "team": "LV", "value": "1653", "stat_name": "Rushing Yards"}
-                    ]
-                }
-            ],
-            "team_stats": [
-                {
-                    "category": "Team Offense", 
-                    "stats": [
-                        {"team_name": "Buffalo Bills", "stats": {"Points": 483, "Total Yards": 6420, "Passing Yards": 4283}},
-                        {"team_name": "Kansas City Chiefs", "stats": {"Points": 496, "Total Yards": 6106, "Passing Yards": 4544}},
-                        {"team_name": "Philadelphia Eagles", "stats": {"Points": 477, "Total Yards": 6217, "Passing Yards": 3715}}
-                    ]
-                }
-            ]
-        }
-    elif league_upper == "NBA":
-        return {
-            "player_stats": [
-                {
-                    "category": "Scoring",
-                    "stats": [
-                        {"player_name": "Luka Doncic", "team": "DAL", "value": "32.4", "stat_name": "Points Per Game"},
-                        {"player_name": "Giannis Antetokounmpo", "team": "MIL", "value": "55.3", "stat_name": "Field Goal %"},
-                        {"player_name": "Stephen Curry", "team": "GSW", "value": "42.7", "stat_name": "3-Point %"},
-                        {"player_name": "Joel Embiid", "team": "PHI", "value": "33.1", "stat_name": "Points Per Game"},
-                        {"player_name": "Jayson Tatum", "team": "BOS", "value": "30.1", "stat_name": "Points Per Game"}
-                    ]
-                },
-                {
-                    "category": "Rebounding",
-                    "stats": [
-                        {"player_name": "Rudy Gobert", "team": "MIN", "value": "12.9", "stat_name": "Rebounds Per Game"},
-                        {"player_name": "Domantas Sabonis", "team": "SAC", "value": "8.1", "stat_name": "Offensive Rebounds"},
-                        {"player_name": "Nikola Jokic", "team": "DEN", "value": "11.8", "stat_name": "Defensive Rebounds"},
-                        {"player_name": "Andre Drummond", "team": "CHI", "value": "10.4", "stat_name": "Rebounds Per Game"},
-                        {"player_name": "Clint Capela", "team": "ATL", "value": "11.0", "stat_name": "Rebounds Per Game"}
-                    ]
-                }
-            ],
-            "team_stats": [
-                {
-                    "category": "Team Offense",
-                    "stats": [
-                        {"team_name": "Boston Celtics", "stats": {"Points": 117.9, "Field Goal %": 47.2, "3-Point %": 37.7}},
-                        {"team_name": "Sacramento Kings", "stats": {"Points": 120.7, "Field Goal %": 48.7, "3-Point %": 36.9}},
-                        {"team_name": "Phoenix Suns", "stats": {"Points": 115.0, "Field Goal %": 47.5, "3-Point %": 36.4}}
-                    ]
-                }
-            ]
-        }
-    elif league_upper == "NHL":
-        return {
-            "player_stats": [
-                {
-                    "category": "Scoring",
-                    "stats": [
-                        {"player_name": "Connor McDavid", "team": "EDM", "value": "150", "stat_name": "Points"},
-                        {"player_name": "David Pastrnak", "team": "BOS", "value": "61", "stat_name": "Goals"},
-                        {"player_name": "Erik Karlsson", "team": "SJS", "value": "101", "stat_name": "Assists"},
-                        {"player_name": "Leon Draisaitl", "team": "EDM", "value": "128", "stat_name": "Points"},
-                        {"player_name": "Mikko Rantanen", "team": "COL", "value": "55", "stat_name": "Goals"}
-                    ]
-                },
-                {
-                    "category": "Goaltending",
-                    "stats": [
-                        {"player_name": "Linus Ullmark", "team": "BOS", "value": "0.938", "stat_name": "Save %"},
-                        {"player_name": "Frederik Andersen", "team": "CAR", "value": "2.17", "stat_name": "Goals Against Avg"},
-                        {"player_name": "Igor Shesterkin", "team": "NYR", "value": "36", "stat_name": "Wins"},
-                        {"player_name": "Ilya Sorokin", "team": "NYI", "value": "0.924", "stat_name": "Save %"},
-                        {"player_name": "Jake Oettinger", "team": "DAL", "value": "2.53", "stat_name": "Goals Against Avg"}
-                    ]
-                }
-            ],
-            "team_stats": [
-                {
-                    "category": "Team Offense",
-                    "stats": [
-                        {"team_name": "Boston Bruins", "stats": {"Goals": 302, "Power Play %": 21.2, "Shots": 2847}},
-                        {"team_name": "Edmonton Oilers", "stats": {"Goals": 314, "Power Play %": 32.4, "Shots": 2623}},
-                        {"team_name": "Toronto Maple Leafs", "stats": {"Goals": 291, "Power Play %": 24.3, "Shots": 2756}}
-                    ]
-                }
-            ]
-        }
-    
-    # Default fallback for any league not specifically handled
-    return {
-        "player_stats": [
-            {
-                "category": "General Stats",
-                "stats": [
-                    {"player_name": "Sample Player 1", "team": "TEAM1", "value": "100", "stat_name": "Sample Stat"},
-                    {"player_name": "Sample Player 2", "team": "TEAM2", "value": "90", "stat_name": "Sample Stat"},
-                    {"player_name": "Sample Player 3", "team": "TEAM3", "value": "85", "stat_name": "Sample Stat"}
-                ]
-            }
-        ],
-        "team_stats": [
-            {
-                "category": "Team Stats",
-                "stats": [
-                    {"team_name": "Sample Team 1", "stats": {"Sample Stat": 100}},
-                    {"team_name": "Sample Team 2", "stats": {"Sample Stat": 90}},
-                    {"team_name": "Sample Team 3", "stats": {"Sample Stat": 85}}
-                ]
-            }
-        ]
-    }
+    """No statistics. This used to return invented players (including "Sample Player 1"
+    and years-old stars with made-up numbers) that the app showed as real leaders."""
+    return {"player_stats": [], "team_stats": []}
 
 
 def get_team_info(league_key, team_id):
@@ -4744,8 +4266,8 @@ def get_team_info(league_key, team_id):
             "location":     team.get("location", ""),
         }
         # Venue
-        venue = team.get("venue", {})
-        result["venue_name"] = venue.get("displayName", "")
+        venue = team.get("venue") or (team.get("franchise") or {}).get("venue") or {}
+        result["venue_name"] = venue.get("fullName") or venue.get("displayName", "")
         addr = venue.get("address", {})
         city, state = addr.get("city", ""), addr.get("state", "")
         result["venue_location"] = f"{city}, {state}" if city and state else city or state
@@ -4754,6 +4276,11 @@ def get_team_info(league_key, team_id):
             rtype = item.get("type", "")
             summary = item.get("summary", "")
             if rtype == "total":
+                # NHL totals have "10-4" here and the overtime losses in the stats.
+                ot_losses = next((st.get("value") for st in item.get("stats", [])
+                                  if st.get("name") == "otLosses"), None)
+                if ot_losses is not None and summary.count("-") == 1:
+                    summary = f"{summary}-{int(ot_losses)}"
                 result["record_overall"] = summary
             elif rtype == "home":
                 result["record_home"] = summary
@@ -4762,6 +4289,7 @@ def get_team_info(league_key, team_id):
         # Division / Conference
         groups = team.get("groups", {})
         result["division"] = groups.get("name", "")
+        result["standing"] = team.get("standingSummary", "")
         result["conference"] = groups.get("parent", {}).get("name", "")
         # Head coach
         coaches = team.get("coaches", [])
@@ -4769,7 +4297,9 @@ def get_team_info(league_key, team_id):
             c = coaches[0]
             result["head_coach"] = f"{c.get('firstName','')} {c.get('lastName','')}".strip()
         # Next event
-        events = team.get("nextEvent", [])
+        # For a while after a game ESPN's nextEvent is still that game.
+        events = [e for e in team.get("nextEvent", [])
+                  if (((e.get("competitions") or [{}])[0].get("status") or {}).get("type") or {}).get("state") != "post"]
         if events:
             comps = events[0].get("competitions", [])
             if comps:
@@ -4816,10 +4346,8 @@ def get_team_roster(league_key, team_id):
                 pos = p.get("position", {})
                 pos_abbr = pos.get("abbreviation", pos.get("name", "")) if isinstance(pos, dict) else str(pos)
                 age = str(p.get("age", ""))
-                h = p.get("height")
-                height_str = f"{h // 12}'{h % 12}\"" if h else ""
-                w = p.get("weight")
-                weight_str = f"{w} lbs" if w else ""
+                height_str = format_height(p.get("height"))
+                weight_str = format_weight(p.get("weight"))
                 players.append({
                     "jersey": jersey, "name": name, "position": pos_abbr,
                     "age": age, "height": height_str, "weight": weight_str,
@@ -4836,7 +4364,8 @@ def get_team_news(league_key, team_id, limit=15):
     if not league_path or not team_id:
         return []
     try:
-        resp = _http_get(f"{BASE_URL}/{league_path}/teams/{team_id}/news", params={"limit": limit})
+        # /teams/{id}/news returns no articles; /news?team={id} does.
+        resp = _http_get(f"{BASE_URL}/{league_path}/news", params={"team": team_id, "limit": limit})
         if resp.status_code != 200:
             return []
         try:

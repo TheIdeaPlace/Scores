@@ -55,6 +55,9 @@ pytest tests/
 ### Data Layer
 
 - `espn_api.py` (4,100+ lines) — All network calls. Fetches from ESPN's undocumented API (`site.api.espn.com/apis/site/v2/sports`), the official MLB Stats API (`statsapi.mlb.com`), and ESPN's fantasy feed (`lm-api-reads.fantasy.espn.com`, the only source for draft ranks/ADP/auction values). Contains per-sport logic for scores, standings, play-by-play, box scores, injuries, news, advanced stats, and the fantasy football cheatsheet.
+- `box_score.py` — Pure: ESPN's `boxscore` block to the tables the dialog shows. Its docstring lists how the shape differs by sport. `active` does not mean played.
+- `game_labels.py` — Pure: period names, broadcasts, odds, injured counts, local schedule dates, `scoreboard_today` (last night's date until 5 AM).
+- `tests/fixtures/espn/` — Real ESPN payloads per sport (`INDEX.txt` says what each shows). Test parsing against these, not hand-made dicts.
 - `services/api_service.py` — Thin wrapper around `espn_api.py` with unified error handling
 - `services/venue_service.py` — Stadium/venue info
 - `services/football_calendar.py` — NFL week/season calendar utilities
@@ -65,7 +68,7 @@ pytest tests/
 
 - `accessible_table.py` (1,000+ lines) — Custom `QTableWidget` subclass powering every data table. Implements three view modes: **Table** (grid), **Quick List** (comma-separated), **Full List** (key: value pairs). Concrete subclasses: `StandingsTable`, `BoxscoreTable`, `InjuryTable`, `LeadersTable`.
 - `pitch_exploration_dialog.py` — Interactive dialog for exploring MLB pitch coordinates with audio feedback
-- `windows_notifications.py` — Windows UIA screen reader notifications
+- `windows_notifications.py` — `announce()`, the app's spoken messages. `uia_notifier.py` raises them from a hidden child window with its own UIA provider; a notification from `UiaHostProviderFromHwnd` never reaches a screen reader.
 
 ### Audio System
 
@@ -110,6 +113,8 @@ The iOS app previously lived on a separate `iOS` branch that also carried a stal
 **Window titles** are set dynamically throughout `scores.py` to give screen readers hierarchical context (e.g., `"Yankees vs Red Sox - MLB - Sports Scores"`). Maintain this pattern when adding new views or dialogs.
 
 **Play-by-play parsing** is sport-specific and lives entirely in `espn_api.py`. MLB play-by-play uses ESPN's `summaryType` field (`S`=scoring, `I`=inning marker, `N`=substitution) and has several workarounds for ESPN data quirks documented in recent commits.
+
+**Accessible table focus:** the `AccessibleTable` wrapper takes no focus; the view inside does. Call `prepare_table_tabs` on any tab widget of tables, and `_focus_once_active` to focus a dialog's table, since Windows gives the first widget focus as a dialog activates.
 
 **No test framework for UI** — UI correctness is verified manually. `tests/` covers data parsing and utility functions.
 

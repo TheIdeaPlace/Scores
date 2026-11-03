@@ -71,5 +71,6 @@ class StandingsData:
             division = team.get("division", "League")
             divisions.setdefault(division, []).append(team)
         for division_teams in divisions.values():
-            division_teams.sort(key=lambda x: (_to_float(x.get("win_pct")), _to_int(x.get("wins"))), reverse=True)
+            # Hockey ranks by points; the percentage can put a team with fewer games first.
+            division_teams.sort(key=lambda x: (_to_int(x.get("points", 0)), _to_float(x.get("win_pct")), _to_int(x.get("wins"))), reverse=True)
         return divisions
