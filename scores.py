@@ -11006,16 +11006,22 @@ class StatisticsViewDialog(QDialog):
         self._content_layout.removeWidget(self._loading_list)
         self._loading_list.deleteLater()
 
+    def _focus_stats_list(self):
+        """A widget just added to a layout isn't visible until the event loop comes round, and
+        setFocus does nothing to it then. Focus would stay on the window, with the row unheard."""
+        self.stats_list.show()
+        self.stats_list.setFocus()
+
     def _on_statistics_error(self, message: str):
         self._clear_loading_row()
         self._show_statistics_message(self._content_layout, f"Unable to load statistics: {message}")
-        self.stats_list.setFocus()
+        self._focus_stats_list()
 
     def _on_statistics_loaded(self, statistics_data: dict):
         self._clear_loading_row()
         self._show_statistics(self._content_layout, statistics_data)  # catches its own errors
         if hasattr(self, 'stats_list'):
-            self.stats_list.setFocus()
+            self._focus_stats_list()
 
     def _show_statistics_message(self, layout, message):
         """A label can't take focus, so a screen reader user would hear nothing at all."""
