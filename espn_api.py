@@ -2117,9 +2117,6 @@ def format_complex_data(key, value):
             if not value:
                 return "No broadcast info"
             networks = []
-            for broadcast in value:
-                if isinstance(broadcast, dict):
-                    pass
             networks = broadcast_names(value)
             return ", ".join(networks[:3]) if networks else "No networks listed"
         elif isinstance(value, dict):
@@ -2345,6 +2342,10 @@ def _get_mlb_standings_fast():
                 }
                 
                 standings.append(team_data)
+
+                if division not in division_teams:
+                    division_teams[division] = []
+                division_teams[division].append(team_data)
                 
                 # Group by division for games back calculation
         
@@ -2490,6 +2491,10 @@ def _get_nfl_standings_fast():
                 }
                 
                 standings.append(team_data)
+
+                if division not in division_teams:
+                    division_teams[division] = []
+                division_teams[division].append(team_data)
                 
         
         # Calculate games back for each division
@@ -2614,6 +2619,10 @@ def _get_nba_standings_fast():
                 }
                 
                 standings.append(team_data)
+
+                if division not in division_teams:
+                    division_teams[division] = []
+                division_teams[division].append(team_data)
                 
         
         # Calculate games back for each division
@@ -3698,7 +3707,6 @@ def get_statistics(league_key):
     
     if team_stats:
         print(f"Successfully retrieved {len(team_stats)} team stat categories")
-        # Combine team stats with sample player stats
         return {
             "player_stats": sample_data.get("player_stats", []),
             "team_stats": team_stats

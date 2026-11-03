@@ -132,3 +132,38 @@ def test_list_shaped_player_statistics_parse(league):
 ])
 def test_scoreboard_day_runs_past_midnight(now, day):
     assert scoreboard_today(now).isoformat() == day
+
+
+class FakeResponse:
+    status_code = 200
+
+    def __init__(self, data):
+        self._data = data
+
+    def json(self):
+        return self._data
+
+
+@pytest.mark.parametrize("league,parser", [("NFL", "_get_nfl_standings_fast"), ("NBA", "_get_nba_standings_fast")])
+def test_games_back_is_computed(monkeypatch, league, parser):
+    monkeypatch.setattr(espn_api, "_http_get", lambda *a, **k: FakeResponse(load(f"standings_{league}.json")))
+    rows = getattr(espn_api, parser)()
+    assert rows
+    by_division = {}
+    for row in rows:
+        by_division.setdefault(row["division"], []).append(row)
+    leaders = [teams[0]["games_back"] for teams in by_division.values()]
+    assert all(gb == "—" for gb in leaders), leaders
+    assert any(row["games_back"] not in ("—", "0.0", "") for row in rows)
+
+
+def test_streak_on_pro_standings(monkeypatch):
+    monkeypatch.setattr(espn_api, "_http_get", lambda *a, **k: FakeResponse(load("standings_NFL.json")))
+    assert any(row["streak"] for row in espn_api._get_nfl_standings_fast())
+
+
+def test_nhl_utah_is_in_central(monkeypatch):
+    monkeypatch.setattr(espn_api, "_http_get", lambda *a, **k: FakeResponse(load("standings_NHL.json")))
+    rows = espn_api._get_nhl_standings_fast()
+    utah = [r for r in rows if r["abbreviation"] == "UTAH"]
+    assert not utah or utah[0]["division"].endswith("Central")
