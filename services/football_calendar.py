@@ -256,7 +256,6 @@ def get_football_season_year(league_key="NFL", today=None):
         return today.year - 1
     return today.year
 
-# This function fetches the NFL or NCAAF calendar (weeks and date ranges)
 # This function finds the current week number for NFL/NCAAF based on today
 def get_current_football_week(league_key, season=None, today=None):
     """Current week number, without its season type.
