@@ -60,10 +60,10 @@ class VenueService:
                         if venue_id and venue_id not in venues:
                             venues[venue_id] = {
                                 'id': venue_id,
-                                'name': venue.get('fullName', 'Unknown'),
-                                'city': venue.get('address', {}).get('city', 'Unknown'),
-                                'state': venue.get('address', {}).get('state', 'Unknown'),
-                                'indoor': venue.get('indoor', False),
+                                'name': venue.get('fullName') or 'Unknown',
+                                'city': (venue.get('address') or {}).get('city') or 'Unknown',
+                                'state': (venue.get('address') or {}).get('state') or 'Unknown',
+                                'indoor': bool(venue.get('indoor')),
                                 'home_teams': []
                             }
 
@@ -105,9 +105,9 @@ class VenueService:
 
                             if venue_id and venue_id in venues:
                                 team_info = {
-                                    'name': team.get('displayName', 'Unknown'),
-                                    'short_name': team.get('shortDisplayName', ''),
-                                    'abbreviation': team.get('abbreviation', ''),
+                                    'name': team.get('displayName') or 'Unknown',
+                                    'short_name': team.get('shortDisplayName') or '',
+                                    'abbreviation': team.get('abbreviation') or '',
                                     'id': team.get('id')
                                 }
                                 venues[venue_id]['home_teams'].append(team_info)
@@ -134,7 +134,7 @@ class VenueService:
                 'league': league_key
             },
             'characteristics': {
-                'indoor': venue.get('indoor', False),
+                'indoor': bool(venue.get('indoor')),
                 'grass': venue.get('grass'),
                 'capacity': venue.get('capacity')
             },
@@ -214,7 +214,7 @@ class VenueService:
         home_teams = venue.get('home_teams', [])
         if home_teams:
             if len(home_teams) == 1:
-                team_name = home_teams[0].get('name', 'Unknown')
+                team_name = home_teams[0].get('name') or 'Unknown'
                 facts.append(f"Home of the {team_name}")
             else:
                 facts.append(f"Shared by {len(home_teams)} teams")

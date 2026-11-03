@@ -1,13 +1,16 @@
 """One bad field at a time: every data function against its real payload with each
-field in turn missing, null, or an empty list. None may raise, and none may turn
-the gap into the text "None". ESPN does send nulls, and a field's absence shouldn't
-cost the user the rest of the screen.
+field in turn missing, null, or an empty list. None may raise, none may put the word
+None in its text, and none may hand a screen a None for a field it shows. ESPN does
+send nulls, and a field's absence shouldn't cost the user the rest of the screen.
+`.get(key, default)` is no help: with the key present and null, it returns None.
 """
 import datetime
+import re
 
 import pytest
 
 import espn_api
+from services.venue_service import VenueService
 
 from .support import HTTP_404, load, mutations
 
@@ -16,15 +19,43 @@ def case(name, call, fixture, route, others=None):
     return pytest.param(call, fixture, route, others or {}, id=name)
 
 
-def strings_in(value):
+NONE_WORD = re.compile(r"\bNone\b")
+
+# None on purpose: the screens test these for "not set", or never show them.
+MAY_BE_NONE = {"position", "playoff_seed", "clinch_status", "magic_number", "number",
+               "zip_code", "grass", "capacity"}
+
+# ESPN's own data handed on untouched: the screen reading it has to cope, not this.
+RAW_FIELDS = {"competitions", "polls"}
+
+
+def none_problems(value, path=""):
+    """Every string with the word None in it, and every None a screen might show."""
     if isinstance(value, str):
-        yield value
+        if NONE_WORD.search(value):
+            yield f"{path}: {value!r}"
     elif isinstance(value, dict):
         for key, item in value.items():
-            yield from strings_in(item)
+            if key not in RAW_FIELDS:
+                if item is None and key not in MAY_BE_NONE:
+                    yield f"{path}.{key}: None"
+                yield from none_problems(item, f"{path}.{key}")
     elif isinstance(value, (list, tuple)):
-        for item in value:
-            yield from strings_in(item)
+        for index, item in enumerate(value):
+            yield from none_problems(item, f"{path}[{index}]")
+
+
+def summary_lines():
+    """What format_complex_data makes of each field of a game summary."""
+    details = espn_api.get_game_details("NFL", "1")
+    return [espn_api.format_complex_data(key, details.get(source))
+            for key, source in (("gameInfo", "gameInfo"), ("odds", "pickcenter"), ("broadcasts", "broadcasts"), ("injuries", "injuries"))]
+
+
+def venue_facts():
+    """A venue list, and the details and facts of each venue on it."""
+    service = VenueService()
+    return [service.get_venue_details(venue_id, "mlb") for venue_id in service.get_venues_for_league("mlb")]
 
 
 def live_golf():
@@ -49,6 +80,8 @@ CASES = [
          "details_NFL_pieces.json", "/summary"),
     case("game details NCAAH", lambda: espn_api.extract_meaningful_game_info(espn_api.get_game_details("NCAAH", "1")),
          "details_NCAAH_pieces.json", "/summary"),
+    case("format_complex_data", summary_lines, "details_NFL_pieces.json", "/summary"),
+    case("venues", venue_facts, "scoreboard_NWSL.json", "/scoreboard", {"/teams$": "teams_NFL.json"}),
     case("get_live_golf_tournament", lambda: espn_api.get_live_golf_tournament("PGA"), live_golf, "/scoreboard"),
     case("get_golf_leaderboard", lambda: espn_api.get_golf_leaderboard("PGA"), "golf_scoreboard_PGA.json", "/scoreboard"),
     case("get_golf_schedule", lambda: espn_api.get_golf_schedule("PGA"), "golf_schedule_PGA.json", "/scoreboard"),
@@ -104,6 +137,7 @@ def test_no_single_bad_field_raises_or_reads_none(espn, call, fixture, route, ot
         except Exception as e:
             failures.append(f"{description}: raised {type(e).__name__}: {e}")
             continue
-        if "None" in strings_in(result):
-            failures.append(f"{description}: the text None in {result}")
-    assert not failures, "\n".join(failures[:20])
+        problems = list(none_problems(result))
+        if problems:
+            failures.append(f"{description}: {problems[:3]}")
+    assert not failures, "\n".join(failures[:40])

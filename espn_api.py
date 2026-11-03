@@ -197,7 +197,7 @@ def _mlb_stat(entry, name, default=""):
     """Display value of a named stat on an ESPN standings entry."""
     for stat in entry.get("stats", []):
         if stat.get("name") == name:
-            return stat.get("displayValue", default)
+            return stat.get("displayValue") or default
     return default
 
 
@@ -214,10 +214,10 @@ def _mlb_stat_value(entry, name, default=0.0):
 def _mlb_wildcard_team(entry, status, position, games_back):
     """Normalise one ESPN standings entry into the dict the standings table wants."""
     team = entry.get("team", {}) or {}
-    abbreviation = team.get("abbreviation", "")
+    abbreviation = team.get("abbreviation") or ""
     league_name = "American" if abbreviation in _MLB_AL_ABBREVIATIONS else "National"
     return {
-        "team_name": team.get("displayName", "Unknown"),
+        "team_name": team.get("displayName") or "Unknown",
         "team_id": str(team.get("id") or ""),
         "abbreviation": abbreviation,
         "wins": int(_mlb_stat_value(entry, "wins")),
@@ -518,17 +518,17 @@ def get_team_schedule(league_key, team_id, days_ahead=30, days_behind=30, season
         for competitor in competitors:
             team_info = _as_dict(competitor.get('team'))
             if competitor.get('homeAway') == 'home':
-                home_team = team_info.get('displayName', 'Unknown')
+                home_team = team_info.get('displayName') or 'Unknown'
                 score_data = competitor.get('score', '')
                 if isinstance(score_data, dict):
-                    home_score = score_data.get('displayValue', '')
+                    home_score = score_data.get('displayValue') or ''
                 else:
                     home_score = str(score_data) if score_data else ''
             else:
-                away_team = team_info.get('displayName', 'Unknown')
+                away_team = team_info.get('displayName') or 'Unknown'
                 score_data = competitor.get('score', '')
                 if isinstance(score_data, dict):
-                    away_score = score_data.get('displayValue', '')
+                    away_score = score_data.get('displayValue') or ''
                 else:
                     away_score = str(score_data) if score_data else ''
         
@@ -538,34 +538,30 @@ def get_team_schedule(league_key, team_id, days_ahead=30, days_behind=30, season
         for competitor in competitors:
             team_info = _as_dict(competitor.get('team'))
             if team_info.get('id') == team_id:
-                team_name = team_info.get('displayName', 'Unknown')
+                team_name = team_info.get('displayName') or 'Unknown'
                 is_home = competitor.get('homeAway') == 'home'
                 break
                 
         if not team_name:
             continue
             
-        opponent = away_team if is_home else home_team
+        opponent = (away_team if is_home else home_team) or 'Unknown'
         home_away = 'vs' if is_home else '@'
         
         # Get game status
         status = _as_dict(comp.get('status'))
         status_type = _as_dict(status.get('type'))
-        game_status = status_type.get('description', 'Unknown')
+        game_status = status_type.get('description') or 'Unknown'
         
         # Get start time
-        start_time = 'TBD'
-        if 'shortDetail' in status_type:
-            start_time = status_type['shortDetail']
-        elif 'detail' in status_type:
-            start_time = status_type['detail']
+        start_time = status_type.get('shortDetail') or status_type.get('detail') or 'TBD'
         
         # Convert timezone to user's local time
         start_time = convert_espn_time_to_local(start_time)
         
         # Get venue
         venue = _as_dict(comp.get('venue'))
-        venue_name = venue.get('fullName', 'TBD')
+        venue_name = venue.get('fullName') or 'TBD'
         
         # Determine date display format - include year for historical seasons
         if is_historical_season:
@@ -583,7 +579,7 @@ def get_team_schedule(league_key, team_id, days_ahead=30, days_behind=30, season
             'venue': venue_name,
             'home_score': home_score,
             'away_score': away_score,
-            'game_id': event.get('id', ''),
+            'game_id': event.get('id') or '',
             'is_today': event_date.date() == today.date()
         })
         
@@ -626,17 +622,17 @@ def parse_schedule_from_api(url, team_id, today, season=None):
                         team_playing = True
                     
                     if competitor.get("homeAway") == "home":
-                        home_team = team_info.get("displayName", "Unknown")
+                        home_team = team_info.get("displayName") or "Unknown"
                         score_data = competitor.get("score", "")
                         if isinstance(score_data, dict):
-                            home_score = score_data.get("displayValue", "")
+                            home_score = score_data.get("displayValue") or ""
                         else:
                             home_score = str(score_data) if score_data else ""
                     else:
-                        away_team = team_info.get("displayName", "Unknown")
+                        away_team = team_info.get("displayName") or "Unknown"
                         score_data = competitor.get("score", "")
                         if isinstance(score_data, dict):
-                            away_score = score_data.get("displayValue", "")
+                            away_score = score_data.get("displayValue") or ""
                         else:
                             away_score = str(score_data) if score_data else ""
                 
@@ -654,21 +650,17 @@ def parse_schedule_from_api(url, team_id, today, season=None):
                     # Get game details
                     status = comp.get("status", {})
                     status_type = status.get("type", {})
-                    game_status = status_type.get("description", "Unknown")
+                    game_status = status_type.get("description") or "Unknown"
                     
                     # Get start time
-                    start_time = "TBD"
-                    if "shortDetail" in status_type:
-                        start_time = status_type["shortDetail"]
-                    elif "detail" in status_type:
-                        start_time = status_type["detail"]
+                    start_time = status_type.get("shortDetail") or status_type.get("detail") or "TBD"
                     
                     # Convert timezone to user's local time
                     start_time = convert_espn_time_to_local(start_time)
                     
                     # Get venue
                     venue = comp.get("venue", {})
-                    venue_name = venue.get("fullName", "TBD")
+                    venue_name = venue.get("fullName") or "TBD"
                     
                     # Determine date display format - include year for historical seasons
                     if is_historical_season:
@@ -686,7 +678,7 @@ def parse_schedule_from_api(url, team_id, today, season=None):
                         "venue": venue_name,
                         "home_score": home_score,
                         "away_score": away_score,
-                        "game_id": event.get("id", ""),
+                        "game_id": event.get("id") or "",
                         "is_today": event_date.date() == today.date()
                     })
         
@@ -889,13 +881,13 @@ def get_live_golf_tournament(tour_key, leaders=3):
             tied = scores.count(score) > 1
             athlete = _as_dict(player.get("athlete"))
             top.append((f"T{first}" if tied else str(first),
-                        athlete.get("displayName") or athlete.get("fullName", ""),
+                        athlete.get("displayName") or athlete.get("fullName") or "",
                         score))
         return {
             "tour": tour_key,
             "tour_name": GOLF_TOUR_NAMES.get(tour_key, tour_key),
-            "name": event.get("name", ""),
-            "status": status.get("detail", "In Progress"),
+            "name": event.get("name") or "",
+            "status": status.get("detail") or "In Progress",
             "leaders": top,
         }
     return None
@@ -1100,8 +1092,8 @@ def get_scores(league_key, date=None, week=None, seasontype=None, season=None):
     scores = []
 
     for event in events:
-        name = event.get("name", "Unknown Game")
-        eid = event.get("id", "")
+        name = event.get("name") or "Unknown Game"
+        eid = event.get("id") or ""
         
         # Extract competition data
         competitions = _as_list(event.get("competitions"))
@@ -1112,45 +1104,42 @@ def get_scores(league_key, date=None, week=None, seasontype=None, season=None):
         
         # Extract start time and status
         status = _as_dict(comp.get("status"))
-        start_time = None
-        game_status = None
+        start_time = ""
+        game_status = ""
         game_status_name = ""
         game_state = ""
         if status:
             type_info = _as_dict(status.get("type"))
             # The stable identifier, e.g. STATUS_SCHEDULED / STATUS_POSTPONED.
             # `description` below is display text and varies; this does not.
-            game_status_name = type_info.get("name", "")
-            game_state = type_info.get("state", "")
-            if "shortDetail" in type_info:
-                start_time = type_info["shortDetail"]
-            elif "detail" in type_info:
-                start_time = type_info["detail"]
+            game_status_name = type_info.get("name") or ""
+            game_state = type_info.get("state") or ""
+            start_time = type_info.get("shortDetail") or type_info.get("detail") or ""
             
             # Convert timezone to user's local time
             if start_time:
                 start_time = convert_espn_time_to_local(start_time)
                 
-            game_status = type_info.get("description", "")
+            game_status = type_info.get("description") or ""
         
         # Extract scores from competitors
         competitors = _as_list(comp.get("competitors"))
         team_scores = []
         for competitor in competitors:
             team = _as_dict(competitor.get("team"))
-            score = competitor.get("score", "")
-            home_away = competitor.get("homeAway", "")
+            score = competitor.get("score") or ""
+            home_away = competitor.get("homeAway") or ""
             
             # For NCAA sports, use full team names (displayName) instead of nicknames
             # All of them: "Huskies 2 at Huskies 4" could be four different schools.
             if league_key in ["NCAAF", "NCAAM", "NCAAWB", "NCAAH", "NCAAWH"]:
-                team_name = team.get("displayName", team.get("name", team.get("abbreviation", "Unknown")))
+                team_name = team.get("displayName") or team.get("name") or team.get("abbreviation") or "Unknown"
                 # ESPN uses 99 for unranked.
                 rank = (competitor.get("curatedRank") or {}).get("current")
                 if isinstance(rank, int) and 1 <= rank <= 25:
                     team_name = f"#{rank} {team_name}"
             else:
-                team_name = team.get("name", team.get("abbreviation", "Unknown"))
+                team_name = team.get("name") or team.get("abbreviation") or "Unknown"
 
             # Overall record, so scheduled games have something to show instead of
             # ESPN's pre-game "0" scores. Matched on type rather than taken from
@@ -1167,7 +1156,7 @@ def get_scores(league_key, date=None, week=None, seasontype=None, season=None):
 
             team_info = {
                 "name": team_name,
-                "abbreviation": team.get("abbreviation", ""),
+                "abbreviation": team.get("abbreviation") or "",
                 "score": score,
                 "record": record_summary,
                 "home_away": home_away
@@ -1181,7 +1170,7 @@ def get_scores(league_key, date=None, week=None, seasontype=None, season=None):
             "status": game_status,
             "status_name": game_status_name,
             "state": game_state,
-            "date": event.get("date", ""),
+            "date": event.get("date") or "",
             "teams": team_scores,
             "competitions": [comp]  # Include raw competition data for bowl names
         })
@@ -1189,7 +1178,7 @@ def get_scores(league_key, date=None, week=None, seasontype=None, season=None):
 
 def _article_href(article, kind):
     """An article's web or mobile link, or "" when ESPN didn't send one."""
-    return _as_dict(_as_dict(article.get("links")).get(kind)).get("href", "")
+    return _as_dict(_as_dict(article.get("links")).get(kind)).get("href") or ""
 
 
 def get_news(league_key, limit=10):
@@ -1218,7 +1207,7 @@ def get_news(league_key, limit=10):
         text_processor = None
     
     for article in articles:
-        raw_description = article.get("description", "")
+        raw_description = article.get("description") or ""
         
         # Clean description text if processor is available
         if text_processor:
@@ -1227,12 +1216,12 @@ def get_news(league_key, limit=10):
             cleaned_description = raw_description
         
         news_item = {
-            "headline": article.get("headline", "No headline"),
+            "headline": article.get("headline") or "No headline",
             "description": cleaned_description,
             "web_url": _article_href(article, "web"),
             "mobile_url": _article_href(article, "mobile"),
-            "published": article.get("published", ""),
-            "byline": article.get("byline", "")
+            "published": article.get("published") or "",
+            "byline": article.get("byline") or ""
         }
         news_items.append(news_item)
     return news_items
@@ -1332,30 +1321,30 @@ def extract_meaningful_game_info(details):
         for competitor in competitors:
             team = _as_dict(competitor.get('team'))
             record = _as_list(competitor.get('record'))
-            score = competitor.get('score', '')
+            score = competitor.get('score') or ''
             team_info = {
-                'name': team.get('displayName', 'Unknown'),
-                'team_id': team.get('id', ''),  # ADD THE TEAM ID!
-                'abbreviation': team.get('abbreviation', 'N/A'),
-                'record': _as_dict(record[0]).get('summary', 'N/A') if record else 'N/A',
-                'home_away': competitor.get('homeAway', 'unknown'),
+                'name': team.get('displayName') or 'Unknown',
+                'team_id': team.get('id') or '',  # ADD THE TEAM ID!
+                'abbreviation': team.get('abbreviation') or 'N/A',
+                'record': (_as_dict(record[0]).get('summary') if record else None) or 'N/A',
+                'home_away': competitor.get('homeAway') or 'unknown',
                 'score': score
             }
             teams.append(team_info)
             if score:
-                scores.append(f"{team.get('name', team.get('abbreviation', 'Unknown'))}: {score}")
+                scores.append(f"{team.get('name') or team.get('abbreviation') or 'Unknown'}: {score}")
         info['teams'] = teams
         info['scores'] = scores
 
         # Game status and time
         status_type = _as_dict(_as_dict(comp.get('status')).get('type'))
-        info['status'] = status_type.get('description', 'Unknown')
-        detailed_status = status_type.get('detail', 'N/A')
+        info['status'] = status_type.get('description') or 'Unknown'
+        detailed_status = status_type.get('detail') or 'N/A'
         # Convert timezone to user's local time
         info['detailed_status'] = convert_espn_time_to_local(detailed_status)
 
         # Date
-        info['date'] = comp.get('date', 'N/A')
+        info['date'] = comp.get('date') or 'N/A'
 
     game_info = _as_dict(details.get('gameInfo'))
 
@@ -1400,12 +1389,12 @@ def extract_meaningful_game_info(details):
         article = details['article']
         if isinstance(article, dict) and article.get('headline'):
             info['article'] = {
-                'headline': article.get('headline', ''),
-                'description': article.get('description', ''),
-                'story': article.get('story', ''),
-                'type': article.get('type', 'Article'),
-                'published': article.get('published', ''),
-                'source': article.get('source', '')
+                'headline': article['headline'],
+                'description': article.get('description') or '',
+                'story': article.get('story') or '',
+                'type': article.get('type') or 'Article',
+                'published': article.get('published') or '',
+                'source': article.get('source') or ''
             }
     
     return info
@@ -1678,7 +1667,7 @@ def _get_mlb_standings_fast():
         
         # Process each league (AL/NL)
         for league in data.get('children', []):
-            league_name = league.get('name', '')
+            league_name = league.get('name') or ''
             
             # Each league contains the standings entries
             league_standings = league.get('standings', {})
@@ -1694,9 +1683,9 @@ def _get_mlb_standings_fast():
                     stats_dict[stat.get('name', '')] = stat.get('value', 0)
                 
                 # Extract team data
-                team_name = team_info.get('displayName', 'Unknown')
+                team_name = team_info.get('displayName') or 'Unknown'
                 team_id = str(team_info.get('id') or '')
-                abbreviation = team_info.get('abbreviation', '')
+                abbreviation = team_info.get('abbreviation') or ''
                 
                 # Get wins/losses from stats
                 wins = int(stats_dict.get('wins', 0))
@@ -1845,9 +1834,9 @@ def _get_nfl_standings_fast():
                     stats_dict[stat.get('name', '')] = stat.get('value', 0)
                 
                 # Extract team data
-                team_name = team_info.get('displayName', 'Unknown')
+                team_name = team_info.get('displayName') or 'Unknown'
                 team_id = str(team_info.get('id') or '')
-                abbreviation = team_info.get('abbreviation', '')
+                abbreviation = team_info.get('abbreviation') or ''
                 
                 # Get wins/losses from stats
                 wins = int(stats_dict.get('wins', 0))
@@ -1873,7 +1862,7 @@ def _get_nfl_standings_fast():
                     "win_percentage": f"{win_pct:.3f}",
                     "games_back": "0.0",
                     "division": division,
-                    "streak": _standing_stat(stats, "streak").get("displayValue", ""),  # Can be enhanced later
+                    "streak": _standing_stat(stats, "streak").get("displayValue") or "",  # Can be enhanced later
                     "logo": team_info.get("logos", [{}])[0].get("href", "") if team_info.get("logos") else "",
                     "record_display": record_display,
                     # Expanded NFL data
@@ -1966,7 +1955,7 @@ def _get_nba_standings_fast():
             return _get_nba_fresh_standings()
         
         for conference in data.get('children', []):
-            conf_name = conference.get('name', '')
+            conf_name = conference.get('name') or ''
             conf_standings = conference.get('standings', {})
             entries = conf_standings.get('entries', [])
             
@@ -1980,9 +1969,9 @@ def _get_nba_standings_fast():
                     stats_dict[stat.get('name', '')] = stat.get('value', 0)
                 
                 # Extract team data
-                team_name = team_info.get('displayName', 'Unknown')
+                team_name = team_info.get('displayName') or 'Unknown'
                 team_id = str(team_info.get('id') or '')
-                abbreviation = team_info.get('abbreviation', '')
+                abbreviation = team_info.get('abbreviation') or ''
                 
                 # Get wins/losses from stats
                 wins = int(stats_dict.get('wins', 0))
@@ -1991,7 +1980,7 @@ def _get_nba_standings_fast():
                 
                 # Get division with conference prefix
                 base_division = nba_divisions.get(abbreviation, "Unknown")
-                division = f"{conf_name} {base_division}" if base_division != "Unknown" else conf_name
+                division = f"{conf_name} {base_division}".strip() if base_division != "Unknown" else conf_name
                 
                 team_data = {
                     "team_name": team_name,
@@ -2002,7 +1991,7 @@ def _get_nba_standings_fast():
                     "win_percentage": f"{win_pct:.3f}",
                     "games_back": "0.0",
                     "division": division,
-                    "streak": _standing_stat(stats, "streak").get("displayValue", ""),
+                    "streak": _standing_stat(stats, "streak").get("displayValue") or "",
                     "logo": team_info.get("logos", [{}])[0].get("href", "") if team_info.get("logos") else "",
                     # Expanded NBA data
                     "avg_points_for": float(stats_dict.get('avgPointsFor', 0.0)),
@@ -2088,9 +2077,9 @@ def _get_nba_fresh_standings():
                 for team in teams:
                     team_info = team.get('team', {})
                     
-                    team_name = team_info.get('displayName', 'Unknown')
+                    team_name = team_info.get('displayName') or 'Unknown'
                     team_id = str(team_info.get('id') or '')
-                    abbreviation = team_info.get('abbreviation', '')
+                    abbreviation = team_info.get('abbreviation') or ''
                     
                     # Get division
                     base_division = nba_divisions.get(abbreviation, "Unknown")
@@ -2160,7 +2149,7 @@ def _get_nhl_standings_fast():
         
         # Process each conference
         for conference in data.get('children', []):
-            conf_name = conference.get('name', '')
+            conf_name = conference.get('name') or ''
             conf_standings = conference.get('standings', {})
             entries = conf_standings.get('entries', [])
             
@@ -2174,9 +2163,9 @@ def _get_nhl_standings_fast():
                     stats_dict[stat.get('name', '')] = stat.get('value', 0)
                 
                 # Extract team data
-                team_name = team_info.get('displayName', 'Unknown')
+                team_name = team_info.get('displayName') or 'Unknown'
                 team_id = str(team_info.get('id') or '')
-                abbreviation = team_info.get('abbreviation', '')
+                abbreviation = team_info.get('abbreviation') or ''
                 
                 # Get wins/losses from stats
                 wins = int(stats_dict.get('wins', 0))
@@ -2190,7 +2179,7 @@ def _get_nhl_standings_fast():
                 
                 # Get division with conference prefix
                 base_division = nhl_divisions.get(abbreviation, "Unknown")
-                division = f"{conf_name} {base_division}" if base_division != "Unknown" else conf_name
+                division = f"{conf_name} {base_division}".strip() if base_division != "Unknown" else conf_name
                 
                 team_data = {
                     "team_name": team_name,
@@ -2201,7 +2190,7 @@ def _get_nhl_standings_fast():
                     "win_percentage": f"{point_pct:.3f}",
                     "games_back": "",
                     "division": division,
-                    "streak": _standing_stat(stats, "streak").get("displayValue", ""),
+                    "streak": _standing_stat(stats, "streak").get("displayValue") or "",
                     "logo": team_info.get("logos", [{}])[0].get("href", "") if team_info.get("logos") else "",
                     # Expanded NHL data
                     "points": points,
@@ -2253,9 +2242,9 @@ def _college_standing_row(entry, conference):
     games = wins + losses + ties
     conf = _standing_stat(stats, "vsconf")
     return {
-        "team_name": team_info.get("displayName", "Unknown"),
+        "team_name": team_info.get("displayName") or "Unknown",
         "team_id": str(team_info.get("id") or ""),
-        "abbreviation": team_info.get("abbreviation", ""),
+        "abbreviation": team_info.get("abbreviation") or "",
         "wins": wins,
         "losses": losses,
         "ties": ties,
@@ -2263,7 +2252,7 @@ def _college_standing_row(entry, conference):
         "games_back": "—",
         "conference_record": conf.get("summary") or conf.get("displayValue") or "",
         "division": conference,
-        "streak": _standing_stat(stats, "streak").get("displayValue", ""),
+        "streak": _standing_stat(stats, "streak").get("displayValue") or "",
         "logo": team_info.get("logos", [{}])[0].get("href", "") if team_info.get("logos") else "",
     }
 
@@ -2375,9 +2364,9 @@ def _parse_standings_from_teams_api(data, league_key):
             team = team_entry.get("team", {})
             
             # Get team info
-            team_name = team.get("displayName", "Unknown")
-            abbreviation = team.get("abbreviation", "")
-            team_id = team.get("id", "")
+            team_name = team.get("displayName") or "Unknown"
+            abbreviation = team.get("abbreviation") or ""
+            team_id = team.get("id") or ""
             
             # Get division from mapping (fix Oakland)
             if abbreviation == "ATH":  # ESPN uses ATH for Athletics
@@ -2538,7 +2527,7 @@ def _get_team_statistics(league_key):
             """Fetch statistics for a single team"""
             team = team_entry.get('team', {})
             team_id = team.get('id')
-            team_name = team.get('displayName', 'Unknown')
+            team_name = team.get('displayName') or 'Unknown'
             
             if not team_id:
                 return None
@@ -2561,7 +2550,7 @@ def _get_team_statistics(league_key):
                             
                             # Process each category for this team
                             for category in categories:
-                                category_name = category.get('displayName', category.get('name', 'Unknown'))
+                                category_name = category.get('displayName') or category.get('name') or 'Unknown'
                                 category_stats = category.get('stats', [])
                                 
                                 # Create team's stats for this category
@@ -2574,7 +2563,7 @@ def _get_team_statistics(league_key):
                                 # Process individual stats
                                 for stat in category_stats:
                                     stat_name = stat.get('name', '')
-                                    stat_display_name = stat.get('displayName', stat_name)
+                                    stat_display_name = stat.get('displayName') or stat_name
                                     stat_value = stat.get('displayValue', str(stat.get('value', '')))
                                     
                                     if stat_name and stat_value:
@@ -2720,13 +2709,13 @@ def _get_mlb_statistics():
                         
                         leaders = []
                         for leader in leaders_data['leaders'][:50]:  # Top 50 players
-                            player_info = leader.get('person', {})
-                            team_info = leader.get('team', {})
+                            player_info = _as_dict(leader.get('person'))
+                            team_info = _as_dict(leader.get('team'))
                             
                             leader_data = {
-                                'name': player_info.get('fullName', 'Unknown'),
-                                'value': leader.get('value', 0),
-                                'team': team_info.get('abbreviation', team_info.get('name', 'N/A')),
+                                'name': player_info.get('fullName') or 'Unknown',
+                                'value': leader.get('value') or 0,
+                                'team': team_info.get('abbreviation') or team_info.get('name') or 'N/A',
                                 'position': None  # MLB API doesn't provide position in leaders
                             }
                             leaders.append(leader_data)
@@ -2936,9 +2925,9 @@ def _parse_generic_player_stats(leaders):
         if not isinstance(category_data, dict):
             continue
 
-        category_key = category_data.get('name', 'unknown')
-        category_display_name = category_data.get('displayName', category_key.title())
-        leaders_list = category_data.get('leaders', [])
+        category_key = category_data.get('name') or 'unknown'
+        category_display_name = category_data.get('displayName') or category_key.title()
+        leaders_list = _as_list(category_data.get('leaders'))
 
         if not leaders_list:
             continue
@@ -2950,10 +2939,10 @@ def _parse_generic_player_stats(leaders):
             if not isinstance(leader, dict):
                 continue
 
-            athlete = leader.get("athlete", {})
-            team = leader.get("team", athlete.get("team", {}))
+            athlete = _as_dict(leader.get("athlete"))
+            team = _as_dict(leader.get("team") or athlete.get("team"))
 
-            if athlete and ("displayName" in athlete or "name" in athlete):
+            if athlete.get("displayName") or athlete.get("name"):
                 # Use the raw value for the specific statistic, not the display value
                 # displayValue contains full stat lines, value contains just the target stat
                 raw_value = leader.get("value", "")
@@ -2971,8 +2960,8 @@ def _parse_generic_player_stats(leaders):
                     stat_value = "" if raw_value is None else str(raw_value)
 
                 stats.append({
-                    "player_name": athlete.get("displayName", athlete.get("name", "Unknown")),
-                    "team": team.get("abbreviation", team.get("name", "")),
+                    "player_name": athlete.get("displayName") or athlete["name"],
+                    "team": team.get("abbreviation") or team.get("name") or "",
                     "value": stat_value,
                     "stat_name": category_display_name or category_key.title()
                 })
@@ -3004,21 +2993,21 @@ def get_team_info(league_key, team_id):
         if not team:
             return {}
         result = {
-            "name":         team.get("displayName", ""),
-            "abbreviation": team.get("abbreviation", ""),
-            "nickname":     team.get("name", ""),
-            "location":     team.get("location", ""),
+            "name":         team.get("displayName") or "",
+            "abbreviation": team.get("abbreviation") or "",
+            "nickname":     team.get("name") or "",
+            "location":     team.get("location") or "",
         }
         # Venue
         venue = team.get("venue") or (team.get("franchise") or {}).get("venue") or {}
-        result["venue_name"] = venue.get("fullName") or venue.get("displayName", "")
-        addr = venue.get("address", {})
-        city, state = addr.get("city", ""), addr.get("state", "")
+        result["venue_name"] = venue.get("fullName") or venue.get("displayName") or ""
+        addr = _as_dict(venue.get("address"))
+        city, state = addr.get("city") or "", addr.get("state") or ""
         result["venue_location"] = f"{city}, {state}" if city and state else city or state
         # Record splits
-        for item in team.get("record", {}).get("items", []):
+        for item in _as_list(_as_dict(team.get("record")).get("items")):
             rtype = item.get("type", "")
-            summary = item.get("summary", "")
+            summary = item.get("summary") or ""
             if rtype == "total":
                 # NHL totals have "10-4" here and the overtime losses in the stats.
                 ot_losses = next((st.get("value") for st in item.get("stats", [])
@@ -3031,31 +3020,31 @@ def get_team_info(league_key, team_id):
             elif rtype == "road":
                 result["record_road"] = summary
         # Division / Conference
-        groups = team.get("groups", {})
-        result["division"] = groups.get("name", "")
-        result["standing"] = team.get("standingSummary", "")
-        result["conference"] = groups.get("parent", {}).get("name", "")
+        groups = _as_dict(team.get("groups"))
+        result["division"] = groups.get("name") or ""
+        result["standing"] = team.get("standingSummary") or ""
+        result["conference"] = _as_dict(groups.get("parent")).get("name") or ""
         # Head coach
-        coaches = team.get("coaches", [])
+        coaches = _as_list(team.get("coaches"))
         if coaches:
             c = coaches[0]
-            result["head_coach"] = f"{c.get('firstName','')} {c.get('lastName','')}".strip()
+            result["head_coach"] = f"{c.get('firstName') or ''} {c.get('lastName') or ''}".strip()
         # Next event
         # For a while after a game ESPN's nextEvent is still that game.
-        events = [e for e in team.get("nextEvent", [])
+        events = [e for e in _as_list(team.get("nextEvent"))
                   if (((e.get("competitions") or [{}])[0].get("status") or {}).get("type") or {}).get("state") != "post"]
         if events:
-            comps = events[0].get("competitions", [])
+            comps = _as_list(events[0].get("competitions"))
             if comps:
-                competitors = comps[0].get("competitors", [])
+                competitors = _as_list(comps[0].get("competitors"))
                 home = next((c for c in competitors if c.get("homeAway") == "home"), None)
                 away = next((c for c in competitors if c.get("homeAway") == "away"), None)
                 if home and away:
-                    is_home = str(home.get("team", {}).get("id", "")) == str(team_id)
+                    is_home = str(_as_dict(home.get("team")).get("id") or "") == str(team_id)
                     opp = away if is_home else home
-                    result["next_game_opponent"] = opp.get("team", {}).get("displayName", "")
+                    result["next_game_opponent"] = _as_dict(opp.get("team")).get("displayName") or ""
                     result["next_game_home_away"] = "vs" if is_home else "@"
-            date_str = events[0].get("date", "")
+            date_str = events[0].get("date") or ""
             if date_str:
                 try:
                     from datetime import datetime, timezone
@@ -3086,9 +3075,9 @@ def get_team_roster(league_key, team_id):
             items = group.get("items", [group] if "displayName" in group else [])
             for p in items:
                 jersey = str(p.get("jersey") or "")
-                name = p.get("displayName", p.get("fullName", ""))
+                name = p.get("displayName") or p.get("fullName") or ""
                 pos = p.get("position", {})
-                pos_abbr = pos.get("abbreviation", pos.get("name", "")) if isinstance(pos, dict) else str(pos or "")
+                pos_abbr = (pos.get("abbreviation") or pos.get("name") or "") if isinstance(pos, dict) else str(pos or "")
                 age = str(p.get("age") or "")
                 height_str = format_height(p.get("height"))
                 weight_str = format_weight(p.get("weight"))
@@ -3118,14 +3107,14 @@ def get_team_news(league_key, team_id, limit=15):
             text_processor = None
         articles = []
         for a in _as_list(resp.json().get("articles")):
-            raw_desc = a.get("description", "")
+            raw_desc = a.get("description") or ""
             desc = text_processor.clean_description(raw_desc, a) if text_processor else raw_desc
             articles.append({
-                "headline":  a.get("headline", ""),
+                "headline":  a.get("headline") or "",
                 "description": desc,
                 "web_url":   _article_href(a, "web"),
-                "published": a.get("published", ""),
-                "byline":    a.get("byline", ""),
+                "published": a.get("published") or "",
+                "byline":    a.get("byline") or "",
             })
         return articles
     except Exception as e:
@@ -3165,11 +3154,11 @@ def get_transactions(league_key, team_id=None, limit=50, page=1):
                 except Exception:
                     date_display = date_str[:10]
             team = item.get("team") or {}
-            team_abbr = team.get("abbreviation", "") if isinstance(team, dict) else ""
+            team_abbr = (team.get("abbreviation") or "") if isinstance(team, dict) else ""
             result.append({
                 "date":        date_display,
                 "team":        team_abbr,
-                "description": item.get("description", ""),
+                "description": item.get("description") or "",
                 # Keep legacy keys so callers using player/type/position still work.
                 "type":        "",
                 "player":      "",
@@ -3197,8 +3186,8 @@ def _get_nfl_team_cache() -> dict:
                     for team in league.get("teams", []):
                         t = team.get("team", {})
                         _DRAFT_TEAM_CACHE[str(t.get("id", ""))] = {
-                            "abbrev": t.get("abbreviation", ""),
-                            "name": t.get("displayName", t.get("shortDisplayName", "")),
+                            "abbrev": t.get("abbreviation") or "",
+                            "name": t.get("displayName") or t.get("shortDisplayName") or "",
                         }
     except Exception:
         pass
@@ -3229,8 +3218,8 @@ def get_draft(year):
             for item in rounds_resp.json().get("items", []):
                 rounds.append({
                     "number": item.get("number"),
-                    "display_name": item.get("displayName", f"Round {item.get('number')}"),
-                    "short_name": item.get("shortDisplayName", str(item.get("number"))),
+                    "display_name": item.get("displayName") or f"Round {item.get('number')}",
+                    "short_name": item.get("shortDisplayName") or str(item.get("number")),
                 })
         else:
             rounds = [{"number": i, "display_name": f"Round {i}", "short_name": str(i)}
@@ -3284,8 +3273,8 @@ def get_draft_round(year, round_num):
         return m.group(1) if m else ""
 
     def fetch_pick_data(pick):
-        athlete_ref = pick.get("athlete", {}).get("$ref", "")
-        team_id = _extract_id(r"/teams/(\d+)", pick.get("team", {}).get("$ref", ""))
+        athlete_ref = _as_dict(pick.get("athlete")).get("$ref") or ""
+        team_id = _extract_id(r"/teams/(\d+)", _as_dict(pick.get("team")).get("$ref") or "")
         team_info = teams.get(team_id, {"abbrev": "?", "name": "Unknown"})
 
         player_name = position = college_ref_url = ""
@@ -3294,25 +3283,25 @@ def get_draft_round(year, round_num):
                 ar = _http_get(athlete_ref)
                 if ar.status_code == 200:
                     ad = ar.json()
-                    player_name = ad.get("displayName") or ad.get("fullName", "")
+                    player_name = ad.get("displayName") or ad.get("fullName") or ""
                     pos = ad.get("position", {})
-                    position = pos.get("abbreviation", pos.get("name", "")) if isinstance(pos, dict) else ""
+                    position = (pos.get("abbreviation") or pos.get("name") or "") if isinstance(pos, dict) else ""
                     col = ad.get("college", {})
-                    college_ref_url = col.get("$ref", "") if isinstance(col, dict) else ""
+                    college_ref_url = (col.get("$ref") or "") if isinstance(col, dict) else ""
             except Exception:
                 pass
 
         return {
             "overall": pick.get("overall") or 0,
             "pick": pick.get("pick") or 0,
-            "round": pick.get("round", round_num),
-            "traded": pick.get("traded", False),
-            "trade_note": pick.get("tradeNote", ""),
+            "round": pick.get("round") or round_num,
+            "traded": bool(pick.get("traded")),
+            "trade_note": pick.get("tradeNote") or "",
             "team_abbrev": team_info["abbrev"],
             "team_name": team_info["name"],
             "player_name": player_name,
             "position": position,
-            "status_name": pick.get("status", {}).get("name", ""),
+            "status_name": _as_dict(pick.get("status")).get("name") or "",
             "_college_ref": college_ref_url,
         }
 
@@ -3335,7 +3324,7 @@ def get_draft_round(year, round_num):
             cr = _http_get(ref_url)
             if cr.status_code == 200:
                 cd = cr.json()
-                return cid, cd.get("name") or cd.get("shortName", "")
+                return cid, cd.get("name") or cd.get("shortName") or ""
         except Exception:
             pass
         return cid, ""
@@ -3380,7 +3369,7 @@ def get_team_transactions(league_key, team_id, limit=25):
                     date_display = date_str[:10]
             result.append({
                 "date":        date_display,
-                "description": item.get("description", ""),
+                "description": item.get("description") or "",
                 # Keep legacy keys so callers using player/type/position still work.
                 "type":        "",
                 "player":      "",
@@ -3428,20 +3417,20 @@ def get_golf_leaderboard(tour_key):
             ]
             players.append({
                 "position": competitor.get("order") or 0,
-                "name": athlete.get("displayName") or athlete.get("fullName", ""),
-                "country": _as_dict(athlete.get("flag")).get("alt", ""),
+                "name": athlete.get("displayName") or athlete.get("fullName") or "",
+                "country": _as_dict(athlete.get("flag")).get("alt") or "",
                 "total_score": golf_total_to_par(competitor),
                 "rounds": rounds,
             })
         players.sort(key=lambda p: p["position"])
 
         return {
-            "name": event.get("name", ""),
-            "short_name": event.get("shortName", ""),
+            "name": event.get("name") or "",
+            "short_name": event.get("shortName") or "",
             "date": (event.get("date") or "")[:10],
             "end_date": (event.get("endDate") or "")[:10],
-            "round_num": comp_status.get("period", 0),
-            "status_detail": _as_dict(comp_status.get("type")).get("detail", ""),
+            "round_num": comp_status.get("period") or 0,
+            "status_detail": _as_dict(comp_status.get("type")).get("detail") or "",
             "players": players,
         }
     except Exception as e:
@@ -3471,7 +3460,7 @@ def get_golf_schedule(tour_key):
         result = []
         for event in _as_list(resp.json().get("events")):
             status_type = _as_dict(_as_dict(event.get("status")).get("type"))
-            state = status_type.get("state", "pre")
+            state = status_type.get("state") or "pre"
 
             winner = ""
             if state == "post":
@@ -3480,15 +3469,15 @@ def get_golf_schedule(tour_key):
                     top = sorted(_as_list(comps[0].get("competitors")), key=lambda x: x.get("order") or 999)
                     if top:
                         w = top[0]
-                        wname = _as_dict(w.get("athlete")).get("displayName", "")
+                        wname = _as_dict(w.get("athlete")).get("displayName") or ""
                         wscore = w.get("score") or ""
                         winner = f"{wname} ({wscore})" if wname and wscore else wname
 
             result.append({
-                "name": event.get("name", ""),
+                "name": event.get("name") or "",
                 "start_date": (event.get("date") or "")[:10],
                 "end_date": (event.get("endDate") or "")[:10],
-                "status": status_type.get("description", "Scheduled"),
+                "status": status_type.get("description") or "Scheduled",
                 "state": state,
                 "winner": winner,
             })
@@ -3518,7 +3507,7 @@ def get_world_cup_standings(league_key):
         groups = []
         for child in data.get("children", []):
             group_id   = str(child.get("id") or "")
-            group_name = child.get("name", "Group")
+            group_name = child.get("name") or "Group"
             entries    = child.get("standings", {}).get("entries", [])
             teams = []
             for idx, entry in enumerate(entries):
@@ -3529,8 +3518,8 @@ def get_world_cup_standings(league_key):
                 gd    = int(stats.get("pointDifferential", 0))
                 teams.append({
                     "team_id":          str(team.get("id") or ""),
-                    "team_name":        team.get("displayName", ""),
-                    "abbreviation":     team.get("abbreviation", ""),
+                    "team_name":        team.get("displayName") or "",
+                    "abbreviation":     team.get("abbreviation") or "",
                     "rank":             rank,
                     "games_played":     int(stats.get("gamesPlayed", 0)),
                     "wins":             int(stats.get("wins", 0)),
@@ -3540,7 +3529,7 @@ def get_world_cup_standings(league_key):
                     "goals_against":    int(stats.get("pointsAgainst", 0)),
                     "goal_difference":  gd,
                     "points":           int(stats.get("points", 0)),
-                    "advancement_note": note.get("description", ""),
+                    "advancement_note": note.get("description") or "",
                 })
             teams.sort(key=lambda t: t["rank"])
             groups.append({"id": group_id, "name": group_name, "teams": teams})

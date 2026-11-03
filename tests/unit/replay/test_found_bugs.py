@@ -157,6 +157,37 @@ def test_a_golfer_with_no_score_is_not_even_par(espn):
     assert [p["total_score"] for p in players] == ["", "E", "E"]
 
 
+class TestNullIsNotTheWordNone:
+    """.get(key, default) returns None when the key is there with a null. The sweep in
+    test_missing_fields.py finds these across every function; these are the ones heard."""
+
+    def details(self, change):
+        data = load("details_NFL_pieces.json")
+        change(data["header"]["competitions"][0])
+        return espn_api.extract_meaningful_game_info(data)
+
+    def test_a_null_team_name_in_the_score_line(self):
+        def change(comp):
+            comp["competitors"][0]["team"]["name"] = None
+        assert self.details(change)["scores"][0] == "WSH: 27"
+
+    def test_a_null_status_description(self):
+        def change(comp):
+            comp["status"]["type"]["description"] = None
+        assert self.details(change)["status"] == "Unknown"
+
+    def test_a_null_status_detail_is_the_value_scores_filters(self):
+        def change(comp):
+            comp["status"]["type"]["detail"] = None
+        assert self.details(change)["detailed_status"] == "N/A"
+
+    def test_a_null_conference_name_in_a_division(self, espn):
+        data = load("standings_NHL.json")
+        data["children"][0]["name"] = None
+        espn.on("/nhl/standings", data)
+        assert "Atlantic" in {row["division"] for row in espn_api.get_standings("NHL")}
+
+
 def test_soccer_standings_read_the_record_not_0_0(espn):
     """A three-part summary raised inside _get_team_record, so every soccer team read 0-0."""
     espn.on(r"/soccer/eng\.1/teams$", load("teams_EPL.json"))
