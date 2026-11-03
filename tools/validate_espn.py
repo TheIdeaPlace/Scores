@@ -673,6 +673,9 @@ def check_scoreboard(http, report, league):
     if status != 200:
         report.fail(league.key, "Scoreboard", f"got {status}", url)
         return
+    # What the apps open on, with its scheduled and live games and football's calendar. The
+    # one find_recent_finals saves is all finals.
+    http.save("scoreboard", f"{league.key}-now", data)
     problems = scoreboard_problems(data)
     if problems:
         report.fail(league.key, "Scoreboard", first_problems(problems), url)
