@@ -13,7 +13,7 @@ _PROCESSING_CURRENT_THEN_MOST_RECENT = 4
 import sys
 import platform
 
-def announce(message):
+def _raise_uia_notification(message):
     """Say `message` through the screen reader, without moving focus.
 
     Raises a UI Automation notification on the app's foreground window. True if it
@@ -100,7 +100,7 @@ class WindowsNotificationHelper:
         Args:
             message (str): The message to announce
         """
-        announce(message)
+        _raise_uia_notification(message)
 
     def announce_score_change(self, game_name, old_score, new_score):
         """
