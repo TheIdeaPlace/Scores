@@ -133,7 +133,19 @@
 		EDF2DE37CADCCD46B40AB0AB /* DataTableView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB9F89C51E04B48DBF663845 /* DataTableView.swift */; };
 		F0325420BCF8E453528C1728 /* BaseballFieldTourView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93169AB8FB73DA57C45D0C7A /* BaseballFieldTourView.swift */; };
 		F8BF3E6E1722253CFF729BD8 /* PollsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BDDD36E16EA39ADB21259034 /* PollsView.swift */; };
+		7E57A0000000000000000009 /* FeedDecodingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E57A0000000000000000007 /* FeedDecodingTests.swift */; };
+		7E57A000000000000000000A /* PlayAudioGeometryGridTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E57A0000000000000000008 /* PlayAudioGeometryGridTests.swift */; };
 /* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		7E57A000000000000000000C /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 76E19A7D39715887A61C957C /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = A9B008DFCA169D8E9BF1FAEE;
+			remoteInfo = SportsScores;
+		};
+/* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
 		069ACD1D5C73DAD2A7D76927 /* Sport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sport.swift; sourceTree = "<group>"; };
@@ -263,6 +275,9 @@
 		F659A5D114F5225EE0FE626D /* PitchAudioEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PitchAudioEngine.swift; sourceTree = "<group>"; };
 		F80EB90ACAB4BA3DF377959B /* WorldCupPathView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorldCupPathView.swift; sourceTree = "<group>"; };
 		FF3BF3CB32FE02D73716FE82 /* RaceTrackHubView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RaceTrackHubView.swift; sourceTree = "<group>"; };
+		7E57A0000000000000000007 /* FeedDecodingTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FeedDecodingTests.swift; sourceTree = "<group>"; };
+		7E57A0000000000000000008 /* PlayAudioGeometryGridTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlayAudioGeometryGridTests.swift; sourceTree = "<group>"; };
+		7E57A0000000000000000002 /* SportsScoresTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = SportsScoresTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
@@ -316,6 +331,7 @@
 			isa = PBXGroup;
 			children = (
 				1C3E87CD273A22E278284964 /* SportsScores.app */,
+				7E57A0000000000000000002 /* SportsScoresTests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -437,6 +453,7 @@
 			isa = PBXGroup;
 			children = (
 				93F89AD5194F005298C2DA73 /* SportsScores */,
+				7E57A0000000000000000006 /* SportsScoresTests */,
 				75CA8C28B9D39AAE47A61FBF /* Products */,
 			);
 			sourceTree = "<group>";
@@ -471,6 +488,15 @@
 			path = Models;
 			sourceTree = "<group>";
 		};
+		7E57A0000000000000000006 /* SportsScoresTests */ = {
+			isa = PBXGroup;
+			children = (
+				7E57A0000000000000000007 /* FeedDecodingTests.swift */,
+				7E57A0000000000000000008 /* PlayAudioGeometryGridTests.swift */,
+			);
+			path = SportsScoresTests;
+			sourceTree = "<group>";
+		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
@@ -492,7 +518,37 @@
 			productReference = 1C3E87CD273A22E278284964 /* SportsScores.app */;
 			productType = "com.apple.product-type.application";
 		};
+		7E57A0000000000000000001 /* SportsScoresTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 7E57A000000000000000000D /* Build configuration list for PBXNativeTarget "SportsScoresTests" */;
+			buildPhases = (
+				7E57A0000000000000000003 /* Sources */,
+				7E57A0000000000000000004 /* Frameworks */,
+				7E57A0000000000000000005 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				7E57A000000000000000000B /* PBXTargetDependency */,
+			);
+			name = SportsScoresTests;
+			packageProductDependencies = (
+			);
+			productName = SportsScoresTests;
+			productReference = 7E57A0000000000000000002 /* SportsScoresTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
 /* End PBXNativeTarget section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		7E57A0000000000000000004 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXProject section */
 		76E19A7D39715887A61C957C /* Project object */ = {
@@ -504,6 +560,9 @@
 					A9B008DFCA169D8E9BF1FAEE = {
 						DevelopmentTeam = P887QF74N8;
 						ProvisioningStyle = Automatic;
+					};
+					7E57A0000000000000000001 = {
+						TestTargetID = A9B008DFCA169D8E9BF1FAEE;
 					};
 				};
 			};
@@ -522,6 +581,7 @@
 			projectRoot = "";
 			targets = (
 				A9B008DFCA169D8E9BF1FAEE /* SportsScores */,
+				7E57A0000000000000000001 /* SportsScoresTests */,
 			);
 		};
 /* End PBXProject section */
@@ -532,6 +592,13 @@
 			buildActionMask = 2147483647;
 			files = (
 				A40265BD5D3531D5A2DBC7CE /* Assets.xcassets in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		7E57A0000000000000000005 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -670,7 +737,24 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		7E57A0000000000000000003 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				7E57A0000000000000000009 /* FeedDecodingTests.swift in Sources */,
+				7E57A000000000000000000A /* PlayAudioGeometryGridTests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		7E57A000000000000000000B /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = A9B008DFCA169D8E9BF1FAEE /* SportsScores */;
+			targetProxy = 7E57A000000000000000000C /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
 		200EAE98A9BDB90D4AD71EBC /* Release */ = {
@@ -870,6 +954,50 @@
 			};
 			name = Debug;
 		};
+		7E57A000000000000000000E /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = P887QF74N8;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.sportsscores.app.tests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_VERSION = 5.9;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/SportsScores.app/SportsScores";
+			};
+			name = Debug;
+		};
+		7E57A000000000000000000F /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = P887QF74N8;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.sportsscores.app.tests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_VERSION = 5.9;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/SportsScores.app/SportsScores";
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -887,6 +1015,15 @@
 			buildConfigurations = (
 				80B76FF674A9FE6CA791743D /* Debug */,
 				200EAE98A9BDB90D4AD71EBC /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		7E57A000000000000000000D /* Build configuration list for PBXNativeTarget "SportsScoresTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				7E57A000000000000000000E /* Debug */,
+				7E57A000000000000000000F /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Debug;

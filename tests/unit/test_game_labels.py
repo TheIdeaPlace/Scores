@@ -162,10 +162,40 @@ def test_streak_on_pro_standings(monkeypatch):
 
 
 def test_nhl_utah_is_in_central(monkeypatch):
+    """The real entry from ESPN's standings, which call Utah UTA."""
     data = load("standings_NHL.json")
-    # The fixture is trimmed, so one of its teams plays Utah's part.
-    entry = data["children"][0]["standings"]["entries"][0]
+    monkeypatch.setattr(espn_api, "_http_get", lambda *a, **k: FakeResponse(data))
+    utah = next(r for r in espn_api._get_nhl_standings_fast() if r["team_name"].startswith("Utah"))
+    assert utah["abbreviation"] == "UTA"
+    assert utah["division"].endswith("Central")
+
+
+def test_nhl_utah_is_in_central_by_its_team_page_abbreviation_too(monkeypatch):
+    data = load("standings_NHL.json")
+    entry = next(e for node in data["children"] for e in node["standings"]["entries"]
+                 if e["team"]["displayName"].startswith("Utah"))
     entry["team"]["abbreviation"] = "UTAH"
     monkeypatch.setattr(espn_api, "_http_get", lambda *a, **k: FakeResponse(data))
-    utah = next(r for r in espn_api._get_nhl_standings_fast() if r["abbreviation"] == "UTAH")
+    utah = next(r for r in espn_api._get_nhl_standings_fast() if r["team_name"].startswith("Utah"))
     assert utah["division"].endswith("Central")
+
+
+def test_wnba_standings_are_the_regular_season_not_the_playoffs(monkeypatch):
+    data = load("standings_WNBA.json")
+    urls = []
+
+    def fake_get(url, *a, **k):
+        urls.append(url)
+        return FakeResponse(data)
+
+    monkeypatch.setattr(espn_api, "_http_get", fake_get)
+    rows = espn_api.get_standings("WNBA")
+    assert rows
+    assert all("basketball/wnba" in url for url in urls)
+    assert len({r["division"] for r in rows}) == 2
+    entry = next(e for node in data["children"] for e in node["standings"]["entries"])
+    total = next(st for st in entry["stats"] if st.get("type") == "total")
+    row = next(r for r in rows if r["team_name"] == entry["team"]["displayName"])
+    assert f"{row['wins']}-{row['losses']}" == total["summary"]
+    behind = next(st for st in entry["stats"] if st.get("type") == "gamesbehind")
+    assert row["games_back"] == behind["displayValue"]
