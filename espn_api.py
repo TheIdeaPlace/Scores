@@ -23,8 +23,9 @@ def _as_dict(value):
     return value if isinstance(value, dict) else {}
 
 
-def _as_list(value):
-    return value if isinstance(value, list) else []
+def _dicts(value):
+    """The dicts in a list of them: nothing if it isn't a list, and no null elements."""
+    return [item for item in value if isinstance(item, dict)] if isinstance(value, list) else []
 
 
 BASE_URL = "https://site.api.espn.com/apis/site/v2/sports"
@@ -391,7 +392,7 @@ def get_team_schedule(league_key, team_id, days_ahead=30, days_behind=30, season
                     resp = _http_get(type_url)
                     if resp.status_code == 200:
                         data = resp.json()
-                        events = _as_list(data.get('events'))
+                        events = _dicts(data.get('events'))
                         all_events.extend(events)
                 except:
                     pass  # Continue even if one season type fails
@@ -415,7 +416,7 @@ def get_team_schedule(league_key, team_id, days_ahead=30, days_behind=30, season
             if resp.status_code != 200:
                 return []
             data = resp.json()
-            events = _as_list(data.get('events'))
+            events = _dicts(data.get('events'))
         elif league_key == "NCAAF":
             # NCAAF: Use specified season or current season with seasontype=2 for regular season
             season_year = season if season else get_current_season_year(league_key)
@@ -424,7 +425,7 @@ def get_team_schedule(league_key, team_id, days_ahead=30, days_behind=30, season
             if resp.status_code != 200:
                 return []
             data = resp.json()
-            events = _as_list(data.get('events'))
+            events = _dicts(data.get('events'))
         elif league_key in ["NCAAM", "NCAAWB"]:
             # NCAA Basketball: Use year+1 format like NBA (2027 = 2026-27 season)
             season_year = season if season else get_current_season_year(league_key)
@@ -437,7 +438,7 @@ def get_team_schedule(league_key, team_id, days_ahead=30, days_behind=30, season
                     resp = _http_get(type_url)
                     if resp.status_code == 200:
                         data = resp.json()
-                        events = _as_list(data.get('events'))
+                        events = _dicts(data.get('events'))
                         all_events.extend(events)
                 except:
                     pass  # Continue even if one season type fails
@@ -485,7 +486,7 @@ def get_team_schedule(league_key, team_id, days_ahead=30, days_behind=30, season
             fallback_resp = _http_get(fallback_url)
             if fallback_resp.status_code == 200:
                 fallback_data = fallback_resp.json()
-                events = _as_list(fallback_data.get('events'))
+                events = _dicts(fallback_data.get('events'))
         except:
             pass  # If fallback fails, continue with empty events
     
@@ -504,12 +505,12 @@ def get_team_schedule(league_key, team_id, days_ahead=30, days_behind=30, season
             continue
             
         # Get competition data
-        competitions = _as_list(event.get('competitions'))
+        competitions = _dicts(event.get('competitions'))
         if not competitions:
             continue
             
         comp = competitions[0]
-        competitors = _as_list(comp.get('competitors'))
+        competitors = _dicts(comp.get('competitors'))
         
         # Find home and away teams
         home_team = away_team = None
@@ -837,7 +838,7 @@ def golf_total_to_par(competitor):
     if score and score not in ("E", "e") and not score.lstrip("+-").isdigit():
         return score
     total, counted = 0, False
-    for line in _as_list(competitor.get("linescores")):
+    for line in _dicts(competitor.get("linescores")):
         value = str(line.get("displayValue", "")).strip()
         if value in ("E", "e"):
             counted = True
@@ -867,12 +868,12 @@ def get_live_golf_tournament(tour_key, leaders=3):
     resp = _http_get(f"{BASE_URL}/{league_path}/scoreboard")
     if resp.status_code != 200:
         return None
-    for event in _as_list(resp.json().get("events")):
-        comp = (event.get("competitions") or [{}])[0]
+    for event in _dicts(resp.json().get("events")):
+        comp = (_dicts(event.get("competitions")) or [{}])[0]
         status = _as_dict(_as_dict(comp.get("status")).get("type"))
         if status.get("state") != "in":
             continue
-        players = sorted(_as_list(comp.get("competitors")), key=lambda c: c.get("order") or 999)
+        players = sorted(_dicts(comp.get("competitors")), key=lambda c: c.get("order") or 999)
         scores = [golf_total_to_par(p) for p in players]
         top = []
         for i, player in enumerate(players[:leaders]):
@@ -1081,13 +1082,13 @@ def get_scores(league_key, date=None, week=None, seasontype=None, season=None):
     if resp.status_code != 200:
         return []
     data = resp.json()
-    events = _as_list(data.get("events"))
+    events = _dicts(data.get("events"))
 
     if ncaaf_needs_fbs_retry(league_key, events):
         retry = _http_get(_swap_to_fbs(url))
         if retry.status_code == 200:
             data = retry.json()
-            events = _as_list(data.get("events"))
+            events = _dicts(data.get("events"))
 
     scores = []
 
@@ -1096,7 +1097,7 @@ def get_scores(league_key, date=None, week=None, seasontype=None, season=None):
         eid = event.get("id") or ""
         
         # Extract competition data
-        competitions = _as_list(event.get("competitions"))
+        competitions = _dicts(event.get("competitions"))
         if not competitions:
             continue
             
@@ -1123,7 +1124,7 @@ def get_scores(league_key, date=None, week=None, seasontype=None, season=None):
             game_status = type_info.get("description") or ""
         
         # Extract scores from competitors
-        competitors = _as_list(comp.get("competitors"))
+        competitors = _dicts(comp.get("competitors"))
         team_scores = []
         for competitor in competitors:
             team = _as_dict(competitor.get("team"))
@@ -1147,7 +1148,7 @@ def get_scores(league_key, date=None, week=None, seasontype=None, season=None):
             # (season opener, preseason) carries no information, so it's dropped
             # here and the team name stands alone.
             record_summary = ""
-            for rec in _as_list(competitor.get("records")):
+            for rec in _dicts(competitor.get("records")):
                 if rec.get("type") == "total":
                     summary = rec.get("summary", "")
                     if summary and summary != "0-0":
@@ -1197,7 +1198,7 @@ def get_news(league_key, limit=10):
     if resp.status_code != 200:
         return []
     data = resp.json()
-    articles = _as_list(data.get("articles"))
+    articles = _dicts(data.get("articles"))
     news_items = []
     
     # Import text processor for cleaning descriptions
@@ -1239,7 +1240,7 @@ def get_game_details(league_key, game_id):
     # ESPN hockey series games can occasionally expose fuller play groups via the
     # web gamepackage payload. Prefer whichever source has more events.
     if league_key in ["NHL", "NCAAH", "NCAAWH"]:
-        api_plays = _as_list(details.get("plays")) if isinstance(details, dict) else []
+        api_plays = _dicts(details.get("plays")) if isinstance(details, dict) else []
         web_plays = _fetch_web_gamepackage_plays(league_path, game_id)
         if len(web_plays) > len(api_plays):
             details["plays"] = web_plays
@@ -1310,17 +1311,17 @@ def extract_meaningful_game_info(details):
     info = {}
     
     # Basic game info
-    competitions = _as_list(_as_dict(details.get('header')).get('competitions'))
+    competitions = _dicts(_as_dict(details.get('header')).get('competitions'))
     if competitions:
         comp = _as_dict(competitions[0])
 
         # Teams, records, and scores
-        competitors = _as_list(comp.get('competitors'))
+        competitors = _dicts(comp.get('competitors'))
         teams = []
         scores = []
         for competitor in competitors:
             team = _as_dict(competitor.get('team'))
-            record = _as_list(competitor.get('record'))
+            record = _dicts(competitor.get('record'))
             score = competitor.get('score') or ''
             team_info = {
                 'name': team.get('displayName') or 'Unknown',
@@ -2911,7 +2912,7 @@ def get_team_statistics(league_key):
 def _parse_statistics_data(data):
     """Player leaders from ESPN's statistics endpoint: stats.categories, a list. A
     league with nothing to show has no stats key at all."""
-    categories = _as_list(_as_dict(_as_dict(data).get("stats")).get("categories"))
+    categories = _dicts(_as_dict(_as_dict(data).get("stats")).get("categories"))
     return {
         "player_stats": _parse_generic_player_stats(categories),
         "team_stats": [],
@@ -2927,7 +2928,7 @@ def _parse_generic_player_stats(leaders):
 
         category_key = category_data.get('name') or 'unknown'
         category_display_name = category_data.get('displayName') or category_key.title()
-        leaders_list = _as_list(category_data.get('leaders'))
+        leaders_list = _dicts(category_data.get('leaders'))
 
         if not leaders_list:
             continue
@@ -3005,7 +3006,7 @@ def get_team_info(league_key, team_id):
         city, state = addr.get("city") or "", addr.get("state") or ""
         result["venue_location"] = f"{city}, {state}" if city and state else city or state
         # Record splits
-        for item in _as_list(_as_dict(team.get("record")).get("items")):
+        for item in _dicts(_as_dict(team.get("record")).get("items")):
             rtype = item.get("type", "")
             summary = item.get("summary") or ""
             if rtype == "total":
@@ -3025,18 +3026,18 @@ def get_team_info(league_key, team_id):
         result["standing"] = team.get("standingSummary") or ""
         result["conference"] = _as_dict(groups.get("parent")).get("name") or ""
         # Head coach
-        coaches = _as_list(team.get("coaches"))
+        coaches = _dicts(team.get("coaches"))
         if coaches:
             c = coaches[0]
             result["head_coach"] = f"{c.get('firstName') or ''} {c.get('lastName') or ''}".strip()
         # Next event
         # For a while after a game ESPN's nextEvent is still that game.
-        events = [e for e in _as_list(team.get("nextEvent"))
+        events = [e for e in _dicts(team.get("nextEvent"))
                   if (((e.get("competitions") or [{}])[0].get("status") or {}).get("type") or {}).get("state") != "post"]
         if events:
-            comps = _as_list(events[0].get("competitions"))
+            comps = _dicts(events[0].get("competitions"))
             if comps:
-                competitors = _as_list(comps[0].get("competitors"))
+                competitors = _dicts(comps[0].get("competitors"))
                 home = next((c for c in competitors if c.get("homeAway") == "home"), None)
                 away = next((c for c in competitors if c.get("homeAway") == "away"), None)
                 if home and away:
@@ -3106,7 +3107,7 @@ def get_team_news(league_key, team_id, limit=15):
         except ImportError:
             text_processor = None
         articles = []
-        for a in _as_list(resp.json().get("articles")):
+        for a in _dicts(resp.json().get("articles")):
             raw_desc = a.get("description") or ""
             desc = text_processor.clean_description(raw_desc, a) if text_processor else raw_desc
             articles.append({
@@ -3260,7 +3261,7 @@ def get_draft_round(year, round_num):
                        if rd.get("number") == round_num), None)
         if not target:
             return []
-        picks_raw = _as_list(target.get("picks"))
+        picks_raw = _dicts(target.get("picks"))
     except Exception as e:
         print(f"[get_draft_round] fetch rounds {year}/r{round_num}: {e}")
         return []
@@ -3397,22 +3398,22 @@ def get_golf_leaderboard(tour_key):
         if resp.status_code != 200:
             return None
         data = resp.json()
-        events = _as_list(data.get("events"))
+        events = _dicts(data.get("events"))
         if not events:
             return None
         event = events[0]
-        comps = _as_list(event.get("competitions"))
+        comps = _dicts(event.get("competitions"))
         if not comps:
             return None
         comp = comps[0]
         comp_status = _as_dict(comp.get("status"))
 
         players = []
-        for competitor in _as_list(comp.get("competitors")):
+        for competitor in _dicts(comp.get("competitors")):
             athlete = _as_dict(competitor.get("athlete"))
             rounds = [
                 ls["displayValue"]
-                for ls in sorted(_as_list(competitor.get("linescores")), key=lambda x: x.get("period") or 0)
+                for ls in sorted(_dicts(competitor.get("linescores")), key=lambda x: x.get("period") or 0)
                 if "value" in ls and "displayValue" in ls
             ]
             players.append({
@@ -3458,15 +3459,15 @@ def get_golf_schedule(tour_key):
         if resp.status_code != 200:
             return []
         result = []
-        for event in _as_list(resp.json().get("events")):
+        for event in _dicts(resp.json().get("events")):
             status_type = _as_dict(_as_dict(event.get("status")).get("type"))
             state = status_type.get("state") or "pre"
 
             winner = ""
             if state == "post":
-                comps = _as_list(event.get("competitions"))
+                comps = _dicts(event.get("competitions"))
                 if comps:
-                    top = sorted(_as_list(comps[0].get("competitors")), key=lambda x: x.get("order") or 999)
+                    top = sorted(_dicts(comps[0].get("competitors")), key=lambda x: x.get("order") or 999)
                     if top:
                         w = top[0]
                         wname = _as_dict(w.get("athlete")).get("displayName") or ""

@@ -121,6 +121,7 @@ def mutations(payload, max_depth=8):
                 paths.append(path + (key,))
                 walk(value, path + (key,))
         elif isinstance(node, list) and node:
+            paths.append(path + (0,))
             walk(node[0], path + (0,))
 
     walk(payload, ())
