@@ -13,6 +13,9 @@ name: Validate ESPN data
 # The report is on the run's summary page and kept as an artifact. A failed nightly run
 # opens an issue, or adds to the open one. The next good nightly run closes it.
 #
+# Nightly and on demand, the iPhone's real models then decode the payloads this run saved,
+# on a Mac. A pull request skips that part.
+#
 # GitHub turns off scheduled workflows after 60 days with no activity in the repo. If the
 # nightly runs have stopped, re-enable this one on the Actions tab.
 #
@@ -77,7 +80,7 @@ jobs:
           args=()
           if [ -n "$LEAGUE" ]; then args+=(--league "$LEAGUE"); fi
           if [ "$ALARM_TEST" = "fail" ]; then args+=(--fake-failure); fi
-          python tools/validate_espn.py "${args[@]}" --report validation-report.md --json validation-results.json
+          python tools/validate_espn.py "${args[@]}" --report validation-report.md --json validation-results.json --save-payloads live-payloads
 
       - name: Keep the report
         if: always()
@@ -89,10 +92,67 @@ jobs:
             validation-results.json
           if-no-files-found: warn
 
+      - name: Keep the payloads for the iPhone's tests
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: live-payloads
+          path: live-payloads
+          retention-days: 3
+          if-no-files-found: warn
+
+  # A required field ESPN drops fails the iPhone's decode, which nothing above can see.
+  ios-decode:
+    needs: validate
+    if: >-
+      always() && github.event_name != 'pull_request' &&
+      needs.validate.result != 'cancelled' && inputs.alarm_test != 'fail'
+    runs-on: macos-latest
+    timeout-minutes: 45
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Select latest stable Xcode
+        uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: latest-stable
+
+      - name: Get the payloads
+        uses: actions/download-artifact@v8
+        with:
+          name: live-payloads
+          path: live-payloads
+
+      - name: Decode them
+        env:
+          TEST_RUNNER_LIVE_PAYLOADS: ${{ github.workspace }}/live-payloads
+        run: |
+          set -euo pipefail
+          ls live-payloads
+          device=$(xcrun simctl list devices available --json | python3 -c "import json,sys; d=json.load(sys.stdin)['devices']; print(next(x['udid'] for k in sorted(d, reverse=True) if 'iOS' in k for x in d[k] if x['name'].startswith('iPhone')))")
+          xcodebuild \
+            -project iOS/SportsScoresApp/SportsScores.xcodeproj \
+            -scheme SportsScores \
+            -destination "platform=iOS Simulator,id=$device" \
+            -derivedDataPath "$RUNNER_TEMP/dd" \
+            -only-testing:SportsScoresTests/BoxScoreDecodingTests/testLivePayloadsDecode \
+            -only-testing:SportsScoresTests/ScoreboardDecodingTests/testLivePayloadsDecode \
+            -only-testing:SportsScoresTests/StandingsDecodingTests/testLivePayloadsDecode \
+            CODE_SIGNING_ALLOWED=NO \
+            test | tee xcodebuild.log
+          # Skipped would mean the payloads never got there, which proves nothing.
+          if grep -q "skipped" xcodebuild.log; then
+            echo "The live tests were skipped"
+            exit 1
+          fi
+
   # Kept apart so that the job running code against live data never holds a write token.
   # One open issue, however many nights it takes to fix, rather than one per night.
   alarm:
-    needs: validate
+    needs: [validate, ios-decode]
     if: >-
       always() && needs.validate.result != 'skipped' &&
       (github.event_name == 'schedule' ||
@@ -104,6 +164,7 @@ jobs:
       GH_TOKEN: ${{ github.token }}
       GH_REPO: ${{ github.repository }}
       RESULT: ${{ needs.validate.result }}
+      IOS_RESULT: ${{ needs.ios-decode.result }}
       LEAGUE: ${{ inputs.league }}
       RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
       LABEL: espn-validation
@@ -118,7 +179,8 @@ jobs:
       - name: Open, update or close the issue
         run: |
           existing=$(gh issue list --label "$LABEL" --state open --limit 1 --json number --jq '.[0].number // empty')
-          if [ "$RESULT" = "success" ]; then
+          # The fake failure doesn't reach the iPhone's job, so skipped has to count as fine.
+          if [ "$RESULT" = "success" ] && [ "$IOS_RESULT" != "failure" ] && [ "$IOS_RESULT" != "cancelled" ]; then
             # One league passing says nothing about the rest of what the issue is about.
             if [ -n "$existing" ] && [ -z "$LEAGUE" ]; then
               gh issue close "$existing" --comment "The data check passed again: $RUN_URL"
@@ -127,7 +189,7 @@ jobs:
           fi
           gh label create "$LABEL" --color D93F0B --description "The live data check failed" --force
           {
-            echo "The nightly data check ended in: $RESULT. $RUN_URL"
+            echo "The nightly data check ended in: $RESULT. The iPhone's decode of today's payloads: $IOS_RESULT. $RUN_URL"
             echo
             if [ -f validation-report.md ]; then
               sed -n '/^## Failed/,/^## Worth a look\|^## Passed/p' validation-report.md | sed '$d' | head -c 60000

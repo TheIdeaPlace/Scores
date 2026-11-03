@@ -333,6 +333,28 @@ struct RankingsAPIResponse: Codable {
 
 // MARK: - Scoreboard Response
 
+/// One event ESPN sent oddly costs that event, not the board. ESPN's own list for week 8
+/// of college football in 2025 has a literal {} in it, which used to lose the whole week.
+/// If nothing at all can be read, that's a change in the feed, and it's still an error.
+extension ScoreboardResponse {
+    private enum CodingKeys: String, CodingKey {
+        case events, week, season, leagues
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        let rows = try container.decode([Lossy<APIGame>].self, forKey: .events)
+        events = rows.compactMap { $0.value }
+        if events.isEmpty && !rows.isEmpty {
+            throw DecodingError.dataCorruptedError(forKey: .events, in: container,
+                                                   debugDescription: "None of the \(rows.count) events could be read")
+        }
+        week = try container.decodeIfPresent(APIWeek.self, forKey: .week)
+        season = try container.decodeIfPresent(APISeason.self, forKey: .season)
+        leagues = try container.decodeIfPresent([APILeague].self, forKey: .leagues)
+    }
+}
+
 struct ScoreboardResponse: Decodable {
     let events: [APIGame]
     /// Present for football sports — describes the current week.
