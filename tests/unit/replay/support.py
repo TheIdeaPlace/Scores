@@ -70,7 +70,7 @@ class FakeEspn:
         return self
 
     def __call__(self, url, **kwargs):
-        full = url
+        full = str(url)
         params = kwargs.get("params")
         if params:
             full += ("&" if "?" in url else "?") + urlencode(params)

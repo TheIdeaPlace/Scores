@@ -3902,9 +3902,11 @@ def get_golf_schedule(tour_key):
         return []
     try:
         year = datetime.now().year
+        # A bare year, not a START-END range: ESPN rejects ranges on team sports
+        # and only still tolerates them here. The year returns the same 49 events.
         resp = _http_get(
             f"{BASE_URL}/{league_path}/scoreboard",
-            params={"dates": f"{year}0101-{year}1231"},
+            params={"dates": str(year)},
         )
         if resp.status_code != 200:
             return []
