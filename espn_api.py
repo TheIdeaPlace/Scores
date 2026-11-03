@@ -2250,6 +2250,9 @@ def get_standings(league_key):
         return _get_nba_standings_fast()
     elif league_key == "NHL":
         return _get_nhl_standings_fast()
+    elif league_key == "WNBA":
+        # The older path reads a team's playoff record once the season has ended.
+        return _fetch_college_standings("WNBA", "basketball/wnba")
     elif league_key == "NCAAF":
         return _get_ncaaf_standings_fast()
     elif league_key == "NCAAM":
@@ -2756,7 +2759,7 @@ def _get_nhl_standings_fast():
             "NYR": "Metropolitan", "PHI": "Metropolitan", "PIT": "Metropolitan", "WSH": "Metropolitan",
             # Western Conference - Central
             "CHI": "Central", "COL": "Central", "DAL": "Central", "MIN": "Central",
-            "NSH": "Central", "STL": "Central", "UTAH": "Central", "WPG": "Central",
+            "NSH": "Central", "STL": "Central", "UTA": "Central", "UTAH": "Central", "WPG": "Central",
             # Western Conference - Pacific
             "ANA": "Pacific", "CGY": "Pacific", "EDM": "Pacific", "LA": "Pacific",
             "SJ": "Pacific", "SEA": "Pacific", "VAN": "Pacific", "VGK": "Pacific"
@@ -2864,7 +2867,8 @@ def _college_standing_row(entry, conference):
         "losses": losses,
         "ties": ties,
         "win_percentage": f"{(wins + ties / 2) / games:.3f}" if games else "0.000",
-        "games_back": "—",
+        # College conferences rank by record. A pro league's games back comes straight from ESPN.
+        "games_back": _standing_stat(stats, "gamesbehind").get("displayValue") or "—",
         "conference_record": conf.get("summary") or conf.get("displayValue") or "",
         "division": conference,
         "streak": _standing_stat(stats, "streak").get("displayValue", ""),

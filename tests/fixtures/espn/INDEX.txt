@@ -12,10 +12,10 @@ standings_NCAAM.json	111 KB	duplicate stat names; last 'wins' is the conference 
 standings_NCAAWB.json	112 KB	same
 standings_NCAAWH.json	14 KB	entries at the root, no children: app falls back to 0-0
 standings_NCAAH.json	27 KB	tiegames stat, three-part overall
-standings_NHL.json	46 KB	otLosses, streak; Utah abbreviation UTAH
+standings_NHL.json	46 KB	otLosses, streak; Utah is UTA here, UTAH on its team page
 standings_NFL.json	39 KB	streak present
 standings_NBA.json	43 KB	streak present
-standings_WNBA.json	42 KB	real standings the app never reads
+standings_WNBA.json	42 KB	both conferences; total, not the playoff record; gamesbehind
 statistics_NFL.json	163 KB	stats.categories is a list: _parse_nfl_player_stats .items() raises
 statistics_NHL.json	334 KB	same for _parse_nhl_player_stats
 statistics_NBA.json	4 KB	no stats key: falls to sample data

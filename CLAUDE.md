@@ -44,6 +44,13 @@ pip install -r requirements.txt
 pytest tests/
 ```
 
+**Check the live data feeds** (ESPN, MLB, CFL, fantasy; opens no windows):
+```powershell
+python tools/validate_espn.py                 # or --league NCAAM
+gh workflow run validate-espn.yml             # the same, in GitHub Actions; also runs nightly
+```
+Add a check here when the app starts relying on a new endpoint or field.
+
 ## Architecture
 
 ### Entry Points
