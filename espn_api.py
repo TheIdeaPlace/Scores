@@ -3195,6 +3195,9 @@ def _parse_nfl_player_stats(leaders):
 
 def _parse_nba_player_stats(leaders):
     """Parse NBA player statistics from leaders data"""
+    if isinstance(leaders, list):
+        # ESPN's statistics endpoint sends a list of categories now, not a dict.
+        return _parse_generic_player_stats(leaders)
     categories = []
     
     category_mapping = {

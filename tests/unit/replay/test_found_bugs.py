@@ -6,6 +6,7 @@ import pytest
 
 import espn_api
 import timezone_utils
+from services.venue_service import VenueService
 
 from .support import load
 
@@ -52,6 +53,40 @@ def test_white_sox_are_in_a_division_when_mlb_falls_back_to_team_records(espn):
                                                           "displayName": "Chicago White Sox"}}]}]}]}
     espn.on("/teams/4$", {"team": {"record": {"items": []}}})
     assert espn_api._parse_standings_from_teams_api(teams, "MLB")[0]["division"] == "AL Central"
+
+
+def test_nba_reads_the_list_shape_like_nfl_and_nhl(espn):
+    """statistics_NBA.json has no stats today. When ESPN adds them, in the list shape it
+    sends every other league, the NBA parser's .items() raised and lost them all."""
+    espn.on("/nba/statistics", load("statistics_NCAAM.json"))
+    espn.on("/nba/(leaders|athletes)", load("statistics_NBA.json"))
+    result = espn_api.get_player_statistics("NBA")
+    expected = load("statistics_NCAAM.json")["stats"]["categories"][0]
+    assert result["player_stats"][0]["category"] == expected["displayName"]
+    assert result["player_stats"][0]["stats"][0]["player_name"] == expected["leaders"][0]["athlete"]["displayName"]
+
+
+@pytest.mark.parametrize("key,value,expected", [
+    ("gameInfo", {"attendance": None, "venue": {"fullName": "Lambeau Field"}}, "Venue: Lambeau Field"),
+    ("gameInfo", {"attendance": "64,195"}, "Attendance: 64,195"),
+    ("gameInfo", {"attendance": 64195}, "Attendance: 64,195"),
+    ("odds", [{"provider": None, "details": "GB -3"}], "• Unknown: GB -3"),
+    ("boxscore", {"teams": [{"team": None, "statistics": [{"name": "yards", "displayValue": "300"}]}]},
+     "• Unknown: yards: 300"),
+])
+def test_format_complex_data_with_unexpected_shapes(key, value, expected):
+    """A text attendance, a null provider and a null team all raised."""
+    assert espn_api.format_complex_data(key, value) == expected
+
+
+@pytest.mark.parametrize("league,fact", [
+    ("mlb", "Major League Baseball venue"), ("nfl", "National Football League venue"),
+    ("nba", "National Basketball Association venue"), ("nhl", "National Hockey League venue"),
+    ("ncaaf", "College football venue"),
+])
+def test_venue_facts_match_the_lower_case_key_scores_passes(league, fact):
+    """scores.py lowers the league, and these compared it to "MLB", so they never appeared."""
+    assert fact in VenueService()._generate_interesting_facts({"name": "Somewhere"}, league)
 
 
 def test_soccer_standings_read_the_record_not_0_0(espn):
