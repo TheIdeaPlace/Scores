@@ -1263,7 +1263,7 @@ def get_game_details(league_key, game_id):
     # ESPN hockey series games can occasionally expose fuller play groups via the
     # web gamepackage payload. Prefer whichever source has more events.
     if league_key in ["NHL", "NCAAH", "NCAAWH"]:
-        api_plays = details.get("plays", []) if isinstance(details, dict) else []
+        api_plays = _as_list(details.get("plays")) if isinstance(details, dict) else []
         web_plays = _fetch_web_gamepackage_plays(league_path, game_id)
         if len(web_plays) > len(api_plays):
             details["plays"] = web_plays
@@ -1334,22 +1334,23 @@ def extract_meaningful_game_info(details):
     info = {}
     
     # Basic game info
-    if 'header' in details and 'competitions' in details['header']:
-        comp = details['header']['competitions'][0]
-        
+    competitions = _as_list(_as_dict(details.get('header')).get('competitions'))
+    if competitions:
+        comp = _as_dict(competitions[0])
+
         # Teams, records, and scores
-        competitors = comp.get('competitors', [])
+        competitors = _as_list(comp.get('competitors'))
         teams = []
         scores = []
         for competitor in competitors:
-            team = competitor.get('team', {})
-            record = competitor.get('record', [])
+            team = _as_dict(competitor.get('team'))
+            record = _as_list(competitor.get('record'))
             score = competitor.get('score', '')
             team_info = {
                 'name': team.get('displayName', 'Unknown'),
                 'team_id': team.get('id', ''),  # ADD THE TEAM ID!
                 'abbreviation': team.get('abbreviation', 'N/A'),
-                'record': record[0].get('summary', 'N/A') if record else 'N/A',
+                'record': _as_dict(record[0]).get('summary', 'N/A') if record else 'N/A',
                 'home_away': competitor.get('homeAway', 'unknown'),
                 'score': score
             }
@@ -1358,32 +1359,34 @@ def extract_meaningful_game_info(details):
                 scores.append(f"{team.get('name', team.get('abbreviation', 'Unknown'))}: {score}")
         info['teams'] = teams
         info['scores'] = scores
-        
+
         # Game status and time
-        status = comp.get('status', {})
-        info['status'] = status.get('type', {}).get('description', 'Unknown')
-        detailed_status = status.get('type', {}).get('detail', 'N/A')
+        status_type = _as_dict(_as_dict(comp.get('status')).get('type'))
+        info['status'] = status_type.get('description', 'Unknown')
+        detailed_status = status_type.get('detail', 'N/A')
         # Convert timezone to user's local time
         info['detailed_status'] = convert_espn_time_to_local(detailed_status)
-        
+
         # Date
         info['date'] = comp.get('date', 'N/A')
-    
+
+    game_info = _as_dict(details.get('gameInfo'))
+
     # Venue information
-    if 'gameInfo' in details and 'venue' in details['gameInfo']:
-        venue = details['gameInfo']['venue']
+    if 'venue' in game_info:
+        venue = _as_dict(game_info['venue'])
         info['venue'] = venue.get('fullName', 'Unknown')
-        address = venue.get('address', {})
+        address = _as_dict(venue.get('address'))
         info['venue_city'] = address.get('city', 'Unknown')
         info['venue_state'] = address.get('state', '')
-    
+
     # Weather (if available)
-    if 'gameInfo' in details and 'weather' in details['gameInfo']:
-        weather = details['gameInfo']['weather']
+    if 'weather' in game_info:
+        weather = _as_dict(game_info['weather'])
         info['weather'] = f"{weather.get('displayValue', 'N/A')}"
         if weather.get('temperature'):
             info['temperature'] = f"{weather['temperature']}°F"
-    
+
     # Odds (if available)
     odds = best_odds(details)
     if odds.get('details'):
@@ -1392,8 +1395,8 @@ def extract_meaningful_game_info(details):
         info['over_under'] = f"O/U {odds['overUnder']}"
     
     # Broadcast information. The summary's list can be empty when its header has one.
-    header_competitions = (details.get('header') or {}).get('competitions') or [{}]
-    networks = broadcast_names(details.get('broadcasts'), header_competitions[0].get('broadcasts'))
+    header_competition = _as_dict(competitions[0]) if competitions else {}
+    networks = broadcast_names(details.get('broadcasts'), header_competition.get('broadcasts'))
     if networks:
         info['broadcast'] = ', '.join(networks)
 

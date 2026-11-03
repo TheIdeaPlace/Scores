@@ -38,6 +38,10 @@ CASES = [
     case("get_team_schedule NBA", lambda: espn_api.get_team_schedule("NBA", "15"), "schedule_NBA_15.json", "/schedule"),
     case("get_team_schedule MLB", lambda: espn_api.get_team_schedule("MLB", "10"), "schedule_MLB_10.json", "/schedule"),
     case("get_team_schedule NCAAM", lambda: espn_api.get_team_schedule("NCAAM", "275"), "schedule_NCAAM_275.json", "/schedule"),
+    case("game details NFL", lambda: espn_api.extract_meaningful_game_info(espn_api.get_game_details("NFL", "1")),
+         "details_NFL_pieces.json", "/summary"),
+    case("game details NCAAH", lambda: espn_api.extract_meaningful_game_info(espn_api.get_game_details("NCAAH", "1")),
+         "details_NCAAH_pieces.json", "/summary"),
 ]
 
 
