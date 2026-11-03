@@ -5,8 +5,9 @@ import pytest
 import requests
 
 import espn_api
+import game_labels
 import settings
-from services import football_calendar
+from services import football_calendar, venue_service
 
 from .support import DATE_RANGE, FakeEspn
 
@@ -41,6 +42,25 @@ def espn(monkeypatch):
 
 
 @pytest.fixture
+def local_zone(monkeypatch):
+    """Make `.astimezone()` with no argument use a fixed UTC offset, so an expected
+    local date doesn't depend on the machine: CI runs in UTC, Kelly in US Central."""
+
+    def set_offset(hours):
+        zone = datetime_module.timezone(datetime_module.timedelta(hours=hours))
+
+        class InZone(datetime_module.datetime):
+            def astimezone(self, tz=None):
+                return super().astimezone(tz or zone)
+
+        monkeypatch.setattr(datetime_module, "datetime", InZone)
+        monkeypatch.setattr(espn_api, "datetime", InZone)
+        monkeypatch.setattr(game_labels, "datetime", InZone)
+
+    return set_offset
+
+
+@pytest.fixture
 def freeze_now(monkeypatch):
     """Fix what datetime.now() returns, for code that decides by today's date."""
 
@@ -54,5 +74,6 @@ def freeze_now(monkeypatch):
 
         monkeypatch.setattr(datetime_module, "datetime", Frozen)
         monkeypatch.setattr(espn_api, "datetime", Frozen)
+        monkeypatch.setattr(venue_service, "datetime", Frozen)
 
     return freeze
