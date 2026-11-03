@@ -836,15 +836,46 @@ class TestStatistics:
         v.check_statistics(FakeHttp(default=(200, {})), report, league("NHL"), event(), in_season)
         assert statuses(report, "App: player statistics") == [expected]
 
-    def test_a_blip_on_statistics_is_a_warning_that_names_it(self, monkeypatch):
+    def app_answers(self, monkeypatch, *answers):
         import espn_api
-        answers = [{"player_stats": []}, {"player_stats": [{"x": 1}]}]
-        monkeypatch.setattr(espn_api, "get_player_statistics", lambda *a, **k: answers.pop(0))
+        answers = list(answers)
+
+        def fake(*a, **k):
+            answer = answers.pop(0)
+            if isinstance(answer, Exception):
+                raise answer
+            return answer
+
+        monkeypatch.setattr(espn_api, "get_player_statistics", fake)
         monkeypatch.setattr(v.time, "sleep", lambda s: None)
+
+    def test_a_blip_on_statistics_is_a_warning_that_names_it(self, monkeypatch):
+        self.app_answers(monkeypatch, v.ApiError("x"), {"player_stats": [{"x": 1}]})
         report = v.Report()
         v.check_statistics(FakeHttp(default=(200, {})), report, league("NHL"), event(), True)
         assert statuses(report, "App: player statistics") == [v.WARN]
         assert "try 2" in detail(report, "App: player statistics")
+        assert "told to try again" in detail(report, "App: player statistics")
+
+    def test_empty_then_fine_says_what_a_user_saw(self, monkeypatch):
+        self.app_answers(monkeypatch, {"player_stats": []}, {"player_stats": [{"x": 1}]})
+        report = v.Report()
+        v.check_statistics(FakeHttp(default=(200, {})), report, league("NHL"), event(), True)
+        assert "would have seen none" in detail(report, "App: player statistics")
+
+    def test_an_early_blip_does_not_excuse_a_parser_reading_nothing(self, monkeypatch):
+        """Or a broken parser could close its own alarm on a bad night for ESPN."""
+        self.app_answers(monkeypatch, v.ApiError("x"), {"player_stats": []}, {"player_stats": []})
+        http = FakeHttp([("/statistics", (200, {"stats": {"categories": [1]}}))], default=(200, {}))
+        report = v.Report()
+        v.check_statistics(http, report, league("NHL"), event(), True)
+        assert FAIL_IN(report, "App: player statistics")
+
+    def test_an_early_blip_does_not_excuse_nothing_in_season(self, monkeypatch):
+        self.app_answers(monkeypatch, v.ApiError("x"), {"player_stats": []}, {"player_stats": []})
+        report = v.Report()
+        v.check_statistics(FakeHttp(default=(200, {})), report, league("NHL"), event(), True)
+        assert FAIL_IN(report, "App: player statistics")
 
     def test_espn_s_own_blip_lasting_is_only_worth_a_look(self, monkeypatch):
         import espn_api
@@ -854,6 +885,31 @@ class TestStatistics:
         report = v.Report()
         v.check_statistics(http, report, league("NHL"), event(), True)
         assert statuses(report, "App: player statistics") == [v.WARN]
+
+    def test_the_app_giving_up_on_espn_s_blip_is_only_worth_a_look(self, monkeypatch):
+        import espn_api
+
+        def gave_up(*a, **k):
+            raise v.ApiError(espn_api.STATISTICS_UNAVAILABLE)
+
+        monkeypatch.setattr(espn_api, "get_player_statistics", gave_up)
+        monkeypatch.setattr(v.time, "sleep", lambda s: None)
+        report = v.Report()
+        # ESPN answering well a moment later doesn't make that a parser bug.
+        http = FakeHttp([("/statistics", (200, {"stats": {"categories": [1]}}))], default=(200, {}))
+        v.check_statistics(http, report, league("NHL"), event(), True)
+        assert statuses(report, "App: player statistics") == [v.WARN]
+
+    def test_any_other_app_error_on_statistics_fails(self, monkeypatch):
+        import espn_api
+
+        def boom(*a, **k):
+            raise ValueError("bad")
+
+        monkeypatch.setattr(espn_api, "get_player_statistics", boom)
+        report = v.Report()
+        v.check_statistics(FakeHttp(default=(200, {})), report, league("NHL"), event(), True)
+        assert FAIL_IN(report, "App: player statistics")
 
     def test_any_other_404_on_statistics_in_season_fails(self, monkeypatch):
         import espn_api

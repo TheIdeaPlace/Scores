@@ -5,7 +5,10 @@ import pytest
 
 import espn_api
 
-from .support import HTTP_404, HTTP_500, TIMEOUT, load
+from exceptions import ApiError
+from services.api_service import ApiService
+
+from .support import HTTP_404, HTTP_500, TIMEOUT, FakeResponse, load
 
 SITE = espn_api.BASE_URL
 NOTHING = {"player_stats": [], "team_stats": []}
@@ -13,6 +16,84 @@ NOTHING = {"player_stats": [], "team_stats": []}
 
 def categories(fixture):
     return load(fixture)["stats"]["categories"]
+
+
+class TestEspnsBlip:
+    """ESPN's /statistics fails like this on a good share of requests (#133)."""
+
+    BLIP = FakeResponse({"code": 404, "message": espn_api.STATISTICS_BLIP}, status=404)
+
+    @pytest.fixture(autouse=True)
+    def no_waiting(self, monkeypatch):
+        self.pauses = []
+        monkeypatch.setattr(espn_api.time, "sleep", self.pauses.append)
+
+    def replies(self, espn, *answers):
+        answers = list(answers)
+        espn.on("/statistics", lambda url: answers.pop(0))
+
+    def test_a_blip_is_asked_again_past_the_cache(self, espn):
+        self.replies(espn, self.BLIP, load("statistics_NFL.json"))
+        result = espn_api.get_player_statistics("NFL")
+        assert result["player_stats"]
+        assert len(espn.calls) == 2
+        assert self.pauses == [1], "asking again at once would hit the same failure"
+        assert espn.calls[0] == f"{SITE}/football/nfl/statistics"
+        assert espn.calls[1] != espn.calls[0], "the same URL can read the cached failure"
+
+    def test_it_can_take_every_try(self, espn):
+        self.replies(espn, self.BLIP, self.BLIP, load("statistics_NFL.json"))
+        assert espn_api.get_player_statistics("NFL")["player_stats"]
+
+    def test_a_blip_that_lasts_says_so_rather_than_showing_nothing(self, espn):
+        self.replies(espn, self.BLIP, self.BLIP, self.BLIP)
+        with pytest.raises(ApiError, match="Try again"):
+            espn_api.get_player_statistics("NFL")
+        assert len(espn.calls) == espn_api.STATISTICS_TRIES
+
+    @pytest.mark.parametrize("later", [TIMEOUT, HTTP_500, HTTP_404], ids=["timeout", "500", "other 404"])
+    def test_a_blip_then_a_different_failure_still_says_so(self, espn, later):
+        self.replies(espn, self.BLIP, later, later)
+        with pytest.raises(ApiError, match="Try again"):
+            espn_api.get_player_statistics("NCAAM")
+
+    def test_a_404_that_is_not_json_is_not_a_blip(self, espn):
+        espn.on("/statistics", FakeResponse(status=404, bad_json=True))
+        assert espn_api.get_player_statistics("NFL") == NOTHING
+        assert len(espn.calls) == 1
+
+    def test_a_404_whose_body_is_a_list_is_not_a_blip(self, espn):
+        espn.on("/statistics", FakeResponse([], status=404))
+        assert espn_api.get_player_statistics("NFL") == NOTHING
+        assert len(espn.calls) == 1
+
+    def test_mlb_falling_back_to_espn_during_a_blip_says_so_too(self, espn):
+        espn.on("statsapi.mlb.com", HTTP_500)
+        self.replies(espn, self.BLIP, self.BLIP, self.BLIP)
+        with pytest.raises(ApiError, match="Try again"):
+            espn_api.get_player_statistics("MLB")
+
+    def test_the_message_reaches_the_dialog_through_the_service(self, espn):
+        self.replies(espn, self.BLIP, self.BLIP, self.BLIP)
+        with pytest.raises(ApiError) as caught:
+            ApiService.get_player_statistics("NFL")
+        assert str(caught.value) == espn_api.STATISTICS_UNAVAILABLE
+
+    def test_any_other_404_is_not_retried(self, espn):
+        espn.on("/statistics", HTTP_404)
+        assert espn_api.get_player_statistics("NFL") == NOTHING
+        assert len(espn.calls) == 1
+
+    def test_the_full_statistics_call_also_gets_past_it(self, espn):
+        self.replies(espn, self.BLIP, load("statistics_NFL.json"))
+        espn.on("/teams", {"sports": []})
+        assert espn_api.get_statistics("NFL")["player_stats"]
+
+    def test_the_full_statistics_call_does_not_raise_when_it_lasts(self, espn):
+        """Its team statistics may still be fine."""
+        self.replies(espn, self.BLIP, self.BLIP, self.BLIP)
+        espn.on("/teams", {"sports": []})
+        assert espn_api.get_statistics("NFL")["player_stats"] == []
 
 
 class TestPlayerStatistics:

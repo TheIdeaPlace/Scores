@@ -1,6 +1,8 @@
 import json
 import requests
+import time
 from datetime import datetime
+from exceptions import ApiError
 from game_labels import (best_odds, broadcast_names, format_height, format_weight,
                          injured_player_count, local_schedule_datetime)
 from timezone_utils import convert_espn_time_to_local
@@ -2766,6 +2768,43 @@ def _get_mlb_statistics():
         "team_stats": []
     }
 
+# ESPN's /statistics answers this 404 on a good share of requests, mostly for college
+# basketball, for a league it served a moment ago. It can stay cached for up to 30 seconds,
+# so asking again for the same URL gets the same failure.
+STATISTICS_BLIP = "Failed to retrieve league stats"
+STATISTICS_TRIES = 3
+STATISTICS_UNAVAILABLE = "ESPN isn't providing these right now. Try again in a minute."
+
+
+def _is_statistics_blip(resp):
+    if resp.status_code != 404:
+        return False
+    try:
+        return resp.json().get("message") == STATISTICS_BLIP
+    except (ValueError, AttributeError):
+        return False
+
+
+def _fetch_statistics(league_path):
+    """The response from /statistics, the only ESPN endpoint with leaders, getting past ESPN's
+    blip with a throwaway parameter, which earns a fresh answer rather than the cached failure.
+    Raises ApiError if ESPN blips and no later try gets an answer: empty would read as no
+    leaders existing, and the player statistics dialog has a row for this."""
+    url = f"{BASE_URL}/{league_path}/statistics"
+    resp = _http_get(url, timeout=10)
+    if not _is_statistics_blip(resp):
+        return resp
+    for _ in range(STATISTICS_TRIES - 1):
+        time.sleep(1)
+        try:
+            resp = _http_get(url, params={"_": int(time.time() * 1000)}, timeout=10)
+        except requests.RequestException:
+            continue
+        if resp.status_code == 200:
+            return resp
+    raise ApiError(STATISTICS_UNAVAILABLE)
+
+
 def get_statistics(league_key):
     """Get statistics/leaders data for a league"""
     # Handle case-insensitive league keys
@@ -2788,8 +2827,7 @@ def get_statistics(league_key):
             else:
                 print("MLB Stats API failed, falling back to ESPN")
 
-        # /statistics is the only ESPN endpoint with leaders.
-        resp = _http_get(f"{BASE_URL}/{league_path}/statistics", timeout=10)
+        resp = _fetch_statistics(league_path)
         if resp.status_code == 200:
             result = _parse_statistics_data(resp.json())
             if result['player_stats']:
@@ -2838,13 +2876,14 @@ def get_player_statistics(league_key):
             else:
                 print("MLB Stats API failed, falling back to ESPN")
 
-        # /statistics is the only ESPN endpoint with leaders.
-        resp = _http_get(f"{BASE_URL}/{league_path}/statistics", timeout=10)
+        resp = _fetch_statistics(league_path)
         if resp.status_code == 200:
             # Only return player stats, not team stats
             return {"player_stats": _parse_statistics_data(resp.json())["player_stats"], "team_stats": []}
         return {"player_stats": [], "team_stats": []}
 
+    except ApiError:
+        raise
     except Exception as e:
         print(f"Error fetching player statistics for {league_key}: {str(e)}")
         return {"player_stats": [], "team_stats": []}

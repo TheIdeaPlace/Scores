@@ -53,6 +53,8 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if ROOT not in sys.path:
     sys.path.insert(0, ROOT)
 
+from exceptions import ApiError  # noqa: E402
+
 SITE = "https://site.api.espn.com/apis/site/v2/sports"
 STANDINGS = "https://site.api.espn.com/apis/v2/sports"
 CORE = "https://sports.core.api.espn.com/v2/sports"
@@ -1047,11 +1049,17 @@ def check_statistics(http, report, league, event, in_season):
     if league.player_stats_gap:
         report.warn(league.key, "App: player statistics", league.player_stats_gap)
     elif league.player_stats:
-        # The app reads ESPN's blip as no statistics, so nothing is only nothing if it lasts.
-        stats, tries = None, 0
+        # ESPN's blip comes in spells that can outlast the app's own retries, so nothing is only
+        # nothing if it lasts. Only the last try says why: an earlier blip mustn't excuse a parser
+        # that then reads nothing from a good answer, or a broken app could close its own alarm.
+        stats, tries, app_said_blip, ever_blipped = None, 0, False, False
         try:
             for tries in range(1, STATISTICS_TRIES + 1):
-                stats = espn_api.get_player_statistics(league.key)
+                app_said_blip = False
+                try:
+                    stats = espn_api.get_player_statistics(league.key)
+                except ApiError:
+                    stats, app_said_blip, ever_blipped = {"player_stats": []}, True, True
                 if stats.get("player_stats"):
                     break
                 if tries < STATISTICS_TRIES:
@@ -1066,19 +1074,20 @@ def check_statistics(http, report, league, event, in_season):
                 report.fail(league.key, "App: player statistics", f"invented data: {first_problems(invented)}")
             elif categories and tries > 1:
                 report.warn(league.key, "App: player statistics",
-                            f"{len(categories)} categories on try {tries}. ESPN's /statistics came back empty before that, "
-                            "and a user would have seen none")
+                            f"{len(categories)} categories on try {tries}. " +
+                            ("ESPN's /statistics failed before that, and a user would have been told to try again"
+                             if ever_blipped else "It came back empty before that, and a user would have seen none"))
             elif categories:
                 report.ok(league.key, "App: player statistics", f"{len(categories)} categories")
             else:
                 url = f"{SITE}/{league.path}/statistics"
                 _, raw = http.get(url)
-                if isinstance(raw, dict) and (raw.get("stats") or {}).get("categories"):
-                    report.fail(league.key, "App: player statistics", "ESPN has them, and the app read nothing", url)
-                elif isinstance(raw, dict) and raw.get("message") == STATISTICS_BLIP:
+                if app_said_blip or (isinstance(raw, dict) and raw.get("message") == STATISTICS_BLIP):
                     report.warn(league.key, "App: player statistics",
                                 f"ESPN kept saying \"{STATISTICS_BLIP}\" over {STATISTICS_TRIES} tries, "
-                                "and a user would have seen none", url)
+                                "and a user would have been told to try again", url)
+                elif isinstance(raw, dict) and (raw.get("stats") or {}).get("categories"):
+                    report.fail(league.key, "App: player statistics", "ESPN has them, and the app read nothing", url)
                 else:
                     report.seasonal(in_season, league.key, "App: player statistics",
                                     f"no categories in {STATISTICS_TRIES} tries", url)

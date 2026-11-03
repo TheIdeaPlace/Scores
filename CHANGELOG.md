@@ -10,6 +10,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 - **Utah is in the Central Division in the NHL standings on Windows.** 1.0.1 said it was, but ESPN
   spells it differently in standings than on its team page, so it stayed in a group of its own.
+- **Player statistics on Windows get past ESPN's frequent failures.** ESPN's feed often answers
+  with an error for a league it served a moment ago, mostly college basketball, and the dialog came
+  up with no leaders. It now asks again, and if ESPN still won't answer, it says so and suggests
+  trying again in a minute.
+- **Times on Windows in summer.** Eastern and Pacific users fell through to Central, and Mountain
+  users to Eastern.
+- **A blank field from ESPN no longer reads out as "None"** in game details, or costs a whole list
+  of games, news or a team's page.
+- **Venue Details has its league lines.** A case mismatch kept them from ever appearing.
 - **A football week on iPhone no longer fails to load because of one blank game.** ESPN's list for
   week 8 of college football in 2025 has an empty entry in it, which lost the whole week.
 
