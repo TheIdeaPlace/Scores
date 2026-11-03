@@ -45,7 +45,8 @@ final class PlayAudioGeometryGridTests: XCTestCase {
             let sport = try XCTUnwrap(Sport(rawValue: item.league), label)
             let result = try XCTUnwrap(PlayAudioGeometry.audioParameters(for: sport, x: item.x, y: item.y), label)
             XCTAssertEqual(result.frequency, item.frequency, accuracy: 0.001, label)
-            XCTAssertEqual(Int((result.duration * 1000).rounded()), item.duration_ms, label)
+            // Python's round() goes to the even number at exactly .5, so 224.5 is 224.
+            XCTAssertEqual(Int((result.duration * 1000).rounded(.toNearestOrEven)), item.duration_ms, label)
             // Windows' balance runs 0 to 1, iOS's pan -1 to 1.
             XCTAssertEqual((Double(result.pan) + 1) / 2, item.balance, accuracy: 0.0001, label)
             XCTAssertEqual(result.description, item.description, label)

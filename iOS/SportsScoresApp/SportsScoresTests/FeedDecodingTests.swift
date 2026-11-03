@@ -280,20 +280,25 @@ final class ScoreboardDayTests: XCTestCase {
 }
 
 final class RequestShapeTests: XCTestCase {
-    /// ESPN answers `dates=START-END` with a 400 since September 2026. That broke the week
-    /// arrows and the World Cup bracket, and nothing noticed until a bug bash (#70).
-    func testNoRequestUsesADateRange() throws {
+    /// ESPN's scoreboard answers `dates=START-END` with a 400 since September 2026. That
+    /// broke the week arrows and the World Cup bracket, and nothing noticed until a bug
+    /// bash (#70). Transactions is a different endpoint and still takes a range.
+    func testNoScoreboardRequestUsesADateRange() throws {
         let services = Fixtures.repoRoot.appendingPathComponent("iOS/SportsScoresApp/SportsScores/Services")
         let files = try FileManager.default.contentsOfDirectory(at: services, includingPropertiesForKeys: nil)
             .filter { $0.pathExtension == "swift" }
         XCTAssertFalse(files.isEmpty)
         let range = try NSRegularExpression(pattern: #"dates=\\\([^)]*\)-\\\("#)
+        var ranges = 0
         for file in files {
             let lines = try String(contentsOf: file, encoding: .utf8).components(separatedBy: .newlines)
             for (index, line) in lines.enumerated() where !line.trimmingCharacters(in: .whitespaces).hasPrefix("//") {
-                let whole = NSRange(line.startIndex..., in: line)
-                XCTAssertNil(range.firstMatch(in: line, range: whole), "\(file.lastPathComponent):\(index + 1): \(line)")
+                guard range.firstMatch(in: line, range: NSRange(line.startIndex..., in: line)) != nil else { continue }
+                ranges += 1
+                let context = lines[max(0, index - 3)...index].joined(separator: " ")
+                XCTAssertTrue(context.contains("/transactions"), "\(file.lastPathComponent):\(index + 1): \(line)")
             }
         }
+        XCTAssertEqual(ranges, 1, "the pattern should still find the one in fetchTransactions, or it finds nothing")
     }
 }
