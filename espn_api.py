@@ -1451,8 +1451,11 @@ def format_complex_data(key, value):
                 venue_name = venue.get("fullName", venue.get("displayName", "Unknown Venue"))
                 info_parts.append(f"Venue: {venue_name}")
         
-        if value.get("attendance"):
-            info_parts.append(f"Attendance: {value['attendance']:,}")
+        attendance = value.get("attendance")
+        if attendance:
+            # A number when ESPN has one, but don't let any other shape raise.
+            shown = f"{attendance:,}" if isinstance(attendance, (int, float)) else attendance
+            info_parts.append(f"Attendance: {shown}")
         
         # Skip officials here - they're handled interactively in the main game details
         # if "officials" in value and isinstance(value["officials"], list):
@@ -1565,7 +1568,7 @@ def format_complex_data(key, value):
             odds_info = []
             for odd in value[:2]:  # Show first 2
                 if isinstance(odd, dict):
-                    provider = odd.get("provider", {}).get("name", "Unknown")
+                    provider = _as_dict(odd.get("provider")).get("name", "Unknown")
                     details = odd.get("details", "No details")
                     over_under = odd.get("overUnder", "")
                     info = f"• {provider}: {details}"
@@ -1587,7 +1590,7 @@ def format_complex_data(key, value):
             boxscore_info = []
             for team in teams[:2]:
                 if isinstance(team, dict):
-                    team_info = team.get("team", {})
+                    team_info = _as_dict(team.get("team"))
                     name = team_info.get("displayName", "Unknown")
                     stats = team.get("statistics", [])
                     if stats:
