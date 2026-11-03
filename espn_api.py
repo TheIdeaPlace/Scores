@@ -2498,15 +2498,18 @@ def _get_team_record(team_id, league_key):
                 summary = item.get("summary", "0-0")
                 stats = item.get("stats", [])
                 
-                # Extract basic record info
-                try:
-                    # Parse summary like "54-61"
-                    wins, losses = map(int, summary.split("-"))
-                    total_games = wins + losses
-                    win_pct = f"{wins/total_games:.3f}" if total_games > 0 else "0.000"
-                except (ValueError, IndexError):
-                    wins, losses, win_pct = 0, 0, "0.000"
-                
+                # The stats name each number. The summary can't be split blindly:
+                # soccer's "8-0-1" is wins, draws, losses, and football's is wins,
+                # losses, ties. Unpacking three parts into two used to fail, and the
+                # team read 0-0.
+                by_name = {stat.get("name"): stat.get("value") for stat in stats}
+                if all(isinstance(by_name.get(n), (int, float)) for n in ("wins", "losses")):
+                    wins, losses = int(by_name["wins"]), int(by_name["losses"])
+                else:
+                    wins, losses, _ = _record_parts(summary)
+                total_games = wins + losses
+                win_pct = f"{wins/total_games:.3f}" if total_games > 0 else "0.000"
+
                 # Extract streak information from stats
                 streak = ""
                 for stat in stats:
