@@ -191,6 +191,15 @@ def _focus_once_active(dialog, set_focus):
     dialog.showEvent = show_event
 
 
+def _focus_first_table(dialog):
+    """Focus the first table a dialog shows: on its open tab if it has tabs."""
+    tabs = dialog.findChildren(QTabWidget)
+    holder = tabs[0].currentWidget() if tabs else dialog
+    tables = holder.findChildren(AccessibleTable) if holder else []
+    if tables and tables[0].rowCount() > 0:
+        tables[0].setFocus()
+
+
 def _tab_widget_in_layout(layout):
     """The QTabWidget a builder just added to `layout`, or None."""
     for i in range(layout.count()):
@@ -7334,6 +7343,7 @@ class StandingsDetailDialog(WildCardTabsMixin, QDialog):
         self.single_table: StandingsTable | None = None
         
         self.setup_ui()
+        _focus_once_active(self, lambda: _focus_first_table(self))
     
     def setup_ui(self):
         layout = QVBoxLayout()
@@ -8877,6 +8887,7 @@ class StandingsDialog(WildCardTabsMixin, QDialog):
         self.expanded_view = False
         self.division_tables: List[StandingsTable] = []
         self.setup_ui()
+        _focus_once_active(self, lambda: _focus_first_table(self))
     
     def setup_ui(self):
         layout = QVBoxLayout()
@@ -9121,6 +9132,7 @@ class PollsDialog(QDialog):
         self.resize(STANDINGS_DIALOG_WIDTH, STANDINGS_DIALOG_HEIGHT)
         self.tab_widget: QTabWidget | None = None
         self.setup_ui()
+        _focus_once_active(self, lambda: _focus_first_table(self))
     
     def setup_ui(self):
         layout = QVBoxLayout()
@@ -12129,6 +12141,7 @@ class SimpleTeamsDialog(QDialog):
         self.setWindowTitle(f"{league} Teams")
         self.resize(600, 400)
         self.setup_ui()
+        _focus_once_active(self, lambda: _focus_first_table(self))
     
     def setup_ui(self):
         layout = QVBoxLayout()
