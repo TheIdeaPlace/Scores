@@ -144,9 +144,10 @@ def test_a_venue_knows_its_home_team(espn):
     assert any(venue["home_teams"] for venue in venues.values())
 
 
-@gap("VenueService only knows nfl, nba, mlb, nhl and ncaaf among the league keys scores.py "
-     "sends, so college basketball and the rest always read \"No venue data available\".")
-@pytest.mark.parametrize("league", ["ncaam", "ncaawb", "wnba", "ncaah"])
+@gap("The Venues item is offered for nine leagues (scores.py _add_common_sections), and "
+     "VenueService knows only nfl, nba, mlb, nhl and ncaaf among the keys it sends, so college "
+     "basketball and hockey always read \"No venue data available\".")
+@pytest.mark.parametrize("league", ["ncaam", "ncaawb", "ncaah", "ncaawh"])
 def test_every_league_with_venues_is_mapped(league):
     assert league in VenueService().leagues
 
