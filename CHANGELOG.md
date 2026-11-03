@@ -52,7 +52,6 @@ Found in a bug bash with NVDA on football, hockey and basketball.
   game" is no longer the game just played. Game Wrap Up no longer replaces names with "\1".
 - **Plays and Drives** open in the tree. The same drive no longer appears twice in a live football
   game, and drive rows lost their emoji.
-
 - **College basketball plays with no real location** no longer read "at the rim" or play a tone,
   on Windows or iOS. ESPN marks a substitution, timeout, free throw or rebound with one fixed spot
   under the basket. The NBA and WNBA use that spot for real tips and dunks, so they keep it.
@@ -83,6 +82,10 @@ build, but not yet on a device or with VoiceOver.
   Shootouts don't show a false score, and "scoring" no longer counts missed college shots.
 - **Team hub.** Overall records appear for the NFL, and NHL records include overtime losses. "Next"
   is never a game already played. The Field Tour button only appears for a park the app has.
+
+### Known issues
+- College basketball fouls read and sound as if they happened at the far end of the court, on
+  Windows and iOS: a foul under the basket can read "deep, 66 feet out". See #123.
 
 ### In Progress
 - **Game Wrap Up Feature**: ESPN text processing and game story extraction (under construction)
