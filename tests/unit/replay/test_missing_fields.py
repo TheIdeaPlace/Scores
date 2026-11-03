@@ -58,6 +58,19 @@ def venue_facts():
     return [service.get_venue_details(venue_id, "mlb") for venue_id in service.get_venues_for_league("mlb")]
 
 
+def scoreboard_with_one_team():
+    """A real NWSL board with the same team in both games, as the WNBA and soccer
+    schedule path reads it, a month at a time."""
+    data = load("scoreboard_NWSL.json")
+    for event in data["events"]:
+        event["competitions"][0]["competitors"][0]["team"]["id"] = "TEAM"
+    return data
+
+
+def scoreboard_schedule():
+    return espn_api.parse_schedule_from_api(f"{espn_api.BASE_URL}/soccer/usa.nwsl/scoreboard", "TEAM", datetime.datetime(2026, 10, 3))
+
+
 def live_golf():
     """The saved tournament hadn't started; get_live_golf_tournament only reads one in progress."""
     data = load("golf_scoreboard_PGA.json")
@@ -76,6 +89,7 @@ CASES = [
     case("get_team_schedule NBA", lambda: espn_api.get_team_schedule("NBA", "15"), "schedule_NBA_15.json", "/schedule"),
     case("get_team_schedule MLB", lambda: espn_api.get_team_schedule("MLB", "10"), "schedule_MLB_10.json", "/schedule"),
     case("get_team_schedule NCAAM", lambda: espn_api.get_team_schedule("NCAAM", "275"), "schedule_NCAAM_275.json", "/schedule"),
+    case("parse_schedule_from_api", scoreboard_schedule, scoreboard_with_one_team, "/scoreboard"),
     case("game details NFL", lambda: espn_api.extract_meaningful_game_info(espn_api.get_game_details("NFL", "1")),
          "details_NFL_pieces.json", "/summary"),
     case("game details NCAAH", lambda: espn_api.extract_meaningful_game_info(espn_api.get_game_details("NCAAH", "1")),
@@ -141,3 +155,22 @@ def test_no_single_bad_field_raises_or_reads_none(espn, call, fixture, route, ot
         if problems:
             failures.append(f"{description}: {problems[:3]}")
     assert not failures, "\n".join(failures[:40])
+
+
+def test_a_bad_game_on_the_scoreboard_schedule_path_keeps_the_next_one(espn):
+    """Everything here runs inside one try, so anything that raises loses this game and
+    every later one in the month, and comes back as [] with no sign of why."""
+    served = {}
+    espn.on("/scoreboard", lambda url: served["payload"])
+    real = scoreboard_with_one_team()
+    second_game = real["events"][1]["id"]
+    served["payload"] = real
+    assert second_game in {game["game_id"] for game in scoreboard_schedule()}
+
+    lost = []
+    for description, changed in mutations(real):
+        if description.startswith("events.0"):
+            served["payload"] = changed
+            if second_game not in {game["game_id"] for game in scoreboard_schedule()}:
+                lost.append(description)
+    assert not lost, lost

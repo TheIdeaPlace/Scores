@@ -602,25 +602,27 @@ def parse_schedule_from_api(url, team_id, today, season=None):
         resp = _http_get(url)
         if resp.status_code == 200:
             data = resp.json()
-            events = data.get("events", [])
+            events = _dicts(data.get("events"))
             
             for event in events:
-                competitions = event.get("competitions", [])
+                competitions = _dicts(event.get("competitions"))
                 if not competitions:
                     continue
                 
                 comp = competitions[0]
-                competitors = comp.get("competitors", [])
+                competitors = _dicts(comp.get("competitors"))
                 
                 # Check if this team is playing
                 team_playing = False
+                is_home = False
                 home_team = away_team = None
                 home_score = away_score = ""
                 
                 for competitor in competitors:
-                    team_info = competitor.get("team", {})
+                    team_info = _as_dict(competitor.get("team"))
                     if team_info.get("id") == team_id:
                         team_playing = True
+                        is_home = competitor.get("homeAway") == "home"
                     
                     if competitor.get("homeAway") == "home":
                         home_team = team_info.get("displayName") or "Unknown"
@@ -649,8 +651,8 @@ def parse_schedule_from_api(url, team_id, today, season=None):
                         event_date = today
                     
                     # Get game details
-                    status = comp.get("status", {})
-                    status_type = status.get("type", {})
+                    status = _as_dict(comp.get("status"))
+                    status_type = _as_dict(status.get("type"))
                     game_status = status_type.get("description") or "Unknown"
                     
                     # Get start time
@@ -660,7 +662,7 @@ def parse_schedule_from_api(url, team_id, today, season=None):
                     start_time = convert_espn_time_to_local(start_time)
                     
                     # Get venue
-                    venue = comp.get("venue", {})
+                    venue = _as_dict(comp.get("venue"))
                     venue_name = venue.get("fullName") or "TBD"
                     
                     # Determine date display format - include year for historical seasons
@@ -672,8 +674,8 @@ def parse_schedule_from_api(url, team_id, today, season=None):
                     schedule.append({
                         "date": event_date.strftime("%Y-%m-%d"),
                         "date_display": date_display,
-                        "opponent": away_team if home_team and team_id in [c.get("team", {}).get("id") for c in competitors if c.get("homeAway") == "home"] else home_team,
-                        "home_away": "vs" if any(c.get("homeAway") == "home" and c.get("team", {}).get("id") == team_id for c in competitors) else "@",
+                        "opponent": (away_team if is_home else home_team) or "Unknown",
+                        "home_away": "vs" if is_home else "@",
                         "time": start_time,
                         "status": game_status,
                         "venue": venue_name,
