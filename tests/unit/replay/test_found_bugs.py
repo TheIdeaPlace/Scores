@@ -2,9 +2,35 @@
 are in test_known_gaps.py."""
 from datetime import datetime
 
+import pytest
+
 import espn_api
+import timezone_utils
 
 from .support import load
+
+
+@pytest.mark.parametrize("offset,is_dst,zone", [
+    (-4, True, "US/Eastern"), (-5, False, "US/Eastern"),
+    (-5, True, "US/Central"), (-6, False, "US/Central"),
+    (-6, True, "US/Mountain"), (-7, False, "US/Mountain"),
+    (-7, True, "US/Pacific"), (-8, False, "US/Pacific"),
+    (1, False, "US/Central"),  # outside the US: the existing default
+])
+def test_the_zone_comes_from_the_standard_time_offset(offset, is_dst, zone):
+    """Daylight saving added an hour where it should take one off, so Eastern at -4
+    became -3, matched nothing and fell through to Central all summer."""
+    assert timezone_utils._zone_for_offset(offset, is_dst) == zone
+
+
+@pytest.mark.parametrize("offset,is_dst,local_time", [
+    (-4, True, "7:00 PM"),   # New York in summer stays at the time ESPN gave
+    (-5, True, "6:00 PM"),   # Chicago
+    (-7, True, "4:00 PM"),   # Los Angeles
+])
+def test_summer_game_times_end_to_end(monkeypatch, offset, is_dst, local_time):
+    monkeypatch.setattr(timezone_utils, "_local_offset_and_dst", lambda: (offset, is_dst))
+    assert timezone_utils.convert_espn_time_to_local("7:00 PM EDT").startswith(local_time + " ")
 
 
 def test_golf_schedule_asks_for_the_year_not_a_range(espn, freeze_now):
