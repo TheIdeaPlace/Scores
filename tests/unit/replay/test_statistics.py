@@ -212,6 +212,12 @@ class TestParsing:
         result = parser([{"name": "era", "leaders": ["text", {"athlete": {}}, {"athlete": {"name": "B"}, "value": "n/a"}]}])
         assert result == [{"category": "Era", "stats": [{"player_name": "B", "team": "", "value": "n/a", "stat_name": "Era"}]}]
 
+    def test_soccers_list_of_leaders_is_not_read_yet(self):
+        """Real shape, from /soccer/eng.1/statistics. Not built: it comes out as no players."""
+        data = {"stats": [{"name": "goalsLeaders", "displayName": "Goals",
+                           "leaders": [{"athlete": {"displayName": "A"}, "value": 9.0}]}]}
+        assert espn_api._parse_statistics_data(data) == NOTHING
+
     @pytest.mark.parametrize("data", [{}, "text", [], {"stats": None}, {"stats": {"categories": None}}, load("statistics_NBA.json")])
     def test_no_stats_key_is_nothing(self, data):
         assert espn_api._parse_statistics_data(data) == NOTHING

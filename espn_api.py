@@ -2913,7 +2913,9 @@ def get_team_statistics(league_key):
 
 def _parse_statistics_data(data):
     """Player leaders from ESPN's statistics endpoint: stats.categories, a list. A
-    league with nothing to show has no stats key at all."""
+    league with nothing to show has no stats key at all. Soccer leagues send stats as a
+    list of leaders instead (goalsLeaders, assistsLeaders), which isn't read here and
+    comes out as no players."""
     categories = _dicts(_as_dict(_as_dict(data).get("stats")).get("categories"))
     return {
         "player_stats": _parse_generic_player_stats(categories),
