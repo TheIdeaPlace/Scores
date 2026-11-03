@@ -10,7 +10,7 @@ from espn_api import scoreboard_months
 
 class VenueService:
     """Service for retrieving and managing venue data"""
-    
+
     def __init__(self):
         self.venue_cache = {}
         self.base_url = "https://site.api.espn.com/apis/site/v2/sports"
@@ -23,23 +23,23 @@ class VenueService:
             "ncaaf": "football/college-football",  # Map NCAAF to college-football
             "mens-college-basketball": "basketball/mens-college-basketball"
         }
-    
+
     def get_venues_for_league(self, league_key: str) -> Dict[str, Dict]:
         """Get all venues for a specific league"""
-        
+
         if league_key in self.venue_cache:
             return self.venue_cache[league_key]
-        
+
         venues = {}
         league_path = self.leagues.get(league_key)
         if not league_path:
             return venues
-        
+
         # Get venues from recent games (more comprehensive than teams endpoint)
         today = datetime.now()
         start_date = today - timedelta(days=60)  # Look back 2 months
         end_date = today + timedelta(days=30)   # Look ahead 1 month
-        
+
         try:
             # ESPN rejects dates=START-END ranges, so gather month by month.
             events = []
@@ -49,13 +49,13 @@ class VenueService:
                 if resp.status_code == 200:
                     events.extend(resp.json().get('events', []))
             if events:
-                
+
                 for event in events:
                     competitions = event.get('competitions', [])
                     if competitions:
                         comp = competitions[0]
                         venue = comp.get('venue', {})
-                        
+
                         venue_id = venue.get('id')
                         if venue_id and venue_id not in venues:
                             venues[venue_id] = {
@@ -66,40 +66,35 @@ class VenueService:
                                 'indoor': venue.get('indoor', False),
                                 'home_teams': []
                             }
-                            
+
                             # Skip enhanced details for now to avoid timeout issues
                             # self._enhance_venue_details(venue_id, venues[venue_id], league_path, event.get('id'))
-                
+
                 # Find home teams for each venue
                 self._find_home_teams(venues, league_key)
-                
+
                 self.venue_cache[league_key] = venues
-                
+
         except Exception as e:
             print(f"Error getting venues for {league_key}: {e}")
-            
-        # If no venues found, add some demo venues for testing
-        if not venues and league_key.lower() in ['nfl', 'mlb', 'nba']:
-            venues = self._get_demo_venues(league_key.lower())
-            self.venue_cache[league_key] = venues
-            
+
         return venues
-    
+
     def _enhance_venue_details(self, venue_id: str, venue_data: Dict, league_path: str, event_id: str):
         """Get enhanced venue details from game details"""
-        
+
         if not event_id:
             return
-            
+
         detail_url = f"{self.base_url}/{league_path}/summary?event={event_id}"
-        
+
         try:
             resp = requests.get(detail_url, timeout=5)
             if resp.status_code == 200:
                 data = resp.json()
                 if 'gameInfo' in data and 'venue' in data['gameInfo']:
                     detailed_venue = data['gameInfo']['venue']
-                    
+
                     # Add enhanced details
                     venue_data.update({
                         'grass': detailed_venue.get('grass'),
@@ -108,26 +103,26 @@ class VenueService:
                         'images': detailed_venue.get('images', []),
                         'guid': detailed_venue.get('guid')
                     })
-                    
+
         except (requests.RequestException, KeyboardInterrupt) as e:
             if isinstance(e, KeyboardInterrupt):
                 raise
             pass  # Skip if can't get details
         except Exception:
             pass  # Skip if can't get details
-    
+
     def _find_home_teams(self, venues: Dict, league_key: str):
         """Find which teams play home games at each venue"""
-        
+
         # Get team data to match venues with home teams
         try:
             league_path = self.leagues.get(league_key)
             if not league_path:
                 return
-                
+
             url = f"{self.base_url}/{league_path}/teams"
             resp = requests.get(url, timeout=10)
-            
+
             if resp.status_code == 200:
                 data = resp.json()
                 sports = data.get('sports', [])
@@ -135,13 +130,13 @@ class VenueService:
                     leagues = sports[0].get('leagues', [])
                     if leagues:
                         teams = leagues[0].get('teams', [])
-                        
+
                         # Match teams to venues
                         for team_entry in teams:
                             team = team_entry.get('team', {})
                             venue = team.get('venue', {})
                             venue_id = venue.get('id')
-                            
+
                             if venue_id and venue_id in venues:
                                 team_info = {
                                     'name': team.get('displayName', 'Unknown'),
@@ -150,95 +145,19 @@ class VenueService:
                                     'id': team.get('id')
                                 }
                                 venues[venue_id]['home_teams'].append(team_info)
-                                
+
         except Exception:
             pass  # Skip if can't get team data
-    
-    def _get_demo_venues(self, league_key: str) -> Dict:
-        """Get demo venues for testing when no live games available"""
-        demo_venues = {}
-        
-        if league_key == 'nfl':
-            demo_venues = {
-                '3883': {
-                    'id': '3883',
-                    'name': 'Lambeau Field',
-                    'city': 'Green Bay',
-                    'state': 'Wisconsin',
-                    'indoor': False,
-                    'home_teams': ['Green Bay Packers'],
-                    'capacity': 81441,
-                    'grass': True
-                },
-                '3839': {
-                    'id': '3839',
-                    'name': 'AT&T Stadium',
-                    'city': 'Arlington',
-                    'state': 'Texas',
-                    'indoor': True,
-                    'home_teams': ['Dallas Cowboys'],
-                    'capacity': 80000,
-                    'grass': False
-                }
-            }
-        elif league_key == 'mlb':
-            demo_venues = {
-                '15': {
-                    'id': '15',
-                    'name': 'Wrigley Field',
-                    'city': 'Chicago',
-                    'state': 'Illinois',
-                    'indoor': False,
-                    'home_teams': ['Chicago Cubs'],
-                    'capacity': 41649,
-                    'grass': True
-                },
-                '19': {
-                    'id': '19',
-                    'name': 'Fenway Park',
-                    'city': 'Boston',
-                    'state': 'Massachusetts',
-                    'indoor': False,
-                    'home_teams': ['Boston Red Sox'],
-                    'capacity': 37755,
-                    'grass': True
-                }
-            }
-        elif league_key == 'nba':
-            demo_venues = {
-                '839': {
-                    'id': '839',
-                    'name': 'Madison Square Garden',
-                    'city': 'New York',
-                    'state': 'New York',
-                    'indoor': True,
-                    'home_teams': ['New York Knicks'],
-                    'capacity': 20789,
-                    'grass': False
-                },
-                '839': {
-                    'id': '314',
-                    'name': 'Staples Center',
-                    'city': 'Los Angeles',
-                    'state': 'California',
-                    'indoor': True,
-                    'home_teams': ['Los Angeles Lakers'],
-                    'capacity': 18997,
-                    'grass': False
-                }
-            }
-            
-        return demo_venues
 
     def get_venue_details(self, venue_id: str, league_key: str) -> Dict:
         """Get comprehensive details for a specific venue"""
-        
+
         venues = self.get_venues_for_league(league_key)
         venue = venues.get(venue_id)
-        
+
         if not venue:
             return None
-        
+
         # Create a comprehensive venue profile
         details = {
             'basic_info': {
@@ -258,29 +177,29 @@ class VenueService:
             },
             'home_teams': venue.get('home_teams', [])
         }
-        
+
         # Add interesting facts based on available data
         details['interesting_facts'] = self._generate_interesting_facts(venue, league_key)
-        
+
         return details
-    
+
     def _generate_interesting_facts(self, venue: Dict, league_key: str) -> List[str]:
         """Generate interesting facts about a venue"""
-        
+
         facts = []
-        
+
         # Surface type facts
         if venue.get('grass') is True:
             facts.append("Natural grass playing surface")
         elif venue.get('grass') is False:
             facts.append("Artificial turf playing surface")
-        
+
         # Indoor/outdoor facts
         if venue.get('indoor'):
             facts.append("Indoor stadium with climate control")
         else:
             facts.append("Open-air stadium exposed to weather")
-        
+
         # Capacity facts (if available)
         capacity = venue.get('capacity')
         if capacity:
@@ -294,7 +213,7 @@ class VenueService:
                     facts.append(f"Intimate venue seating {cap_num:,} fans")
             except (ValueError, TypeError):
                 pass
-        
+
         # League-specific facts
         if league_key == "MLB":
             facts.append("Major League Baseball venue")
@@ -303,27 +222,27 @@ class VenueService:
                 facts.append("Classic baseball 'Field' naming")
             elif "Park" in venue_name:
                 facts.append("Traditional baseball 'Park' naming")
-        
+
         elif league_key == "NFL":
             facts.append("National Football League venue")
             if venue.get('indoor'):
                 facts.append("Weather never affects games here")
-        
+
         elif league_key == "NBA":
             facts.append("National Basketball Association venue")
-        
+
         elif league_key == "NHL":
             facts.append("National Hockey League venue")
-        
+
         elif league_key in ["NCAAF", "college-football"]:
             facts.append("College football venue")
-        
+
         # Location facts
         city = venue.get('city', '')
         state = venue.get('state', '')
         if city and state:
             facts.append(f"Located in {city}, {state}")
-        
+
         # Home team facts
         home_teams = venue.get('home_teams', [])
         if home_teams:
@@ -332,7 +251,7 @@ class VenueService:
                 facts.append(f"Home of the {team_name}")
             else:
                 facts.append(f"Shared by {len(home_teams)} teams")
-        
+
         return facts
 
 # Global instance

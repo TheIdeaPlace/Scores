@@ -67,7 +67,7 @@ class TestOtherLeagues:
         assert text == "Ducks 2 at Jets 0 [End of 2nd] | Goal by Someone"
 
     def test_long_play_is_cut_at_a_word_and_marked(self):
-        play = "Golden State Valkyries Full timeout called with the shot clock running down"
+        play = "Golden State Valkyries Full timeout called with the shot clock running down " * 3
         text = lpf.format_live_game("WNBA", TEAMS, "", play, "Valkyries 8 at Aces 14")
         tail = text.split(" | ", 1)[1]
         assert tail.endswith("...")

@@ -9,7 +9,8 @@ be tested directly.
 import re
 
 # Plays in leagues without an enhanced display are cut to this many characters.
-PLAY_LIMIT = 50
+# Long enough for an assist or a second name. Cutting mid-name loses the point of the play.
+PLAY_LIMIT = 140
 
 # The clock at the start of a status like "12:57 - 4th".
 _STATUS_CLOCK = re.compile(r"^(\d{1,2}:\d{2})\b")

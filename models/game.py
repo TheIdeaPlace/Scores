@@ -43,7 +43,12 @@ class GameData:
     def was_never_played(self) -> bool:
         """True for games with no score worth showing (scheduled, postponed, cancelled)."""
         if self.status_name:
-            return self.status_name in self.NOT_PLAYED_STATUS_NAMES
+            if self.status_name in self.NOT_PLAYED_STATUS_NAMES:
+                return True
+            # A delayed game that hasn't started reads "0 at 0" otherwise. One delayed
+            # after it began has a real score, and an all-zero one is rare enough.
+            return self.status_name == "STATUS_DELAYED" and all(
+                str(t.get("score") or "0") == "0" for t in self.teams)
         # Older callers build GameData without status_name; fall back to the
         # display text ESPN puts in `description`.
         return bool(self.status) and self.status.lower() in self.NOT_PLAYED_DESCRIPTIONS
@@ -134,7 +139,9 @@ class GameData:
                 # Fallback: home_away not available, use teams as-is
                 display_parts = [team_display(t) for t in self.teams]
             
-            parts.append(" at ".join(display_parts))
+            # At a neutral site neither team is at the other's place.
+            neutral = ((self.raw or {}).get("competitions") or [{}])[0].get("neutralSite")
+            parts.append((" vs " if neutral else " at ").join(display_parts))
         else:
             parts.append(self.name)
         
