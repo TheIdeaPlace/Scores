@@ -1220,3 +1220,99 @@ class TestAppScores:
         report = v.Report()
         v.check_app_scores(report, league("NFL"), played)
         assert "no week number" in detail(report, "App: game list")
+
+
+class TestRemainingChecks:
+    def test_a_tour_with_no_schedule_fails(self, monkeypatch):
+        import espn_api
+        monkeypatch.setattr(espn_api, "get_golf_schedule", lambda t: [])
+        monkeypatch.setattr(espn_api, "get_golf_leaderboard", lambda t: None)
+        report = v.Report()
+        v.check_golf(FakeHttp(), report)
+        assert FAIL_IN(report, "App: golf schedule")
+        assert v.WARN in statuses(report, "App: golf leaderboard")
+
+    def test_a_tournament_with_no_name_fails(self, monkeypatch):
+        import espn_api
+        monkeypatch.setattr(espn_api, "get_golf_schedule", lambda t: [{"name": "x"}])
+        monkeypatch.setattr(espn_api, "get_golf_leaderboard", lambda t: {"players": []})
+        report = v.Report()
+        v.check_golf(FakeHttp(), report)
+        assert FAIL_IN(report, "App: golf leaderboard")
+
+    @pytest.mark.parametrize("board", [{"players": []}, {"players": [{"name": ""}]}, None])
+    def test_a_fantasy_board_with_no_real_players_fails(self, monkeypatch, board):
+        import espn_api
+        monkeypatch.setattr(espn_api, "get_fantasy_cheatsheet", lambda **k: board)
+        report = v.Report()
+        v.check_fantasy(FakeHttp(), report)
+        assert FAIL_IN(report, "App: cheatsheet")
+
+    def test_the_espn_page_blocking_a_server_is_no_news(self, monkeypatch):
+        import espn_api
+        finished = event()
+        monkeypatch.setattr(v, "find_recent_finals", lambda *a, **k: v.Finals([finished], "u", {}))
+        monkeypatch.setattr(espn_api, "_fetch_web_gamepackage_plays", lambda *a: [])
+        report = v.Report()
+        v.check_hockey_web_page(FakeHttp(), report)
+        assert statuses(report, "espn.com game page") == [v.PASS]
+
+    def test_the_espn_page_code_raising_is_worth_a_look(self, monkeypatch):
+        import espn_api
+
+        def boom(*a):
+            raise ValueError("bad")
+
+        monkeypatch.setattr(v, "find_recent_finals", lambda *a, **k: v.Finals([event()], "u", {}))
+        monkeypatch.setattr(espn_api, "_fetch_web_gamepackage_plays", boom)
+        report = v.Report()
+        v.check_hockey_web_page(FakeHttp(), report)
+        assert statuses(report, "espn.com game page") == [v.WARN]
+
+    @pytest.mark.parametrize("answer", [(500, None), (200, {"sports": []}), (200, {"sports": [{"leagues": [{"teams": []}]}]})])
+    def test_a_team_list_that_is_gone(self, answer):
+        report = v.Report()
+        assert v.check_team_list(FakeHttp(default=answer), report, league("NBA")) == set()
+        assert FAIL_IN(report, "Teams")
+
+    def test_app_rankings_with_a_nameless_team(self, monkeypatch):
+        import espn_api
+        monkeypatch.setattr(espn_api, "get_rankings", lambda k: {"polls": [{"name": "AP", "ranks": [
+            {"current": 1, "team": {"abbreviation": "D"}}]}]})
+        report = v.Report()
+        v.check_rankings(FakeHttp(default=(200, {"rankings": [1]})), report, league("NCAAM"), True)
+        assert FAIL_IN(report, "App: rankings")
+
+    def test_app_news_empty_when_espn_has_it(self, monkeypatch):
+        import espn_api
+        monkeypatch.setattr(espn_api, "get_news", lambda k: [])
+        report = v.Report()
+        v.check_news(FakeHttp(default=(200, {"articles": [1]})), report, league("NBA"))
+        assert FAIL_IN(report, "App: news")
+
+    def test_world_cup_standings_the_app_can_not_read(self, monkeypatch):
+        import espn_api
+        data = {"competitions": [{"matchNumber": 99}], "children": [{"standings": {"entries": [{"team": {}}]}}]}
+        monkeypatch.setattr(espn_api, "get_world_cup_standings", lambda *a: [])
+        report = v.Report()
+        v.check_world_cup(FakeHttp(default=(200, data)), report)
+        assert FAIL_IN(report, "App: standings")
+
+    def test_app_standings_lose_a_team_or_a_division(self, monkeypatch):
+        import espn_api
+        data = load("standings_NFL.json")
+        entries = v.standings_entries(data)
+        rows = []
+        for entry in entries:
+            total = next(s for s in entry["stats"] if s.get("type") == "total")
+            wins, losses = v.parse_record(total["summary"])
+            rows.append({"team_name": entry["team"]["displayName"], "wins": wins, "losses": losses, "division": "All"})
+        monkeypatch.setattr(espn_api, "get_standings", lambda k: rows)
+        report = v.Report()
+        v.check_standings(FakeHttp(default=(200, data)), report, league("NFL"), True)
+        assert "divisions" in detail(report, "App: standings")
+
+        monkeypatch.setattr(espn_api, "get_standings", lambda k: rows[1:])
+        report = v.Report()
+        v.check_standings(FakeHttp(default=(200, data)), report, league("NFL"), True)
+        assert "missing" in detail(report, "App: standings")
