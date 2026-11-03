@@ -1,0 +1,112 @@
+{
+ "rankings": [
+  {
+   "name": "AP Top 25",
+   "shortName": "AP Poll",
+   "type": "ap",
+   "headline": "2026 NCAA Football Rankings - AP Poll Week 10",
+   "shortHeadline": "2026 AP Poll: Week 10",
+   "ranks": [
+    {
+     "current": 1,
+     "previous": 1,
+     "points": 1740.0,
+     "firstPlaceVotes": 62,
+     "trend": "-",
+     "recordSummary": "8-0",
+     "team": {
+      "id": "2390",
+      "location": "Miami",
+      "name": "Hurricanes",
+      "nickname": "Miami",
+      "abbreviation": "MIA"
+     }
+    },
+    {
+     "current": 2,
+     "previous": 3,
+     "points": 1648.0,
+     "firstPlaceVotes": 7,
+     "trend": "+1",
+     "recordSummary": "7-1",
+     "team": {
+      "id": "61",
+      "location": "Georgia",
+      "name": "Bulldogs",
+      "nickname": "Georgia",
+      "abbreviation": "UGA"
+     }
+    },
+    {
+     "current": 3,
+     "previous": 6,
+     "points": 1540.0,
+     "firstPlaceVotes": 1,
+     "trend": "+3",
+     "recordSummary": "8-0",
+     "team": {
+      "id": "254",
+      "location": "Utah",
+      "name": "Utes",
+      "nickname": "Utah",
+      "abbreviation": "UTAH"
+     }
+    }
+   ]
+  },
+  {
+   "name": "AFCA Coaches Poll",
+   "shortName": "AFCA Coaches Poll",
+   "type": "usa",
+   "headline": "2026 NCAA Football Rankings - AFCA Coaches Poll Week 10",
+   "shortHeadline": "2026 AFCA Coaches Poll: Week 10",
+   "ranks": [
+    {
+     "current": 1,
+     "previous": 1,
+     "points": 1818.0,
+     "firstPlaceVotes": 68,
+     "trend": "-",
+     "recordSummary": "8-0",
+     "team": {
+      "id": "2390",
+      "location": "Miami",
+      "name": "Hurricanes",
+      "nickname": "Miami",
+      "abbreviation": "MIA"
+     }
+    },
+    {
+     "current": 2,
+     "previous": 3,
+     "points": 1719.0,
+     "firstPlaceVotes": 4,
+     "trend": "+1",
+     "recordSummary": "7-1",
+     "team": {
+      "id": "61",
+      "location": "Georgia",
+      "name": "Bulldogs",
+      "nickname": "Georgia",
+      "abbreviation": "UGA"
+     }
+    },
+    {
+     "current": 3,
+     "previous": 4,
+     "points": 1597.0,
+     "firstPlaceVotes": 0,
+     "trend": "+1",
+     "recordSummary": "8-1",
+     "team": {
+      "id": "84",
+      "location": "Indiana",
+      "name": "Hoosiers",
+      "nickname": "Indiana",
+      "abbreviation": "IU"
+     }
+    }
+   ]
+  }
+ ]
+}

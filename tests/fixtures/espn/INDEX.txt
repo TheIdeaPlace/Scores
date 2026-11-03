@@ -37,3 +37,24 @@ roster_NFL_9.json	14 KB	height and weight are floats: 6.0'5.0"
 roster_NBA_15.json	12 KB	flat shape, floats
 team_NHL_utah.json	20 KB	record summary omits OTL; groups has no name; no venue, no coaches
 bowls_NCAAF.json	13 KB	competition type.id is a string: every bowl lands in Other Bowls
+team_NFL_9.json	4 KB	venue under franchise; nextEvent already final; OTLosses with a capital; no division name
+team_EPL_359.json	6 KB	soccer: record summary is W-D-L, 8-0-1 is 8 wins and 1 loss
+team_WNBA_8.json	2 KB	two-part record; streak is a negative value
+teams_NFL.json	1 KB	team list, trimmed to 3: no venue on these, unlike a single team
+teams_NBA.json	1 KB	team list, trimmed to 3
+teams_EPL.json	1 KB	team list, trimmed to 3; Arsenal is id 359
+news_NFL.json	1 KB	league news, 2 articles, web and mobile links
+team_news_NFL_9.json	1 KB	/news?team=9, 2 articles. /teams/9/news answers 200 with {}
+transactions_NFL.json	1 KB	league-wide: team on each item; pageCount 407
+transactions_NFL_9.json	1 KB	team-filtered: no team on the items
+rankings_NCAAF.json	2 KB	AP and Coaches polls, 3 teams each
+draft_NFL_2026.json	4 KB	pieces: draft, status, rounds (2, 2 picks each), athletes and colleges by their $ref URLs
+team_stats_NBA_15.json	1 KB	results.stats.categories, 2 categories, 3 stats each
+golf_schedule_PGA.json	5 KB	dates=2026: a cancelled event with no competitors, a final, a scheduled one
+golf_scoreboard_PGA.json	2 KB	current scoreboard, tournament not started, 3 golfers
+worldcup_standings_WC2026.json	10 KB	2 groups of 4; note.description is the advancement text; a stat with value null
+worldcup_scoreboard_20260620.json	3 KB	2 group games, STATUS_FULL_TIME
+scoreboard_NWSL.json	3 KB	2 games from dates=202610, used by the month-by-month schedule path
+standings_MLB.json	14 KB	AL and NL trimmed to 5 and 3 teams, CHW and ATH included; streak is a signed value
+mlb_leaders_homeRuns.json	1 KB	statsapi.mlb.com leaders, 3 players; team has a name but no abbreviation
+schedule_MLB_10.json	4 KB	3 finals; score is a dict with displayValue

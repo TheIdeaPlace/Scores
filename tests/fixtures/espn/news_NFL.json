@@ -1,0 +1,31 @@
+{
+ "header": "NFL News",
+ "articles": [
+  {
+   "headline": "Knockout league pickups: Bijan Robinson, Parker Washington lead players to add",
+   "description": "Listing the most common players on eliminated teams and advising on which free agents to pursue ... and for how much.",
+   "published": "2026-11-03T18:13:34Z",
+   "byline": "Tristan H. Cockcroft",
+   "type": "Story",
+   "links": {
+    "web": {
+     "href": "https://www.espn.com/fantasy/football/story/_/id/50370154/knockout-waiver-wire-free-agent-pickups-week-9"
+    },
+    "mobile": {
+     "href": "http://m.espn.go.com/wireless/story?storyId=50370154"
+    }
+   }
+  },
+  {
+   "headline": "Bengals vs. Falcons in Spain. Bills vs. Vikings on Monday Night. Don't miss it on ESPN",
+   "description": "Bengals vs. Falcons in Spain. Bills vs. Vikings on Monday Night. Don't miss it on ESPN",
+   "published": "2026-11-03T18:24:20Z",
+   "type": "Media",
+   "links": {
+    "web": {
+     "href": "https://www.espn.com/video/clip/_/id/50370026/bengals-vs-falcons-spain-bills-vs-vikings-monday-night-miss-espn"
+    }
+   }
+  }
+ ]
+}
