@@ -1,17 +1,24 @@
 name: Validate ESPN data
 
-# Calls every endpoint either app uses, checks the shape each relies on, and runs the
-# real Windows parsers on the live data. Nothing documents these feeds and they change
-# without notice: ESPN began rejecting date ranges in September 2026, and the iPhone's
-# football week arrows stayed broken until a bug bash found it.
+# Checks the feeds both apps rely on and runs the real Windows parsers on the live data.
+# tools/validate_espn.py says exactly what's covered, and what's a failure rather than a
+# quiet off-season. Nothing documents these feeds and they change without notice: ESPN
+# began rejecting date ranges in September 2026, and the iPhone's football week arrows
+# stayed broken until a bug bash found it.
 #
 # Run it any time from the Actions tab, or:
 #     gh workflow run validate-espn.yml
 #     gh workflow run validate-espn.yml -f league=NCAAM
 #
-# It only reads, and needs no secrets for that. The report is on the run's summary page
-# and kept as an artifact. A failed nightly run opens an issue, or adds to the open one.
-# tools/validate_espn.py is the same check to run by hand; it opens no windows.
+# The report is on the run's summary page and kept as an artifact. A failed nightly run
+# opens an issue, or adds to the open one. The next good nightly run closes it.
+#
+# GitHub turns off scheduled workflows after 60 days with no activity in the repo. If the
+# nightly runs have stopped, re-enable this one on the Actions tab.
+#
+# To try the alarm, which only ever runs for real at night:
+#     gh workflow run validate-espn.yml -f alarm_test=fail       opens the issue
+#     gh workflow run validate-espn.yml -f alarm_test=recover    closes it, if the run passes
 
 on:
   workflow_dispatch:
@@ -20,6 +27,15 @@ on:
         description: "Just one league, such as NCAAM or NHL. Blank checks everything."
         required: false
         type: string
+      alarm_test:
+        description: "Try the nightly alarm: fail reports a made-up failure, recover acts on a real pass."
+        required: false
+        type: choice
+        default: none
+        options:
+          - none
+          - fail
+          - recover
   schedule:
     # 10:00 UTC, the small hours in the US: last night's games are final by then.
     - cron: '0 10 * * *'
@@ -34,30 +50,33 @@ permissions:
 jobs:
   validate:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
-    permissions:
-      contents: read
-      issues: write
+    # The validator gives up on requests after 15 minutes and still writes its report.
+    timeout-minutes: 30
     steps:
       - name: Checkout
         uses: actions/checkout@v7
+        with:
+          persist-credentials: false
 
       - name: Set up Python
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@v7
         with:
           python-version: '3.13'
 
-      # Only what the data layer needs. It doesn't touch Qt.
+      # Only what the data layer needs, at the versions the app ships. It doesn't touch Qt.
       - name: Install dependencies
-        run: pip install requests pytz
+        run: |
+          grep -E '^(requests|pytz)==' requirements.txt > validator-requirements.txt
+          pip install -r validator-requirements.txt
 
       - name: Validate
-        id: validate
         env:
           LEAGUE: ${{ inputs.league }}
+          ALARM_TEST: ${{ inputs.alarm_test }}
         run: |
           args=()
           if [ -n "$LEAGUE" ]; then args+=(--league "$LEAGUE"); fi
+          if [ "$ALARM_TEST" = "fail" ]; then args+=(--fake-failure); fi
           python tools/validate_espn.py "${args[@]}" --report validation-report.md --json validation-results.json
 
       - name: Keep the report
@@ -70,23 +89,52 @@ jobs:
             validation-results.json
           if-no-files-found: warn
 
-      # One open issue, however many nights it takes to fix, rather than one per night.
-      - name: Open or update an issue
-        if: failure() && steps.validate.outcome == 'failure' && github.event_name == 'schedule'
-        env:
-          GH_TOKEN: ${{ github.token }}
-          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+  # Kept apart so that the job running code against live data never holds a write token.
+  # One open issue, however many nights it takes to fix, rather than one per night.
+  alarm:
+    needs: validate
+    if: >-
+      always() && needs.validate.result != 'skipped' &&
+      (github.event_name == 'schedule' ||
+       (github.event_name == 'workflow_dispatch' && inputs.alarm_test != 'none' && inputs.alarm_test != ''))
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+      RESULT: ${{ needs.validate.result }}
+      RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+      LABEL: espn-validation
+    steps:
+      - name: Get the report
+        if: needs.validate.result != 'success'
+        continue-on-error: true
+        uses: actions/download-artifact@v8
+        with:
+          name: validation-report
+
+      - name: Open, update or close the issue
         run: |
-          label=espn-validation
-          gh label create "$label" --color D93F0B --description "The live data check failed" --force
+          existing=$(gh issue list --label "$LABEL" --state open --limit 1 --json number --jq '.[0].number // empty')
+          if [ "$RESULT" = "success" ]; then
+            if [ -n "$existing" ]; then
+              gh issue close "$existing" --comment "The data check passed again: $RUN_URL"
+            fi
+            exit 0
+          fi
+          gh label create "$LABEL" --color D93F0B --description "The live data check failed" --force
           {
-            echo "The nightly data check failed: $RUN_URL"
+            echo "The nightly data check ended in: $RESULT. $RUN_URL"
             echo
-            sed -n '/^## Failed/,/^## Worth a look\|^## Passed/p' validation-report.md | sed '$d'
+            if [ -f validation-report.md ]; then
+              sed -n '/^## Failed/,/^## Worth a look\|^## Passed/p' validation-report.md | sed '$d' | head -c 60000
+            else
+              echo "It left no report, so it was probably cancelled or ran out of time."
+            fi
           } > issue-body.md
-          existing=$(gh issue list --label "$label" --state open --limit 1 --json number --jq '.[0].number // empty')
           if [ -n "$existing" ]; then
             gh issue comment "$existing" --body-file issue-body.md
           else
-            gh issue create --title "The nightly ESPN data check failed" --label "$label" --body-file issue-body.md
+            gh issue create --title "The nightly ESPN data check failed" --label "$LABEL" --body-file issue-body.md
           fi

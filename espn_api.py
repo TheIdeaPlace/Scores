@@ -2867,7 +2867,8 @@ def _college_standing_row(entry, conference):
         "losses": losses,
         "ties": ties,
         "win_percentage": f"{(wins + ties / 2) / games:.3f}" if games else "0.000",
-        "games_back": "—",
+        # College conferences rank by record. A pro league's games back comes straight from ESPN.
+        "games_back": _standing_stat(stats, "gamesbehind").get("displayValue") or "—",
         "conference_record": conf.get("summary") or conf.get("displayValue") or "",
         "division": conference,
         "streak": _standing_stat(stats, "streak").get("displayValue", ""),

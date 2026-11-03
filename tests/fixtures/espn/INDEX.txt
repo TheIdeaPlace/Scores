@@ -12,7 +12,7 @@ standings_NCAAM.json	111 KB	duplicate stat names; last 'wins' is the conference 
 standings_NCAAWB.json	112 KB	same
 standings_NCAAWH.json	14 KB	entries at the root, no children: app falls back to 0-0
 standings_NCAAH.json	27 KB	tiegames stat, three-part overall
-standings_NHL.json	46 KB	otLosses, streak; Utah abbreviation UTAH
+standings_NHL.json	46 KB	otLosses, streak; Utah is UTA here, UTAH on its team page
 standings_NFL.json	39 KB	streak present
 standings_NBA.json	43 KB	streak present
 standings_WNBA.json	42 KB	real standings the app never reads
