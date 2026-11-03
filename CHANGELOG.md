@@ -7,6 +7,52 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+Found in a bug bash with NVDA on football, hockey and basketball.
+
+- **Box scores work in every sport.** Football and hockey showed nothing, and basketball
+  showed only the five players on the floor at the end. Every player is there now, under a
+  tab named for the team and group ("Green Bay Packers Passing", "Duke Blue Devils Players"),
+  with a Totals row, "Did not play" for those who sat out, and one Team Stats tab comparing
+  both teams. The dialog opens in the first table. Games with no box score, such as all of
+  college hockey, no longer offer one.
+- **Tables are one Tab away.** Tab used to stop on an empty area where the arrow keys did
+  nothing, and on the tab bar's scroll buttons. F6 moves between the tabs and the table.
+  Alt+V, Alt+T, Alt+Q and Alt+F work from the tab bar. Enter works in Quick List and Full List.
+  Switching views no longer repeats "Switched to..." more each time, and keeps your column.
+- **College standings show the overall record.** They were showing a split, such as the
+  record against ranked teams. All conferences are present, including the Sun Belt, with a
+  conference record and a streak. Women's college hockey no longer reads 0-0 for everyone.
+- **Standings streaks** are filled in for the NFL, NBA, NHL and college. NHL columns line up
+  with their headings, teams rank by points, and Utah is in the Central Division.
+- **No more invented statistics.** Some leagues showed made-up leaders ("Sample Player 1",
+  years-old stars) as if real. NFL and NHL player statistics load again.
+- **Schedule dates are right.** Evening games read as the next day. Today's game is
+  marked as today again.
+- **Game details** show betting lines, TV, officials, attendance and the number of injured
+  players. A game's Standings row opens real tables. Rows no longer use internal names.
+- **Period names.** Men's college basketball has halves, not quarters. Overtimes read OT, 2OT, 3OT
+  in basketball and football, and shootout attempts no longer count as goals.
+- **Late games stay put.** Until 5 AM, Live Scores and league views stay on last night's games,
+  so a West Coast game no longer vanishes at midnight in the East.
+- **Keeping your place.** Back returns to the game, date or week you came from. Monitoring
+  a game survives a refresh and a visit to the game, and score alerts work.
+- **Enter presses buttons** everywhere, not just in dialogs.
+- **The app really speaks now.** Announcements used to be a beep. The date or week is said as it
+  changes and is in the window title. Live Scores no longer re-reads your row every refresh; it
+  speaks only when the row's text changes.
+- **Score rows** use full team names in women's college basketball and college hockey, show AP
+  ranks, say "vs" at a neutral site, and don't read "0 at 0" for a delayed game that hasn't
+  started. Live plays aren't cut off mid-name.
+- **Team hub:** rosters read 6'5" and 325 lbs, name first, with venue and News filled in, and "next
+  game" is no longer the game just played. Game Wrap Up no longer replaces names with "\\1".
+- **Plays and Drives** open in the tree. The same drive no longer appears twice in a live football
+  game, and drive rows lost their emoji.
+
+### Known issues
+- College basketball plays with no real location, such as substitutions and timeouts, read "at the
+  rim". The fix has to go in with the iOS app's matching table.
+
 ### In Progress
 - **Game Wrap Up Feature**: ESPN text processing and game story extraction (under construction)
   - Core infrastructure implemented, text processing being refined
