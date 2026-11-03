@@ -1,0 +1,92 @@
+name: Validate ESPN data
+
+# Calls every endpoint either app uses, checks the shape each relies on, and runs the
+# real Windows parsers on the live data. Nothing documents these feeds and they change
+# without notice: ESPN began rejecting date ranges in September 2026, and the iPhone's
+# football week arrows stayed broken until a bug bash found it.
+#
+# Run it any time from the Actions tab, or:
+#     gh workflow run validate-espn.yml
+#     gh workflow run validate-espn.yml -f league=NCAAM
+#
+# It only reads, and needs no secrets for that. The report is on the run's summary page
+# and kept as an artifact. A failed nightly run opens an issue, or adds to the open one.
+# tools/validate_espn.py is the same check to run by hand; it opens no windows.
+
+on:
+  workflow_dispatch:
+    inputs:
+      league:
+        description: "Just one league, such as NCAAM or NHL. Blank checks everything."
+        required: false
+        type: string
+  schedule:
+    # 10:00 UTC, the small hours in the US: last night's games are final by then.
+    - cron: '0 10 * * *'
+  pull_request:
+    paths:
+      - 'tools/validate_espn.py'
+      - '.github/workflows/validate-espn.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+      issues: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.13'
+
+      # Only what the data layer needs. It doesn't touch Qt.
+      - name: Install dependencies
+        run: pip install requests pytz
+
+      - name: Validate
+        id: validate
+        env:
+          LEAGUE: ${{ inputs.league }}
+        run: |
+          args=()
+          if [ -n "$LEAGUE" ]; then args+=(--league "$LEAGUE"); fi
+          python tools/validate_espn.py "${args[@]}" --report validation-report.md --json validation-results.json
+
+      - name: Keep the report
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: validation-report
+          path: |
+            validation-report.md
+            validation-results.json
+          if-no-files-found: warn
+
+      # One open issue, however many nights it takes to fix, rather than one per night.
+      - name: Open or update an issue
+        if: failure() && steps.validate.outcome == 'failure' && github.event_name == 'schedule'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          label=espn-validation
+          gh label create "$label" --color D93F0B --description "The live data check failed" --force
+          {
+            echo "The nightly data check failed: $RUN_URL"
+            echo
+            sed -n '/^## Failed/,/^## Worth a look\|^## Passed/p' validation-report.md | sed '$d'
+          } > issue-body.md
+          existing=$(gh issue list --label "$label" --state open --limit 1 --json number --jq '.[0].number // empty')
+          if [ -n "$existing" ]; then
+            gh issue comment "$existing" --body-file issue-body.md
+          else
+            gh issue create --title "The nightly ESPN data check failed" --label "$label" --body-file issue-body.md
+          fi

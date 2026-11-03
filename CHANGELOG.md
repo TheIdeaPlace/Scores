@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- **Utah is in the Central Division in the NHL standings on Windows.** 1.0.1 said it was, but ESPN
+  spells it differently in standings than on its team page, so it stayed in a group of its own.
+
 ### In Progress
 - **Game Wrap Up Feature**: ESPN text processing and game story extraction (under construction)
   - Core infrastructure implemented, text processing being refined
