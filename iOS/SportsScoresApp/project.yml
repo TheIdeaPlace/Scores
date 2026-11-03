@@ -87,6 +87,22 @@ targets:
         SUPPORTS_MACCATALYST: YES
         DERIVE_MACCATALYST_PRODUCT_BUNDLE_IDENTIFIER: YES
 
+  SportsScoresTests:
+    type: bundle.unit-test
+    platform: iOS
+    sources:
+      - path: SportsScoresTests
+    dependencies:
+      - target: SportsScores
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.sportsscores.app.tests
+        GENERATE_INFOPLIST_FILE: YES
+        CODE_SIGN_STYLE: Automatic
+        DEVELOPMENT_TEAM: P887QF74N8
+        BUNDLE_LOADER: $(TEST_HOST)
+        TEST_HOST: $(BUILT_PRODUCTS_DIR)/SportsScores.app/SportsScores
+
 schemes:
   SportsScores:
     build:
@@ -96,6 +112,8 @@ schemes:
       config: Debug
     test:
       config: Debug
+      targets:
+        - SportsScoresTests
     profile:
       config: Release
     analyze:

@@ -13,11 +13,13 @@ on:
     branches: [main]
     paths:
       - 'iOS/**'
+      - 'tests/fixtures/**'
       - '.github/workflows/ios-build-check.yml'
   pull_request:
     branches: [main]
     paths:
       - 'iOS/**'
+      - 'tests/fixtures/**'
       - '.github/workflows/ios-build-check.yml'
 
 jobs:
@@ -52,3 +54,18 @@ jobs:
             -derivedDataPath "$RUNNER_TEMP/dd" \
             CODE_SIGNING_ALLOWED=NO \
             clean build
+
+      # The real models against real ESPN payloads, and the geometry against the grid
+      # both platforms share. On a named simulator, since tests have to run on one.
+      - name: Run tests
+        run: |
+          set -euo pipefail
+          device=$(xcrun simctl list devices available --json | python3 -c "import json,sys; d=json.load(sys.stdin)['devices']; print(next(x['udid'] for k in sorted(d, reverse=True) if 'iOS' in k for x in d[k] if x['name'].startswith('iPhone')))")
+          echo "Simulator $device"
+          xcodebuild \
+            -project iOS/SportsScoresApp/SportsScores.xcodeproj \
+            -scheme SportsScores \
+            -destination "platform=iOS Simulator,id=$device" \
+            -derivedDataPath "$RUNNER_TEMP/dd" \
+            CODE_SIGNING_ALLOWED=NO \
+            test
