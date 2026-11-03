@@ -1625,7 +1625,8 @@ class LeagueView(BaseView):
 
     def _title_items(self):
         label = self.date_label.text().removeprefix('Date: ')
-        return [label, self.league] if label else [self.league]
+        # The calendar lookup's "Finding the current week..." isn't a place to name.
+        return [label, self.league] if label and not self._calendar_pending else [self.league]
 
     def _say_date_shown(self):
         # The date or week isn't in the list, so say it and put it in the title.

@@ -45,7 +45,7 @@ Found in a bug bash with NVDA on football, hockey and basketball.
   ranks, say "vs" at a neutral site, and don't read "0 at 0" for a delayed game that hasn't
   started. Live plays aren't cut off mid-name.
 - **Team hub:** rosters read 6'5" and 325 lbs, name first, with venue and News filled in, and "next
-  game" is no longer the game just played. Game Wrap Up no longer replaces names with "\\1".
+  game" is no longer the game just played. Game Wrap Up no longer replaces names with "\1".
 - **Plays and Drives** open in the tree. The same drive no longer appears twice in a live football
   game, and drive rows lost their emoji.
 
