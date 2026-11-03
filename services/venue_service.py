@@ -67,9 +67,6 @@ class VenueService:
                                 'home_teams': []
                             }
 
-                            # Skip enhanced details for now to avoid timeout issues
-                            # self._enhance_venue_details(venue_id, venues[venue_id], league_path, event.get('id'))
-
                 # Find home teams for each venue
                 self._find_home_teams(venues, league_key)
 
@@ -79,37 +76,6 @@ class VenueService:
             print(f"Error getting venues for {league_key}: {e}")
 
         return venues
-
-    def _enhance_venue_details(self, venue_id: str, venue_data: Dict, league_path: str, event_id: str):
-        """Get enhanced venue details from game details"""
-
-        if not event_id:
-            return
-
-        detail_url = f"{self.base_url}/{league_path}/summary?event={event_id}"
-
-        try:
-            resp = requests.get(detail_url, timeout=5)
-            if resp.status_code == 200:
-                data = resp.json()
-                if 'gameInfo' in data and 'venue' in data['gameInfo']:
-                    detailed_venue = data['gameInfo']['venue']
-
-                    # Add enhanced details
-                    venue_data.update({
-                        'grass': detailed_venue.get('grass'),
-                        'capacity': detailed_venue.get('capacity'),
-                        'zipCode': detailed_venue.get('address', {}).get('zipCode'),
-                        'images': detailed_venue.get('images', []),
-                        'guid': detailed_venue.get('guid')
-                    })
-
-        except (requests.RequestException, KeyboardInterrupt) as e:
-            if isinstance(e, KeyboardInterrupt):
-                raise
-            pass  # Skip if can't get details
-        except Exception:
-            pass  # Skip if can't get details
 
     def _find_home_teams(self, venues: Dict, league_key: str):
         """Find which teams play home games at each venue"""

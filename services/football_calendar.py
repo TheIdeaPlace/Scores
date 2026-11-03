@@ -257,43 +257,6 @@ def get_football_season_year(league_key="NFL", today=None):
     return today.year
 
 # This function fetches the NFL or NCAAF calendar (weeks and date ranges)
-def get_football_calendar(league_key, season=None):
-    league_path = {
-        "NFL": "football/nfl",
-        "NCAAF": "football/college-football"
-    }.get(league_key)
-    if not league_path:
-        return []
-    
-    # Use current season if none specified, try without season parameter first
-    if season:
-        url = f"{BASE_URL}/{league_path}/scoreboard?season={season}"
-    else:
-        url = f"{BASE_URL}/{league_path}/scoreboard"
-    
-    resp = requests.get(url, timeout=20)
-    if resp.status_code != 200:
-        return []
-    data = resp.json()
-
-    leagues = data.get('leagues', [])
-    if not leagues:
-        return []
-    
-    calendar = []
-    # Get all calendar types (preseason, regular season, postseason)
-    for cal in leagues[0].get('calendar', []):
-        cal_label = cal.get('label', '').lower()
-        for entry in cal.get('entries', []):
-            calendar.append({
-                'label': entry.get('label'),
-                'week': int(entry.get('value', 0)),
-                'start': entry.get('startDate'),
-                'end': entry.get('endDate'),
-                'season_type': cal_label
-            })
-    return calendar
-
 # This function finds the current week number for NFL/NCAAF based on today
 def get_current_football_week(league_key, season=None, today=None):
     """Current week number, without its season type.
