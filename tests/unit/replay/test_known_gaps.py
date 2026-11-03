@@ -113,9 +113,9 @@ def test_a_past_wnba_season_asks_for_that_season(espn, freeze_now):
 @gap("The slow standings path gives a team whose record request failed 0-0, a record it "
      "doesn't have. Blank would be honest. This is every team if the failure is general.")
 def test_a_failed_team_record_is_not_shown_as_0_0(espn):
-    espn.on("/wnba/teams$", load("teams_NBA.json"))
-    espn.on(r"/wnba/teams/\d+$", HTTP_500)
-    assert all(row["wins"] != 0 or row["losses"] != 0 for row in espn_api.get_standings("WNBA"))
+    espn.on(r"/soccer/eng\.1/teams$", load("teams_EPL.json"))
+    espn.on(r"/soccer/eng\.1/teams/\d+$", HTTP_500)
+    assert all(row["wins"] != 0 or row["losses"] != 0 for row in espn_api.get_standings("EPL"))
 
 
 @gap("An empty standings response for the NBA is taken to mean a new season and lists "

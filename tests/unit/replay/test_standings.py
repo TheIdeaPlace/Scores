@@ -173,7 +173,7 @@ class TestFallbackFromTeamRecords:
     def test_wnba_reads_real_team_records(self, espn):
         espn.on("/wnba/teams$", load("teams_NBA.json"))
         espn.on(r"/wnba/teams/\d+$", load("team_WNBA_8.json"))
-        rows = espn_api.get_standings("WNBA")
+        rows = espn_api._get_standings_original("WNBA")
         assert espn.urls("/teams/") == [f"{SITE}/basketball/wnba/teams/{i}" for i in ("1", "2", "17")]
         assert all((r["wins"], r["losses"], r["win_percentage"], r["streak"]) == (0, 2, "0.000", "L2") for r in rows)
         assert {r["division"] for r in rows} == {"League"}
