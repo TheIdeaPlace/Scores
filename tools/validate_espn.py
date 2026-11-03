@@ -72,6 +72,9 @@ DEADLINE_SECONDS = 15 * 60
 NOT_PLAYED = ("STATUS_POSTPONED", "STATUS_CANCELED", "STATUS_CANCELLED", "STATUS_FORFEIT")
 # A World Cup match from the core API, which is where the iPhone gets match numbers.
 WORLD_CUP_MATCH = "760512"
+# What the iPhone asks the core API for. ESPN has no statistics for some season types, such
+# as the NBA's preseason and play-in, so one season type on its own proves nothing.
+CORE_SEASON_TYPES = (2, 3, 1)
 STATISTICS_TRIES = 3
 STATISTICS_PAUSE = 10
 
@@ -264,6 +267,8 @@ def scoreboard_problems(data):
     if not isinstance(data, dict) or not isinstance(data.get("events"), list):
         return ["no events list"]
     for event in data["events"]:
+        if not event:
+            continue  # ESPN leaves a literal {} in some lists. check_scoreboard mentions it.
         label = event.get("id", "an event with no id")
         if not event.get("id"):
             problems.append("an event has no id")
@@ -671,6 +676,8 @@ def check_scoreboard(http, report, league):
     else:
         count = len(data["events"])
         report.ok(league.key, "Scoreboard", f"{count} games now" if count else "no games right now", url)
+        if not all(data["events"]):
+            report.warn(league.key, "Scoreboard", "a blank event in the list, which both apps should skip", url)
     if league.family == FOOTBALL:
         problems = calendar_problems(data)
         if problems:
@@ -903,7 +910,7 @@ def check_team_hub(http, report, league, event, in_season):
 
     # The app turns an error into an empty list, so ask ESPN directly first.
     url = f"{SITE}/{league.path}/teams/{team_id}/roster"
-    status, _ = http.get(url)
+    status, raw = http.get(url)
     if status != 200:
         report.fail(league.key, "Roster", f"got {status}", url)
     else:
@@ -916,6 +923,8 @@ def check_team_hub(http, report, league, event, in_season):
                             f"{len(decimals)} decimal heights such as {decimals[:1]}, {len(nameless)} with no name", url)
             elif roster:
                 report.ok(league.key, "App: roster", f"{len(roster)} players", url)
+            elif isinstance(raw, dict) and raw.get("athletes"):
+                report.fail(league.key, "App: roster", f"ESPN has {name}'s roster, and the app read nothing", url)
             elif league.rosters:
                 report.seasonal(in_season, league.key, "App: roster", f"{name} has an empty roster", url)
             else:
@@ -933,13 +942,15 @@ def check_team_hub(http, report, league, event, in_season):
                         f"{name} has none within {SCHEDULE_WINDOW_DAYS} days, the most this path looks (#71)")
 
     url = f"{SITE}/{league.path}/news?team={team_id}"
-    status, _ = http.get(url)
+    status, raw = http.get(url)
     if status != 200:
         report.fail(league.key, "Team news", f"got {status}", url)
     else:
         news = checked("App: team news", espn_api.get_team_news, league.key, team_id)
         if news:
             report.ok(league.key, "App: team news", f"{len(news)} articles", url)
+        elif news is not None and isinstance(raw, dict) and raw.get("articles"):
+            report.fail(league.key, "App: team news", f"ESPN has news for {name}, and the app read nothing", url)
         elif news is not None:
             report.warn(league.key, "App: team news", f"{name} has none, which can be a quiet team", url)
 
@@ -1055,8 +1066,13 @@ def check_statistics(http, report, league, event, in_season):
             elif categories:
                 report.ok(league.key, "App: player statistics", f"{len(categories)} categories")
             else:
-                report.seasonal(in_season, league.key, "App: player statistics",
-                                f"no categories in {STATISTICS_TRIES} tries")
+                url = f"{SITE}/{league.path}/statistics"
+                _, raw = http.get(url)
+                if isinstance(raw, dict) and (raw.get("stats") or {}).get("categories"):
+                    report.fail(league.key, "App: player statistics", "ESPN has them, and the app read nothing", url)
+                else:
+                    report.seasonal(in_season, league.key, "App: player statistics",
+                                    f"no categories in {STATISTICS_TRIES} tries", url)
 
     if league.team_stats:
         # The iPhone's team statistics. Windows asks team by team, which #94 tracks.
@@ -1069,37 +1085,41 @@ def check_statistics(http, report, league, event, in_season):
         else:
             report.seasonal(in_season, league.key, "Team statistics (iPhone)", "no teams", url)
 
-    season = event.get("season") or {}
-    if league.core_leaders and season.get("year") and season.get("type"):
-        url = f"{CORE}/{league.core_path}/seasons/{season['year']}/types/{season['type']}/leaders"
-        status, data = http.get(url)
-        if status != 200 or not isinstance(data, dict):
-            report.seasonal(in_season, league.key, "Core API: leaders (iPhone)", f"got {status}", url)
-        elif data.get("categories"):
-            report.ok(league.key, "Core API: leaders (iPhone)", f"{len(data['categories'])} categories", url)
-        else:
-            report.seasonal(in_season, league.key, "Core API: leaders (iPhone)", "no categories", url)
-        check_core_team_statistics(http, report, league, event, in_season)
+    if league.core_leaders:
+        check_core_statistics(http, report, league, event, in_season)
 
 
-def check_core_team_statistics(http, report, league, event, in_season):
-    """The iPhone's team hub asks the core API for these. It tries last season as well, so
-    a team with no games on record yet this season still has something to show."""
-    season = event.get("season") or {}
-    team_id = (event["competitions"][0]["competitors"][0].get("team") or {}).get("id")
-    if not (season.get("year") and season.get("type") and team_id):
-        report.fail(league.key, "Core API: team statistics (iPhone)", f"final {event['id']} has no season or team id")
-        return
+def check_core_stats(http, report, league, year, name, tail, read):
+    """Ask as the iPhone does: this season and last, a season type at a time. Last season
+    is what a team with no games on record yet shows. `read` finds the categories."""
     answers = []
-    for year in (season["year"], season["year"] - 1):
-        url = f"{CORE}/{league.core_path}/seasons/{year}/types/{season['type']}/teams/{team_id}/statistics"
-        status, data = http.get(url)
-        categories = (data.get("splits") or {}).get("categories") if status == 200 and isinstance(data, dict) else None
-        if categories:
-            report.ok(league.key, "Core API: team statistics (iPhone)", f"{year}: {len(categories)} categories", url)
-            return
-        answers.append(f"{year} got {status}")
-    report.seasonal(in_season, league.key, "Core API: team statistics (iPhone)", f"no categories: {', '.join(answers)}", url)
+    for season in (year, year - 1):
+        for season_type in CORE_SEASON_TYPES:
+            url = f"{CORE}/{league.core_path}/seasons/{season}/types/{season_type}/{tail}"
+            status, data = http.get(url)
+            categories = read(data) if status == 200 and isinstance(data, dict) else None
+            if categories:
+                report.ok(league.key, name, f"{season}, season type {season_type}: {len(categories)} categories", url)
+                return True
+            answers.append(status)
+    return answers
+
+
+def check_core_statistics(http, report, league, event, in_season):
+    year = (event.get("season") or {}).get("year")
+    team_id = (event["competitions"][0]["competitors"][0].get("team") or {}).get("id")
+    if not (year and team_id):
+        report.fail(league.key, "Core API (iPhone)", f"final {event['id']} has no season or team id")
+        return
+    for name, tail, read in (
+            ("Core API: leaders (iPhone)", "leaders", lambda d: d.get("categories")),
+            ("Core API: team statistics (iPhone)", f"teams/{team_id}/statistics",
+             lambda d: (d.get("splits") or {}).get("categories"))):
+        answers = check_core_stats(http, report, league, year, name, tail, read)
+        if answers is not True:
+            report.seasonal(in_season, league.key, name,
+                            f"no categories in {year} or {year - 1}, with answers {sorted(set(map(str, answers)))}",
+                            f"{CORE}/{league.core_path}/seasons/{year}/types/2/{tail}")
 
 
 def check_league(http, league):
@@ -1125,7 +1145,7 @@ def check_league(http, league):
                 report.ok(league.key, "Recent final", f"{event.get('shortName')} on {event.get('date', '')[:10]}", finals.url)
             # A refused date is a break even if an earlier one still worked. It's how the
             # September change looked.
-            refused = {k: n for k, n in finals.bad_statuses.items() if k.isdigit() and int(k) < 500}
+            refused = {k: n for k, n in finals.bad_statuses.items() if k.isdigit() and int(k) < 500 and k != "429"}
             if refused:
                 report.fail(league.key, "Dated scoreboard", f"ESPN refused dated queries: {refused}", finals.url)
             elif finals.bad_statuses:
@@ -1154,12 +1174,17 @@ def check_league_twice(http, league):
     report, in_season = check_league(http, league)
     if not report.failed:
         return report, in_season
-    first = [c for c in report.checks if c.status == FAIL]
+    first = report
     report, in_season = check_league(http, league)
-    if not report.failed:
-        for check in first:
-            report.warn(check.source, check.name, f"failed once, then passed: {check.detail}", check.url)
+    note_what_cleared(first, report)
     return report, in_season
+
+
+def note_what_cleared(first, second):
+    if not second.failed:
+        for check in first.checks:
+            if check.status == FAIL:
+                second.warn(check.source, check.name, f"failed once, then passed: {check.detail}", check.url)
 
 
 # ---------------------------------------------------------------- everything else
@@ -1192,12 +1217,11 @@ def check_football_calendar(http, report):
             report.fail(key, "App: football calendar", f"season {season}, {len(weeks or [])} weeks")
             continue
         report.ok(key, "App: football calendar", f"{season}: {len(weeks)} weeks")
-        if key != "NFL":
-            continue
 
         # How both apps ask for a week. A date range is what ESPN stopped accepting.
+        league = LEAGUE_KEYS[key]
         first = weeks[0]
-        url = f"{SITE}/football/nfl/scoreboard?dates={season}&week={first['week']}&seasontype={first['season_type']}"
+        url = scoreboard_url(league, f"{season}&week={first['week']}&seasontype={first['season_type']}")
         status, data = http.get(url)
         if status != 200 or not isinstance(data, dict):
             report.fail(key, "Week query", f"got {status}, so the week arrows would fail", url)
@@ -1206,7 +1230,7 @@ def check_football_calendar(http, report):
         else:
             report.ok(key, "Week query", f"{first['label']} of {season}: {len(data['events'])} games", url)
 
-        url = f"{CORE}/football/leagues/nfl/seasons/{season}/types/2/weeks?limit=3"
+        url = f"{CORE}/{league.core_path}/seasons/{season}/types/2/weeks?limit=3"
         status, data = http.get(url)
         if status != 200 or not isinstance(data, dict):
             report.fail(key, "Core API: weeks (iPhone)", f"got {status}", url)
@@ -1275,7 +1299,8 @@ def check_draft(http, report):
     for season in (year, year - 1):
         url = f"{SITE}/football/nfl/draft?season={season}"
         status, data = http.get(url)
-        if status == 200 and isinstance(data, dict) and (data.get("picks") or data.get("rounds")):
+        # A draft yet to happen answers 200 with its rounds, and no picks.
+        if status == 200 and isinstance(data, dict) and data.get("picks"):
             drafted = season
             report.ok("NFL", "Draft (iPhone)", f"{season} has picks", url)
             break
@@ -1390,6 +1415,16 @@ def check_fantasy(http, report):
         report.ok("Fantasy", "App: cheatsheet", f"{board.get('season')}: {len(players)} players")
 
 
+def check_others_twice(http, seasons):
+    report = check_others(http, seasons)
+    if not report.failed:
+        return report
+    first = report
+    report = check_others(http, seasons)
+    note_what_cleared(first, report)
+    return report
+
+
 def check_others(http, seasons):
     report = Report()
     for check in (check_every_league_path, check_football_calendar, check_golf, check_draft, check_world_cup,
@@ -1467,7 +1502,7 @@ def main(argv=None):
                     report.checks.extend(league_report.checks)
                     seasons[league.key] = in_season
             if not args.league:
-                report.checks.extend(check_others(http, seasons).checks)
+                report.checks.extend(check_others_twice(http, seasons).checks)
     finally:
         requests.get = original_get
     if args.fake_failure:

@@ -122,6 +122,13 @@ class TestScoreboard:
     def test_no_events_key_is_a_break(self):
         assert v.scoreboard_problems({"leagues": []}) == ["no events list"]
 
+    def test_a_blank_event_is_not_a_broken_feed_but_is_mentioned(self):
+        """ESPN's own list for week 8 of college football in 2025 has a literal {} in it."""
+        assert v.scoreboard_problems({"events": [event(), {}]}) == []
+        report = v.Report()
+        v.check_scoreboard(FakeHttp(default=(200, {"events": [event(), {}]})), report, league("NBA"))
+        assert statuses(report, "Scoreboard") == [v.PASS, v.WARN]
+
     def test_empty_slate_is_fine(self):
         assert v.scoreboard_problems({"events": []}) == []
 
@@ -412,6 +419,17 @@ class TestFindingFinals:
         assert FAIL_IN(report, "Dated scoreboard")
         assert in_season
 
+    def test_being_rate_limited_is_not_being_refused(self, monkeypatch):
+        finished = event()
+        finished["date"] = datetime.now(timezone.utc).isoformat()
+        finals = v.Finals([finished], "u", {"429": 2})
+        monkeypatch.setattr(v, "find_recent_finals", lambda *a, **k: finals)
+        for name in ("check_app_scores", "check_games", "check_standings", "check_team_hub", "check_news",
+                     "check_statistics", "check_transactions"):
+            monkeypatch.setattr(v, name, lambda *a: None)
+        report, _ = v.check_league(FakeHttp(), league("NHL"))
+        assert statuses(report, "Dated scoreboard") == [v.WARN]
+
     def test_a_blip_on_a_date_is_only_a_warning(self, monkeypatch):
         finished = event()
         finished["date"] = datetime.now(timezone.utc).isoformat()
@@ -480,6 +498,18 @@ class TestOddGames:
     def test_a_league_with_only_one_final_to_go_on(self):
         report, _ = self.run([False])
         assert FAIL_IN(report, "Box score shape")
+
+    def test_players_dropped_from_every_box_score_fails(self):
+        def without_players():
+            summary = self.summary(True)
+            summary["boxscore"] = {**summary["boxscore"], "players": []}
+            return summary
+
+        routes = [(f"event={i}", (200, without_players())) for i in range(3)]
+        report = v.Report()
+        v.check_games(FakeHttp(routes), report, league("NBA"), self.finals(3), True)
+        assert FAIL_IN(report, "Box score shape")
+        assert "players" in detail(report, "Box score shape")
 
     def test_a_summary_that_will_not_load(self):
         report = v.Report()
@@ -560,6 +590,30 @@ class TestTeamHub:
         report = self.run("NCAAH", monkeypatch, get_team_info={"name": "T0"}, get_team_roster=[])
         assert statuses(report, "App: team info") == [v.PASS]
         assert statuses(report, "App: roster") == [v.PASS]
+
+    def test_a_roster_espn_has_and_the_app_lost_fails_any_season(self, monkeypatch):
+        app = StubbedApp(monkeypatch)
+        app.set("get_team_roster", [])
+        played = event()
+        played["date"] = datetime.now(timezone.utc).isoformat()
+        http = FakeHttp([("/roster", (200, {"athletes": [{"id": 1}]}))], default=(200, {}))
+        report = v.Report()
+        v.check_team_hub(http, report, league("NCAAH"), played, False)
+        assert FAIL_IN(report, "App: roster")
+
+    def test_news_espn_has_and_the_app_lost_fails(self, monkeypatch):
+        app = StubbedApp(monkeypatch)
+        app.set("get_team_news", [])
+        played = event()
+        played["date"] = datetime.now(timezone.utc).isoformat()
+        http = FakeHttp([("/news", (200, {"articles": [{"headline": "x"}]}))], default=(200, {}))
+        report = v.Report()
+        v.check_team_hub(http, report, league("NBA"), played, False)
+        assert FAIL_IN(report, "App: team news")
+
+    def test_a_quiet_team_only_warns(self, monkeypatch):
+        report = self.run("NBA", monkeypatch, get_team_news=[])
+        assert statuses(report, "App: team news") == [v.WARN]
 
     def test_an_empty_roster_in_season_is_a_failure(self, monkeypatch):
         assert FAIL_IN(self.run("NHL", monkeypatch, get_team_roster=[]), "App: roster")
@@ -702,7 +756,7 @@ class TestFootballCalendar:
         self.stub(monkeypatch, (2026, self.WEEKS))
         report = v.Report()
         v.check_football_calendar(FakeHttp([("week=1", (400, {}))], default=(200, {"items": [1], "count": 1})), report)
-        assert statuses(report, "Week query") == [v.FAIL]
+        assert statuses(report, "Week query") == [v.FAIL, v.FAIL]
 
     def test_the_core_season_is_espn_s_rather_than_this_year(self, monkeypatch):
         """On New Year's Day this year's season isn't published. ESPN's own season number is."""
@@ -711,15 +765,24 @@ class TestFootballCalendar:
                          ("week=1", (200, {"events": []}))])
         report = v.Report()
         v.check_football_calendar(http, report)
-        assert statuses(report, "Core API: weeks (iPhone)") == [v.PASS]
+        assert statuses(report, "Core API: weeks (iPhone)") == [v.PASS, v.PASS]
         assert not report.failed
+
+    def test_college_football_weeks_are_asked_for_on_their_own_path(self, monkeypatch):
+        self.stub(monkeypatch, (2026, self.WEEKS))
+        http = FakeHttp([("leagues/college-football/seasons/2026/types/2/weeks", (404, None)),
+                         ("/weeks", (200, {"count": 18, "items": [1]})), ("week=1", (200, {"events": []}))])
+        report = v.Report()
+        v.check_football_calendar(http, report)
+        assert statuses(report, "Core API: weeks (iPhone)") == [v.PASS, v.FAIL]
+        assert any("college-football/scoreboard?groups=90&limit=400&dates=2026&week=1" in u for u in http.urls)
 
     def test_core_weeks_gone_fails(self, monkeypatch):
         self.stub(monkeypatch, (2026, self.WEEKS))
         http = FakeHttp([("/weeks", (200, {"count": 0, "items": []})), ("week=1", (200, {"events": []}))])
         report = v.Report()
         v.check_football_calendar(http, report)
-        assert statuses(report, "Core API: weeks (iPhone)") == [v.FAIL]
+        assert statuses(report, "Core API: weeks (iPhone)") == [v.FAIL, v.FAIL]
 
 
 class TestTransactions:
@@ -786,26 +849,55 @@ class TestStatistics:
     def test_a_team_yet_to_play_falls_back_to_last_season_as_the_iphone_does(self):
         played = event()
         played["season"] = {"year": 2027, "type": 2}
-        http = FakeHttp([("/seasons/2026/", (200, {"splits": {"categories": [1]}}))])
+        http = FakeHttp([("/seasons/2026/", (200, {"categories": [1], "splits": {"categories": [1]}}))])
         report = v.Report()
-        v.check_core_team_statistics(http, report, league("NCAAWB"), played, True)
+        v.check_core_statistics(http, report, league("NCAAM"), played, True)
         assert statuses(report, "Core API: team statistics (iPhone)") == [v.PASS]
 
     def test_core_requests_use_the_season_of_the_final(self, monkeypatch):
         import espn_api
         monkeypatch.setattr(espn_api, "get_player_statistics", lambda *a, **k: {"player_stats": [{"x": 1}]})
         played = event()
-        played["season"] = {"year": 2027, "type": 3}
+        played["season"] = {"year": 2027, "type": 1}
         http = FakeHttp(default=(200, {"categories": [1], "splits": {"categories": [1]}, "teams": [1]}))
         report = v.Report()
         v.check_statistics(http, report, league("NHL"), played, True)
-        assert any("/seasons/2027/types/3/leaders" in u for u in http.urls)
-        assert any("/seasons/2027/types/3/teams/T0/statistics" in u for u in http.urls)
+        assert any("/seasons/2027/types/2/leaders" in u for u in http.urls)
+        assert any("/seasons/2027/types/2/teams/T0/statistics" in u for u in http.urls)
         assert not report.failed
 
-    def test_core_team_statistics_gone(self):
+    def test_preseason_having_no_core_statistics_is_not_a_break(self):
+        """ESPN answers 404 for the NBA's preseason and play-in. The iPhone asks for the
+        regular season first, and so does this."""
+        played = event()
+        played["season"] = {"year": 2027, "type": 1}
+        http = FakeHttp([("/types/1/", (404, None)), ("/types/5/", (404, None)),
+                         ("/leaders", (200, {"categories": [1]})),
+                         ("/statistics", (200, {"splits": {"categories": [1]}}))])
         report = v.Report()
-        v.check_core_team_statistics(FakeHttp(default=(200, {"splits": {}})), report, league("NHL"), event(), True)
+        v.check_core_statistics(http, report, league("NBA"), played, True)
+        assert not report.failed
+
+    def test_core_gone_for_every_season_type_fails_in_season(self):
+        report = v.Report()
+        v.check_core_statistics(FakeHttp(default=(404, None)), report, league("NBA"), event(), True)
+        assert FAIL_IN(report, "Core API: leaders (iPhone)")
+        assert FAIL_IN(report, "Core API: team statistics (iPhone)")
+        assert "404" in detail(report, "Core API: leaders (iPhone)")
+
+    def test_a_statistics_parser_that_swallows_an_error_is_caught_out_of_season(self, monkeypatch):
+        import espn_api
+        monkeypatch.setattr(espn_api, "get_player_statistics", lambda *a, **k: {"player_stats": []})
+        monkeypatch.setattr(v.time, "sleep", lambda s: None)
+        http = FakeHttp([("/statistics", (200, {"stats": {"categories": [1]}}))], default=(200, {}))
+        report = v.Report()
+        v.check_statistics(http, report, league("NHL"), event(), False)
+        assert FAIL_IN(report, "App: player statistics")
+
+    def test_core_team_statistics_gone(self):
+        http = FakeHttp([("/leaders", (200, {"categories": [1]}))], default=(200, {"splits": {}}))
+        report = v.Report()
+        v.check_core_statistics(http, report, league("NHL"), event(), True)
         assert statuses(report, "Core API: team statistics (iPhone)") == [v.FAIL]
 
 
@@ -839,14 +931,18 @@ class TestOtherSources:
         year = date.today().year
         monkeypatch.setattr(espn_api, "get_draft", lambda y: {"year": y})
         monkeypatch.setattr(espn_api, "get_draft_round", lambda y, r: [{"player_name": "A"}])
-        http = FakeHttp([(f"season={year - 1}", (200, {"picks": [1]})), ("draft", (200, {"picks": []}))])
+        asked = []
+        monkeypatch.setattr(espn_api, "get_draft_round", lambda y, r: asked.append(y) or [{"player_name": "A"}])
+        # The real shape of a draft yet to happen: its rounds and no picks.
+        http = FakeHttp([(f"season={year - 1}", (200, {"picks": [1]})), ("draft", (200, {"picks": [], "rounds": [1]}))])
         report = v.Report()
         v.check_draft(http, report)
         assert not report.failed
+        assert asked == [year - 1]
 
     def test_a_draft_with_no_picks_in_two_years_fails(self):
         report = v.Report()
-        v.check_draft(FakeHttp(default=(200, {"picks": []})), report)
+        v.check_draft(FakeHttp(default=(200, {"picks": [], "rounds": [1]})), report)
         assert FAIL_IN(report, "Draft (iPhone)")
 
     def test_app_draft_empty_fails(self, monkeypatch):
@@ -967,6 +1063,22 @@ class TestRetries:
         report, _ = v.check_league_twice(FakeHttp(), league("NBA"))
         assert report.failed
 
+    def test_the_other_sources_get_a_second_run_too(self, monkeypatch):
+        bad, good = v.Report(), v.Report()
+        bad.fail("World Cup", "Standings", "got 404")
+        good.ok("World Cup", "Standings")
+        answers = [bad, good]
+        monkeypatch.setattr(v, "check_others", lambda *a: answers.pop(0))
+        report = v.check_others_twice(FakeHttp(), {})
+        assert not report.failed
+        assert "failed once" in detail(report, "Standings")
+
+    def test_the_other_sources_failing_twice_fails(self, monkeypatch):
+        bad = v.Report()
+        bad.fail("World Cup", "Standings", "got 404")
+        monkeypatch.setattr(v, "check_others", lambda *a: bad)
+        assert v.check_others_twice(FakeHttp(), {}).failed
+
     def test_a_league_that_passes_runs_once(self, monkeypatch):
         calls = []
         monkeypatch.setattr(v, "check_league", lambda *a: calls.append(1) or (v.Report(), True))
@@ -1021,3 +1133,90 @@ class TestMain:
         http.save("summary", "NBA", {"a": 1})
         http.save("summary", "NFL", None)
         assert [p.name for p in tmp_path.iterdir()] == ["summary-NBA.json"]
+
+
+class TestAppScores:
+    """Whether get_scores lists the game the feed has, by date and by football week."""
+
+    class Response:
+        status_code = 200
+
+        def __init__(self, data):
+            self.data = data
+
+        def json(self):
+            return self.data
+
+    def scoreboard(self):
+        return load("scoreboard_events_by_status.json")
+
+    def final(self):
+        return next(e for e in self.scoreboard()["events"] if e["status"]["type"]["name"] == "STATUS_FINAL")
+
+    def test_the_real_parser_on_a_real_board(self, monkeypatch):
+        import espn_api
+        data = self.scoreboard()
+        monkeypatch.setattr(espn_api, "_http_get", lambda *a, **k: self.Response(data))
+        report = v.Report()
+        v.check_app_scores(report, league("NBA"), self.final())
+        assert statuses(report, "App: game list") == [v.PASS]
+
+    def test_a_game_on_the_feed_that_the_app_loses(self, monkeypatch):
+        import espn_api
+        data = self.scoreboard()
+        data["events"] = [e for e in data["events"] if e["id"] != self.final()["id"]]
+        monkeypatch.setattr(espn_api, "_http_get", lambda *a, **k: self.Response(data))
+        report = v.Report()
+        v.check_app_scores(report, league("NBA"), self.final())
+        assert FAIL_IN(report, "App: game list")
+        assert "didn't list it" in detail(report, "App: game list")
+
+    def test_get_scores_raising(self, monkeypatch):
+        import espn_api
+
+        def boom(*a, **k):
+            raise ValueError("bad")
+
+        monkeypatch.setattr(espn_api, "get_scores", boom)
+        report = v.Report()
+        v.check_app_scores(report, league("NBA"), self.final())
+        assert "ValueError" in detail(report, "App: game list")
+
+    def test_unreadable_rows(self, monkeypatch):
+        import espn_api
+        from models import game
+        final = self.final()
+        monkeypatch.setattr(espn_api, "get_scores", lambda *a, **k: [{"id": final["id"]}])
+
+        class Row:
+            def __init__(self, *a):
+                pass
+
+            def get_display_text(self):
+                return "Unknown at Unknown"
+
+        monkeypatch.setattr(game, "GameData", Row)
+        report = v.Report()
+        v.check_app_scores(report, league("NBA"), final)
+        assert FAIL_IN(report, "App: game list")
+        assert "unreadable" in detail(report, "App: game list")
+
+    def test_football_asks_for_the_week_of_the_game(self, monkeypatch):
+        import espn_api
+        asked = {}
+
+        def fake(key, **kwargs):
+            asked.update(kwargs)
+            return []
+
+        monkeypatch.setattr(espn_api, "get_scores", fake)
+        report = v.Report()
+        v.check_app_scores(report, league("NFL"), event())
+        assert asked == {"week": 9, "season": 2026, "seasontype": 2}
+
+    def test_a_football_final_with_no_week_fails(self):
+        played = event()
+        del played["week"]
+        report = v.Report()
+        v.check_app_scores(report, league("NFL"), played)
+        assert "no week number" in detail(report, "App: game list")

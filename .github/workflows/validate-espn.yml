@@ -104,6 +104,7 @@ jobs:
       GH_TOKEN: ${{ github.token }}
       GH_REPO: ${{ github.repository }}
       RESULT: ${{ needs.validate.result }}
+      LEAGUE: ${{ inputs.league }}
       RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
       LABEL: espn-validation
     steps:
@@ -118,7 +119,8 @@ jobs:
         run: |
           existing=$(gh issue list --label "$LABEL" --state open --limit 1 --json number --jq '.[0].number // empty')
           if [ "$RESULT" = "success" ]; then
-            if [ -n "$existing" ]; then
+            # One league passing says nothing about the rest of what the issue is about.
+            if [ -n "$existing" ] && [ -z "$LEAGUE" ]; then
               gh issue close "$existing" --comment "The data check passed again: $RUN_URL"
             fi
             exit 0
@@ -130,7 +132,7 @@ jobs:
             if [ -f validation-report.md ]; then
               sed -n '/^## Failed/,/^## Worth a look\|^## Passed/p' validation-report.md | sed '$d' | head -c 60000
             else
-              echo "It left no report, so it was probably cancelled or ran out of time."
+              echo "It stopped before writing a report. The run's log says why."
             fi
           } > issue-body.md
           if [ -n "$existing" ]; then
