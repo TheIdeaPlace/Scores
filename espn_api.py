@@ -2787,15 +2787,22 @@ def _is_statistics_blip(resp):
 
 def _fetch_statistics(league_path):
     """The response from /statistics, the only ESPN endpoint with leaders, getting past ESPN's
-    blip with a throwaway parameter, which earns a fresh answer rather than the cached failure."""
+    blip with a throwaway parameter, which earns a fresh answer rather than the cached failure.
+    Raises ApiError if ESPN blips and no later try gets an answer: empty would read as no
+    leaders existing, and the player statistics dialog has a row for this."""
     url = f"{BASE_URL}/{league_path}/statistics"
     resp = _http_get(url, timeout=10)
+    if not _is_statistics_blip(resp):
+        return resp
     for _ in range(STATISTICS_TRIES - 1):
-        if not _is_statistics_blip(resp):
-            break
         time.sleep(1)
-        resp = _http_get(url, params={"_": int(time.time() * 1000)}, timeout=10)
-    return resp
+        try:
+            resp = _http_get(url, params={"_": int(time.time() * 1000)}, timeout=10)
+        except requests.RequestException:
+            continue
+        if resp.status_code == 200:
+            return resp
+    raise ApiError(STATISTICS_UNAVAILABLE)
 
 
 def get_statistics(league_key):
@@ -2870,9 +2877,6 @@ def get_player_statistics(league_key):
                 print("MLB Stats API failed, falling back to ESPN")
 
         resp = _fetch_statistics(league_path)
-        if _is_statistics_blip(resp):
-            # The dialog has a row for this. Empty would read as no leaders exist.
-            raise ApiError(STATISTICS_UNAVAILABLE)
         if resp.status_code == 200:
             # Only return player stats, not team stats
             return {"player_stats": _parse_statistics_data(resp.json())["player_stats"], "team_stats": []}

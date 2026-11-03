@@ -14,7 +14,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   with an error for a league it served a moment ago, mostly college basketball, and the dialog came
   up with no leaders. It now asks again, and if ESPN still won't answer, it says so and suggests
   trying again in a minute.
-- **Times on Windows in summer.** Eastern and Pacific users fell through to Central.
+- **Times on Windows in summer.** Eastern and Pacific users fell through to Central, and Mountain
+  users to Eastern.
 - **A blank field from ESPN no longer reads out as "None"** in game details, or costs a whole list
   of games, news or a team's page.
 - **Venue Details has its league lines.** A case mismatch kept them from ever appearing.

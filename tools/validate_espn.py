@@ -1046,14 +1046,17 @@ def check_statistics(http, report, league, event, in_season):
     if league.player_stats_gap:
         report.warn(league.key, "App: player statistics", league.player_stats_gap)
     elif league.player_stats:
-        # The app reads ESPN's blip as no statistics, so nothing is only nothing if it lasts.
-        stats, tries, app_said_blip = None, 0, False
+        # ESPN's blip comes in spells that can outlast the app's own retries, so nothing is only
+        # nothing if it lasts. Only the last try says why: an earlier blip mustn't excuse a parser
+        # that then reads nothing from a good answer, or a broken app could close its own alarm.
+        stats, tries, app_said_blip, ever_blipped = None, 0, False, False
         try:
             for tries in range(1, STATISTICS_TRIES + 1):
+                app_said_blip = False
                 try:
                     stats = espn_api.get_player_statistics(league.key)
-                except ApiError:  # ESPN's blip outlasted the app's own retries
-                    stats, app_said_blip = {"player_stats": []}, True
+                except ApiError:
+                    stats, app_said_blip, ever_blipped = {"player_stats": []}, True, True
                 if stats.get("player_stats"):
                     break
                 if tries < STATISTICS_TRIES:
@@ -1068,8 +1071,9 @@ def check_statistics(http, report, league, event, in_season):
                 report.fail(league.key, "App: player statistics", f"invented data: {first_problems(invented)}")
             elif categories and tries > 1:
                 report.warn(league.key, "App: player statistics",
-                            f"{len(categories)} categories on try {tries}. ESPN's /statistics failed before that, "
-                            "and a user would have been told to try again")
+                            f"{len(categories)} categories on try {tries}. " +
+                            ("ESPN's /statistics failed before that, and a user would have been told to try again"
+                             if ever_blipped else "It came back empty before that, and a user would have seen none"))
             elif categories:
                 report.ok(league.key, "App: player statistics", f"{len(categories)} categories")
             else:

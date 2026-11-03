@@ -25,7 +25,8 @@ class TestEspnsBlip:
 
     @pytest.fixture(autouse=True)
     def no_waiting(self, monkeypatch):
-        monkeypatch.setattr(espn_api.time, "sleep", lambda s: None)
+        self.pauses = []
+        monkeypatch.setattr(espn_api.time, "sleep", self.pauses.append)
 
     def replies(self, espn, *answers):
         answers = list(answers)
@@ -36,6 +37,7 @@ class TestEspnsBlip:
         result = espn_api.get_player_statistics("NFL")
         assert result["player_stats"]
         assert len(espn.calls) == 2
+        assert self.pauses == [1], "asking again at once would hit the same failure"
         assert espn.calls[0] == f"{SITE}/football/nfl/statistics"
         assert espn.calls[1] != espn.calls[0], "the same URL can read the cached failure"
 
@@ -48,6 +50,28 @@ class TestEspnsBlip:
         with pytest.raises(ApiError, match="Try again"):
             espn_api.get_player_statistics("NFL")
         assert len(espn.calls) == espn_api.STATISTICS_TRIES
+
+    @pytest.mark.parametrize("later", [TIMEOUT, HTTP_500, HTTP_404], ids=["timeout", "500", "other 404"])
+    def test_a_blip_then_a_different_failure_still_says_so(self, espn, later):
+        self.replies(espn, self.BLIP, later, later)
+        with pytest.raises(ApiError, match="Try again"):
+            espn_api.get_player_statistics("NCAAM")
+
+    def test_a_404_that_is_not_json_is_not_a_blip(self, espn):
+        espn.on("/statistics", FakeResponse(status=404, bad_json=True))
+        assert espn_api.get_player_statistics("NFL") == NOTHING
+        assert len(espn.calls) == 1
+
+    def test_a_404_whose_body_is_a_list_is_not_a_blip(self, espn):
+        espn.on("/statistics", FakeResponse([], status=404))
+        assert espn_api.get_player_statistics("NFL") == NOTHING
+        assert len(espn.calls) == 1
+
+    def test_mlb_falling_back_to_espn_during_a_blip_says_so_too(self, espn):
+        espn.on("statsapi.mlb.com", HTTP_500)
+        self.replies(espn, self.BLIP, self.BLIP, self.BLIP)
+        with pytest.raises(ApiError, match="Try again"):
+            espn_api.get_player_statistics("MLB")
 
     def test_the_message_reaches_the_dialog_through_the_service(self, espn):
         self.replies(espn, self.BLIP, self.BLIP, self.BLIP)
