@@ -13,8 +13,9 @@
 //  This is the Swift half of a mapping the Windows app also ships, as
 //  play_geometry.py. Keep the two in step: the bands, the landmarks and the
 //  spoken wording are all meant to match, so a listener who uses both apps
-//  hears the same thing. play_geometry.py has the test suite that pins the
-//  numbers; TheBench/ESPN_UNUSED_DATA.md has the survey behind them.
+//  hears the same thing. tests/fixtures/play_geometry_grid.json pins the numbers
+//  for both, through PlayAudioGeometryGridTests here and test_play_geometry_parity
+//  on Windows; TheBench/ESPN_UNUSED_DATA.md has the survey behind them.
 //
 //  Coordinate systems, measured against real games rather than taken from
 //  ESPN docs, of which there are none.
