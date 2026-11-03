@@ -113,6 +113,12 @@ def test_mlb_statistics_survive_a_console_that_cannot_print_emoji(espn, monkeypa
     assert len(espn_api.get_player_statistics("MLB")["player_stats"]) == 39
 
 
+def test_a_null_venue_name_does_not_lose_the_mlb_facts():
+    """Making the league facts reachable made this `"Field" in None` reachable too."""
+    facts = VenueService()._generate_interesting_facts({"name": None}, "mlb")
+    assert "Major League Baseball venue" in facts
+
+
 def test_soccer_standings_read_the_record_not_0_0(espn):
     """A three-part summary raised inside _get_team_record, so every soccer team read 0-0."""
     espn.on(r"/soccer/eng\.1/teams$", load("teams_EPL.json"))

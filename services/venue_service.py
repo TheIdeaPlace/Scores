@@ -184,7 +184,7 @@ class VenueService:
         league_key = (league_key or "").upper()
         if league_key == "MLB":
             facts.append("Major League Baseball venue")
-            venue_name = venue.get('name', '')
+            venue_name = venue.get('name') or ''
             if "Field" in venue_name:
                 facts.append("Classic baseball 'Field' naming")
             elif "Park" in venue_name:
