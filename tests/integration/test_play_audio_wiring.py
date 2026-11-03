@@ -76,6 +76,7 @@ class Host:
     _on_audio_feedback = scores.GameDetailsView._on_audio_feedback
 
     def __init__(self, league):
+        self.league = league  # period names depend on it
         self._plays_sport_type = league
         self.play_audio_mapper = RecordingMapper()
         self.announced = []
