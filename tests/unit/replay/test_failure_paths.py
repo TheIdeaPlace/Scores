@@ -68,10 +68,11 @@ class TestGetDraft:
         espn.on(".*", reply)
         assert espn_api.get_draft(2026) is None
 
-    def test_an_empty_body_is_a_draft_with_no_rounds_listed(self, espn):
-        """numberOfRounds defaults to 7, which isn't invented: it has been 7 since 1994."""
+    def test_an_empty_body_is_no_draft(self, espn):
+        """Not a finished seven-round one. The dialog says the year isn't available."""
         espn.on(".*", EMPTY_JSON)
-        assert espn_api.get_draft(2026) == {"year": 2026, "num_rounds": 7, "status": "post", "rounds": []}
+        assert espn_api.get_draft(2026) is None
+        assert len(espn.calls) == 1
 
 
 # These let a failed request out on purpose. Each caller runs on a loader thread and

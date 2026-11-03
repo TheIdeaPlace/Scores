@@ -124,6 +124,39 @@ def test_a_null_venue_name_does_not_lose_the_mlb_facts():
     assert "Major League Baseball venue" in facts
 
 
+@pytest.mark.parametrize("game_info", [
+    {"venue": None}, {"venue": {}}, {"venue": {"fullName": None}},
+    {"venue": {"fullName": None, "address": {"city": "Landover"}}},
+])
+def test_no_venue_name_means_no_venue_line(game_info):
+    """It read "Venue: Unknown". With a city and a null name, scores.py added the city
+    to None and raised, which lost the whole details list."""
+    info = espn_api.extract_meaningful_game_info({"gameInfo": game_info})
+    assert not {"venue", "venue_city", "venue_state"} & set(info)
+
+
+@pytest.mark.parametrize("weather", [None, {}, {"displayValue": None}])
+def test_no_weather_means_no_weather_line(weather):
+    """It read "Weather: N/A"."""
+    assert espn_api.extract_meaningful_game_info({"gameInfo": {"weather": weather}}) == {}
+
+
+def test_a_temperature_alone_is_still_weather():
+    info = espn_api.extract_meaningful_game_info({"gameInfo": {"weather": {"temperature": 50}}})
+    assert (info["weather"], info["temperature"]) == ("50°F", "50°F")
+
+
+def test_a_golfer_with_no_score_is_not_even_par(espn):
+    """A null score and no rounds read "E", a score nobody shot."""
+    data = load("golf_scoreboard_PGA.json")
+    golfers = data["events"][0]["competitions"][0]["competitors"]
+    assert golfers[1]["score"] == "E"  # ESPN's own, for a tournament not started
+    golfers[0]["score"] = None
+    espn.on("/scoreboard", data)
+    players = espn_api.get_golf_leaderboard("PGA")["players"]
+    assert [p["total_score"] for p in players] == ["", "E", "E"]
+
+
 def test_soccer_standings_read_the_record_not_0_0(espn):
     """A three-part summary raised inside _get_team_record, so every soccer team read 0-0."""
     espn.on(r"/soccer/eng\.1/teams$", load("teams_EPL.json"))

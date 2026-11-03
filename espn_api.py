@@ -1359,20 +1359,22 @@ def extract_meaningful_game_info(details):
 
     game_info = _as_dict(details.get('gameInfo'))
 
-    # Venue information
-    if 'venue' in game_info:
-        venue = _as_dict(game_info['venue'])
-        info['venue'] = venue.get('fullName', 'Unknown')
+    # Venue, when ESPN names one. scores.py adds the city to this name, so a venue
+    # with a city but no name is left out rather than passed on as None.
+    venue = _as_dict(game_info.get('venue'))
+    venue_name = venue.get('fullName') or venue.get('displayName')
+    if venue_name:
+        info['venue'] = venue_name
         address = _as_dict(venue.get('address'))
-        info['venue_city'] = address.get('city', 'Unknown')
-        info['venue_state'] = address.get('state', '')
+        info['venue_city'] = address.get('city') or 'Unknown'
+        info['venue_state'] = address.get('state') or ''
 
-    # Weather (if available)
-    if 'weather' in game_info:
-        weather = _as_dict(game_info['weather'])
-        info['weather'] = f"{weather.get('displayValue', 'N/A')}"
-        if weather.get('temperature'):
-            info['temperature'] = f"{weather['temperature']}°F"
+    # Weather, when ESPN has any
+    weather = _as_dict(game_info.get('weather'))
+    if weather.get('temperature'):
+        info['temperature'] = f"{weather['temperature']}°F"
+    if weather.get('displayValue') or info.get('temperature'):
+        info['weather'] = weather.get('displayValue') or info['temperature']
 
     # Odds (if available)
     odds = best_odds(details)
@@ -3216,7 +3218,10 @@ def get_draft(year):
         if resp.status_code != 200:
             return None
         data = resp.json()
-        num_rounds = data.get("numberOfRounds", 7)
+        # An empty body isn't a finished seven-round draft.
+        if not any(data.get(field) for field in ("year", "numberOfRounds", "rounds", "status")):
+            return None
+        num_rounds = data.get("numberOfRounds") or 7
 
         rounds_resp = _http_get(f"{base}/seasons/{year}/draft/rounds")
         rounds = []
@@ -3425,7 +3430,7 @@ def get_golf_leaderboard(tour_key):
                 "position": competitor.get("order") or 0,
                 "name": athlete.get("displayName") or athlete.get("fullName", ""),
                 "country": _as_dict(athlete.get("flag")).get("alt", ""),
-                "total_score": golf_total_to_par(competitor) or "E",
+                "total_score": golf_total_to_par(competitor),
                 "rounds": rounds,
             })
         players.sort(key=lambda p: p["position"])
