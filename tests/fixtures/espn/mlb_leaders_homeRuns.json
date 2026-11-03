@@ -1,0 +1,62 @@
+{
+ "leagueLeaders": [
+  {
+   "leaderCategory": "homeRuns",
+   "season": "2026",
+   "statGroup": "hitting",
+   "leaders": [
+    {
+     "rank": 1,
+     "value": "45",
+     "team": {
+      "id": 112,
+      "name": "Chicago Cubs",
+      "link": "/api/v1/teams/112"
+     },
+     "person": {
+      "id": 691718,
+      "fullName": "Pete Crow-Armstrong",
+      "link": "/api/v1/people/691718",
+      "firstName": "Pete",
+      "lastName": "Crow-Armstrong",
+      "nameSlug": "pete-crow-armstrong-691718"
+     }
+    },
+    {
+     "rank": 1,
+     "value": "45",
+     "team": {
+      "id": 143,
+      "name": "Philadelphia Phillies",
+      "link": "/api/v1/teams/143"
+     },
+     "person": {
+      "id": 656941,
+      "fullName": "Kyle Schwarber",
+      "link": "/api/v1/people/656941",
+      "firstName": "Kyle",
+      "lastName": "Schwarber",
+      "nameSlug": "kyle-schwarber-656941"
+     }
+    },
+    {
+     "rank": 3,
+     "value": "43",
+     "team": {
+      "id": 110,
+      "name": "Baltimore Orioles",
+      "link": "/api/v1/teams/110"
+     },
+     "person": {
+      "id": 624413,
+      "fullName": "Pete Alonso",
+      "link": "/api/v1/people/624413",
+      "firstName": "Pete",
+      "lastName": "Alonso",
+      "nameSlug": "pete-alonso-624413"
+     }
+    }
+   ]
+  }
+ ]
+}

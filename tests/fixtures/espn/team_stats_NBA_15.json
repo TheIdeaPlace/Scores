@@ -1,0 +1,58 @@
+{
+ "status": "success",
+ "results": {
+  "stats": {
+   "name": "All Splits",
+   "categories": [
+    {
+     "name": "general",
+     "displayName": "General",
+     "stats": [
+      {
+       "name": "avgRebounds",
+       "displayName": "Rebounds Per Game",
+       "value": 49.57143,
+       "displayValue": "49.6"
+      },
+      {
+       "name": "assistTurnoverRatio",
+       "displayName": "Assist To Turnover Ratio",
+       "value": 1.5929203,
+       "displayValue": "1.6"
+      },
+      {
+       "name": "avgFouls",
+       "displayName": "Fouls Per Game",
+       "value": 22.571428,
+       "displayValue": "22.6"
+      }
+     ]
+    },
+    {
+     "name": "offensive",
+     "displayName": "Offensive",
+     "stats": [
+      {
+       "name": "freeThrowPct",
+       "displayName": "Free Throw Percentage",
+       "value": 71.23300170898438,
+       "displayValue": "71.2"
+      },
+      {
+       "name": "threePointPct",
+       "displayName": "3-Point Field Goal Percentage",
+       "value": 33.33300018310547,
+       "displayValue": "33.3"
+      },
+      {
+       "name": "avgFieldGoalsMade",
+       "displayName": "Average Field Goals Made",
+       "value": 40.857143,
+       "displayValue": "40.9"
+      }
+     ]
+    }
+   ]
+  }
+ }
+}

@@ -1,0 +1,36 @@
+{
+ "status": "success",
+ "count": 2031,
+ "pageIndex": 1,
+ "pageSize": 5,
+ "pageCount": 407,
+ "transactions": [
+  {
+   "date": "2026-11-02T08:00Z",
+   "description": "Waived OLB Jared Ivey. Released OLB Drake Jackson from the practice squad.",
+   "team": {
+    "id": "1",
+    "abbreviation": "ATL",
+    "displayName": "Atlanta Falcons"
+   }
+  },
+  {
+   "date": "2026-11-02T08:00Z",
+   "description": "Waived RB Audric Estime.",
+   "team": {
+    "id": "5",
+    "abbreviation": "CLE",
+    "displayName": "Cleveland Browns"
+   }
+  },
+  {
+   "date": "2026-11-02T08:00Z",
+   "description": "Released CB Kader Kohou from the practice squad.",
+   "team": {
+    "id": "12",
+    "abbreviation": "KC",
+    "displayName": "Kansas City Chiefs"
+   }
+  }
+ ]
+}

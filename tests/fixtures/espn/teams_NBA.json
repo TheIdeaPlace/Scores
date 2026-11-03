@@ -1,0 +1,59 @@
+{
+ "sports": [
+  {
+   "name": "Basketball",
+   "leagues": [
+    {
+     "name": "National Basketball Association",
+     "teams": [
+      {
+       "team": {
+        "id": "1",
+        "abbreviation": "ATL",
+        "displayName": "Atlanta Hawks",
+        "shortDisplayName": "Hawks",
+        "name": "Hawks",
+        "location": "Atlanta",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/nba/500/atl.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "2",
+        "abbreviation": "BOS",
+        "displayName": "Boston Celtics",
+        "shortDisplayName": "Celtics",
+        "name": "Celtics",
+        "location": "Boston",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/nba/500/bos.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "17",
+        "abbreviation": "BKN",
+        "displayName": "Brooklyn Nets",
+        "shortDisplayName": "Nets",
+        "name": "Nets",
+        "location": "Brooklyn",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/nba/500/bkn.png"
+         }
+        ]
+       }
+      }
+     ]
+    }
+   ]
+  }
+ ]
+}

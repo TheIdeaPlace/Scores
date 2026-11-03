@@ -1,0 +1,731 @@
+{
+ "name": "Major League Baseball",
+ "children": [
+  {
+   "name": "American League",
+   "standings": {
+    "entries": [
+     {
+      "team": {
+       "id": "10",
+       "abbreviation": "NYY",
+       "displayName": "New York Yankees",
+       "logos": [
+        {
+         "href": "https://a.espncdn.com/i/teamlogos/mlb/500/nyy.png"
+        }
+       ]
+      },
+      "stats": [
+       {
+        "name": "gamesBehind",
+        "value": 4.5,
+        "displayValue": "4.5"
+       },
+       {
+        "name": "losses",
+        "value": 68.0,
+        "displayValue": "68"
+       },
+       {
+        "name": "playoffSeed",
+        "value": 4.0,
+        "displayValue": "4"
+       },
+       {
+        "name": "pointDifferential",
+        "value": 138.0,
+        "displayValue": "+138"
+       },
+       {
+        "name": "pointsAgainst",
+        "value": 601.0,
+        "displayValue": "601"
+       },
+       {
+        "name": "pointsFor",
+        "value": 739.0,
+        "displayValue": "739"
+       },
+       {
+        "name": "streak",
+        "value": 1.0,
+        "displayValue": "W1"
+       },
+       {
+        "name": "winPercent",
+        "value": 0.57763976,
+        "displayValue": ".578"
+       },
+       {
+        "name": "wins",
+        "value": 93.0,
+        "displayValue": "93"
+       },
+       {
+        "name": "homeLosses",
+        "value": 34.0,
+        "displayValue": "34"
+       },
+       {
+        "name": "homeWins",
+        "value": 46.0,
+        "displayValue": "46"
+       },
+       {
+        "name": "magicNumberDivision",
+        "value": 6.0,
+        "displayValue": "6"
+       },
+       {
+        "name": "playoffPercent",
+        "value": 100.0,
+        "displayValue": "100.0%"
+       },
+       {
+        "name": "roadLosses",
+        "value": 34.0,
+        "displayValue": "34"
+       },
+       {
+        "name": "roadWins",
+        "value": 47.0,
+        "displayValue": "47"
+       }
+      ]
+     },
+     {
+      "team": {
+       "id": "2",
+       "abbreviation": "BOS",
+       "displayName": "Boston Red Sox",
+       "logos": [
+        {
+         "href": "https://a.espncdn.com/i/teamlogos/mlb/500/bos.png"
+        }
+       ]
+      },
+      "stats": [
+       {
+        "name": "gamesBehind",
+        "value": 11.0,
+        "displayValue": "11"
+       },
+       {
+        "name": "losses",
+        "value": 75.0,
+        "displayValue": "75"
+       },
+       {
+        "name": "playoffSeed",
+        "value": 5.0,
+        "displayValue": "5"
+       },
+       {
+        "name": "pointDifferential",
+        "value": 78.0,
+        "displayValue": "+78"
+       },
+       {
+        "name": "pointsAgainst",
+        "value": 611.0,
+        "displayValue": "611"
+       },
+       {
+        "name": "pointsFor",
+        "value": 689.0,
+        "displayValue": "689"
+       },
+       {
+        "name": "streak",
+        "value": -1.0,
+        "displayValue": "L1"
+       },
+       {
+        "name": "winPercent",
+        "value": 0.537037,
+        "displayValue": ".537"
+       },
+       {
+        "name": "wins",
+        "value": 87.0,
+        "displayValue": "87"
+       },
+       {
+        "name": "homeLosses",
+        "value": 40.0,
+        "displayValue": "40"
+       },
+       {
+        "name": "homeWins",
+        "value": 41.0,
+        "displayValue": "41"
+       },
+       {
+        "name": "magicNumberDivision",
+        "value": 12.0,
+        "displayValue": "12"
+       },
+       {
+        "name": "playoffPercent",
+        "value": 100.0,
+        "displayValue": "100.0%"
+       },
+       {
+        "name": "roadLosses",
+        "value": 35.0,
+        "displayValue": "35"
+       },
+       {
+        "name": "roadWins",
+        "value": 46.0,
+        "displayValue": "46"
+       }
+      ]
+     },
+     {
+      "team": {
+       "id": "4",
+       "abbreviation": "CHW",
+       "displayName": "Chicago White Sox",
+       "logos": [
+        {
+         "href": "https://a.espncdn.com/i/teamlogos/mlb/500/chw.png"
+        }
+       ]
+      },
+      "stats": [
+       {
+        "name": "gamesBehind",
+        "value": 14.0,
+        "displayValue": "14"
+       },
+       {
+        "name": "losses",
+        "value": 78.0,
+        "displayValue": "78"
+       },
+       {
+        "name": "playoffSeed",
+        "value": 6.0,
+        "displayValue": "6"
+       },
+       {
+        "name": "pointDifferential",
+        "value": 56.0,
+        "displayValue": "+56"
+       },
+       {
+        "name": "pointsAgainst",
+        "value": 720.0,
+        "displayValue": "720"
+       },
+       {
+        "name": "pointsFor",
+        "value": 776.0,
+        "displayValue": "776"
+       },
+       {
+        "name": "streak",
+        "value": 1.0,
+        "displayValue": "W1"
+       },
+       {
+        "name": "winPercent",
+        "value": 0.5185185,
+        "displayValue": ".519"
+       },
+       {
+        "name": "wins",
+        "value": 84.0,
+        "displayValue": "84"
+       },
+       {
+        "name": "homeLosses",
+        "value": 33.0,
+        "displayValue": "33"
+       },
+       {
+        "name": "homeWins",
+        "value": 48.0,
+        "displayValue": "48"
+       },
+       {
+        "name": "magicNumberDivision",
+        "value": 2.0,
+        "displayValue": "2"
+       },
+       {
+        "name": "playoffPercent",
+        "value": 100.0,
+        "displayValue": "100.0%"
+       },
+       {
+        "name": "roadLosses",
+        "value": 45.0,
+        "displayValue": "45"
+       },
+       {
+        "name": "roadWins",
+        "value": 36.0,
+        "displayValue": "36"
+       }
+      ]
+     },
+     {
+      "team": {
+       "id": "14",
+       "abbreviation": "TOR",
+       "displayName": "Toronto Blue Jays",
+       "logos": [
+        {
+         "href": "https://a.espncdn.com/i/teamlogos/mlb/500/tor.png"
+        }
+       ]
+      },
+      "stats": [
+       {
+        "name": "gamesBehind",
+        "value": 19.0,
+        "displayValue": "19"
+       },
+       {
+        "name": "losses",
+        "value": 83.0,
+        "displayValue": "83"
+       },
+       {
+        "name": "playoffSeed",
+        "value": 9.0,
+        "displayValue": "9"
+       },
+       {
+        "name": "pointDifferential",
+        "value": -46.0,
+        "displayValue": "-46"
+       },
+       {
+        "name": "pointsAgainst",
+        "value": 694.0,
+        "displayValue": "694"
+       },
+       {
+        "name": "pointsFor",
+        "value": 648.0,
+        "displayValue": "648"
+       },
+       {
+        "name": "streak",
+        "value": 1.0,
+        "displayValue": "W1"
+       },
+       {
+        "name": "winPercent",
+        "value": 0.48765433,
+        "displayValue": ".488"
+       },
+       {
+        "name": "wins",
+        "value": 79.0,
+        "displayValue": "79"
+       },
+       {
+        "name": "homeLosses",
+        "value": 39.0,
+        "displayValue": "39"
+       },
+       {
+        "name": "homeWins",
+        "value": 42.0,
+        "displayValue": "42"
+       },
+       {
+        "name": "magicNumberDivision",
+        "value": 20.0,
+        "displayValue": "20"
+       },
+       {
+        "name": "playoffPercent",
+        "value": 0.0,
+        "displayValue": "0.0%"
+       },
+       {
+        "name": "roadLosses",
+        "value": 44.0,
+        "displayValue": "44"
+       },
+       {
+        "name": "roadWins",
+        "value": 37.0,
+        "displayValue": "37"
+       }
+      ]
+     },
+     {
+      "team": {
+       "id": "11",
+       "abbreviation": "ATH",
+       "displayName": "Athletics",
+       "logos": [
+        {
+         "href": "https://a.espncdn.com/i/teamlogos/mlb/500/ath.png"
+        }
+       ]
+      },
+      "stats": [
+       {
+        "name": "gamesBehind",
+        "value": 34.0,
+        "displayValue": "34"
+       },
+       {
+        "name": "losses",
+        "value": 98.0,
+        "displayValue": "98"
+       },
+       {
+        "name": "playoffSeed",
+        "value": 14.0,
+        "displayValue": "14"
+       },
+       {
+        "name": "pointDifferential",
+        "value": -238.0,
+        "displayValue": "-238"
+       },
+       {
+        "name": "pointsAgainst",
+        "value": 937.0,
+        "displayValue": "937"
+       },
+       {
+        "name": "pointsFor",
+        "value": 699.0,
+        "displayValue": "699"
+       },
+       {
+        "name": "streak",
+        "value": -2.0,
+        "displayValue": "L2"
+       },
+       {
+        "name": "winPercent",
+        "value": 0.39506173,
+        "displayValue": ".395"
+       },
+       {
+        "name": "wins",
+        "value": 64.0,
+        "displayValue": "64"
+       },
+       {
+        "name": "homeLosses",
+        "value": 49.0,
+        "displayValue": "49"
+       },
+       {
+        "name": "homeWins",
+        "value": 32.0,
+        "displayValue": "32"
+       },
+       {
+        "name": "magicNumberDivision",
+        "value": 18.0,
+        "displayValue": "18"
+       },
+       {
+        "name": "playoffPercent",
+        "value": 0.0,
+        "displayValue": "0.0%"
+       },
+       {
+        "name": "roadLosses",
+        "value": 49.0,
+        "displayValue": "49"
+       },
+       {
+        "name": "roadWins",
+        "value": 32.0,
+        "displayValue": "32"
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "name": "National League",
+   "standings": {
+    "entries": [
+     {
+      "team": {
+       "id": "22",
+       "abbreviation": "PHI",
+       "displayName": "Philadelphia Phillies",
+       "logos": [
+        {
+         "href": "https://a.espncdn.com/i/teamlogos/mlb/500/phi.png"
+        }
+       ]
+      },
+      "stats": [
+       {
+        "name": "gamesBehind",
+        "value": 15.0,
+        "displayValue": "15"
+       },
+       {
+        "name": "losses",
+        "value": 74.0,
+        "displayValue": "74"
+       },
+       {
+        "name": "playoffSeed",
+        "value": 6.0,
+        "displayValue": "6"
+       },
+       {
+        "name": "pointDifferential",
+        "value": 15.0,
+        "displayValue": "+15"
+       },
+       {
+        "name": "pointsAgainst",
+        "value": 698.0,
+        "displayValue": "698"
+       },
+       {
+        "name": "pointsFor",
+        "value": 713.0,
+        "displayValue": "713"
+       },
+       {
+        "name": "streak",
+        "value": 1.0,
+        "displayValue": "W1"
+       },
+       {
+        "name": "winPercent",
+        "value": 0.54320985,
+        "displayValue": ".543"
+       },
+       {
+        "name": "wins",
+        "value": 88.0,
+        "displayValue": "88"
+       },
+       {
+        "name": "homeLosses",
+        "value": 38.0,
+        "displayValue": "38"
+       },
+       {
+        "name": "homeWins",
+        "value": 43.0,
+        "displayValue": "43"
+       },
+       {
+        "name": "magicNumberDivision",
+        "value": 7.0,
+        "displayValue": "7"
+       },
+       {
+        "name": "playoffPercent",
+        "value": 100.0,
+        "displayValue": "100.0%"
+       },
+       {
+        "name": "roadLosses",
+        "value": 36.0,
+        "displayValue": "36"
+       },
+       {
+        "name": "roadWins",
+        "value": 45.0,
+        "displayValue": "45"
+       }
+      ]
+     },
+     {
+      "team": {
+       "id": "19",
+       "abbreviation": "LAD",
+       "displayName": "Los Angeles Dodgers",
+       "logos": [
+        {
+         "href": "https://a.espncdn.com/i/teamlogos/mlb/500/lad.png"
+        }
+       ]
+      },
+      "stats": [
+       {
+        "name": "gamesBehind",
+        "value": 3.0,
+        "displayValue": "3"
+       },
+       {
+        "name": "losses",
+        "value": 62.0,
+        "displayValue": "62"
+       },
+       {
+        "name": "playoffSeed",
+        "value": 2.0,
+        "displayValue": "2"
+       },
+       {
+        "name": "pointDifferential",
+        "value": 201.0,
+        "displayValue": "+201"
+       },
+       {
+        "name": "pointsAgainst",
+        "value": 600.0,
+        "displayValue": "600"
+       },
+       {
+        "name": "pointsFor",
+        "value": 801.0,
+        "displayValue": "801"
+       },
+       {
+        "name": "streak",
+        "value": 3.0,
+        "displayValue": "W3"
+       },
+       {
+        "name": "winPercent",
+        "value": 0.61728394,
+        "displayValue": ".617"
+       },
+       {
+        "name": "wins",
+        "value": 100.0,
+        "displayValue": "100"
+       },
+       {
+        "name": "homeLosses",
+        "value": 30.0,
+        "displayValue": "30"
+       },
+       {
+        "name": "homeWins",
+        "value": 51.0,
+        "displayValue": "51"
+       },
+       {
+        "name": "magicNumberDivision",
+        "value": -8.0,
+        "displayValue": "-8"
+       },
+       {
+        "name": "playoffPercent",
+        "value": 100.0,
+        "displayValue": "100.0%"
+       },
+       {
+        "name": "roadLosses",
+        "value": 32.0,
+        "displayValue": "32"
+       },
+       {
+        "name": "roadWins",
+        "value": 49.0,
+        "displayValue": "49"
+       }
+      ]
+     },
+     {
+      "team": {
+       "id": "15",
+       "abbreviation": "ATL",
+       "displayName": "Atlanta Braves",
+       "logos": [
+        {
+         "href": "https://a.espncdn.com/i/teamlogos/mlb/500/atl.png"
+        }
+       ]
+      },
+      "stats": [
+       {
+        "name": "gamesBehind",
+        "value": 9.0,
+        "displayValue": "9"
+       },
+       {
+        "name": "losses",
+        "value": 68.0,
+        "displayValue": "68"
+       },
+       {
+        "name": "playoffSeed",
+        "value": 3.0,
+        "displayValue": "3"
+       },
+       {
+        "name": "pointDifferential",
+        "value": 116.0,
+        "displayValue": "+116"
+       },
+       {
+        "name": "pointsAgainst",
+        "value": 626.0,
+        "displayValue": "626"
+       },
+       {
+        "name": "pointsFor",
+        "value": 742.0,
+        "displayValue": "742"
+       },
+       {
+        "name": "streak",
+        "value": -1.0,
+        "displayValue": "L1"
+       },
+       {
+        "name": "winPercent",
+        "value": 0.5802469,
+        "displayValue": ".580"
+       },
+       {
+        "name": "wins",
+        "value": 94.0,
+        "displayValue": "94"
+       },
+       {
+        "name": "homeLosses",
+        "value": 29.0,
+        "displayValue": "29"
+       },
+       {
+        "name": "homeWins",
+        "value": 52.0,
+        "displayValue": "52"
+       },
+       {
+        "name": "magicNumberDivision",
+        "value": -5.0,
+        "displayValue": "-5"
+       },
+       {
+        "name": "playoffPercent",
+        "value": 100.0,
+        "displayValue": "100.0%"
+       },
+       {
+        "name": "roadLosses",
+        "value": 39.0,
+        "displayValue": "39"
+       },
+       {
+        "name": "roadWins",
+        "value": 42.0,
+        "displayValue": "42"
+       }
+      ]
+     }
+    ]
+   }
+  }
+ ]
+}

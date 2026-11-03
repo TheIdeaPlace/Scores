@@ -1,0 +1,187 @@
+{
+ "events": [
+  {
+   "id": "401814702",
+   "date": "2026-03-26T00:05Z",
+   "name": "New York Yankees at San Francisco Giants",
+   "timeValid": true,
+   "competitions": [
+    {
+     "id": "401814702",
+     "date": "2026-03-26T00:05Z",
+     "venue": {
+      "fullName": "Oracle Park",
+      "address": {
+       "city": "San Francisco",
+       "state": "California",
+       "zipCode": "94107"
+      }
+     },
+     "status": {
+      "type": {
+       "id": "3",
+       "name": "STATUS_FINAL",
+       "state": "post",
+       "completed": true,
+       "description": "Final",
+       "detail": "Final",
+       "shortDetail": "Final"
+      }
+     },
+     "competitors": [
+      {
+       "id": "26",
+       "homeAway": "home",
+       "score": {
+        "value": 0.0,
+        "displayValue": "0"
+       },
+       "winner": false,
+       "team": {
+        "id": "26",
+        "displayName": "San Francisco Giants",
+        "abbreviation": "SF"
+       }
+      },
+      {
+       "id": "10",
+       "homeAway": "away",
+       "score": {
+        "value": 7.0,
+        "displayValue": "7"
+       },
+       "winner": true,
+       "team": {
+        "id": "10",
+        "displayName": "New York Yankees",
+        "abbreviation": "NYY"
+       }
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "401814721",
+   "date": "2026-03-27T20:35Z",
+   "name": "New York Yankees at San Francisco Giants",
+   "timeValid": true,
+   "competitions": [
+    {
+     "id": "401814721",
+     "date": "2026-03-27T20:35Z",
+     "venue": {
+      "fullName": "Oracle Park",
+      "address": {
+       "city": "San Francisco",
+       "state": "California",
+       "zipCode": "94107"
+      }
+     },
+     "status": {
+      "type": {
+       "id": "3",
+       "name": "STATUS_FINAL",
+       "state": "post",
+       "completed": true,
+       "description": "Final",
+       "detail": "Final",
+       "shortDetail": "Final"
+      }
+     },
+     "competitors": [
+      {
+       "id": "26",
+       "homeAway": "home",
+       "score": {
+        "value": 0.0,
+        "displayValue": "0"
+       },
+       "winner": false,
+       "team": {
+        "id": "26",
+        "displayName": "San Francisco Giants",
+        "abbreviation": "SF"
+       }
+      },
+      {
+       "id": "10",
+       "homeAway": "away",
+       "score": {
+        "value": 3.0,
+        "displayValue": "3"
+       },
+       "winner": true,
+       "team": {
+        "id": "10",
+        "displayName": "New York Yankees",
+        "abbreviation": "NYY"
+       }
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "401814734",
+   "date": "2026-03-28T23:15Z",
+   "name": "New York Yankees at San Francisco Giants",
+   "timeValid": true,
+   "competitions": [
+    {
+     "id": "401814734",
+     "date": "2026-03-28T23:15Z",
+     "venue": {
+      "fullName": "Oracle Park",
+      "address": {
+       "city": "San Francisco",
+       "state": "California",
+       "zipCode": "94107"
+      }
+     },
+     "status": {
+      "type": {
+       "id": "3",
+       "name": "STATUS_FINAL",
+       "state": "post",
+       "completed": true,
+       "description": "Final",
+       "detail": "Final",
+       "shortDetail": "Final"
+      }
+     },
+     "competitors": [
+      {
+       "id": "26",
+       "homeAway": "home",
+       "score": {
+        "value": 1.0,
+        "displayValue": "1"
+       },
+       "winner": false,
+       "team": {
+        "id": "26",
+        "displayName": "San Francisco Giants",
+        "abbreviation": "SF"
+       }
+      },
+      {
+       "id": "10",
+       "homeAway": "away",
+       "score": {
+        "value": 3.0,
+        "displayValue": "3"
+       },
+       "winner": true,
+       "team": {
+        "id": "10",
+        "displayName": "New York Yankees",
+        "abbreviation": "NYY"
+       }
+      }
+     ]
+    }
+   ]
+  }
+ ]
+}
