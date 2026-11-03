@@ -27,6 +27,13 @@ def strings_in(value):
             yield from strings_in(item)
 
 
+def live_golf():
+    """The saved tournament hadn't started; get_live_golf_tournament only reads one in progress."""
+    data = load("golf_scoreboard_PGA.json")
+    data["events"][0]["competitions"][0]["status"]["type"]["state"] = "in"
+    return data
+
+
 CASES = [
     case("get_scores", lambda: espn_api.get_scores("NBA"), "scoreboard_events_by_status.json", "/scoreboard"),
     case("get_world_cup_scores_range",
@@ -42,11 +49,16 @@ CASES = [
          "details_NFL_pieces.json", "/summary"),
     case("game details NCAAH", lambda: espn_api.extract_meaningful_game_info(espn_api.get_game_details("NCAAH", "1")),
          "details_NCAAH_pieces.json", "/summary"),
+    case("get_live_golf_tournament", lambda: espn_api.get_live_golf_tournament("PGA"), live_golf, "/scoreboard"),
+    case("get_golf_leaderboard", lambda: espn_api.get_golf_leaderboard("PGA"), "golf_scoreboard_PGA.json", "/scoreboard"),
+    case("get_golf_schedule", lambda: espn_api.get_golf_schedule("PGA"), "golf_schedule_PGA.json", "/scoreboard"),
 ]
 
 
 def payload(spec):
-    """"file.json" or "file.json:key" for one piece of a bundle."""
+    """A function, "file.json", or "file.json:key" for one piece of a bundle."""
+    if callable(spec):
+        return spec()
     name, _, key = spec.partition(":")
     data = load(name)
     return data[key] if key else data
@@ -57,13 +69,14 @@ def test_no_single_bad_field_raises_or_reads_none(espn, call, fixture, route, ot
     espn.on(".*", HTTP_404)
     for pattern, spec in others.items():
         espn.on(pattern, payload(spec))
-    # The real payload first: the sweep proves nothing if this already comes back empty.
-    espn.routes.append((__import__("re").compile(route), payload(fixture)))
+    served = {"payload": payload(fixture)}
+    espn.on(route, lambda url: served["payload"])
+    # The sweep proves nothing if the real payload already comes back empty.
     assert call(), "the unmodified payload should produce a result"
 
     failures = []
-    for description, changed in mutations(payload(fixture)):
-        espn.routes[-1] = (espn.routes[-1][0], changed)
+    for description, changed in mutations(served["payload"]):
+        served["payload"] = changed
         try:
             result = call()
         except Exception as e:

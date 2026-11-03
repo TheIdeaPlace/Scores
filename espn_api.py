@@ -854,11 +854,11 @@ def golf_total_to_par(competitor):
     total is their sum. Falls back to `score` when no round has a value, and
     keeps a non-numeric `score` (CUT, WD, DQ) as it is.
     """
-    score = str(competitor.get("score", "")).strip()
+    score = str(competitor.get("score") or "").strip()
     if score and score not in ("E", "e") and not score.lstrip("+-").isdigit():
         return score
     total, counted = 0, False
-    for line in competitor.get("linescores", []):
+    for line in _as_list(competitor.get("linescores")):
         value = str(line.get("displayValue", "")).strip()
         if value in ("E", "e"):
             counted = True
@@ -888,19 +888,19 @@ def get_live_golf_tournament(tour_key, leaders=3):
     resp = _http_get(f"{BASE_URL}/{league_path}/scoreboard")
     if resp.status_code != 200:
         return None
-    for event in resp.json().get("events", []):
+    for event in _as_list(resp.json().get("events")):
         comp = (event.get("competitions") or [{}])[0]
-        status = comp.get("status", {}).get("type", {})
+        status = _as_dict(_as_dict(comp.get("status")).get("type"))
         if status.get("state") != "in":
             continue
-        players = sorted(comp.get("competitors", []), key=lambda c: c.get("order", 999))
+        players = sorted(_as_list(comp.get("competitors")), key=lambda c: c.get("order") or 999)
         scores = [golf_total_to_par(p) for p in players]
         top = []
         for i, player in enumerate(players[:leaders]):
             score = scores[i]
             first = scores.index(score) + 1
             tied = scores.count(score) > 1
-            athlete = player.get("athlete", {})
+            athlete = _as_dict(player.get("athlete"))
             top.append((f"T{first}" if tied else str(first),
                         athlete.get("displayName") or athlete.get("fullName", ""),
                         score))
@@ -3850,28 +3850,28 @@ def get_golf_leaderboard(tour_key):
         if resp.status_code != 200:
             return None
         data = resp.json()
-        events = data.get("events", [])
+        events = _as_list(data.get("events"))
         if not events:
             return None
         event = events[0]
-        comps = event.get("competitions", [])
+        comps = _as_list(event.get("competitions"))
         if not comps:
             return None
         comp = comps[0]
-        comp_status = comp.get("status", {})
+        comp_status = _as_dict(comp.get("status"))
 
         players = []
-        for competitor in comp.get("competitors", []):
-            athlete = competitor.get("athlete", {})
+        for competitor in _as_list(comp.get("competitors")):
+            athlete = _as_dict(competitor.get("athlete"))
             rounds = [
                 ls["displayValue"]
-                for ls in sorted(competitor.get("linescores", []), key=lambda x: x.get("period", 0))
+                for ls in sorted(_as_list(competitor.get("linescores")), key=lambda x: x.get("period") or 0)
                 if "value" in ls and "displayValue" in ls
             ]
             players.append({
-                "position": competitor.get("order", 0),
+                "position": competitor.get("order") or 0,
                 "name": athlete.get("displayName") or athlete.get("fullName", ""),
-                "country": athlete.get("flag", {}).get("alt", ""),
+                "country": _as_dict(athlete.get("flag")).get("alt", ""),
                 "total_score": golf_total_to_par(competitor) or "E",
                 "rounds": rounds,
             })
@@ -3880,10 +3880,10 @@ def get_golf_leaderboard(tour_key):
         return {
             "name": event.get("name", ""),
             "short_name": event.get("shortName", ""),
-            "date": event.get("date", "")[:10],
-            "end_date": event.get("endDate", "")[:10],
+            "date": (event.get("date") or "")[:10],
+            "end_date": (event.get("endDate") or "")[:10],
             "round_num": comp_status.get("period", 0),
-            "status_detail": comp_status.get("type", {}).get("detail", ""),
+            "status_detail": _as_dict(comp_status.get("type")).get("detail", ""),
             "players": players,
         }
     except Exception as e:
@@ -3911,25 +3911,25 @@ def get_golf_schedule(tour_key):
         if resp.status_code != 200:
             return []
         result = []
-        for event in resp.json().get("events", []):
-            status_type = event.get("status", {}).get("type", {})
+        for event in _as_list(resp.json().get("events")):
+            status_type = _as_dict(_as_dict(event.get("status")).get("type"))
             state = status_type.get("state", "pre")
 
             winner = ""
             if state == "post":
-                comps = event.get("competitions", [])
+                comps = _as_list(event.get("competitions"))
                 if comps:
-                    top = sorted(comps[0].get("competitors", []), key=lambda x: x.get("order", 999))
+                    top = sorted(_as_list(comps[0].get("competitors")), key=lambda x: x.get("order") or 999)
                     if top:
                         w = top[0]
-                        wname = w.get("athlete", {}).get("displayName", "")
-                        wscore = w.get("score", "")
-                        winner = f"{wname} ({wscore})" if wname else ""
+                        wname = _as_dict(w.get("athlete")).get("displayName", "")
+                        wscore = w.get("score") or ""
+                        winner = f"{wname} ({wscore})" if wname and wscore else wname
 
             result.append({
                 "name": event.get("name", ""),
-                "start_date": event.get("date", "")[:10],
-                "end_date": event.get("endDate", "")[:10],
+                "start_date": (event.get("date") or "")[:10],
+                "end_date": (event.get("endDate") or "")[:10],
                 "status": status_type.get("description", "Scheduled"),
                 "state": state,
                 "winner": winner,
