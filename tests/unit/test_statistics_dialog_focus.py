@@ -1,5 +1,5 @@
-"""The statistics dialog's rows have to take focus when they replace the loading row, or a
-screen reader says nothing about them. Builds Qt objects, so this runs in CI or the VM."""
+"""The statistics dialog's rows have to take focus at the moment they replace the loading row,
+so UI Automation reports them rather than the window. Builds Qt objects: CI or the VM only."""
 from unittest.mock import patch
 
 import pytest

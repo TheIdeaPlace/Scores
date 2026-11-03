@@ -11008,7 +11008,8 @@ class StatisticsViewDialog(QDialog):
 
     def _focus_stats_list(self):
         """A widget just added to a layout isn't visible until the event loop comes round, and
-        setFocus does nothing to it then. Focus would stay on the window, with the row unheard."""
+        setFocus can't take effect on it then. NVDA still spoke the row, but UI Automation went on
+        reporting the window as focused."""
         self.stats_list.show()
         self.stats_list.setFocus()
 
