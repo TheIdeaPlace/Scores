@@ -855,6 +855,31 @@ class TestStatistics:
         v.check_statistics(http, report, league("NHL"), event(), True)
         assert statuses(report, "App: player statistics") == [v.WARN]
 
+    def test_the_app_giving_up_on_espn_s_blip_is_only_worth_a_look(self, monkeypatch):
+        import espn_api
+
+        def gave_up(*a, **k):
+            raise v.ApiError(espn_api.STATISTICS_UNAVAILABLE)
+
+        monkeypatch.setattr(espn_api, "get_player_statistics", gave_up)
+        monkeypatch.setattr(v.time, "sleep", lambda s: None)
+        report = v.Report()
+        # ESPN answering well a moment later doesn't make that a parser bug.
+        http = FakeHttp([("/statistics", (200, {"stats": {"categories": [1]}}))], default=(200, {}))
+        v.check_statistics(http, report, league("NHL"), event(), True)
+        assert statuses(report, "App: player statistics") == [v.WARN]
+
+    def test_any_other_app_error_on_statistics_fails(self, monkeypatch):
+        import espn_api
+
+        def boom(*a, **k):
+            raise ValueError("bad")
+
+        monkeypatch.setattr(espn_api, "get_player_statistics", boom)
+        report = v.Report()
+        v.check_statistics(FakeHttp(default=(200, {})), report, league("NHL"), event(), True)
+        assert FAIL_IN(report, "App: player statistics")
+
     def test_any_other_404_on_statistics_in_season_fails(self, monkeypatch):
         import espn_api
         monkeypatch.setattr(espn_api, "get_player_statistics", lambda *a, **k: {"player_stats": []})
