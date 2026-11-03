@@ -49,14 +49,6 @@ class TestUrls:
         espn_api.get_team_schedule("WNBA", "8", days_ahead=30, days_behind=30)
         assert espn.calls == [f"{SITE}/basketball/wnba/scoreboard?dates={m}&limit=1000" for m in ("202609", "202610", "202611")]
 
-    def test_a_college_scoreboard_league_keeps_its_group_but_widens_the_limit(self, espn, monkeypatch):
-        """The scoreboard path no longer runs for any college league, but it's built to."""
-        monkeypatch.setitem(espn_api.LEAGUES, "NCAAX", "basketball/mens-college-basketball")
-        monkeypatch.setattr(espn_api, "college_scoreboard_params", lambda *a, **k: ["groups=50", "limit=400"])
-        espn.on("/scoreboard", {"events": []})
-        espn_api.get_team_schedule("NCAAX", "1")
-        assert all("groups=50&limit=1000" in url for url in espn.calls), espn.calls
-
 
 class TestLocalDates:
     """ESPN's dates are UTC, so an evening game is tomorrow in UTC. local_zone fixes the

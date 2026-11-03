@@ -167,17 +167,12 @@ class TestGetStatistics:
             f"{SITE}/football/nfl/statistics",
             f"{SITE}/football/nfl/stats/leaders",
             "https://sports.core.api.espn.com/v2/sports/football/nfl/leaders",
-            f"{SITE}/football/nfl/scoreboard",
             f"{SITE}/football/nfl/teams",
         ]
 
     def test_timeouts_are_nothing(self, espn):
         espn.on(".*", TIMEOUT)
         assert espn_api.get_statistics("NFL") == NOTHING
-
-    def test_a_real_scoreboard_has_no_stats_to_offer(self, espn):
-        espn.on(".*", HTTP_404).on("/scoreboard", load("scoreboard_events_by_status.json"))
-        assert espn_api.get_statistics("NBA") == NOTHING
 
     def test_team_stats_without_player_stats(self, espn):
         espn.on(".*", HTTP_404)
@@ -202,78 +197,24 @@ class TestGetStatistics:
         assert espn_api.get_statistics("MLB") == NOTHING
         assert f"{SITE}/baseball/mlb/leaders" in espn.calls
 
-    def test_a_scoreboard_with_something_to_show_is_returned(self, espn, monkeypatch):
-        monkeypatch.setattr(espn_api, "_extract_stats_from_scoreboard",
-                            lambda data, league: {"player_stats": [{"category": "x"}], "team_stats": []})
-        espn.on(".*", HTTP_404).on("/scoreboard", {"events": []})
-        assert espn_api.get_statistics("NBA")["player_stats"] == [{"category": "x"}]
 
-
-class TestPayloadShapes:
-    """_parse_statistics_data takes several shapes. Only the list one is live today."""
-
+class TestParsing:
     LEADERS = [{"athlete": {"displayName": "A", "team": {"abbreviation": "TM"}}, "value": 0.3125, "displayValue": ".313"}]
 
-    @pytest.mark.parametrize("data", [
-        {"stats": {"categories": [{"name": "avg", "displayName": "Batting Average", "leaders": LEADERS}]}},
-        {"leaders": [{"name": "avg", "displayName": "Batting Average", "leaders": LEADERS}]},
-        {"categories": [{"name": "avg", "displayName": "Batting Average", "leaders": LEADERS}]},
-    ])
-    @pytest.mark.parametrize("league", ["MLB", "NCAAM"])
-    def test_ratio_stats_get_three_places(self, data, league):
-        result = espn_api._parse_statistics_data(data, league)
-        assert result["player_stats"] == [{"category": "Batting Average", "stats": [
+    def test_ratio_stats_get_three_places(self):
+        data = {"stats": {"categories": [{"name": "avg", "displayName": "Batting Average", "leaders": self.LEADERS}]}}
+        assert espn_api._parse_statistics_data(data)["player_stats"] == [{"category": "Batting Average", "stats": [
             {"player_name": "A", "team": "TM", "value": "0.312", "stat_name": "Batting Average"}]}]
 
-    @pytest.mark.parametrize("parser", [espn_api._parse_mlb_player_stats, espn_api._parse_generic_player_stats])
-    def test_list_edge_cases(self, parser):
+    def test_edge_cases(self):
+        parser = espn_api._parse_generic_player_stats
         assert parser(["text", {"name": "x", "leaders": []}]) == []
         result = parser([{"name": "era", "leaders": ["text", {"athlete": {}}, {"athlete": {"name": "B"}, "value": "n/a"}]}])
         assert result == [{"category": "Era", "stats": [{"player_name": "B", "team": "", "value": "n/a", "stat_name": "Era"}]}]
 
-    @pytest.mark.parametrize("parser,name", [(espn_api._parse_mlb_player_stats, "Home Runs"), (espn_api._parse_generic_player_stats, "Homeruns")])
-    @pytest.mark.parametrize("field", ["leaders", "athletes", "items"])
-    def test_dict_shape(self, parser, name, field):
-        leader = {"athlete": {"displayName": "A", "team": {"name": "Team"}}, "displayValue": "40", "shortDisplayName": "HR"}
-        result = parser({"homeruns": {field: ["text", leader]}, "empty": {}, "scalar": 7})
-        assert result == [{"category": name, "stats": [{"player_name": "A", "team": "Team", "value": "40", "stat_name": "HR"}]}]
-
-    @pytest.mark.parametrize("parser", [espn_api._parse_mlb_player_stats, espn_api._parse_generic_player_stats])
-    def test_dict_of_lists_with_the_athlete_at_the_top(self, parser):
-        result = parser({"wins": [{"displayName": "A", "value": 20}]})
-        assert result[0]["stats"][0]["player_name"] == "A"
-        assert result[0]["stats"][0]["value"] == 20
-
-    @pytest.mark.parametrize("parser", [espn_api._parse_mlb_player_stats, espn_api._parse_generic_player_stats])
-    def test_an_unexpected_type(self, parser):
-        assert parser("text") == []
-
-    @pytest.mark.parametrize("parser,key,name", [
-        (espn_api._parse_nfl_player_stats, "passing", "Passing"),
-        (espn_api._parse_nba_player_stats, "scoring", "Scoring"),
-        (espn_api._parse_nhl_player_stats, "goals", "Goals"),
-    ])
-    def test_the_old_dict_shape_per_sport(self, parser, key, name):
-        leader = {"athlete": {"displayName": "A", "team": {"abbreviation": "TM"}}, "displayValue": "9"}
-        result = parser({key: {"leaders": [leader, {"no": "athlete"}]}, "other": {"leaders": []}, "scalar": 1})
-        assert result == [{"category": name, "stats": [{"player_name": "A", "team": "TM", "value": "9", "stat_name": name}]}]
-
-    def test_empty_leaders_parse_to_nothing(self):
-        for league in ("NFL", "NBA", "NHL"):
-            assert espn_api._parse_statistics_data({"leaders": []}, league) == NOTHING
-
-    def test_a_bare_list(self):
-        assert espn_api._parse_statistics_data([], "NCAAM") == NOTHING
-        assert espn_api._parse_statistics_data(
-            [{"name": "pts", "displayName": "Points", "leaders": [{"athlete": {"displayName": "A"}, "value": 30}]}], "NCAAM"
-        )["player_stats"][0]["stats"][0]["value"] == "30"
-
-
-def test_scoreboard_extraction_never_invents_stats():
-    assert espn_api._extract_stats_from_scoreboard(load("scoreboard_events_by_status.json"), "NBA") == NOTHING
-    assert espn_api._extract_stats_from_scoreboard({"events": [
-        {"competitions": [{"details": [], "competitors": [{"statistics": [], "team": {}}]}]}]}, "NBA") == NOTHING
-    assert espn_api._extract_stats_from_scoreboard({"events": "bad"}, "NBA") == NOTHING
+    @pytest.mark.parametrize("data", [{}, "text", [], {"stats": None}, {"stats": {"categories": None}}, load("statistics_NBA.json")])
+    def test_no_stats_key_is_nothing(self, data):
+        assert espn_api._parse_statistics_data(data) == NOTHING
 
 
 def test_a_request_error_in_the_player_endpoint_loop_tries_the_next(espn):

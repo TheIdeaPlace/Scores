@@ -94,9 +94,8 @@ def college_scoreboard_params(league_key, coverage=None):
     college basketball returns only a handful of featured games. `limit=` then
     lifts the page size far enough to hold the result.
 
-    `coverage` overrides the user's football setting; callers that filter the
-    response down to one team pass "all_d1" so the net is as wide as possible.
-    It has no meaning for basketball, which has only the one division.
+    `coverage` overrides the user's football setting. It has no meaning for
+    basketball, which has only the one division.
     """
     if league_key == "NCAAF":
         if coverage is None:
@@ -457,25 +456,13 @@ def get_team_schedule(league_key, team_id, days_ahead=30, days_behind=30, season
         today = datetime.now()
         start_date = today - timedelta(days=days_behind)
         end_date = today + timedelta(days=days_ahead)
-        # Unreachable for NCAAF today — it is handled by the dedicated
-        # /teams/{id}/schedule endpoint above, which needs no division filter and
-        # already works for FCS teams. Kept as a guard in case that ever changes:
-        # widest coverage regardless of the user's setting, because the response
-        # is filtered down to one team anyway and FBS-only would return nothing
-        # at all for an FCS team.
-        extra = college_scoreboard_params(league_key, coverage="all_d1")
-        if league_key != "NCAAF":
-            # A month is far bigger than a day, so lift the page size to the
-            # 1000 ceiling (past it ESPN collapses to 25). College football is
-            # left alone: ESPN doubles its limit, so 400 is already 800.
-            extra = [p for p in extra if not p.startswith("limit=")] + ["limit=1000"]
-
         # ESPN rejects dates=START-END ranges (400 since September 2026), so
         # fetch each month the window touches and trim to the window afterwards.
+        # A month is far bigger than a day, so lift the page size to the 1000
+        # ceiling (past it ESPN collapses to 25).
         schedule = []
         for month in scoreboard_months(start_date, end_date):
-            params = [f"dates={month}"] + extra
-            url = f"{BASE_URL}/{league_path}/scoreboard?" + "&".join(params)
+            url = f"{BASE_URL}/{league_path}/scoreboard?dates={month}&limit=1000"
             schedule.extend(parse_schedule_from_api(url, team_id, datetime.now(), season))
         first, last = start_date.strftime("%Y-%m-%d"), end_date.strftime("%Y-%m-%d")
         schedule = [g for g in schedule if first <= g['date'] <= last]
@@ -2811,7 +2798,6 @@ def get_statistics(league_key):
             f"{BASE_URL}/{league_path}/statistics",
             f"{BASE_URL}/{league_path}/stats/leaders",
             f"https://sports.core.api.espn.com/v2/sports/{league_path}/leaders",
-            f"{BASE_URL}/{league_path}/scoreboard"  # Last resort
         ]
         
         for endpoint in endpoints_to_try:
@@ -2825,31 +2811,21 @@ def get_statistics(league_key):
                     print(f"Response keys: {list(data.keys())}")
                     print(f"Response sample: {str(data)[:300]}...")
                     
-                    # Special handling for scoreboard endpoint
-                    if "scoreboard" in endpoint:
-                        scoreboard_result = _extract_stats_from_scoreboard(data, league_key)
-                        # Only return scoreboard result if it has data, otherwise continue to team stats/sample data
-                        if scoreboard_result['player_stats'] or scoreboard_result['team_stats']:
-                            return scoreboard_result
-                        else:
-                            print(f"Scoreboard endpoint returned no usable data, will try team stats and sample data fallback")
-                            break  # Exit the endpoint loop to try team stats
+                    result = _parse_statistics_data(data)
+                    print(f"Parsed result - player_stats: {len(result['player_stats'])}, team_stats: {len(result['team_stats'])}")
+
+                    # If we got data, try to also get team statistics
+                    if result['player_stats'] or result['team_stats']:
+                        print(f"Got player stats, now attempting to fetch team statistics for {league_key}")
+                        team_stats = _get_team_statistics(league_key)
+                        if team_stats:
+                            result['team_stats'] = team_stats
+                            print(f"Successfully added {len(team_stats)} team stat categories")
+
+                        return result
                     else:
-                        result = _parse_statistics_data(data, league_key)
-                        print(f"Parsed result - player_stats: {len(result['player_stats'])}, team_stats: {len(result['team_stats'])}")
-                        
-                        # If we got data, try to also get team statistics
-                        if result['player_stats'] or result['team_stats']:
-                            print(f"Got player stats, now attempting to fetch team statistics for {league_key}")
-                            team_stats = _get_team_statistics(league_key)
-                            if team_stats:
-                                result['team_stats'] = team_stats
-                                print(f"Successfully added {len(team_stats)} team stat categories")
-                            
-                            return result
-                        else:
-                            print(f"No usable data from {endpoint}, trying next...")
-                            continue
+                        print(f"No usable data from {endpoint}, trying next...")
+                        continue
                 else:
                     print(f"FAILED: {endpoint} returned status {resp.status_code}")
                     
@@ -2912,7 +2888,7 @@ def get_player_statistics(league_key):
                 
                 if resp.status_code == 200:
                     data = resp.json()
-                    parsed_data = _parse_statistics_data(data, league_key)
+                    parsed_data = _parse_statistics_data(data)
                     if parsed_data and parsed_data.get("player_stats"):
                         # Only return player stats, not team stats
                         return {"player_stats": parsed_data["player_stats"], "team_stats": []}
@@ -2938,479 +2914,71 @@ def get_team_statistics(league_key):
         print(f"Error fetching team statistics for {league_key}: {str(e)}")
         return {"team_stats": [], "player_stats": []}
 
-def _parse_statistics_data(data, league_key):
-    """Parse statistics data from ESPN leaders endpoint"""
-    player_stats = []
-    team_stats = []
-    
-    print(f"Parsing statistics data for {league_key}")
-    print(f"Data structure: {type(data)} with keys: {list(data.keys()) if isinstance(data, dict) else 'Not a dict'}")
-    
-    # Try different possible data structures
-    leaders_data = None
-    
-    # Check for ESPN statistics API structure
-    if "stats" in data and isinstance(data["stats"], dict):
-        stats_data = data["stats"]
-        if "categories" in stats_data:
-            leaders_data = stats_data["categories"]
-            print(f"Found 'stats.categories' with type: {type(leaders_data)}")
-    elif "leaders" in data:
-        leaders_data = data["leaders"]
-        print(f"Found 'leaders' key with type: {type(leaders_data)}")
-    elif "categories" in data:
-        leaders_data = data["categories"]  
-        print(f"Found 'categories' key with type: {type(leaders_data)}")
-    elif isinstance(data, list):
-        leaders_data = data
-        print(f"Data is a list with {len(data)} items")
-    else:
-        print(f"No recognized structure, trying to use data directly")
-        leaders_data = data
-    
-    if leaders_data:
-        # Parse different categories based on sport
-        if league_key == "MLB":
-            player_stats = _parse_mlb_player_stats(leaders_data)
-        elif league_key == "NFL":
-            player_stats = _parse_nfl_player_stats(leaders_data)
-        elif league_key == "NBA":
-            player_stats = _parse_nba_player_stats(leaders_data)
-        elif league_key == "NHL":
-            player_stats = _parse_nhl_player_stats(leaders_data)
-        else:
-            player_stats = _parse_generic_player_stats(leaders_data)
-        
-        print(f"Parsed {len(player_stats)} player stat categories")
-    
-    # Team statistics are typically found in different endpoints
-    # For now, return empty team stats - could be enhanced later
+def _parse_statistics_data(data):
+    """Player leaders from ESPN's statistics endpoint: stats.categories, a list. A
+    league with nothing to show has no stats key at all."""
+    categories = _as_list(_as_dict(_as_dict(data).get("stats")).get("categories"))
     return {
-        "player_stats": player_stats,
-        "team_stats": team_stats
+        "player_stats": _parse_generic_player_stats(categories),
+        "team_stats": [],
     }
-
-def _parse_mlb_player_stats(leaders):
-    """Parse MLB player statistics from leaders data"""
-    categories = []
-    
-    print(f"Parsing MLB stats from data type: {type(leaders)}")
-    
-    # Common MLB categories
-    category_mapping = {
-        "batting": "Hitting",
-        "hitting": "Hitting", 
-        "pitching": "Pitching",
-        "fielding": "Fielding",
-        "rbis": "RBIs",
-        "homeruns": "Home Runs",
-        "avg": "Batting Average",
-        "era": "ERA",
-        "wins": "Wins",
-        "saves": "Saves"
-    }
-    
-    # Handle list structure from ESPN statistics API
-    if isinstance(leaders, list):
-        print(f"Processing {len(leaders)} categories from statistics API")
-        
-        for category_data in leaders:
-            if not isinstance(category_data, dict):
-                continue
-                
-            category_key = category_data.get('name', 'unknown')
-            category_display_name = category_data.get('displayName', category_key.title())
-            leaders_list = category_data.get('leaders', [])
-            
-            print(f"Processing category: {category_key} ({category_display_name}) with {len(leaders_list)} leaders")
-            
-            if not leaders_list:
-                continue
-            
-            # Use display name if available, otherwise use mapping
-            category_name = category_display_name or category_mapping.get(category_key.lower(), category_key.title())
-            
-            stats = []
-            for leader in leaders_list:
-                if not isinstance(leader, dict):
-                    continue
-                    
-                athlete = leader.get("athlete", {})
-                team = leader.get("team", athlete.get("team", {}))
-                
-                if athlete and ("displayName" in athlete or "name" in athlete):
-                    # Use the raw value for the specific statistic, not the display value
-                    # displayValue contains full stat lines, value contains just the target stat
-                    raw_value = leader.get("value", "")
-                    
-                    # For most statistics, use the raw numeric value
-                    # For special cases like batting average, format appropriately
-                    stat_value = raw_value
-                    if category_key.lower() in ['avg', 'era', 'whip', 'onbasepct', 'slugavg', 'ops']:
-                        # For percentage/ratio stats, format to 3 decimal places
-                        try:
-                            stat_value = f"{float(raw_value):.3f}"
-                        except (ValueError, TypeError):
-                            stat_value = "" if raw_value is None else str(raw_value)
-                    else:
-                        # For counting stats, use the numeric value as-is
-                        stat_value = "" if raw_value is None else str(raw_value)
-                    
-                    stats.append({
-                        "player_name": athlete.get("displayName", athlete.get("name", "Unknown")),
-                        "team": team.get("abbreviation", team.get("name", "")),
-                        "value": stat_value,
-                        "stat_name": category_display_name or category_key.title()
-                    })
-            
-            if stats:
-                categories.append({
-                    "category": category_name,
-                    "stats": stats
-                })
-                print(f"Added category {category_name} with {len(stats)} players")
-    
-    # Handle dictionary structure (legacy support)
-    elif isinstance(leaders, dict):
-        # Standard structure: {category: {leaders: [...]}}
-        items = leaders.items()
-        
-        for category_key, category_data in items:
-            print(f"Processing category: {category_key}, data type: {type(category_data)}")
-            
-            # Get leaders list
-            leaders_list = []
-            if isinstance(category_data, dict):
-                if "leaders" in category_data:
-                    leaders_list = category_data["leaders"]
-                elif "athletes" in category_data:
-                    leaders_list = category_data["athletes"]
-                elif "items" in category_data:
-                    leaders_list = category_data["items"]
-            elif isinstance(category_data, list):
-                leaders_list = category_data
-                
-            if not leaders_list:
-                print(f"No leaders found for category {category_key}")
-                continue
-                
-            category_name = category_mapping.get(category_key.lower(), category_key.title())
-            print(f"Found {len(leaders_list)} leaders for {category_name}")
-            
-            stats = []
-            for leader in leaders_list:
-                if not isinstance(leader, dict):
-                    continue
-                    
-                athlete = leader.get("athlete", leader)  # sometimes athlete data is at top level
-                
-                if "displayName" in athlete or "name" in athlete:
-                    team = athlete.get("team", {})
-                    
-                    stats.append({
-                        "player_name": athlete.get("displayName", athlete.get("name", "Unknown")),
-                        "team": team.get("abbreviation", team.get("name", "")),
-                        "value": leader.get("displayValue", leader.get("value", "")),
-                        "stat_name": leader.get("shortDisplayName", category_name)
-                    })
-            
-            if stats:
-                categories.append({
-                    "category": category_name,
-                    "stats": stats
-                })
-                print(f"Added category {category_name} with {len(stats)} players")
-    else:
-        print(f"Unexpected leaders data structure: {type(leaders)}")
-        return categories
-    
-    print(f"MLB parsing complete: {len(categories)} categories")
-    return categories
-
-def _parse_nfl_player_stats(leaders):
-    """Parse NFL player statistics from leaders data"""
-    if isinstance(leaders, list):
-        # ESPN's statistics endpoint sends a list of categories now, not a dict.
-        return _parse_generic_player_stats(leaders)
-    categories = []
-    
-    category_mapping = {
-        "passing": "Passing",
-        "rushing": "Rushing", 
-        "receiving": "Receiving",
-        "defense": "Defense",
-        "kicking": "Kicking"
-    }
-    
-    for category_key, category_data in leaders.items():
-        if isinstance(category_data, dict) and "leaders" in category_data:
-            category_name = category_mapping.get(category_key, category_key.title())
-            
-            stats = []
-            for leader in category_data["leaders"]:
-                if "athlete" in leader:
-                    athlete = leader["athlete"]
-                    team = athlete.get("team", {})
-                    
-                    stats.append({
-                        "player_name": athlete.get("displayName", "Unknown"),
-                        "team": team.get("abbreviation", ""), 
-                        "value": leader.get("displayValue", leader.get("value", "")),
-                        "stat_name": leader.get("shortDisplayName", category_name)
-                    })
-            
-            if stats:
-                categories.append({
-                    "category": category_name,
-                    "stats": stats
-                })
-    
-    return categories
-
-def _parse_nba_player_stats(leaders):
-    """Parse NBA player statistics from leaders data"""
-    if isinstance(leaders, list):
-        # ESPN's statistics endpoint sends a list of categories now, not a dict.
-        return _parse_generic_player_stats(leaders)
-    categories = []
-    
-    category_mapping = {
-        "scoring": "Scoring",
-        "rebounding": "Rebounding",
-        "assists": "Assists", 
-        "steals": "Steals",
-        "blocks": "Blocks",
-        "fieldGoals": "Field Goals",
-        "freeThrows": "Free Throws",
-        "threePoints": "Three Points"
-    }
-    
-    for category_key, category_data in leaders.items():
-        if isinstance(category_data, dict) and "leaders" in category_data:
-            category_name = category_mapping.get(category_key, category_key.title())
-            
-            stats = []
-            for leader in category_data["leaders"]:
-                if "athlete" in leader:
-                    athlete = leader["athlete"]
-                    team = athlete.get("team", {})
-                    
-                    stats.append({
-                        "player_name": athlete.get("displayName", "Unknown"),
-                        "team": team.get("abbreviation", ""),
-                        "value": leader.get("displayValue", leader.get("value", "")),
-                        "stat_name": leader.get("shortDisplayName", category_name)
-                    })
-            
-            if stats:
-                categories.append({
-                    "category": category_name,
-                    "stats": stats
-                })
-    
-    return categories
 
 def _parse_generic_player_stats(leaders):
-    """Parse generic player statistics for other sports"""
+    """[{name, displayName, leaders: [{athlete, value}]}] to the rows the dialog shows."""
     categories = []
-    
-    print(f"Parsing generic stats from data type: {type(leaders)}")
-    
-    # Handle different data structures
-    if isinstance(leaders, list):
-        # ESPN statistics API structure: [{name: category, leaders: [...]}]
-        print(f"Processing {len(leaders)} categories from statistics API")
-        
-        for category_data in leaders:
-            if not isinstance(category_data, dict):
+
+    for category_data in leaders:
+        if not isinstance(category_data, dict):
+            continue
+
+        category_key = category_data.get('name', 'unknown')
+        category_display_name = category_data.get('displayName', category_key.title())
+        leaders_list = category_data.get('leaders', [])
+
+        if not leaders_list:
+            continue
+
+        category_name = category_display_name or category_key.replace("_", " ").title()
+
+        stats = []
+        for leader in leaders_list:
+            if not isinstance(leader, dict):
                 continue
-                
-            category_key = category_data.get('name', 'unknown')
-            category_display_name = category_data.get('displayName', category_key.title())
-            leaders_list = category_data.get('leaders', [])
-            
-            print(f"Processing generic category: {category_key} ({category_display_name}) with {len(leaders_list)} leaders")
-            
-            if not leaders_list:
-                continue
-            
-            category_name = category_display_name or category_key.replace("_", " ").title()
-            
-            stats = []
-            for leader in leaders_list:
-                if not isinstance(leader, dict):
-                    continue
-                    
-                athlete = leader.get("athlete", {})
-                team = leader.get("team", athlete.get("team", {}))
-                
-                if athlete and ("displayName" in athlete or "name" in athlete):
-                    # Use the raw value for the specific statistic, not the display value
-                    # displayValue contains full stat lines, value contains just the target stat
-                    raw_value = leader.get("value", "")
-                    
-                    # For most statistics, use the raw numeric value
-                    # For special cases like batting average, format appropriately
-                    stat_value = raw_value
-                    if category_key.lower() in ['avg', 'era', 'whip', 'onbasepct', 'slugavg', 'ops']:
-                        # For percentage/ratio stats, format to 3 decimal places
-                        try:
-                            stat_value = f"{float(raw_value):.3f}"
-                        except (ValueError, TypeError):
-                            stat_value = "" if raw_value is None else str(raw_value)
-                    else:
-                        # For counting stats, use the numeric value as-is
+
+            athlete = leader.get("athlete", {})
+            team = leader.get("team", athlete.get("team", {}))
+
+            if athlete and ("displayName" in athlete or "name" in athlete):
+                # Use the raw value for the specific statistic, not the display value
+                # displayValue contains full stat lines, value contains just the target stat
+                raw_value = leader.get("value", "")
+
+                # For most statistics, use the raw numeric value
+                # For special cases like batting average, format appropriately
+                if category_key.lower() in ['avg', 'era', 'whip', 'onbasepct', 'slugavg', 'ops']:
+                    # For percentage/ratio stats, format to 3 decimal places
+                    try:
+                        stat_value = f"{float(raw_value):.3f}"
+                    except (ValueError, TypeError):
                         stat_value = "" if raw_value is None else str(raw_value)
-                    
-                    stats.append({
-                        "player_name": athlete.get("displayName", athlete.get("name", "Unknown")),
-                        "team": team.get("abbreviation", team.get("name", "")),
-                        "value": stat_value,
-                        "stat_name": category_display_name or category_key.title()
-                    })
-            
-            if stats:
-                categories.append({
-                    "category": category_name,
-                    "stats": stats
-                })
-                print(f"Added generic category {category_name} with {len(stats)} players")
-    
-    elif isinstance(leaders, dict):
-        # Standard structure: {category: {leaders: [...]}}
-        items = leaders.items()
-        
-        for category_key, category_data in items:
-            print(f"Processing generic category: {category_key}, data type: {type(category_data)}")
-            
-            # Get leaders list
-            leaders_list = []
-            if isinstance(category_data, dict):
-                if "leaders" in category_data:
-                    leaders_list = category_data["leaders"]
-                elif "athletes" in category_data:
-                    leaders_list = category_data["athletes"]
-                elif "items" in category_data:
-                    leaders_list = category_data["items"]
-            elif isinstance(category_data, list):
-                leaders_list = category_data
-                
-            if not leaders_list:
-                print(f"No leaders found for generic category {category_key}")
-                continue
-                
-            category_name = str(category_key).replace("_", " ").title()
-            print(f"Found {len(leaders_list)} leaders for generic {category_name}")
-            
-            stats = []
-            for leader in leaders_list:
-                if not isinstance(leader, dict):
-                    continue
-                    
-                athlete = leader.get("athlete", leader)  # sometimes athlete data is at top level
-                
-                if "displayName" in athlete or "name" in athlete:
-                    team = athlete.get("team", {})
-                    
-                    stats.append({
-                        "player_name": athlete.get("displayName", athlete.get("name", "Unknown")),
-                        "team": team.get("abbreviation", team.get("name", "")),
-                        "value": leader.get("displayValue", leader.get("value", "")),
-                        "stat_name": leader.get("shortDisplayName", category_name)
-                    })
-            
-            if stats:
-                categories.append({
-                    "category": category_name,
-                    "stats": stats
-                })
-                print(f"Added generic category {category_name} with {len(stats)} players")
-    else:
-        print(f"Unexpected leaders data structure: {type(leaders)}")
-        return categories
-    
-    print(f"Generic parsing complete: {len(categories)} categories")
-    return categories
+                else:
+                    # For counting stats, use the numeric value as-is
+                    stat_value = "" if raw_value is None else str(raw_value)
 
-def _parse_nhl_player_stats(leaders):
-    """Parse NHL player statistics from leaders data"""
-    if isinstance(leaders, list):
-        # ESPN's statistics endpoint sends a list of categories now, not a dict.
-        return _parse_generic_player_stats(leaders)
-    categories = []
-    
-    category_mapping = {
-        "scoring": "Scoring",
-        "goals": "Goals",
-        "assists": "Assists",
-        "points": "Points", 
-        "plus_minus": "Plus/Minus",
-        "penalty_minutes": "Penalty Minutes",
-        "powerplay": "Power Play",
-        "goaltending": "Goaltending"
-    }
-    
-    for category_key, category_data in leaders.items():
-        if isinstance(category_data, dict) and "leaders" in category_data:
-            category_name = category_mapping.get(category_key, category_key.title())
-            
-            stats = []
-            for leader in category_data["leaders"]:
-                if "athlete" in leader:
-                    athlete = leader["athlete"]
-                    team = athlete.get("team", {})
-                    
-                    stats.append({
-                        "player_name": athlete.get("displayName", "Unknown"),
-                        "team": team.get("abbreviation", ""),
-                        "value": leader.get("displayValue", leader.get("value", "")),
-                        "stat_name": leader.get("shortDisplayName", category_name)
-                    })
-            
-            if stats:
-                categories.append({
-                    "category": category_name,
-                    "stats": stats
+                stats.append({
+                    "player_name": athlete.get("displayName", athlete.get("name", "Unknown")),
+                    "team": team.get("abbreviation", team.get("name", "")),
+                    "value": stat_value,
+                    "stat_name": category_display_name or category_key.title()
                 })
-    
-    return categories
 
-def _extract_stats_from_scoreboard(data, league_key):
-    """Extract basic statistics from scoreboard data as fallback"""
-    print(f"Attempting to extract stats from scoreboard data for {league_key}")
-    player_stats = []
-    team_stats = []
-    
-    try:
-        # Look for any statistical data in the scoreboard response
-        if "events" in data:
-            events = data["events"]
-            print(f"Found {len(events)} events in scoreboard")
-            
-            for event in events:
-                if "competitions" in event:
-                    for competition in event["competitions"]:
-                        # Check if there are any player stats in the game data
-                        if "details" in competition:
-                            # Sometimes game details contain player performance
-                            pass
-                        
-                        # Extract team statistics if available
-                        if "competitors" in competition:
-                            for competitor in competition["competitors"]:
-                                team = competitor.get("team", {})
-                                team_name = team.get("displayName", "Unknown Team")
-                                
-                                # Look for team statistics
-                                if "statistics" in competitor:
-                                    stats = competitor["statistics"]
-                                    # This could be developed further based on actual API structure
-                        
-        print("Scoreboard extraction complete - no usable stats found")
-    except Exception as e:
-        print(f"Error extracting from scoreboard: {e}")
-    
-    return {"player_stats": player_stats, "team_stats": team_stats}
+        if stats:
+            categories.append({
+                "category": category_name,
+                "stats": stats
+            })
+
+    return categories
 
 def _get_sample_statistics_data(league_key):
     """No statistics. This used to return invented players (including "Sample Player 1"

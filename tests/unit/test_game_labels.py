@@ -118,8 +118,7 @@ def test_statistics_never_invented():
 @pytest.mark.parametrize("league", ["NFL", "NHL"])
 def test_list_shaped_player_statistics_parse(league):
     stats = load(f"statistics_{league}.json")["stats"]["categories"]
-    parser = {"NFL": espn_api._parse_nfl_player_stats, "NHL": espn_api._parse_nhl_player_stats}[league]
-    categories = parser(stats)
+    categories = espn_api._parse_generic_player_stats(stats)
     assert len(categories) >= 2  # the fixture is trimmed
     assert categories[0]["stats"]
 
