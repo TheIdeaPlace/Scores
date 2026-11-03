@@ -1,5 +1,7 @@
 """Bugs the replay tests found and the fixes made for them. The ones not fixed yet
 are in test_known_gaps.py."""
+import io
+import sys
 from datetime import datetime
 
 import pytest
@@ -100,6 +102,15 @@ def test_the_game_details_injury_line_counts_players_not_teams():
 def test_team_info_with_no_team_in_the_body_is_empty_not_a_blank_team(espn):
     espn.on("/teams/9$", {})
     assert espn_api.get_team_info("NFL", "9") == {}
+
+
+def test_mlb_statistics_survive_a_console_that_cannot_print_emoji(espn, monkeypatch):
+    """With stdout redirected on Windows, print() encodes as cp1252. Emoji in the progress
+    lines raised UnicodeEncodeError, and every MLB leader was lost."""
+    console = io.TextIOWrapper(io.BytesIO(), encoding="cp1252")
+    monkeypatch.setattr(sys, "stdout", console)
+    espn.on("statsapi.mlb.com", load("mlb_leaders_homeRuns.json"))
+    assert len(espn_api.get_player_statistics("MLB")["player_stats"]) == 39
 
 
 def test_soccer_standings_read_the_record_not_0_0(espn):

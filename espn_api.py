@@ -2749,7 +2749,7 @@ def _get_mlb_statistics():
                         return category_data, display_name, leaders[0]['name'], leaders[0]['value']
                         
         except Exception as e:
-            print(f"  💥 Error fetching {display_name}: {str(e)[:60]}")
+            print(f"  Error fetching {display_name}: {str(e)[:60]}")
         
         return None, display_name, None, None
     
@@ -2769,11 +2769,11 @@ def _get_mlb_statistics():
                 category_data, display_name, leader_name, leader_value = future.result()
                 if category_data:
                     player_stats.append(category_data)
-                    print(f"  ✅ {display_name}: {leader_name} = {leader_value}")
+                    print(f"  {display_name}: {leader_name} = {leader_value}")
                 else:
-                    print(f"  ❌ {display_name}: No data available")
+                    print(f"  {display_name}: No data available")
             except Exception as e:
-                print(f"  💥 {stat_name}: Exception - {str(e)[:50]}")
+                print(f"  {stat_name}: Exception - {str(e)[:50]}")
     
     print(f"Successfully loaded {len(player_stats)} MLB statistical categories")
     
