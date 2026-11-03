@@ -48,11 +48,11 @@ class ESPNAPIService {
     // MARK: - College football scoreboard parameters
 
     /// ESPN's college football scoreboard *doubles* `limit` internally on any
-    /// query that is not a `dates=A-B` range: limit=5 returns 10 events, limit=50
+    /// query it accepts: limit=5 returns 10 events, limit=50
     /// returns 100. The effective (post-doubling) value must stay at or below
     /// 1000 — past that the page size collapses to 25, so limit=501 is worse than
-    /// limit=250. 400 clears a 209-game Division I week on range queries while
-    /// leaving the doubled shapes at 800, comfortably inside the ceiling.
+    /// limit=250. 400 clears a 209-game Division I week and leaves the doubled
+    /// value at 800, comfortably inside the ceiling.
     private static let ncaafScoreboardLimit = 400
 
     /// ESPN's "NCAA Division I" group for college basketball. Unlike football
@@ -297,17 +297,20 @@ class ESPNAPIService {
         return (try? JSONDecoder().decode(WeeksResponse.self, from: data))?.count ?? 0
     }
 
-    // MARK: - Historical Football Week Games (Core API + date-range scoreboard)
+    // MARK: - Football Week Games (week-addressed scoreboard)
 
-    /// Fetches games for a specific week of a **historical** football season.
+    /// Fetches games for one explicit week of a football season, live or historical.
     ///
-    /// Because the site scoreboard endpoint rejects `season=YEAR` params for past
-    /// seasons, this method:
-    /// 1. Gets the week's `startDate`/`endDate` from the Core API.
-    /// 2. Fetches the site scoreboard with `?dates=YYYYMMDD-YYYYMMDD`.
+    /// `dates=YEAR` is what picks the season: the scoreboard's `season=` is ignored
+    /// when `week=` is also passed, while `dates=2025&week=5` serves the 2025
+    /// season's week 5 and `dates=2026&week=1&seasontype=3` the January 2027 games.
+    /// This replaced a `dates=START-END` range, which ESPN began rejecting with a
+    /// 400 in September 2026. `seasontype` matters because week numbers restart
+    /// within each season type.
     ///
-    /// Both the week date range and the scoreboard result are cached so that
-    /// navigating back and forth between weeks is cheap.
+    /// The Core API is only asked for the week's label, so losing it costs the
+    /// label rather than the games. The label is cached, so navigating back and
+    /// forth between weeks is cheap.
     func fetchFootballWeek(
         sport: Sport,
         season: Int,
@@ -315,47 +318,17 @@ class ESPNAPIService {
         week: Int,
         ncaafCoverage: NCAAFCoverage? = nil
     ) async throws -> FootballScoreboardResult {
-        // Step 1 — get the date range for this week (cached after first fetch).
         let weekCacheKey = "\(sport.rawValue)-\(season)-\(seasonType)-\(week)"
-        let weekRange: ScheduleCacheStore.WeekRange
+        var weekLabel = await scheduleCache.weekRange(forKey: weekCacheKey)?.text
 
-        if let cached = await scheduleCache.weekRange(forKey: weekCacheKey) {
-            weekRange = cached
-        } else {
-            let league = coreLeagueName(for: sport)
-            let weekURLString = "\(coreAPIBaseURL)/football/leagues/\(league)/seasons/\(season)/types/\(seasonType)/weeks/\(week)"
-            guard let weekURL = URL(string: weekURLString) else { throw APIError.invalidURL }
-
-            let (weekData, weekResponse) = try await session.data(from: weekURL)
-            guard let weekHttp = weekResponse as? HTTPURLResponse,
-                  weekHttp.statusCode == 200 else { throw APIError.invalidResponse }
-
-            struct CoreWeek: Decodable {
-                let number: Int
-                let startDate: String
-                let endDate: String
-                let text: String?
-            }
-            let coreWeek = try JSONDecoder().decode(CoreWeek.self, from: weekData)
-            let start = parseESPNDateString(coreWeek.startDate) ?? Date()
-            let end   = parseESPNDateString(coreWeek.endDate)   ?? Date()
-            let text  = coreWeek.text ?? "Week \(week)"
-            weekRange = ScheduleCacheStore.WeekRange(start: start, end: end, text: text)
+        if weekLabel == nil,
+           let weekRange = await fetchWeekRange(sport: sport, season: season,
+                                                seasonType: seasonType, week: week) {
             await scheduleCache.store(weekRange, forKey: weekCacheKey)
+            weekLabel = weekRange.text
         }
 
-        // Step 2 — fetch the scoreboard using the date range.
-        // ESPN's week boundaries are Pacific midnights (07:00Z / 06:59Z), and the
-        // `dates=` param is read the same way — so format in Pacific rather than
-        // the device's zone, which would otherwise pull in the neighbouring
-        // week's Thursday game for anyone east of Los Angeles.
-        let fmt = DateFormatter()
-        fmt.locale = Locale(identifier: "en_US_POSIX")
-        fmt.timeZone = TimeZone(identifier: "America/Los_Angeles") ?? .current
-        fmt.dateFormat = "yyyyMMdd"
-        let startStr = fmt.string(from: weekRange.start)
-        let endStr   = fmt.string(from: weekRange.end)
-        var scoreboardParams = ["dates=\(startStr)-\(endStr)"]
+        var scoreboardParams = ["dates=\(season)", "week=\(week)", "seasontype=\(seasonType)"]
         scoreboardParams += collegeScoreboardParams(for: sport, coverage: ncaafCoverage)
         let scoreboardURLString =
             "\(baseURL)/\(sport.apiPath)/scoreboard?" + scoreboardParams.joined(separator: "&")
@@ -379,10 +352,31 @@ class ESPNAPIService {
         return FootballScoreboardResult(
             games: games,
             week: week,
-            weekLabel: weekRange.text,
+            weekLabel: weekLabel ?? "Week \(week)",
             seasonType: seasonType,
             season: season
         )
+    }
+
+    /// One week's dates and label from the Core API, or nil if it can't be had.
+    private func fetchWeekRange(sport: Sport, season: Int, seasonType: Int,
+                                week: Int) async -> ScheduleCacheStore.WeekRange? {
+        let league = coreLeagueName(for: sport)
+        let urlString = "\(coreAPIBaseURL)/football/leagues/\(league)/seasons/\(season)/types/\(seasonType)/weeks/\(week)"
+        guard let url = URL(string: urlString),
+              let (data, response) = try? await session.data(from: url),
+              let http = response as? HTTPURLResponse, http.statusCode == 200 else { return nil }
+
+        struct CoreWeek: Decodable {
+            let startDate: String
+            let endDate: String
+            let text: String?
+        }
+        guard let coreWeek = try? JSONDecoder().decode(CoreWeek.self, from: data) else { return nil }
+        let start = parseESPNDateString(coreWeek.startDate) ?? Date()
+        let end = parseESPNDateString(coreWeek.endDate) ?? Date()
+        return ScheduleCacheStore.WeekRange(start: start, end: end,
+                                            text: coreWeek.text ?? "Week \(week)")
     }
 
     /// Parse an ESPN date string that may be formatted with or without seconds.
@@ -541,23 +535,56 @@ class ESPNAPIService {
 
     /// Fetches all games within a date range — used by the bracket tab to load
     /// all matches for a tournament phase in one call.
+    ///
+    /// ESPN's scoreboard answers `dates=START-END` with a 400 (since September
+    /// 2026) but still takes a month, so this fetches each month the range touches
+    /// and trims to the range. A month holds far more than a phase, so the page
+    /// size goes to ESPN's ceiling of 1000; past that it collapses to 25.
+    ///
+    /// The trim uses Eastern time, as ESPN's date boards do. Tournament phases are
+    /// calendar days on that board; a kickoff's day on the device can differ, which
+    /// would put a match in the wrong round or lose it.
     func fetchGamesRange(for sport: Sport, startDate: Date, endDate: Date) async throws -> [Game] {
-        let fmt = DateFormatter()
-        fmt.dateFormat = "yyyyMMdd"
-        let startStr = fmt.string(from: startDate)
-        let endStr   = fmt.string(from: endDate)
-        let urlString = "\(baseURL)/\(sport.apiPath)/scoreboard?dates=\(startStr)-\(endStr)&limit=100"
-        guard let url = URL(string: urlString) else { throw APIError.invalidURL }
+        let dayFormat = DateFormatter()
+        dayFormat.locale = Locale(identifier: "en_US_POSIX")
+        dayFormat.dateFormat = "yyyyMMdd"
+        let monthFormat = DateFormatter()
+        monthFormat.locale = Locale(identifier: "en_US_POSIX")
+        monthFormat.dateFormat = "yyyyMM"
+        let firstDay = dayFormat.string(from: startDate)
+        let lastDay = dayFormat.string(from: endDate)
 
-        let (data, response) = try await session.data(from: url)
-        guard let httpResponse = response as? HTTPURLResponse,
-              httpResponse.statusCode == 200 else { throw APIError.invalidResponse }
+        var months: [String] = []
+        var cursor = startDate
+        while monthFormat.string(from: cursor) <= monthFormat.string(from: endDate) {
+            months.append(monthFormat.string(from: cursor))
+            guard let next = Calendar.current.date(byAdding: .month, value: 1, to: cursor) else { break }
+            cursor = next
+        }
 
         let decoder = JSONDecoder()
         decoder.dateDecodingStrategy = .iso8601
-        let apiResponse = try decoder.decode(ScoreboardResponse.self, from: data)
-        let seasonType = apiResponse.season?.type ?? 1
-        return try apiResponse.events.map { try Game(from: $0, seasonType: seasonType) }
+        var games: [Game] = []
+        for month in months {
+            let urlString = "\(baseURL)/\(sport.apiPath)/scoreboard?dates=\(month)&limit=1000"
+            guard let url = URL(string: urlString) else { throw APIError.invalidURL }
+
+            let (data, response) = try await session.data(from: url)
+            guard let httpResponse = response as? HTTPURLResponse,
+                  httpResponse.statusCode == 200 else { throw APIError.invalidResponse }
+
+            let apiResponse = try decoder.decode(ScoreboardResponse.self, from: data)
+            let seasonType = apiResponse.season?.type ?? 1
+            games += try apiResponse.events.map { try Game(from: $0, seasonType: seasonType) }
+        }
+        let boardDayFormat = DateFormatter()
+        boardDayFormat.locale = Locale(identifier: "en_US_POSIX")
+        boardDayFormat.timeZone = TimeZone(identifier: "America/New_York")
+        boardDayFormat.dateFormat = "yyyyMMdd"
+        return games.filter {
+            let day = boardDayFormat.string(from: $0.date)
+            return firstDay <= day && day <= lastDay
+        }
     }
 
     /// Fetches each event's official tournament match number (e.g. FIFA World Cup
@@ -637,9 +664,9 @@ class ESPNAPIService {
         // into proper divisions (e.g. "AL East", "AFC North").  Otherwise fall back
         // to the conference-level groupings from the API.
         if DivisionMapper.hasDivisions(sport) {
-            return groupByDivision(apiResponse.children, sport: sport)
+            return groupByDivision(apiResponse.groupsWithEntries, sport: sport)
         } else {
-            return try apiResponse.children.map { try StandingsGroup(from: $0) }
+            return try apiResponse.groupsWithEntries.map { try StandingsGroup(from: $0) }
         }
     }
 
@@ -659,9 +686,13 @@ class ESPNAPIService {
             }
         }
 
-        // Sort entries within each division by win% descending, then wins descending
+        // Sort entries within each division by win% descending, then wins descending.
+        // The NHL ranks by points, which an overtime loss earns one of.
         for key in buckets.keys {
             buckets[key]?.sort {
+                if sport == .nhl, $0.stats.nhlPoints != $1.stats.nhlPoints {
+                    return ($0.stats.nhlPoints ?? 0) > ($1.stats.nhlPoints ?? 0)
+                }
                 if $0.stats.winPercent != $1.stats.winPercent {
                     return $0.stats.winPercent > $1.stats.winPercent
                 }
@@ -1447,9 +1478,29 @@ class ESPNAPIService {
         func recordSummary(matching description: String) -> String? {
             items.first(where: { $0.description?.lowercased().contains(description) == true })?.summary
         }
-        let overallRecord = recordSummary(matching: "overall")
-        let homeRecord = recordSummary(matching: "home")
-        let awayRecord = recordSummary(matching: "away") ?? recordSummary(matching: "road")
+        // NFL record items have no description; `type` is the reliable marker.
+        let totalItem = items.first(where: { $0.type == "total" })
+            ?? items.first(where: { $0.description?.lowercased().contains("overall") == true })
+        var overallRecord = totalItem?.summary
+        var homeRecord = recordSummary(matching: "home")
+        var awayRecord = recordSummary(matching: "away") ?? recordSummary(matching: "road")
+        if sport == .nhl, let totalItem {
+            // ESPN's NHL summary leaves out overtime losses, and it sends no home or
+            // road items, only the numbers for them inside the total.
+            func value(_ name: String) -> Int? {
+                (totalItem.stats?.first(where: { $0.name == name })?.value).map { Int($0) }
+            }
+            func record(_ prefix: String) -> String? {
+                guard let w = value("\(prefix)Wins"), let l = value("\(prefix)Losses") else { return nil }
+                return "\(w)-\(l)-\(value("\(prefix)OtLosses") ?? 0)"
+            }
+            if let summary = totalItem.summary, let ot = value("otLosses"),
+               summary.split(separator: "-").count == 2 {
+                overallRecord = "\(summary)-\(ot)"
+            }
+            homeRecord = homeRecord ?? record("home")
+            awayRecord = awayRecord ?? record("away")
+        }
 
         // Venue from franchise
         let venue = t.franchise?.venue
@@ -1464,14 +1515,22 @@ class ESPNAPIService {
             let opponent = comp.competitors?.first(where: { $0.team?.id != teamId })
             let isHome = comp.competitors?.first(where: { $0.team?.id == teamId })?.homeAway == "home"
             if let opp = opponent?.team {
-                let parsedDate = parseESPNDate(ev.date)
-                if let parsedDate = parsedDate {
+                let timeIsKnown = (ev.timeValid ?? comp.timeValid) != false
+                let parsedDate = parseESPNDate(ev.date).map {
+                    timeIsKnown ? $0 : ScoreboardDay.localNoon(onUTCDayOf: $0)
+                }
+                // `nextEvent` can still be the game just played.
+                if let parsedDate = parsedDate,
+                   timeIsKnown ? parsedDate > Date()
+                               : parsedDate >= Calendar.current.startOfDay(for: Date()) {
                     nextGame = TeamHubNextGame(
                         gameId: ev.id,
                         date: parsedDate,
                         opponentDisplayName: opp.displayName ?? opp.abbreviation ?? "Opponent",
                         opponentAbbreviation: opp.abbreviation ?? "?",
-                        isHome: isHome
+                        isHome: isHome,
+                        timeIsKnown: timeIsKnown,
+                        isNeutralSite: comp.neutralSite ?? false
                     )
                 }
             }

@@ -71,7 +71,7 @@ class PlayAudioMapper(QObject):
 
     def describe_play(self, league, play):
         """Spoken location for a play, or None if it has no usable location."""
-        if not has_coordinate(play):
+        if not has_coordinate(play, league):
             return None
         coord = play["coordinate"]
         location = locate(league, coord["x"], coord["y"])
@@ -85,7 +85,7 @@ class PlayAudioMapper(QObject):
         percent of hockey plays have none. The caller gets None so it can say so
         rather than play a misleading tone.
         """
-        if not has_coordinate(play):
+        if not has_coordinate(play, league):
             return None
 
         coord = play["coordinate"]
@@ -116,7 +116,7 @@ class PlayAudioMapper(QObject):
         """
         located = []
         for play in plays:
-            if not has_coordinate(play):
+            if not has_coordinate(play, league):
                 continue
             coord = play["coordinate"]
             params = audio_params(league, coord["x"], coord["y"])

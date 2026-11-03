@@ -52,10 +52,40 @@ Found in a bug bash with NVDA on football, hockey and basketball.
   game" is no longer the game just played. Game Wrap Up no longer replaces names with "\1".
 - **Plays and Drives** open in the tree. The same drive no longer appears twice in a live football
   game, and drive rows lost their emoji.
+- **College basketball plays with no real location** no longer read "at the rim" or play a tone,
+  on Windows or iOS. ESPN marks a substitution, timeout, free throw or rebound with one fixed spot
+  under the basket. The NBA and WNBA use that spot for real tips and dunks, so they keep it.
+
+### Fixed on iOS
+The iOS side of the same bug bash. These were checked against live ESPN data and in a simulator
+build, but not yet on a device or with VoiceOver.
+
+- **Women's college basketball games open.** About one in five failed outright because of a single
+  player with only a short name. One unreadable row or section can no longer take a whole game down.
+- **Football week arrows work,** for past seasons too. So does the World Cup bracket. ESPN stopped
+  accepting date ranges in September, which left only the current week and an empty bracket.
+- **Box scores.** Every sport shows real columns under Essential Stats, including shooting in
+  basketball, and team stats fill in. Tabs have names ("Players", "Defense", "Kick Returns"), and
+  there's no tab for an empty group. Tables have a Totals row wherever ESPN sends one, which is every
+  sport but hockey, and say "Did not play". College hockey says "Box score not available" instead of nine blank tabs.
+- **Before a game,** the team table says it holds season stats. Postponed and delayed games no
+  longer read 0 to 0.
+- **Standings load in college football and men's college hockey,** which failed outright, and in
+  women's college hockey, which was empty. College football shows real losses and percentages. The
+  NHL has one group per division, including Utah, ranks by points and shows overtime losses. The
+  Knicks are back in the Atlantic. Nobody reads "Rank: 0".
+- **Late games stay put.** Until 5 AM, Live Scores, Soccer Live and the league screens stay on last
+  night's games.
+- **Game details and rows** show betting lines, TV on games opened from a schedule, AP ranks, and
+  "vs" at a neutral site. A game with no set time says "Time TBD" on the right day.
+- **Plays and drives.** A live football drive no longer appears twice. Overtimes read OT, 2OT.
+  Shootouts don't show a false score, and "scoring" no longer counts missed college shots.
+- **Team hub.** Overall records appear for the NFL, and NHL records include overtime losses. "Next"
+  is never a game already played. The Field Tour button only appears for a park the app has.
 
 ### Known issues
-- College basketball plays with no real location, such as substitutions and timeouts, read "at the
-  rim". The fix has to go in with the iOS app's matching table.
+- College basketball fouls read and sound as if they happened at the far end of the court, on
+  Windows and iOS: a foul under the basket can read "deep, 66 feet out". See #123.
 
 ### In Progress
 - **Game Wrap Up Feature**: ESPN text processing and game story extraction (under construction)

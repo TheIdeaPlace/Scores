@@ -677,8 +677,12 @@ struct GenericPlaysView: View {
         }
     }
 
+    private func hasLocation(_ play: GameDetails.Play) -> Bool {
+        sport.map { play.hasPlayLocation(for: $0) } ?? false
+    }
+
     private func locatedCount(_ period: PeriodGroup) -> Int {
-        period.plays.filter { $0.hasPlayLocation }.count
+        period.plays.filter { hasLocation($0) }.count
     }
 
     private var periods: [PeriodGroup] {
@@ -712,17 +716,13 @@ struct GenericPlaysView: View {
     @ViewBuilder
     private func periodSection(_ period: PeriodGroup) -> some View {
         let isOpen = expandedPeriods.contains(period.id)
-        let scoringCount = period.plays.filter { $0.scoreValue ?? 0 > 0 }.count
+        let scoringCount = period.plays.filter { $0.isScoring }.count
         let changeCount  = period.plays.filter { Self.isPlayerChangePlay($0) }.count
         
         // Find the final score after this period by checking the last play with score info
         let finalScore: String? = {
-            period.plays.reversed().first { play in
-                play.awayScore != nil && play.homeScore != nil
-            }.flatMap { play in
-                guard let away = play.awayScore, let home = play.homeScore else { return nil }
-                return "\(away)-\(home)"
-            }
+            period.plays.reversed().lazy.compactMap { $0.runningScore }.first
+                .map { "\($0.away)-\($0.home)" }
         }()
         
         let a11yHeader: String = {
@@ -778,7 +778,7 @@ struct GenericPlaysView: View {
             // Only where there is something to hear: football and soccer share
             // this view and have no coordinates at all.
             .accessibilityActions {
-                if canPlayAudio && period.plays.contains(where: { $0.hasPlayLocation }) {
+                if canPlayAudio && period.plays.contains(where: { hasLocation($0) }) {
                     Button("Play locations") { playPeriodLocations(period) }
                 }
             }
@@ -840,8 +840,8 @@ struct GenericPlaysView: View {
                             .foregroundColor(isPlayerChange ? .secondary : .blue)
                     }
                     Spacer()
-                    if let away = play.awayScore, let home = play.homeScore {
-                        Text("\(awayAbbr) \(away)–\(home) \(homeAbbr)")
+                    if let score = play.runningScore {
+                        Text("\(awayAbbr) \(score.away)–\(score.home) \(homeAbbr)")
                             .font(.caption.monospacedDigit())
                             .foregroundColor(.secondary)
                     }
@@ -857,18 +857,18 @@ struct GenericPlaysView: View {
         // Offered only on the plays that actually have somewhere to play, so the
         // rotor is not full of actions that would answer "no location".
         .accessibilityActions {
-            if canPlayAudio && play.hasPlayLocation {
+            if canPlayAudio && hasLocation(play) {
                 Button("Play location") { playLocation(play) }
             }
         }
         .accessibilityHint(
-            canPlayAudio && play.hasPlayLocation
+            canPlayAudio && hasLocation(play)
                 ? "Actions available to hear where this play happened."
                 : ""
         )
         // Tapping the row does the same thing for anyone not using VoiceOver.
         .onTapGesture {
-            if canPlayAudio && play.hasPlayLocation { playLocation(play) }
+            if canPlayAudio && hasLocation(play) { playLocation(play) }
         }
     }
 
@@ -891,8 +891,8 @@ struct GenericPlaysView: View {
         var parts: [String] = []
         parts.append(playText)
         if let clock = play.clock?.displayValue { parts.append(clock) }
-        if let away = play.awayScore, let home = play.homeScore {
-            parts.append("\(awayAbbr) \(away), \(homeAbbr) \(home)")
+        if let score = play.runningScore {
+            parts.append("\(awayAbbr) \(score.away), \(homeAbbr) \(score.home)")
         }
         return parts.joined(separator: ". ")
     }
@@ -928,7 +928,8 @@ struct NFLDrivesView: View {
                 case 2: label = "2nd Quarter"
                 case 3: label = "3rd Quarter"
                 case 4: label = "4th Quarter"
-                default: label = "OT \(q - 4)"
+                case 5: label = "OT"
+                default: label = "\(q - 4)OT"
                 }
                 groups.append((quarter: q, label: label, drives: [drive]))
             }

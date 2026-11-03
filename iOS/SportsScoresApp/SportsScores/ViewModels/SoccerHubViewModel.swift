@@ -15,7 +15,7 @@ final class SoccerHubViewModel: ObservableObject {
     private var newDayObserver: Task<Void, Never>?
 
     init(initialDate: Date? = nil) {
-        self.selectedDate = Calendar.current.startOfDay(for: initialDate ?? Date())
+        self.selectedDate = initialDate.map { Calendar.current.startOfDay(for: $0) } ?? ScoreboardDay.today()
         newDayObserver = Task { [weak self] in
             for await _ in NotificationCenter.default.notifications(named: .appReturnedToNewDay) {
                 await self?.goToToday()
@@ -46,11 +46,11 @@ final class SoccerHubViewModel: ObservableObject {
 
     private var navStart: Date {
         Calendar.current.date(byAdding: .day, value: -7,
-                              to: Calendar.current.startOfDay(for: Date())) ?? Date()
+                              to: ScoreboardDay.today()) ?? Date()
     }
     private var navEnd: Date {
         Calendar.current.date(byAdding: .day, value: 7,
-                              to: Calendar.current.startOfDay(for: Date())) ?? Date()
+                              to: ScoreboardDay.today()) ?? Date()
     }
 
     var canNavigateBackward: Bool { selectedDate > navStart }
@@ -69,15 +69,15 @@ final class SoccerHubViewModel: ObservableObject {
     }
 
     func goToToday() async {
-        selectedDate = Calendar.current.startOfDay(for: Date())
+        selectedDate = ScoreboardDay.today()
         await load()
     }
 
     var headerText: String {
-        Calendar.current.isDateInToday(selectedDate) ? "Today's Games" : "\(dayOfWeek(selectedDate))'s Games"
+        ScoreboardDay.isToday(selectedDate) ? "Today's Games" : "\(dayOfWeek(selectedDate))'s Games"
     }
 
-    var isOnToday: Bool { Calendar.current.isDateInToday(selectedDate) }
+    var isOnToday: Bool { ScoreboardDay.isToday(selectedDate) }
 
     private func dayOfWeek(_ date: Date) -> String {
         let fmt = DateFormatter()

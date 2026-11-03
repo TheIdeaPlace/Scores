@@ -127,6 +127,19 @@ struct StandingsEntry: Identifiable {
         return text
     }
 
+    // The NHL ranks by points and has overtime losses, not percentages and games back.
+    var nhlQuickListText: String {
+        var text = "\(team.abbreviation), \(stats.wins)-\(stats.losses)-\(stats.otLosses ?? 0), \(stats.nhlPoints ?? 0) PTS"
+        if let l10 = stats.lastTenRecord { text += ", L10: \(l10)" }
+        return text
+    }
+
+    var nhlFullListText: String {
+        var text = "Team: \(team.displayName); Wins: \(stats.wins); Losses: \(stats.losses); OT Losses: \(stats.otLosses ?? 0); Points: \(stats.nhlPoints ?? 0); Streak: \(stats.streak)"
+        if let l10 = stats.lastTenRecord { text += "; Last 10: \(l10)" }
+        return text
+    }
+
     // For full list display
     var fullListText: String {
         if let wc = wildCard {
@@ -135,7 +148,7 @@ struct StandingsEntry: Identifiable {
                 + "Wild card games back: \(wc.gamesBack); Streak: \(stats.streak); "
                 + "Record: \(stats.record); Status: \(wc.spokenStatus)"
         }
-        var text = "Rank: \(rank); Team: \(team.displayName); Wins: \(stats.wins); Losses: \(stats.losses); Win%: \(stats.displayWinPercent); Games Back: \(stats.gamesBack); Streak: \(stats.streak); Record: \(stats.record)"
+        var text = "\(rank > 0 ? "Rank: \(rank); " : "")Team: \(team.displayName); Wins: \(stats.wins); Losses: \(stats.losses); Win%: \(stats.displayWinPercent); Games Back: \(stats.gamesBack); Streak: \(stats.streak); Record: \(stats.record)"
         if let l10 = stats.lastTenRecord { text += "; Last 10: \(l10)" }
         return text
     }
@@ -146,9 +159,20 @@ extension StandingsEntry {
     /// Build a StandingsEntry from a raw API entry, populating all extended fields.
     init(fromAPIEntry apiEntry: APIStandingsGroup.APIStandings.APIStandingsEntry) {
         typealias AS = APIStandingsGroup.APIStandings.APIStandingsEntry.APIStat
-        func stat(_ name: String) -> AS? {
-            apiEntry.stats.first(where: { $0.name == name })
+        // ESPN repeats a stat once per split (home, road, conference), with the same
+        // `name` and a different `type`, so the name alone doesn't say which you get.
+        func stat(_ name: String, type: String? = nil) -> AS? {
+            let wanted = type ?? name.lowercased()
+            return apiEntry.stats.first(where: { $0.name == name && $0.type == wanted })
+                ?? apiEntry.stats.first(where: { $0.name == name })
         }
+        let overall = stat("overall", type: "total")?.displayValue
+        // College football sends no losses or win percentage, only "7-1".
+        let wins = Int(stat("wins")?.value ?? 0)
+        let losses = stat("losses").map { Int($0.value) } ?? Self.losses(fromRecord: overall)
+        let ties = stat("ties").map { Int($0.value) } ?? stat("tiegames").map { Int($0.value) }
+        let decided = Double(wins + losses + (ties ?? 0))
+        let computedPercent = decided > 0 ? (Double(wins) + Double(ties ?? 0) / 2) / decided : 0
         let t = apiEntry.team
         self.wildCard = nil
         self.rank = Int(stat("rank")?.value ?? 0)
@@ -157,15 +181,15 @@ extension StandingsEntry {
             displayName: t.displayName, logo: t.logos?.first?.href
         )
         self.stats = StandingsStats(
-            wins:          Int(stat("wins")?.value ?? 0),
-            losses:        Int(stat("losses")?.value ?? 0),
-            winPercent:    stat("winPercent")?.value ?? 0,
+            wins:          wins,
+            losses:        losses,
+            winPercent:    stat("winPercent")?.value ?? computedPercent,
             gamesBack:     stat("divisionGamesBehind")?.displayValue ?? stat("gamesBehind")?.displayValue ?? "-",
             streak:        stat("streak")?.displayValue ?? "-",
-            record:        stat("overall")?.displayValue ?? "-",
+            record:        overall ?? "-",
             pointsFor:     stat("pointsFor").map { Int($0.value) },
             pointsAgainst: stat("pointsAgainst").map { Int($0.value) },
-            ties:          stat("ties").map { Int($0.value) },
+            ties:          ties,
             otLosses:      stat("otLosses").map { Int($0.value) }
                             ?? stat("OTLosses").map { Int($0.value) },
             nhlPoints:     stat("points").map { Int($0.value) },
@@ -173,11 +197,19 @@ extension StandingsEntry {
             avgPointsAgainst: stat("avgPointsAgainst")?.value,
             homeRecord:    stat("Home")?.displayValue,
             roadRecord:    stat("Road")?.displayValue,
-            lastTenRecord: stat("Last Ten Games")?.displayValue,
+            // The NHL's reads "7-2-1, 0 PTS", and that zero means nothing.
+            lastTenRecord: stat("Last Ten Games")?.displayValue
+                .components(separatedBy: ", ").first,
             divisionRecord: stat("vs. Div.")?.displayValue ?? stat("divisionRecord")?.displayValue,
             playoffSeed:   stat("playoffSeed").map { Int($0.value) },
             differential:  stat("differential")?.displayValue
         )
+    }
+
+    /// The second number of a record such as "7-1" or "5-1-0", 0 if it has none.
+    private static func losses(fromRecord record: String?) -> Int {
+        let parts = (record ?? "").split(separator: "-")
+        return parts.count > 1 ? Int(parts[1]) ?? 0 : 0
     }
 }
 
@@ -189,13 +221,38 @@ extension StandingsGroup {
     }
 }
 
+/// One node of ESPN's standings tree. Leagues nest differently: a node can hold
+/// entries, children, or nothing (College Hockey America has a `standings` with no
+/// `entries`; the Sun Belt has only East and West children).
 struct APIStandingsGroup: Codable {
     let name: String
     let standings: APIStandings
-    
+    let children: [APIStandingsGroup]?
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        name = (try? container.decodeIfPresent(String.self, forKey: .name)) ?? ""
+        standings = (try? container.decodeIfPresent(APIStandings.self, forKey: .standings))
+            ?? APIStandings()
+        children = try? container.decodeIfPresent([APIStandingsGroup].self, forKey: .children)
+    }
+
+    /// This node and everything under it that actually has teams, in order.
+    var groupsWithEntries: [APIStandingsGroup] {
+        (standings.entries.isEmpty ? [] : [self])
+            + (children ?? []).flatMap { $0.groupsWithEntries }
+    }
+
     struct APIStandings: Codable {
         let entries: [APIStandingsEntry]
-        
+
+        init() { entries = [] }
+
+        init(from decoder: Decoder) throws {
+            let container = try decoder.container(keyedBy: CodingKeys.self)
+            entries = container.lossyArray(forKey: .entries) ?? []
+        }
+
         struct APIStandingsEntry: Codable {
             let team: APITeam
             let stats: [APIStat]
@@ -215,6 +272,8 @@ struct APIStandingsGroup: Codable {
             struct APIStat: Codable {
                 let name: String
                 let displayName: String?   // absent on some ESPN stats (e.g. "overall")
+                /// Which split this is: "wins", "total", "homerecord_wins".
+                let type: String?
                 let value: Double          // defaulted to 0 when ESPN omits the field
                 let displayValue: String
 
@@ -226,18 +285,34 @@ struct APIStandingsGroup: Codable {
                     let c = try decoder.container(keyedBy: CodingKeys.self)
                     self.name         = try  c.decode(String.self,         forKey: .name)
                     self.displayName  = try  c.decodeIfPresent(String.self, forKey: .displayName)
+                    self.type         = try? c.decodeIfPresent(String.self, forKey: .type)
                     self.value        = (try? c.decodeIfPresent(Double.self, forKey: .value)) ?? 0
                     self.displayValue = try  c.decode(String.self,         forKey: .displayValue)
                 }
 
                 enum CodingKeys: String, CodingKey {
-                    case name, displayName, value, displayValue
+                    case name, displayName, type, value, displayValue
                 }
             }
         }
     }
 }
 
+/// The root of the tree. Women's college hockey keeps its entries here, with no
+/// children at all.
 struct APIStandingsResponse: Codable {
     let children: [APIStandingsGroup]
+    let root: APIStandingsGroup
+
+    init(from decoder: Decoder) throws {
+        root = try APIStandingsGroup(from: decoder)
+        children = root.children ?? []
+    }
+
+    func encode(to encoder: Encoder) throws {
+        try root.encode(to: encoder)
+    }
+
+    /// Every group in the tree that has teams.
+    var groupsWithEntries: [APIStandingsGroup] { root.groupsWithEntries }
 }

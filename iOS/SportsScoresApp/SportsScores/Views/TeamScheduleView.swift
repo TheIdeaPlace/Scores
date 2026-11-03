@@ -133,8 +133,9 @@ struct TeamScheduleView: View {
         let tableRows = games.map { g -> [String] in
             let isHome = g.homeTeam.id == team.id
             let opp = isHome ? g.awayTeam : g.homeTeam
+            let vs = isHome || g.isNeutralSite
             return [Self.dayFormatter.string(from: g.date),
-                    (isHome ? "vs " : "@ ") + opp.abbreviation,
+                    (vs ? "vs " : "@ ") + opp.abbreviation,
                     scheduleResultText(g)]
         }
         return VStack(alignment: .leading, spacing: 0) {
@@ -160,7 +161,7 @@ struct TeamScheduleView: View {
                     let isHome = game.homeTeam.id == team.id
                     let opp = isHome ? game.awayTeam : game.homeTeam
                     let row = [Self.dayFormatter.string(from: game.date),
-                               (isHome ? "vs " : "@ ") + opp.abbreviation,
+                               (isHome || game.isNeutralSite ? "vs " : "@ ") + opp.abbreviation,
                                scheduleResultText(game)]
                     NavigationLink(destination: GameDetailView(game: game.toGame(), sport: sport)) {
                         HStack(spacing: 0) {
@@ -201,7 +202,7 @@ struct TeamScheduleView: View {
         } else if game.isInProgress {
             return game.statusText
         } else {
-            return Self.timeFormatter.string(from: game.date)
+            return (game.timeIsKnown ? Self.timeFormatter.string(from: game.date) : "Time TBD")
         }
     }
 
@@ -242,7 +243,7 @@ struct TeamScheduleView: View {
     private func scheduleQuickText(_ game: ScheduleGame) -> String {
         let isHome = game.homeTeam.id == team.id
         let opp = isHome ? game.awayTeam : game.homeTeam
-        let matchup = (isHome ? "vs " : "@ ") + opp.abbreviation
+        let matchup = (isHome || game.isNeutralSite ? "vs " : "@ ") + opp.abbreviation
         return "\(Self.dayFormatter.string(from: game.date)) \(matchup) \u{2014} \(scheduleResultText(game))"
     }
 
@@ -290,13 +291,13 @@ struct TeamScheduleView: View {
                 let isHome = game.homeTeam.id == team.id
                 let opponent = isHome ? game.awayTeam : game.homeTeam
                 HStack(spacing: 4) {
-                    Text(isHome ? "vs" : "@")
+                    Text(isHome || game.isNeutralSite ? "vs" : "@")
                         .font(.caption)
                         .foregroundColor(.secondary)
                     Text(opponent.abbreviation)
                         .font(.subheadline.bold())
                 }
-                Text(game.venueName ?? (isHome ? "Home" : "Away"))
+                Text(game.venueName ?? (game.isNeutralSite ? "Neutral site" : (isHome ? "Home" : "Away")))
                     .font(.caption2)
                     .foregroundColor(.secondary)
                     .lineLimit(1)
@@ -329,7 +330,7 @@ struct TeamScheduleView: View {
                         .multilineTextAlignment(.trailing)
                 } else {
                     // Scheduled: show local game time derived from the parsed date
-                    Text(Self.timeFormatter.string(from: game.date))
+                    Text((game.timeIsKnown ? Self.timeFormatter.string(from: game.date) : "Time TBD"))
                         .font(.caption)
                         .foregroundColor(.secondary)
                 }
@@ -343,7 +344,7 @@ struct TeamScheduleView: View {
     private func scheduleAccessibilityLabel(_ game: ScheduleGame) -> String {
         let isHome = game.homeTeam.id == team.id
         let opponent = isHome ? game.awayTeam : game.homeTeam
-        let homeAway = isHome ? "vs" : "at"
+        let homeAway = isHome || game.isNeutralSite ? "vs" : "at"
         let dateStr = Self.dayFormatter.string(from: game.date)
         let statusPart: String
         if game.isCompleted {
@@ -358,7 +359,7 @@ struct TeamScheduleView: View {
         } else if game.isInProgress {
             statusPart = game.statusText
         } else {
-            statusPart = Self.timeFormatter.string(from: game.date)
+            statusPart = (game.timeIsKnown ? Self.timeFormatter.string(from: game.date) : "Time TBD")
         }
         return "\(dateStr), \(homeAway) \(opponent.displayName), \(statusPart)"
     }

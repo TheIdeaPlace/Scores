@@ -548,8 +548,8 @@ struct ScoresView: View {
     }
 
     private func gameTableRow(_ game: Game) -> [String] {
-        let away = game.awayTeam.abbreviation + (game.awayTeam.score.map { " \($0)" } ?? "")
-        let home = game.homeTeam.abbreviation + (game.homeTeam.score.map { " \($0)" } ?? "")
+        let away = game.awayTeam.rankedAbbreviation + (game.awayTeam.score.map { " \($0)" } ?? "")
+        let home = game.homeTeam.rankedAbbreviation + (game.homeTeam.score.map { " \($0)" } ?? "")
         let status: String
         if game.status.isLive { status = game.status.displayText }
         else if game.status.isPostponed { status = "PPD" }
@@ -616,8 +616,8 @@ struct ScoresView: View {
     }
 
     private func gameQuickText(_ game: Game) -> String {
-        let away = game.awayTeam.abbreviation + (game.awayTeam.score.map { " \($0)" } ?? "")
-        let home = game.homeTeam.abbreviation + (game.homeTeam.score.map { " \($0)" } ?? "")
+        let away = game.awayTeam.rankedAbbreviation + (game.awayTeam.score.map { " \($0)" } ?? "")
+        let home = game.homeTeam.rankedAbbreviation + (game.homeTeam.score.map { " \($0)" } ?? "")
         let status: String
         if game.status.isLive {
             var parts = [game.status.displayText]
@@ -630,7 +630,7 @@ struct ScoresView: View {
         else if game.status.isSuspended { status = "Suspended" }
         else if game.status.isCompleted { status = "Final" }
         else { status = game.displayTime }
-        var line = "\(away) @ \(home) — \(status)"
+        var line = "\(away) \(game.matchupSymbol) \(home) — \(status)"
         if let venue = game.venue, !venue.name.isEmpty { line += " · \(venue.fullName)" }
         return line
     }
@@ -649,7 +649,7 @@ struct ScoresView: View {
         else if game.status.isSuspended { status = "Suspended" }
         else if game.status.isCompleted { status = "Final" }
         else { status = game.displayTime }
-        var label = "\(away) at \(home), \(status)"
+        var label = "\(away) \(game.matchupWord) \(home), \(status)"
         // Venue: unlabeled (terse) but the data is still spoken.
         if let venue = game.venue, !venue.name.isEmpty { label += ", \(venue.fullName)" }
         if game.shouldShowBroadcastInfo, let broadcast = game.broadcasts.first, !broadcast.isEmpty {
@@ -721,8 +721,8 @@ struct GameRow: View {
 
             // Away / Home score rows
             VStack(alignment: .leading, spacing: 4) {
-                TeamScoreRow(team: game.awayTeam, isHome: false)
-                TeamScoreRow(team: game.homeTeam, isHome: true)
+                TeamScoreRow(team: game.awayTeam, isHome: false, isNeutralSite: game.isNeutralSite == true)
+                TeamScoreRow(team: game.homeTeam, isHome: true, isNeutralSite: game.isNeutralSite == true)
             }
 
             // Live situation line
@@ -797,9 +797,9 @@ struct GameRow: View {
 
         // Away / Home with scores
         let awayScore = game.awayTeam.score.map { " \($0)" } ?? ""
-        let awayPart = "Away: \(game.awayTeam.voiceOverName(for: pref))\(awayScore)"
+        let awayPart = "\(game.awayPrefix)\(game.awayTeam.voiceOverName(for: pref))\(awayScore)"
         let homeScore = game.homeTeam.score.map { " \($0)" } ?? ""
-        let homePart = "Home: \(game.homeTeam.voiceOverName(for: pref))\(homeScore)"
+        let homePart = "\(game.homePrefix)\(game.homeTeam.voiceOverName(for: pref))\(homeScore)"
 
         // Status field — same data as quick list, field name added here (full list mode)
         // Suppress status word when section heading already communicates it (design debt #5)
@@ -874,15 +874,16 @@ struct GameRow: View {
 struct TeamScoreRow: View {
     let team: Game.Team
     let isHome: Bool
+    var isNeutralSite = false
 
     var body: some View {
         HStack {
-            Text(isHome ? "vs" : "@")
+            Text(isHome ? "vs" : (isNeutralSite ? "" : "@"))
                 .font(.caption)
                 .foregroundColor(.secondary)
                 .frame(width: 20)
 
-            Text(team.abbreviation)
+            Text(team.rankedAbbreviation)
                 .font(.body)
                 .fontWeight(.medium)
 

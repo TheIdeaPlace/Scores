@@ -393,7 +393,7 @@ extension StadiumGeometry {
         // ── American League West ─────────────────────────────────────────
 
         StadiumGeometry(
-            id: "hou", parkName: "Minute Maid Park",
+            id: "hou", parkName: "Daikin Park",
             teamName: "Houston Astros", teamAbbreviation: "HOU",
             location: "Houston, TX", yearOpened: 2000,
             notableFeatures: [

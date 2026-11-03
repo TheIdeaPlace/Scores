@@ -20,12 +20,21 @@ struct ScheduleGame: Identifiable {
     let statusType: String      // "STATUS_FINAL" / "STATUS_SCHEDULED" etc.
     let seasonType: Int         // 1=spring/pre, 2=regular, 3=postseason
     let venueName: String?
+    /// False when ESPN's time is a placeholder; `date` is then noon local on the game's date.
+    var timeIsKnown: Bool = true
+    var isNeutralSite: Bool = false
 
     var isCompleted: Bool { statusType == "STATUS_FINAL" }
     var isInProgress: Bool { statusType == "STATUS_IN_PROGRESS" }
 
     /// Whether this game is today (wall-clock comparison)
     var isToday: Bool { Calendar.current.isDateInToday(date) }
+
+    /// True when the start is still ahead. With no set time, `date` is a placeholder,
+    /// so a game later today still counts.
+    func isAhead(of now: Date) -> Bool {
+        timeIsKnown ? date > now : date >= Calendar.current.startOfDay(for: now)
+    }
 
     /// Convert to the Game model so GameDetailView can be reused.
     func toGame() -> Game {
@@ -62,7 +71,9 @@ struct ScheduleGame: Identifiable {
             venue: venueName.map { Game.Venue(name: $0, city: nil, state: nil) },
             broadcasts: [],
             situation: nil,
-            seasonType: seasonType
+            seasonType: seasonType,
+            timeValid: timeIsKnown,
+            isNeutralSite: isNeutralSite
         )
     }
 
@@ -87,6 +98,7 @@ struct TeamScheduleAPIResponse: Codable {
     struct APIScheduleEvent: Codable {
         let id: String
         let date: String            // ISO-8601 string
+        let timeValid: Bool?
         let name: String
         let seasonType: APISeasonType
         let competitions: [APICompetition]
@@ -99,6 +111,8 @@ struct TeamScheduleAPIResponse: Codable {
             let venue: APIVenue?
             let competitors: [APICompetitor]
             let status: APICompetitionStatus
+            let timeValid: Bool?
+            let neutralSite: Bool?
 
             struct APIVenue: Codable {
                 let fullName: String?
@@ -144,10 +158,11 @@ struct TeamScheduleAPIResponse: Codable {
             // ISO8601DateFormatter fails to parse, returning nil → Date.distantPast → Dec 31.
             // Try multiple formats, same approach as Game.swift.
             let parsedDate = Self.parseDate(date)
+            let timeIsKnown = (timeValid ?? competition.timeValid) != false
 
             return ScheduleGame(
                 id: id,
-                date: parsedDate,
+                date: timeIsKnown ? parsedDate : ScoreboardDay.localNoon(onUTCDayOf: parsedDate),
                 name: name,
                 awayTeam: ScheduleGame.ScheduleTeam(
                     id: awayComp.team.id,
@@ -164,7 +179,9 @@ struct TeamScheduleAPIResponse: Codable {
                 statusText: competition.status.type.description,
                 statusType: competition.status.type.name,
                 seasonType: seasonType.type,
-                venueName: competition.venue?.fullName
+                venueName: competition.venue?.fullName,
+                timeIsKnown: timeIsKnown,
+                isNeutralSite: competition.neutralSite ?? false
             )
         }
 
