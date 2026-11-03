@@ -52,6 +52,10 @@ CASES = [
     case("get_live_golf_tournament", lambda: espn_api.get_live_golf_tournament("PGA"), live_golf, "/scoreboard"),
     case("get_golf_leaderboard", lambda: espn_api.get_golf_leaderboard("PGA"), "golf_scoreboard_PGA.json", "/scoreboard"),
     case("get_golf_schedule", lambda: espn_api.get_golf_schedule("PGA"), "golf_schedule_PGA.json", "/scoreboard"),
+    case("get_draft_round", lambda: espn_api.get_draft_round(2026, 1), "draft_NFL_2026.json:rounds", "/draft/rounds",
+         {"/teams": "teams_NFL.json"}),
+    case("get_draft", lambda: espn_api.get_draft(2026), "draft_NFL_2026.json:draft", "/draft$",
+         {"/draft/rounds": "draft_NFL_2026.json:rounds", "/draft/status": "draft_NFL_2026.json:status"}),
 ]
 
 

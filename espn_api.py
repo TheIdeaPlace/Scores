@@ -3713,7 +3713,7 @@ def get_draft_round(year, round_num):
                        if rd.get("number") == round_num), None)
         if not target:
             return []
-        picks_raw = target.get("picks", [])
+        picks_raw = _as_list(target.get("picks"))
     except Exception as e:
         print(f"[get_draft_round] fetch rounds {year}/r{round_num}: {e}")
         return []
@@ -3745,8 +3745,8 @@ def get_draft_round(year, round_num):
                 pass
 
         return {
-            "overall": pick.get("overall", 0),
-            "pick": pick.get("pick", 0),
+            "overall": pick.get("overall") or 0,
+            "pick": pick.get("pick") or 0,
             "round": pick.get("round", round_num),
             "traded": pick.get("traded", False),
             "trade_note": pick.get("tradeNote", ""),
