@@ -162,7 +162,8 @@ jobs:
 
       - name: Pick out what failed
         if: failure()
-        run: grep -E "error: .*testLivePayloadsDecode" xcodebuild.log | cut -c1-400 > ios-decode-errors.txt || true
+        run: |
+          grep -E "error: .*testLivePayloadsDecode" xcodebuild.log | cut -c1-400 > ios-decode-errors.txt || true
 
       - name: Keep what failed
         if: failure()
