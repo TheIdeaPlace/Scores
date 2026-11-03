@@ -144,7 +144,7 @@ jobs:
             CODE_SIGNING_ALLOWED=NO \
             test | tee xcodebuild.log
           # Skipped would mean the payloads never got there, which proves nothing.
-          if grep -q "skipped" xcodebuild.log; then
+          if grep -E "Executed [0-9]+ tests?, with [0-9]+ tests? skipped" xcodebuild.log; then
             echo "The live tests were skipped"
             exit 1
           fi
