@@ -3033,7 +3033,7 @@ def get_team_info(league_key, team_id):
         # Next event
         # For a while after a game ESPN's nextEvent is still that game.
         events = [e for e in _dicts(team.get("nextEvent"))
-                  if (((e.get("competitions") or [{}])[0].get("status") or {}).get("type") or {}).get("state") != "post"]
+                  if (((_dicts(e.get("competitions")) or [{}])[0].get("status") or {}).get("type") or {}).get("state") != "post"]
         if events:
             comps = _dicts(events[0].get("competitions"))
             if comps:

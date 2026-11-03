@@ -74,6 +74,15 @@ class TestTeamInfo:
         assert (info["division"], info["conference"], info["head_coach"]) == ("NFC North", "NFC", "Matt LaFleur")
 
     class TestNextGame:
+        def test_a_null_competition_does_not_lose_the_team_view(self, espn):
+            """The filter raised, get_team_info caught it and returned {}."""
+            data = load("team_NFL_9.json")
+            data["team"]["nextEvent"][0]["competitions"] = [None]
+            espn.on("/teams/9$", data)
+            info = espn_api.get_team_info("NFL", "9")
+            assert (info["name"], info["venue_name"]) == ("Green Bay Packers", "Lambeau Field")
+            assert "next_game_opponent" not in info
+
         def test_a_finished_game_is_not_the_next_game(self, espn):
             """For a while after a game ESPN's nextEvent is still that game."""
             data = load("team_NFL_9.json")
