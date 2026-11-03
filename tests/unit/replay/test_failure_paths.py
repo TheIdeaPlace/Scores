@@ -18,7 +18,9 @@ DAY = date(2026, 6, 20)
 NOTHING = {"player_stats": [], "team_stats": []}
 TEAM_NOTHING = {"team_stats": [], "player_stats": []}
 
-# name, call, what it returns when a request fails or has nothing in it.
+# name, call, what it returns when a request fails or has nothing in it. This is what
+# they do today, not what they should: all but the wild card read as "nothing to show"
+# when the request failed, which test_known_gaps.py records.
 QUIET = [
     ("get_rankings", lambda: espn_api.get_rankings("NCAAF"), {"polls": []}),
     ("get_team_info", lambda: espn_api.get_team_info("NFL", "9"), {}),
