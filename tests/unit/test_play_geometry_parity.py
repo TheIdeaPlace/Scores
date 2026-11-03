@@ -2,9 +2,9 @@
 
 `tests/fixtures/play_geometry_grid.json` is the shared reference for the
 Windows and iOS mappings: PlayAudioGeometry.swift is meant to give the same
-note, length, balance and words for every case in it. The iOS project has no
-test target yet, so only the Python side is checked automatically; check the
-Swift side by hand against the same file when it changes.
+note, length, balance and words for every case in it. This holds the Python
+side to it, and PlayAudioGeometryGridTests.swift holds the Swift side, in the
+iOS Build Check workflow.
 
 A deliberate change to the mapping means regenerating the fixture from
 `audio_params` and making the same change in Swift.

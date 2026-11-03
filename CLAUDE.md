@@ -72,7 +72,7 @@ pytest tests/
 
 ### Audio System
 
-- `play_geometry.py` — Pure mapping from ESPN play coordinates to a note, a stereo balance and a spoken location, for basketball (NBA/WNBA/NCAAM/NCAAWB) and hockey (NHL/NCAAH/NCAAWH). No PyQt or winsound import, so it is unit-tested on any platform. **Its iOS twin is `Services/PlayAudioGeometry.swift`; the two must give identical output. `tests/fixtures/play_geometry_grid.json` is the shared reference grid; `tests/unit/test_play_geometry_parity.py` checks the Python side, and the Swift side has to be checked against the same file by hand until the iOS project has a test target. Change both in the same commit.** Football and soccer plays carry no coordinates, so they have no audio.
+- `play_geometry.py` — Pure mapping from ESPN play coordinates to a note, a stereo balance and a spoken location, for basketball (NBA/WNBA/NCAAM/NCAAWB) and hockey (NHL/NCAAH/NCAAWH). No PyQt or winsound import, so it is unit-tested on any platform. **Its iOS twin is `Services/PlayAudioGeometry.swift`; the two must give identical output. `tests/fixtures/play_geometry_grid.json` is the shared reference grid; `tests/unit/test_play_geometry_parity.py` checks the Python side and `PlayAudioGeometryGridTests.swift` the Swift side. Change both in the same commit.** Football and soccer plays carry no coordinates, so they have no audio.
 - `play_audio_mapper.py` — `PlayAudioMapper`, the playback layer for the above. Alt+P plays one play, Alt+S the whole period. **Nothing is spoken while a tone plays, on either platform.** The location is part of the play's own accessible text (`AccessibleTextRole` on Windows, the row's accessibility label on iOS) and the located count is part of the period header's, so it is heard on arrival; an announcement at playback time would repeat it and talk over the audio. The only thing said at playback time is that there is nothing to play.
 - `simple_audio_mapper.py` — Maps pitch (x, y) coordinates to audio frequencies via `winsound` (MLB)
 - `stereo_audio_mapper.py` — Stereo variant with left/right channel positioning for pitch location
@@ -92,10 +92,11 @@ pytest tests/
 
 ### iOS App
 
-Lives entirely in `iOS/SportsScoresApp/` (Xcode project, SwiftUI). Nothing in the Python app reads from it and nothing in it reads from the Python app — `pytest` and `build.py` ignore the directory completely.
+Lives entirely in `iOS/SportsScoresApp/` (Xcode project, SwiftUI). Nothing in the Python app reads from it, and the app itself reads nothing from the Python app — `pytest` and `build.py` ignore the directory completely. Its tests do read the shared `tests/fixtures/`, so a fixture change can fail them.
 
 - `SportsScores/Services/ESPNAPIService.swift` — the iOS equivalent of `espn_api.py`. When you fix an ESPN data quirk on one platform, check whether the other needs the same fix; this has been the main source of drift.
-- `.github/workflows/ios-build-check.yml` — simulator-only compile, runs on `main` for changes under `iOS/**`. No signing, no secrets.
+- `SportsScoresTests/` — XCTest target: the real models on the real ESPN fixtures, the shared play audio grid, and a check that no scoreboard request uses a date range. Runs on a Mac only, in the workflow below.
+- `.github/workflows/ios-build-check.yml` — simulator build and tests, runs on `main` for changes under `iOS/**` and `tests/fixtures/**`. No signing, no secrets.
 - `.github/workflows/ios-release.yml` — runs on the same `v*` tags as the Windows release (and by manual dispatch); archives on a macOS runner and uploads to TestFlight. Needs the five App Store Connect secrets listed in `.github/workflows/README-ios-release.md`.
 
 Both apps share one version: `VERSION` drives the Windows build and the iOS marketing version, and one `v*` tag releases both. The iOS build number is the commit count. Keep `MARKETING_VERSION` in `iOS/SportsScoresApp/project.yml` and `project.pbxproj` equal to `VERSION`; `tests/unit/test_version_sync.py` enforces it.

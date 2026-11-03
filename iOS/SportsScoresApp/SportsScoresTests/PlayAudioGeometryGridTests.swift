@@ -5,7 +5,9 @@
 //  PlayAudioGeometry.swift and play_geometry.py are the same mapping written twice.
 //  tests/fixtures/play_geometry_grid.json is the reference, and
 //  tests/unit/test_play_geometry_parity.py holds the Python side to it. This holds the
-//  Swift side, so a change to one that misses the other fails CI (#106).
+//  Swift side, so a change to one that misses the other fails CI (#106). The numeric cases
+//  are NBA and NHL. The `located` rows reach all seven leagues, so those also have to have
+//  a sound, which is what would go missing if a league fell out of the family list.
 //
 
 import XCTest
@@ -63,6 +65,26 @@ final class PlayAudioGeometryGridTests: XCTestCase {
             let json = #"{"x": \#(item.x), "y": \#(item.y)}"#
             let coordinate = try JSONDecoder().decode(GameDetails.Play.PlayCoordinate.self, from: Data(json.utf8))
             XCTAssertEqual(PlayAudioGeometry.hasLocation(coordinate, for: sport), item.located, label)
+            if item.located {
+                XCTAssertNotNil(PlayAudioGeometry.audioParameters(for: sport, x: item.x, y: item.y), label)
+            }
+        }
+    }
+
+    func testEveryLeagueWithLocationsIsInTheGrid() throws {
+        let leagues = Set(try grid().located.map(\.league))
+        XCTAssertEqual(leagues, ["NBA", "WNBA", "NCAAM", "NCAAWB", "NHL", "NCAAH", "NCAAWH"])
+    }
+
+    func testEachLeagueSoundsLikeItsSport() {
+        for sport in [Sport.nba, .wnba, .ncaam, .ncaawb] {
+            XCTAssertEqual(PlayAudioGeometry.family(for: sport), .basketball, sport.rawValue)
+        }
+        for sport in [Sport.nhl, .ncaah, .ncaawh] {
+            XCTAssertEqual(PlayAudioGeometry.family(for: sport), .hockey, sport.rawValue)
+        }
+        for sport in [Sport.nfl, .ncaaf, .mlb] {
+            XCTAssertNil(PlayAudioGeometry.family(for: sport), sport.rawValue)
         }
     }
 }

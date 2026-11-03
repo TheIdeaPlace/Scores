@@ -7,8 +7,13 @@
 //  decode, which is how one bench player with no full name took out about one in five
 //  women's college basketball games (#121).
 //
+//  GameDetails decodes each section on its own and a play at a time, so a bad section or
+//  play disappears rather than throwing. Decoding without a throw proves little there,
+//  which is why the tests below count what came through against the raw payload.
+//
 //  Set LIVE_PAYLOADS (TEST_RUNNER_LIVE_PAYLOADS for xcodebuild) to a folder of payloads
 //  saved by `tools/validate_espn.py --save-payloads`, and the same checks run on today's.
+//  The live tests skip when it isn't set, and fail when it's set and has nothing in it.
 //
 
 import XCTest
@@ -48,13 +53,30 @@ enum Fixtures {
         return try decoder.decode(ScoreboardResponse.self, from: data)
     }
 
-    /// Payloads saved from live ESPN, by kind, or nothing when this isn't a live run.
+    /// Decodes a summary the way ESPNAPIService does.
+    static func decodeDetails(_ data: Data) throws -> GameDetails {
+        let decoder = JSONDecoder()
+        decoder.dateDecodingStrategy = .iso8601
+        return try decoder.decode(GameDetails.self, from: data)
+    }
+
+    /// How many items a top-level array of a JSON object holds, before any are dropped.
+    static func rawCount(_ key: String, of data: Data) throws -> Int {
+        let object = try XCTUnwrap(JSONSerialization.jsonObject(with: data) as? [String: Any])
+        return try XCTUnwrap(object[key] as? [Any], "no \(key)").count
+    }
+
+    /// Payloads saved from live ESPN, by kind. Skips the test when this isn't a live run.
     static func live(_ kind: String) throws -> [URL] {
-        guard let path = ProcessInfo.processInfo.environment["LIVE_PAYLOADS"], !path.isEmpty else { return [] }
-        return try FileManager.default.contentsOfDirectory(at: URL(fileURLWithPath: path),
-                                                           includingPropertiesForKeys: nil)
+        guard let path = ProcessInfo.processInfo.environment["LIVE_PAYLOADS"], !path.isEmpty else {
+            throw XCTSkip("LIVE_PAYLOADS isn't set")
+        }
+        let files = try FileManager.default.contentsOfDirectory(at: URL(fileURLWithPath: path),
+                                                                includingPropertiesForKeys: nil)
             .filter { $0.lastPathComponent.hasPrefix(kind + "-") }
             .sorted { $0.lastPathComponent < $1.lastPathComponent }
+        XCTAssertFalse(files.isEmpty, "LIVE_PAYLOADS is \(path), and it has no \(kind)- files")
+        return files
     }
 }
 
@@ -108,6 +130,10 @@ final class BoxScoreDecodingTests: XCTestCase {
         for league in ["NFL", "NCAAF", "NBA", "WNBA", "NCAAM", "NCAAWB", "NHL", "MLB"] {
             let players = try XCTUnwrap(try box(league: league).players, league)
             let profile = BoxScoreProfiles.profile(for: try XCTUnwrap(Sport(rawValue: league)))
+            // Football and hockey only have `labels`. If those stopped reading as headers,
+            // every group would lose its content and the loop below would check nothing.
+            XCTAssertTrue(players.allSatisfy { team in team.statistics.contains(where: \.hasContent) },
+                          "\(league): a team has no group with anything to show")
             for team in players {
                 for group in team.statistics where group.hasContent {
                     XCTAssertFalse(group.groupTitle.lowercased().contains("unknown"), league)
@@ -143,22 +169,108 @@ final class BoxScoreDecodingTests: XCTestCase {
         }
     }
 
+    func testEveryBoxScoreFixtureComesThroughAWholeGame() throws {
+        for file in try Fixtures.named("box_") {
+            let details = try Fixtures.decodeDetails(Data(contentsOf: file))
+            XCTAssertNotNil(details.boxscore, file.lastPathComponent)
+        }
+    }
+
     func testLivePayloadsDecode() throws {
         for file in try Fixtures.live("summary") {
-            XCTAssertNoThrow(try JSONDecoder().decode(GameDetails.self, from: Data(contentsOf: file)),
-                             file.lastPathComponent)
+            let details = try Fixtures.decodeDetails(Data(contentsOf: file))
+            XCTAssertNotNil(details.boxscore, "\(file.lastPathComponent): the box score was dropped")
+            XCTAssertNotNil(details.header, "\(file.lastPathComponent): the header was dropped")
         }
     }
 }
 
+final class GameDetailsDecodingTests: XCTestCase {
+    func testNoRealPlayIsDropped() throws {
+        let files = try Fixtures.named("plays_")
+        XCTAssertGreaterThanOrEqual(files.count, 4)
+        for file in files {
+            let data = try Data(contentsOf: file)
+            let plays = try XCTUnwrap(try Fixtures.decodeDetails(data).plays, file.lastPathComponent)
+            XCTAssertEqual(plays.count, try Fixtures.rawCount("plays", of: data), file.lastPathComponent)
+            XCTAssertFalse(plays.isEmpty, file.lastPathComponent)
+        }
+    }
+
+    func testTheHeaderOfARealGameIsRead() throws {
+        for prefix in ["plays_", "details_"] {
+            for file in try Fixtures.named(prefix) {
+                let details = try Fixtures.decodeDetails(Data(contentsOf: file))
+                XCTAssertNotNil(details.header, file.lastPathComponent)
+            }
+        }
+    }
+
+    func testEspnsNoLocationValuesDoNotCountAsLocations() throws {
+        // A real game: some plays have shot coordinates, and others ESPN's sentinel.
+        let file = try XCTUnwrap(try Fixtures.named("plays_NBA_").first)
+        let plays = try XCTUnwrap(try Fixtures.decodeDetails(Data(contentsOf: file)).plays)
+        let coordinates = plays.compactMap(\.coordinate)
+        let located = coordinates.filter { PlayAudioGeometry.hasLocation($0, for: .nba) }
+        XCTAssertFalse(located.isEmpty)
+        XCTAssertLessThan(located.count, coordinates.count)
+    }
+
+    func testAllOfAFootballGamesPiecesAreRead() throws {
+        let data = try Fixtures.data("details_NFL_pieces.json")
+        let details = try Fixtures.decodeDetails(data)
+        XCTAssertNotNil(details.gameInfo)
+        XCTAssertEqual(details.pickcenter?.count, try Fixtures.rawCount("pickcenter", of: data))
+        XCTAssertEqual(details.injuries?.count, try Fixtures.rawCount("injuries", of: data))
+        XCTAssertFalse(try XCTUnwrap(details.pickcenter).isEmpty)
+        XCTAssertFalse(try XCTUnwrap(details.injuries).isEmpty)
+    }
+
+    func testCollegeHockeyPiecesAreRead() throws {
+        let details = try Fixtures.decodeDetails(Fixtures.data("details_NCAAH_pieces.json"))
+        XCTAssertNotNil(details.gameInfo)
+    }
+}
+
 final class ScoreboardDecodingTests: XCTestCase {
-    func testEventsInEveryStatusDecodeAndBecomeGames() throws {
+    func testEventsInEveryStatusReadAsThatStatus() throws {
+        struct Expected { let live: Bool, completed: Bool, postponed: Bool }
+        let expected: [String: Expected] = [
+            "STATUS_SCHEDULED": Expected(live: false, completed: false, postponed: false),
+            "STATUS_IN_PROGRESS": Expected(live: true, completed: false, postponed: false),
+            "STATUS_HALFTIME": Expected(live: true, completed: false, postponed: false),
+            "STATUS_END_PERIOD": Expected(live: true, completed: false, postponed: false),
+            "STATUS_FINAL": Expected(live: false, completed: true, postponed: false),
+            "STATUS_DELAYED": Expected(live: true, completed: false, postponed: false),
+            "STATUS_POSTPONED": Expected(live: false, completed: true, postponed: true),
+            "STATUS_FORFEIT": Expected(live: false, completed: true, postponed: false),
+        ]
         let response = try Fixtures.decodeScoreboard(Fixtures.data("scoreboard_events_by_status.json"))
-        XCTAssertFalse(response.events.isEmpty)
+        XCTAssertEqual(response.events.count, expected.count)
+
+        // Game falls back to now if it can't read the date, which would otherwise pass unseen.
+        let compact = DateFormatter()
+        compact.locale = Locale(identifier: "en_US_POSIX")
+        compact.timeZone = TimeZone(identifier: "UTC")
+        compact.dateFormat = "yyyy-MM-dd'T'HH:mm'Z'"
+
+        var seen = Set<String>()
         for event in response.events {
             let game = try Game(from: event)
-            XCTAssertFalse(game.id.isEmpty)
+            let name = try XCTUnwrap(game.status.name, event.id)
+            seen.insert(name)
+            let want = try XCTUnwrap(expected[name], "a status this test doesn't know: \(name)")
+            XCTAssertEqual(game.status.isLive, want.live, name)
+            XCTAssertEqual(game.status.isCompleted, want.completed, name)
+            XCTAssertEqual(game.status.isPostponed, want.postponed, name)
+            XCTAssertEqual(game.id, event.id, name)
+            XCTAssertFalse(game.homeTeam.displayName.isEmpty, name)
+            XCTAssertFalse(game.awayTeam.displayName.isEmpty, name)
+            if game.timeValid != false {
+                XCTAssertEqual(game.date, try XCTUnwrap(compact.date(from: event.date), name), name)
+            }
         }
+        XCTAssertEqual(seen, Set(expected.keys))
     }
 
     func testLivePayloadsDecode() throws {
@@ -288,7 +400,9 @@ final class RequestShapeTests: XCTestCase {
         let files = try FileManager.default.contentsOfDirectory(at: services, includingPropertiesForKeys: nil)
             .filter { $0.pathExtension == "swift" }
         XCTAssertFalse(files.isEmpty)
-        let range = try NSRegularExpression(pattern: #"dates=\\\([^)]*\)-\\\("#)
+        // Only sees ranges written in the URL, such as dates=\(a)-\(fmt.string(from: b)). A
+        // range built up in a variable first can't be caught by reading the source.
+        let range = try NSRegularExpression(pattern: #"dates=\\\(.*\)-\\\("#)
         var ranges = 0
         for file in files {
             let lines = try String(contentsOf: file, encoding: .utf8).components(separatedBy: .newlines)

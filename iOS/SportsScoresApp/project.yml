@@ -96,6 +96,8 @@ targets:
       - target: SportsScores
     settings:
       base:
+        # The project sets PRODUCT_NAME to SportsScores, and the tests can't share the app's module name.
+        PRODUCT_NAME: $(TARGET_NAME)
         PRODUCT_BUNDLE_IDENTIFIER: com.sportsscores.app.tests
         GENERATE_INFOPLIST_FILE: YES
         CODE_SIGN_STYLE: Automatic
