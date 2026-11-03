@@ -85,7 +85,7 @@ NCAAB_GROUP = "50"
 # it exactly, so this is a straight ceiling on a day's games.
 NCAAB_SCOREBOARD_LIMIT = 400
 
-def college_scoreboard_params(league_key, coverage=None):
+def college_scoreboard_params(league_key):
     """Extra scoreboard query parameters that give a college league its full slate.
 
     Returns [] for every other league, which ESPN already returns in full.
@@ -95,13 +95,11 @@ def college_scoreboard_params(league_key, coverage=None):
     college basketball returns only a handful of featured games. `limit=` then
     lifts the page size far enough to hold the result.
 
-    `coverage` overrides the user's football setting. It has no meaning for
-    basketball, which has only the one division.
+    Football follows the user's coverage setting. Basketball has only the one division.
     """
     if league_key == "NCAAF":
-        if coverage is None:
-            import settings
-            coverage = settings.get('ncaaf_coverage', 'all_d1')
+        import settings
+        coverage = settings.get('ncaaf_coverage', 'all_d1')
         group = NCAAF_COVERAGE_GROUPS.get(coverage, NCAAF_COVERAGE_GROUPS['all_d1'])
         return [f"groups={group}", f"limit={NCAAF_SCOREBOARD_LIMIT}"]
     if league_key in ("NCAAM", "NCAAWB"):
@@ -113,7 +111,7 @@ def college_scoreboard_params(league_key, coverage=None):
 ncaaf_scoreboard_params = college_scoreboard_params
 
 
-def ncaaf_needs_fbs_retry(league_key, events, coverage=None):
+def ncaaf_needs_fbs_retry(league_key, events):
     """True when an empty NCAAF response should be retried as FBS.
 
     ESPN returns *zero* events for a week-indexed postseason query under
@@ -127,10 +125,8 @@ def ncaaf_needs_fbs_retry(league_key, events, coverage=None):
     """
     if league_key != "NCAAF" or events:
         return False
-    if coverage is None:
-        import settings
-        coverage = settings.get('ncaaf_coverage', 'all_d1')
-    return coverage != 'fbs'
+    import settings
+    return settings.get('ncaaf_coverage', 'all_d1') != 'fbs'
 
 
 # The sections of a scores list, in the order they're shown. Matches the iOS
@@ -2875,9 +2871,6 @@ def _parse_generic_player_stats(leaders):
     categories = []
 
     for category_data in leaders:
-        if not isinstance(category_data, dict):
-            continue
-
         category_key = category_data.get('name') or 'unknown'
         category_display_name = category_data.get('displayName') or category_key.title()
         leaders_list = _dicts(category_data.get('leaders'))
@@ -2885,13 +2878,8 @@ def _parse_generic_player_stats(leaders):
         if not leaders_list:
             continue
 
-        category_name = category_display_name or category_key.replace("_", " ").title()
-
         stats = []
         for leader in leaders_list:
-            if not isinstance(leader, dict):
-                continue
-
             athlete = _as_dict(leader.get("athlete"))
             team = _as_dict(leader.get("team") or athlete.get("team"))
 
@@ -2916,12 +2904,12 @@ def _parse_generic_player_stats(leaders):
                     "player_name": athlete.get("displayName") or athlete["name"],
                     "team": team.get("abbreviation") or team.get("name") or "",
                     "value": stat_value,
-                    "stat_name": category_display_name or category_key.title()
+                    "stat_name": category_display_name
                 })
 
         if stats:
             categories.append({
-                "category": category_name,
+                "category": category_display_name,
                 "stats": stats
             })
 

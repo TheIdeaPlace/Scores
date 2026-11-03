@@ -204,8 +204,8 @@ class TestParsing:
 
     def test_edge_cases(self):
         parser = espn_api._parse_generic_player_stats
-        assert parser(["text", {"name": "x", "leaders": []}]) == []
-        result = parser([{"name": "era", "leaders": ["text", {"athlete": {}}, {"athlete": {"name": "B"}, "value": "n/a"}]}])
+        assert parser([{"name": "x", "leaders": []}]) == []
+        result = parser([{"name": "era", "leaders": [{"athlete": {}}, {"athlete": {"name": "B"}, "value": "n/a"}]}])
         assert result == [{"category": "Era", "stats": [{"player_name": "B", "team": "", "value": "n/a", "stat_name": "Era"}]}]
 
     def test_soccers_list_of_leaders_is_not_read_yet(self):
@@ -217,3 +217,7 @@ class TestParsing:
     @pytest.mark.parametrize("data", [{}, "text", [], {"stats": None}, {"stats": {"categories": None}}, load("statistics_NBA.json")])
     def test_no_stats_key_is_nothing(self, data):
         assert espn_api._parse_statistics_data(data) == NOTHING
+
+    def test_text_in_the_lists_is_dropped(self):
+        data = {"stats": {"categories": ["text", {"name": "pts", "leaders": ["text", {"athlete": {"name": "B"}, "value": 3}]}]}}
+        assert espn_api._parse_statistics_data(data)["player_stats"][0]["stats"][0]["player_name"] == "B"
