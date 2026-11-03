@@ -41,6 +41,19 @@ def test_golf_schedule_asks_for_the_year_not_a_range(espn, freeze_now):
     assert espn.calls == [f"{espn_api.BASE_URL}/golf/pga/scoreboard?dates=2026"]
 
 
+def test_white_sox_are_in_a_division_when_mlb_falls_back_to_team_records(espn):
+    """ESPN's abbreviation is CHW (see standings_MLB.json); this map had CWS, so the
+    fallback filed the White Sox under "League"."""
+    abbreviations = {entry["team"]["abbreviation"]
+                     for league in load("standings_MLB.json")["children"]
+                     for entry in league["standings"]["entries"]}
+    assert "CHW" in abbreviations
+    teams = {"sports": [{"leagues": [{"teams": [{"team": {"id": "4", "abbreviation": "CHW",
+                                                          "displayName": "Chicago White Sox"}}]}]}]}
+    espn.on("/teams/4$", {"team": {"record": {"items": []}}})
+    assert espn_api._parse_standings_from_teams_api(teams, "MLB")[0]["division"] == "AL Central"
+
+
 def test_soccer_standings_read_the_record_not_0_0(espn):
     """A three-part summary raised inside _get_team_record, so every soccer team read 0-0."""
     espn.on(r"/soccer/eng\.1/teams$", load("teams_EPL.json"))
