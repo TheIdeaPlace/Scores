@@ -31,7 +31,7 @@ from version import __version__
 from services import updater
 
 from PyQt6.QtWidgets import (
-    QApplication, QWidget, QVBoxLayout, QListWidget, QPushButton, QLabel,
+    QApplication, QTabBar, QWidget, QVBoxLayout, QListWidget, QPushButton, QLabel,
     QHBoxLayout, QCheckBox, QDialog, QMessageBox, QTextEdit, QScrollArea,
     QTableWidget, QTableWidgetItem, QHeaderView, QTabWidget, QStackedWidget,
     QListWidgetItem, QTreeWidget, QTreeWidgetItem, QSpinBox, QComboBox,
@@ -198,6 +198,14 @@ def _focus_once_active(dialog, set_focus):
             timer.start()
 
     dialog.showEvent = show_event
+
+
+def _take_focus_after_load(widget):
+    """Move to freshly loaded data, unless someone is on a tab bar or a combo box: pulling
+    them off it while they arrow through its choices loses their place and cuts off speech."""
+    focused = QApplication.focusWidget()
+    if not isinstance(focused, (QTabBar, QComboBox)):
+        widget.setFocus()
 
 
 def _focus_first_table(dialog):
@@ -8331,7 +8339,7 @@ class TeamHubDialog(QDialog):
             future = next((i for i, g in enumerate(schedule_data)
                            if g.get('status', '') not in ('Final', 'Cancelled', 'Postponed')), 0)
             self.schedule_list.setCurrentRow(future)
-        self.schedule_list.setFocus()
+        _take_focus_after_load(self.schedule_list)
 
     def _on_game_selected(self, item):
         game_data = item.data(Qt.ItemDataRole.UserRole)
@@ -9208,7 +9216,7 @@ class TransactionsDialog(QDialog):
         self.load_more_btn.setEnabled(has_more)
         if self.current_page == 1 and self.trans_list.count() > 0:
             self.trans_list.setCurrentRow(0)
-            self.trans_list.setFocus()
+            _take_focus_after_load(self.trans_list)
 
     def _on_error(self, _error, loading_item):
         row = self.trans_list.row(loading_item)
