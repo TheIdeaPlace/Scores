@@ -99,8 +99,18 @@ def mutations(payload, max_depth=8):
     """Every copy of a payload with one field missing, null, or an empty list.
 
     Walks dicts and the first element of each list, since ESPN's lists repeat a
-    shape. Each result is (description, mutated copy).
+    shape, and cuts lists to two items first so a big payload stays quick. Each
+    result is (description, mutated copy).
     """
+
+    def shrink(node):
+        if isinstance(node, dict):
+            return {key: shrink(value) for key, value in node.items()}
+        if isinstance(node, list):
+            return [shrink(item) for item in node[:2]]
+        return node
+
+    payload = shrink(payload)
     paths = []
 
     def walk(node, path):

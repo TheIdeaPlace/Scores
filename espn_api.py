@@ -17,6 +17,16 @@ def _http_get(url, **kwargs):
     return requests.get(url, **kwargs)
 
 
+# ESPN sometimes sends null, or an empty list, where a dict or list belongs. A
+# `.get(key, {})` default doesn't help when the key is there with a null in it.
+def _as_dict(value):
+    return value if isinstance(value, dict) else {}
+
+
+def _as_list(value):
+    return value if isinstance(value, list) else []
+
+
 BASE_URL = "https://site.api.espn.com/apis/site/v2/sports"
 
 LEAGUES = {
@@ -1091,13 +1101,13 @@ def get_scores(league_key, date=None, week=None, seasontype=None, season=None):
     if resp.status_code != 200:
         return []
     data = resp.json()
-    events = data.get("events", [])
+    events = _as_list(data.get("events"))
 
     if ncaaf_needs_fbs_retry(league_key, events):
         retry = _http_get(_swap_to_fbs(url))
         if retry.status_code == 200:
             data = retry.json()
-            events = data.get("events", [])
+            events = _as_list(data.get("events"))
 
     scores = []
 
@@ -1106,20 +1116,20 @@ def get_scores(league_key, date=None, week=None, seasontype=None, season=None):
         eid = event.get("id", "")
         
         # Extract competition data
-        competitions = event.get("competitions", [])
+        competitions = _as_list(event.get("competitions"))
         if not competitions:
             continue
             
         comp = competitions[0]
         
         # Extract start time and status
-        status = comp.get("status", {})
+        status = _as_dict(comp.get("status"))
         start_time = None
         game_status = None
         game_status_name = ""
         game_state = ""
         if status:
-            type_info = status.get("type", {})
+            type_info = _as_dict(status.get("type"))
             # The stable identifier, e.g. STATUS_SCHEDULED / STATUS_POSTPONED.
             # `description` below is display text and varies; this does not.
             game_status_name = type_info.get("name", "")
@@ -1136,10 +1146,10 @@ def get_scores(league_key, date=None, week=None, seasontype=None, season=None):
             game_status = type_info.get("description", "")
         
         # Extract scores from competitors
-        competitors = comp.get("competitors", [])
+        competitors = _as_list(comp.get("competitors"))
         team_scores = []
         for competitor in competitors:
-            team = competitor.get("team", {})
+            team = _as_dict(competitor.get("team"))
             score = competitor.get("score", "")
             home_away = competitor.get("homeAway", "")
             
@@ -1160,7 +1170,7 @@ def get_scores(league_key, date=None, week=None, seasontype=None, season=None):
             # (season opener, preseason) carries no information, so it's dropped
             # here and the team name stands alone.
             record_summary = ""
-            for rec in competitor.get("records", []):
+            for rec in _as_list(competitor.get("records")):
                 if rec.get("type") == "total":
                     summary = rec.get("summary", "")
                     if summary and summary != "0-0":
