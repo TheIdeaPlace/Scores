@@ -123,7 +123,9 @@ def use_list_team_names(text, name_map):
     for full in sorted(name_map, key=len, reverse=True):
         short = name_map[full]
         if full and short and full != short:
-            score = score.replace(full, short)
+            # A list name can contain the full one ("#5 Arizona Wildcats"), and the
+            # text may already use it: undo that first so it isn't added twice.
+            score = score.replace(short, full).replace(full, short)
     return score + bar + play + sep + rest
 
 

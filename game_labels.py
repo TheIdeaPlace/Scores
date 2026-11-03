@@ -1,10 +1,18 @@
 """Period names and small game facts read from ESPN data. No PyQt import, so tested directly."""
 
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import Any, Dict, List, Optional
 
 # Men's college basketball is played in two halves; everything else here in four quarters.
 _HALVES_LEAGUES = {"NCAAM"}
+
+
+def scoreboard_today(now: Optional[datetime] = None):
+    """The date whose scoreboard is "today". Until 5 AM local it's still last night's,
+    which is what's on: a West Coast game runs well past midnight in the East, and
+    ESPN files it under the day it started. Asking for the new date loses it."""
+    now = now or datetime.now()
+    return (now - timedelta(hours=5)).date()
 
 
 def _overtime_label(number: int) -> str:

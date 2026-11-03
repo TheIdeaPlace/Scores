@@ -63,7 +63,7 @@ from models.standings import StandingsData
 from windows_notifications import announce, set_notifier_window
 from accessible_table import AccessibleTable, StandingsTable, WildCardTable, LeadersTable, BoxscoreTable, InjuryTable, prepare_table_tabs
 from box_score import build_box_tables
-from game_labels import basketball_period_label, football_period_label, football_period_sort_key, game_standings_tables
+from game_labels import scoreboard_today, basketball_period_label, football_period_label, football_period_sort_key, game_standings_tables
 
 # Text processing utilities
 try:
@@ -1409,7 +1409,7 @@ class LiveScoresView(BaseView):
         from espn_api import GOLF_TOURS
 
         all_games = []
-        today = datetime.now().date()
+        today = scoreboard_today()
 
         leagues = [lg for lg in ApiService.get_leagues() if lg not in GOLF_TOURS]
 
@@ -1561,7 +1561,7 @@ class LeagueView(BaseView):
             self.current_season = None
             self.current_week = None
             self.current_season_type = None
-            self.current_date = datetime.now().date()
+            self.current_date = scoreboard_today()
 
         if state:
             if self.is_football_league():

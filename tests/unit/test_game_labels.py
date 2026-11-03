@@ -9,7 +9,7 @@ import espn_api
 from game_labels import (basketball_period_label, best_odds, broadcast_names,
                          football_period_label, football_period_sort_key, format_height,
                          format_weight, game_standings_tables, injured_player_count,
-                         local_schedule_datetime)
+                         local_schedule_datetime, scoreboard_today)
 
 FIXTURES = os.path.join(os.path.dirname(__file__), "..", "fixtures", "espn")
 
@@ -122,3 +122,13 @@ def test_list_shaped_player_statistics_parse(league):
     categories = parser(stats)
     assert len(categories) >= 2  # the fixture is trimmed
     assert categories[0]["stats"]
+
+
+@pytest.mark.parametrize("now,day", [
+    (datetime(2026, 11, 3, 0, 12), "2026-11-02"),
+    (datetime(2026, 11, 3, 4, 59), "2026-11-02"),
+    (datetime(2026, 11, 3, 5, 0), "2026-11-03"),
+    (datetime(2026, 11, 2, 23, 0), "2026-11-02"),
+])
+def test_scoreboard_day_runs_past_midnight(now, day):
+    assert scoreboard_today(now).isoformat() == day
