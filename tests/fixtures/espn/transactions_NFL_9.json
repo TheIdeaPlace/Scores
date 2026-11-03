@@ -1,0 +1,17 @@
+{
+ "status": "success",
+ "count": 69,
+ "pageIndex": 1,
+ "pageSize": 5,
+ "pageCount": 14,
+ "transactions": [
+  {
+   "date": "2026-10-26T07:00Z",
+   "description": "Signed G Mekhi Becton Sr. from the practice squad to the active roster. Placed C/G Jacob Monk on injured reserve."
+  },
+  {
+   "date": "2026-10-24T07:00Z",
+   "description": "Activated RB Josh Jacobs from exempt status. Activated DT Jordan Riley off reserve/physically unable to perform list. Signed WR Coleman Owen from the practice squad to the active roster."
+  }
+ ]
+}

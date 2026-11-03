@@ -1,0 +1,282 @@
+{
+ "team": {
+  "abbreviation": "ARS",
+  "defaultLeague": {
+   "abbreviation": "Premier League",
+   "alternateId": "23",
+   "id": "700",
+   "midsizeName": "ENG.1",
+   "name": "English Premier League",
+   "season": {
+    "type": {
+     "hasStandings": true
+    }
+   },
+   "shortName": "English Premier League"
+  },
+  "displayName": "Arsenal",
+  "groups": {
+   "id": "1"
+  },
+  "id": "359",
+  "isActive": true,
+  "leagueAbbrev": "eng.1",
+  "location": "Arsenal",
+  "name": "Arsenal",
+  "nextEvent": [
+   {
+    "competitions": [
+     {
+      "competitors": [
+       {
+        "homeAway": "home",
+        "id": "359",
+        "order": 0,
+        "team": {
+         "id": "359",
+         "displayName": "Arsenal",
+         "abbreviation": "ARS"
+        },
+        "type": "team",
+        "winner": false
+       },
+       {
+        "homeAway": "away",
+        "id": "306",
+        "order": 1,
+        "team": {
+         "id": "306",
+         "displayName": "Hull City",
+         "abbreviation": "HUL"
+        },
+        "type": "team",
+        "winner": false
+       }
+      ],
+      "date": "2026-11-07T15:00Z",
+      "id": "401878760",
+      "odds": [
+       {
+        "awayTeamOdds": {
+         "current": {
+          "moneyLine": {
+           "alternateDisplayValue": "+1500",
+           "american": "+1500",
+           "decimal": 16.0,
+           "displayValue": "15/1",
+           "fraction": "15/1",
+           "value": 16.0
+          },
+          "pointSpread": {
+           "alternateDisplayValue": "+2.5",
+           "american": "+2.5"
+          },
+          "spread": {
+           "alternateDisplayValue": "-180",
+           "american": "-180",
+           "decimal": 1.55,
+           "displayValue": "5/9",
+           "fraction": "5/9",
+           "value": 1.55
+          }
+         },
+         "favorite": false,
+         "moneyLine": 1500,
+         "open": {
+          "favorite": false,
+          "moneyLine": {
+           "alternateDisplayValue": "+1400",
+           "american": "+1400",
+           "decimal": 15.0,
+           "displayValue": "14/1",
+           "fraction": "14/1",
+           "value": 15.0
+          },
+          "pointSpread": {
+           "alternateDisplayValue": "+2.5",
+           "american": "+2.5"
+          },
+          "spread": {
+           "alternateDisplayValue": "-185",
+           "american": "-185",
+           "decimal": 1.54,
+           "displayValue": "20/37",
+           "fraction": "20/37",
+           "value": 1.54
+          }
+         },
+         "spreadOdds": -180.0,
+         "team": {
+          "abbreviation": "HUL",
+          "id": "306",
+          "name": "Hull City"
+         },
+         "underdog": true
+        },
+        "homeTeamOdds": {
+         "current": {
+          "moneyLine": {
+           "alternateDisplayValue": "-650",
+           "american": "-650",
+           "decimal": 1.15,
+           "displayValue": "2/13",
+           "fraction": "2/13",
+           "value": 1.15
+          },
+          "pointSpread": {
+           "alternateDisplayValue": "-2.5",
+           "american": "-2.5"
+          },
+          "spread": {
+           "alternateDisplayValue": "+120",
+           "american": "+120",
+           "decimal": 2.2,
+           "displayValue": "6/5",
+           "fraction": "6/5",
+           "value": 2.2
+          }
+         },
+         "favorite": true,
+         "moneyLine": -650,
+         "open": {
+          "favorite": true,
+          "moneyLine": {
+           "alternateDisplayValue": "-700",
+           "american": "-700",
+           "decimal": 1.14,
+           "displayValue": "1/7",
+           "fraction": "1/7",
+           "value": 1.14
+          },
+          "pointSpread": {
+           "alternateDisplayValue": "-2.5",
+           "american": "-2.5"
+          },
+          "spread": {
+           "alternateDisplayValue": "+120",
+           "american": "+120",
+           "decimal": 2.2,
+           "displayValue": "6/5",
+           "fraction": "6/5",
+           "value": 2.2
+          }
+         },
+         "spreadOdds": 120.0,
+         "team": {
+          "abbreviation": "ARS",
+          "id": "359",
+          "name": "Arsenal"
+         },
+         "underdog": false
+        }
+       },
+       {
+        "awayTeamOdds": {
+         "odds": {
+          "handicap": 0.0,
+          "summary": "18/1",
+          "value": 19.0
+         },
+         "team": {
+          "abbreviation": "HUL",
+          "id": "306",
+          "name": "Hull City"
+         }
+        },
+        "homeTeamOdds": {
+         "odds": {
+          "handicap": 0.0,
+          "summary": "1/7",
+          "value": 1.143
+         },
+         "team": {
+          "abbreviation": "ARS",
+          "id": "359",
+          "name": "Arsenal"
+         }
+        }
+       }
+      ],
+      "status": {
+       "addedClock": 0.0,
+       "clock": 0.0,
+       "displayClock": "0'",
+       "period": 0,
+       "type": {
+        "completed": false,
+        "description": "Scheduled",
+        "detail": "Sat, November 7th at 10:00 AM EST",
+        "id": "1",
+        "name": "STATUS_SCHEDULED",
+        "shortDetail": "11/7 - 10:00 AM EST",
+        "state": "pre"
+       }
+      },
+      "venue": {
+       "address": {
+        "city": "London",
+        "country": "England"
+       },
+       "fullName": "Emirates Stadium"
+      }
+     }
+    ],
+    "date": "2026-11-07T15:00Z",
+    "id": "401878760",
+    "league": {
+     "abbreviation": "Premier League",
+     "alternateId": "23",
+     "id": "700",
+     "isTournament": false,
+     "midsizeName": "ENG.1",
+     "name": "English Premier League",
+     "shortName": "English Premier League"
+    },
+    "name": "Hull City at Arsenal",
+    "timeValid": true
+   }
+  ],
+  "nickname": "Gunners",
+  "record": {
+   "items": [
+    {
+     "description": "Overall Record",
+     "stats": [
+      {
+       "name": "pointsAgainst",
+       "value": 5.0
+      },
+      {
+       "name": "losses",
+       "value": 1.0
+      },
+      {
+       "name": "gamesPlayed",
+       "value": 9.0
+      },
+      {
+       "name": "ties",
+       "value": 0.0
+      },
+      {
+       "name": "wins",
+       "value": 8.0
+      },
+      {
+       "name": "pointsFor",
+       "value": 14.0
+      },
+      {
+       "name": "streak",
+       "value": 0.0
+      }
+     ],
+     "summary": "8-0-1",
+     "type": "total"
+    }
+   ]
+  },
+  "shortDisplayName": "Arsenal",
+  "standingSummary": "1st in English Premier League"
+ }
+}

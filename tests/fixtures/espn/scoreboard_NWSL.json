@@ -1,0 +1,156 @@
+{
+ "events": [
+  {
+   "id": "401854015",
+   "date": "2026-10-03T00:00Z",
+   "name": "San Diego Wave FC at Orlando Pride",
+   "shortName": "SD @ ORL",
+   "competitions": [
+    {
+     "id": "401854015",
+     "date": "2026-10-03T00:00Z",
+     "timeValid": true,
+     "status": {
+      "type": {
+       "id": "28",
+       "name": "STATUS_FULL_TIME",
+       "state": "post",
+       "completed": true,
+       "description": "Full Time",
+       "detail": "FT",
+       "shortDetail": "FT"
+      }
+     },
+     "venue": {
+      "id": "6971",
+      "fullName": "Inter&Co Stadium",
+      "address": {
+       "city": "Orlando, Florida",
+       "country": "USA"
+      }
+     },
+     "competitors": [
+      {
+       "id": "18206",
+       "homeAway": "home",
+       "score": "1",
+       "winner": false,
+       "team": {
+        "id": "18206",
+        "displayName": "Orlando Pride",
+        "shortDisplayName": "Orlando",
+        "name": "Orlando Pride",
+        "abbreviation": "ORL"
+       },
+       "records": [
+        {
+         "name": "All Splits",
+         "type": "total",
+         "summary": "10-3-14",
+         "abbreviation": "Total"
+        }
+       ]
+      },
+      {
+       "id": "21423",
+       "homeAway": "away",
+       "score": "2",
+       "winner": true,
+       "team": {
+        "id": "21423",
+        "displayName": "San Diego Wave FC",
+        "shortDisplayName": "San Diego",
+        "name": "San Diego Wave FC",
+        "abbreviation": "SD"
+       },
+       "records": [
+        {
+         "name": "All Splits",
+         "type": "total",
+         "summary": "16-3-8",
+         "abbreviation": "Total"
+        }
+       ]
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "401854016",
+   "date": "2026-10-03T02:00Z",
+   "name": "North Carolina Courage at Seattle Reign FC",
+   "shortName": "NC @ SEA",
+   "competitions": [
+    {
+     "id": "401854016",
+     "date": "2026-10-03T02:00Z",
+     "timeValid": true,
+     "status": {
+      "type": {
+       "id": "28",
+       "name": "STATUS_FULL_TIME",
+       "state": "post",
+       "completed": true,
+       "description": "Full Time",
+       "detail": "FT",
+       "shortDetail": "FT"
+      }
+     },
+     "venue": {
+      "id": "4485",
+      "fullName": "Lumen Field",
+      "address": {
+       "city": "Seattle, Washington",
+       "country": "USA"
+      }
+     },
+     "competitors": [
+      {
+       "id": "15363",
+       "homeAway": "home",
+       "score": "0",
+       "winner": false,
+       "team": {
+        "id": "15363",
+        "displayName": "Seattle Reign FC",
+        "shortDisplayName": "Seattle",
+        "name": "Seattle Reign FC",
+        "abbreviation": "SEA"
+       },
+       "records": [
+        {
+         "name": "All Splits",
+         "type": "total",
+         "summary": "12-4-11",
+         "abbreviation": "Total"
+        }
+       ]
+      },
+      {
+       "id": "15366",
+       "homeAway": "away",
+       "score": "1",
+       "winner": true,
+       "team": {
+        "id": "15366",
+        "displayName": "North Carolina Courage",
+        "shortDisplayName": "North Carolina",
+        "name": "North Carolina Courage",
+        "abbreviation": "NC"
+       },
+       "records": [
+        {
+         "name": "All Splits",
+         "type": "total",
+         "summary": "13-3-11",
+         "abbreviation": "Total"
+        }
+       ]
+      }
+     ]
+    }
+   ]
+  }
+ ]
+}

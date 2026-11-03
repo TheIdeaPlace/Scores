@@ -60,15 +60,12 @@ class VenueService:
                         if venue_id and venue_id not in venues:
                             venues[venue_id] = {
                                 'id': venue_id,
-                                'name': venue.get('fullName', 'Unknown'),
-                                'city': venue.get('address', {}).get('city', 'Unknown'),
-                                'state': venue.get('address', {}).get('state', 'Unknown'),
-                                'indoor': venue.get('indoor', False),
+                                'name': venue.get('fullName') or 'Unknown',
+                                'city': (venue.get('address') or {}).get('city') or 'Unknown',
+                                'state': (venue.get('address') or {}).get('state') or 'Unknown',
+                                'indoor': bool(venue.get('indoor')),
                                 'home_teams': []
                             }
-
-                            # Skip enhanced details for now to avoid timeout issues
-                            # self._enhance_venue_details(venue_id, venues[venue_id], league_path, event.get('id'))
 
                 # Find home teams for each venue
                 self._find_home_teams(venues, league_key)
@@ -79,37 +76,6 @@ class VenueService:
             print(f"Error getting venues for {league_key}: {e}")
 
         return venues
-
-    def _enhance_venue_details(self, venue_id: str, venue_data: Dict, league_path: str, event_id: str):
-        """Get enhanced venue details from game details"""
-
-        if not event_id:
-            return
-
-        detail_url = f"{self.base_url}/{league_path}/summary?event={event_id}"
-
-        try:
-            resp = requests.get(detail_url, timeout=5)
-            if resp.status_code == 200:
-                data = resp.json()
-                if 'gameInfo' in data and 'venue' in data['gameInfo']:
-                    detailed_venue = data['gameInfo']['venue']
-
-                    # Add enhanced details
-                    venue_data.update({
-                        'grass': detailed_venue.get('grass'),
-                        'capacity': detailed_venue.get('capacity'),
-                        'zipCode': detailed_venue.get('address', {}).get('zipCode'),
-                        'images': detailed_venue.get('images', []),
-                        'guid': detailed_venue.get('guid')
-                    })
-
-        except (requests.RequestException, KeyboardInterrupt) as e:
-            if isinstance(e, KeyboardInterrupt):
-                raise
-            pass  # Skip if can't get details
-        except Exception:
-            pass  # Skip if can't get details
 
     def _find_home_teams(self, venues: Dict, league_key: str):
         """Find which teams play home games at each venue"""
@@ -139,9 +105,9 @@ class VenueService:
 
                             if venue_id and venue_id in venues:
                                 team_info = {
-                                    'name': team.get('displayName', 'Unknown'),
-                                    'short_name': team.get('shortDisplayName', ''),
-                                    'abbreviation': team.get('abbreviation', ''),
+                                    'name': team.get('displayName') or 'Unknown',
+                                    'short_name': team.get('shortDisplayName') or '',
+                                    'abbreviation': team.get('abbreviation') or '',
                                     'id': team.get('id')
                                 }
                                 venues[venue_id]['home_teams'].append(team_info)
@@ -168,7 +134,7 @@ class VenueService:
                 'league': league_key
             },
             'characteristics': {
-                'indoor': venue.get('indoor', False),
+                'indoor': bool(venue.get('indoor')),
                 'grass': venue.get('grass'),
                 'capacity': venue.get('capacity')
             },
@@ -214,10 +180,11 @@ class VenueService:
             except (ValueError, TypeError):
                 pass
 
-        # League-specific facts
+        # League-specific facts. scores.py passes the league in lower case.
+        league_key = (league_key or "").upper()
         if league_key == "MLB":
             facts.append("Major League Baseball venue")
-            venue_name = venue.get('name', '')
+            venue_name = venue.get('name') or ''
             if "Field" in venue_name:
                 facts.append("Classic baseball 'Field' naming")
             elif "Park" in venue_name:
@@ -234,7 +201,7 @@ class VenueService:
         elif league_key == "NHL":
             facts.append("National Hockey League venue")
 
-        elif league_key in ["NCAAF", "college-football"]:
+        elif league_key in ["NCAAF", "COLLEGE-FOOTBALL"]:
             facts.append("College football venue")
 
         # Location facts
@@ -247,7 +214,7 @@ class VenueService:
         home_teams = venue.get('home_teams', [])
         if home_teams:
             if len(home_teams) == 1:
-                team_name = home_teams[0].get('name', 'Unknown')
+                team_name = home_teams[0].get('name') or 'Unknown'
                 facts.append(f"Home of the {team_name}")
             else:
                 facts.append(f"Shared by {len(home_teams)} teams")

@@ -1,0 +1,59 @@
+{
+ "sports": [
+  {
+   "name": "Soccer",
+   "leagues": [
+    {
+     "name": "English Premier League",
+     "teams": [
+      {
+       "team": {
+        "id": "349",
+        "abbreviation": "BOU",
+        "displayName": "AFC Bournemouth",
+        "shortDisplayName": "Bournemouth",
+        "name": "AFC Bournemouth",
+        "location": "AFC Bournemouth",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/soccer/500/349.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "359",
+        "abbreviation": "ARS",
+        "displayName": "Arsenal",
+        "shortDisplayName": "Arsenal",
+        "name": "Arsenal",
+        "location": "Arsenal",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/soccer/500/359.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "362",
+        "abbreviation": "AVL",
+        "displayName": "Aston Villa",
+        "shortDisplayName": "Aston Villa",
+        "name": "Aston Villa",
+        "location": "Aston Villa",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/soccer/500/362.png"
+         }
+        ]
+       }
+      }
+     ]
+    }
+   ]
+  }
+ ]
+}

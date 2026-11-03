@@ -67,10 +67,6 @@ class ApiService:
         return ApiService._call(espn_api.format_complex_data, key, value)
 
     @staticmethod
-    def get_live_scores_all_sports() -> List[Dict]:
-        return ApiService._call(espn_api.get_live_scores_all_sports)
-
-    @staticmethod
     def get_statistics(league: str) -> Dict:
         return ApiService._call(espn_api.get_statistics, league)
     
