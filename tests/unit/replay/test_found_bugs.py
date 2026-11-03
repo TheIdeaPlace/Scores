@@ -75,6 +75,11 @@ def test_nba_reads_the_list_shape_like_nfl_and_nhl(espn):
     ("odds", [{"provider": None, "details": "GB -3"}], "• Unknown: GB -3"),
     ("boxscore", {"teams": [{"team": None, "statistics": [{"name": "yards", "displayValue": "300"}]}]},
      "• Unknown: yards: 300"),
+    ("odds", [{"provider": {"name": "X"}, "details": None}], "• X: No details"),
+    ("odds", [{"provider": {"name": None}, "details": "GB -3"}], "• Unknown: GB -3"),
+    ("gameInfo", {"venue": {"fullName": None, "displayName": "Dome"}}, "Venue: Dome"),
+    ("gameInfo", {"venue": {"fullName": None}, "attendance": 100}, "Attendance: 100"),
+    ("gameInfo", {"weather": {"displayValue": None, "temperature": 50}}, "Weather: 50°F"),
 ])
 def test_format_complex_data_with_unexpected_shapes(key, value, expected):
     """A text attendance, a null provider and a null team all raised."""

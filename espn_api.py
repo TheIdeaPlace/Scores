@@ -1431,8 +1431,9 @@ def format_complex_data(key, value):
         if "venue" in value:
             venue = value["venue"]
             if isinstance(venue, dict):
-                venue_name = venue.get("fullName", venue.get("displayName", "Unknown Venue"))
-                info_parts.append(f"Venue: {venue_name}")
+                venue_name = venue.get("fullName") or venue.get("displayName")
+                if venue_name:
+                    info_parts.append(f"Venue: {venue_name}")
         
         attendance = value.get("attendance")
         if attendance:
@@ -1449,8 +1450,8 @@ def format_complex_data(key, value):
         if "weather" in value:
             weather = value["weather"]
             if isinstance(weather, dict):
-                weather_desc = weather.get("displayValue", "")
-                temp = weather.get("temperature", "")
+                weather_desc = weather.get("displayValue") or ""
+                temp = weather.get("temperature") or ""
                 if weather_desc or temp:
                     weather_info = weather_desc
                     if temp:
@@ -1529,9 +1530,9 @@ def format_complex_data(key, value):
             odds_info = []
             for odd in value[:2]:  # Show first 2
                 if isinstance(odd, dict):
-                    provider = _as_dict(odd.get("provider")).get("name", "Unknown")
-                    details = odd.get("details", "No details")
-                    over_under = odd.get("overUnder", "")
+                    provider = _as_dict(odd.get("provider")).get("name") or "Unknown"
+                    details = odd.get("details") or "No details"
+                    over_under = odd.get("overUnder") or ""
                     info = f"• {provider}: {details}"
                     if over_under:
                         info += f" (O/U: {over_under})"
@@ -1549,8 +1550,8 @@ def format_complex_data(key, value):
             for team in teams[:2]:
                 if isinstance(team, dict):
                     team_info = _as_dict(team.get("team"))
-                    name = team_info.get("displayName", "Unknown")
-                    stats = team.get("statistics", [])
+                    name = team_info.get("displayName") or "Unknown"
+                    stats = team.get("statistics") or []
                     if stats:
                         # Show a few key stats
                         key_stats = []
