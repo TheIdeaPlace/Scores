@@ -392,7 +392,7 @@ def get_team_schedule(league_key, team_id, days_ahead=30, days_behind=30, season
                     resp = _http_get(type_url)
                     if resp.status_code == 200:
                         data = resp.json()
-                        events = data.get('events', [])
+                        events = _as_list(data.get('events'))
                         all_events.extend(events)
                 except:
                     pass  # Continue even if one season type fails
@@ -416,7 +416,7 @@ def get_team_schedule(league_key, team_id, days_ahead=30, days_behind=30, season
             if resp.status_code != 200:
                 return []
             data = resp.json()
-            events = data.get('events', [])
+            events = _as_list(data.get('events'))
         elif league_key == "NCAAF":
             # NCAAF: Use specified season or current season with seasontype=2 for regular season
             season_year = season if season else get_current_season_year(league_key)
@@ -425,7 +425,7 @@ def get_team_schedule(league_key, team_id, days_ahead=30, days_behind=30, season
             if resp.status_code != 200:
                 return []
             data = resp.json()
-            events = data.get('events', [])
+            events = _as_list(data.get('events'))
         elif league_key in ["NCAAM", "NCAAWB"]:
             # NCAA Basketball: Use year+1 format like NBA (2027 = 2026-27 season)
             season_year = season if season else get_current_season_year(league_key)
@@ -438,7 +438,7 @@ def get_team_schedule(league_key, team_id, days_ahead=30, days_behind=30, season
                     resp = _http_get(type_url)
                     if resp.status_code == 200:
                         data = resp.json()
-                        events = data.get('events', [])
+                        events = _as_list(data.get('events'))
                         all_events.extend(events)
                 except:
                     pass  # Continue even if one season type fails
@@ -498,7 +498,7 @@ def get_team_schedule(league_key, team_id, days_ahead=30, days_behind=30, season
             fallback_resp = _http_get(fallback_url)
             if fallback_resp.status_code == 200:
                 fallback_data = fallback_resp.json()
-                events = fallback_data.get('events', [])
+                events = _as_list(fallback_data.get('events'))
         except:
             pass  # If fallback fails, continue with empty events
     
@@ -517,19 +517,19 @@ def get_team_schedule(league_key, team_id, days_ahead=30, days_behind=30, season
             continue
             
         # Get competition data
-        competitions = event.get('competitions', [])
+        competitions = _as_list(event.get('competitions'))
         if not competitions:
             continue
             
         comp = competitions[0]
-        competitors = comp.get('competitors', [])
+        competitors = _as_list(comp.get('competitors'))
         
         # Find home and away teams
         home_team = away_team = None
         home_score = away_score = ''
         
         for competitor in competitors:
-            team_info = competitor.get('team', {})
+            team_info = _as_dict(competitor.get('team'))
             if competitor.get('homeAway') == 'home':
                 home_team = team_info.get('displayName', 'Unknown')
                 score_data = competitor.get('score', '')
@@ -549,8 +549,9 @@ def get_team_schedule(league_key, team_id, days_ahead=30, days_behind=30, season
         team_name = None
         is_home = False
         for competitor in competitors:
-            if competitor.get('team', {}).get('id') == team_id:
-                team_name = competitor.get('team', {}).get('displayName', 'Unknown')
+            team_info = _as_dict(competitor.get('team'))
+            if team_info.get('id') == team_id:
+                team_name = team_info.get('displayName', 'Unknown')
                 is_home = competitor.get('homeAway') == 'home'
                 break
                 
@@ -561,8 +562,8 @@ def get_team_schedule(league_key, team_id, days_ahead=30, days_behind=30, season
         home_away = 'vs' if is_home else '@'
         
         # Get game status
-        status = comp.get('status', {})
-        status_type = status.get('type', {})
+        status = _as_dict(comp.get('status'))
+        status_type = _as_dict(status.get('type'))
         game_status = status_type.get('description', 'Unknown')
         
         # Get start time
@@ -576,7 +577,7 @@ def get_team_schedule(league_key, team_id, days_ahead=30, days_behind=30, season
         start_time = convert_espn_time_to_local(start_time)
         
         # Get venue
-        venue = comp.get('venue', {})
+        venue = _as_dict(comp.get('venue'))
         venue_name = venue.get('fullName', 'TBD')
         
         # Determine date display format - include year for historical seasons

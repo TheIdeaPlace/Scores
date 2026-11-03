@@ -34,6 +34,10 @@ CASES = [
          "worldcup_scoreboard_20260620.json", "/scoreboard"),
     case("get_news", lambda: espn_api.get_news("NFL"), "news_NFL.json", "/news"),
     case("get_team_news", lambda: espn_api.get_team_news("NFL", "9"), "team_news_NFL_9.json", "/news"),
+    case("get_team_schedule NFL", lambda: espn_api.get_team_schedule("NFL", "9"), "schedule_NFL_9.json", "/schedule"),
+    case("get_team_schedule NBA", lambda: espn_api.get_team_schedule("NBA", "15"), "schedule_NBA_15.json", "/schedule"),
+    case("get_team_schedule MLB", lambda: espn_api.get_team_schedule("MLB", "10"), "schedule_MLB_10.json", "/schedule"),
+    case("get_team_schedule NCAAM", lambda: espn_api.get_team_schedule("NCAAM", "275"), "schedule_NCAAM_275.json", "/schedule"),
 ]
 
 
