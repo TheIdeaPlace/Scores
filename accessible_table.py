@@ -1084,6 +1084,9 @@ def prepare_table_tabs(tab_widget: QTabWidget) -> None:
       falls on whatever comes next, with nothing said about which tab this is.
     """
     bar = tab_widget.tabBar()
+    # The tab widget's own focus goes to its bar, so as a Tab stop it's an empty one:
+    # Tab appears to do nothing, and the arrow keys go nowhere.
+    tab_widget.setFocusPolicy(Qt.FocusPolicy.NoFocus)
     for button in bar.findChildren(QToolButton):
         button.setFocusPolicy(Qt.FocusPolicy.NoFocus)
     bar.installEventFilter(_TabBarViewKeys(tab_widget))

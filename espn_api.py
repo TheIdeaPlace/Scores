@@ -4289,7 +4289,8 @@ def get_team_info(league_key, team_id):
                 result["record_road"] = summary
         # Division / Conference
         groups = team.get("groups", {})
-        result["division"] = groups.get("name") or team.get("standingSummary", "")
+        result["division"] = groups.get("name", "")
+        result["standing"] = team.get("standingSummary", "")
         result["conference"] = groups.get("parent", {}).get("name", "")
         # Head coach
         coaches = team.get("coaches", [])

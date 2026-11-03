@@ -8063,6 +8063,10 @@ class GameDetailsDialog(QDialog):
         layout.addLayout(button_layout)
         self.setLayout(layout)
     
+    def go_back(self):
+        """Back, from the view inside this dialog, closes the dialog."""
+        self.accept()
+
     def update_window_title(self, context_parts=None):
         """Update dialog window title with context information"""
         if context_parts:
@@ -8145,6 +8149,8 @@ class TeamHubDialog(QDialog):
         self.info_list.setAccessibleDescription("Team details including record, venue, coach, and next game")
         info_layout.addWidget(self.info_list)
         self.tab_widget.addTab(info_w, "&Info")
+        # Open on the team's details, not on the favorites button above them.
+        _focus_once_active(self, self.info_list.setFocus)
 
         # Tab 1 — Roster
         roster_w = QWidget()
@@ -8188,7 +8194,7 @@ class TeamHubDialog(QDialog):
         self.news_list.setAccessibleDescription("Team news articles. Press Enter to open in browser.")
         self.news_list.itemActivated.connect(self._on_news_activated)
         news_layout.addWidget(self.news_list)
-        open_btn = QPushButton("&Open Story in Browser")
+        open_btn = QPushButton("O&pen Story in Browser")
         open_btn.clicked.connect(self._open_selected_news)
         news_layout.addWidget(open_btn)
         self.tab_widget.addTab(news_w, "&News")
@@ -8200,7 +8206,7 @@ class TeamHubDialog(QDialog):
         self.trans_list.setAccessibleName(f"{self.team_name} Transactions")
         self.trans_list.setAccessibleDescription("Recent player transactions for this team")
         trans_layout.addWidget(self.trans_list)
-        self.tab_widget.addTab(trans_w, "&Transactions")
+        self.tab_widget.addTab(trans_w, "T&ransactions")
 
         layout.addWidget(self.tab_widget)
 
@@ -8247,6 +8253,7 @@ class TeamHubDialog(QDialog):
                 self.info_list.addItem(f"{label}: {value}")
         add("Team", info.get('name'))
         add("Division", info.get('division'))
+        add("Standing", info.get('standing'))
         add("Conference", info.get('conference'))
         add("Record (Overall)", info.get('record_overall'))
         add("Record (Home)", info.get('record_home'))
@@ -8259,25 +8266,27 @@ class TeamHubDialog(QDialog):
         date = info.get('next_game_date')
         if opp and date:
             add("Next Game", f"{ha} {opp}  —  {date}")
+        self.info_list.setCurrentRow(0)
 
     # -------------------------------------------------------------- roster tab
 
     def _load_roster(self):
-        self.roster_table.populate_data([["Loading roster...", "", "", "", "", ""]])
+        self.roster_table.populate_data([["Loading roster...", "", "", "", "", ""]], set_focus=False)
         loader = TeamRosterLoader(self.team_id, self.league)
         loader.data_loaded.connect(self._on_roster_loaded)
         loader.error_occurred.connect(
-            lambda e: self.roster_table.populate_data([[f"Error: {e}", "", "", "", "", ""]]))
+            lambda e: self.roster_table.populate_data([[f"Error: {e}", "", "", "", "", ""]], set_focus=False))
         self._loaders.append(loader)
         loader.start()
 
     def _on_roster_loaded(self, players):
         if not players:
-            self.roster_table.populate_data([["No roster data available.", "", "", "", "", ""]])
+            self.roster_table.populate_data([["No roster data available.", "", "", "", "", ""]], set_focus=False)
             return
         rows = [[p['name'], p['jersey'], p['position'], p['age'], p['height'], p['weight']]
                 for p in players]
-        self.roster_table.populate_data(rows, set_focus=True)
+        # Not set_focus: someone arrowing along the tabs stays on the tabs.
+        self.roster_table.populate_data(rows, set_focus=False)
 
     # ------------------------------------------------------------ schedule tab
 
@@ -11022,6 +11031,14 @@ class StatisticsViewDialog(QDialog):
         if hasattr(self, 'stats_list'):
             self.stats_list.setFocus()
 
+    def _show_statistics_message(self, layout, message):
+        """A label can't take focus, so a screen reader user would hear nothing at all."""
+        self.stats_list = QListWidget()
+        self.stats_list.setAccessibleName(f"{self.stat_type.title()} statistics")
+        self.stats_list.addItem(message)
+        self.stats_list.setCurrentRow(0)
+        layout.addWidget(self.stats_list)
+
     def _show_statistics(self, layout, statistics_data):
         """Build the statistics interface from loaded data. No network access."""
         try:
@@ -11033,11 +11050,9 @@ class StatisticsViewDialog(QDialog):
                 if available_stats:
                     self._create_working_statistics_interface(layout, available_stats)
                 else:
-                    no_data_label = QLabel(f"No {self.stat_type} statistics available for {self.league}")
-                    layout.addWidget(no_data_label)
+                    self._show_statistics_message(layout, f"No {self.stat_type} statistics are available for {self.league}.")
             else:
-                no_data_label = QLabel(f"Unable to load statistics data for {self.league}")
-                layout.addWidget(no_data_label)
+                self._show_statistics_message(layout, f"Unable to load statistics for {self.league}.")
                 
         except Exception as e:
             print(f"DEBUG: Exception in setup_ui: {str(e)}")
