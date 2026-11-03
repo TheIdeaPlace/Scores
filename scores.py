@@ -60,7 +60,7 @@ from models.game import GameData
 from models.news import NewsData
 import live_play_format
 from models.standings import StandingsData
-from windows_notifications import announce
+from windows_notifications import announce, set_notifier_window
 from accessible_table import AccessibleTable, StandingsTable, WildCardTable, LeadersTable, BoxscoreTable, InjuryTable, prepare_table_tabs
 from box_score import build_box_tables
 from game_labels import basketball_period_label, football_period_label, football_period_sort_key, game_standings_tables
@@ -100,6 +100,7 @@ TEAM_SUMMARY_HEADERS = ["Team", "Statistic", "Value"]
 INJURY_HEADERS = ["Player", "Position", "Team", "Status", "Type", "Details", "Return Date"]
 LEADERS_HEADERS = ["Category/Player", "Team", "Statistic", "Value"]
 FOCUS_DELAY_MS = 50
+DIALOG_FOCUS_DELAY_MS = 200
 
 
 def _get_home_leagues(available_leagues):
@@ -176,6 +177,18 @@ def _int_or_none(value):
         return int(value)
     except (TypeError, ValueError):
         return None
+
+
+def _focus_once_active(dialog, set_focus):
+    """Run `set_focus` after the dialog has opened and taken its first focus, so it
+    wins. Windows hands focus to the dialog's first widget, the tab bar, as it activates."""
+    original_show = dialog.showEvent
+
+    def show_event(event):
+        original_show(event)
+        QTimer.singleShot(DIALOG_FOCUS_DELAY_MS, set_focus)
+
+    dialog.showEvent = show_event
 
 
 def _tab_widget_in_layout(layout):
@@ -2545,7 +2558,7 @@ class GameDetailsView(BaseView):
                 trees = dlg.findChildren(QTreeWidget)
                 if trees:
                     trees[0].setFocus()
-            QTimer.singleShot(FOCUS_DELAY_MS, set_focus_to_tree)
+            _focus_once_active(dlg, set_focus_to_tree)
 
         if field_name in ["boxscore", "leaders", "standings"]:
             def set_focus_to_table():
@@ -2562,7 +2575,7 @@ class GameDetailsView(BaseView):
                     else:
                         tab_widget.setFocus()
             
-            QTimer.singleShot(FOCUS_DELAY_MS, set_focus_to_table)
+            _focus_once_active(dlg, set_focus_to_table)
         
         dlg.exec()
     
@@ -12743,6 +12756,11 @@ class SportsScoresApp(QWidget):
         self.view_stack = []  # Stack for navigation history
         self.monitored_games = set()  # live games with score alerts on, across views
         QApplication.instance().installEventFilter(self)
+        # Hidden and never focused: only here so announcements have a window to come from.
+        self._announcer_window = QWidget(self)
+        self._announcer_window.setAttribute(Qt.WidgetAttribute.WA_NativeWindow)
+        self._announcer_window.hide()
+        set_notifier_window(int(self._announcer_window.winId()))
         self.startup_params = startup_params
         
         # Initialize configuration

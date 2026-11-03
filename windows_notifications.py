@@ -4,55 +4,26 @@ Windows UIA Notification Helper for Screen Reader Accessibility
 This module provides Windows UIA (User Interface Automation) notifications
 for screen readers and other assistive technologies.
 """
-import ctypes
-import sys
-
-_KIND_OTHER = 4
-_PROCESSING_CURRENT_THEN_MOST_RECENT = 4
 
 import sys
 import platform
 
+_notifier = None
+
+
+def set_notifier_window(hwnd):
+    """Serve notifications from this hidden window. The app calls this once at startup."""
+    global _notifier
+    from uia_notifier import UiaNotifier
+    _notifier = UiaNotifier(hwnd, "Sports Scores announcements")
+
+
 def _raise_uia_notification(message):
-    """Say `message` through the screen reader, without moving focus.
-
-    Raises a UI Automation notification on the app's foreground window. True if it
-    was sent. Nothing listening, or Windows older than 10 1709, is not an error."""
-    if not message or sys.platform != "win32":
+    """Say `message` through the screen reader, without moving focus. True if it was
+    sent. Nothing listening, or no window yet, is not an error."""
+    if not message or _notifier is None:
         return False
-    try:
-        core = ctypes.WinDLL("UIAutomationCore.dll")
-        ole = ctypes.WinDLL("oleaut32.dll")
-        user32 = ctypes.WinDLL("user32.dll")
-        user32.GetForegroundWindow.restype = ctypes.c_void_p
-        core.UiaHostProviderFromHwnd.argtypes = [ctypes.c_void_p, ctypes.POINTER(ctypes.c_void_p)]
-        core.UiaHostProviderFromHwnd.restype = ctypes.c_long
-        core.UiaRaiseNotificationEvent.argtypes = [ctypes.c_void_p, ctypes.c_int, ctypes.c_int,
-                                                   ctypes.c_void_p, ctypes.c_void_p]
-        core.UiaRaiseNotificationEvent.restype = ctypes.c_long
-        ole.SysAllocString.argtypes = [ctypes.c_wchar_p]
-        ole.SysAllocString.restype = ctypes.c_void_p
-        ole.SysFreeString.argtypes = [ctypes.c_void_p]
-        ole.SysFreeString.restype = None
-
-        provider = ctypes.c_void_p()
-        hwnd = user32.GetForegroundWindow()
-        if not hwnd or core.UiaHostProviderFromHwnd(hwnd, ctypes.byref(provider)) < 0 or not provider:
-            return False
-        text = ole.SysAllocString(str(message))
-        activity = ole.SysAllocString("SportsScores")
-        try:
-            return core.UiaRaiseNotificationEvent(provider, _KIND_OTHER, _PROCESSING_CURRENT_THEN_MOST_RECENT,
-                                                  text, activity) >= 0
-        finally:
-            ole.SysFreeString(text)
-            ole.SysFreeString(activity)
-            # IUnknown::Release, the third entry in the object's vtable.
-            vtable = ctypes.cast(provider, ctypes.POINTER(ctypes.POINTER(ctypes.c_void_p))).contents
-            ctypes.WINFUNCTYPE(ctypes.c_ulong, ctypes.c_void_p)(vtable[2])(provider)
-    except (OSError, AttributeError) as e:
-        print(f"Notification error: {e}")
-        return False
+    return _notifier.notify(str(message), interrupt=False)
 
 
 class WindowsNotificationHelper:

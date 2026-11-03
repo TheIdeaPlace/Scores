@@ -17,5 +17,7 @@ def test_helper_method_raises_one_notification(monkeypatch):
     assert said == ["Refreshing"]
 
 
-def test_no_message_is_quiet():
+def test_no_message_or_no_window_is_quiet(monkeypatch):
+    monkeypatch.setattr(wn, "_notifier", None)
     assert wn._raise_uia_notification("") is False
+    assert wn._raise_uia_notification("Hello") is False
