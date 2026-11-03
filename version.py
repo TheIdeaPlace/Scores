@@ -30,4 +30,4 @@ with the feature line. test_version_sync.py requires three or four parts for
 the same reason.
 """
 
-__version__ = "1.0.0"
+__version__ = "1.0.1"

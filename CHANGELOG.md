@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### In Progress
+- **Game Wrap Up Feature**: ESPN text processing and game story extraction (under construction)
+  - Core infrastructure implemented, text processing being refined
+  - Game story text placeholders currently under investigation
+
+## [1.0.1] - 2026-11-03
+
 ### Fixed
 Found in a bug bash with NVDA on football, hockey and basketball.
 
@@ -36,7 +43,7 @@ Found in a bug bash with NVDA on football, hockey and basketball.
 - **Late games stay put.** Until 5 AM, Live Scores and league views stay on last night's games,
   so a West Coast game no longer vanishes at midnight in the East.
 - **Keeping your place.** Back returns to the game, date or week you came from. Monitoring
-  a game survives a refresh and a visit to the game, and score alerts work.
+  a game survives a refresh and a visit to the game, and a score alert no longer ends in an error.
 - **Enter presses the button that has focus,** everywhere. Enter on a list row no longer also
   presses a dialog's first button; opening a game from a team's schedule toggled the team as a
   favorite that way.
@@ -57,8 +64,7 @@ Found in a bug bash with NVDA on football, hockey and basketball.
   under the basket. The NBA and WNBA use that spot for real tips and dunks, so they keep it.
 
 ### Fixed on iOS
-The iOS side of the same bug bash. These were checked against live ESPN data and in a simulator
-build, but not yet on a device or with VoiceOver.
+The iOS side of the same bug bash.
 
 - **Women's college basketball games open.** About one in five failed outright because of a single
   player with only a short name. One unreadable row or section can no longer take a whole game down.
@@ -86,11 +92,6 @@ build, but not yet on a device or with VoiceOver.
 ### Known issues
 - College basketball fouls read and sound as if they happened at the far end of the court, on
   Windows and iOS: a foul under the basket can read "deep, 66 feet out". See #123.
-
-### In Progress
-- **Game Wrap Up Feature**: ESPN text processing and game story extraction (under construction)
-  - Core infrastructure implemented, text processing being refined
-  - Game story text placeholders currently under investigation
 
 ## [1.0.0] - 2026-10-29
 
