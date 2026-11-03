@@ -2894,7 +2894,7 @@ class GameDetailsView(BaseView):
             if 'officials' in game_info and isinstance(game_info['officials'], list):
                 officials = game_info['officials']
                 if officials:
-                    officials_item = QListWidgetItem(f"Officials: {len(officials)} assigned (Press Enter for details)")
+                    officials_item = QListWidgetItem(f"Officials: {len(officials)} assigned")
                     officials_item.setData(Qt.ItemDataRole.UserRole, {
                         "field": "officials",
                         "data": officials
