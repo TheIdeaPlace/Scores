@@ -146,6 +146,17 @@ def test_a_temperature_alone_is_still_weather():
     assert (info["weather"], info["temperature"]) == ("50°F", "50°F")
 
 
+@pytest.mark.parametrize("weather,expected,line", [
+    ({"displayValue": "Snow", "temperature": 0}, "Snow", "Weather: Snow (0°F)"),
+    ({"temperature": 0}, "0°F", "Weather: 0°F"),
+])
+def test_zero_degrees_is_a_temperature(weather, expected, line):
+    """0 is falsy, so it read "Weather: Snow", and on its own showed no line at all."""
+    info = espn_api.extract_meaningful_game_info({"gameInfo": {"weather": weather}})
+    assert (info["weather"], info["temperature"]) == (expected, "0°F")
+    assert espn_api.format_complex_data("gameInfo", {"weather": weather}) == line
+
+
 def test_a_golfer_with_no_score_is_not_even_par(espn):
     """A null score and no rounds read "E", a score nobody shot."""
     data = load("golf_scoreboard_PGA.json")

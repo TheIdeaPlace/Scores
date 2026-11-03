@@ -1363,7 +1363,7 @@ def extract_meaningful_game_info(details):
 
     # Weather, when ESPN has any
     weather = _as_dict(game_info.get('weather'))
-    if weather.get('temperature'):
+    if weather.get('temperature') is not None:
         info['temperature'] = f"{weather['temperature']}°F"
     if weather.get('displayValue') or info.get('temperature'):
         info['weather'] = weather.get('displayValue') or info['temperature']
@@ -1445,10 +1445,10 @@ def format_complex_data(key, value):
             weather = value["weather"]
             if isinstance(weather, dict):
                 weather_desc = weather.get("displayValue") or ""
-                temp = weather.get("temperature") or ""
-                if weather_desc or temp:
+                temp = weather.get("temperature")
+                if weather_desc or temp is not None:
                     weather_info = weather_desc
-                    if temp:
+                    if temp is not None:
                         weather_info += f" ({temp}°F)" if weather_desc else f"{temp}°F"
                     info_parts.append(f"Weather: {weather_info}")
         
