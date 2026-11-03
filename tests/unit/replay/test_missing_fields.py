@@ -32,6 +32,8 @@ CASES = [
     case("get_world_cup_scores_range",
          lambda: espn_api.get_world_cup_scores_range("WC2026", datetime.date(2026, 6, 20), datetime.date(2026, 6, 20)),
          "worldcup_scoreboard_20260620.json", "/scoreboard"),
+    case("get_news", lambda: espn_api.get_news("NFL"), "news_NFL.json", "/news"),
+    case("get_team_news", lambda: espn_api.get_team_news("NFL", "9"), "team_news_NFL_9.json", "/news"),
 ]
 
 

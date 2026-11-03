@@ -1199,6 +1199,11 @@ def get_scores(league_key, date=None, week=None, seasontype=None, season=None):
         })
     return sort_games_by_section(scores)
 
+def _article_href(article, kind):
+    """An article's web or mobile link, or "" when ESPN didn't send one."""
+    return _as_dict(_as_dict(article.get("links")).get(kind)).get("href", "")
+
+
 def get_news(league_key, limit=10):
     """Get news headlines and links for a specific league
     
@@ -1215,7 +1220,7 @@ def get_news(league_key, limit=10):
     if resp.status_code != 200:
         return []
     data = resp.json()
-    articles = data.get("articles", [])
+    articles = _as_list(data.get("articles"))
     news_items = []
     
     # Import text processor for cleaning descriptions
@@ -1236,8 +1241,8 @@ def get_news(league_key, limit=10):
         news_item = {
             "headline": article.get("headline", "No headline"),
             "description": cleaned_description,
-            "web_url": article.get("links", {}).get("web", {}).get("href", ""),
-            "mobile_url": article.get("links", {}).get("mobile", {}).get("href", ""),
+            "web_url": _article_href(article, "web"),
+            "mobile_url": _article_href(article, "mobile"),
             "published": article.get("published", ""),
             "byline": article.get("byline", "")
         }
@@ -3553,13 +3558,13 @@ def get_team_news(league_key, team_id, limit=15):
         except ImportError:
             text_processor = None
         articles = []
-        for a in resp.json().get("articles", []):
+        for a in _as_list(resp.json().get("articles")):
             raw_desc = a.get("description", "")
             desc = text_processor.clean_description(raw_desc, a) if text_processor else raw_desc
             articles.append({
                 "headline":  a.get("headline", ""),
                 "description": desc,
-                "web_url":   a.get("links", {}).get("web", {}).get("href", ""),
+                "web_url":   _article_href(a, "web"),
                 "published": a.get("published", ""),
                 "byline":    a.get("byline", ""),
             })
