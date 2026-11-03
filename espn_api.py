@@ -2788,56 +2788,23 @@ def get_statistics(league_key):
             else:
                 print("MLB Stats API failed, falling back to ESPN")
 
-        # Try multiple endpoints that might contain statistics
-        endpoints_to_try = [
-            f"{BASE_URL}/{league_path}/leaders",
-            f"{BASE_URL}/{league_path}/athletes",
-            f"{BASE_URL}/{league_path}/statistics",
-            f"{BASE_URL}/{league_path}/stats/leaders",
-            f"https://sports.core.api.espn.com/v2/sports/{league_path}/leaders",
-        ]
-        
-        for endpoint in endpoints_to_try:
-            try:
-                print(f"Attempting to fetch statistics from: {endpoint}")
-                resp = _http_get(endpoint, timeout=10)
-                
-                if resp.status_code == 200:
-                    data = resp.json()
-                    print(f"SUCCESS: {endpoint} returned data")
-                    print(f"Response keys: {list(data.keys())}")
-                    print(f"Response sample: {str(data)[:300]}...")
-                    
-                    result = _parse_statistics_data(data)
-                    print(f"Parsed result - player_stats: {len(result['player_stats'])}, team_stats: {len(result['team_stats'])}")
+        # /statistics is the only ESPN endpoint with leaders.
+        resp = _http_get(f"{BASE_URL}/{league_path}/statistics", timeout=10)
+        if resp.status_code == 200:
+            result = _parse_statistics_data(resp.json())
+            if result['player_stats']:
+                team_stats = _get_team_statistics(league_key)
+                if team_stats:
+                    result['team_stats'] = team_stats
+                return result
+        else:
+            print(f"Statistics for {league_key} returned status {resp.status_code}")
 
-                    # If we got data, try to also get team statistics
-                    if result['player_stats'] or result['team_stats']:
-                        print(f"Got player stats, now attempting to fetch team statistics for {league_key}")
-                        team_stats = _get_team_statistics(league_key)
-                        if team_stats:
-                            result['team_stats'] = team_stats
-                            print(f"Successfully added {len(team_stats)} team stat categories")
-
-                        return result
-                    else:
-                        print(f"No usable data from {endpoint}, trying next...")
-                        continue
-                else:
-                    print(f"FAILED: {endpoint} returned status {resp.status_code}")
-                    
-            except Exception as e:
-                print(f"ERROR: {endpoint} failed with: {e}")
-                continue
-    
     except Exception as e:
         print(f"Error fetching statistics for {league_key}: {e}")
-        import traceback
-        traceback.print_exc()
     
-    print(f"All player statistics endpoints failed for {league_key}")
     
-    # Try to get team statistics
+    # No player statistics, so try to get team statistics
     print(f"Attempting to fetch team statistics for {league_key}")
     team_stats = _get_team_statistics(league_key)
     
@@ -2871,32 +2838,13 @@ def get_player_statistics(league_key):
             else:
                 print("MLB Stats API failed, falling back to ESPN")
 
-        # For other leagues, use ESPN API but only extract player stats
-        endpoints_to_try = [
-            f"{BASE_URL}/{league_path}/leaders",
-            f"{BASE_URL}/{league_path}/athletes", 
-            f"{BASE_URL}/{league_path}/statistics"
-        ]
-        
-        for endpoint in endpoints_to_try:
-            try:
-                print(f"Attempting to fetch player statistics from: {endpoint}")
-                resp = _http_get(endpoint, timeout=10)
-                
-                if resp.status_code == 200:
-                    data = resp.json()
-                    parsed_data = _parse_statistics_data(data)
-                    if parsed_data and parsed_data.get("player_stats"):
-                        # Only return player stats, not team stats
-                        return {"player_stats": parsed_data["player_stats"], "team_stats": []}
-                        
-            except requests.RequestException:
-                continue
-                
-        # Fallback to sample data
-        sample_data = _get_sample_statistics_data(league_key)
-        return {"player_stats": sample_data.get("player_stats", []), "team_stats": []}
-        
+        # /statistics is the only ESPN endpoint with leaders.
+        resp = _http_get(f"{BASE_URL}/{league_path}/statistics", timeout=10)
+        if resp.status_code == 200:
+            # Only return player stats, not team stats
+            return {"player_stats": _parse_statistics_data(resp.json())["player_stats"], "team_stats": []}
+        return {"player_stats": [], "team_stats": []}
+
     except Exception as e:
         print(f"Error fetching player statistics for {league_key}: {str(e)}")
         return {"player_stats": [], "team_stats": []}

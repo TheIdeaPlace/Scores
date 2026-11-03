@@ -61,7 +61,6 @@ def test_nba_reads_the_list_shape_like_nfl_and_nhl(espn):
     """statistics_NBA.json has no stats today. When ESPN adds them, in the list shape it
     sends every other league, the NBA parser's .items() raised and lost them all."""
     espn.on("/nba/statistics", load("statistics_NCAAM.json"))
-    espn.on("/nba/(leaders|athletes)", load("statistics_NBA.json"))
     result = espn_api.get_player_statistics("NBA")
     expected = load("statistics_NCAAM.json")["stats"]["categories"][0]
     assert result["player_stats"][0]["category"] == expected["displayName"]

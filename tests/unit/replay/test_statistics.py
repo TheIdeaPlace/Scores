@@ -2,11 +2,10 @@
 from datetime import datetime
 
 import pytest
-import requests
 
 import espn_api
 
-from .support import FakeResponse, HTTP_404, HTTP_500, TIMEOUT, load
+from .support import HTTP_404, HTTP_500, TIMEOUT, load
 
 SITE = espn_api.BASE_URL
 NOTHING = {"player_stats": [], "team_stats": []}
@@ -17,10 +16,11 @@ def categories(fixture):
 
 
 class TestPlayerStatistics:
-    def test_tries_each_endpoint_in_turn(self, espn):
-        espn.on("/nfl/(leaders|athletes)", HTTP_404).on("/nfl/statistics", load("statistics_NFL.json"))
+    def test_asks_only_for_statistics(self, espn):
+        """/leaders and /athletes are 404 in every league, up to 10 seconds each when stalled."""
+        espn.on("/nfl/statistics", load("statistics_NFL.json"))
         espn_api.get_player_statistics("NFL")
-        assert espn.calls == [f"{SITE}/football/nfl/{tail}" for tail in ("leaders", "athletes", "statistics")]
+        assert espn.calls == [f"{SITE}/football/nfl/statistics"]
 
     @pytest.mark.parametrize("league,path,fixture", [
         ("NFL", "nfl", "statistics_NFL.json"),
@@ -28,7 +28,7 @@ class TestPlayerStatistics:
         ("NCAAM", "mens-college-basketball", "statistics_NCAAM.json"),
     ])
     def test_real_leaders(self, espn, league, path, fixture):
-        espn.on(rf"/{path}/(leaders|athletes)", HTTP_404).on(f"/{path}/statistics", load(fixture))
+        espn.on(f"/{path}/statistics", load(fixture))
         result = espn_api.get_player_statistics(league)
         assert result["team_stats"] == []
         raw = categories(fixture)
@@ -53,7 +53,7 @@ class TestPlayerStatistics:
         assert espn.calls == []
         espn.on(".*", HTTP_500)
         assert espn_api.get_player_statistics("nfl") == NOTHING
-        assert espn.calls[0] == f"{SITE}/football/nfl/leaders"
+        assert espn.calls[0] == f"{SITE}/football/nfl/statistics"
 
     def test_a_bad_payload_is_nothing_rather_than_an_exception(self, espn):
         espn.on(".*", {"stats": {"categories": [{"name": None, "leaders": [{}]}]}})
@@ -89,7 +89,7 @@ class TestMlbStatistics:
 
     def test_the_mlb_api_down_falls_back_to_espn(self, espn):
         espn.on("statsapi.mlb.com", HTTP_500)
-        espn.on("/mlb/(leaders|athletes)", HTTP_404).on("/mlb/statistics", load("statistics_NFL.json"))
+        espn.on("/mlb/statistics", load("statistics_NFL.json"))
         result = espn_api.get_player_statistics("MLB")
         assert result["player_stats"][0]["stats"][0]["player_name"] == categories("statistics_NFL.json")[0]["leaders"][0]["athlete"]["displayName"]
 
@@ -152,21 +152,17 @@ class TestTeamStatistics:
 
 class TestGetStatistics:
     def test_players_and_teams_together(self, espn):
-        espn.on("/nfl/(leaders|athletes)", HTTP_404).on("/nfl/statistics", load("statistics_NFL.json"))
+        espn.on("/nfl/statistics", load("statistics_NFL.json"))
         espn.on("/nfl/teams$", load("teams_NFL.json")).on("/nfl/teams/.*/statistics", load("team_stats_NBA_15.json"))
         result = espn_api.get_statistics("NFL")
         assert result["player_stats"][0]["category"] == categories("statistics_NFL.json")[0]["displayName"]
         assert {c["category"] for c in result["team_stats"]} == {"General", "Offensive"}
 
-    def test_every_endpoint_tried_in_order_when_each_fails(self, espn):
+    def test_statistics_then_team_stats_when_it_fails(self, espn):
         espn.on(".*", HTTP_404)
         assert espn_api.get_statistics("NFL") == NOTHING
         assert espn.calls == [
-            f"{SITE}/football/nfl/leaders",
-            f"{SITE}/football/nfl/athletes",
             f"{SITE}/football/nfl/statistics",
-            f"{SITE}/football/nfl/stats/leaders",
-            "https://sports.core.api.espn.com/v2/sports/football/nfl/leaders",
             f"{SITE}/football/nfl/teams",
         ]
 
@@ -185,7 +181,7 @@ class TestGetStatistics:
         """statistics_NBA.json is what ESPN sends the NBA today: no stats key."""
         espn.on(".*", HTTP_404).on("/nba/statistics", load("statistics_NBA.json"))
         assert espn_api.get_statistics("NBA") == NOTHING
-        assert f"{SITE}/basketball/nba/stats/leaders" in espn.calls
+        assert espn.calls == [f"{SITE}/basketball/nba/statistics", f"{SITE}/basketball/nba/teams"]
 
     def test_unknown_league_and_lower_case(self, espn):
         assert espn_api.get_statistics("CRICKET") == NOTHING
@@ -195,7 +191,7 @@ class TestGetStatistics:
     def test_the_mlb_api_down_falls_through_to_espn(self, espn):
         espn.on(".*", HTTP_404)
         assert espn_api.get_statistics("MLB") == NOTHING
-        assert f"{SITE}/baseball/mlb/leaders" in espn.calls
+        assert f"{SITE}/baseball/mlb/statistics" in espn.calls
 
 
 class TestParsing:
@@ -221,9 +217,3 @@ class TestParsing:
     @pytest.mark.parametrize("data", [{}, "text", [], {"stats": None}, {"stats": {"categories": None}}, load("statistics_NBA.json")])
     def test_no_stats_key_is_nothing(self, data):
         assert espn_api._parse_statistics_data(data) == NOTHING
-
-
-def test_a_request_error_in_the_player_endpoint_loop_tries_the_next(espn):
-    espn.on("/nfl/leaders", requests.ConnectionError("reset")).on("/nfl/athletes", FakeResponse(bad_json=True))
-    espn.on("/nfl/statistics", load("statistics_NFL.json"))
-    assert espn_api.get_player_statistics("NFL")["player_stats"]
