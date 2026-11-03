@@ -3457,6 +3457,8 @@ def get_team_info(league_key, team_id):
         if resp.status_code != 200:
             return {}
         team = resp.json().get("team", {})
+        if not team:
+            return {}
         result = {
             "name":         team.get("displayName", ""),
             "abbreviation": team.get("abbreviation", ""),
