@@ -75,8 +75,11 @@ WORLD_CUP_MATCH = "760512"
 # What the iPhone asks the core API for. ESPN has no statistics for some season types, such
 # as the NBA's preseason and play-in, so one season type on its own proves nothing.
 CORE_SEASON_TYPES = (2, 3, 1)
+# ESPN's /statistics fails often, mostly for college basketball, with this message on a 404.
+# The failure can stay cached for up to 30 seconds, so the pause has to outlast that.
 STATISTICS_TRIES = 3
-STATISTICS_PAUSE = 10
+STATISTICS_PAUSE = 35
+STATISTICS_BLIP = "Failed to retrieve league stats"
 
 
 @dataclass(frozen=True)
@@ -1041,8 +1044,7 @@ def check_statistics(http, report, league, event, in_season):
     if league.player_stats_gap:
         report.warn(league.key, "App: player statistics", league.player_stats_gap)
     elif league.player_stats:
-        # ESPN's /statistics now and then answers 404 for a league it served a moment ago,
-        # and the app reads that as no statistics. So nothing is only nothing if it lasts.
+        # The app reads ESPN's blip as no statistics, so nothing is only nothing if it lasts.
         stats, tries = None, 0
         try:
             for tries in range(1, STATISTICS_TRIES + 1):
@@ -1070,6 +1072,10 @@ def check_statistics(http, report, league, event, in_season):
                 _, raw = http.get(url)
                 if isinstance(raw, dict) and (raw.get("stats") or {}).get("categories"):
                     report.fail(league.key, "App: player statistics", "ESPN has them, and the app read nothing", url)
+                elif isinstance(raw, dict) and raw.get("message") == STATISTICS_BLIP:
+                    report.warn(league.key, "App: player statistics",
+                                f"ESPN kept saying \"{STATISTICS_BLIP}\" over {STATISTICS_TRIES} tries, "
+                                "and a user would have seen none", url)
                 else:
                     report.seasonal(in_season, league.key, "App: player statistics",
                                     f"no categories in {STATISTICS_TRIES} tries", url)

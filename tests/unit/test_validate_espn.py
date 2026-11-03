@@ -846,6 +846,27 @@ class TestStatistics:
         assert statuses(report, "App: player statistics") == [v.WARN]
         assert "try 2" in detail(report, "App: player statistics")
 
+    def test_espn_s_own_blip_lasting_is_only_worth_a_look(self, monkeypatch):
+        import espn_api
+        monkeypatch.setattr(espn_api, "get_player_statistics", lambda *a, **k: {"player_stats": []})
+        monkeypatch.setattr(v.time, "sleep", lambda s: None)
+        http = FakeHttp([("/statistics", (404, {"code": 404, "message": v.STATISTICS_BLIP}))], default=(200, {}))
+        report = v.Report()
+        v.check_statistics(http, report, league("NHL"), event(), True)
+        assert statuses(report, "App: player statistics") == [v.WARN]
+
+    def test_any_other_404_on_statistics_in_season_fails(self, monkeypatch):
+        import espn_api
+        monkeypatch.setattr(espn_api, "get_player_statistics", lambda *a, **k: {"player_stats": []})
+        monkeypatch.setattr(v.time, "sleep", lambda s: None)
+        http = FakeHttp([("/statistics", (404, {"code": 404, "message": "Not Found"}))], default=(200, {}))
+        report = v.Report()
+        v.check_statistics(http, report, league("NHL"), event(), True)
+        assert FAIL_IN(report, "App: player statistics")
+
+    def test_the_pause_outlasts_the_cached_failure(self):
+        assert v.STATISTICS_PAUSE > 30
+
     def test_a_team_yet_to_play_falls_back_to_last_season_as_the_iphone_does(self):
         played = event()
         played["season"] = {"year": 2027, "type": 2}
