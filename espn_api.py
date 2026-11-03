@@ -219,7 +219,7 @@ def _mlb_wildcard_team(entry, status, position, games_back):
     league_name = "American" if abbreviation in _MLB_AL_ABBREVIATIONS else "National"
     return {
         "team_name": team.get("displayName", "Unknown"),
-        "team_id": str(team.get("id", "")),
+        "team_id": str(team.get("id") or ""),
         "abbreviation": abbreviation,
         "wins": int(_mlb_stat_value(entry, "wins")),
         "losses": int(_mlb_stat_value(entry, "losses")),
@@ -1731,7 +1731,7 @@ def _get_mlb_standings_fast():
                 
                 # Extract team data
                 team_name = team_info.get('displayName', 'Unknown')
-                team_id = str(team_info.get('id', ''))
+                team_id = str(team_info.get('id') or '')
                 abbreviation = team_info.get('abbreviation', '')
                 
                 # Get wins/losses from stats
@@ -1882,7 +1882,7 @@ def _get_nfl_standings_fast():
                 
                 # Extract team data
                 team_name = team_info.get('displayName', 'Unknown')
-                team_id = str(team_info.get('id', ''))
+                team_id = str(team_info.get('id') or '')
                 abbreviation = team_info.get('abbreviation', '')
                 
                 # Get wins/losses from stats
@@ -2017,7 +2017,7 @@ def _get_nba_standings_fast():
                 
                 # Extract team data
                 team_name = team_info.get('displayName', 'Unknown')
-                team_id = str(team_info.get('id', ''))
+                team_id = str(team_info.get('id') or '')
                 abbreviation = team_info.get('abbreviation', '')
                 
                 # Get wins/losses from stats
@@ -2125,7 +2125,7 @@ def _get_nba_fresh_standings():
                     team_info = team.get('team', {})
                     
                     team_name = team_info.get('displayName', 'Unknown')
-                    team_id = str(team_info.get('id', ''))
+                    team_id = str(team_info.get('id') or '')
                     abbreviation = team_info.get('abbreviation', '')
                     
                     # Get division
@@ -2211,7 +2211,7 @@ def _get_nhl_standings_fast():
                 
                 # Extract team data
                 team_name = team_info.get('displayName', 'Unknown')
-                team_id = str(team_info.get('id', ''))
+                team_id = str(team_info.get('id') or '')
                 abbreviation = team_info.get('abbreviation', '')
                 
                 # Get wins/losses from stats
@@ -2290,7 +2290,7 @@ def _college_standing_row(entry, conference):
     conf = _standing_stat(stats, "vsconf")
     return {
         "team_name": team_info.get("displayName", "Unknown"),
-        "team_id": str(team_info.get("id", "")),
+        "team_id": str(team_info.get("id") or ""),
         "abbreviation": team_info.get("abbreviation", ""),
         "wins": wins,
         "losses": losses,
@@ -3074,10 +3074,10 @@ def _parse_mlb_player_stats(leaders):
                         try:
                             stat_value = f"{float(raw_value):.3f}"
                         except (ValueError, TypeError):
-                            stat_value = str(raw_value)
+                            stat_value = "" if raw_value is None else str(raw_value)
                     else:
                         # For counting stats, use the numeric value as-is
-                        stat_value = str(raw_value)
+                        stat_value = "" if raw_value is None else str(raw_value)
                     
                     stats.append({
                         "player_name": athlete.get("displayName", athlete.get("name", "Unknown")),
@@ -3277,10 +3277,10 @@ def _parse_generic_player_stats(leaders):
                         try:
                             stat_value = f"{float(raw_value):.3f}"
                         except (ValueError, TypeError):
-                            stat_value = str(raw_value)
+                            stat_value = "" if raw_value is None else str(raw_value)
                     else:
                         # For counting stats, use the numeric value as-is
-                        stat_value = str(raw_value)
+                        stat_value = "" if raw_value is None else str(raw_value)
                     
                     stats.append({
                         "player_name": athlete.get("displayName", athlete.get("name", "Unknown")),
@@ -3530,11 +3530,11 @@ def get_team_roster(league_key, team_id):
         for group in data.get("athletes", []):
             items = group.get("items", [group] if "displayName" in group else [])
             for p in items:
-                jersey = str(p.get("jersey", ""))
+                jersey = str(p.get("jersey") or "")
                 name = p.get("displayName", p.get("fullName", ""))
                 pos = p.get("position", {})
-                pos_abbr = pos.get("abbreviation", pos.get("name", "")) if isinstance(pos, dict) else str(pos)
-                age = str(p.get("age", ""))
+                pos_abbr = pos.get("abbreviation", pos.get("name", "")) if isinstance(pos, dict) else str(pos or "")
+                age = str(p.get("age") or "")
                 height_str = format_height(p.get("height"))
                 weight_str = format_weight(p.get("weight"))
                 players.append({
@@ -3959,7 +3959,7 @@ def get_world_cup_standings(league_key):
         data = resp.json()
         groups = []
         for child in data.get("children", []):
-            group_id   = str(child.get("id", ""))
+            group_id   = str(child.get("id") or "")
             group_name = child.get("name", "Group")
             entries    = child.get("standings", {}).get("entries", [])
             teams = []
@@ -3970,7 +3970,7 @@ def get_world_cup_standings(league_key):
                 rank  = int(stats.get("rank", idx + 1))
                 gd    = int(stats.get("pointDifferential", 0))
                 teams.append({
-                    "team_id":          str(team.get("id", "")),
+                    "team_id":          str(team.get("id") or ""),
                     "team_name":        team.get("displayName", ""),
                     "abbreviation":     team.get("abbreviation", ""),
                     "rank":             rank,
