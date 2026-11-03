@@ -367,6 +367,8 @@ class TestWorldCup:
             "points": 9, "advancement_note": "Advance to Round of 32",
         }
         assert [t["rank"] for t in groups[1]["teams"]] == [1, 2, 3, 4]
+        switzerland = groups[1]["teams"][0]
+        assert (switzerland["team_name"], switzerland["wins"], switzerland["draws"], switzerland["losses"]) == ("Switzerland", 2, 1, 0)
 
     def test_scores_day_by_day_without_repeats(self, espn):
         real = load("worldcup_scoreboard_20260620.json")
