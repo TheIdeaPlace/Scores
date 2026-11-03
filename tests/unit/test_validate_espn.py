@@ -1205,6 +1205,12 @@ class TestMain:
         assert FAIL_IN(report, "Validator")
         assert "surprise" in detail(report, "Validator")
 
+    def test_the_board_the_apps_open_on_is_saved_too(self, tmp_path):
+        http = FakeHttp(default=(200, {"events": []}))
+        http.save_dir = str(tmp_path)
+        v.check_scoreboard(http, v.Report(), league("NBA"))
+        assert [p.name for p in tmp_path.iterdir()] == ["scoreboard-NBA-now.json"]
+
     def test_payloads_are_saved_for_the_iphone(self, tmp_path):
         http = v.Http(save_dir=str(tmp_path))
         http.save("summary", "NBA", {"a": 1})

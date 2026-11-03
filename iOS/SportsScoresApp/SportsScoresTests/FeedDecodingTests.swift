@@ -66,7 +66,15 @@ enum Fixtures {
         return try XCTUnwrap(object[key] as? [Any], "no \(key)").count
     }
 
+    /// How many real entries a scoreboard's `events` holds, leaving out ESPN's stray {}.
+    static func realEventCount(of data: Data) throws -> Int {
+        let object = try XCTUnwrap(JSONSerialization.jsonObject(with: data) as? [String: Any])
+        let events = try XCTUnwrap(object["events"] as? [[String: Any]], "no events")
+        return events.filter { !$0.isEmpty }.count
+    }
+
     /// Payloads saved from live ESPN, by kind. Skips the test when this isn't a live run.
+    /// A run of one league (LIVE_PAYLOADS_PARTIAL) can lack a kind, such as standings out of season.
     static func live(_ kind: String) throws -> [URL] {
         guard let path = ProcessInfo.processInfo.environment["LIVE_PAYLOADS"], !path.isEmpty else {
             throw XCTSkip("LIVE_PAYLOADS isn't set")
@@ -75,7 +83,9 @@ enum Fixtures {
                                                                 includingPropertiesForKeys: nil)
             .filter { $0.lastPathComponent.hasPrefix(kind + "-") }
             .sorted { $0.lastPathComponent < $1.lastPathComponent }
-        XCTAssertFalse(files.isEmpty, "LIVE_PAYLOADS is \(path), and it has no \(kind)- files")
+        if (ProcessInfo.processInfo.environment["LIVE_PAYLOADS_PARTIAL"] ?? "").isEmpty {
+            XCTAssertFalse(files.isEmpty, "LIVE_PAYLOADS is \(path), and it has no \(kind)- files")
+        }
         return files
     }
 }
@@ -273,9 +283,69 @@ final class ScoreboardDecodingTests: XCTestCase {
         XCTAssertEqual(seen, Set(expected.keys))
     }
 
+    private func board(with extra: [Any], keepingRealEvents: Bool = true) throws -> Data {
+        let data = try Fixtures.data("scoreboard_events_by_status.json")
+        var object = try XCTUnwrap(JSONSerialization.jsonObject(with: data) as? [String: Any])
+        let events = try XCTUnwrap(object["events"] as? [Any])
+        object["events"] = (keepingRealEvents ? events : []) + extra
+        return try JSONSerialization.data(withJSONObject: object)
+    }
+
+    func testABlankEventCostsOnlyItself() throws {
+        // ESPN's board for week 8 of college football in 2025 has a literal {} in it.
+        let response = try Fixtures.decodeScoreboard(board(with: [[String: Any]()]))
+        XCTAssertEqual(response.events.count, 8)
+    }
+
+    func testAnEventThatCanNotBeReadCostsOnlyItself() throws {
+        let response = try Fixtures.decodeScoreboard(board(with: [["id": "1"]]))
+        XCTAssertEqual(response.events.count, 8)
+    }
+
+    func testABoardWithNothingReadableIsStillAnError() throws {
+        let data = try board(with: [[String: Any](), ["id": "1"]], keepingRealEvents: false)
+        XCTAssertThrowsError(try Fixtures.decodeScoreboard(data))
+    }
+
+    func testABoardMostlyUnreadableIsStillAnError() throws {
+        // A short list would look normal, so ESPN dropping a field can't be left to pass as one.
+        let unreadable = Array(repeating: ["id": "1"] as [String: Any], count: 9)
+        XCTAssertThrowsError(try Fixtures.decodeScoreboard(board(with: unreadable)))
+    }
+
+    func testABoardOfOnlyBlanksIsAnEmptySlate() throws {
+        let response = try Fixtures.decodeScoreboard(board(with: [[String: Any]()], keepingRealEvents: false))
+        XCTAssertTrue(response.events.isEmpty)
+    }
+
+    func testTheRestOfTheBoardIsStillRead() throws {
+        let data = try Fixtures.data("scoreboard_events_by_status.json")
+        var object = try XCTUnwrap(JSONSerialization.jsonObject(with: data) as? [String: Any])
+        object["week"] = ["number": 9, "text": "Week 9"]
+        object["season"] = ["year": 2026]
+        object["leagues"] = [["calendar": [[String: Any]]()]]
+        let response = try Fixtures.decodeScoreboard(JSONSerialization.data(withJSONObject: object))
+        XCTAssertEqual(response.week?.number, 9)
+        XCTAssertEqual(response.season?.year, 2026)
+        XCTAssertEqual(response.leagues?.count, 1)
+    }
+
+    func testAnEmptySlateIsNotAnError() throws {
+        let response = try Fixtures.decodeScoreboard(board(with: [], keepingRealEvents: false))
+        XCTAssertTrue(response.events.isEmpty)
+    }
+
+    func testLosingTheEventsKeyIsStillAnError() throws {
+        XCTAssertThrowsError(try Fixtures.decodeScoreboard(Data(#"{"leagues": []}"#.utf8)))
+    }
+
     func testLivePayloadsDecode() throws {
         for file in try Fixtures.live("scoreboard") {
-            let response = try Fixtures.decodeScoreboard(Data(contentsOf: file))
+            let data = try Data(contentsOf: file)
+            let response = try Fixtures.decodeScoreboard(data)
+            // An event that can't be read disappears, so count them: this is what catches
+            // ESPN dropping a required field from some games.
+            XCTAssertEqual(response.events.count, try Fixtures.realEventCount(of: data), file.lastPathComponent)
             for event in response.events {
                 XCTAssertNoThrow(try Game(from: event), "\(file.lastPathComponent): \(event.id)")
             }

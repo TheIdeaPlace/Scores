@@ -19,6 +19,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **A blank field from ESPN no longer reads out as "None"** in game details, or costs a whole list
   of games, news or a team's page.
 - **Venue Details has its league lines.** A case mismatch kept them from ever appearing.
+- **A football week on iPhone no longer fails to load because of one blank game.** ESPN's list for
+  week 8 of college football in 2025 has an empty entry in it, which lost the whole week.
 
 ### In Progress
 - **Game Wrap Up Feature**: ESPN text processing and game story extraction (under construction)
