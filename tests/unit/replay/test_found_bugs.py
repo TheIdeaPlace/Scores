@@ -89,6 +89,19 @@ def test_venue_facts_match_the_lower_case_key_scores_passes(league, fact):
     assert fact in VenueService()._generate_interesting_facts({"name": "Somewhere"}, league)
 
 
+def test_the_game_details_injury_line_counts_players_not_teams():
+    """The list is per team, so a real summary with 10 injured read "(2 players)"."""
+    injuries = load("details_NFL_pieces.json")["injuries"]
+    assert espn_api.format_complex_data("injuries", injuries) == "Injury reports available (10 players)"
+    assert espn_api.format_complex_data("injuries", [{"injuries": [{}]}]) == "Injury reports available (1 player)"
+    assert espn_api.format_complex_data("injuries", [{"injuries": []}]) == "No injuries reported"
+
+
+def test_team_info_with_no_team_in_the_body_is_empty_not_a_blank_team(espn):
+    espn.on("/teams/9$", {})
+    assert espn_api.get_team_info("NFL", "9") == {}
+
+
 def test_soccer_standings_read_the_record_not_0_0(espn):
     """A three-part summary raised inside _get_team_record, so every soccer team read 0-0."""
     espn.on(r"/soccer/eng\.1/teams$", load("teams_EPL.json"))

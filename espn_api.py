@@ -1542,10 +1542,10 @@ def format_complex_data(key, value):
             return "Standings available"
     
     elif key == "injuries" and isinstance(value, list):
-        if not value:
+        injury_count = injured_player_count(value)
+        if not injury_count:
             return "No injuries reported"
-        injury_count = len(value)
-        return f"Injury reports available ({injury_count} players)"
+        return f"Injury reports available ({injury_count} {'player' if injury_count == 1 else 'players'})"
     
     elif key == "broadcasts":
         if isinstance(value, list):
