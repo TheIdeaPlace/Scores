@@ -105,7 +105,7 @@ Game detail has up to four tabs:
 
 | Tab | Contents |
 |-----|----------|
-| **Box Score** | One tab per team and stat group (such as "BOS Players" or "GB Kicking"), then the team comparison. Each table has a Totals row, and a player who sat out reads "Did not play". Before a game, the team table holds season averages and says so |
+| **Box Score** | One tab per team and stat group (such as "BOS Players" or "GB Kicking"), then the team comparison. Tables have a Totals row wherever ESPN sends one (every sport but hockey), and a player who sat out reads "Did not play". Before a game, the team table holds season stats and says so |
 | **Plays** or **Drives** | Play-by-play (basketball, hockey, baseball) or drive summaries (football) |
 | **Info** | Game leaders, injuries, officials, venue, news |
 | **More** | Win probability, season series — MLB only |

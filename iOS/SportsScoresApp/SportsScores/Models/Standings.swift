@@ -127,6 +127,19 @@ struct StandingsEntry: Identifiable {
         return text
     }
 
+    // The NHL ranks by points and has overtime losses, not percentages and games back.
+    var nhlQuickListText: String {
+        var text = "\(team.abbreviation), \(stats.wins)-\(stats.losses)-\(stats.otLosses ?? 0), \(stats.nhlPoints ?? 0) PTS"
+        if let l10 = stats.lastTenRecord { text += ", L10: \(l10)" }
+        return text
+    }
+
+    var nhlFullListText: String {
+        var text = "Team: \(team.displayName); Wins: \(stats.wins); Losses: \(stats.losses); OT Losses: \(stats.otLosses ?? 0); Points: \(stats.nhlPoints ?? 0); Streak: \(stats.streak)"
+        if let l10 = stats.lastTenRecord { text += "; Last 10: \(l10)" }
+        return text
+    }
+
     // For full list display
     var fullListText: String {
         if let wc = wildCard {
@@ -184,7 +197,9 @@ extension StandingsEntry {
             avgPointsAgainst: stat("avgPointsAgainst")?.value,
             homeRecord:    stat("Home")?.displayValue,
             roadRecord:    stat("Road")?.displayValue,
-            lastTenRecord: stat("Last Ten Games")?.displayValue,
+            // The NHL's reads "7-2-1, 0 PTS", and that zero means nothing.
+            lastTenRecord: stat("Last Ten Games")?.displayValue
+                .components(separatedBy: ", ").first,
             divisionRecord: stat("vs. Div.")?.displayValue ?? stat("divisionRecord")?.displayValue,
             playoffSeed:   stat("playoffSeed").map { Int($0.value) },
             differential:  stat("differential")?.displayValue
@@ -235,7 +250,7 @@ struct APIStandingsGroup: Codable {
 
         init(from decoder: Decoder) throws {
             let container = try decoder.container(keyedBy: CodingKeys.self)
-            entries = (try? container.decodeIfPresent([APIStandingsEntry].self, forKey: .entries)) ?? []
+            entries = container.lossyArray(forKey: .entries) ?? []
         }
 
         struct APIStandingsEntry: Codable {
@@ -288,8 +303,6 @@ struct APIStandingsGroup: Codable {
 struct APIStandingsResponse: Codable {
     let children: [APIStandingsGroup]
     let root: APIStandingsGroup
-
-    private enum CodingKeys: String, CodingKey { case children }
 
     init(from decoder: Decoder) throws {
         root = try APIStandingsGroup(from: decoder)

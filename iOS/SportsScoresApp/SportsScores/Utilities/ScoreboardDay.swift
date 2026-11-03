@@ -27,6 +27,15 @@ enum ScoreboardDay {
         isToday(Calendar.current.date(byAdding: .day, value: 1, to: date) ?? date, now: now)
     }
 
+    /// Whether a game on this day's board belongs on the screen for `today`. The day
+    /// runs on past midnight to the rollover, and a game being played always counts.
+    static func belongsOnToday(_ game: Game, now: Date = Date()) -> Bool {
+        let start = today(now: now)
+        let end = (Calendar.current.date(byAdding: .day, value: 1, to: start) ?? start)
+            .addingTimeInterval(Double(rolloverHours) * 3600)
+        return game.status.isLive || (game.date >= start && game.date < end)
+    }
+
     static func isTomorrow(_ date: Date, now: Date = Date()) -> Bool {
         isToday(Calendar.current.date(byAdding: .day, value: -1, to: date) ?? date, now: now)
     }
@@ -39,6 +48,9 @@ enum ScoreboardDay {
         utc.timeZone = TimeZone(secondsFromGMT: 0) ?? .current
         var day = utc.dateComponents([.year, .month, .day], from: date)
         day.hour = 12
-        return Calendar.current.date(from: day) ?? date
+        // Gregorian here too: the device's own calendar can be Buddhist or Hijri.
+        var local = Calendar(identifier: .gregorian)
+        local.timeZone = .current
+        return local.date(from: day) ?? date
     }
 }

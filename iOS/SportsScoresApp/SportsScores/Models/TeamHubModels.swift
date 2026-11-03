@@ -33,6 +33,8 @@ struct TeamHubNextGame {
     let opponentDisplayName: String
     let opponentAbbreviation: String
     let isHome: Bool
+    var timeIsKnown = true
+    var isNeutralSite = false
 }
 
 // MARK: - Favorite Team (persisted team bookmark)
@@ -133,9 +135,12 @@ struct TeamInfoAPIResponse: Decodable {
     struct TeamInfoNextEvent: Decodable {
         let id: String
         let date: String   // multi-format ISO8601 (may lack seconds)
+        let timeValid: Bool?
         let competitions: [TeamInfoCompetition]?
 
         struct TeamInfoCompetition: Decodable {
+            let timeValid: Bool?
+            let neutralSite: Bool?
             let competitors: [TeamInfoCompetitor]?
 
             struct TeamInfoCompetitor: Decodable {

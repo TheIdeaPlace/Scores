@@ -39,7 +39,7 @@ struct BoxScoreView: View {
     let boxscore: GameDetails.Boxscore
     let sport: Sport
     /// True before a game has been played, when the team table holds season
-    /// averages rather than anything from this game.
+    /// stats rather than anything from this game.
     var isPreGame = false
     @State private var showingAllStats = false
     @State private var selectedPage: BoxScorePage?
@@ -85,7 +85,7 @@ struct BoxScoreView: View {
         // ── Team-stat pages ────────────────────────────────────────────────────
         if boxscore.teams.hasNestedStatistics {
             // MLB: one side-by-side comparison table per category.
-            for cat in boxscore.teams.comparisonEntries {
+            for cat in boxscore.teams.comparisonEntries where cat.stats?.isEmpty == false {
                 result.append(.mlbTeamStats(groupTitle: cat.groupTitle))
             }
         } else if !boxscore.teams.hasNoStatistics {
@@ -116,7 +116,7 @@ struct BoxScoreView: View {
                             .padding()
                     } else {
                         if isPreGame {
-                            Text("Season averages. This game hasn't been played.")
+                            Text("Season stats. This game hasn't been played.")
                                 .font(.subheadline)
                                 .foregroundColor(.secondary)
                         } else {
@@ -222,8 +222,9 @@ struct BoxScoreView: View {
         let catEntry = teams.comparisonEntries.first(where: { $0.groupTitle == groupTitle })
         let allItems = catEntry?.stats ?? []
         let essentialItems = allItems.filter { profile.essentialTeamStats.contains($0.name) }
-        // A category the profile has nothing for (Fielding) still shows its rows.
-        let filteredItems = showingAllStats || essentialItems.isEmpty ? allItems : essentialItems
+        // A category with no essentials still shows its rows, and season stats have
+        // no essentials at all: the toggle isn't offered for them.
+        let filteredItems = showingAllStats || isPreGame || essentialItems.isEmpty ? allItems : essentialItems
 
         let tableHeaders: [String] = filteredItems.isEmpty
             ? [] : (["Stat"] + teams.map { $0.team.abbreviation })
@@ -358,7 +359,7 @@ struct BoxScoreView: View {
         let allRows = teams.comparisonEntries
         let profile = BoxScoreProfiles.profile(for: sport)
 
-        // Season averages have no essentials: the toggle isn't offered for them.
+        // Season stats have no essentials: the toggle isn't offered for them.
         let rows = showingAllStats || isPreGame ? allRows : profile.essentialTeamRows(of: allRows)
 
         let tableHeaders = ["Stat"] + teams.map { $0.team.abbreviation }

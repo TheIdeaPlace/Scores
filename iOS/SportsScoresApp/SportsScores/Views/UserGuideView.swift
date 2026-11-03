@@ -70,7 +70,7 @@ struct UserGuideView: View {
                 // MARK: Game Detail
                 GuideSection(icon: "list.bullet.rectangle", title: "Game Detail", color: .green) {
                     Text("Select any game row to open its detail screen. The header shows both teams, the current score or start time, and the venue. Four tabs are available:")
-                    BulletPoint("**Box Score** — one tab per team and stat group, then the team comparison. Each table has a Totals row. Before a game, the team table holds season averages and says so")
+                    BulletPoint("**Box Score** — one tab per team and stat group, then the team comparison. Tables have a Totals row wherever ESPN sends one. Before a game, the team table holds season stats and says so")
                     BulletPoint("**Plays / Drives** — pitch-by-pitch (baseball), play-by-play (basketball, hockey), or drive chart (football)")
                     BulletPoint("**Info** — leaders, injuries, officials, venue, related news")
                     BulletPoint("**More** — win probability and season series; MLB only")

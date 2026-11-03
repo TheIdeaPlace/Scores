@@ -422,7 +422,7 @@ struct StandingsTableView: View {
         VStack(alignment: .leading, spacing: 4) {
             ForEach(group.entries) { entry in
                 NavigationLink(destination: TeamScheduleView(team: scheduleTeam(from: entry.team), sport: sport)) {
-                    Text(entry.quickListText)
+                    Text(sport == .nhl ? entry.nhlQuickListText : entry.quickListText)
                         .font(.subheadline)
                         .padding(.horizontal, 16)
                         .padding(.vertical, 6)
@@ -445,7 +445,7 @@ struct StandingsTableView: View {
                     VStack(alignment: .leading, spacing: 4) {
                         Text(entry.team.displayName)
                             .font(.headline)
-                        Text(entry.fullListText)
+                        Text(sport == .nhl ? entry.nhlFullListText : entry.fullListText)
                             .font(.caption)
                             .foregroundColor(.secondary)
                     }

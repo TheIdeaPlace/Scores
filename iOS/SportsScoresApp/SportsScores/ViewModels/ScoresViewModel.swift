@@ -133,7 +133,6 @@ class ScoresViewModel: ObservableObject {
     // MARK: - Formatted date label for display
 
     var dateLabelText: String {
-        let cal = Calendar.current
         if ScoreboardDay.isToday(currentDate)     { return "Today" }
         if ScoreboardDay.isYesterday(currentDate) { return "Yesterday" }
         if ScoreboardDay.isTomorrow(currentDate)  { return "Tmrw" }
@@ -144,7 +143,6 @@ class ScoresViewModel: ObservableObject {
 
     /// Long-form date string used in VoiceOver announcements and accessibility labels.
     var dateAccessibilityString: String {
-        let cal = Calendar.current
         if ScoreboardDay.isToday(currentDate)     { return "Today" }
         if ScoreboardDay.isYesterday(currentDate) { return "Yesterday" }
         if ScoreboardDay.isTomorrow(currentDate)  { return "Tomorrow" }

@@ -25,10 +25,7 @@ class SoccerLiveViewModel: ObservableObject {
         isLoading = liveGames.isEmpty && completedGames.isEmpty && upcomingGames.isEmpty
         errorMessage = nil
 
-        let calendar = Calendar.current
         let now = Date()
-        let startOfToday = calendar.startOfDay(for: now)
-        let endOfToday = calendar.date(byAdding: .day, value: 1, to: startOfToday)!
 
         // Fetch all soccer leagues in parallel.
         // DateFormatter is NOT thread-safe — each task creates its own inside Game.init.
@@ -57,7 +54,7 @@ class SoccerLiveViewModel: ObservableObject {
         var upcoming: [LeagueGames] = []
 
         for (league, games) in results {
-            let todaysGames = games.filter { $0.date >= startOfToday && $0.date < endOfToday }
+            let todaysGames = games.filter { ScoreboardDay.belongsOnToday($0, now: now) }
             // Suspended matches are halted, not over — they belong with the live ones.
             let liveG      = todaysGames.filter { $0.status.isLive || $0.status.isSuspended }
             let completedG = todaysGames.filter { $0.status.isCompleted && !$0.status.isSuspended }

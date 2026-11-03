@@ -10,7 +10,7 @@ import Foundation
 
 /// One element of an ESPN array, nil when it can't be read, so a bad row costs
 /// that row rather than everything around it.
-private struct Lossy<Element: Decodable>: Decodable {
+struct Lossy<Element: Decodable>: Decodable {
     let value: Element?
 
     init(from decoder: Decoder) throws {
@@ -18,7 +18,7 @@ private struct Lossy<Element: Decodable>: Decodable {
     }
 }
 
-private extension KeyedDecodingContainer {
+extension KeyedDecodingContainer {
     /// The array under `key` without the elements that can't be read; nil when
     /// the key is absent or isn't an array.
     func lossyArray<Element: Decodable>(forKey key: Key) -> [Element]? {

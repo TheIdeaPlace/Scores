@@ -30,6 +30,12 @@ struct ScheduleGame: Identifiable {
     /// Whether this game is today (wall-clock comparison)
     var isToday: Bool { Calendar.current.isDateInToday(date) }
 
+    /// True when the start is still ahead. With no set time, `date` is a placeholder,
+    /// so a game later today still counts.
+    func isAhead(of now: Date) -> Bool {
+        timeIsKnown ? date > now : date >= Calendar.current.startOfDay(for: now)
+    }
+
     /// Convert to the Game model so GameDetailView can be reused.
     func toGame() -> Game {
         Game(

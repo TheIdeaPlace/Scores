@@ -55,8 +55,10 @@ extension PlayerStatGroup {
 
         var rows = athletes.map { entry -> BoxPlayerTable.Row in
             let position = entry.athlete.position?.abbreviation ?? ""
-            // No stats at all means the player sat out, whatever `didNotPlay` says.
-            guard !entry.stats.isEmpty, entry.didNotPlay != true else {
+            // ESPN says so outright. Empty stats alone doesn't count when it says
+            // otherwise: mid-game, that's someone who hasn't checked in yet.
+            let satOut = entry.didNotPlay ?? entry.stats.isEmpty
+            guard !satOut else {
                 return .init(name: entry.athlete.displayName, position: position,
                              stats: [], kind: .didNotPlay)
             }
@@ -111,17 +113,15 @@ struct BoxPlayerTable {
     }
 
     /// The header and rows for the accessible data table. A player who sat out
-    /// says so in the first stat column, and every row has the same width so
-    /// VoiceOver's column positions stay true.
+    /// says so in the first stat column and the row ends there, rather than making
+    /// VoiceOver stop on a run of empty cells. A cell that's blank mid-row, such as
+    /// minutes on a Totals row, says so; an empty element would be a silent stop.
     func accessibleGrid() -> (headers: [String], rows: [[String]]) {
         let lead = showsPosition ? ["Player", "Pos"] : ["Player"]
         let grid = rows.map { row -> [String] in
             let leadCells = showsPosition ? [row.name, row.position] : [row.name]
-            if row.kind == .didNotPlay {
-                return leadCells + [BoxPlayerTable.didNotPlayText]
-                    + Array(repeating: "", count: max(columns.count - 1, 0))
-            }
-            return leadCells + row.stats
+            let cells = row.kind == .didNotPlay ? [BoxPlayerTable.didNotPlayText] : row.stats
+            return (leadCells + cells).map { $0.isEmpty ? "no value" : $0 }
         }
         return (lead + columns, grid)
     }

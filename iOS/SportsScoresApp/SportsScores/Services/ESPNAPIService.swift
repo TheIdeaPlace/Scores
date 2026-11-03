@@ -372,9 +372,9 @@ class ESPNAPIService {
             let endDate: String
             let text: String?
         }
-        guard let coreWeek = try? JSONDecoder().decode(CoreWeek.self, from: data),
-              let start = parseESPNDateString(coreWeek.startDate),
-              let end = parseESPNDateString(coreWeek.endDate) else { return nil }
+        guard let coreWeek = try? JSONDecoder().decode(CoreWeek.self, from: data) else { return nil }
+        let start = parseESPNDateString(coreWeek.startDate) ?? Date()
+        let end = parseESPNDateString(coreWeek.endDate) ?? Date()
         return ScheduleCacheStore.WeekRange(start: start, end: end,
                                             text: coreWeek.text ?? "Week \(week)")
     }
@@ -540,6 +540,10 @@ class ESPNAPIService {
     /// 2026) but still takes a month, so this fetches each month the range touches
     /// and trims to the range. A month holds far more than a phase, so the page
     /// size goes to ESPN's ceiling of 1000; past that it collapses to 25.
+    ///
+    /// The trim uses Eastern time, as ESPN's date boards do. Tournament phases are
+    /// calendar days on that board; a kickoff's day on the device can differ, which
+    /// would put a match in the wrong round or lose it.
     func fetchGamesRange(for sport: Sport, startDate: Date, endDate: Date) async throws -> [Game] {
         let dayFormat = DateFormatter()
         dayFormat.locale = Locale(identifier: "en_US_POSIX")
@@ -557,9 +561,6 @@ class ESPNAPIService {
             guard let next = Calendar.current.date(byAdding: .month, value: 1, to: cursor) else { break }
             cursor = next
         }
-        // Stepping from the 31st can skip a short month, so make sure the last is in.
-        let lastMonth = monthFormat.string(from: endDate)
-        if months.last != lastMonth { months.append(lastMonth) }
 
         let decoder = JSONDecoder()
         decoder.dateDecodingStrategy = .iso8601
@@ -576,8 +577,12 @@ class ESPNAPIService {
             let seasonType = apiResponse.season?.type ?? 1
             games += try apiResponse.events.map { try Game(from: $0, seasonType: seasonType) }
         }
+        let boardDayFormat = DateFormatter()
+        boardDayFormat.locale = Locale(identifier: "en_US_POSIX")
+        boardDayFormat.timeZone = TimeZone(identifier: "America/New_York")
+        boardDayFormat.dateFormat = "yyyyMMdd"
         return games.filter {
-            let day = dayFormat.string(from: $0.date)
+            let day = boardDayFormat.string(from: $0.date)
             return firstDay <= day && day <= lastDay
         }
     }
@@ -1510,15 +1515,22 @@ class ESPNAPIService {
             let opponent = comp.competitors?.first(where: { $0.team?.id != teamId })
             let isHome = comp.competitors?.first(where: { $0.team?.id == teamId })?.homeAway == "home"
             if let opp = opponent?.team {
-                let parsedDate = parseESPNDate(ev.date)
+                let timeIsKnown = (ev.timeValid ?? comp.timeValid) != false
+                let parsedDate = parseESPNDate(ev.date).map {
+                    timeIsKnown ? $0 : ScoreboardDay.localNoon(onUTCDayOf: $0)
+                }
                 // `nextEvent` can still be the game just played.
-                if let parsedDate = parsedDate, parsedDate > Date() {
+                if let parsedDate = parsedDate,
+                   timeIsKnown ? parsedDate > Date()
+                               : parsedDate >= Calendar.current.startOfDay(for: Date()) {
                     nextGame = TeamHubNextGame(
                         gameId: ev.id,
                         date: parsedDate,
                         opponentDisplayName: opp.displayName ?? opp.abbreviation ?? "Opponent",
                         opponentAbbreviation: opp.abbreviation ?? "?",
-                        isHome: isHome
+                        isHome: isHome,
+                        timeIsKnown: timeIsKnown,
+                        isNeutralSite: comp.neutralSite ?? false
                     )
                 }
             }

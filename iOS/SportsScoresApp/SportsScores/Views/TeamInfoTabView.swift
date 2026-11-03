@@ -224,8 +224,9 @@ struct TeamInfoTabView: View {
     private func upcomingGameRow(game: ScheduleGame) -> some View {
         let opponentTeam = opponentOf(game: game)
         let isHome = game.homeTeam.id == viewModel.teamId
-        let locationText = isHome ? "vs" : "@"
-        let dateText = Self.dateFormatter.string(from: game.date)
+        let locationText = isHome || game.isNeutralSite ? "vs" : "@"
+        let dateText = game.timeIsKnown ? Self.dateFormatter.string(from: game.date)
+            : DateFormatter.localizedString(from: game.date, dateStyle: .medium, timeStyle: .none) + ", time TBD"
 
         return HStack(spacing: 12) {
             Image(systemName: "calendar.circle")
@@ -253,8 +254,9 @@ struct TeamInfoTabView: View {
     }
 
     private func nextGameFromInfoRow(nextGame: TeamHubNextGame) -> some View {
-        let locationText = nextGame.isHome ? "vs" : "@"
-        let dateText = Self.dateFormatter.string(from: nextGame.date)
+        let locationText = nextGame.isHome || nextGame.isNeutralSite ? "vs" : "@"
+        let dateText = nextGame.timeIsKnown ? Self.dateFormatter.string(from: nextGame.date)
+            : DateFormatter.localizedString(from: nextGame.date, dateStyle: .medium, timeStyle: .none) + ", time TBD"
 
         return HStack(spacing: 12) {
             Image(systemName: "calendar.circle")

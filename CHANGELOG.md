@@ -67,15 +67,16 @@ build, but not yet on a device or with VoiceOver.
   accepting date ranges in September, which left only the current week and an empty bracket.
 - **Box scores.** Every sport shows real columns under Essential Stats, including shooting in
   basketball, and team stats fill in. Tabs have names ("Players", "Defense", "Kick Returns"), and
-  there's no tab for an empty group. Each table has a Totals row and says "Did not play". College
-  hockey says "Box score not available" instead of nine blank tabs.
-- **Before a game,** the team table says it holds season averages. Postponed and delayed games no
+  there's no tab for an empty group. Tables have a Totals row wherever ESPN sends one, which is every
+  sport but hockey, and say "Did not play". College hockey says "Box score not available" instead of nine blank tabs.
+- **Before a game,** the team table says it holds season stats. Postponed and delayed games no
   longer read 0 to 0.
 - **Standings load in college football and men's college hockey,** which failed outright, and in
   women's college hockey, which was empty. College football shows real losses and percentages. The
   NHL has one group per division, including Utah, ranks by points and shows overtime losses. The
   Knicks are back in the Atlantic. Nobody reads "Rank: 0".
-- **Late games stay put.** Until 5 AM, Live Scores and the league screens stay on last night's games.
+- **Late games stay put.** Until 5 AM, Live Scores, Soccer Live and the league screens stay on last
+  night's games.
 - **Game details and rows** show betting lines, TV on games opened from a schedule, AP ranks, and
   "vs" at a neutral site. A game with no set time says "Time TBD" on the right day.
 - **Plays and drives.** A live football drive no longer appears twice. Overtimes read OT, 2OT.

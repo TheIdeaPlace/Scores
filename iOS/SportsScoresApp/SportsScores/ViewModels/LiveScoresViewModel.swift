@@ -28,16 +28,14 @@ class LiveScoresViewModel: ObservableObject {
         errorMessage = nil
 
         // Today's date boundaries for filtering
-        let calendar = Calendar.current
         let now = Date()
         // Last night's scoreboard until 5 AM, so a game still running stays put.
         let startOfToday = ScoreboardDay.today(now: now)
-        let endOfToday = calendar.date(byAdding: .day, value: 1, to: startOfToday)!
 
-        // Fetch all sports in parallel. We always pass today's local date so that ESPN
+        // Fetch all sports in parallel. We always pass the scoreboard day so that ESPN
         // returns today's scoreboard. Without a date param ESPN sometimes returns the
         // previous day's games (observed consistently for MLB spring training), which
-        // then get filtered out by the local-day boundary check below.
+        // then get filtered out by the day check below.
         // Soccer leagues are included here so they appear in the all-sports view.
         let allLeagues = Sport.allCases + Sport.soccerLeagues
         let results: [(Sport, [Game])] = await withTaskGroup(of: (Sport, [Game]).self) { group in
@@ -66,11 +64,8 @@ class LiveScoresViewModel: ObservableObject {
         var upcoming: [SportGames] = []
 
         for (sport, games) in results {
-            // Restrict every sport to today — no special football exemption. A game
-            // being played is on today by definition, whatever day it started.
-            let relevantGames = games.filter {
-                $0.status.isLive || ($0.date >= startOfToday && $0.date < endOfToday)
-            }
+            // Restrict every sport to today — no special football exemption.
+            let relevantGames = games.filter { ScoreboardDay.belongsOnToday($0, now: now) }
 
             // Suspended games are halted, not over — they belong with the live ones.
             let liveGamesForSport      = relevantGames.filter { $0.status.isLive || $0.status.isSuspended }
