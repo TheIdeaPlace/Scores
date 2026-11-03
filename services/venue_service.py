@@ -180,7 +180,8 @@ class VenueService:
             except (ValueError, TypeError):
                 pass
 
-        # League-specific facts
+        # League-specific facts. scores.py passes the league in lower case.
+        league_key = (league_key or "").upper()
         if league_key == "MLB":
             facts.append("Major League Baseball venue")
             venue_name = venue.get('name', '')
@@ -200,7 +201,7 @@ class VenueService:
         elif league_key == "NHL":
             facts.append("National Hockey League venue")
 
-        elif league_key in ["NCAAF", "college-football"]:
+        elif league_key in ["NCAAF", "COLLEGE-FOOTBALL"]:
             facts.append("College football venue")
 
         # Location facts
