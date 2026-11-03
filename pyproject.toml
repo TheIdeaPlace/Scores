@@ -15,4 +15,5 @@ source_pkgs = [
 
 [tool.coverage.report]
 fail_under = 98
+precision = 2
 show_missing = true
