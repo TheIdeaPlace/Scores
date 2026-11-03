@@ -2467,7 +2467,9 @@ def _get_team_record(team_id, league_key):
                 if all(isinstance(by_name.get(n), (int, float)) for n in ("wins", "losses")):
                     wins, losses = int(by_name["wins"]), int(by_name["losses"])
                 else:
-                    wins, losses, _ = _record_parts(summary)
+                    first, second, third = _record_parts(summary)
+                    is_soccer = (LEAGUES.get(league_key) or "").startswith("soccer/")
+                    wins, losses = (first, third) if is_soccer else (first, second)
                 total_games = wins + losses
                 win_pct = f"{wins/total_games:.3f}" if total_games > 0 else "0.000"
 
