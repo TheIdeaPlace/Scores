@@ -55,6 +55,8 @@ jobs:
     runs-on: ubuntu-latest
     # The validator gives up on requests after 15 minutes and still writes its report.
     timeout-minutes: 30
+    outputs:
+      payloads: ${{ steps.saved.outputs.payloads }}
     steps:
       - name: Checkout
         uses: actions/checkout@v7
@@ -101,12 +103,19 @@ jobs:
           retention-days: 3
           if-no-files-found: warn
 
-  # A required field ESPN drops fails the iPhone's decode, which nothing above can see.
+      - name: Note whether there are any
+        id: saved
+        if: always()
+        run: |
+          if [ -n "$(ls -A live-payloads 2>/dev/null)" ]; then echo "payloads=true" >> "$GITHUB_OUTPUT"; fi
+
+  # A field ESPN drops that the iPhone requires costs it those games. The checks above can't
+  # see that: they read these payloads as Windows does.
   ios-decode:
     needs: validate
     if: >-
       always() && github.event_name != 'pull_request' &&
-      needs.validate.result != 'cancelled' && inputs.alarm_test != 'fail'
+      needs.validate.outputs.payloads == 'true' && inputs.alarm_test != 'fail'
     runs-on: macos-latest
     timeout-minutes: 45
     steps:
@@ -129,6 +138,7 @@ jobs:
       - name: Decode them
         env:
           TEST_RUNNER_LIVE_PAYLOADS: ${{ github.workspace }}/live-payloads
+          TEST_RUNNER_LIVE_PAYLOADS_PARTIAL: ${{ inputs.league }}
         run: |
           set -euo pipefail
           ls live-payloads
@@ -143,11 +153,24 @@ jobs:
             -only-testing:SportsScoresTests/StandingsDecodingTests/testLivePayloadsDecode \
             CODE_SIGNING_ALLOWED=NO \
             test | tee xcodebuild.log
-          # Skipped would mean the payloads never got there, which proves nothing.
-          if grep -E "Executed [0-9]+ tests?, with [0-9]+ tests? skipped" xcodebuild.log; then
-            echo "The live tests were skipped"
+          # All three have to have really run: a skip would mean the payloads never got there,
+          # and a renamed test would quietly drop out.
+          if ! grep -qE "Executed 3 tests, with 0 failures" xcodebuild.log; then
+            echo "The three live tests didn't all run"
             exit 1
           fi
+
+      - name: Pick out what failed
+        if: failure()
+        run: grep -E "error: .*testLivePayloadsDecode" xcodebuild.log | cut -c1-400 > ios-decode-errors.txt || true
+
+      - name: Keep what failed
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: ios-decode-errors
+          path: ios-decode-errors.txt
+          if-no-files-found: ignore
 
   # Kept apart so that the job running code against live data never holds a write token.
   # One open issue, however many nights it takes to fix, rather than one per night.
@@ -176,11 +199,17 @@ jobs:
         with:
           name: validation-report
 
+      - name: Get what the iPhone couldn't read
+        if: needs.ios-decode.result == 'failure'
+        continue-on-error: true
+        uses: actions/download-artifact@v8
+        with:
+          name: ios-decode-errors
+
       - name: Open, update or close the issue
         run: |
           existing=$(gh issue list --label "$LABEL" --state open --limit 1 --json number --jq '.[0].number // empty')
-          # The fake failure doesn't reach the iPhone's job, so skipped has to count as fine.
-          if [ "$RESULT" = "success" ] && [ "$IOS_RESULT" != "failure" ] && [ "$IOS_RESULT" != "cancelled" ]; then
+          if [ "$RESULT" = "success" ] && [ "$IOS_RESULT" = "success" ]; then
             # One league passing says nothing about the rest of what the issue is about.
             if [ -n "$existing" ] && [ -z "$LEAGUE" ]; then
               gh issue close "$existing" --comment "The data check passed again: $RUN_URL"
@@ -191,10 +220,21 @@ jobs:
           {
             echo "The nightly data check ended in: $RESULT. The iPhone's decode of today's payloads: $IOS_RESULT. $RUN_URL"
             echo
-            if [ -f validation-report.md ]; then
-              sed -n '/^## Failed/,/^## Worth a look\|^## Passed/p' validation-report.md | sed '$d' | head -c 60000
+            if [ "$RESULT" = "success" ]; then
+              echo "The feeds gave Windows what it needs, so this is about the iPhone."
+            elif [ -f validation-report.md ]; then
+              sed -n '/^## Failed/,/^## Worth a look\|^## Passed/p' validation-report.md | sed '$d' | head -c 50000
             else
               echo "It stopped before writing a report. The run's log says why."
+            fi
+            if [ -s ios-decode-errors.txt ]; then
+              echo
+              echo "What the iPhone couldn't read:"
+              echo
+              echo '```'
+              head -c 10000 ios-decode-errors.txt
+              echo
+              echo '```'
             fi
           } > issue-body.md
           if [ -n "$existing" ]; then

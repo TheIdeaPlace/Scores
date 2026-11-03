@@ -335,19 +335,39 @@ struct RankingsAPIResponse: Codable {
 
 /// One event ESPN sent oddly costs that event, not the board. ESPN's own list for week 8
 /// of college football in 2025 has a literal {} in it, which used to lose the whole week.
-/// If nothing at all can be read, that's a change in the feed, and it's still an error.
+/// If most of the real entries can't be read, that's a change in the feed rather than a
+/// stray entry, and a short list would look normal, so it's still an error.
 extension ScoreboardResponse {
     private enum CodingKeys: String, CodingKey {
         case events, week, season, leagues
     }
 
+    private struct AnyKey: CodingKey {
+        var stringValue: String
+        var intValue: Int? { nil }
+        init?(stringValue: String) { self.stringValue = stringValue }
+        init?(intValue: Int) { nil }
+    }
+
+    /// An entry of `events`: its game if it can be read, and whether it was a blank {}.
+    private struct Row: Decodable {
+        let game: APIGame?
+        let isBlank: Bool
+
+        init(from decoder: Decoder) throws {
+            game = try? APIGame(from: decoder)
+            isBlank = (try? decoder.container(keyedBy: AnyKey.self))?.allKeys.isEmpty ?? false
+        }
+    }
+
     init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
-        let rows = try container.decode([Lossy<APIGame>].self, forKey: .events)
-        events = rows.compactMap { $0.value }
-        if events.isEmpty && !rows.isEmpty {
+        let rows = try container.decode([Row].self, forKey: .events)
+        events = rows.compactMap { $0.game }
+        let sent = rows.filter { !$0.isBlank }.count
+        if (sent - events.count) * 2 > sent {
             throw DecodingError.dataCorruptedError(forKey: .events, in: container,
-                                                   debugDescription: "None of the \(rows.count) events could be read")
+                                                   debugDescription: "Only \(events.count) of \(sent) events could be read")
         }
         week = try container.decodeIfPresent(APIWeek.self, forKey: .week)
         season = try container.decodeIfPresent(APISeason.self, forKey: .season)
