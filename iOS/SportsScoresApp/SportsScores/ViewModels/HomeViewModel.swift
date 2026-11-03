@@ -11,7 +11,7 @@ final class HomeViewModel: ObservableObject {
     @Published var soccerGameCount: Int = 0
     @Published var cflGameCount: Int = 0
     @Published var isLoading = true
-    @Published var selectedDate: Date = Calendar.current.startOfDay(for: Date())
+    @Published var selectedDate: Date = ScoreboardDay.today()
 
     private let api = ESPNAPIService.shared
     private var newDayObserver: Task<Void, Never>?
@@ -64,12 +64,12 @@ final class HomeViewModel: ObservableObject {
 
     // Navigation window: today ± 7 days
     private var navigationWindowStart: Date {
-        let today = Calendar.current.startOfDay(for: Date())
+        let today = ScoreboardDay.today()
         return Calendar.current.date(byAdding: .day, value: -7, to: today) ?? today
     }
 
     private var navigationWindowEnd: Date {
-        let today = Calendar.current.startOfDay(for: Date())
+        let today = ScoreboardDay.today()
         return Calendar.current.date(byAdding: .day, value: 7, to: today) ?? today
     }
 
@@ -94,7 +94,7 @@ final class HomeViewModel: ObservableObject {
     }
 
     func goToToday() async {
-        selectedDate = Calendar.current.startOfDay(for: Date())
+        selectedDate = ScoreboardDay.today()
         await load()
     }
 }

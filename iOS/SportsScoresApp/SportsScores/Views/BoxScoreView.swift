@@ -38,6 +38,9 @@ private enum BoxScorePage: Hashable {
 struct BoxScoreView: View {
     let boxscore: GameDetails.Boxscore
     let sport: Sport
+    /// True before a game has been played, when the team table holds season
+    /// averages rather than anything from this game.
+    var isPreGame = false
     @State private var showingAllStats = false
     @State private var selectedPage: BoxScorePage?
     @State private var viewMode: ViewMode = .quickList
@@ -59,7 +62,7 @@ struct BoxScoreView: View {
             var seenGroups = Set<String>()
             var groupOrder: [String] = []
             for teamPlayers in players {
-                for group in teamPlayers.statistics {
+                for group in teamPlayers.statistics where group.hasContent {
                     if seenGroups.insert(group.groupTitle).inserted {
                         groupOrder.append(group.groupTitle)
                     }
@@ -68,7 +71,7 @@ struct BoxScoreView: View {
             // For each group, emit one page per team (keeps groups together).
             for groupTitle in groupOrder {
                 for teamPlayers in players {
-                    if teamPlayers.statistics.contains(where: { $0.groupTitle == groupTitle }) {
+                    if teamPlayers.statistics.contains(where: { $0.hasContent && $0.groupTitle == groupTitle }) {
                         result.append(.playerGroup(
                             teamDisplayName: teamPlayers.team.displayName,
                             teamAbbr: teamPlayers.team.abbreviation,
@@ -80,12 +83,12 @@ struct BoxScoreView: View {
         }
 
         // ── Team-stat pages ────────────────────────────────────────────────────
-        if boxscore.teams.first?.statistics.first?.isNested == true {
+        if boxscore.teams.hasNestedStatistics {
             // MLB: one side-by-side comparison table per category.
-            for cat in boxscore.teams.first?.statistics ?? [] {
+            for cat in boxscore.teams.comparisonEntries {
                 result.append(.mlbTeamStats(groupTitle: cat.groupTitle))
             }
-        } else if !boxscore.teams.isEmpty {
+        } else if !boxscore.teams.hasNoStatistics {
             result.append(.flatTeamStats)
         }
 
@@ -107,12 +110,18 @@ struct BoxScoreView: View {
 
             ScrollView {
                 VStack(alignment: .leading, spacing: 24) {
-                    if boxscore.teams.isEmpty {
+                    if pages.isEmpty {
                         Text("Box score not available")
                             .foregroundColor(.secondary)
                             .padding()
                     } else {
-                        toggleButton
+                        if isPreGame {
+                            Text("Season averages. This game hasn't been played.")
+                                .font(.subheadline)
+                                .foregroundColor(.secondary)
+                        } else {
+                            toggleButton
+                        }
                         pageContent
                     }
                 }
@@ -196,7 +205,7 @@ struct BoxScoreView: View {
         VStack(alignment: .leading, spacing: 8) {
             if let players = boxscore.players,
                let teamPlayers = players.first(where: { $0.team.displayName == teamDisplayName }),
-               let group = teamPlayers.statistics.first(where: { $0.groupTitle == groupTitle }) {
+               let group = teamPlayers.statistics.first(where: { $0.hasContent && $0.groupTitle == groupTitle }) {
                 playerStatGroupView(teamName: teamDisplayName, statGroup: group)
             } else {
                 Text("No statistics available.")
@@ -210,10 +219,11 @@ struct BoxScoreView: View {
     private func mlbTeamStatsPage(groupTitle: String) -> some View {
         let teams = boxscore.teams
         let profile = BoxScoreProfiles.profile(for: sport)
-        let catEntry = teams.first?.statistics.first(where: { $0.groupTitle == groupTitle })
-        let filteredItems = catEntry?.stats?.filter { stat in
-            showingAllStats || profile.essentialTeamStats.contains(stat.name)
-        } ?? []
+        let catEntry = teams.comparisonEntries.first(where: { $0.groupTitle == groupTitle })
+        let allItems = catEntry?.stats ?? []
+        let essentialItems = allItems.filter { profile.essentialTeamStats.contains($0.name) }
+        // A category the profile has nothing for (Fielding) still shows its rows.
+        let filteredItems = showingAllStats || essentialItems.isEmpty ? allItems : essentialItems
 
         let tableHeaders: [String] = filteredItems.isEmpty
             ? [] : (["Stat"] + teams.map { $0.team.abbreviation })
@@ -345,15 +355,13 @@ struct BoxScoreView: View {
 
     private var flatTeamStats: some View {
         let teams = boxscore.teams
-        let allRows = teams.first?.statistics ?? []
+        let allRows = teams.comparisonEntries
         let profile = BoxScoreProfiles.profile(for: sport)
 
-        // Filter rows based on showingAllStats
-        let rows = allRows.filter { stat in
-            showingAllStats || profile.essentialTeamStats.contains(stat.name)
-        }
+        // Season averages have no essentials: the toggle isn't offered for them.
+        let rows = showingAllStats || isPreGame ? allRows : profile.essentialTeamRows(of: allRows)
 
-        let tableHeaders = [""] + teams.map { $0.team.abbreviation }
+        let tableHeaders = ["Stat"] + teams.map { $0.team.abbreviation }
         let tableRows = rows.map { stat in
             let statName = stat.label ?? stat.displayName ?? stat.name
             return [statName] + teams.map { team in
@@ -463,37 +471,12 @@ struct BoxScoreView: View {
 
     // MARK: - Player Stat Group View
 
-    private func playerStatGroupView(teamName: String, statGroup: GameDetails.Boxscore.TeamPlayers.PlayerStatGroup) -> some View {
-        let allStatNames = statGroup.columnHeaders
-        let profile = BoxScoreProfiles.profile(for: sport)
-        
-        // Filter stat columns based on profile if not showing all
-        let filteredStatNames = showingAllStats 
-            ? allStatNames
-            : filterPlayerStatNames(allStatNames, for: statGroup.type ?? statGroup.name ?? "", profile: profile)
-        
-        // Show all athletes regardless of active state.
-        // For baseball, pitchers are marked active:false once done pitching, but
-        // we still want to display their stats. For basketball, inactive = DNP,
-        // which are also useful to show (zero minutes, etc.).
-        let athletes = statGroup.athletes
-        
-        // Create filtered stats array (only include columns that are in filteredStatNames)
-        let filteredAthletes: [(athlete: GameDetails.Boxscore.TeamPlayers.PlayerStatGroup.AthleteStats, filteredStats: [String])] = athletes.map { athlete in
-            let filtered = athlete.stats.enumerated().compactMap { idx, stat in
-                idx < allStatNames.count && filteredStatNames.contains(allStatNames[idx]) ? stat : nil
-            }
-            return (athlete: athlete, filteredStats: filtered)
-        }
-        
-        let tableHeaders = ["Player", "Pos"] + filteredStatNames
-        let tableRows = filteredAthletes.map { entry in
-            [entry.athlete.athlete.displayName, entry.athlete.athlete.position?.abbreviation ?? ""] + entry.filteredStats
-        }
-        
-        guard !athletes.isEmpty, !filteredStatNames.isEmpty else {
-            return AnyView(EmptyView())
-        }
+    private func playerStatGroupView(teamName: String, statGroup: PlayerStatGroup) -> some View {
+        let table = statGroup.table(essentialOnly: !showingAllStats,
+                                    profile: BoxScoreProfiles.profile(for: sport))
+        let columns = table.columns
+        let rows = table.rows
+        let grid = table.accessibleGrid()
 
         switch viewMode {
         case .table:
@@ -503,86 +486,96 @@ struct BoxScoreView: View {
                         // Header row
                         HStack(spacing: 0) {
                             Text("Player")
-                                    .font(.caption.bold())
-                                    .foregroundColor(.secondary)
-                                    .frame(width: 140, alignment: .leading)
-                                
+                                .font(.caption.bold())
+                                .foregroundColor(.secondary)
+                                .frame(width: 140, alignment: .leading)
+
+                            if table.showsPosition {
                                 Text("Pos")
                                     .font(.caption.bold())
                                     .foregroundColor(.secondary)
                                     .frame(width: 45, alignment: .center)
-                                
-                                ForEach(filteredStatNames.indices, id: \.self) { idx in
-                                    Text(filteredStatNames[idx])
-                                        .font(.caption.bold())
-                                        .foregroundColor(.secondary)
-                                        .frame(width: 50, alignment: .trailing)
-                                }
                             }
-                            .padding(.horizontal, 12)
-                            .padding(.vertical, 6)
-                            .background(Color.secondary.opacity(0.12))
-                            .accessibilityHidden(true)
-                            
-                            // Player rows
-                            ForEach(filteredAthletes.indices, id: \.self) { athleteIdx in
-                                let entry = filteredAthletes[athleteIdx]
-                                
-                                HStack(spacing: 0) {
-                                    Text(entry.athlete.athlete.displayName)
-                                        .font(.caption)
-                                        .frame(width: 140, alignment: .leading)
-                                        .lineLimit(1)
-                                    
-                                    Text(entry.athlete.athlete.position?.abbreviation ?? "")
+
+                            ForEach(columns.indices, id: \.self) { idx in
+                                Text(columns[idx])
+                                    .font(.caption.bold())
+                                    .foregroundColor(.secondary)
+                                    .frame(width: 50, alignment: .trailing)
+                            }
+                        }
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 6)
+                        .background(Color.secondary.opacity(0.12))
+                        .accessibilityHidden(true)
+
+                        // Player rows
+                        ForEach(rows.indices, id: \.self) { rowIdx in
+                            let row = rows[rowIdx]
+
+                            HStack(spacing: 0) {
+                                Text(row.name)
+                                    .font(row.kind == .totals ? .caption.bold() : .caption)
+                                    .frame(width: 140, alignment: .leading)
+                                    .lineLimit(1)
+
+                                if table.showsPosition {
+                                    Text(row.position)
                                         .font(.caption2)
                                         .foregroundColor(.secondary)
                                         .frame(width: 45, alignment: .center)
-                                    
-                                    ForEach(entry.filteredStats.indices, id: \.self) { statIdx in
-                                        Text(entry.filteredStats[statIdx])
+                                }
+
+                                if row.kind == .didNotPlay {
+                                    Text(BoxPlayerTable.didNotPlayText)
+                                        .font(.caption)
+                                        .foregroundColor(.secondary)
+                                        .frame(width: CGFloat(columns.count) * 50, alignment: .leading)
+                                } else {
+                                    ForEach(row.stats.indices, id: \.self) { statIdx in
+                                        Text(row.stats[statIdx])
                                             .font(.caption.monospacedDigit())
                                             .frame(width: 50, alignment: .trailing)
                                     }
                                 }
-                                .padding(.horizontal, 12)
-                                .padding(.vertical, 4)
-                                .background((athleteIdx % 2 == 0) ? Color.clear : Color.secondary.opacity(0.04))
-                                .accessibilityHidden(true)
                             }
+                            .padding(.horizontal, 12)
+                            .padding(.vertical, 4)
+                            .background((rowIdx % 2 == 0) ? Color.clear : Color.secondary.opacity(0.04))
+                            .accessibilityHidden(true)
                         }
-                        .accessibilityHidden(true)
-                        .overlay(
-                            AccessibleDataTable(headers: tableHeaders, rows: tableRows)
-                                .allowsHitTesting(false)
-                        )
                     }
-                    .background(Color.secondary.opacity(0.04))
-                    .cornerRadius(8)
+                    .accessibilityHidden(true)
+                    .overlay(
+                        AccessibleDataTable(headers: grid.headers, rows: grid.rows)
+                            .allowsHitTesting(false)
+                    )
+                }
+                .background(Color.secondary.opacity(0.04))
+                .cornerRadius(8)
             )
         case .quickList:
             return AnyView(
                 VStack(alignment: .leading, spacing: 2) {
-                    ForEach(filteredAthletes.indices, id: \.self) { idx in
-                        let entry = filteredAthletes[idx]
-                        let name = entry.athlete.athlete.displayName
-                        let pos = entry.athlete.athlete.position?.abbreviation ?? ""
-                        let statsText = zip(filteredStatNames, entry.filteredStats)
-                            .map { "\($0): \($1)" }.joined(separator: ", ")
+                    ForEach(rows.indices, id: \.self) { idx in
+                        let row = rows[idx]
+                        let statsText = row.statsText(columns: columns)
                         VStack(alignment: .leading, spacing: 2) {
-                            Text("\(name) (\(pos))")
+                            Text(row.title)
                                 .font(.caption.bold())
                                 .lineLimit(1)
-                            Text(statsText)
-                                .font(.caption)
-                                .foregroundColor(.secondary)
+                            if !statsText.isEmpty {
+                                Text(statsText)
+                                    .font(.caption)
+                                    .foregroundColor(.secondary)
+                            }
                         }
                         .padding(.horizontal, 12)
                         .padding(.vertical, 6)
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .background(idx % 2 == 0 ? Color.clear : Color.secondary.opacity(0.04))
                         .accessibilityElement(children: .ignore)
-                        .accessibilityLabel("\(name) (\(pos)), \(statsText)")
+                        .accessibilityLabel(row.spokenText(columns: columns))
                     }
                 }
                 .background(Color.secondary.opacity(0.04))
@@ -591,14 +584,19 @@ struct BoxScoreView: View {
         case .fullList:
             return AnyView(
                 VStack(alignment: .leading, spacing: 8) {
-                    ForEach(filteredAthletes.indices, id: \.self) { idx in
-                        let entry = filteredAthletes[idx]
-                        let name = entry.athlete.athlete.displayName
-                        let pos = entry.athlete.athlete.position?.abbreviation ?? ""
+                    ForEach(rows.indices, id: \.self) { idx in
+                        let row = rows[idx]
+                        let pairs = zip(columns, row.stats).filter { !$0.1.isEmpty }
                         VStack(alignment: .leading, spacing: 4) {
-                            Text("\(name)\(pos.isEmpty ? "" : " (\(pos))")")
+                            Text(row.title)
                                 .font(.headline)
-                            ForEach(Array(zip(filteredStatNames, entry.filteredStats).enumerated()), id: \.offset) { _, pair in
+                            if row.kind == .didNotPlay {
+                                Text(BoxPlayerTable.didNotPlayText)
+                                    .font(.caption)
+                                    .foregroundColor(.secondary)
+                            }
+                            ForEach(pairs.indices, id: \.self) { pairIdx in
+                                let pair = pairs[pairIdx]
                                 HStack(alignment: .top) {
                                     Text("\(pair.0):")
                                         .font(.caption.bold())
@@ -619,105 +617,4 @@ struct BoxScoreView: View {
             )
         }
     }
-    
-    /// Filter stat column names based on the sport profile
-    private func filterPlayerStatNames(_ names: [String], for groupType: String, profile: BoxScoreProfile) -> [String] {
-        let lowerType = groupType.lowercased()
-        let essentialStats = profile.essentialPlayerStats[lowerType] 
-            ?? profile.essentialPlayerStats.values.first 
-            ?? Set<String>()
-        
-        return names.filter { essentialStats.contains($0.lowercased()) }
-    }
 }
-
-// MARK: - Box Score Profiles
-
-struct BoxScoreProfile {
-    /// Essential stat names (map to ESPN's internal `name` field) to show by default
-    let essentialTeamStats: Set<String>
-    
-    /// Essential player stat column names (map to ESPN's `names` array in player statistics)
-    let essentialPlayerStats: [String: Set<String>]
-}
-
-enum BoxScoreProfiles {
-    
-    // MARK: - MLB
-    
-    static let mlb = BoxScoreProfile(
-        essentialTeamStats: [
-            // Batting — names match ESPN's boxscore.teams[].statistics[].stats[].name
-            "hits", "runs", "runnersLeftOnBase", "homeRuns", "RBIs", "walks", "strikeouts",
-            // Pitching
-            "earnedRuns", "strikeouts", "walks", "homeRuns"
-        ],
-        essentialPlayerStats: [
-            // Column names match ESPN's boxscore.players[].statistics[].names[] display values
-            "batting":  ["h-ab", "ab", "r", "h", "rbi", "bb", "k", "avg"],
-            "pitching": ["ip", "h", "r", "er", "bb", "k", "era"]
-        ]
-    )
-    
-    // MARK: - NFL / NCAAF
-    
-    static let football = BoxScoreProfile(
-        essentialTeamStats: [
-            "firstDowns", "passYards", "rushYards", "totalYards", "turnovers", "penalties", "timeOfPossession"
-        ],
-        essentialPlayerStats: [
-            "passing": ["cmp", "att", "yds", "td", "int"],
-            "rushing": ["car", "yds", "avg", "td"],
-            "receiving": ["rec", "yds", "avg", "td"],
-            "defense": ["tackles", "sacks", "int", "pd"]
-        ]
-    )
-    
-    // MARK: - NBA / NCAAM / NCAAWB / WNBA
-    
-    static let basketball = BoxScoreProfile(
-        essentialTeamStats: [
-            "fieldGoalsMade", "fieldGoalsAttempted", "threePointsMade", "threePointsAttempted",
-            "freeThrowsMade", "freeThrowsAttempted", "rebounds", "assists", "turnovers", "steals", "blocks"
-        ],
-        essentialPlayerStats: [
-            "player": ["min", "fgm", "fga", "3pm", "3pa", "ftm", "fta", "pts", "reb", "ast", "stl", "blk", "to"]
-        ]
-    )
-    
-    // MARK: - NHL / NCAAH / NCAAWH
-    
-    static let hockey = BoxScoreProfile(
-        essentialTeamStats: [
-            "shots", "hits", "blocks", "giveaways", "takeaways", "faceoffWinPercentage",
-            "powerPlayGoals", "powerPlayAttempts", "penaltyKillPercentage"
-        ],
-        essentialPlayerStats: [
-            "skater": ["g", "a", "plusMinus", "shots", "hits", "blocks"],
-            "goalie": ["saves", "shotsAgainst", "gaa", "sv%", "so"]
-        ]
-    )
-    
-    // MARK: - Profile Lookup by Sport
-    
-    static func profile(for sport: Sport) -> BoxScoreProfile {
-        switch sport {
-        case .mlb:
-            return mlb
-        case .nfl, .ncaaf:
-            return football
-        case .nba, .ncaam, .ncaawb, .wnba:
-            return basketball
-        case .nhl, .ncaah, .ncaawh:
-            return hockey
-        default:
-            // Soccer and any future sports — no sport-specific profile; show raw stats as-is.
-            return BoxScoreProfile(
-                essentialTeamStats: [],
-                essentialPlayerStats: [:]
-            )
-        }
-    }
-}
-
-

@@ -25,6 +25,7 @@
 		1E4B120B7514E95882EE8C2B /* RacingStandingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 571A24A6070F1FF8B878BC0F /* RacingStandingsView.swift */; };
 		21C8CC3FA2C4044DEC1D77BB /* SoccerPitchTourView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 57680AE9E26542D361BDBA55 /* SoccerPitchTourView.swift */; };
 		21CAFBB917DB068912303B5F /* Racing.swift in Sources */ = {isa = PBXBuildFile; fileRef = A123364C5844F97428FC4E90 /* Racing.swift */; };
+		24993E659B33DCAE8F46C1FD /* ScoreboardDay.swift in Sources */ = {isa = PBXBuildFile; fileRef = C70572C676C1C40B4832B700 /* ScoreboardDay.swift */; };
 		25A1383A1CEA78F0A22E7647 /* TransactionViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 82A66944C86F3ADCC7364DEA /* TransactionViewModel.swift */; };
 		25EDD6B8C34B2ACC2DA9BBAC /* FantasyCheatsheetView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 289A82398ECDB07D2544E980 /* FantasyCheatsheetView.swift */; };
 		29FAF8656BCC9C688CBF9721 /* ESPNAPIResponseModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = AE2796BCB4469DAC7E4FFE0E /* ESPNAPIResponseModels.swift */; };
@@ -101,6 +102,7 @@
 		B4F64F7D6CCC5781CAE761A4 /* RacingViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 901C65AC787E3D15CF345232 /* RacingViewModel.swift */; };
 		B50DBF1CC05B839C0E1C521D /* GolfHubView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6963D1A97994CF4846D3B0D5 /* GolfHubView.swift */; };
 		B54A3C6BF8F49A420AE8B5A6 /* LiveScoresViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2C6754243E2E05857C78D223 /* LiveScoresViewModel.swift */; };
+		B6ADF42CA8CFE51F0824B076 /* BoxScoreTables.swift in Sources */ = {isa = PBXBuildFile; fileRef = F4C66E9B2341928A5E68224F /* BoxScoreTables.swift */; };
 		B6D69EB294E291DC424699E8 /* Sport.swift in Sources */ = {isa = PBXBuildFile; fileRef = 069ACD1D5C73DAD2A7D76927 /* Sport.swift */; };
 		B746C2D72B31CABAB14A8A32 /* GameDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD62F7905FFCDC5D2AA616FB /* GameDetailView.swift */; };
 		B7F18A6B46B91155BE6DE856 /* FieldAudioEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 403903D8B1E6F2AE0AC92E30 /* FieldAudioEngine.swift */; };
@@ -233,6 +235,7 @@
 		C2D67B211A7F23E4A6A52ACF /* RaceTrackGeometry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RaceTrackGeometry.swift; sourceTree = "<group>"; };
 		C54D54E4F45E8D6A098DFF0B /* StadiumGeometry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StadiumGeometry.swift; sourceTree = "<group>"; };
 		C5DAB5AB7C96D7FEF4A3AD54 /* WorldCupTeamViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorldCupTeamViewModel.swift; sourceTree = "<group>"; };
+		C70572C676C1C40B4832B700 /* ScoreboardDay.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScoreboardDay.swift; sourceTree = "<group>"; };
 		CA03F672A5EA237BD26D7267 /* AccessibleTableBridge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccessibleTableBridge.swift; sourceTree = "<group>"; };
 		CA292638C3237DA00CF63E2C /* FavoriteTeamCardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FavoriteTeamCardView.swift; sourceTree = "<group>"; };
 		CF309DE2E51E7352C8748699 /* Draft.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Draft.swift; sourceTree = "<group>"; };
@@ -256,6 +259,7 @@
 		EE41AFE532E985B250D0D3BE /* NewsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NewsView.swift; sourceTree = "<group>"; };
 		EE89454CB0F7EC17F5781490 /* ScheduleCacheStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScheduleCacheStore.swift; sourceTree = "<group>"; };
 		EE9AB71F6059AED1535F97A5 /* GolfAPIModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GolfAPIModels.swift; sourceTree = "<group>"; };
+		F4C66E9B2341928A5E68224F /* BoxScoreTables.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BoxScoreTables.swift; sourceTree = "<group>"; };
 		F659A5D114F5225EE0FE626D /* PitchAudioEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PitchAudioEngine.swift; sourceTree = "<group>"; };
 		F80EB90ACAB4BA3DF377959B /* WorldCupPathView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorldCupPathView.swift; sourceTree = "<group>"; };
 		FF3BF3CB32FE02D73716FE82 /* RaceTrackHubView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RaceTrackHubView.swift; sourceTree = "<group>"; };
@@ -286,6 +290,7 @@
 			children = (
 				D0E882578A16436F5C152578 /* AppLifecycle.swift */,
 				A5CE33EAAFA4237153027182 /* Collection+Safe.swift */,
+				C70572C676C1C40B4832B700 /* ScoreboardDay.swift */,
 				1F02454A9066804EF35F956A /* ViewMode.swift */,
 			);
 			path = Utilities;
@@ -439,6 +444,7 @@
 		F1FF975028D1D628A08F6E2C /* Models */ = {
 			isa = PBXGroup;
 			children = (
+				F4C66E9B2341928A5E68224F /* BoxScoreTables.swift */,
 				1CEE4CE2353099109FF62D72 /* DivisionMapper.swift */,
 				CF309DE2E51E7352C8748699 /* Draft.swift */,
 				AE2796BCB4469DAC7E4FFE0E /* ESPNAPIResponseModels.swift */,
@@ -541,6 +547,7 @@
 				BC4CAE67D1B91E0DD0EF8F48 /* AppSettings.swift in Sources */,
 				F0325420BCF8E453528C1728 /* BaseballFieldTourView.swift in Sources */,
 				7FE49CE6841F2741FB6D9993 /* BasketballCourtTourView.swift in Sources */,
+				B6ADF42CA8CFE51F0824B076 /* BoxScoreTables.swift in Sources */,
 				4EBA8B3274D13D19014A34C4 /* BoxScoreView.swift in Sources */,
 				186C57EB9184039417063728 /* CFLAPIService.swift in Sources */,
 				0628508F6916E0005D37835D /* CheatsheetPlayerDetailView.swift in Sources */,
@@ -600,6 +607,7 @@
 				B4F64F7D6CCC5781CAE761A4 /* RacingViewModel.swift in Sources */,
 				19E3A581324D154BA8CAB60C /* Schedule.swift in Sources */,
 				3F4AF475F0FC739B81A268F7 /* ScheduleCacheStore.swift in Sources */,
+				24993E659B33DCAE8F46C1FD /* ScoreboardDay.swift in Sources */,
 				3CF5D8B7E440EC82D67DAC1F /* ScoresView.swift in Sources */,
 				B4010B138E30A62510C01960 /* ScoresViewModel.swift in Sources */,
 				392431D62CD96C97D9DC0E35 /* ScoringSettingsView.swift in Sources */,

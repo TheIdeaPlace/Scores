@@ -8,6 +8,25 @@
 
 import Foundation
 
+/// One element of an ESPN array, nil when it can't be read, so a bad row costs
+/// that row rather than everything around it.
+private struct Lossy<Element: Decodable>: Decodable {
+    let value: Element?
+
+    init(from decoder: Decoder) throws {
+        value = try? Element(from: decoder)
+    }
+}
+
+private extension KeyedDecodingContainer {
+    /// The array under `key` without the elements that can't be read; nil when
+    /// the key is absent or isn't an array.
+    func lossyArray<Element: Decodable>(forKey key: Key) -> [Element]? {
+        guard let rows = try? decodeIfPresent([Lossy<Element>].self, forKey: key) else { return nil }
+        return rows.compactMap { $0.value }
+    }
+}
+
 struct GameDetails: Codable {
     let boxscore: Boxscore?
     let plays: [Play]?
@@ -17,6 +36,8 @@ struct GameDetails: Codable {
     /// Venue, officials, odds, injuries from the summary API.
     let gameInfo: GameInfo?
     let odds: [OddsEntry]?
+    /// Where ESPN puts betting lines outside soccer; root `odds` is usually empty.
+    let pickcenter: [OddsEntry]?
     let injuries: [InjuryTeam]?
     /// Win probability timeline (MLB, per play).
     let winprobability: [WinProbEntry]?
@@ -33,6 +54,32 @@ struct GameDetails: Codable {
     let situation: SummarySituation?
     /// Full rosters from the summary endpoint, used to resolve player IDs to names.
     let rosters: [GameRoster]?
+
+    /// Each section decodes on its own: ESPN's summary varies by sport, league
+    /// and game state, and something unreadable in one section must never take
+    /// the rest of the game's details down with it.
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        boxscore = try? container.decodeIfPresent(Boxscore.self, forKey: .boxscore)
+        plays = container.lossyArray(forKey: .plays)
+        leaders = container.lossyArray(forKey: .leaders)
+        drives = try? container.decodeIfPresent(DrivesContainer.self, forKey: .drives)
+        gameInfo = try? container.decodeIfPresent(GameInfo.self, forKey: .gameInfo)
+        odds = container.lossyArray(forKey: .odds)
+        pickcenter = container.lossyArray(forKey: .pickcenter)
+        injuries = container.lossyArray(forKey: .injuries)
+        winprobability = container.lossyArray(forKey: .winprobability)
+        seasonseries = container.lossyArray(forKey: .seasonseries)
+        news = try? container.decodeIfPresent(GameNewsContainer.self, forKey: .news)
+        header = try? container.decodeIfPresent(GameHeader.self, forKey: .header)
+        situation = try? container.decodeIfPresent(SummarySituation.self, forKey: .situation)
+        rosters = container.lossyArray(forKey: .rosters)
+    }
+
+    /// The betting line to show, wherever ESPN put it.
+    var bettingLine: OddsEntry? {
+        ((pickcenter ?? []) + (odds ?? [])).first { $0.details != nil || $0.overUnder != nil }
+    }
 
     // MARK: - Player lookup (situation → names)
 
@@ -118,15 +165,48 @@ struct GameDetails: Codable {
             let competitors: [HeaderCompetitor]
             /// Status of the competition — carries the current period/inning/clock.
             let status: HeaderStatus?
+            /// National and local TV, which the summary's own list can leave out.
+            let broadcasts: [HeaderBroadcast]?
+
+            struct HeaderBroadcast: Codable {
+                let media: Media?
+
+                struct Media: Codable {
+                    let shortName: String?
+                }
+            }
+
+            /// TV names, each once.
+            var broadcastNames: [String] {
+                var seen = Set<String>()
+                return (broadcasts ?? []).compactMap { $0.media?.shortName }
+                    .filter { !$0.isEmpty && seen.insert($0).inserted }
+            }
+
+            /// True when this game hasn't been played and may never be: ESPN
+            /// sends a postponed game as state "post" with a score of 0 to 0, a
+            /// delayed one as "in" at period 0, and season averages in place of
+            /// team statistics until it starts.
+            var hasNotBeenPlayed: Bool {
+                switch status?.type?.name {
+                case "STATUS_POSTPONED", "STATUS_CANCELED", "STATUS_CANCELLED": return true
+                default:
+                    return status?.type?.state == "pre"
+                        || (status?.type?.state == "in" && status?.period == 0)
+                }
+            }
 
             struct HeaderStatus: Codable {
                 let type: HeaderStatusType?
+                let period: Int?
 
                 struct HeaderStatusType: Codable {
                     /// Human-readable detail, e.g. "Top 9th", "Q3 5:42", "End of 2nd".
                     let detail: String?
                     /// Low-level state: "pre", "in", "post".
                     let state: String?
+                    /// ESPN's status name, e.g. "STATUS_POSTPONED".
+                    let name: String?
                 }
             }
 
@@ -283,11 +363,20 @@ struct GameDetails: Codable {
         let current: Drive?
         let previous: [Drive]?
 
-        /// All drives in chronological order (current drive appended at end if present).
+        init(from decoder: Decoder) throws {
+            let container = try decoder.container(keyedBy: CodingKeys.self)
+            current = try? container.decodeIfPresent(Drive.self, forKey: .current)
+            previous = container.lossyArray(forKey: .previous)
+        }
+
+        /// All drives in chronological order, each once. During a live game
+        /// `previous` already holds the drive in progress, so `current` only adds
+        /// to the list when it isn't there.
         var all: [Drive] {
-            var list = previous ?? []
-            if let cur = current { list.append(cur) }
-            return list
+            var seen = Set<String>()
+            return ((previous ?? []) + (current.map { [$0] } ?? [])).filter {
+                seen.insert($0.id).inserted
+            }
         }
     }
 
@@ -375,19 +464,41 @@ struct GameDetails: Codable {
     struct Boxscore: Codable {
         let teams: [TeamStats]
         let players: [TeamPlayers]?
-        
+
+        init(from decoder: Decoder) throws {
+            let container = try decoder.container(keyedBy: CodingKeys.self)
+            teams = container.lossyArray(forKey: .teams) ?? []
+            players = container.lossyArray(forKey: .players)
+        }
+
+        /// A team as ESPN's box score names it. Falls back rather than fails, so
+        /// one odd team block can't cost the box score.
+        struct TeamInfo: Codable {
+            let displayName: String
+            let abbreviation: String
+
+            init(from decoder: Decoder) throws {
+                let container = try decoder.container(keyedBy: CodingKeys.self)
+                let name = try? container.decodeIfPresent(String.self, forKey: .displayName)
+                let abbreviation = try? container.decodeIfPresent(String.self, forKey: .abbreviation)
+                displayName = name ?? abbreviation ?? "Team"
+                self.abbreviation = abbreviation ?? name ?? "Team"
+            }
+        }
+
         struct TeamStats: Codable {
             let team: TeamInfo
             // ESPN returns statistics in two different shapes depending on sport:
             //   MLB  → [{name, displayName, stats:[{name,displayName,...}]}]  (nested categories)
             //   NFL/NBA/NHL → [{name, label, abbreviation?, displayValue}]     (flat rows)
             let statistics: [StatEntry]
-            
-            struct TeamInfo: Codable {
-                let displayName: String
-                let abbreviation: String
+
+            init(from decoder: Decoder) throws {
+                let container = try decoder.container(keyedBy: CodingKeys.self)
+                team = try container.decode(TeamInfo.self, forKey: .team)
+                statistics = container.lossyArray(forKey: .statistics) ?? []
             }
-            
+
             /// One element of the statistics array.
             /// Use `isNested` to distinguish MLB category format from NFL/NBA/NHL flat format.
             struct StatEntry: Codable {
@@ -403,13 +514,23 @@ struct GameDetails: Codable {
                 let displayValue: String?
                 // MLB only: nested stat rows under this category
                 let stats: [StatItem]?
-                
+
+                init(from decoder: Decoder) throws {
+                    let container = try decoder.container(keyedBy: CodingKeys.self)
+                    name = try container.decode(String.self, forKey: .name)
+                    displayName = try? container.decodeIfPresent(String.self, forKey: .displayName)
+                    label = try? container.decodeIfPresent(String.self, forKey: .label)
+                    abbreviation = try? container.decodeIfPresent(String.self, forKey: .abbreviation)
+                    displayValue = try? container.decodeIfPresent(String.self, forKey: .displayValue)
+                    stats = container.lossyArray(forKey: .stats)
+                }
+
                 /// Human-readable title for this entry (works for all formats).
                 var groupTitle: String { displayName ?? label ?? name }
-                
+
                 /// True when this entry is an MLB-style category wrapping nested stats.
                 var isNested: Bool { stats != nil }
-                
+
                 struct StatItem: Codable {
                     let name: String
                     let displayName: String
@@ -420,48 +541,108 @@ struct GameDetails: Codable {
                 }
             }
         }
-        
+
         struct TeamPlayers: Codable {
             let team: TeamInfo
             let statistics: [PlayerStatGroup]
-            
-            struct TeamInfo: Codable {
-                let displayName: String
-                let abbreviation: String
+
+            init(from decoder: Decoder) throws {
+                let container = try decoder.container(keyedBy: CodingKeys.self)
+                team = try container.decode(TeamInfo.self, forKey: .team)
+                statistics = container.lossyArray(forKey: .statistics) ?? []
             }
-            
+
             struct PlayerStatGroup: Codable {
-                /// ESPN uses "type" for MLB/NFL/NBA, "name" for NHL/NCAAH.
-                /// Both serve as the group identifier (e.g. "forwards", "goalies", "passing").
+                /// ESPN uses "type" for MLB, "name" for football and hockey, and
+                /// neither for basketball, whose one group holds everybody.
                 let type: String?
                 let name: String?
                 let names: [String]?
                 let labels: [String]?
                 let keys: [String]?
+                /// The team's line for this group. Empty strings for columns that
+                /// don't add up, such as minutes; absent in hockey.
+                let totals: [String]?
                 let athletes: [AthleteStats]
-                
-                var groupTitle: String { (type ?? name ?? "unknown").capitalized }
-                
-                /// Column headers for player stats. MLB uses 'names', NFL/NBA/NHL use 'labels'.
-                var columnHeaders: [String] { names ?? labels ?? [] }
-                
+
+                init(from decoder: Decoder) throws {
+                    let container = try decoder.container(keyedBy: CodingKeys.self)
+                    type = try? container.decodeIfPresent(String.self, forKey: .type)
+                    name = try? container.decodeIfPresent(String.self, forKey: .name)
+                    names = try? container.decodeIfPresent([String].self, forKey: .names)
+                    labels = try? container.decodeIfPresent([String].self, forKey: .labels)
+                    keys = try? container.decodeIfPresent([String].self, forKey: .keys)
+                    totals = try? container.decodeIfPresent([String].self, forKey: .totals)
+                    athletes = container.lossyArray(forKey: .athletes) ?? []
+                }
+
+                /// Column headers for player stats. MLB and basketball use 'names',
+                /// football and hockey only 'labels'.
+                var columnHeaders: [String] {
+                    if let names, !names.isEmpty { return names }
+                    return labels ?? []
+                }
+
                 struct AthleteStats: Codable {
                     let athlete: AthleteInfo
                     let stats: [String]
                     let active: Bool?
-                    
+                    let didNotPlay: Bool?
+
+                    init(from decoder: Decoder) throws {
+                        let container = try decoder.container(keyedBy: CodingKeys.self)
+                        athlete = (try? container.decode(AthleteInfo.self, forKey: .athlete))
+                            ?? AthleteInfo(displayName: AthleteInfo.unknownName, position: nil, headshot: nil)
+                        stats = (try? container.decodeIfPresent([String].self, forKey: .stats)) ?? []
+                        active = try? container.decodeIfPresent(Bool.self, forKey: .active)
+                        didNotPlay = try? container.decodeIfPresent(Bool.self, forKey: .didNotPlay)
+                    }
+
                     var isActive: Bool { active ?? true }
-                    
+
                     struct AthleteInfo: Codable {
+                        /// Always something to read. Some players who sat out carry
+                        /// only `shortName`, and college football has a "Team" row
+                        /// spelled " Team".
                         let displayName: String
                         let position: Position?
                         let headshot: Headshot?
-                        
+
+                        static let unknownName = "Unknown player"
+
+                        private enum CodingKeys: String, CodingKey {
+                            case displayName, shortName, position, headshot
+                        }
+
+                        init(displayName: String, position: Position?, headshot: Headshot?) {
+                            self.displayName = displayName
+                            self.position = position
+                            self.headshot = headshot
+                        }
+
+                        init(from decoder: Decoder) throws {
+                            let container = try decoder.container(keyedBy: CodingKeys.self)
+                            let names = [CodingKeys.displayName, .shortName].compactMap {
+                                (try? container.decodeIfPresent(String.self, forKey: $0))?
+                                    .trimmingCharacters(in: .whitespacesAndNewlines)
+                            }
+                            displayName = names.first { !$0.isEmpty } ?? Self.unknownName
+                            position = try? container.decodeIfPresent(Position.self, forKey: .position)
+                            headshot = try? container.decodeIfPresent(Headshot.self, forKey: .headshot)
+                        }
+
+                        func encode(to encoder: Encoder) throws {
+                            var container = encoder.container(keyedBy: CodingKeys.self)
+                            try container.encode(displayName, forKey: .displayName)
+                            try container.encodeIfPresent(position, forKey: .position)
+                            try container.encodeIfPresent(headshot, forKey: .headshot)
+                        }
+
                         struct Position: Codable {
                             let name: String?
                             let abbreviation: String?
                         }
-                        
+
                         struct Headshot: Codable {
                             let href: String?
                             let alt: String?
@@ -471,7 +652,7 @@ struct GameDetails: Codable {
             }
         }
     }
-    
+
     struct Play: Codable {
         let id: String
         // text is absent on some play types (e.g. inning-start markers in MLB)
@@ -487,6 +668,9 @@ struct GameDetails: Codable {
         let clock: PlayClock?
         /// MLB play classification: I=inning-header, A=at-bat-header, P=pitch, N=result-note
         let summaryType: String?
+        /// ESPN's own flag. `scoreValue` isn't enough: college basketball sets it
+        /// on misses too.
+        let scoringPlay: Bool?
         // Default init values let callers (e.g. previews) omit optional fields
         init(id: String, text: String?, type: PlayType, scoreValue: Int?,
              period: Period?, awayScore: Int? = nil, homeScore: Int? = nil,
@@ -495,8 +679,9 @@ struct GameDetails: Codable {
              pitchType: PitchTypeInfo? = nil, pitchVelocity: Int? = nil,
              bats: BatterHand? = nil, atBatId: String? = nil,
              atBatPitchNumber: Int? = nil, resultCount: PitchCount? = nil,
-             outs: Int? = nil, coordinate: PlayCoordinate? = nil) {
+             outs: Int? = nil, coordinate: PlayCoordinate? = nil, scoringPlay: Bool? = nil) {
             self.coordinate = coordinate
+            self.scoringPlay = scoringPlay
             self.id = id; self.text = text; self.type = type
             self.scoreValue = scoreValue; self.period = period
             self.awayScore = awayScore; self.homeScore = homeScore
@@ -531,8 +716,20 @@ struct GameDetails: Codable {
 
         var isPitch: Bool { pitchCoordinate != nil }
 
-        /// True when this play has a location worth sonifying.
-        var hasPlayLocation: Bool { coordinate?.isUsable == true }
+        var isScoring: Bool { scoringPlay ?? ((scoreValue ?? 0) > 0) }
+
+        /// The score after this play. Nil in a shootout, where ESPN repeats the
+        /// tied score plus one on every attempt rather than anything meaningful.
+        var runningScore: (away: Int, home: Int)? {
+            guard period?.displayValue != "SO", let awayScore, let homeScore else { return nil }
+            return (awayScore, homeScore)
+        }
+
+        /// True when this play has a location worth sonifying in `sport`.
+        func hasPlayLocation(for sport: Sport) -> Bool {
+            guard let coordinate else { return false }
+            return PlayAudioGeometry.hasLocation(coordinate, for: sport)
+        }
         
         struct PlayType: Codable {
             let text: String

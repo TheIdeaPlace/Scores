@@ -5,7 +5,9 @@ the mapping was derived from: where the basket is, where the goal lines are,
 and which plays ESPN sends without a location.
 """
 
+import json
 import math
+from pathlib import Path
 
 import pytest
 
@@ -40,23 +42,52 @@ class TestLeagueFamily:
 
 class TestHasCoordinate:
     def test_accepts_a_real_location(self):
-        assert has_coordinate({"coordinate": {"x": 21, "y": 7}})
+        assert has_coordinate({"coordinate": {"x": 21, "y": 7}}, "NBA")
 
     def test_rejects_espn_sentinel(self):
         # What ESPN sends for substitutions, timeouts and free throws.
-        assert not has_coordinate({"coordinate": {"x": -214748340, "y": -214748365}})
+        assert not has_coordinate({"coordinate": {"x": -214748340, "y": -214748365}}, "NBA")
 
     def test_rejects_missing_or_malformed(self):
-        assert not has_coordinate({})
-        assert not has_coordinate({"coordinate": None})
-        assert not has_coordinate({"coordinate": {}})
-        assert not has_coordinate({"coordinate": {"x": 10}})
-        assert not has_coordinate({"coordinate": {"x": "10", "y": "4"}})
+        assert not has_coordinate({}, "NBA")
+        assert not has_coordinate({"coordinate": None}, "NBA")
+        assert not has_coordinate({"coordinate": {}}, "NBA")
+        assert not has_coordinate({"coordinate": {"x": 10}}, "NBA")
+        assert not has_coordinate({"coordinate": {"x": "10", "y": "4"}}, "NBA")
 
     def test_accepts_zero_and_negative_coordinates(self):
         # Hockey runs negative, and basketball x reaches 0 on the sideline.
-        assert has_coordinate({"coordinate": {"x": 0, "y": 0}})
-        assert has_coordinate({"coordinate": {"x": -99, "y": -42}})
+        assert has_coordinate({"coordinate": {"x": 0, "y": 0}}, "NBA")
+        assert has_coordinate({"coordinate": {"x": -99, "y": -42}}, "NHL")
+
+    @pytest.mark.parametrize("league", ["NCAAM", "NCAAWB", "NCAAW", "ncaam"])
+    def test_college_basketball_placeholder_is_no_location(self, league):
+        assert not has_coordinate({"coordinate": {"x": 25, "y": 0}}, league)
+        assert not has_coordinate({"coordinate": {"x": 25.0, "y": 0.0}}, league)
+
+    @pytest.mark.parametrize("league", ["NCAAM", "NCAAWB"])
+    def test_college_basketball_keeps_real_rim_shots(self, league):
+        # Real layups cluster a foot or two away from the placeholder.
+        assert has_coordinate({"coordinate": {"x": 25, "y": 2}}, league)
+        assert has_coordinate({"coordinate": {"x": 24, "y": 0}}, league)
+
+    @pytest.mark.parametrize("league", ["NBA", "WNBA", "NHL", "NCAAH", "NCAAWH"])
+    def test_that_spot_is_real_everywhere_else(self, league):
+        # NBA and WNBA send real tips and dunks there, and in hockey it's on the ice.
+        assert has_coordinate({"coordinate": {"x": 25, "y": 0}}, league)
+
+    @pytest.mark.parametrize(
+        "name", ["plays_NCAAM_401845838_3OT.json", "plays_NCAAWB_401911736.json"]
+    )
+    def test_no_real_college_shot_is_lost_in_the_fixtures(self, name):
+        data = json.loads((Path(__file__).parent.parent / "fixtures" / "espn" / name).read_text())
+        plays = data if isinstance(data, list) else data["plays"]
+        league = name.split("_")[1]
+        dropped = [p for p in plays if p.get("coordinate") == {"x": 25, "y": 0}]
+        assert dropped
+        for play in dropped:
+            assert not has_coordinate(play, league)
+            assert not play.get("shootingPlay") or "FreeThrow" in play["type"]["text"]
 
 
 class TestBasketballGeometry:

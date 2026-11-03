@@ -105,7 +105,14 @@ struct TeamInfoAPIResponse: Decodable {
 
         struct TeamInfoRecordItem: Decodable {
             let description: String?
+            let type: String?
             let summary: String?
+            let stats: [TeamInfoRecordStat]?
+
+            struct TeamInfoRecordStat: Decodable {
+                let name: String?
+                let value: Double?
+            }
         }
     }
 

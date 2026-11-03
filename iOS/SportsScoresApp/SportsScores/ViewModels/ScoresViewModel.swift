@@ -37,7 +37,7 @@ class ScoresViewModel: ObservableObject {
     @Published var errorMessage: String?
 
     // Date navigation (non-football sports)
-    @Published var currentDate: Date = Calendar.current.startOfDay(for: Date())
+    @Published var currentDate: Date = ScoreboardDay.today()
 
     // Week navigation (football)
     @Published var currentWeek: Int?
@@ -128,15 +128,15 @@ class ScoresViewModel: ObservableObject {
     // MARK: - Today / current-week state
 
     /// True when the currently displayed date is calendar today (non-football).
-    var isOnToday: Bool { Calendar.current.isDateInToday(currentDate) }
+    var isOnToday: Bool { ScoreboardDay.isToday(currentDate) }
 
     // MARK: - Formatted date label for display
 
     var dateLabelText: String {
         let cal = Calendar.current
-        if cal.isDateInToday(currentDate)     { return "Today" }
-        if cal.isDateInYesterday(currentDate) { return "Yesterday" }
-        if cal.isDateInTomorrow(currentDate)  { return "Tmrw" }
+        if ScoreboardDay.isToday(currentDate)     { return "Today" }
+        if ScoreboardDay.isYesterday(currentDate) { return "Yesterday" }
+        if ScoreboardDay.isTomorrow(currentDate)  { return "Tmrw" }
         let fmt = DateFormatter()
         fmt.dateFormat = "EEE, MMM d"
         return fmt.string(from: currentDate)
@@ -145,9 +145,9 @@ class ScoresViewModel: ObservableObject {
     /// Long-form date string used in VoiceOver announcements and accessibility labels.
     var dateAccessibilityString: String {
         let cal = Calendar.current
-        if cal.isDateInToday(currentDate)     { return "Today" }
-        if cal.isDateInYesterday(currentDate) { return "Yesterday" }
-        if cal.isDateInTomorrow(currentDate)  { return "Tomorrow" }
+        if ScoreboardDay.isToday(currentDate)     { return "Today" }
+        if ScoreboardDay.isYesterday(currentDate) { return "Yesterday" }
+        if ScoreboardDay.isTomorrow(currentDate)  { return "Tomorrow" }
         let fmt = DateFormatter()
         fmt.dateFormat = "EEEE, MMMM d"
         return fmt.string(from: currentDate)
@@ -178,9 +178,8 @@ class ScoresViewModel: ObservableObject {
                 isOnCurrentWeek = result.isCurrentRound
             } else if sport.isFootball {
                 // Only the "current week of the current season" view lets ESPN
-                // resolve things; every explicit week goes through the date-range
-                // path, because the scoreboard's `week=` param ignores `season=`
-                // and serves the previous season.
+                // resolve things; every explicit week asks for its season by year,
+                // because the scoreboard's `week=` param ignores `season=`.
                 if currentSeason == nil && isOnCurrentWeek {
                     let result = try await apiService.fetchFootballGames(for: sport)
                     games             = result.games
@@ -339,7 +338,7 @@ class ScoresViewModel: ObservableObject {
     }
 
     func goToToday(for sport: Sport) async {
-        currentDate          = Calendar.current.startOfDay(for: Date())
+        currentDate          = ScoreboardDay.today()
         currentWeek          = nil
         currentSeason        = nil   // nil → ESPN resolves to current season
         currentSeasonType    = 2

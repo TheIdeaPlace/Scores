@@ -105,7 +105,7 @@ Game detail has up to four tabs:
 
 | Tab | Contents |
 |-----|----------|
-| **Box Score** | Team-level stats (football) or full line score (baseball) |
+| **Box Score** | One tab per team and stat group (such as "BOS Players" or "GB Kicking"), then the team comparison. Each table has a Totals row, and a player who sat out reads "Did not play". Before a game, the team table holds season averages and says so |
 | **Plays** or **Drives** | Play-by-play (basketball, hockey, baseball) or drive summaries (football) |
 | **Info** | Game leaders, injuries, officials, venue, news |
 | **More** | Win probability, season series — MLB only |
@@ -294,6 +294,8 @@ All data comes from ESPN's public API. A few things to know:
 
 - **MLB Spring Training** runs February–March. During that window, the app defaults to spring training games. Regular season starts in late March.
 - **NBA and WNBA** season years follow the second year of the season (2025–26 season shows as 2026).
-- **NCAA Hockey** data from ESPN is sometimes incomplete — box scores or play-by-play may be missing for some games.
-- Game times are shown in your device's local time zone.
+- **NCAA Hockey** data from ESPN is sometimes incomplete — ESPN sends no box score at all for college hockey, so the Box Score tab says so.
+- Game times are shown in your device's local time zone. A game with no set time reads **Time TBD**.
+- **"Today" lasts until 5 AM.** Until then, Live Scores and the league screens stay on last night's games, because a West Coast game can run well past midnight in the East.
+- **College basketball plays** with no real location, such as substitutions and free throws, have no location or tone. ESPN doesn't say where they happened.
 

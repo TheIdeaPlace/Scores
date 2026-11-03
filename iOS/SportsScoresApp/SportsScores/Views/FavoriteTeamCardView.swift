@@ -59,7 +59,7 @@ struct FavoriteTeamCardView: View {
     private func gameLabel(for game: ScheduleGame, prefix: String) -> String {
         let isHome = game.homeTeam.id == favorite.id
         let opp = isHome ? game.awayTeam : game.homeTeam
-        let loc = isHome ? "vs" : "@"
+        let loc = isHome || game.isNeutralSite ? "vs" : "@"
         if game.isInProgress {
             // Build a scoreboard-style label: "Away name score @ Home name score, Status detail, Situation"
             // Uses live details from the summary endpoint for accurate scores, status, and
@@ -99,7 +99,7 @@ struct FavoriteTeamCardView: View {
             let result = my > op ? "W" : my < op ? "L" : "T"
             return "\(prefix): \(result) \(loc) \(opp.abbreviation) \(my)-\(op)"
         }
-        return "\(prefix): \(loc) \(opp.abbreviation), \(Self.gameDateFormatter.string(from: game.date))"
+        return "\(prefix): \(loc) \(opp.abbreviation), \((game.timeIsKnown ? Self.gameDateFormatter.string(from: game.date) : DateFormatter.localizedString(from: game.date, dateStyle: .short, timeStyle: .none)))"
     }
 
     // MARK: - Body

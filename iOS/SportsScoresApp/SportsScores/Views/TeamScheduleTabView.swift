@@ -91,7 +91,7 @@ struct TeamScheduleTabView: View {
     private func gameRow(game: ScheduleGame) -> some View {
         let teamIsHome = game.homeTeam.id == viewModel.teamId
         let opponent = teamIsHome ? game.awayTeam : game.homeTeam
-        let locationText = teamIsHome ? "vs" : "@"
+        let locationText = teamIsHome || game.isNeutralSite ? "vs" : "@"
 
         return HStack(spacing: 12) {
             resultBadge(game: game, teamIsHome: teamIsHome)
@@ -106,7 +106,7 @@ struct TeamScheduleTabView: View {
                         .font(.subheadline)
                         .fontWeight(.medium)
                 }
-                Text(Self.dateFormatter.string(from: game.date))
+                Text((game.timeIsKnown ? Self.dateFormatter.string(from: game.date) : DateFormatter.localizedString(from: game.date, dateStyle: .medium, timeStyle: .none)))
                     .font(.caption)
                     .foregroundColor(.secondary)
             }
@@ -163,8 +163,8 @@ struct TeamScheduleTabView: View {
     private func gameAccessibilityLabel(_ game: ScheduleGame) -> String {
         let teamIsHome = game.homeTeam.id == viewModel.teamId
         let opponent = teamIsHome ? game.awayTeam : game.homeTeam
-        let location = teamIsHome ? "vs" : "at"
-        let date = Self.dateFormatter.string(from: game.date)
+        let location = teamIsHome || game.isNeutralSite ? "vs" : "at"
+        let date = (game.timeIsKnown ? Self.dateFormatter.string(from: game.date) : DateFormatter.localizedString(from: game.date, dateStyle: .medium, timeStyle: .none))
         if game.isCompleted {
             let won = isWin(game: game, teamIsHome: teamIsHome)
             let ts = teamIsHome ? (game.homeTeam.score ?? 0) : (game.awayTeam.score ?? 0)
