@@ -2116,7 +2116,6 @@ def format_complex_data(key, value):
         if isinstance(value, list):
             if not value:
                 return "No broadcast info"
-            networks = []
             networks = broadcast_names(value)
             return ", ".join(networks[:3]) if networks else "No networks listed"
         elif isinstance(value, dict):

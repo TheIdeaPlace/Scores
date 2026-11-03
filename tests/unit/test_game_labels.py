@@ -163,7 +163,10 @@ def test_streak_on_pro_standings(monkeypatch):
 
 
 def test_nhl_utah_is_in_central(monkeypatch):
-    monkeypatch.setattr(espn_api, "_http_get", lambda *a, **k: FakeResponse(load("standings_NHL.json")))
-    rows = espn_api._get_nhl_standings_fast()
-    utah = [r for r in rows if r["abbreviation"] == "UTAH"]
-    assert not utah or utah[0]["division"].endswith("Central")
+    data = load("standings_NHL.json")
+    # The fixture is trimmed, so one of its teams plays Utah's part.
+    entry = data["children"][0]["standings"]["entries"][0]
+    entry["team"]["abbreviation"] = "UTAH"
+    monkeypatch.setattr(espn_api, "_http_get", lambda *a, **k: FakeResponse(data))
+    utah = next(r for r in espn_api._get_nhl_standings_fast() if r["abbreviation"] == "UTAH")
+    assert utah["division"].endswith("Central")

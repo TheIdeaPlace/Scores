@@ -60,6 +60,7 @@ from models.game import GameData
 from models.news import NewsData
 import live_play_format
 from models.standings import StandingsData
+import error_log
 from windows_notifications import announce, set_notifier_window
 from accessible_table import AccessibleTable, StandingsTable, WildCardTable, LeadersTable, BoxscoreTable, InjuryTable, prepare_table_tabs, ButtonKeys
 from box_score import build_box_tables
@@ -95,7 +96,6 @@ except ImportError:
 # Odds, TV, venue and attendance are read into the basic rows above these.
 DETAIL_FIELDS = ["boxscore", "plays", "drives", "leaders", "standings", "injuries", "news"]
 BASEBALL_STAT_HEADERS = ["Player", "Position", "AB", "R", "H", "RBI", "BB", "SO", "AVG"]
-STANDINGS_HEADERS = ["Rank", "Team", "Wins", "Losses", "Win %", "GB", "Streak", "Record"]
 TEAM_SUMMARY_HEADERS = ["Team", "Statistic", "Value"]
 INJURY_HEADERS = ["Player", "Position", "Team", "Status", "Type", "Details", "Return Date"]
 LEADERS_HEADERS = ["Category/Player", "Team", "Statistic", "Value"]
@@ -209,15 +209,6 @@ def _focus_first_table(dialog):
         tables[0].setFocus()
     elif tabs:
         tabs[0].setFocus()
-
-
-def _tab_widget_in_layout(layout):
-    """The QTabWidget a builder just added to `layout`, or None."""
-    for i in range(layout.count()):
-        widget = layout.itemAt(i).widget()
-        if isinstance(widget, QTabWidget):
-            return widget
-    return None
 
 
 class AudioOnFocusAction(QAction):
@@ -349,6 +340,7 @@ class HomeSettingsDialog(QDialog):
 
         ok_layout = QHBoxLayout()
         ok_btn = QPushButton("OK")
+        ok_btn.setDefault(True)
         ok_btn.clicked.connect(self._save_and_accept)
         cancel_btn = QPushButton("Cancel")
         cancel_btn.clicked.connect(self.reject)
@@ -1036,7 +1028,7 @@ class LiveScoresView(BaseView):
 
     def _on_live_scores_loaded(self, live_games: list, current_date_games: list, golf: list):
         """Show freshly loaded games, keeping the user's place in the list."""
-        # An exception escaping a slot aborts the app under PyQt6.
+        # An exception escaping a slot would reach only error_log.
         try:
             self._show_loaded_live_scores(live_games, current_date_games, golf)
         except Exception as e:
@@ -1678,6 +1670,7 @@ class LeagueView(BaseView):
         """
         if self._scores_generation > 0:
             self._restore_state = None  # moved on to another day or week
+            self._skip_date_announcement = False
         self._scores_generation += 1
         self._reselect = (self._scores_generation, reselect) if reselect is not None else None
         football = self.is_football_league()
@@ -2154,7 +2147,7 @@ class LeagueView(BaseView):
 
         def loaded(result):
             finish()
-            # An exception escaping a slot aborts the app under PyQt6.
+            # An exception escaping a slot would reach only error_log.
             try:
                 show(result)
             except Exception as e:
@@ -2484,22 +2477,17 @@ class GameDetailsView(BaseView):
         dlg = QDialog(self)
         dlg.setWindowTitle(f"{field_name.title()} Details")
         dlg.resize(DIALOG_WIDTH, DIALOG_HEIGHT)
-        layout = QVBoxLayout()        # Store reference to tab widget for F6 handling
-        tab_widget_ref = None
-        
+        layout = QVBoxLayout()        
         if field_name == "leaders" and isinstance(field_data, (list, dict)):
             try:
                 self._add_leaders_data_to_layout(layout, field_data)
-                tab_widget_ref = _tab_widget_in_layout(layout)
             except Exception as e:
                 error_label = QLabel(f"Leaders display error: {str(e)}")
                 layout.addWidget(error_label)
         elif field_name == "boxscore" and isinstance(field_data, dict):
             self._add_boxscore_data_to_layout(layout, field_data)
-            tab_widget_ref = _tab_widget_in_layout(layout)
         elif field_name == "standings" and isinstance(field_data, dict):
             self._add_game_standings_to_layout(layout, field_data)
-            tab_widget_ref = _tab_widget_in_layout(layout)
         elif field_name == "plays" and isinstance(field_data, list):
             self._add_plays_list_to_layout(layout, field_data)
             # A period of play audio runs half a minute; don't let it outlive
@@ -2557,18 +2545,6 @@ class GameDetailsView(BaseView):
                 dlg.reject()
                 return
             
-            # F6 moves between the tabs and the table on the current tab.
-            if event.key() == Qt.Key.Key_F6 and tab_widget_ref:
-                if tab_widget_ref.tabBar().hasFocus():
-                    page = tab_widget_ref.currentWidget()
-                    tables = page.findChildren(AccessibleTable) if page else []
-                    if tables:
-                        tables[0].setFocus()
-                else:
-                    tab_widget_ref.tabBar().setFocus()
-                event.accept()
-                return
-
             original_keyPressEvent(event)
             
         dlg.keyPressEvent = custom_keyPressEvent
@@ -2612,7 +2588,7 @@ class GameDetailsView(BaseView):
         had_focus = self.details_list.hasFocus()
         self.details_list.clear()
 
-        # An exception escaping a slot aborts the app under PyQt6.
+        # An exception escaping a slot would reach only error_log.
         try:
             # Store raw details for export functionality
             self.current_raw_details = raw_details
@@ -8247,6 +8223,7 @@ class TeamHubDialog(QDialog):
         self.info_list.clear()
         if not info:
             self.info_list.addItem("No team info available.")
+            self.info_list.setCurrentRow(0)
             return
         def add(label, value):
             if value:
@@ -8432,6 +8409,7 @@ class TeamHubDialog(QDialog):
     def _show_list_error(self, list_widget, error_msg):
         list_widget.clear()
         list_widget.addItem(f"Error loading data: {error_msg}")
+        list_widget.setCurrentRow(0)
 
     def _refresh_fav_button(self):
         if settings.is_favorite(self.team_id, self.league):
@@ -11022,8 +11000,8 @@ class StatisticsViewDialog(QDialog):
 
     def _on_statistics_error(self, message: str):
         self._clear_loading_row()
-        error_label = QLabel(f"Error loading statistics: {message}")
-        self._content_layout.addWidget(error_label)
+        self._show_statistics_message(self._content_layout, f"Unable to load statistics: {message}")
+        self.stats_list.setFocus()
 
     def _on_statistics_loaded(self, statistics_data: dict):
         self._clear_loading_row()
@@ -11055,11 +11033,7 @@ class StatisticsViewDialog(QDialog):
                 self._show_statistics_message(layout, f"Unable to load statistics for {self.league}.")
                 
         except Exception as e:
-            print(f"DEBUG: Exception in setup_ui: {str(e)}")
-            import traceback
-            traceback.print_exc()
-            error_label = QLabel(f"Error loading statistics: {str(e)}")
-            layout.addWidget(error_label)
+            self._show_statistics_message(layout, f"Unable to show statistics: {e}")
 
     def _debug_accept(self, reason):
         """Debug wrapper for accept() to track why dialog is closing"""
@@ -13131,6 +13105,7 @@ class SportsScoresApp(QWidget):
                 current_widget.handle_resize(event.size())
 
 if __name__ == "__main__":
+    error_log.install()
     app = QApplication(sys.argv)
     # Held for the life of the process so the installer can detect a running copy.
     app._scores_mutex = updater.hold_app_mutex()

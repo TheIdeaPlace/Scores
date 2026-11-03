@@ -37,7 +37,11 @@ Found in a bug bash with NVDA on football, hockey and basketball.
   so a West Coast game no longer vanishes at midnight in the East.
 - **Keeping your place.** Back returns to the game, date or week you came from. Monitoring
   a game survives a refresh and a visit to the game, and score alerts work.
-- **Enter presses buttons** everywhere, not just in dialogs.
+- **Enter presses the button that has focus,** everywhere. Enter on a list row no longer also
+  presses a dialog's first button; opening a game from a team's schedule toggled the team as a
+  favorite that way.
+- **A crash in a dialog no longer closes the app.** Back from a game opened from a team's schedule
+  did. An error like that is now written to `errors.log` next to the settings, and spoken.
 - **The app really speaks now.** Announcements used to be a beep. The date or week is said as it
   changes and is in the window title. Live Scores no longer re-reads your row every refresh; it
   speaks only when the row's text changes.

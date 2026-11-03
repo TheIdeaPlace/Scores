@@ -200,3 +200,37 @@ class TestButtonKeys:
         assert dialog.clicks == [1]
         QApplication.sendEvent(dialog.button, self.enter(auto_repeat=True))
         assert dialog.clicks == [1]
+
+
+class TestTabs:
+    @pytest.fixture
+    def tabs(self, app):
+        tabs = QTabWidget()
+        prepare_table_tabs(tabs)
+        page = QWidget()
+        layout = QVBoxLayout(page)
+        tabs.table = make_table(app)
+        layout.addWidget(tabs.table)
+        tabs.addTab(page, "One")
+        return tabs
+
+    def test_bar_is_a_tab_stop_and_the_tab_widget_is_not_another(self, tabs):
+        assert tabs.tabBar().focusPolicy() & Qt.FocusPolicy.TabFocus
+
+    def test_f6_moves_between_the_tabs_and_the_table(self, tabs, app):
+        tabs.show()
+        QApplication.processEvents()
+        tabs.activateWindow()
+        tabs.tabBar().setFocus()
+        f6 = QKeyEvent(QEvent.Type.KeyPress, Qt.Key.Key_F6, Qt.KeyboardModifier.NoModifier)
+        calls = []
+        tabs.table.setFocus = lambda: calls.append("table")
+        bar = tabs.tabBar()
+        bar.hasFocus = lambda: True
+        QApplication.sendEvent(bar, f6)
+        assert calls == ["table"]
+        bar.hasFocus = lambda: False
+        bar.setFocus = lambda: calls.append("bar")
+        QApplication.sendEvent(tabs, f6)
+        assert calls == ["table", "bar"]
+        tabs.close()

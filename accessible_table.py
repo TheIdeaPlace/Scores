@@ -1082,26 +1082,47 @@ class ButtonKeys(QObject):
 
 
 class _TabBarViewKeys(QObject):
-    """Alt+V, Alt+T, Alt+Q, Alt+F pressed on a tab bar act on the table on that tab."""
+    """F6 between the tabs and the tab's content. Alt+V, Alt+T, Alt+Q, Alt+F pressed on
+    a tab bar act on the table on that tab."""
 
     def __init__(self, tab_widget: QTabWidget):
         super().__init__(tab_widget)
         self._tabs = tab_widget
 
+    def _focus_page(self, page):
+        tables = page.findChildren(AccessibleTable) if page else []
+        if tables:
+            tables[0].setFocus()
+            return
+        for widget in page.findChildren(QWidget) if page else []:
+            if widget.isVisible() and widget.focusPolicy() & Qt.FocusPolicy.TabFocus:
+                widget.setFocus()
+                return
+
     def eventFilter(self, obj, event):
         if event.type() == QEvent.Type.KeyPress:
+            bar = self._tabs.tabBar()
             page = self._tabs.currentWidget()
-            tables = page.findChildren(AccessibleTable) if page else []
-            if tables and tables[0].handle_view_key(event):
-                tables[0].setFocus()
+            if event.key() == Qt.Key.Key_F6 and event.modifiers() == Qt.KeyboardModifier.NoModifier:
+                # F6 moves between the tabs and what's on the tab.
+                if bar.hasFocus():
+                    self._focus_page(page)
+                else:
+                    bar.setFocus()
                 return True
+            if obj is bar:
+                tables = page.findChildren(AccessibleTable) if page else []
+                if tables and tables[0].handle_view_key(event):
+                    tables[0].setFocus()
+                    return True
         return super().eventFilter(obj, event)
 
 
 def prepare_table_tabs(tab_widget: QTabWidget) -> None:
     """Keyboard behaviour for a tab widget whose pages hold accessible tables.
 
-    - The tab bar's scroll buttons aren't Tab stops. Arrow keys already scroll it.
+    - The tab bar is one Tab stop; its scroll buttons aren't. Arrow keys already scroll it.
+    - F6 moves between the tabs and the tab's content.
     - The view keys work from the tab bar, not only from inside a table.
     - Ctrl+Tab from inside a table lands in the next tab's table. Left alone, focus
       falls on whatever comes next, with nothing said about which tab this is.
@@ -1110,9 +1131,14 @@ def prepare_table_tabs(tab_widget: QTabWidget) -> None:
     # The tab widget's own focus goes to its bar, so as a Tab stop it's an empty one:
     # Tab appears to do nothing, and the arrow keys go nowhere.
     tab_widget.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+    # That setting passes through to the bar, which must stay a stop of its own.
+    bar.setFocusPolicy(Qt.FocusPolicy.TabFocus)
     for button in bar.findChildren(QToolButton):
         button.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-    bar.installEventFilter(_TabBarViewKeys(tab_widget))
+    keys = _TabBarViewKeys(tab_widget)
+    bar.installEventFilter(keys)
+    # A key not used inside the page comes up through the tab widget.
+    tab_widget.installEventFilter(keys)
 
     def focus_table_on_new_tab(_index):
         focused = QApplication.focusWidget()

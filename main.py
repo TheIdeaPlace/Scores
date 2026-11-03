@@ -5,7 +5,7 @@ A comprehensive sports analysis application supporting MLB and NFL
 """
 
 import sys
-import traceback
+import error_log
 import os
 import argparse
 
@@ -155,14 +155,7 @@ Examples:
     args = parser.parse_args()
     startup_params = determine_startup_params(args)
 
-    # Without a hook, PyQt6 ends the process on any exception that escapes a slot. A bug
-    # in one dialog shouldn't take the whole app away from someone following a game.
-    def log_uncaught(exc_type, exc, tb):
-        # The windowed build has no stderr.
-        if sys.stderr:
-            traceback.print_exception(exc_type, exc, tb, file=sys.stderr)
-    sys.excepthook = log_uncaught
-
+    error_log.install()
     app = QApplication(sys.argv)
     # Held for the life of the process so the installer can detect a running copy.
     app._scores_mutex = updater.hold_app_mutex()
