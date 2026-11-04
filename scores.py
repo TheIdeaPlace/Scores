@@ -55,7 +55,7 @@ except ImportError:
 # New separated modules
 from exceptions import ApiError, DataModelError
 from services.api_service import ApiService
-from services.venue_service import venue_service
+from services.venue_service import venue_service, venue_summary
 from models.game import GameData
 from models.news import NewsData
 import live_play_format
@@ -12262,38 +12262,7 @@ class VenuesDialog(QDialog):
         
         # Add venues to list with summary info
         for venue in sorted_venues:
-            venue_name = venue.get('name', 'Unknown Venue')
-            city = venue.get('city', 'Unknown')
-            state = venue.get('state', 'Unknown')
-            
-            # Add visual indicators for venue characteristics
-            indicators = []
-            if venue.get('indoor'):
-                indicators.append("Indoor")
-            else:
-                indicators.append("Outdoor")
-            
-            if venue.get('grass') is True:
-                indicators.append("Grass")
-            elif venue.get('grass') is False:
-                indicators.append("Turf")
-            else:
-                indicators.append("Unknown Surface")
-            
-            # Show home teams if available
-            home_teams = venue.get('home_teams', [])
-            team_info = ""
-            if home_teams:
-                if len(home_teams) == 1:
-                    team_info = f" - {home_teams[0].get('name', 'Unknown Team')}"
-                else:
-                    team_info = f" - {len(home_teams)} teams"
-            
-            # Format: "Stadium Name (City, State) [Indoor, Grass] - Team Name" 
-            surface_info = " | ".join(indicators)
-            display_text = f"{venue_name} ({city}, {state}) [{surface_info}]{team_info}"
-            
-            item = QListWidgetItem(display_text)
+            item = QListWidgetItem(venue_summary(venue))
             item.setData(Qt.ItemDataRole.UserRole, venue)
             self.venues_list.addItem(item)
         
@@ -12321,16 +12290,8 @@ class VenuesDialog(QDialog):
         if not venue_data:
             return
         
-        # Get detailed venue information
-        venue_id = venue_data.get('id')
-        league_key = self.league.lower()
-        venue_details = venue_service.get_venue_details(venue_id, league_key)
-        
-        if not venue_details:
-            QMessageBox.information(self, "Venue Details", "No detailed information available for this venue.")
-            return
-        
-        # Show venue details dialog
+        # Everything it shows came with the list, so nothing waits on the network here.
+        venue_details = venue_service.venue_details(venue_data, self.league.lower())
         details_dialog = VenueDetailsDialog(venue_details, self)
         details_dialog.exec()
     
@@ -12364,42 +12325,24 @@ class VenueDetailsDialog(QDialog):
         characteristics = self.venue_details.get('characteristics', {})
         home_teams = self.venue_details.get('home_teams', [])
         interesting_facts = self.venue_details.get('interesting_facts', [])
-        media = self.venue_details.get('media', {})
-        images = media.get('images', [])
-        
+
         # Venue name header
         venue_name = basic_info.get('name', 'Unknown Venue')
         self.details_list.addItem(QListWidgetItem(f"=== {venue_name} ==="))
         
         # Basic Information Section
         self.details_list.addItem(QListWidgetItem("--- Basic Information ---"))
-        if basic_info.get('city') and basic_info.get('state'):
-            self.details_list.addItem(QListWidgetItem(f"Location: {basic_info['city']}, {basic_info['state']}"))
+        if basic_info.get('location'):
+            self.details_list.addItem(QListWidgetItem(f"Location: {basic_info['location']}"))
         if basic_info.get('league'):
             self.details_list.addItem(QListWidgetItem(f"League: {basic_info['league']}"))
-        if basic_info.get('zip_code'):
-            self.details_list.addItem(QListWidgetItem(f"ZIP Code: {basic_info['zip_code']}"))
-        
+
         # Characteristics Section
-        if characteristics:
+        if characteristics.get('indoor') is not None:
             self.details_list.addItem(QListWidgetItem("--- Stadium Characteristics ---"))
-            if characteristics.get('indoor') is not None:
-                venue_type = "Indoor stadium" if characteristics['indoor'] else "Outdoor stadium"
-                self.details_list.addItem(QListWidgetItem(f"Type: {venue_type}"))
-            
-            if characteristics.get('grass') is not None:
-                if characteristics['grass']:
-                    self.details_list.addItem(QListWidgetItem("Playing Surface: Natural grass"))
-                else:
-                    self.details_list.addItem(QListWidgetItem("Playing Surface: Artificial turf"))
-            
-            if characteristics.get('capacity'):
-                try:
-                    capacity = int(characteristics['capacity'])
-                    self.details_list.addItem(QListWidgetItem(f"Capacity: {capacity:,} fans"))
-                except (ValueError, TypeError):
-                    self.details_list.addItem(QListWidgetItem(f"Capacity: {characteristics['capacity']}"))
-        
+            venue_type = "Indoor stadium" if characteristics['indoor'] else "Outdoor stadium"
+            self.details_list.addItem(QListWidgetItem(f"Type: {venue_type}"))
+
         # Home Teams Section
         if home_teams:
             self.details_list.addItem(QListWidgetItem("--- Home Teams ---"))
@@ -12416,20 +12359,7 @@ class VenueDetailsDialog(QDialog):
             self.details_list.addItem(QListWidgetItem("--- Interesting Facts ---"))
             for fact in interesting_facts:
                 self.details_list.addItem(QListWidgetItem(f"• {fact}"))
-        
-        # Images Section
-        if images:
-            self.details_list.addItem(QListWidgetItem("--- Available Media ---"))
-            self.details_list.addItem(QListWidgetItem(f"{len(images)} high-quality images available"))
-            # Show first few image types for information
-            for i, img in enumerate(images[:3]):
-                rel_info = ", ".join(img.get('rel', []))
-                if rel_info:
-                    self.details_list.addItem(QListWidgetItem(f"  • {rel_info.title()} view"))
-            
-            if len(images) > 3:
-                self.details_list.addItem(QListWidgetItem(f"  • ... and {len(images) - 3} more"))
-        
+
         layout.addWidget(self.details_list)
         
         # Close button

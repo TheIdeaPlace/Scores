@@ -134,19 +134,12 @@ def test_a_time_crossing_midnight_moves_the_date(monkeypatch):
     assert timezone_utils.convert_espn_time_to_local("11/2 - 12:30 AM EST").startswith("11/1 - ")
 
 
-@gap("_find_home_teams reads team.venue from /teams, and the real list has no venue on "
-     "any team (teams_NFL.json), so a venue's home teams are always empty. The scoreboard "
-     "that supplied the venue also names its home team.")
 def test_a_venue_knows_its_home_team(espn):
-    data = load("scoreboard_NWSL.json")
-    espn.on("/scoreboard", data).on("/teams$", load("teams_NFL.json"))
+    espn.on("/scoreboard", load("scoreboard_NWSL.json"))
     venues = VenueService().get_venues_for_league("nfl")
     assert any(venue["home_teams"] for venue in venues.values())
 
 
-@gap("The Venues item is offered for nine leagues (scores.py _add_common_sections), and "
-     "VenueService knows only nfl, nba, mlb, nhl and ncaaf among the keys it sends, so college "
-     "basketball and hockey always read \"No venue data available\".")
 @pytest.mark.parametrize("league", ["ncaam", "ncaawb", "ncaah", "ncaawh"])
 def test_every_league_with_venues_is_mapped(league):
     assert league in VenueService().leagues

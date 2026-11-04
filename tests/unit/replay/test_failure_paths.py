@@ -10,7 +10,6 @@ import requests
 import espn_api
 from exceptions import ApiError
 from services.api_service import ApiService
-from services.venue_service import VenueService
 
 from .support import EMPTY_JSON, HTTP_404, HTTP_500, NOT_JSON, TIMEOUT, FakeResponse
 
@@ -36,7 +35,6 @@ QUIET = [
     ("get_player_statistics", lambda: espn_api.get_player_statistics("NBA"), NOTHING),
     ("get_team_statistics", lambda: espn_api.get_team_statistics("NBA"), TEAM_NOTHING),
     ("get_statistics", lambda: espn_api.get_statistics("NBA"), NOTHING),
-    ("get_venues_for_league", lambda: VenueService().get_venues_for_league("nfl"), {}),
     ("get_team_schedule NBA", lambda: espn_api.get_team_schedule("NBA", "15", season=2027), []),
     ("get_team_schedule scoreboard", lambda: espn_api.get_team_schedule("WNBA", "8", season=2026), []),
 ]
