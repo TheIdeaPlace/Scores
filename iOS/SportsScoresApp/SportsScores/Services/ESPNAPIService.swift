@@ -782,30 +782,30 @@ class ESPNAPIService {
         // Get current season year (the winter sports use the year+1 format)
         let seasonYear = sport.currentSeasonYear
 
-        // Get season types to try (MLB spring training in Feb-March uses type 1)
-        let seasonTypes = getSeasonTypes(for: sport)
-
-        // Try current season with all season types, then fallback to previous seasons
+        // The regular season, this year's or the most recent. Never a preseason: the app has
+        // nowhere to say so, and an NFL user in August would read them as the real thing.
+        // Soccer files its whole league season under type 1.
+        let seasonType = sport.isSoccer ? 1 : 2
         let seasonsToTry = [seasonYear, seasonYear - 1, seasonYear - 2]
 
         for season in seasonsToTry {
-            for seasonType in seasonTypes {
-                do {
-                    let categories = try await fetchLeadersForSeason(
-                        sportType: sportType,
-                        league: league,
-                        season: season,
-                        seasonType: seasonType,
-                        limit: limit,
-                        onlyTeam: onlyTeam
-                    )
-                    if !categories.isEmpty {
-                        return categories
-                    }
-                } catch {
-                    // Continue to next season/type combination
-                    continue
+            do {
+                let categories = try await fetchLeadersForSeason(
+                    sportType: sportType,
+                    league: league,
+                    season: season,
+                    seasonType: seasonType,
+                    limit: limit,
+                    onlyTeam: onlyTeam
+                )
+                if !categories.isEmpty {
+                    return categories
                 }
+            } catch let error as URLError {
+                // Another season won't get through a stalled network either, 30 seconds a try.
+                throw error
+            } catch {
+                continue
             }
         }
         
@@ -1101,7 +1101,11 @@ class ESPNAPIService {
         guard http.statusCode == 200 else { throw APIError.invalidResponse }
         
         let apiResponse = try JSONDecoder().decode(CoreLeadersAPIResponse.self, from: data)
-        let categories = apiResponse.categories ?? []
+        // A rating with nobody rated isn't a list of leaders, such as the WNBA's Player
+        // Efficiency Rating, where they all read 0.0. Windows leaves these out too.
+        let categories = (apiResponse.categories ?? []).filter { category in
+            (category.leaders ?? []).contains { ($0.value ?? 0) != 0 }
+        }
         
         // Collect all unique $ref URLs across all categories, so each is only asked for once.
         // The teams come first, since `onlyTeam` needs them to tell which athletes matter.
@@ -1112,7 +1116,8 @@ class ESPNAPIService {
                 if let ref = leader.team?.ref { teamRefs.insert(secureURL(ref)) }
             }
         }
-        let teams = await resolveRefs(teamRefs, as: CoreTeamResponse.self)
+        let stallWatch = StallWatch()
+        let teams = await resolveRefs(teamRefs, as: CoreTeamResponse.self, stallWatch: stallWatch)
 
         var athleteRefs = Set<String>()
         for category in categories {
@@ -1124,7 +1129,7 @@ class ESPNAPIService {
                 athleteRefs.insert(secureURL(ref))
             }
         }
-        let athletes = await resolveRefs(athleteRefs, as: CoreAthleteResponse.self)
+        let athletes = await resolveRefs(athleteRefs, as: CoreAthleteResponse.self, stallWatch: stallWatch)
 
         // Build results using the resolved caches
         return categories.map { category in
@@ -1170,7 +1175,8 @@ class ESPNAPIService {
     /// game_labels.leader_display_value, and tests/fixtures/leader_display_grid.json holds both.
     ///  - Baseball's is a stat line ("179-567, 42 HR, 3B, ..."), for every category.
     ///  - A fraction gets rounded away: 7.5 sacks reads 8, a 137.3 quarterback rating reads 137.
-    ///  - Three-point and college free throw percentages are fractions: 0.6154 reads 0.6.
+    ///  - Three-point and college free throw percentages are fractions: 0.6154 reads 0.6. A save
+    ///    percentage is one too, but reads as one: .945.
     ///  - Season totals read as if they were averages: 268 points reads 268.0.
     static func leaderDisplayValue(category: String?, value: Double?, displayValue: String?) -> String {
         let display = (displayValue ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
@@ -1179,7 +1185,7 @@ class ESPNAPIService {
         let isWhole = number == number.rounded()
 
         guard display.range(of: #"^[+-]?[\d,]*\.?\d+$"#, options: .regularExpression) != nil else {
-            if ["avg", "ops", "onbasepct", "slugavg", "opponentavg"].contains(name) {
+            if ["avg", "ops", "onbasepct", "slugavg", "opponentavg", "savepct"].contains(name) {
                 let text = String(format: "%.3f", number)
                 return text.hasPrefix("0.") ? String(text.dropFirst()) : text
             }
@@ -1192,7 +1198,7 @@ class ESPNAPIService {
         if ["points", "doubledouble"].contains(name) && isWhole {
             return String(Int(number))
         }
-        if name.contains("pct"), (0...1).contains(number), !display.hasPrefix("."),
+        if name.contains("pct"), name != "savepct", (0...1).contains(number),
            let shown = Double(display.replacingOccurrences(of: ",", with: "")), shown <= 1 {
             return String(format: "%.1f", number * 100)
         }
@@ -1231,15 +1237,39 @@ class ESPNAPIService {
     /// The most Core API references asked for at once. 125 took about 4 seconds at 8.
     static let maxConcurrentRefRequests = 8
 
+    /// How many connection failures in a row, with no answer between them, mean the network
+    /// has stalled. Two rounds of `maxConcurrentRefRequests`, so about a minute at 30 seconds
+    /// each, rather than 18 minutes of asking for every name in the league.
+    static let refFailuresBeforeGivingUp = maxConcurrentRefRequests * 2
+
+    /// Counts connection failures in a row across one list's references. Past the limit, the
+    /// rest aren't asked for, and those rows read "—".
+    private actor StallWatch {
+        private var failuresInARow = 0
+
+        var hasStalled: Bool {
+            failuresInARow >= ESPNAPIService.refFailuresBeforeGivingUp
+        }
+
+        func answered() {
+            failuresInARow = 0
+        }
+
+        func failed() {
+            failuresInARow += 1
+        }
+    }
+
     /// Resolve a set of Core API $ref URLs, some at a time. Returns a dictionary mapping each
     /// original ref URL string to the decoded response object. One that still fails after
     /// `fetchRef`'s retry is left out rather than failing the whole batch, and its row reads "—".
     private func resolveRefs<T: Decodable & Sendable>(
         _ refs: Set<String>,
-        as type: T.Type
+        as type: T.Type,
+        stallWatch: StallWatch
     ) async -> [String: T] {
         let results = await Self.concurrentMap(Array(refs), limit: Self.maxConcurrentRefRequests) { ref in
-            (ref, await self.fetchRef(ref, as: type))
+            (ref, await self.fetchRef(ref, as: type, stallWatch: stallWatch))
         }
         var cache = [String: T]()
         for (ref, result) in results {
@@ -1249,22 +1279,30 @@ class ESPNAPIService {
     }
 
     /// One Core API reference, with a second try if ESPN or the connection fails: a name
-    /// missing from a row of leaders is worth one more request. A 404 won't change, so it's final.
-    private func fetchRef<T: Decodable>(_ ref: String, as type: T.Type) async -> T? {
+    /// missing from a row of leaders is worth one more request. A 404 won't change, so it's
+    /// final. So is a timeout, which has already taken 30 seconds of someone's wait.
+    private func fetchRef<T: Decodable>(_ ref: String, as type: T.Type, stallWatch: StallWatch) async -> T? {
         guard let url = URL(string: ref) else { return nil }
         for attempt in 0..<2 {
+            guard await !stallWatch.hasStalled else { return nil }
             if attempt > 0 {
                 try? await Task.sleep(nanoseconds: 300_000_000)
             }
-            guard let (data, response) = try? await session.data(from: url),
-                  let status = (response as? HTTPURLResponse)?.statusCode else {
-                continue
-            }
-            if status == 200 {
-                return try? JSONDecoder().decode(T.self, from: data)
-            }
-            if status < 500 && status != 429 {
-                return nil
+            do {
+                let (data, response) = try await session.data(from: url)
+                await stallWatch.answered()
+                guard let status = (response as? HTTPURLResponse)?.statusCode else { continue }
+                if status == 200 {
+                    return try? JSONDecoder().decode(T.self, from: data)
+                }
+                if status < 500 && status != 429 {
+                    return nil
+                }
+            } catch {
+                await stallWatch.failed()
+                if (error as? URLError)?.code == .timedOut {
+                    return nil
+                }
             }
         }
         return nil

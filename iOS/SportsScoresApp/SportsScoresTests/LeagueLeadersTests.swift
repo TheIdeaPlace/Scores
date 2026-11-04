@@ -96,6 +96,10 @@ private final class StandInESPN: URLProtocol {
     static var failuresFirst = 0
     static var failureStatus = 503
     static var failures = [String: Int]()
+    /// Every reference fails like a stalled network, rather than answering.
+    static var referenceError: URLError.Code?
+    /// The status of a leaders request, by its URL. 200 sends `leaders`.
+    static var leadersStatus: (String) -> Int = { _ in 200 }
 
     static func reset(leaders: Data) {
         lock.withLock {
@@ -104,11 +108,21 @@ private final class StandInESPN: URLProtocol {
             failuresFirst = 0
             failureStatus = 503
             failures = [:]
+            referenceError = nil
+            leadersStatus = { _ in 200 }
         }
     }
 
     static var athleteRequests: [String] {
         lock.withLock { requests.filter { $0.contains("/athletes/") } }
+    }
+
+    static var leadersRequests: [String] {
+        lock.withLock { requests.filter { $0.contains("/leaders") } }
+    }
+
+    static var referenceRequests: [String] {
+        lock.withLock { requests.filter { !$0.contains("/leaders") } }
     }
 
     override class func canInit(with request: URLRequest) -> Bool { true }
@@ -117,6 +131,14 @@ private final class StandInESPN: URLProtocol {
 
     override func startLoading() {
         guard let url = request.url else { return }
+        if let code = Self.lock.withLock({ () -> URLError.Code? in
+            guard !url.absoluteString.contains("/leaders"), let code = Self.referenceError else { return nil }
+            Self.requests.append(url.absoluteString)
+            return code
+        }) {
+            client?.urlProtocol(self, didFailWithError: URLError(code))
+            return
+        }
         let (status, body) = Self.answer(url)
         let response = HTTPURLResponse(url: url, statusCode: status, httpVersion: nil, headerFields: nil)!
         client?.urlProtocol(self, didReceive: response, cacheStoragePolicy: .notAllowed)
@@ -131,7 +153,8 @@ private final class StandInESPN: URLProtocol {
         requests.append(text)
         let id = url.lastPathComponent
         if text.contains("/leaders") {
-            return (200, leaders)
+            let status = leadersStatus(text)
+            return (status, status == 200 ? leaders : Data())
         }
         if text.contains("/teams/") {
             return (200, Data(#"{"displayName":"Team \#(id)","abbreviation":"\#(id)"}"#.utf8))
@@ -141,6 +164,20 @@ private final class StandInESPN: URLProtocol {
             return (failureStatus, Data())
         }
         return (200, Data(#"{"displayName":"Athlete \#(id)"}"#.utf8))
+    }
+}
+
+/// Nothing gets through, not even the leaders.
+private final class NoConnection: URLProtocol {
+    static var count = 0
+
+    override class func canInit(with request: URLRequest) -> Bool { true }
+    override class func canonicalRequest(for request: URLRequest) -> URLRequest { request }
+    override func stopLoading() {}
+
+    override func startLoading() {
+        Self.count += 1
+        client?.urlProtocol(self, didFailWithError: URLError(.notConnectedToInternet))
     }
 }
 
@@ -208,6 +245,95 @@ final class LeagueLeadersRequestTests: XCTestCase {
         let names = categories.flatMap(\.leaders).map(\.athleteName)
         XCTAssertFalse(names.isEmpty)
         XCTAssertTrue(names.allSatisfy { $0 == "—" })
+    }
+
+    private var uniqueReferences: Int {
+        let leaders = (realLeaders.categories ?? []).flatMap { $0.leaders ?? [] }
+        return Set(leaders.compactMap { $0.athlete?.ref }).count + Set(leaders.compactMap { $0.team?.ref }).count
+    }
+
+    func testATimeoutIsNotAskedAgain() async throws {
+        StandInESPN.lock.withLock { StandInESPN.referenceError = .timedOut }
+        _ = try await service.fetchLeagueLeaders(for: .nba, limit: 3)
+        let requests = StandInESPN.referenceRequests
+        XCTAssertEqual(requests.count, Set(requests).count)
+    }
+
+    func testAStalledNetworkStopsAskingForTheRest() async throws {
+        XCTAssertGreaterThan(uniqueReferences, ESPNAPIService.refFailuresBeforeGivingUp + ESPNAPIService.maxConcurrentRefRequests,
+                             "the fixture should have enough references to show it")
+        StandInESPN.lock.withLock { StandInESPN.referenceError = .timedOut }
+        let categories = try await service.fetchLeagueLeaders(for: .nba, limit: 3)
+        XCTAssertLessThan(StandInESPN.referenceRequests.count, uniqueReferences)
+        XCTAssertTrue(categories.flatMap(\.leaders).allSatisfy { $0.athleteName == "—" }, "the rows are still there")
+        XCTAssertFalse(categories.isEmpty)
+    }
+
+    func testALostConnectionIsAskedAgain() async throws {
+        StandInESPN.lock.withLock { StandInESPN.referenceError = .networkConnectionLost }
+        _ = try await service.fetchLeagueLeaders(for: .nba, limit: 3)
+        let requests = StandInESPN.referenceRequests
+        XCTAssertGreaterThan(requests.count, Set(requests).count)
+    }
+
+    func testALeadersRequestThatCannotConnectIsAnErrorNotAnotherSeason() async throws {
+        let session: URLSession = {
+            let config = URLSessionConfiguration.ephemeral
+            config.protocolClasses = [NoConnection.self]
+            return URLSession(configuration: config)
+        }()
+        do {
+            _ = try await ESPNAPIService(session: session).fetchLeagueLeaders(for: .nba)
+            XCTFail("it should have thrown")
+        } catch is URLError {
+            XCTAssertEqual(NoConnection.count, 1)
+        }
+    }
+
+    // MARK: Which season
+
+    func testBetweenSeasonsIsLastSeasonsRegularSeasonNeverAPreseason() async throws {
+        let thisYear = Sport.nfl.currentSeasonYear
+        // As in August: the core API has a preseason this year, and 404s the rest.
+        StandInESPN.lock.withLock {
+            StandInESPN.leadersStatus = { url in
+                url.contains("/seasons/\(thisYear)/types/1/") || url.contains("/seasons/\(thisYear - 1)/types/2/") ? 200 : 404
+            }
+        }
+        let categories = try await service.fetchLeagueLeaders(for: .nfl, limit: 3)
+        XCTAssertFalse(categories.isEmpty)
+        let asked = StandInESPN.leadersRequests
+        XCTAssertFalse(asked.contains { $0.contains("/types/1/") }, "\(asked)")
+        XCTAssertFalse(asked.contains { $0.contains("/types/3/") }, "\(asked)")
+        XCTAssertTrue(asked.last?.contains("/seasons/\(thisYear - 1)/types/2/") ?? false, "\(asked)")
+    }
+
+    func testMLBDoesNotShowSpringTrainingEither() async throws {
+        let thisYear = Sport.mlb.currentSeasonYear
+        StandInESPN.lock.withLock {
+            StandInESPN.leadersStatus = { url in url.contains("/seasons/\(thisYear - 1)/types/2/") ? 200 : 404 }
+        }
+        _ = try await service.fetchLeagueLeaders(for: .mlb, limit: 3)
+        XCTAssertFalse(StandInESPN.leadersRequests.contains { $0.contains("/types/1/") })
+    }
+
+    func testSoccerIsFiledUnderTypeOne() async throws {
+        let sport = try XCTUnwrap(Sport.soccerLeagues.first)
+        _ = try await service.fetchLeagueLeaders(for: sport, limit: 3)
+        XCTAssertTrue(StandInESPN.leadersRequests.first?.contains("/types/1/") ?? false)
+    }
+
+    // MARK: Nobody rated
+
+    func testARatingWithNobodyRatedIsLeftOut() async throws {
+        let data = try Fixtures.data("leaders_core_NCAAM_per.json")
+        let raw = try JSONDecoder().decode(CoreLeadersAPIResponse.self, from: data)
+        let per = try XCTUnwrap(raw.categories?.first { $0.name == "PER" })
+        XCTAssertTrue((per.leaders ?? []).allSatisfy { $0.value == 0 }, "the fixture should show the problem")
+        StandInESPN.reset(leaders: data)
+        let names = try await service.fetchLeagueLeaders(for: .ncaam, limit: 3).map(\.name)
+        XCTAssertFalse(names.contains("PER"))
+        XCTAssertTrue(names.contains("pointsPerGame"))
     }
 
     func testANotFoundIsNotAskedAgain() async throws {
