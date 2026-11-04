@@ -166,7 +166,8 @@ extension Error {
         self is CancellationError || (self as? URLError)?.code == .cancelled
     }
 
-    /// ESPN answered, and has nothing there. See `APIError.serverError` for the other kind.
+    /// ESPN answered 400 or 404, and has nothing there. Any other status is
+    /// `APIError.unexpectedStatus`, a failure like a timeout.
     var isNothingThere: Bool {
         if let error = self as? APIError, case .invalidResponse = error { return true }
         return false
@@ -179,7 +180,35 @@ extension Sport {
     var usesSoccerSchedule: Bool { apiPath.hasPrefix("soccer/") }
 }
 
+/// The day of a game, for text read on its own.
+enum ScheduleDayText {
+    private static let day: DateFormatter = {
+        let f = DateFormatter()
+        f.dateFormat = "EEE, MMM d"
+        return f
+    }()
+
+    private static let dayAndYear: DateFormatter = {
+        let f = DateFormatter()
+        f.dateFormat = "EEE, MMM d, yyyy"
+        return f
+    }()
+
+    /// With the year when it isn't this one. A list has a month and year heading, but a screen
+    /// reader moving row by row doesn't hear it, and a season can cross new year: MLS's list
+    /// has 2027's games beside 2026's.
+    static func text(for date: Date, now: Date = Date()) -> String {
+        let thisYear = Calendar.current.isDate(date, equalTo: now, toGranularity: .year)
+        return (thisYear ? day : dayAndYear).string(from: date)
+    }
+}
+
 extension Sequence where Element == ScheduleGame {
+    /// The next game there is to play. A game called off isn't one, whatever its date says.
+    func nextToPlay(after now: Date) -> ScheduleGame? {
+        first { !$0.isCompleted && !$0.isInProgress && !$0.isCalledOff && $0.isAhead(of: now) }
+    }
+
     /// The venue of most of a team's home games, the later one winning a tie. A one-off
     /// doesn't count as the team moving, and neither does spring training. A game at a
     /// neutral site isn't a home game even when ESPN lists the team as home for it.
@@ -211,7 +240,7 @@ struct TeamScheduleAPIResponse: Codable {
     init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         season = try container.decodeIfPresent(APISeason.self, forKey: .season)
-        events = try LossyEvents.decode(from: container, forKey: .events)
+        events = try LossyEvents.decode(from: container, forKey: .events, judgingAbove: 3)
     }
 
     struct APISeason: Codable {

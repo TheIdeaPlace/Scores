@@ -655,6 +655,7 @@ final class TeamScheduleTests: XCTestCase {
 final class StubESPN: URLProtocol {
     enum Reply {
         case body(Data)
+        case delayed(TimeInterval, Data)
         case status(Int)
         case failure(URLError)
     }
@@ -696,6 +697,11 @@ final class StubESPN: URLProtocol {
             return
         case .body(let data):
             respond(status: 200, data: data)
+        case .delayed(let seconds, let data):
+            // Weak: a request cancelled in the meantime has nobody to answer.
+            DispatchQueue.global().asyncAfter(deadline: .now() + seconds) { [weak self] in
+                self?.respond(status: 200, data: data)
+            }
         case .status(let code):
             respond(status: code, data: Data("{}".utf8))
         }
@@ -949,7 +955,337 @@ final class TeamScheduleFailureTests: XCTestCase {
     // MARK: Team Hub
 
     private func hub() -> TeamHubViewModel {
-        TeamHubViewModel(teamId: "26", sport: .nfl, apiService: ESPNAPIService(session: StubESPN.session()))
+        TeamHubViewModel(teamId: "26", sport: .nfl, apiService: ESPNAPIService(session: StubESPN.session()),
+                         fetchRegularSeason: { _, _ in [] })
+    }
+
+    /// Team info answers at once, and the schedule as `schedule` says.
+    private func teamInfoThenSchedule(_ schedule: StubESPN.Reply) throws {
+        let team = try Fixtures.data("team_NFL_9.json")
+        StubESPN.answer { url in url.path.hasSuffix("/schedule") ? schedule : .body(team) }
+    }
+
+    func testInfoAsksAgainWhenItsScheduleWasCancelled() async throws {
+        let viewModel = hub()
+        try teamInfoThenSchedule(.failure(URLError(.cancelled)))
+        await viewModel.loadInfo()
+        XCTAssertNotNil(viewModel.teamInfo)
+        XCTAssertTrue(viewModel.schedule.isEmpty)
+        XCTAssertNil(viewModel.errorSchedule)
+
+        try seahawks()
+        await viewModel.loadInfo()
+        XCTAssertEqual(viewModel.schedule.count, 8)
+    }
+
+    func testCancellingLoadInfoForRealAndCallingItAgain() async throws {
+        let viewModel = hub()
+        try teamInfoThenSchedule(.delayed(2, Data(#"{"events":[]}"#.utf8)))
+        let task = Task { await viewModel.loadInfo() }
+        for _ in 0..<500 where viewModel.teamInfo == nil {
+            try await Task.sleep(nanoseconds: 10_000_000)
+        }
+        XCTAssertNotNil(viewModel.teamInfo)
+        task.cancel()
+        await task.value
+        XCTAssertTrue(viewModel.schedule.isEmpty)
+        XCTAssertNil(viewModel.errorSchedule)
+
+        try seahawks()
+        await viewModel.loadInfo()
+        XCTAssertEqual(viewModel.schedule.count, 8)
+    }
+
+    func testInfoDoesNotAskAgainOnceTheScheduleHasAnswered() async throws {
+        let viewModel = hub()
+        let nothing = empty
+        let team = try Fixtures.data("team_NFL_9.json")
+        StubESPN.answer { url in .body(url.path.hasSuffix("/schedule") ? nothing : team) }
+        await viewModel.loadInfo()
+        XCTAssertTrue(viewModel.schedule.isEmpty)
+        let asked = StubESPN.requests.count
+        await viewModel.loadInfo()
+        XCTAssertEqual(StubESPN.requests.count, asked)
+    }
+
+    func testInfoDoesNotAskAgainAfterAFailureItIsShowing() async throws {
+        let viewModel = hub()
+        try teamInfoThenSchedule(timedOut)
+        await viewModel.loadInfo()
+        XCTAssertNotNil(viewModel.errorSchedule)
+        let asked = StubESPN.requests.count
+        await viewModel.loadInfo()
+        XCTAssertEqual(StubESPN.requests.count, asked)
+    }
+
+    func testTeamHubReadsNothingThereAsNoScheduleNotAFailure() async {
+        let viewModel = hub()
+        StubESPN.answer { _ in .status(404) }
+        await viewModel.loadSchedule()
+        XCTAssertNil(viewModel.errorSchedule)
+        XCTAssertTrue(viewModel.schedule.isEmpty)
+    }
+
+    // MARK: Team Hub's season
+
+    func testTeamHubShowsTheLastSeasonWhenTheCurrentOneIsEmpty() async throws {
+        let season = Sport.nfl.currentSeasonYear
+        let regular = try Fixtures.data("schedule_NFL_26_reg.json")
+        let nothing = empty
+        StubESPN.answer { url in
+            .body((url.query ?? "").contains("season=\(season - 1)&seasontype=2") ? regular : nothing)
+        }
+        let viewModel = hub()
+        await viewModel.loadSchedule()
+        XCTAssertEqual(viewModel.schedule.count, 2)
+        XCTAssertNil(viewModel.errorSchedule)
+    }
+
+    func testTeamHubDoesNotFallBackAfterAFailure() async {
+        let season = Sport.nfl.currentSeasonYear
+        let failure = timedOut
+        StubESPN.answer { _ in failure }
+        let viewModel = hub()
+        await viewModel.loadSchedule()
+        XCTAssertNotNil(viewModel.errorSchedule)
+        XCTAssertFalse(StubESPN.requests.contains { ($0.query ?? "").contains("season=\(season - 1)") })
+    }
+
+    // MARK: A favorite's card
+
+    private func cardGames(_ sport: Sport = .nfl) async throws -> [ScheduleGame] {
+        try await ESPNAPIService(session: StubESPN.session())
+            .fetchFavoriteCardSchedule(teamId: sport.isFootball ? "26" : "359", sport: sport)
+    }
+
+    func testAFavoriteKeepsItsGamesWhenOnePartFails() async throws {
+        for failing in ["seasontype=1", "seasontype=2", "seasontype=3"] {
+            for reply in [timedOut, StubESPN.Reply.status(500)] {
+                try seahawks(failing: failing, reply: reply)
+                let games = try await cardGames()
+                XCTAssertFalse(games.isEmpty, failing)
+                XCTAssertLessThan(games.count, 8, failing)
+            }
+        }
+    }
+
+    func testAFavoriteWithEveryPartFailingThrows() async {
+        let failure = timedOut
+        StubESPN.answer { _ in failure }
+        do {
+            _ = try await cardGames()
+            XCTFail("Expected an error")
+        } catch {
+            XCTAssertEqual((error as? URLError)?.code, .timedOut)
+        }
+    }
+
+    func testASoccerFavoriteKeepsWhicheverListLoaded() async throws {
+        try arsenal(failing: "fixture=true", reply: .status(500))
+        let results = try await cardGames(.soccerEPL)
+        XCTAssertEqual(results.count, 3)
+        XCTAssertTrue(results.allSatisfy(\.isCompleted))
+
+        try arsenal(failing: "season=", reply: .status(500))
+        let fixtures = try await cardGames(.soccerEPL)
+        XCTAssertEqual(fixtures.count, 3)
+        XCTAssertFalse(fixtures.contains(where: \.isCompleted))
+    }
+
+    func testASoccerFavoriteWithBothListsFailingThrows() async {
+        let failure = timedOut
+        StubESPN.answer { _ in failure }
+        do {
+            _ = try await cardGames(.soccerEPL)
+            XCTFail("Expected an error")
+        } catch {}
+    }
+
+    // MARK: Statuses ESPN means as failures
+
+    func testOnly400And404MeanNothingThere() async throws {
+        for status in [403, 429, 500, 503] {
+            for failing in ["seasontype=1", "seasontype=2", "seasontype=3"] {
+                try seahawks(failing: failing, reply: .status(status))
+                let error = await thrown(ESPNAPIService(session: StubESPN.session()), season: 2025)
+                XCTAssertNotNil(error, "\(status) on \(failing)")
+                XCTAssertFalse(error?.isNothingThere ?? true, "\(status) on \(failing)")
+            }
+        }
+        for status in [400, 404] {
+            try seahawks(failing: "seasontype=3", reply: .status(status))
+            let games = try await ESPNAPIService(session: StubESPN.session())
+                .fetchTeamSeasonSchedule(teamId: "26", sport: .nfl, season: 2025)
+            XCTAssertEqual(games.count, 5)
+            try seahawks(failing: "seasontype=2", reply: .status(status))
+            let error = await thrown(ESPNAPIService(session: StubESPN.session()), season: 2025)
+            XCTAssertEqual(error?.isNothingThere, true)
+        }
+    }
+
+    func testOneUnreadableGameAloneOnAPageCostsOnlyThatGame() async throws {
+        // A team with one bowl game, whose event can't be read. Windows just skips the row.
+        try seahawks(failing: "seasontype=3", reply: .body(Data(#"{"events":[{"id":"1"}]}"#.utf8)))
+        let games = try await ESPNAPIService(session: StubESPN.session())
+            .fetchTeamSeasonSchedule(teamId: "26", sport: .nfl, season: 2025)
+        XCTAssertEqual(games.count, 5)
+    }
+
+    // MARK: Refreshes and picking a year
+
+    func testNothingThereReadsAsNoScheduleWithNoFallback() async {
+        let viewModel = screen()
+        let season = viewModel.selectedYear
+        StubESPN.answer { _ in .status(404) }
+        await viewModel.fetchSchedule()
+        XCTAssertNotNil(viewModel.errorMessage)
+        XCTAssertFalse(viewModel.loadFailed)
+        XCTAssertEqual(viewModel.selectedYear, season)
+        XCTAssertFalse(StubESPN.requests.contains { ($0.query ?? "").contains("season=\(season - 1)") })
+    }
+
+    func testAFailedRefreshKeepsTheListAndSaysSoSeparately() async throws {
+        let viewModel = screen()
+        try seahawks()
+        await viewModel.fetchSchedule()
+        XCTAssertEqual(viewModel.games.count, 8)
+
+        let failure = timedOut
+        StubESPN.answer { _ in failure }
+        await viewModel.fetchSchedule()
+        XCTAssertEqual(viewModel.games.count, 8)
+        XCTAssertTrue(viewModel.refreshFailed)
+        XCTAssertFalse(viewModel.loadFailed)
+        XCTAssertNil(viewModel.errorMessage)
+        XCTAssertFalse(viewModel.isLoading)
+
+        try seahawks()
+        await viewModel.fetchSchedule()
+        XCTAssertFalse(viewModel.refreshFailed)
+    }
+
+    func testPickingAYearAfterAFailedRefreshStartsClean() async throws {
+        let viewModel = screen()
+        try seahawks()
+        await viewModel.fetchSchedule()
+        let failure = timedOut
+        StubESPN.answer { _ in failure }
+        await viewModel.fetchSchedule()
+        XCTAssertTrue(viewModel.refreshFailed)
+
+        await viewModel.changeYear(viewModel.selectedYear - 1)
+        XCTAssertFalse(viewModel.refreshFailed)
+        XCTAssertTrue(viewModel.games.isEmpty, "the old year's games don't stand in for this one")
+        XCTAssertTrue(viewModel.loadFailed)
+    }
+
+    func testAnOlderReplyArrivingLastDoesNotReplaceTheSeasonPicked() async throws {
+        let viewModel = screen()
+        let slowYear = viewModel.selectedYear - 1
+        let quickYear = viewModel.selectedYear - 2
+        let regular = try Fixtures.data("schedule_NFL_26_reg.json")
+        let post = try Fixtures.data("schedule_NFL_26_post.json")
+        let nothing = empty
+        StubESPN.answer { url in
+            let query = url.query ?? ""
+            if query == "season=\(slowYear)&seasontype=2" { return .delayed(0.5, regular) }
+            if query == "season=\(quickYear)&seasontype=2" { return .body(post) }
+            return .body(nothing)
+        }
+
+        let slow = Task { await viewModel.changeYear(slowYear) }
+        for _ in 0..<500 where !StubESPN.requests.contains(where: { ($0.query ?? "").contains("season=\(slowYear)") }) {
+            try await Task.sleep(nanoseconds: 10_000_000)
+        }
+        await viewModel.changeYear(quickYear)
+        XCTAssertEqual(viewModel.games.count, 3)
+        XCTAssertFalse(viewModel.isLoading)
+
+        await slow.value
+        XCTAssertEqual(viewModel.selectedYear, quickYear)
+        XCTAssertEqual(viewModel.games.count, 3, "still the season picked")
+        XCTAssertEqual(viewModel.games.last?.label, "Super Bowl LX")
+        XCTAssertFalse(viewModel.isLoading)
+    }
+
+    func testAnOlderFailureArrivingLastIsIgnoredToo() async throws {
+        let viewModel = screen()
+        let slowYear = viewModel.selectedYear - 1
+        let quickYear = viewModel.selectedYear - 2
+        let post = try Fixtures.data("schedule_NFL_26_post.json")
+        let nothing = empty
+        StubESPN.answer { url in
+            let query = url.query ?? ""
+            if query == "season=\(slowYear)&seasontype=2" { return .delayed(0.5, Data("<html>".utf8)) }
+            return .body(query == "season=\(quickYear)&seasontype=2" ? post : nothing)
+        }
+
+        let slow = Task { await viewModel.changeYear(slowYear) }
+        for _ in 0..<500 where !StubESPN.requests.contains(where: { ($0.query ?? "").contains("season=\(slowYear)") }) {
+            try await Task.sleep(nanoseconds: 10_000_000)
+        }
+        await viewModel.changeYear(quickYear)
+        await slow.value
+        XCTAssertEqual(viewModel.games.count, 3)
+        XCTAssertFalse(viewModel.loadFailed)
+        XCTAssertNil(viewModel.errorMessage)
+    }
+
+    // MARK: A game called off with its date ahead
+
+    private func futureGame(id: String, days: Int, completed: Bool, state: String) -> ScheduleGame {
+        ScheduleGame(id: id, date: Date().addingTimeInterval(TimeInterval(days) * 86_400), name: "A at H",
+                     awayTeam: .init(id: "26", abbreviation: "A", displayName: "Away", score: nil),
+                     homeTeam: .init(id: "H", abbreviation: "H", displayName: "Home", score: nil),
+                     statusText: state == "post" ? "Postponed" : "Scheduled",
+                     statusType: state == "post" ? "STATUS_POSTPONED" : "STATUS_SCHEDULED", seasonType: 2,
+                     venueName: nil, espnCompleted: completed, espnState: state)
+    }
+
+    func testAPostponedGameIsNotTheNextGameButStaysListedAsUpcoming() {
+        let viewModel = hub()
+        viewModel.schedule = [futureGame(id: "rainout", days: 2, completed: false, state: "post"),
+                              futureGame(id: "next", days: 5, completed: false, state: "pre")]
+        XCTAssertEqual(viewModel.upcomingGame?.id, "next")
+        XCTAssertEqual(viewModel.upcomingGames.map(\.id), ["rainout", "next"])
+    }
+
+    func testAPostponedGameAloneLeavesNoNextGame() {
+        let viewModel = hub()
+        viewModel.schedule = [futureGame(id: "rainout", days: 2, completed: false, state: "post")]
+        XCTAssertNil(viewModel.upcomingGame)
+    }
+
+    func testTheFavoriteCardsNextGameSkipsAPostponedOne() {
+        // What FavoriteTeamCardView.nextGame asks.
+        let schedule = [futureGame(id: "rainout", days: 2, completed: false, state: "post"),
+                        futureGame(id: "next", days: 5, completed: false, state: "pre")]
+        XCTAssertEqual(schedule.nextToPlay(after: Date())?.id, "next")
+        XCTAssertNil([schedule[0]].nextToPlay(after: Date()))
+    }
+
+    private func teamInfo(nextEventState state: String, completed: Bool) async throws -> TeamHubTeamInfo {
+        var object = try XCTUnwrap(JSONSerialization.jsonObject(with: Fixtures.data("team_NFL_9.json")) as? [String: Any])
+        var team = try XCTUnwrap(object["team"] as? [String: Any])
+        var events = try XCTUnwrap(team["nextEvent"] as? [[String: Any]])
+        var competitions = try XCTUnwrap(events[0]["competitions"] as? [[String: Any]])
+        competitions[0]["status"] = ["type": ["completed": completed, "state": state]]
+        competitions[0]["timeValid"] = true
+        events[0]["competitions"] = competitions
+        events[0]["date"] = "2099-01-03T18:00Z"
+        events[0]["timeValid"] = true
+        team["nextEvent"] = events
+        object["team"] = team
+        let body = try JSONSerialization.data(withJSONObject: object)
+        StubESPN.answer { _ in .body(body) }
+        return try await ESPNAPIService(session: StubESPN.session()).fetchTeamHubInfo(teamId: "9", sport: .nfl)
+    }
+
+    func testTeamInfosNextGameIsNotOneCalledOff() async throws {
+        let scheduled = try await teamInfo(nextEventState: "pre", completed: false)
+        XCTAssertNotNil(scheduled.nextGame)
+        let calledOff = try await teamInfo(nextEventState: "post", completed: false)
+        XCTAssertNil(calledOff.nextGame)
     }
 
     func testTeamHubSaysSoOnAFailure() async {
@@ -1173,9 +1509,35 @@ final class TeamHubDecodingTests: XCTestCase {
         XCTAssertEqual(response.events.count, 3)
     }
 
-    func testAScheduleWithNothingReadableIsStillAnError() throws {
-        let data = try schedule(with: [[String: Any](), ["id": "1"]], keepingRealEvents: false)
-        XCTAssertThrowsError(try decodeSchedule(data))
+    func testAPageWithNothingReadableIsStillAnError() throws {
+        let unreadable = Array(repeating: ["id": "1"] as [String: Any], count: 4)
+        XCTAssertThrowsError(try decodeSchedule(schedule(with: unreadable, keepingRealEvents: false)))
+    }
+
+    func testAShortPageWithNothingReadableIsNoReasonToLoseTheSeason() throws {
+        // A postseason page can be one bowl game.
+        for count in 1...3 {
+            let unreadable = Array(repeating: ["id": "1"] as [String: Any], count: count)
+            let response = try decodeSchedule(schedule(with: unreadable, keepingRealEvents: false))
+            XCTAssertTrue(response.events.isEmpty)
+        }
+    }
+
+    func testTheScoreboardStaysStrictAboutAShortList() throws {
+        // A board of one unreadable event is still an error: only team schedules have short pages.
+        let data = try JSONSerialization.data(withJSONObject: ["events": [["id": "1"]]])
+        XCTAssertThrowsError(try Fixtures.decodeScoreboard(data))
+    }
+
+    func testTheDayShowsTheYearOnlyWhenItIsNotThisOne() throws {
+        let calendar = Calendar.current
+        let now = try XCTUnwrap(calendar.date(from: DateComponents(year: 2026, month: 11, day: 3, hour: 12)))
+        let sameYear = try XCTUnwrap(calendar.date(from: DateComponents(year: 2026, month: 2, day: 21, hour: 12)))
+        let nextYear = try XCTUnwrap(calendar.date(from: DateComponents(year: 2027, month: 5, day: 1, hour: 12)))
+        let lastYear = try XCTUnwrap(calendar.date(from: DateComponents(year: 2025, month: 9, day: 7, hour: 12)))
+        XCTAssertFalse(ScheduleDayText.text(for: sameYear, now: now).contains("20"))
+        XCTAssertTrue(ScheduleDayText.text(for: nextYear, now: now).hasSuffix(", 2027"))
+        XCTAssertTrue(ScheduleDayText.text(for: lastYear, now: now).hasSuffix(", 2025"))
     }
 
     func testAScheduleMostlyUnreadableIsStillAnError() throws {

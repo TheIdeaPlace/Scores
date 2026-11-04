@@ -336,7 +336,9 @@ struct RankingsAPIResponse: Codable {
 /// One event ESPN sent oddly costs that event, not the list. ESPN's own list for week 8
 /// of college football in 2025 has a literal {} in it, which used to lose the whole week.
 /// If most of the real entries can't be read, that's a change in the feed rather than a
-/// stray entry, and a short list would look normal, so it's still an error.
+/// stray entry, and a short list would look normal, so it's still an error. `judgingAbove`
+/// is for a list short enough for that to mean nothing: a team schedule's postseason page
+/// can be one bowl game, and losing it isn't a reason to lose the season.
 enum LossyEvents {
     private struct AnyKey: CodingKey {
         var stringValue: String
@@ -357,11 +359,12 @@ enum LossyEvents {
     }
 
     static func decode<Event: Decodable, Key: CodingKey>(from container: KeyedDecodingContainer<Key>,
-                                                         forKey key: Key) throws -> [Event] {
+                                                         forKey key: Key,
+                                                         judgingAbove minimum: Int = 0) throws -> [Event] {
         let rows = try container.decode([Row<Event>].self, forKey: key)
         let events = rows.compactMap { $0.event }
         let sent = rows.filter { !$0.isBlank }.count
-        if (sent - events.count) * 2 > sent {
+        if sent > minimum && (sent - events.count) * 2 > sent {
             throw DecodingError.dataCorruptedError(forKey: key, in: container,
                                                    debugDescription: "Only \(events.count) of \(sent) events could be read")
         }
@@ -441,9 +444,9 @@ struct ScoreboardResponse: Decodable {
 enum APIError: LocalizedError {
     case invalidURL
     case invalidResponse
-    /// A 5xx, where `invalidResponse` is ESPN answering that it has nothing. Only team
-    /// schedules tell them apart so far.
-    case serverError(Int)
+    /// Any status but 400 or 404, where `invalidResponse` is ESPN answering that it has
+    /// nothing there. Only team schedules tell them apart so far.
+    case unexpectedStatus(Int)
     case decodingError
     case networkError(Error)
 
@@ -453,8 +456,8 @@ enum APIError: LocalizedError {
             return "Invalid URL"
         case .invalidResponse:
             return "Invalid response from server"
-        case .serverError(let status):
-            return "The server had an error (\(status))"
+        case .unexpectedStatus(let status):
+            return "The server answered with an error (\(status))"
         case .decodingError:
             return "Failed to decode response"
         case .networkError(let error):

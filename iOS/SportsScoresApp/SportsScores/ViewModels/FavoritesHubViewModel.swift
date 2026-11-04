@@ -65,6 +65,6 @@ final class FavoritesHubViewModel: ObservableObject {
     }
 
     private func fetchSchedule(_ fav: FavoriteTeam) async -> [ScheduleGame]? {
-        try? await apiService.fetchTeamHubSchedule(teamId: fav.id, sport: fav.sport)
+        try? await apiService.fetchFavoriteCardSchedule(teamId: fav.id, sport: fav.sport)
     }
 }

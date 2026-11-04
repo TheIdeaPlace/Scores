@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import UIKit
 
 struct TeamScheduleView: View {
     let team: Game.Team
@@ -30,20 +31,6 @@ struct TeamScheduleView: View {
         f.dateFormat = "EEE, MMM d"
         return f
     }()
-
-    private static let dayAndYearFormatter: DateFormatter = {
-        let f = DateFormatter()
-        f.dateFormat = "EEE, MMM d, yyyy"
-        return f
-    }()
-
-    /// The day, with the year when it isn't this one, for text read on its own. A list has
-    /// a month and year heading, but a screen reader moving row by row doesn't hear it, and
-    /// a season can cross new year: MLS's list has 2027's games beside 2026's.
-    private func dayText(_ date: Date) -> String {
-        let thisYear = Calendar.current.isDate(date, equalTo: Date(), toGranularity: .year)
-        return (thisYear ? Self.dayFormatter : Self.dayAndYearFormatter).string(from: date)
-    }
 
     private static let timeFormatter: DateFormatter = {
         let f = DateFormatter()
@@ -91,6 +78,9 @@ struct TeamScheduleView: View {
                 .padding()
             } else {
                 VStack(spacing: 0) {
+                    if viewModel.refreshFailed {
+                        refreshFailedNote
+                    }
                     switch viewMode {
                     case .table:
                         scheduleTableView
@@ -115,6 +105,37 @@ struct TeamScheduleView: View {
             }
         }
         .task { await viewModel.fetchSchedule() }
+        .onChange(of: viewModel.refreshFailed) { _, failed in
+            if failed { announceRefreshFailed() }
+        }
+    }
+
+    // MARK: - A refresh that failed
+
+    private static let refreshFailedText = "Couldn't refresh the schedule. These are the games last loaded."
+
+    private func announceRefreshFailed() {
+        UIAccessibility.post(notification: .announcement, argument: Self.refreshFailedText)
+    }
+
+    /// Above the list rather than in place of it, so whoever is partway down keeps their place.
+    private var refreshFailedNote: some View {
+        HStack(spacing: 12) {
+            Text(Self.refreshFailedText)
+                .font(.caption)
+                .foregroundColor(.secondary)
+            Spacer()
+            Button("Retry") {
+                Task {
+                    await viewModel.fetchSchedule()
+                    // Still failed: nothing changed for onChange to see, and a press deserves an answer.
+                    if viewModel.refreshFailed { announceRefreshFailed() }
+                }
+            }
+            .font(.caption)
+        }
+        .padding(.horizontal)
+        .padding(.vertical, 6)
     }
 
     // MARK: - Year Picker
@@ -159,7 +180,7 @@ struct TeamScheduleView: View {
             let isHome = g.homeTeam.id == team.id
             let opp = isHome ? g.awayTeam : g.homeTeam
             let vs = isHome || g.isNeutralSite
-            return [dayText(g.date),
+            return [ScheduleDayText.text(for: g.date),
                     (vs ? "vs " : "@ ") + opp.abbreviation,
                     scheduleResultAndLabel(g)]
         }
@@ -276,7 +297,7 @@ struct TeamScheduleView: View {
         let isHome = game.homeTeam.id == team.id
         let opp = isHome ? game.awayTeam : game.homeTeam
         let matchup = (isHome || game.isNeutralSite ? "vs " : "@ ") + opp.abbreviation
-        return "\(dayText(game.date)) \(matchup) \u{2014} \(scheduleResultAndLabel(game))"
+        return "\(ScheduleDayText.text(for: game.date)) \(matchup) \u{2014} \(scheduleResultAndLabel(game))"
     }
 
     // MARK: - Schedule List
@@ -387,7 +408,7 @@ struct TeamScheduleView: View {
         let isHome = game.homeTeam.id == team.id
         let opponent = isHome ? game.awayTeam : game.homeTeam
         let homeAway = isHome || game.isNeutralSite ? "vs" : "at"
-        let dateStr = dayText(game.date)
+        let dateStr = ScheduleDayText.text(for: game.date)
         let statusPart: String
         if game.isCompleted {
             let myTeam  = game.homeTeam.id == team.id ? game.homeTeam : game.awayTeam

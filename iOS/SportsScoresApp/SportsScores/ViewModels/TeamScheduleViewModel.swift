@@ -15,11 +15,18 @@ class TeamScheduleViewModel: ObservableObject {
     /// True when `errorMessage` is a failed request, which trying again might fix, rather
     /// than a season with nothing in it.
     @Published var loadFailed = false
+    /// True when a refresh failed with games showing. They stay, since that may be the list
+    /// someone is partway through, and this says they may be out of date. It lasts until a
+    /// load works, so returning from game details on a bad connection doesn't say it again.
+    @Published var refreshFailed = false
     @Published var selectedYear: Int
 
     private let apiService: ESPNAPIService
     private let teamId: String
     private let sport: Sport
+    /// Picking a year during a slow load starts another. Only the newest may touch the
+    /// list: an older reply arriving last would leave the wrong season under the picker.
+    private var generation = 0
 
     // Available years to display in the picker (current year and 4 prior)
     let availableYears: [Int]
@@ -48,6 +55,8 @@ class TeamScheduleViewModel: ObservableObject {
     }
 
     func fetchSchedule() async {
+        generation += 1
+        let thisLoad = generation
         isLoading = true
         errorMessage = nil
         loadFailed = false
@@ -58,20 +67,28 @@ class TeamScheduleViewModel: ObservableObject {
                 sport: sport,
                 season: selectedYear
             )
-        } catch let error where error.isCancellation {
-            // The view went away mid-load, and nothing is known about the schedule. Keep
-            // what's there, and the next load, when it's back, asks again.
-            isLoading = false
-            return
         } catch {
-            // Not the fallback below: a failed request isn't an off-season, and last
-            // season's games would read as this season's with no sign anything went wrong.
-            errorMessage = "Could not load the schedule. Check your connection and try again."
-            loadFailed = true
-            games = []
+            guard thisLoad == generation else { return }
             isLoading = false
+            if error.isCancellation {
+                // The view went away mid-load, and nothing is known about the schedule. Keep
+                // what's there, and the next load, when it's back, asks again.
+            } else if error.isNothingThere {
+                // ESPN says it has nothing there: no schedule, and no sign of an off-season.
+                errorMessage = noScheduleMessage
+                refreshFailed = false
+                games = []
+            } else if !games.isEmpty {
+                refreshFailed = true
+            } else {
+                // Not the fallback below: a failed request isn't an off-season, and last
+                // season's games would read as this season's with no sign anything went wrong.
+                errorMessage = "Could not load the schedule. Check your connection and try again."
+                loadFailed = true
+            }
             return
         }
+        guard thisLoad == generation else { return }
 
         // ESPN publishes a new season's schedule some weeks after the previous
         // one ends, so in that gap the current season year comes back empty.
@@ -84,16 +101,22 @@ class TeamScheduleViewModel: ObservableObject {
         }
 
         if fetched.isEmpty {
-            errorMessage = "No schedule data available for \(sport.seasonDisplayName(year: selectedYear))."
+            errorMessage = noScheduleMessage
         }
+        refreshFailed = false
         games = fetched
         isLoading = false
+    }
+
+    private var noScheduleMessage: String {
+        "No schedule data available for \(sport.seasonDisplayName(year: selectedYear))."
     }
 
     func changeYear(_ year: Int) async {
         selectedYear = year
         // The view keeps a list up during a refresh, but this one is the wrong season.
         games = []
+        refreshFailed = false
         await fetchSchedule()
     }
 }
