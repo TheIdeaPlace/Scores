@@ -1147,7 +1147,6 @@ class LiveScoresView(BaseView):
                     item.setData(Qt.ItemDataRole.UserRole,
                                  {"golf_tour": t["tour"], "tour_name": t["tour_name"]})
                     self.live_scores_list.addItem(item)
-                self.live_scores_list.addItem("")
 
             total_games = len(live_games) + len(upcoming_games) + len(completed_games) + len(golf)
             if total_games == 0:
@@ -1211,7 +1210,6 @@ class LiveScoresView(BaseView):
                         if game_id:
                             self.game_data[game_id] = game
                 
-                self.live_scores_list.addItem("")
 
             # Section 2: Upcoming Games
             if upcoming_games:
@@ -1244,9 +1242,7 @@ class LiveScoresView(BaseView):
                         item.setData(Qt.ItemDataRole.UserRole, game_data)
                         self.live_scores_list.addItem(item)
                 
-                self.live_scores_list.addItem("")
 
-                self.live_scores_list.addItem("")
 
             # Section 3: Completed Games
             if completed_games:
@@ -1279,7 +1275,6 @@ class LiveScoresView(BaseView):
                         item.setData(Qt.ItemDataRole.UserRole, game_data)
                         self.live_scores_list.addItem(item)
 
-                self.live_scores_list.addItem("")
         except Exception as e:
             self._show_api_error(f"Failed to load live scores: {str(e)}")
     
@@ -12375,7 +12370,6 @@ class VenueDetailsDialog(QDialog):
         # Venue name header
         venue_name = basic_info.get('name', 'Unknown Venue')
         self.details_list.addItem(QListWidgetItem(f"=== {venue_name} ==="))
-        self.details_list.addItem(QListWidgetItem(""))
         
         # Basic Information Section
         self.details_list.addItem(QListWidgetItem("--- Basic Information ---"))
@@ -12385,7 +12379,6 @@ class VenueDetailsDialog(QDialog):
             self.details_list.addItem(QListWidgetItem(f"League: {basic_info['league']}"))
         if basic_info.get('zip_code'):
             self.details_list.addItem(QListWidgetItem(f"ZIP Code: {basic_info['zip_code']}"))
-        self.details_list.addItem(QListWidgetItem(""))
         
         # Characteristics Section
         if characteristics:
@@ -12406,7 +12399,6 @@ class VenueDetailsDialog(QDialog):
                     self.details_list.addItem(QListWidgetItem(f"Capacity: {capacity:,} fans"))
                 except (ValueError, TypeError):
                     self.details_list.addItem(QListWidgetItem(f"Capacity: {characteristics['capacity']}"))
-            self.details_list.addItem(QListWidgetItem(""))
         
         # Home Teams Section
         if home_teams:
@@ -12418,14 +12410,12 @@ class VenueDetailsDialog(QDialog):
                     self.details_list.addItem(QListWidgetItem(f"{team_name} ({team_abbrev})"))
                 else:
                     self.details_list.addItem(QListWidgetItem(team_name))
-            self.details_list.addItem(QListWidgetItem(""))
         
         # Interesting Facts Section
         if interesting_facts:
             self.details_list.addItem(QListWidgetItem("--- Interesting Facts ---"))
             for fact in interesting_facts:
                 self.details_list.addItem(QListWidgetItem(f"• {fact}"))
-            self.details_list.addItem(QListWidgetItem(""))
         
         # Images Section
         if images:
@@ -12576,8 +12566,6 @@ class BowlsAndPlayoffsDialog(QDialog):
                     for game in games:
                         self._add_game_item(game)
                     
-                    # Add spacing
-                    self.bowl_list.addItem("")
         
         except Exception as e:
             from PyQt6.QtWidgets import QMessageBox
