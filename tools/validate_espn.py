@@ -576,6 +576,21 @@ def leaders_problems(data):
     return problems
 
 
+def leaders_direction_problems(data, low_is_good):
+    """A category running the other way from what the app expects gets cut to its first row.
+    The first change is what shows the direction. A tied start followed by ESPN's unqualified
+    players can look wrong here, which is why this is only worth a look."""
+    problems = []
+    for category in (data.get("leaders") or {}).get("categories") or []:
+        values = [leader.get("value") for leader in category.get("leaders") or []]
+        change = next((b - a for a, b in zip(values, values[1:])
+                       if isinstance(a, (int, float)) and isinstance(b, (int, float)) and a != b), 0)
+        name = category.get("name")
+        if (change > 0) != (name in low_is_good) and change:
+            problems.append(name)
+    return problems
+
+
 def _top_values(categories):
     return {c.get("name"): c["leaders"][0].get("value") for c in categories or [] if c.get("leaders")}
 
@@ -1112,7 +1127,7 @@ def check_transactions(http, report, league):
 
 def check_statistics(http, report, league, event, in_season):
     if league.player_stats:
-        check_leaders(http, report, league)
+        check_leaders(http, report, league, in_season)
         check_app_leaders(report, league, in_season)
     else:
         check_no_leaders(http, report, league)
@@ -1132,7 +1147,22 @@ def check_statistics(http, report, league, event, in_season):
         check_core_statistics(http, report, league, event, in_season)
 
 
-def check_leaders(http, report, league):
+def fetch_leaders(http, league, year):
+    """(status, data, url, limit) for one season, stepping down as the app does."""
+    import espn_api
+
+    base = f"{V3}/{league.path}/leaders?region=us&lang=en&season={year}&seasontype=2&limit="
+    first_status, first_url = None, None
+    for limit in (espn_api.LEADERS_LIMIT, *espn_api.LEADERS_SMALLER_LIMITS):
+        url = f"{base}{limit}"
+        status, data = http.get(url)
+        if status in (200, 404):
+            return status, data, url, limit
+        first_status, first_url = first_status or status, first_url or url
+    return first_status, None, first_url, espn_api.LEADERS_LIMIT
+
+
+def check_leaders(http, report, league, in_season=True):
     """ESPN's /leaders, as the app asks, and that it's really the regular season. It's the app's
     source everywhere but MLB, where it's the fallback if the MLB Stats API has nothing."""
     import espn_api
@@ -1143,23 +1173,21 @@ def check_leaders(http, report, league):
         report.fail(league.key, "Core API: season", f"the app can't tell the season: {e}",
                     f"{CORE}/{league.core_path}/season")
         return
-    base = f"{V3}/{league.path}/leaders?region=us&lang=en&season={year}&seasontype=2&limit="
-    url = f"{base}{espn_api.LEADERS_LIMIT}"
-    status, data = http.get(url)
-    if status != 200:
-        # The app steps down to these too. Below the full list is worth a look, not a break.
-        for limit in espn_api.LEADERS_SMALLER_LIMITS:
-            shorter = f"{base}{limit}"
-            answer, data = http.get(shorter)
-            if answer == 200:
-                report.warn(league.key, "Leaders", f"got {status} for {espn_api.LEADERS_LIMIT}, "
-                                                   f"so the app shows {limit} a category", shorter)
-                url, status = shorter, answer
-                break
-        else:
+    # As the app does: a new season can be a 404 or have nobody on the list yet.
+    for season_year in (year, year - 1):
+        status, data, url, limit = fetch_leaders(http, league, season_year)
+        if status == 200 and ((data or {}).get("leaders") or {}).get("categories"):
+            break
+        if status not in (200, 404):
             report.fail(league.key, "Leaders", f"got {status}, and the same at every smaller limit, "
                                                "so the app says to try again", url)
             return
+    else:
+        report.seasonal(in_season, league.key, "Leaders", f"nothing for {year} or {year - 1}", url)
+        return
+    if limit != espn_api.LEADERS_LIMIT:
+        report.warn(league.key, "Leaders", f"{season_year} failed at {espn_api.LEADERS_LIMIT}, "
+                                           f"so the app shows {limit} a category", url)
     problems = leaders_problems(data)
     if problems:
         report.fail(league.key, "Leaders", first_problems(problems), url)
@@ -1167,6 +1195,10 @@ def check_leaders(http, report, league):
     season = data["requestedSeason"]
     report.ok(league.key, "Leaders", f"{season.get('displayName')} {season['type'].get('name')}: "
                                      f"{len(data['leaders']['categories'])} categories", url)
+    wrong_way = leaders_direction_problems(data, espn_api.LOW_IS_GOOD_LEADERS)
+    if wrong_way:
+        report.warn(league.key, "Leaders",
+                    f"not the way espn_api.LOW_IS_GOOD_LEADERS says, so the list is cut short: {first_problems(wrong_way)}", url)
 
     answers = {}
     for season_type in (2, 1):

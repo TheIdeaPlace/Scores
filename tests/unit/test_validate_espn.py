@@ -893,6 +893,25 @@ class TestPreseasonLeaders:
         assert v.preseason_leaders({"leaders": data}, data, data) == ([], [])
 
 
+class TestLeadersDirection:
+    @pytest.mark.parametrize("key", ["NFL", "NBA", "NHL", "NCAAM", "MLB"])
+    def test_real_payloads_go_the_way_the_app_expects(self, key):
+        import espn_api
+        assert v.leaders_direction_problems(load(f"leaders_v3_{key}.json"), espn_api.LOW_IS_GOOD_LEADERS) == []
+
+    def test_espns_second_run_of_players_does_not_count(self):
+        import espn_api
+        assert v.leaders_direction_problems(load("leaders_v3_NCAAM_full.json"), espn_api.LOW_IS_GOOD_LEADERS) == []
+
+    def test_a_low_is_good_list_running_high_to_low(self):
+        data = {"leaders": {"categories": [{"name": "ERA", "leaders": [{"value": 3}, {"value": 2}]}]}}
+        assert v.leaders_direction_problems(data, {"ERA"}) == ["ERA"]
+
+    def test_all_tied_says_nothing(self):
+        data = {"leaders": {"categories": [{"name": "x", "leaders": [{"value": 3}, {"value": 3}]}]}}
+        assert v.leaders_direction_problems(data, set()) == []
+
+
 class TestUnreadableLeaderValues:
     def test_numbers_read(self):
         rows = [{"category": "x", "stats": [{"value": v_} for v_ in ("38.3", ".316", "-3", "2,246", "45")]}]
@@ -960,6 +979,39 @@ class TestLeadersFeed:
         assert statuses(report, "Leaders")[0] == v.WARN
         assert "shows 5 a category" in detail(report, "Leaders")
 
+    def test_a_season_not_yet_on_file_falls_back_as_the_app_does(self):
+        """The first week of the NHL or NFL season shouldn't fail the nightly run."""
+        report = v.Report()
+        http = self.http(("season=2026", (404, None)))
+        v.check_leaders(http, report, league("NFL"))
+        assert statuses(report, "Leaders") == [v.PASS]
+        assert any("season=2025" in u for u in http.urls)
+
+    def test_a_season_with_nobody_on_the_list_falls_back_too(self):
+        report = v.Report()
+        v.check_leaders(self.http(("season=2026", (200, {"leaders": {"categories": []}}))), report, league("NFL"))
+        assert statuses(report, "Leaders") == [v.PASS]
+
+    def test_a_404_does_not_step_down(self):
+        http = self.http(("/site/v3/", (404, None)))
+        v.check_leaders(http, v.Report(), league("NFL"))
+        assert not any("limit=10" in u for u in http.urls)
+
+    @pytest.mark.parametrize("in_season,expected", [(True, v.FAIL), (False, v.WARN)])
+    @pytest.mark.parametrize("answer", [(404, None), (200, {"leaders": {"categories": []}})], ids=["404", "empty"])
+    def test_nothing_in_either_season_is_seasonal(self, answer, in_season, expected):
+        report = v.Report()
+        v.check_leaders(self.http(("/site/v3/", answer)), report, league("NFL"), in_season)
+        assert statuses(report, "Leaders") == [expected]
+
+    def test_a_list_running_the_wrong_way_is_worth_a_look(self):
+        report = v.Report()
+        data = load("leaders_v3_NFL.json")
+        data["leaders"]["categories"][0]["leaders"].reverse()
+        v.check_leaders(self.http(("/site/v3/", (200, data))), report, league("NFL"))
+        assert v.WARN in statuses(report, "Leaders")
+        assert "passingYards" in detail(report, "Leaders")
+
     def test_failing_at_every_limit_fails(self):
         report = v.Report()
         v.check_leaders(self.http(("/site/v3/", (500, None))), report, league("NFL"))
@@ -967,7 +1019,7 @@ class TestLeadersFeed:
 
     def test_a_changed_shape_fails(self):
         report = v.Report()
-        v.check_leaders(self.http(("/site/v3/", (200, {"leaders": {"categories": []}}))), report, league("NFL"))
+        v.check_leaders(self.http(("/site/v3/", (200, {"leaders": {"categories": [{"name": "x"}]}}))), report, league("NFL"))
         assert statuses(report, "Leaders") == [v.FAIL]
 
     def test_not_knowing_the_season_fails(self, monkeypatch):
@@ -1025,7 +1077,7 @@ class TestStatistics:
 
     def test_every_league_with_leaders_gets_the_feed_and_app_checks(self, monkeypatch):
         seen = []
-        monkeypatch.setattr(v, "check_leaders", lambda http, report, l: seen.append(("feed", l.key)))
+        monkeypatch.setattr(v, "check_leaders", lambda http, report, l, s: seen.append(("feed", l.key)))
         monkeypatch.setattr(v, "check_app_leaders", lambda report, l, s: seen.append(("app", l.key)))
         self.run(key="NBA")
         assert seen == [("feed", "NBA"), ("app", "NBA")]
