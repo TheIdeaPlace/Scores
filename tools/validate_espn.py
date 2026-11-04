@@ -1805,22 +1805,6 @@ def check_cfl(http, report):
             report.ok("CFL (iPhone)", name, "as expected", url)
 
 
-def check_hockey_web_page(http, report):
-    """Fuller hockey plays come from the espn.com page. It's a bonus, and it blocks automated
-    requests some of the time, so an empty answer is no news. Raising is."""
-    import espn_api
-
-    finals = find_recent_finals(http, LEAGUE_KEYS["NHL"])
-    if not finals.events:
-        return
-    try:
-        plays = espn_api._fetch_web_gamepackage_plays("hockey/nhl", finals.events[0]["id"])
-    except Exception as e:
-        report.warn("NHL", "espn.com game page", f"raised {type(e).__name__}: {e}")
-        return
-    report.ok("NHL", "espn.com game page", f"{len(plays)} plays" if plays else "none, as usual from a server")
-
-
 # How many home teams the Venues list should find: a little under what one month of each
 # league had in November 2026. College football's is for the narrower coverage setting.
 VENUE_HOME_TEAMS = {"MLB": 28, "NFL": 28, "NBA": 28, "NHL": 28, "WNBA": 12, "NCAAF": 120,
@@ -1896,7 +1880,7 @@ def check_others_twice(http, seasons):
 def check_others(http, seasons):
     report = Report()
     for check in (check_every_league_path, check_football_calendar, check_past_postseasons, check_soccer_schedules,
-                  check_golf, check_draft, check_world_cup, check_cfl, check_hockey_web_page, check_fantasy):
+                  check_golf, check_draft, check_world_cup, check_cfl, check_fantasy):
         try:
             check(http, report)
         except Exception as e:

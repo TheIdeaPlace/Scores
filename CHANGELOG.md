@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- **The NFL Draft on Windows opens much faster.** It made a request or more for every pick, and now
+  makes one for the whole draft, the same one as the iPhone.
+- **Hockey games on Windows open with one less download.** Each one also fetched espn.com's web page for
+  more plays, which has stopped giving any. The plays come from where the iPhone's do.
+- **News lists are the same length on both apps,** up to 25 stories.
+
 ### Fixed
 - **Player and Team Statistics are a list, and Enter opens the rankings.** The list no longer sits
   beside the results. Press Enter on a statistic to open its rankings in the list's place, and Escape

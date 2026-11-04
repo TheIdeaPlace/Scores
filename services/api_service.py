@@ -33,7 +33,7 @@ class ApiService:
         return ApiService._call(espn_api.get_mlb_wildcard_standings) or {}
 
     @staticmethod
-    def get_news(league: str, limit: int = 20) -> List[Dict]:
+    def get_news(league: str, limit: int = 25) -> List[Dict]:
         """Get news headlines for a league with configurable limit
         
         Args:

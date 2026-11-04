@@ -509,7 +509,7 @@ class TestTeamNews:
         """/teams/9/news answers 200 with {}; only /news?team=9 has articles."""
         espn.on("/news", load("team_news_NFL_9.json"))
         espn_api.get_team_news("NFL", "9")
-        assert espn.calls == [f"{SITE}/football/nfl/news?team=9&limit=15"]
+        assert espn.calls == [f"{SITE}/football/nfl/news?team=9&limit=25"]
 
     def test_articles(self, espn):
         espn.on("/news", load("team_news_NFL_9.json"))

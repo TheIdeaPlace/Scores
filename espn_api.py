@@ -1282,73 +1282,8 @@ def get_game_details(league_key, game_id):
     resp = _http_get(url)
     if resp.status_code != 200:
         return {}
-    details = resp.json()
+    return resp.json()
 
-    # ESPN hockey series games can occasionally expose fuller play groups via the
-    # web gamepackage payload. Prefer whichever source has more events.
-    if league_key in ["NHL", "NCAAH", "NCAAWH"]:
-        api_plays = _dicts(details.get("plays")) if isinstance(details, dict) else []
-        web_plays = _fetch_web_gamepackage_plays(league_path, game_id)
-        if len(web_plays) > len(api_plays):
-            details["plays"] = web_plays
-            details["playsSource"] = "web_gamepackage"
-        elif isinstance(details, dict):
-            details["playsSource"] = "site_summary"
-
-    return details
-
-
-def _fetch_web_gamepackage_plays(league_path, game_id):
-    """Fetch and flatten play groups from ESPN web gamepackage payload."""
-    league_slug = league_path.split("/")[-1]
-    page_url = f"https://www.espn.com/{league_slug}/playbyplay/_/gameId/{game_id}"
-    headers = {
-        "User-Agent": (
-            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
-            "AppleWebKit/537.36 (KHTML, like Gecko) "
-            "Chrome/122.0.0.0 Safari/537.36"
-        )
-    }
-
-    try:
-        resp = _http_get(page_url, headers=headers, timeout=20)
-        if resp.status_code != 200:
-            return []
-
-        marker = "window['__espnfitt__']='"
-        # Use exact marker assignment used by ESPN pages.
-        marker = "window['__espnfitt__']='" if marker in resp.text else "window['__espnfitt__']="
-        start_idx = resp.text.find(marker)
-        if start_idx == -1:
-            return []
-
-        payload_start = start_idx + len(marker)
-        payload, _ = json.JSONDecoder().raw_decode(resp.text[payload_start:])
-
-        play_groups = (
-            payload.get("page", {})
-            .get("content", {})
-            .get("gamepackage", {})
-            .get("pbp", {})
-            .get("playGrps", [])
-        )
-
-        flattened = []
-        for group in play_groups:
-            if isinstance(group, list):
-                for play in group:
-                    if isinstance(play, dict):
-                        flattened.append(play)
-            elif isinstance(group, dict):
-                plays = group.get("plays", [])
-                if isinstance(plays, list):
-                    for play in plays:
-                        if isinstance(play, dict):
-                            flattened.append(play)
-
-        return flattened
-    except Exception:
-        return []
 
 def extract_meaningful_game_info(details):
     """Extract meaningful information from game details for display"""
@@ -3229,7 +3164,7 @@ def get_team_roster(league_key, team_id):
         return []
 
 
-def get_team_news(league_key, team_id, limit=15):
+def get_team_news(league_key, team_id, limit=25):
     """Get news articles for a specific team."""
     league_path = LEAGUES.get(league_key)
     if not league_path or not team_id:
@@ -3308,28 +3243,31 @@ def get_transactions(league_key, team_id=None, limit=50, page=1):
         return [], False
 
 
-_DRAFT_TEAM_CACHE: dict = {}
+# One request has a whole draft, as on the iPhone. It's kept briefly, since each round's tab asks for
+# it, and a draft in progress has to move on.
+DRAFT_CACHE_SECONDS = 30
+_DRAFT_CACHE = {}  # year: (when it was asked, ESPN's answer)
 
 
-def _get_nfl_team_cache() -> dict:
-    """Build {team_id: {abbrev, name}} from the NFL teams API. Cached for the process lifetime."""
-    global _DRAFT_TEAM_CACHE
-    if _DRAFT_TEAM_CACHE:
-        return _DRAFT_TEAM_CACHE
-    try:
-        resp = _http_get(f"{BASE_URL}/football/nfl/teams", params={"limit": 50})
-        if resp.status_code == 200:
-            for sport in resp.json().get("sports", []):
-                for league in sport.get("leagues", []):
-                    for team in league.get("teams", []):
-                        t = team.get("team", {})
-                        _DRAFT_TEAM_CACHE[str(t.get("id", ""))] = {
-                            "abbrev": t.get("abbreviation") or "",
-                            "name": t.get("displayName") or t.get("shortDisplayName") or "",
-                        }
-    except Exception:
-        pass
-    return _DRAFT_TEAM_CACHE
+def _fetch_draft(year):
+    """One NFL draft, or None if ESPN has no such thing. An empty body isn't a finished draft."""
+    year = int(year)
+    cached = _DRAFT_CACHE.get(year)
+    if cached and time.monotonic() - cached[0] < DRAFT_CACHE_SECONDS:
+        return cached[1]
+    resp = _http_get(f"{BASE_URL}/football/nfl/draft", params={"season": year})
+    if resp.status_code != 200:
+        return None
+    data = _as_dict(resp.json())
+    if not any(data.get(field) for field in ("year", "rounds", "picks", "status")):
+        return None
+    _DRAFT_CACHE[year] = (time.monotonic(), data)
+    return data
+
+
+def _ordinal(number):
+    suffix = "th" if 10 <= number % 100 <= 20 else {1: "st", 2: "nd", 3: "rd"}.get(number % 10, "th")
+    return f"{number}{suffix}"
 
 
 def get_draft(year):
@@ -3338,42 +3276,15 @@ def get_draft(year):
     Returns dict: {year, num_rounds, status ('pre'/'in'/'post'), rounds: [{number, display_name, short_name}]}
     or None if unavailable.
     """
-    import re
-    base = "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl"
     try:
-        resp = _http_get(f"{base}/seasons/{year}/draft")
-        if resp.status_code != 200:
+        data = _fetch_draft(year)
+        if data is None:
             return None
-        data = resp.json()
-        # An empty body isn't a finished seven-round draft.
-        if not any(data.get(field) for field in ("year", "numberOfRounds", "rounds", "status")):
-            return None
-        num_rounds = data.get("numberOfRounds") or 7
-
-        rounds_resp = _http_get(f"{base}/seasons/{year}/draft/rounds")
-        rounds = []
-        if rounds_resp.status_code == 200:
-            for item in rounds_resp.json().get("items", []):
-                rounds.append({
-                    "number": item.get("number"),
-                    "display_name": item.get("displayName") or f"Round {item.get('number')}",
-                    "short_name": item.get("shortDisplayName") or str(item.get("number")),
-                })
-        else:
-            rounds = [{"number": i, "display_name": f"Round {i}", "short_name": str(i)}
-                      for i in range(1, num_rounds + 1)]
-
-        status = "post"
-        status_info = data.get("status", {})
-        if isinstance(status_info, dict) and "$ref" in status_info:
-            try:
-                sr = _http_get(status_info["$ref"])
-                if sr.status_code == 200:
-                    state = sr.json().get("type", {}).get("state", "post")
-                    status = str(state).lower()
-            except Exception:
-                pass
-
+        num_rounds = data.get("rounds")
+        num_rounds = num_rounds if isinstance(num_rounds, int) and num_rounds > 0 else 7
+        rounds = [{"number": number, "display_name": f"{_ordinal(number)} Round", "short_name": _ordinal(number)}
+                  for number in range(1, num_rounds + 1)]
+        status = str(_as_dict(data.get("status")).get("state") or "post").lower()
         return {"year": int(year), "num_rounds": num_rounds, "status": status, "rounds": rounds}
     except Exception as e:
         print(f"[get_draft] {year}: {e}")
@@ -3381,104 +3292,44 @@ def get_draft(year):
 
 
 def get_draft_round(year, round_num):
-    """Return a list of pick dicts for one round of the NFL Draft.
+    """Return a list of pick dicts for one round of the NFL Draft, in order.
 
     Each dict: {overall, pick, round, traded, trade_note, team_abbrev, team_name,
                 player_name, position, college, status_name}
     """
-    import re
-    from concurrent.futures import ThreadPoolExecutor, as_completed
-
-    base = "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl"
     try:
-        rounds_resp = _http_get(f"{base}/seasons/{year}/draft/rounds")
-        if rounds_resp.status_code != 200:
-            return []
-        target = next((rd for rd in rounds_resp.json().get("items", [])
-                       if rd.get("number") == round_num), None)
-        if not target:
-            return []
-        picks_raw = _dicts(target.get("picks"))
+        data = _fetch_draft(year)
     except Exception as e:
-        print(f"[get_draft_round] fetch rounds {year}/r{round_num}: {e}")
+        print(f"[get_draft_round] {year}/r{round_num}: {e}")
         return []
+    if data is None:
+        return []
+    teams = {str(team.get("id")): team for team in _dicts(data.get("teams"))}
+    positions = {str(position.get("id")): position for position in _dicts(data.get("positions"))}
 
-    teams = _get_nfl_team_cache()
-    college_cache: dict = {}
-
-    def _extract_id(pattern, url):
-        m = re.search(pattern, url or "")
-        return m.group(1) if m else ""
-
-    def fetch_pick_data(pick):
-        athlete_ref = _as_dict(pick.get("athlete")).get("$ref") or ""
-        team_id = _extract_id(r"/teams/(\d+)", _as_dict(pick.get("team")).get("$ref") or "")
-        team_info = teams.get(team_id, {"abbrev": "?", "name": "Unknown"})
-
-        player_name = position = college_ref_url = ""
-        if athlete_ref:
-            try:
-                ar = _http_get(athlete_ref)
-                if ar.status_code == 200:
-                    ad = ar.json()
-                    player_name = ad.get("displayName") or ad.get("fullName") or ""
-                    pos = ad.get("position", {})
-                    position = (pos.get("abbreviation") or pos.get("name") or "") if isinstance(pos, dict) else ""
-                    col = ad.get("college", {})
-                    college_ref_url = (col.get("$ref") or "") if isinstance(col, dict) else ""
-            except Exception:
-                pass
-
-        return {
+    picks = []
+    for pick in _dicts(data.get("picks")):
+        if pick.get("round") != round_num:
+            continue
+        team = teams.get(str(pick.get("teamId")), {})
+        athlete = _as_dict(pick.get("athlete"))
+        school = _as_dict(athlete.get("team"))
+        position = positions.get(str(_as_dict(athlete.get("position")).get("id")), {})
+        picks.append({
             "overall": pick.get("overall") or 0,
             "pick": pick.get("pick") or 0,
-            "round": pick.get("round") or round_num,
+            "round": round_num,
             "traded": bool(pick.get("traded")),
             "trade_note": pick.get("tradeNote") or "",
-            "team_abbrev": team_info["abbrev"],
-            "team_name": team_info["name"],
-            "player_name": player_name,
-            "position": position,
-            "status_name": _as_dict(pick.get("status")).get("name") or "",
-            "_college_ref": college_ref_url,
-        }
-
-    results = []
-    with ThreadPoolExecutor(max_workers=20) as executor:
-        for future in as_completed({executor.submit(fetch_pick_data, p): p for p in picks_raw}):
-            try:
-                results.append(future.result())
-            except Exception:
-                pass
-
-    # Resolve unique colleges concurrently
-    unique_refs = {r["_college_ref"] for r in results if r.get("_college_ref")}
-
-    def fetch_college(ref_url):
-        cid = _extract_id(r"/colleges/(\d+)", ref_url)
-        if not cid:
-            return "", ""
-        try:
-            cr = _http_get(ref_url)
-            if cr.status_code == 200:
-                cd = cr.json()
-                return cid, cd.get("name") or cd.get("shortName") or ""
-        except Exception:
-            pass
-        return cid, ""
-
-    with ThreadPoolExecutor(max_workers=20) as executor:
-        for future in as_completed({executor.submit(fetch_college, ref): ref for ref in unique_refs}):
-            cid, name = future.result()
-            if cid:
-                college_cache[cid] = name
-
-    for pick in results:
-        cid = _extract_id(r"/colleges/(\d+)", pick.pop("_college_ref", ""))
-        pick["college"] = college_cache.get(cid, "")
-
-    results.sort(key=lambda p: p.get("overall", 0))
-    return results
+            "team_abbrev": team.get("abbreviation") or "?",
+            "team_name": team.get("displayName") or team.get("shortDisplayName") or "Unknown",
+            "player_name": athlete.get("displayName") or "",
+            "position": position.get("abbreviation") or position.get("displayName") or "",
+            "college": school.get("shortDisplayName") or school.get("location") or school.get("abbreviation") or "",
+            "status_name": pick.get("status") or "",
+        })
+    picks.sort(key=lambda pick: pick["overall"])
+    return picks
 
 
 def get_team_transactions(league_key, team_id, limit=25):

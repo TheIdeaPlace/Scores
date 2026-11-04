@@ -77,7 +77,7 @@ class TestApiService:
         monkeypatch.setattr(espn_api, "get_mlb_wildcard_standings", lambda: None)
         ApiService.get_news("NFL")
         ApiService.get_team_schedule("NFL", "9")
-        assert seen == [("NFL", 20), ("NFL", "9", 30, 30, None)]
+        assert seen == [("NFL", 25), ("NFL", "9", 30, 30, None)]
         assert ApiService.get_mlb_wildcard_standings() == {}
 
 
@@ -732,7 +732,7 @@ class TestGameData:
 class TestNewsData:
     def test_from_get_news(self, espn):
         espn.on("/news", load("news_NFL.json"))
-        article = NewsData(espn_api.get_news("NFL", 20)[0])
+        article = NewsData(espn_api.get_news("NFL", 25)[0])
         text = article.get_display_text()
         assert text.startswith("Knockout league pickups")
         assert "| Tristan H. Cockcroft | 2026-11-03\n" in text

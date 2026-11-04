@@ -1,7 +1,5 @@
 """Game details end to end: a saved summary through get_game_details and
 extract_meaningful_game_info to what the details list shows."""
-import json
-
 import pytest
 
 import espn_api
@@ -98,53 +96,14 @@ def test_extract_with_nothing_usable_is_empty(bad):
     assert espn_api.extract_meaningful_game_info(bad) == {}
 
 
-class TestHockeyPlays:
-    """Hockey series games can have fuller play groups on ESPN's web page."""
-
-    API_PLAYS = [{"id": "1", "text": "Faceoff"}]
-
-    def page(self, groups, quoted=False):
-        payload = {"page": {"content": {"gamepackage": {"pbp": {"playGrps": groups}}}}}
-        marker = "window['__espnfitt__']='" if quoted else "window['__espnfitt__']="
-        return FakeResponse(text=f"<html><script>{marker}{json.dumps(payload)};</script></html>")
-
-    def run(self, espn, web_reply, league="NHL", path="nhl"):
-        espn.on("/summary", {"plays": self.API_PLAYS})
-        espn.on(f"www.espn.com/{path}/playbyplay/_/gameId/7", web_reply)
-        return espn_api.get_game_details(league, "7")
-
-    def test_the_web_page_wins_when_it_has_more_plays(self, espn):
-        real = load("plays_NHL_401892616_SO.json")["plays"][:3]
-        details = self.run(espn, self.page([real[:2], {"plays": real[2:]}, "not a group", [["not a play"]]]))
-        assert details["plays"] == real
-        assert details["playsSource"] == "web_gamepackage"
-
-    def test_the_summary_wins_otherwise(self, espn):
-        details = self.run(espn, self.page([]))
-        assert details["plays"] == self.API_PLAYS
-        assert details["playsSource"] == "site_summary"
-
-    @pytest.mark.parametrize("reply", [
-        FakeResponse(status=202, text=""),  # what www.espn.com answers from here today
-        HTTP_404,
-        FakeResponse(text="<html>no marker</html>"),
-        FakeResponse(text="<html>window['__espnfitt__']=not json;</html>"),
-        OSError("connection reset"),
-    ])
-    def test_a_failed_scrape_keeps_the_summary_plays(self, espn, reply):
-        details = self.run(espn, reply)
-        assert details["plays"] == self.API_PLAYS
-        assert details["playsSource"] == "site_summary"
-
-    def test_college_hockey_uses_its_own_page(self, espn):
-        details = self.run(espn, self.page([]), league="NCAAWH", path="womens-college-hockey")
-        assert details["playsSource"] == "site_summary"
-
-    def test_other_sports_never_scrape(self, espn):
-        espn.on("/summary", {"plays": self.API_PLAYS})
-        details = espn_api.get_game_details("NBA", "7")
-        assert "playsSource" not in details
-        assert len(espn.calls) == 1
+@pytest.mark.parametrize("league", ["NHL", "NCAAH", "NCAAWH", "NBA"])
+def test_a_game_is_one_request(espn, league):
+    """Hockey also fetched espn.com's page, which has stopped giving any plays. College hockey's
+    has none to give: it and the summary are both empty."""
+    plays = [{"id": "1", "text": "Faceoff"}]
+    espn.on("/summary", {"plays": plays})
+    assert espn_api.get_game_details(league, "7")["plays"] == plays
+    assert len(espn.calls) == 1
 
 
 def test_unknown_league_requests_nothing(espn):
