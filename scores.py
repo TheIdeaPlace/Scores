@@ -322,7 +322,7 @@ class HomeSettingsDialog(QDialog):
         # College football coverage. ESPN serves the two divisions separately, and
         # asking only for FBS hides most of opening weekend, which is largely FCS.
         cfb_layout = QHBoxLayout()
-        cfb_layout.addWidget(QLabel("College football games shown:"))
+        cfb_layout.addWidget(QLabel("College football coverage:"))
         self.ncaaf_coverage_combo = QComboBox()
         self._ncaaf_coverage_options = [
             ("All Division I (FBS and FCS)", 'all_d1'),
@@ -334,7 +334,7 @@ class HomeSettingsDialog(QDialog):
             if value == saved_coverage:
                 self.ncaaf_coverage_combo.setCurrentIndex(i)
                 break
-        self.ncaaf_coverage_combo.setAccessibleName("College football games shown")
+        self.ncaaf_coverage_combo.setAccessibleName("College football coverage")
         self.ncaaf_coverage_combo.setAccessibleDescription(
             "All Division I shows FBS and FCS together, around 200 games a week, and is the only "
             "setting that shows opening weekend in full. FBS only shows about 100 games a week. "
