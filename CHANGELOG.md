@@ -14,6 +14,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   of text, such as "1 Luka Doncic (LAL) 38.3". On any cell a screen reader now hears whose row it
   is: "Luka Doncic, Value, 38.3". Players level on a number now share a rank, as teams do: two
   players on 7.5 sacks are both 1st, where one used to read 1st and the other 2nd.
+- **Switching a table's view stays on your row.** The new view could report the row it was last left
+  on before moving to yours, so a screen reader might read the wrong row first.
 - **A game's Leaders opens on Windows.** It showed only an error message, which a screen reader may
   not have read, for any game with leaders. Each team now has a tab with a table, in all three views,
   and focus lands on its first row. If the table ever can't be built, a row you can arrow to says so

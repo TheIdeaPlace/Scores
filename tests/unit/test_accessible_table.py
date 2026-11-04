@@ -86,6 +86,25 @@ def test_row_and_column_survive_a_round_trip(app):
     assert (table.table_widget.currentRow(), table.table_widget.currentColumn()) == (1, 2)
 
 
+def test_a_view_has_its_row_before_it_is_shown(app):
+    """Showing a view moves focus to it, so a stale row there gets announced first."""
+    table = make_table(app)
+    table.handle_view_key(alt(Qt.Key.Key_Q))
+    table.handle_view_key(alt(Qt.Key.Key_T))
+    table.table_widget.setCurrentCell(2, 0)
+
+    rows_when_shown = []
+    show = table.stacked_widget.setCurrentIndex
+
+    def spy(index):
+        rows_when_shown.append((table.table_widget.currentRow(), table.quick_list.currentRow()))
+        show(index)
+
+    table.stacked_widget.setCurrentIndex = spy
+    table.handle_view_key(alt(Qt.Key.Key_Q))
+    assert rows_when_shown == [(2, 2)]
+
+
 def test_saved_view_used_by_a_new_table(app, view_setting):
     view_setting["default_view_mode"] = 2
     table = make_table(app)

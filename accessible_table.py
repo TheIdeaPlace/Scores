@@ -214,14 +214,13 @@ class AccessibleTable(QWidget):
         if self._current_view == self.VIEW_TABLE:
             self._table_column = max(self.table_widget.currentColumn(), 0)
 
-        # Switch the view
+        # Put the row in place before the view is shown. Showing it moves focus to
+        # it, and a screen reader would hear whichever row it was last left on.
         self._current_view = view_mode
+        self._restore_position(current_row)
         self.stacked_widget.setCurrentIndex(view_mode)
         settings.set('default_view_mode', view_mode)
-
-        # Set focus to the new view and restore position
         self._set_focus_to_current_view()
-        self._restore_position(current_row)
         # The new view's accessible name ("... - Quick List") says which view this
         # is when it takes focus, so nothing more needs announcing.
 
