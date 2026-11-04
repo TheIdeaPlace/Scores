@@ -29,11 +29,15 @@ class ESPNAPIService {
     /// stat headings request definitions concurrently — see `TeamStatsStore`.
     private let teamStatsStore: TeamStatsStore
 
-    private init() {
+    private convenience init() {
         let config = URLSessionConfiguration.default
         config.timeoutIntervalForRequest = 30
         config.timeoutIntervalForResource = 60
-        let session = URLSession(configuration: config)
+        self.init(session: URLSession(configuration: config))
+    }
+
+    /// The app uses `shared`. Tests pass a session that answers from fixtures.
+    init(session: URLSession) {
         self.session = session
         self.teamStatsStore = TeamStatsStore(session: session, baseURL: webAPIBaseURL)
     }
@@ -643,8 +647,18 @@ class ESPNAPIService {
     }
     
     // MARK: - Fetch Standings
-    func fetchStandings(for sport: Sport) async throws -> [StandingsGroup] {
+
+    /// The standings request for a sport. Without a group, college football is FBS alone,
+    /// while the scoreboard shows FCS games too. The parameter is singular here:
+    /// `/standings` ignores the scoreboard's `groups=`.
+    func standingsURLString(for sport: Sport, coverage: NCAAFCoverage? = nil) -> String {
         let urlString = "\(standingsBaseURL)/\(sport.apiPath)/standings"
+        guard sport == .ncaaf else { return urlString }
+        return "\(urlString)?group=\((coverage ?? NCAAFCoverage.stored).espnGroupsID)"
+    }
+
+    func fetchStandings(for sport: Sport) async throws -> [StandingsGroup] {
+        let urlString = standingsURLString(for: sport)
         guard let url = URL(string: urlString) else {
             throw APIError.invalidURL
         }
@@ -1386,9 +1400,24 @@ class ESPNAPIService {
         return try JSONDecoder().decode(TransactionResponse.self, from: data)
     }
 
-    /// Fetches all teams for a sport, sorted by display name.
+    /// ESPN's team list stops at 50 unless told otherwise, and college leagues run past that.
+    func teamsURLString(for sport: Sport) -> String {
+        "\(baseURL)/\(sport.apiPath)/teams?limit=1000"
+    }
+
+    /// Fetches all teams for a sport, in ESPN's order.
+    ///
+    /// College football's `/teams` is every team ESPN knows, 762 across all divisions, with
+    /// nothing on a team to say which and no parameter to narrow it. Its standings are the one
+    /// request that lists just the teams in the coverage setting, so if they fail this throws
+    /// rather than listing Division III to someone who chose FBS only.
     func fetchTeamsForSport(sport: Sport) async throws -> [TransactionTeam] {
-        let urlString = "\(baseURL)/\(sport.apiPath)/teams"
+        if sport == .ncaaf {
+            let teams = try await fetchConferencesWithTeams(for: sport).flatMap(\.teams)
+            guard !teams.isEmpty else { throw APIError.invalidResponse }
+            return teams
+        }
+        let urlString = teamsURLString(for: sport)
         guard let url = URL(string: urlString) else { throw APIError.invalidURL }
         let (data, response) = try await session.data(from: url)
         guard let http = response as? HTTPURLResponse, http.statusCode == 200 else {
@@ -1403,55 +1432,19 @@ class ESPNAPIService {
     /// Returns an empty array if the sport has no usable conference structure
     /// (caller should fall back to fetchTeamsForSport).
     func fetchConferencesWithTeams(for sport: Sport) async throws -> [ConferenceGroup] {
-        let urlString = "\(standingsBaseURL)/\(sport.apiPath)/standings"
+        let urlString = standingsURLString(for: sport)
         guard let url = URL(string: urlString) else { throw APIError.invalidURL }
         let (data, response) = try await session.data(from: url)
         guard let http = response as? HTTPURLResponse, http.statusCode == 200 else {
             throw APIError.invalidResponse
         }
-        let decoded = try JSONDecoder().decode(ConferencesAPIResponse.self, from: data)
+        let groups = try JSONDecoder().decode(ConferencesAPIResponse.self, from: data).conferenceGroups
 
-        // Build a helper to convert a raw entry's team into TransactionTeam
-        func toTeam(_ t: ConferencesAPIResponse.APIConference.APIStandings.APIEntry.APITeam) -> TransactionTeam {
-            let logos = t.logos?.map { logo in
-                TransactionTeamLogo(href: logo.href, width: nil, height: nil, rel: logo.rel)
-            }
-            return TransactionTeam(
-                id: t.id,
-                location: t.location,
-                name: t.name,
-                abbreviation: t.abbreviation,
-                displayName: t.displayName,
-                color: t.color,
-                logos: logos
-            )
-        }
-
-        // Extract teams from a conference node, flattening sub-divisions (e.g. Sun Belt)
-        func teamsFrom(_ conf: ConferencesAPIResponse.APIConference) -> [TransactionTeam] {
-            var teams = conf.standings?.entries.map { toTeam($0.team) } ?? []
-            for sub in conf.children ?? [] {
-                teams += sub.standings?.entries.map { toTeam($0.team) } ?? []
-            }
-            return teams.sorted { $0.displayName < $1.displayName }
-        }
-
-        // Top-level conference children → one ConferenceGroup each
-        if let conferences = decoded.children, !conferences.isEmpty {
-            let groups = conferences.compactMap { conf -> ConferenceGroup? in
-                let teams = teamsFrom(conf)
-                guard !teams.isEmpty else { return nil }
-                return ConferenceGroup(id: conf.id ?? conf.name, name: conf.name, teams: teams)
-            }
-            // Only return conference groups if we have a meaningful number of teams.
-            // Sports like NCAAH have conference structure but near-empty standings data —
-            // in that case return [] so the caller falls back to fetchTeamsForSport.
-            let totalTeams = groups.reduce(0) { $0 + $1.teams.count }
-            if totalTeams >= 20 { return groups }
-        }
-
-        // No usable conference data — caller will fall back to a flat team list.
-        return []
+        // Only return conference groups if we have a meaningful number of teams.
+        // Sports like NCAAH have conference structure but near-empty standings data —
+        // in that case return [] so the caller falls back to fetchTeamsForSport.
+        let totalTeams = groups.reduce(0) { $0 + $1.teams.count }
+        return totalTeams >= 20 ? groups : []
     }
 
     // MARK: - Team Hub: Team Info
