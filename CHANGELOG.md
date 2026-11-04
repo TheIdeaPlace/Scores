@@ -8,6 +8,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Fixed
+- **The WNBA has Standings, Statistics, Teams, Transactions and Venues on Windows,** and `--wnba`,
+  `--wnba-teams` and `--wnba-standings` go straight to them. The league view only had games and news.
 - **Venues on Windows now work for college basketball and college hockey, and name the home
   teams.** Those leagues always said "No venue data", and no league ever listed a home team. Each
   venue now says who plays there. Only a team's real homes are listed: not an arena used for a
