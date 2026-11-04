@@ -6,6 +6,7 @@ import pytest
 
 import espn_api
 import game_labels
+from exceptions import ApiError
 import live_play_format
 from services import updater
 
@@ -39,16 +40,17 @@ def test_a_live_game_that_cannot_be_laid_out_falls_back_to_one_line(monkeypatch)
 
 
 class TestScheduleFailures:
-    def test_a_timeout_on_every_college_basketball_season_type_is_empty(self, espn):
+    def test_a_timeout_on_college_basketball_stops_at_the_first_request(self, espn):
         espn.on("/schedule", TIMEOUT)
-        assert espn_api.get_team_schedule("NCAAM", "275", season=2027) == []
-        assert len(espn.calls) == 3
+        with pytest.raises(type(TIMEOUT)):
+            espn_api.get_team_schedule("NCAAM", "275", season=2027)
+        assert len(espn.calls) == 1
 
-    def test_a_timeout_on_one_college_basketball_season_type_keeps_the_others(self, espn):
+    def test_a_timeout_on_one_college_basketball_season_type_reaches_the_caller(self, espn):
         real = load("schedule_NCAAM_275.json")
-        espn.on("/schedule", lambda url: TIMEOUT if "seasontype=1" in url else (real if "seasontype=2" in url else {"events": []}))
-        ids = {g["game_id"] for g in espn_api.get_team_schedule("NCAAM", "275", season=2027)}
-        assert ids == {e["id"] for e in real["events"]}
+        espn.on("/schedule", lambda url: TIMEOUT if "seasontype=1" in url else real)
+        with pytest.raises(type(TIMEOUT)):
+            espn_api.get_team_schedule("NCAAM", "275", season=2027)
 
     def test_an_empty_college_football_season_asks_for_no_other(self, espn):
         """Any other season would time out here, so asking for one would raise."""
@@ -97,7 +99,8 @@ def test_fresh_nba_standings_cover_the_west_and_an_unknown_team(espn):
 
 def test_a_failed_college_football_regular_season_stops_there(espn):
     espn.on("/schedule", HTTP_500)
-    assert espn_api.get_team_schedule("NCAAF", "333", season=2020) == []
+    with pytest.raises(ApiError):
+        espn_api.get_team_schedule("NCAAF", "333", season=2020)
     assert len(espn.calls) == 1
 
 

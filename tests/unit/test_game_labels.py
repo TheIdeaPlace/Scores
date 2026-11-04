@@ -10,7 +10,7 @@ from game_labels import (basketball_period_label, best_odds, broadcast_names,
                          football_period_label, football_period_sort_key, format_height,
                          format_weight, game_standings_tables, injured_player_count,
                          local_schedule_datetime, schedule_game_is_over, schedule_game_label,
-                         schedule_row_text, scoreboard_today)
+                         schedule_row_text, schedule_start_row, scoreboard_today)
 
 FIXTURES = os.path.join(os.path.dirname(__file__), "..", "fixtures", "espn")
 
@@ -63,6 +63,39 @@ class TestScheduleGameLabel:
     ])
     def test_nothing_to_go_on_is_no_label(self, event):
         assert schedule_game_label(event) == ""
+
+
+class TestScheduleStartRow:
+    OVER = {"completed": True, "status": "Final"}
+    CALLED_OFF = {"completed": False, "status": "Postponed"}
+    TO_COME = {"completed": False, "status": "Scheduled"}
+    TODAY = {"completed": False, "status": "Scheduled", "is_today": True}
+
+    @pytest.mark.parametrize("current_season", [True, False])
+    def test_the_next_game_to_play(self, current_season):
+        rows = [self.OVER, self.CALLED_OFF, self.TO_COME, self.TO_COME]
+        assert schedule_start_row(rows, current_season) == 2
+
+    @pytest.mark.parametrize("current_season", [True, False])
+    def test_todays_game_comes_first(self, current_season):
+        assert schedule_start_row([self.OVER, self.TO_COME, self.TODAY, self.TO_COME], current_season) == 2
+
+    def test_a_finished_game_today_still_counts(self):
+        assert schedule_start_row([self.OVER, dict(self.OVER, is_today=True), self.TO_COME]) == 1
+
+    def test_the_later_of_two_games_today(self):
+        assert schedule_start_row([self.TODAY, self.TODAY, self.TO_COME]) == 1
+
+    def test_a_current_season_with_nothing_left_opens_on_its_last_game_not_its_preseason(self):
+        """The Lynx in December, or the Seahawks in the spring."""
+        assert schedule_start_row([self.OVER, self.OVER, self.OVER], current_season=True) == 2
+
+    def test_a_past_season_opens_at_its_start(self):
+        assert schedule_start_row([self.OVER, self.OVER, self.OVER], current_season=False) == 0
+
+    @pytest.mark.parametrize("current_season", [True, False])
+    def test_no_rows(self, current_season):
+        assert schedule_start_row([], current_season) == 0
 
 
 class TestScheduleRowText:

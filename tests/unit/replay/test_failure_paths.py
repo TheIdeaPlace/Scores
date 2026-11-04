@@ -37,8 +37,6 @@ QUIET = [
     ("get_team_statistics", lambda: espn_api.get_team_statistics("NBA"), TEAM_NOTHING),
     ("get_statistics", lambda: espn_api.get_statistics("NBA"), NOTHING),
     ("get_venues_for_league", lambda: VenueService().get_venues_for_league("nfl"), {}),
-    ("get_team_schedule NBA", lambda: espn_api.get_team_schedule("NBA", "15", season=2027), []),
-    ("get_team_schedule WNBA", lambda: espn_api.get_team_schedule("WNBA", "8", season=2026), []),
 ]
 
 
@@ -64,6 +62,29 @@ def test_an_empty_body_returns_the_empty_shape(espn, call, expected, reply):
     assert call() == expected
 
 
+@pytest.mark.parametrize("league,team,season", [
+    ("NFL", "9", 2026), ("NCAAF", "333", 2026), ("NBA", "15", 2027), ("NHL", "1", 2027), ("MLB", "10", 2026),
+    ("WNBA", "8", 2026), ("NCAAM", "275", 2027), ("NCAAWB", "275", 2027), ("NCAAH", "1", 2027), ("NCAAWH", "1", 2027),
+    ("EPL", "359", 2026),
+])
+class TestScheduleFailures:
+    """A schedule with a part missing looks complete, and one with everything missing looks
+    like an off-season, so a failure reaches the dialog. ESPN saying it has nothing doesn't."""
+
+    @pytest.mark.parametrize("reply", [HTTP_500, FakeResponse({}, status=503), NOT_JSON], ids=["500", "503", "not_json"])
+    def test_a_server_failure_comes_out_and_the_service_wraps_it(self, espn, league, team, season, reply):
+        espn.on(".*", reply)
+        with pytest.raises(Exception):
+            espn_api.get_team_schedule(league, team, season=season)
+        with pytest.raises(ApiError):
+            ApiService.get_team_schedule(league, team, season=season)
+
+    @pytest.mark.parametrize("reply", [HTTP_404, FakeResponse({}, status=400), EMPTY_JSON], ids=["404", "400", "empty"])
+    def test_nothing_there_is_empty(self, espn, league, team, season, reply):
+        espn.on(".*", reply)
+        assert espn_api.get_team_schedule(league, team, season=season) == []
+
+
 class TestGetDraft:
     @pytest.mark.parametrize("reply", [TIMEOUT, HTTP_404, HTTP_500, NOT_JSON])
     def test_failure_is_none(self, espn, reply):
@@ -87,6 +108,8 @@ RAISING = [
     ("get_team_schedule NFL", lambda: espn_api.get_team_schedule("NFL", "9"), lambda: ApiService.get_team_schedule("NFL", "9")),
     ("get_team_schedule NCAAF", lambda: espn_api.get_team_schedule("NCAAF", "333"), lambda: ApiService.get_team_schedule("NCAAF", "333")),
     ("get_team_schedule EPL", lambda: espn_api.get_team_schedule("EPL", "359"), lambda: ApiService.get_team_schedule("EPL", "359")),
+    ("get_team_schedule NBA", lambda: espn_api.get_team_schedule("NBA", "15"), lambda: ApiService.get_team_schedule("NBA", "15")),
+    ("get_team_schedule WNBA", lambda: espn_api.get_team_schedule("WNBA", "8"), lambda: ApiService.get_team_schedule("WNBA", "8")),
     ("get_standings NFL", lambda: espn_api.get_standings("NFL"), lambda: ApiService.get_standings("NFL")),
     ("get_standings soccer", lambda: espn_api.get_standings("EPL"), lambda: ApiService.get_standings("EPL")),
     ("get_standings college", lambda: espn_api.get_standings("NCAAM"), lambda: ApiService.get_standings("NCAAM")),
@@ -110,15 +133,12 @@ class TestTimeoutsReachTheCaller:
     (lambda: espn_api.get_scores("NBA"), []),
     (lambda: espn_api.get_news("NFL"), []),
     (lambda: espn_api.get_game_details("NFL", "1"), {}),
-    (lambda: espn_api.get_team_schedule("NFL", "9", season=2026), []),
-    (lambda: espn_api.get_team_schedule("NCAAF", "333", season=2026), []),
-    (lambda: espn_api.get_team_schedule("EPL", "359", season=2026), []),
     (lambda: espn_api.get_standings("NFL"), []),
     (lambda: espn_api.get_standings("MLB"), []),
     (lambda: espn_api.get_standings("NHL"), []),
     (lambda: espn_api.get_standings("NBA"), []),
     (lambda: espn_api.get_live_golf_tournament("PGA"), None),
-], ids=["scores", "news", "details", "schedule_nfl", "schedule_ncaaf", "schedule_soccer", "nfl", "mlb", "nhl", "nba", "live_golf"])
+], ids=["scores", "news", "details", "nfl", "mlb", "nhl", "nba", "live_golf"])
 class TestHttpErrorsOnTheOthers:
     @pytest.mark.parametrize("reply", [HTTP_404, HTTP_500], ids=["404", "500"])
     def test_are_empty(self, espn, call, expected, reply):

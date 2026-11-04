@@ -948,7 +948,9 @@ def check_team_hub(http, report, league, event, in_season):
 
     # Every league here has a season-long schedule, and with nothing in the current season
     # the app shows the last one, so a team that has played always has something to show.
-    schedule = checked("App: schedule", espn_api.get_team_schedule, league.key, team_id)
+    # Asked as Team Hub asks: with a season, the top of its list.
+    schedule = checked("App: schedule", espn_api.get_team_schedule, league.key, team_id, 30, 30,
+                       espn_api.get_available_seasons(league.key)[0][0])
     if schedule is not None:
         if schedule:
             report.ok(league.key, "App: schedule", f"{len(schedule)} games")
@@ -1348,7 +1350,7 @@ def check_soccer_schedules(http, report):
 
         try:
             rows = espn_api.get_team_schedule(key, team_id, season=season)
-            current = espn_api.get_team_schedule(key, team_id)
+            current = espn_api.get_team_schedule(key, team_id, season=espn_api.get_available_seasons(key)[0][0])
         except Exception as e:
             report.fail(key, "App: soccer schedule", f"raised {type(e).__name__}: {e}")
             continue

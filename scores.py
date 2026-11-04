@@ -64,7 +64,7 @@ import error_log
 from windows_notifications import announce, set_notifier_window
 from accessible_table import AccessibleTable, StandingsTable, WildCardTable, LeadersTable, BoxscoreTable, InjuryTable, prepare_table_tabs, ButtonKeys
 from box_score import build_box_tables
-from game_labels import scoreboard_today, basketball_period_label, football_period_label, football_period_sort_key, game_standings_tables, schedule_game_is_over, schedule_row_text
+from game_labels import scoreboard_today, basketball_period_label, football_period_label, football_period_sort_key, game_standings_tables, schedule_row_text, schedule_start_row
 
 # Text processing utilities
 try:
@@ -8295,22 +8295,17 @@ class TeamHubDialog(QDialog):
         if not schedule_data:
             self.schedule_list.addItem("No games found in schedule.")
             return
-        today_idx = -1
-        for i, game in enumerate(schedule_data):
+        for game in schedule_data:
             item = QListWidgetItem(schedule_row_text(game))
             item.setData(Qt.ItemDataRole.UserRole, game)
             if game.get('is_today', False):
                 f = QFont(); f.setBold(True)
                 item.setFont(f)
                 item.setBackground(QColor(255, 255, 200))
-                today_idx = i
             self.schedule_list.addItem(item)
-        if today_idx >= 0:
-            self.schedule_list.setCurrentRow(today_idx)
-        else:
-            future = next((i for i, g in enumerate(schedule_data)
-                           if not schedule_game_is_over(g)), 0)
-            self.schedule_list.setCurrentRow(future)
+        # The season list runs newest first, so its top entry is the current season.
+        self.schedule_list.setCurrentRow(
+            schedule_start_row(schedule_data, current_season=self.season_combo.currentIndex() <= 0))
         _take_focus_after_load(self.schedule_list)
 
     def _on_game_selected(self, item):

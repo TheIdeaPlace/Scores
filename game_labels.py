@@ -147,6 +147,22 @@ def schedule_game_is_over(game: Dict[str, Any]) -> bool:
     return bool(game.get("completed")) or game.get("status") in _CALLED_OFF
 
 
+def schedule_start_row(rows: List[Dict[str, Any]], current_season: bool = True) -> int:
+    """The row a team's schedule opens on: today's game, else the next one to play.
+
+    With nothing left to play, the current season opens on its last game, the most
+    recent news, rather than a preseason game from months ago. A past season opens
+    at its start, to read through from the beginning.
+    """
+    today = [i for i, game in enumerate(rows) if game.get("is_today")]
+    if today:
+        return today[-1]
+    upcoming = next((i for i, game in enumerate(rows) if not schedule_game_is_over(game)), None)
+    if upcoming is not None:
+        return upcoming
+    return max(len(rows) - 1, 0) if current_season else 0
+
+
 def _schedule_result(game: Dict[str, Any]) -> str:
     """W 29-13, the team asked for first. Empty unless there are two scores."""
     home, away = game.get("home_score"), game.get("away_score")

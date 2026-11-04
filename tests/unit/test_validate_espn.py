@@ -643,8 +643,9 @@ class TestSoccerSchedules:
         import espn_api
         past = [{"date": "2025-01-01", "completed": True}] * 30 if past is None else past
         current = [{"date": "2026-11-01", "completed": False}] if current is None else current
+        two_back = date.today().year - 2
         monkeypatch.setattr(espn_api, "get_team_schedule",
-                            lambda league, team, season=None: past if season else current)
+                            lambda league, team, season=None: past if season == two_back else current)
 
     def run(self, monkeypatch, http=None, past=None, current=None):
         self.app(monkeypatch, past, current)
@@ -733,6 +734,17 @@ class TestTeamHub:
 
     def test_all_well(self, monkeypatch):
         assert not self.run("NBA", monkeypatch).failed
+
+    def test_the_schedule_is_asked_for_as_team_hub_asks(self, monkeypatch):
+        """With the top of the season list. Team Hub never leaves the season out."""
+        import espn_api
+        app = StubbedApp(monkeypatch)
+        asked = []
+        monkeypatch.setattr(espn_api, "get_team_schedule", lambda *a, **k: asked.append(a) or [{"id": "1"}])
+        played = event()
+        played["date"] = datetime.now(timezone.utc).isoformat()
+        v.check_team_hub(FakeHttp(default=(200, {})), v.Report(), league("WNBA"), played, True)
+        assert app and asked[0][4] == espn_api.get_available_seasons("WNBA")[0][0]
 
     def test_schedule_empty_after_a_recent_game_is_a_failure(self, monkeypatch):
         assert FAIL_IN(self.run("NBA", monkeypatch, get_team_schedule=[]), "App: schedule")

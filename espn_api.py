@@ -354,51 +354,42 @@ def scoreboard_months(start, end):
     return months
 
 
-# Leagues whose schedule comes one season type at a time, where a failed type is
-# left out of the list. WNBA is here: ESPN's scoreboard, which it used to read,
-# only reached 30 days either side of today and could not show a past season.
-SEASON_TYPE_SCHEDULE_LEAGUES = ("MLB", "NBA", "NHL", "WNBA", "NCAAH", "NCAAWH", "NCAAM", "NCAAWB")
-FOOTBALL_SCHEDULE_LEAGUES = ("NFL", "NCAAF")
+# Leagues whose schedule comes one season type at a time. WNBA is here: ESPN's scoreboard,
+# which it used to read, only reached 30 days either side of today and had no past seasons.
+SEASON_TYPE_SCHEDULE_LEAGUES = ("NFL", "NCAAF", "MLB", "NBA", "NHL", "WNBA", "NCAAH", "NCAAWH", "NCAAM", "NCAAWB")
 
 
-def _schedule_events(resp):
-    return _dicts(_as_dict(resp.json()).get("events"))
+def _schedule_answer(url):
+    """ESPN's answer to one team schedule request, or None for a 4xx, which says it has
+    nothing there. A timeout or a 5xx reaches the caller, and the dialog reports it: a
+    schedule missing its playoffs or its games to come would look complete, and one
+    missing everything would look like an off-season."""
+    resp = _http_get(url)
+    if resp.status_code >= 500:
+        raise ApiError(f"ESPN's server answered with an error ({resp.status_code})")
+    return _as_dict(resp.json()) if resp.status_code == 200 else None
 
 
 def _season_type_schedule_events(base_url, season_year):
-    """Preseason, regular season and postseason, leaving out any that fails."""
-    events = []
-    for season_type in (1, 2, 3):
-        try:
-            resp = _http_get(f"{base_url}?season={season_year}&seasontype={season_type}")
-            if resp.status_code == 200:
-                events.extend(_schedule_events(resp))
-        except Exception:
-            pass  # Continue even if one season type fails
-    return events
+    """Preseason, regular season and postseason, or None if ESPN has no regular season here.
 
-
-def _football_schedule_events(base_url, season_year):
-    """All three season types, so the Super Bowl and the bowls are there.
-
-    A timeout is not caught: the dialog reports it, where a schedule missing its
-    playoffs or its regular season would look complete. Without a regular season
-    there is no schedule worth showing, so an error there means none; an error on
-    the other two leaves out only that part. FCS playoffs are type 2, and a team
-    that missed the postseason gets an empty list for type 3, not an error.
+    FCS playoffs are type 2, and a team that missed the postseason gets an empty list
+    for type 3, not an error. The regular season comes first so a failure costs one request.
     """
-    events = []
-    for season_type in (2, 1, 3):
-        resp = _http_get(f"{base_url}?season={season_year}&seasontype={season_type}")
-        if resp.status_code == 200:
-            events.extend(_schedule_events(resp))
-        elif season_type == 2:
-            return []
+    answer = _schedule_answer(f"{base_url}?season={season_year}&seasontype=2")
+    if answer is None:
+        return None
+    events = _dicts(answer.get("events"))
+    for season_type in (1, 3):
+        answer = _schedule_answer(f"{base_url}?season={season_year}&seasontype={season_type}")
+        if answer is not None:
+            events.extend(_dicts(answer.get("events")))
     return events
 
 
 def _soccer_schedule_events(base_url, season_year, current_season):
-    """Results, plus the games to come if this is the current season.
+    """Results, plus the games to come if this is the current season, or None if ESPN has
+    no results here.
 
     Soccer has no seasontype: 2 and 3 answer with nothing. `season=Y` gives the
     games played and `fixture=true` the games to come, whatever season is asked
@@ -407,24 +398,24 @@ def _soccer_schedule_events(base_url, season_year, current_season):
     Each league's seasons cross the new year on their own calendar, so the year
     ESPN calls current can be behind ours: in February 2027 `season=2027` is empty
     for the Premier League, whose 2026-27 season ESPN reports as `season.year` 2026.
-    Its results are then the ones to show. As elsewhere, a timeout reaches the caller.
+    Its results are then the ones to show. Only the year before counts: the Women's
+    World Cup's `season.year` stays at 2023 until the next one, and 2023 isn't current.
     """
-    resp = _http_get(f"{base_url}?season={season_year}")
-    if resp.status_code != 200:
-        return []
-    data = _as_dict(resp.json())
-    events = _dicts(data.get("events"))
-    espn_season = _as_dict(data.get("season")).get("year")
+    answer = _schedule_answer(f"{base_url}?season={season_year}")
+    if answer is None:
+        return None
+    events = _dicts(answer.get("events"))
+    espn_season = _as_dict(answer.get("season")).get("year")
     if season_year not in (current_season, espn_season):
         return events
 
-    if isinstance(espn_season, int) and espn_season < season_year:
-        resp = _http_get(f"{base_url}?season={espn_season}")
-        if resp.status_code == 200:
-            events.extend(_schedule_events(resp))
-    resp = _http_get(f"{base_url}?fixture=true")
-    if resp.status_code == 200:
-        events.extend(_schedule_events(resp))
+    queries = ["fixture=true"]
+    if espn_season == season_year - 1:
+        queries.insert(0, f"season={espn_season}")
+    for query in queries:
+        answer = _schedule_answer(f"{base_url}?{query}")
+        if answer is not None:
+            events.extend(_dicts(answer.get("events")))
     return events
 
 
@@ -454,9 +445,9 @@ def _schedule_row_facts(event, comp, status_type):
 def get_team_schedule(league_key, team_id, days_ahead=30, days_behind=30, season=None):
     """A team's schedule for one season, from ESPN's team schedule endpoint.
 
-    A season asked for is that season or nothing, never another year's games.
-    Only a current season with nothing in it falls back, and only when no season
-    was asked for, and those rows show their year.
+    A past season asked for is that season or nothing, never another year's games. The
+    current season can fall back to the last one (below), and those rows show their year.
+    Team Hub always asks for a season, the top of its list being the current one.
     """
     from datetime import timedelta
 
@@ -470,9 +461,7 @@ def get_team_schedule(league_key, team_id, days_ahead=30, days_behind=30, season
     season_year = season if season else current_season
     base_url = f"{BASE_URL}/{league_path}/teams/{team_id}/schedule"
 
-    if league_key in FOOTBALL_SCHEDULE_LEAGUES:
-        events = _football_schedule_events(base_url, season_year)
-    elif league_key in SEASON_TYPE_SCHEDULE_LEAGUES:
+    if league_key in SEASON_TYPE_SCHEDULE_LEAGUES:
         events = _season_type_schedule_events(base_url, season_year)
     elif league_path.startswith("soccer/"):
         events = _soccer_schedule_events(base_url, season_year, current_season)
@@ -497,10 +486,14 @@ def get_team_schedule(league_key, team_id, days_ahead=30, days_behind=30, season
         schedule.sort(key=lambda g: g['date'])
         return schedule
 
+    # A request ESPN refused is no sign of an off-season.
+    if events is None:
+        return []
+
     # Offseason fallback: ESPN publishes a new season's schedule some weeks
     # after the previous one ends, so in that gap the current season year comes
     # back empty. Fall back to the season that just finished.
-    if not events and season is None:
+    if not events and season in (None, current_season):
         return get_team_schedule(league_key, team_id, days_ahead, days_behind,
                                  season=current_season - 1)
 
@@ -582,8 +575,9 @@ def get_team_schedule(league_key, team_id, days_ahead=30, days_behind=30, season
         venue = _as_dict(comp.get('venue'))
         venue_name = venue.get('fullName') or 'TBD'
         
-        # Determine date display format - include year for historical seasons
-        if is_historical_season:
+        # Include the year for a past season, or a game outside this year: a current
+        # season can cross new year, and MLS's lists 2027's games beside 2026's.
+        if is_historical_season or event_date.year != today.year:
             date_display = event_date.strftime('%a, %b %d, %Y')
         else:
             date_display = event_date.strftime('%a, %b %d')
@@ -684,8 +678,8 @@ def parse_schedule_from_api(url, team_id, today, season=None):
                     venue = _as_dict(comp.get("venue"))
                     venue_name = venue.get("fullName") or "TBD"
                     
-                    # Determine date display format - include year for historical seasons
-                    if is_historical_season:
+                    # Include the year for a past season, or a game outside this year.
+                    if is_historical_season or event_date.year != today.year:
                         date_display = event_date.strftime("%a, %b %d, %Y")
                     else:
                         date_display = event_date.strftime("%a, %b %d")
