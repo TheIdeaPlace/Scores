@@ -223,11 +223,15 @@ class TestEveryTabAreaGoesThroughOneHelper:
         made += [node for node in ast.walk(tree) if isinstance(node, ast.ClassDef)
                  and any(self._names_tab_widget(base) for base in node.bases)]
         if path.name == "accessible_table.py":
-            # The helper's QTabWidget() and _LiteralTabWidget, which only the helper makes.
-            assert sorted(getattr(node, "name", "call") for node in made) == ["_LiteralTabWidget", "call"]
+            # _TabArea is the one class on QTabWidget, and only the helper makes it and its subclass.
+            assert [node.name for node in made] == ["_TabArea"]
             helper = next(node for node in ast.walk(tree)
                           if isinstance(node, ast.FunctionDef) and node.name == "make_tab_area")
-            assert any(node in made for node in ast.walk(helper))
+            own = {"_TabArea", "_LiteralTabWidget"}
+            calls = [node for node in ast.walk(tree) if isinstance(node, ast.Call)
+                     and isinstance(node.func, ast.Name) and node.func.id in own]
+            in_helper = list(ast.walk(helper))
+            assert calls and all(node in in_helper for node in calls)
         else:
             assert not made, f"{path.name}:{made[0].lineno} should call make_tab_area, which picks tabs or a list"
 

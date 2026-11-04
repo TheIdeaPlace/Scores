@@ -26,6 +26,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   goes on to the next one starting with it. Different letters typed quickly narrow it down, so S, U,
   N reaches Sun Belt. How quick is twice your Windows double-click time, about a second unless you've
   changed it. Letters typed in a table on a tab still go to the table.
+- **Ctrl+Tab goes straight to the next tab's table.** Focus stopped on the Close button on the way, so
+  a screen reader could say "Close, button" before the new table.
 - **A tab keeps an ampersand in its name.** Texas A&M's tabs lost the & from their text, and Alt+M
   became a shortcut to one of them.
 - **Tab from MLB's wild card tabs and the NFL Draft's rounds goes to what's on the tab, not to Close.**

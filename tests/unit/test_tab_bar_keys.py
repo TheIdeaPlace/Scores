@@ -810,6 +810,47 @@ class TestListPages:
         assert pages.currentIndex() == 1
         assert calls == ["table"]
 
+    @pytest.mark.parametrize("count", [3, 9], ids=["tabs", "list"])
+    def test_ctrl_tab_goes_straight_to_the_next_table(self, app, monkeypatch, count):
+        """It used to stop on Close or Back first, and a screen reader said so."""
+        saved = {"default_view_mode": 0}
+        monkeypatch.setattr(accessible_table.settings, "get", lambda k, d=None: saved.get(k, d))
+        monkeypatch.setattr(accessible_table.settings, "set", saved.__setitem__)
+        window = QWidget()
+        layout = QVBoxLayout(window)
+        area = make_tab_area(count, list_name="Tables")
+        tables = []
+        for index in range(count):
+            page = QWidget()
+            page_layout = QVBoxLayout(page)
+            table = AccessibleTable(accessible_name=f"T{index}", accessible_description="D")
+            table.setup_columns(["Player", "YDS"])
+            table.populate_data([["Avery", "10"]], set_focus=False)
+            page_layout.addWidget(table)
+            area.addTab(page, f"Table {index}")
+            tables.append(table)
+        layout.addWidget(area)
+        layout.addWidget(QPushButton("Close"))
+        window.resize(600, 400)
+        window.show()
+        try:
+            window.activateWindow()
+            QApplication.processEvents()
+            if isinstance(area, ListPages):
+                area.open_page()
+            tables[0].setFocus()
+            QApplication.processEvents()
+            assert QApplication.focusWidget() is tables[0].table_widget
+
+            seen = []
+            app.focusChanged.connect(lambda _old, new: seen.append(new))
+            press(tables[0].table_widget, Qt.Key.Key_Tab, CTRL)
+            QApplication.processEvents()
+            assert area.currentIndex() == 1
+            assert seen == [tables[1].table_widget]
+        finally:
+            window.close()
+
     def test_ctrl_tab_and_ctrl_shift_tab_go_round_from_the_list(self, pages):
         press(pages.tabBar(), Qt.Key.Key_Backtab, CTRL | SHIFT)
         assert pages.currentIndex() == len(self.NAMES) - 1

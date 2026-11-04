@@ -1232,6 +1232,14 @@ def prepare_table_tabs(tab_widget: QTabWidget) -> None:
     _install_tab_keys(tab_widget, bar)
 
 
+def _focus_is_on_a_page_being_swapped(area) -> bool:
+    """Hiding a page with focus in it makes Qt ask its ancestors to move focus on. That lands on
+    the next control, such as Close, and a screen reader says so before the new page's table
+    takes focus. The stacked layout moves focus to the new page itself, so nothing has to."""
+    focused = QApplication.focusWidget()
+    return focused is not None and area.isAncestorOf(focused) and not focused.isVisible()
+
+
 class ListPages(QWidget):
     """A tab area too long for tabs: a list of the names, and Enter opens the one you want.
 
@@ -1265,6 +1273,11 @@ class ListPages(QWidget):
         self._list.currentRowChanged.connect(self._show_page)
         self._keys = _install_tab_keys(self, self._list)
         self._list.itemActivated.connect(lambda _item: self.open_page())
+
+    def focusNextPrevChild(self, next_child: bool) -> bool:
+        if _focus_is_on_a_page_being_swapped(self):
+            return True
+        return super().focusNextPrevChild(next_child)
 
     def _show_page(self, row: int) -> None:
         if row >= 0:
@@ -1377,7 +1390,14 @@ def keep_in_tab_order(tabs, widget: QWidget) -> None:
             previous = candidate
 
 
-class _LiteralTabWidget(QTabWidget):
+class _TabArea(QTabWidget):
+    def focusNextPrevChild(self, next_child: bool) -> bool:
+        if _focus_is_on_a_page_being_swapped(self):
+            return True
+        return super().focusNextPrevChild(next_child)
+
+
+class _LiteralTabWidget(_TabArea):
     """Tabs named from data. To a tab bar & marks a mnemonic: Texas A&M loses the & from its text,
     shown and exposed, and Alt+M becomes a shortcut to it, unless it's written A&&M. A ListPages
     shows its text as it is already."""
@@ -1398,7 +1418,7 @@ def make_tab_area(count: int, name: str = "", description: str = "", list_name: 
         pages = ListPages()
         pages.set_list_name(list_name or name, list_description)
         return pages
-    tab_widget = QTabWidget() if mnemonics else _LiteralTabWidget()
+    tab_widget = _TabArea() if mnemonics else _LiteralTabWidget()
     prepare_table_tabs(tab_widget)
     if name:
         tab_widget.setAccessibleName(name)
