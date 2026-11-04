@@ -30,6 +30,7 @@ struct ScheduleGame: Identifiable {
     /// What sets this game apart, read with the row: "Super Bowl LX", "SEC Championship",
     /// "Preseason Week 1". Nil for an everyday game.
     var label: String? = nil
+    var venueCity: String? = nil
 
     /// Soccer says STATUS_FULL_TIME, or STATUS_FINAL_PEN after a shootout, for a finished game.
     private static let finishedStatuses: Set<String> = [
@@ -178,6 +179,25 @@ extension Sport {
     var usesSoccerSchedule: Bool { apiPath.hasPrefix("soccer/") }
 }
 
+extension Sequence where Element == ScheduleGame {
+    /// The venue of most of a team's home games, the later one winning a tie. A one-off
+    /// doesn't count as the team moving, and neither does spring training. A game at a
+    /// neutral site isn't a home game even when ESPN lists the team as home for it.
+    /// Same rule as `most_used_home_venue` in espn_api.py.
+    func mostUsedHomeVenue(teamId: String) -> (name: String, city: String?)? {
+        var uses: [String: (count: Int, latest: ScheduleGame)] = [:]
+        for game in self.sorted(by: { $0.date < $1.date })
+        where game.homeTeam.id == teamId && !game.isNeutralSite && game.seasonType != 1 {
+            guard let name = game.venueName, !name.isEmpty else { continue }
+            uses[name] = ((uses[name]?.count ?? 0) + 1, game)
+        }
+        let best = uses.max { a, b in
+            (a.value.count, a.value.latest.date) < (b.value.count, b.value.latest.date)
+        }
+        return best.map { ($0.key, $0.value.latest.venueCity) }
+    }
+}
+
 // MARK: - API response types (Codable)
 
 struct TeamScheduleAPIResponse: Codable {
@@ -226,6 +246,11 @@ struct TeamScheduleAPIResponse: Codable {
 
             struct APIVenue: Codable {
                 let fullName: String?
+                let address: APIAddress?
+
+                struct APIAddress: Codable {
+                    let city: String?
+                }
             }
 
             /// `headline` is missing on soccer's bare ingest notes.
@@ -318,7 +343,8 @@ struct TeamScheduleAPIResponse: Codable {
                 isNeutralSite: competition.neutralSite ?? false,
                 espnCompleted: competition.status.type.completed,
                 espnState: competition.status.type.state,
-                label: gameLabel
+                label: gameLabel,
+                venueCity: competition.venue?.address?.city
             )
         }
 

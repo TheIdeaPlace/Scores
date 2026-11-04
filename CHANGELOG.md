@@ -8,6 +8,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Fixed
+- **Venues on Windows now work for college basketball and college hockey, and name the home
+  teams.** Those leagues always said "No venue data", and no league ever listed a home team. Each
+  venue now says who plays there. Only a team's real homes are listed: not an arena used for a
+  neutral site game, a preseason game or a one-off, and not a non-Division I school a college
+  basketball team visited. If ESPN doesn't answer, it says so instead of saying there are no venues,
+  and one month with a server error no longer loses the list.
+- **The venue list only says what's known.** "Unknown Surface" is gone from every row, a venue
+  ESPN says nothing about no longer reads "Outdoor", and a venue with no state no longer reads
+  "City, Unknown".
+- **Team Info shows where a team plays now, on Windows and iPhone.** ESPN's team page still had the
+  Nets at Prudential Center and the Warriors at Oracle Arena. The venue now comes from the team's
+  home games. Teams that had no venue at all, in college, the WNBA and soccer, now have one on both
+  apps, and a World Cup team stays blank since its games are at tournament stadiums.
 - **FCS teams are in college football standings and Teams, on Windows and iPhone.** You could see
   their games but not the teams: the Big Sky and 13 other conferences were missing. Standings and
   team lists now follow the "College football games shown" setting, so All Division I lists all 25

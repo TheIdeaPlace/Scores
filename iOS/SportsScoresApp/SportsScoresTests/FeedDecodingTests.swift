@@ -1203,6 +1203,163 @@ final class TeamHubDecodingTests: XCTestCase {
         XCTAssertFalse(response.team.id.isEmpty)
     }
 
+    private func games(_ file: String) throws -> [ScheduleGame] {
+        try JSONDecoder().decode(TeamScheduleAPIResponse.self, from: Fixtures.data(file))
+            .events.compactMap { $0.toScheduleGame() }
+    }
+
+    func testTheNetsPlayAtBarclaysWhateverTheirFranchiseSays() throws {
+        let team = try JSONDecoder().decode(TeamInfoAPIResponse.self, from: Fixtures.data("team_NBA_17.json"))
+        XCTAssertEqual(team.team.franchise?.venue?.fullName, "Prudential Center")
+        let venue = try games("schedule_NBA_17.json").mostUsedHomeVenue(teamId: "17")
+        XCTAssertEqual(venue?.name, "Barclays Center")
+        XCTAssertEqual(venue?.city, "Brooklyn")
+    }
+
+    func testMostOfTheHomeGamesBeatsTheLatest() throws {
+        // The Athletics played most of their season in Sacramento, then some in Las Vegas.
+        let schedule = try games("schedule_MLB_11.json")
+        XCTAssertEqual(schedule.last?.venueName, "Las Vegas Ballpark")
+        let venue = schedule.mostUsedHomeVenue(teamId: "11")
+        XCTAssertEqual(venue?.name, "Sutter Health Park")
+        XCTAssertEqual(venue?.city, "Sacramento")
+    }
+
+    func testTheLaterVenueWinsATie() throws {
+        var schedule = try games("schedule_MLB_11.json")
+        let sutter = try XCTUnwrap(schedule.firstIndex { $0.venueName == "Sutter Health Park" })
+        schedule.remove(at: sutter)
+        XCTAssertEqual(schedule.mostUsedHomeVenue(teamId: "11")?.name, "Las Vegas Ballpark")
+    }
+
+    func testANeutralSiteIsNotAHomeGame() throws {
+        // ESPN lists the Falcons as home in Madrid, and that game is the later one.
+        let schedule = try games("schedule_NFL_1.json")
+        XCTAssertEqual(schedule.last?.isNeutralSite, true)
+        XCTAssertEqual(schedule.last?.homeTeam.id, "1")
+        XCTAssertEqual(schedule.mostUsedHomeVenue(teamId: "1")?.name, "Mercedes-Benz Stadium")
+    }
+
+    func testAnotherTeamsHomeGamesAreNotThisTeams() throws {
+        let schedule = try games("schedule_NBA_17.json")
+        XCTAssertEqual(schedule.mostUsedHomeVenue(teamId: "2")?.name, "TD Garden")
+        XCTAssertNil(schedule.mostUsedHomeVenue(teamId: "99999"))
+    }
+
+    func testSpringTrainingIsNotAHome() throws {
+        // More games at Hohokam here than at either home park, and it isn't one.
+        let spring = try games("schedule_MLB_11_spring.json")
+        XCTAssertEqual(spring.first?.seasonType, 1)
+        XCTAssertEqual(spring.filter { $0.homeTeam.id == "11" && $0.venueName == "Hohokam Stadium" }.count, 4)
+        XCTAssertNil(spring.mostUsedHomeVenue(teamId: "11"))
+        let season = try spring + games("schedule_MLB_11.json")
+        XCTAssertEqual(season.mostUsedHomeVenue(teamId: "11")?.name, "Sutter Health Park")
+    }
+
+    /// A hub for the Nets, with the out of date venue ESPN's team page has for them.
+    @MainActor
+    private func nets(sport: Sport = .nba, regularSeason: @escaping () async throws -> [ScheduleGame]) -> TeamHubViewModel {
+        let hub = TeamHubViewModel(teamId: "17", sport: sport) { _, _ in try await regularSeason() }
+        hub.teamInfo = TeamHubTeamInfo(
+            teamId: "17", displayName: "Brooklyn Nets", abbreviation: "BKN", location: "Brooklyn",
+            color: nil, alternateColor: nil, primaryLogoURL: nil, overallRecord: nil,
+            homeRecord: nil, awayRecord: nil, standingSummary: nil,
+            venueName: "Prudential Center", venueCity: "Newark", coachName: nil, nextGame: nil)
+        return hub
+    }
+
+    @MainActor
+    func testTheVenueWaitsForTheSchedules() throws {
+        let hub = nets { [] }
+        hub.isLoadingSchedule = true
+        XCTAssertNil(hub.teamVenue)
+        hub.isLoadingSchedule = false
+        hub.isLoadingHomeVenue = true
+        XCTAssertNil(hub.teamVenue)
+    }
+
+    @MainActor
+    func testAnEmptySeasonYearAsksForTheRegularSeasonBeforeTheFranchiseVenue() async throws {
+        // currentSeasonYear rolls forward before ESPN has that schedule: from July the Nets'
+        // schedule is empty, and this read Prudential Center.
+        let season = try games("schedule_NBA_17.json")
+        var asked = 0
+        let hub = nets { asked += 1; return season }
+        XCTAssertTrue(hub.schedule.isEmpty)
+        await hub.loadHomeVenue()
+        XCTAssertEqual(asked, 1)
+        XCTAssertEqual(hub.teamVenue?.name, "Barclays Center")
+        XCTAssertEqual(hub.teamVenue?.city, "Brooklyn")
+    }
+
+    @MainActor
+    func testNoHomeGameOnTheScheduleAsksToo() async throws {
+        // A preseason alone says nothing about where a team plays.
+        let season = try games("schedule_MLB_11.json")
+        let hub = TeamHubViewModel(teamId: "11", sport: .mlb) { _, _ in season }
+        hub.schedule = try games("schedule_MLB_11_spring.json")
+        await hub.loadHomeVenue()
+        XCTAssertEqual(hub.teamVenue?.name, "Sutter Health Park")
+    }
+
+    @MainActor
+    func testAScheduleWithHomeGamesAsksForNothingMore() async throws {
+        var asked = 0
+        let hub = nets { asked += 1; return [] }
+        hub.schedule = try games("schedule_NBA_17.json")
+        await hub.loadHomeVenue()
+        XCTAssertEqual(asked, 0)
+        XCTAssertEqual(hub.teamVenue?.name, "Barclays Center")
+    }
+
+    @MainActor
+    func testTheFranchiseVenueIsWhatsLeftOnceBothAreEmpty() async throws {
+        let hub = nets { [] }
+        await hub.loadHomeVenue()
+        XCTAssertEqual(hub.teamVenue?.name, "Prudential Center")
+        XCTAssertEqual(hub.teamVenue?.city, "Newark")
+    }
+
+    @MainActor
+    func testLosingTheRequestKeepsTheFranchiseVenue() async throws {
+        let hub = nets { throw APIError.invalidResponse }
+        await hub.loadHomeVenue()
+        XCTAssertFalse(hub.isLoadingHomeVenue)
+        XCTAssertEqual(hub.teamVenue?.name, "Prudential Center")
+    }
+
+    @MainActor
+    func testAWorldCupTeamHasNoHome() async throws {
+        // A team reaches this from a World Cup game's details. Its "home" games are
+        // tournament draws, so Brazil would read MetLife Stadium.
+        var asked = 0
+        let hub = TeamHubViewModel(teamId: "17", sport: .worldCup) { _, _ in asked += 1; return [] }
+        hub.schedule = try games("schedule_NBA_17.json")
+        XCTAssertNil(hub.teamVenue)
+        hub.schedule = []
+        await hub.loadHomeVenue()
+        XCTAssertEqual(asked, 0)
+        XCTAssertNil(hub.teamVenue)
+    }
+
+    @MainActor
+    func testTheCFLHasNoESPNScheduleToAskFor() async throws {
+        var asked = 0
+        let hub = TeamHubViewModel(teamId: "17", sport: .cfl) { _, _ in asked += 1; return [] }
+        await hub.loadHomeVenue()
+        XCTAssertEqual(asked, 0)
+    }
+
+    func testTheRegularSeasonRequestNamesNoSeason() {
+        let api = ESPNAPIService.shared
+        let nfl = api.regularSeasonScheduleURL(teamId: "14", sport: .nfl)
+        XCTAssertTrue(nfl.hasSuffix("/football/nfl/teams/14/schedule?seasontype=2"), nfl)
+        XCTAssertFalse(nfl.contains("season="), nfl)
+        // ESPN's soccer season types have their own numbers, so 2 finds nothing.
+        let epl = api.regularSeasonScheduleURL(teamId: "359", sport: .soccerEPL)
+        XCTAssertTrue(epl.hasSuffix("/soccer/eng.1/teams/359/schedule"), epl)
+    }
+
     func testRostersDecode() throws {
         // ESPN's NFL roster is grouped by position, and its NBA roster is flat.
         let nfl = try JSONDecoder().decode(RosterAPIResponse.self, from: Fixtures.data("roster_NFL_9.json"))

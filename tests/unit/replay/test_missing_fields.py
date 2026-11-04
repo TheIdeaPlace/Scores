@@ -10,7 +10,7 @@ import re
 import pytest
 
 import espn_api
-from services.venue_service import VenueService
+from services.venue_service import VenueService, venue_summary
 
 from .support import HTTP_404, load, mutations
 
@@ -22,8 +22,7 @@ def case(name, call, fixture, route, others=None):
 NONE_WORD = re.compile(r"\bNone\b")
 
 # None on purpose: the screens test these for "not set", or never show them.
-MAY_BE_NONE = {"position", "playoff_seed", "clinch_status", "magic_number", "number",
-               "zip_code", "grass", "capacity"}
+MAY_BE_NONE = {"position", "playoff_seed", "clinch_status", "magic_number", "number"}
 
 # ESPN's own data handed on untouched: the screen reading it has to cope, not this.
 RAW_FIELDS = {"competitions", "polls"}
@@ -55,7 +54,8 @@ def summary_lines():
 def venue_facts():
     """A venue list, and the details and facts of each venue on it."""
     service = VenueService()
-    return [service.get_venue_details(venue_id, "mlb") for venue_id in service.get_venues_for_league("mlb")]
+    venues = service.get_venues_for_league("mlb").values()
+    return [service.venue_details(venue, "mlb") for venue in venues] + [venue_summary(venue) for venue in venues]
 
 
 def scoreboard_with_one_team():
@@ -100,7 +100,7 @@ CASES = [
     case("game details NCAAH", lambda: espn_api.extract_meaningful_game_info(espn_api.get_game_details("NCAAH", "1")),
          "details_NCAAH_pieces.json", "/summary"),
     case("format_complex_data", summary_lines, "details_NFL_pieces.json", "/summary"),
-    case("venues", venue_facts, "scoreboard_NWSL.json", "/scoreboard", {"/teams$": "teams_NFL.json"}),
+    case("venues", venue_facts, "scoreboard_NFL_202611.json", "/scoreboard"),
     case("get_live_golf_tournament", lambda: espn_api.get_live_golf_tournament("PGA"), live_golf, "/scoreboard"),
     case("get_golf_leaderboard", lambda: espn_api.get_golf_leaderboard("PGA"), "golf_scoreboard_PGA.json", "/scoreboard"),
     case("get_golf_schedule", lambda: espn_api.get_golf_schedule("PGA"), "golf_schedule_PGA.json", "/scoreboard"),
