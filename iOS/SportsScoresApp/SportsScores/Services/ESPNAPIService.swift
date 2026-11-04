@@ -1121,8 +1121,9 @@ class ESPNAPIService {
             let leaders = (category.leaders ?? []).enumerated().map { index, leader -> LeagueLeaderCategory.LeagueLeaderEntry in
                 let entityTeam = leader.team?.ref.flatMap { teams[secureURL($0)]?.abbreviation } ?? ""
                 let entityName: String
-                if let ref = leader.athlete?.ref, let ath = athletes[secureURL(ref)] {
-                    entityName = ath.displayName ?? "—"
+                if let ref = leader.athlete?.ref {
+                    // Not the team's name if this lookup failed: that reads as if a team led.
+                    entityName = athletes[secureURL(ref)]?.displayName ?? "—"
                 } else if let ref = leader.team?.ref, let team = teams[secureURL(ref)] {
                     entityName = team.displayName ?? "—"
                 } else {
