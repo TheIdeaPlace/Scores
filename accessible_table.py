@@ -1270,12 +1270,14 @@ class ListPages(QWidget):
         if row >= 0:
             self._stack.setCurrentIndex(row)
             if self.is_open():
-                self._title_for_page()
+                self._settle_open_page()
             self.currentChanged.emit(row)
 
-    def _title_for_page(self) -> None:
+    def _settle_open_page(self) -> None:
+        """The window title names the page, and Tab goes through it before the Back button."""
         name = self.tabText(self.currentIndex())
         self.window().setWindowTitle(f"{name} - {self._dialog_title}" if self._dialog_title else name)
+        keep_in_tab_order(self, self.currentWidget())
 
     def is_open(self) -> bool:
         """A page is on show, rather than the list."""
@@ -1288,7 +1290,7 @@ class ListPages(QWidget):
             return
         self._dialog_title = self.window().windowTitle()
         self._page_area.show()
-        self._title_for_page()
+        self._settle_open_page()
         self._keys.focus_page(self.currentWidget())
         self._list.hide()
 
