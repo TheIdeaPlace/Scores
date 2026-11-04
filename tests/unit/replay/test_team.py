@@ -27,6 +27,15 @@ class TestTeamInfo:
         espn_api.get_team_info("EPL", "359")
         assert espn.calls[-1] == f"{SITE}/soccer/eng.1/teams/359/schedule"
 
+    @pytest.mark.parametrize("league,path", [("WC2026", "fifa.world"), ("WWC2027", "fifa.wwc")])
+    def test_a_world_cup_team_has_no_home_venue(self, espn, league, path):
+        """Its "home" games are tournament draws. Brazil read MetLife Stadium."""
+        data = load("team_EPL_359.json")
+        espn.on("/teams/359$", data)
+        info = espn_api.get_team_info(league, "359")
+        assert espn.calls == [f"{SITE}/soccer/{path}/teams/359"]
+        assert (info["name"], info["venue_name"], info["venue_location"]) == (data["team"]["displayName"], "", "")
+
     def test_a_venue_not_shown_costs_no_request(self, espn):
         """Favorites asks for a team's record and next game, once per favorite."""
         espn.on("/teams/9$", load("team_NFL_9.json"))

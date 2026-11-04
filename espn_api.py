@@ -2986,7 +2986,10 @@ def _team_home_venue(league_path, team_id):
     """Where a team is playing its home games this season, or None. Asks for the regular
     season, since the default can be an empty postseason (MLB, November) and spring
     training is somewhere else. A soccer league's season type is its own number, so 2
-    finds nothing there and the default is the league season."""
+    finds nothing there and the default is the league season. A World Cup team has no
+    home: its "home" games are tournament draws, so Brazil would read MetLife Stadium."""
+    if league_path.startswith("soccer/fifa."):
+        return None
     query = "" if league_path.startswith("soccer/") else "?seasontype=2"
     try:
         # Only one line of the page, so it doesn't get to hold the rest up for long.
