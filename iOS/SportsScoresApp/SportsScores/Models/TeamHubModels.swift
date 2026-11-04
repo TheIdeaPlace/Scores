@@ -77,6 +77,26 @@ struct RosterPlayer: Identifiable {
     let age: String
 }
 
+// MARK: - Decodable API Response: the current season (core /leagues/{league}/season)
+
+/// The season ESPN calls current, and what part of it the league is in. From ESPN rather than
+/// the calendar, so a preseason is known for what it is. Soccer's season types are numbers of
+/// their own, and it doesn't ask.
+struct CurrentSeasonResponse: Decodable {
+    let year: Int
+    let type: SeasonType?
+
+    struct SeasonType: Decodable {
+        let type: Int?
+    }
+
+    var isRegularSeason: Bool { type?.type == 2 }
+
+    /// A season's playoffs and off-season come after its regular season and are filed under
+    /// its year, so only a preseason means that the last one is the latest.
+    var regularSeasonYear: Int { type?.type == 1 ? year - 1 : year }
+}
+
 // MARK: - Decodable API Response: Team Info endpoint (/teams/{id})
 
 struct TeamInfoAPIResponse: Decodable {
