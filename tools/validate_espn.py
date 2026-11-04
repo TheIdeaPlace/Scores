@@ -59,6 +59,7 @@ SITE = "https://site.api.espn.com/apis/site/v2/sports"
 STANDINGS = "https://site.api.espn.com/apis/v2/sports"
 CORE = "https://sports.core.api.espn.com/v2/sports"
 WEB = "https://site.web.api.espn.com/apis/common/v3/sports"
+V3 = "https://site.web.api.espn.com/apis/site/v3/sports"
 
 FOOTBALL, BASKETBALL, HOCKEY, BASEBALL, SOCCER = "football", "basketball", "hockey", "baseball", "soccer"
 PASS, WARN, FAIL = "PASS", "WARN", "FAIL"
@@ -77,11 +78,6 @@ WORLD_CUP_MATCH = "760512"
 # What the iPhone asks the core API for. ESPN has no statistics for some season types, such
 # as the NBA's preseason and play-in, so one season type on its own proves nothing.
 CORE_SEASON_TYPES = (2, 3, 1)
-# ESPN's /statistics fails often, mostly for college basketball, with this message on a 404.
-# The failure can stay cached for up to 30 seconds, so the pause has to outlast that.
-STATISTICS_TRIES = 3
-STATISTICS_PAUSE = 35
-STATISTICS_BLIP = "Failed to retrieve league stats"
 
 
 @dataclass(frozen=True)
@@ -95,8 +91,7 @@ class League:
     plays: bool = True
     rankings: bool = False
     transactions: bool = True
-    player_stats: bool = True
-    player_stats_gap: str = ""  # the app can't read these today, and this says why
+    player_stats: bool = True  # espn_api.LEADER_LEAGUES, and a test holds the two together
     team_stats: bool = True
     core_leaders: bool = True
     # espn_api's team schedule only looks this far either side of today for these leagues.
@@ -123,8 +118,7 @@ _SOCCER = dict(plays=False, transactions=False, player_stats=False, team_stats=F
 LEAGUES = [
     League("NFL", "football/nfl", FOOTBALL),
     League("NCAAF", "football/college-football", FOOTBALL, "groups=90&limit=400", rankings=True, transactions=False),
-    League("NBA", "basketball/nba", BASKETBALL,
-           player_stats_gap="ESPN's /statistics has no leaders for the NBA, so Windows shows none (#95)"),
+    League("NBA", "basketball/nba", BASKETBALL),
     League("WNBA", "basketball/wnba", BASKETBALL, schedule_window=True),
     League("NCAAM", "basketball/mens-college-basketball", BASKETBALL, "groups=50&limit=400",
            rankings=True, transactions=False),
@@ -537,6 +531,56 @@ def game_problems(summary, league):
     return {"Game summary": summary_header_problems(summary),
             "Box score shape": box_score_problems(summary.get("boxscore"), league),
             "Plays": play_problems(summary, league)}
+
+
+def leaders_problems(data):
+    """What ESPN's /leaders must look like for espn_api._parse_leaders."""
+    if not isinstance(data, dict):
+        return ["no answer"]
+    categories = (data.get("leaders") or {}).get("categories")
+    if not categories:
+        return ["leaders.categories is empty"]
+    problems = []
+    if not ((data.get("requestedSeason") or {}).get("type") or {}).get("type"):
+        problems.append("requestedSeason has no season type, so the app can't say what these are")
+    for category in categories:
+        name = category.get("name")
+        if not name or not category.get("displayName"):
+            problems.append("a category has no name or displayName")
+        for leader in category.get("leaders") or []:
+            if not (leader.get("athlete") or {}).get("displayName"):
+                problems.append(f"{name}: a leader has no name inside the response")
+            if not (leader.get("team") or {}).get("abbreviation"):
+                problems.append(f"{name}: a leader has no team inside the response")
+            if leader.get("value") is None or leader.get("displayValue") is None:
+                problems.append(f"{name}: a leader has no value or displayValue")
+    return problems
+
+
+def _top_values(categories):
+    return {c.get("name"): c["leaders"][0].get("value") for c in categories or [] if c.get("leaders")}
+
+
+def preseason_leaders(leaders, core_regular, core_preseason):
+    """Whether these leaders are really the preseason's, as /statistics was for the NFL and NHL
+    while calling itself the regular season. (Categories that give it away, those that can.)
+    Only a category whose two leaders differ can say. /leaders can also rightly differ from
+    the core API's regular season, since it leaves out those short of a qualifying minimum."""
+    regular = _top_values((core_regular or {}).get("categories"))
+    preseason = _top_values((core_preseason or {}).get("categories"))
+    can_tell = {name: value for name, value in _top_values((leaders.get("leaders") or {}).get("categories")).items()
+                if name in regular and name in preseason and regular[name] != preseason[name]}
+    return [name for name, value in can_tell.items() if value == preseason[name]], list(can_tell)
+
+
+def unreadable_leader_values(categories):
+    """Stat lines or blanks where the app's rows should have a number."""
+    found = []
+    for category in categories:
+        for row in category.get("stats") or []:
+            if not re.fullmatch(r"[+-]?[\d,]*\.?\d+", str(row.get("value", ""))):
+                found.append(f"{category.get('category')}: {row.get('value')!r}")
+    return found
 
 
 def invented_names(value):
@@ -1044,53 +1088,11 @@ def check_transactions(http, report, league):
 
 
 def check_statistics(http, report, league, event, in_season):
-    import espn_api
-
-    if league.player_stats_gap:
-        report.warn(league.key, "App: player statistics", league.player_stats_gap)
-    elif league.player_stats:
-        # ESPN's blip comes in spells that can outlast the app's own retries, so nothing is only
-        # nothing if it lasts. Only the last try says why: an earlier blip mustn't excuse a parser
-        # that then reads nothing from a good answer, or a broken app could close its own alarm.
-        stats, tries, app_said_blip, ever_blipped = None, 0, False, False
-        try:
-            for tries in range(1, STATISTICS_TRIES + 1):
-                app_said_blip = False
-                try:
-                    stats = espn_api.get_player_statistics(league.key)
-                except ApiError:
-                    stats, app_said_blip, ever_blipped = {"player_stats": []}, True, True
-                if stats.get("player_stats"):
-                    break
-                if tries < STATISTICS_TRIES:
-                    time.sleep(STATISTICS_PAUSE)
-        except Exception as e:
-            report.fail(league.key, "App: player statistics", f"raised {type(e).__name__}: {e}")
-            stats = None
-        if stats is not None:
-            invented = invented_names(stats)
-            categories = stats.get("player_stats") or []
-            if invented:
-                report.fail(league.key, "App: player statistics", f"invented data: {first_problems(invented)}")
-            elif categories and tries > 1:
-                report.warn(league.key, "App: player statistics",
-                            f"{len(categories)} categories on try {tries}. " +
-                            ("ESPN's /statistics failed before that, and a user would have been told to try again"
-                             if ever_blipped else "It came back empty before that, and a user would have seen none"))
-            elif categories:
-                report.ok(league.key, "App: player statistics", f"{len(categories)} categories")
-            else:
-                url = f"{SITE}/{league.path}/statistics"
-                _, raw = http.get(url)
-                if app_said_blip or (isinstance(raw, dict) and raw.get("message") == STATISTICS_BLIP):
-                    report.warn(league.key, "App: player statistics",
-                                f"ESPN kept saying \"{STATISTICS_BLIP}\" over {STATISTICS_TRIES} tries, "
-                                "and a user would have been told to try again", url)
-                elif isinstance(raw, dict) and (raw.get("stats") or {}).get("categories"):
-                    report.fail(league.key, "App: player statistics", "ESPN has them, and the app read nothing", url)
-                else:
-                    report.seasonal(in_season, league.key, "App: player statistics",
-                                    f"no categories in {STATISTICS_TRIES} tries", url)
+    if league.player_stats:
+        check_leaders(http, report, league)
+        check_app_leaders(report, league, in_season)
+    else:
+        check_no_leaders(http, report, league)
 
     if league.team_stats:
         # The iPhone's team statistics. Windows asks team by team, which #94 tracks.
@@ -1105,6 +1107,96 @@ def check_statistics(http, report, league, event, in_season):
 
     if league.core_leaders:
         check_core_statistics(http, report, league, event, in_season)
+
+
+def check_leaders(http, report, league):
+    """ESPN's /leaders, as the app asks, and that it's really the regular season. It's the app's
+    source everywhere but MLB, where it's the fallback if the MLB Stats API has nothing."""
+    import espn_api
+
+    try:
+        year = espn_api._leaders_season(league.path)
+    except ApiError as e:
+        report.fail(league.key, "Core API: season", f"the app can't tell the season: {e}",
+                    f"{CORE}/{league.core_path}/season")
+        return
+    base = f"{V3}/{league.path}/leaders?region=us&lang=en&season={year}&seasontype=2&limit="
+    url = f"{base}{espn_api.LEADERS_LIMIT}"
+    status, data = http.get(url)
+    if status != 200:
+        # The app steps down to these too. Below the full list is worth a look, not a break.
+        for limit in espn_api.LEADERS_SMALLER_LIMITS:
+            shorter = f"{base}{limit}"
+            answer, data = http.get(shorter)
+            if answer == 200:
+                report.warn(league.key, "Leaders", f"got {status} for {espn_api.LEADERS_LIMIT}, "
+                                                   f"so the app shows {limit} a category", shorter)
+                url, status = shorter, answer
+                break
+        else:
+            report.fail(league.key, "Leaders", f"got {status}, and the same at every smaller limit, "
+                                               "so the app says to try again", url)
+            return
+    problems = leaders_problems(data)
+    if problems:
+        report.fail(league.key, "Leaders", first_problems(problems), url)
+        return
+    season = data["requestedSeason"]
+    report.ok(league.key, "Leaders", f"{season.get('displayName')} {season['type'].get('name')}: "
+                                     f"{len(data['leaders']['categories'])} categories", url)
+
+    answers = {}
+    for season_type in (2, 1):
+        core_url = f"{CORE}/{league.core_path}/seasons/{season.get('year')}/types/{season_type}/leaders?limit=1"
+        answer, answers[season_type] = http.get(core_url)
+        if answer not in (200, 404):  # the NBA and college have no preseason leaders: a 404
+            report.warn(league.key, "Leaders aren't the preseason", f"got {answer} from the core API", core_url)
+            return
+    given_away, can_tell = preseason_leaders(data, answers[2], answers[1])
+    if can_tell and len(given_away) * 2 >= len(can_tell):
+        report.fail(league.key, "Leaders aren't the preseason",
+                    f"{len(given_away)} of {len(can_tell)} categories have the preseason's leader: "
+                    f"{first_problems(given_away)}", url)
+    elif can_tell:
+        report.ok(league.key, "Leaders aren't the preseason", f"checked {len(can_tell)} categories", url)
+    else:
+        report.ok(league.key, "Leaders aren't the preseason", "ESPN has no preseason leaders to mix up", url)
+
+
+def check_app_leaders(report, league, in_season):
+    """The app's own request, which steps down and raises. ESPN's failing after all that is a
+    FAIL, and gets the second run that any failure does."""
+    import espn_api
+
+    try:
+        stats = espn_api.get_player_statistics(league.key)
+    except ApiError as e:
+        report.fail(league.key, "App: player statistics", f"a user would have been told: {e}")
+        return
+    except Exception as e:
+        report.fail(league.key, "App: player statistics", f"raised {type(e).__name__}: {e}")
+        return
+    categories = stats.get("player_stats") or []
+    invented = invented_names(stats)
+    unreadable = unreadable_leader_values(categories)
+    if invented:
+        report.fail(league.key, "App: player statistics", f"invented data: {first_problems(invented)}")
+    elif unreadable:
+        report.fail(league.key, "App: player statistics", f"values that don't read as numbers: {first_problems(unreadable)}")
+    elif categories:
+        report.ok(league.key, "App: player statistics", f"{len(categories)} categories, {stats.get('season') or 'MLB Stats API'}")
+    else:
+        report.seasonal(in_season, league.key, "App: player statistics", "no categories")
+
+
+def check_no_leaders(http, report, league):
+    """Both apps have none here because ESPN has none, so it's news if that changes."""
+    url = f"{V3}/{league.path}/leaders?region=us&lang=en&limit=5"
+    status, data = http.get(url)
+    if status == 200 and isinstance(data, dict) and (data.get("leaders") or {}).get("categories"):
+        report.warn(league.key, "Leaders", "ESPN has these now. Windows could show them", url)
+    else:
+        report.ok(league.key, "Leaders", f"none, as expected (got {status})", url)
 
 
 def check_core_stats(http, report, league, year, name, tail, read):
