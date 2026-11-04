@@ -153,6 +153,7 @@ def test_team_rows_keep_the_shared_rank_and_read_best_first(open_dialog):
         ["1", "Celtics", "9"], ["2", "Heat", "11"], ["3", "Bulls", "15"]]
 
     select_stat(view, "Points (Offense)")
+    table = results(view)
     assert [row_cells(table, row) for row in range(3)] == [
         ["1", "Bulls", "120"], ["1", "Celtics", "120"], ["3", "Heat", "99"]]
     assert table.full_list.item(2).text() == "Rank: 3; Team: Heat; Value: 99"
@@ -202,13 +203,13 @@ def test_choosing_a_stat_focuses_the_first_row_of_the_saved_view(open_dialog, sa
 def test_the_heading_names_the_table_in_every_view(open_dialog):
     view = open_dialog("NBA", "player", NBA_LEADERS)
     select_stat(view, "Points Per Game")
-    heading = heading(view)
-    assert heading.endswith("Leaders: Points Per Game") and NBA_LEADERS["season"] in heading
+    text = heading(view)
+    assert text.endswith("Leaders: Points Per Game") and NBA_LEADERS["season"] in text
     table = results(view)
-    assert table.accessibleName() == heading
-    assert table.table_widget.accessibleName() == heading
-    assert table.quick_list.accessibleName() == f"{heading} - Quick List"
-    assert table.full_list.accessibleName() == f"{heading} - Full List"
+    assert table.accessibleName() == text
+    assert table.table_widget.accessibleName() == text
+    assert table.quick_list.accessibleName() == f"{text} - Quick List"
+    assert table.full_list.accessibleName() == f"{text} - Full List"
 
 
 def test_the_view_keys_work_and_are_saved(open_dialog, saved_view):
