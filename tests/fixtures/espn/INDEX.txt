@@ -45,7 +45,6 @@ transactions_NFL.json	1 KB	league-wide: team on each item; pageCount 407
 transactions_NFL_9.json	1 KB	team-filtered: no team on the items
 rankings_NCAAF.json	2 KB	AP and Coaches polls, 3 teams each
 draft_NFL_2026.json	4 KB	pieces: draft, status, rounds (2, 2 picks each), athletes and colleges by their $ref URLs
-team_stats_NBA_15.json	1 KB	results.stats.categories, 2 categories, 3 stats each
 golf_schedule_PGA.json	5 KB	dates=2026: a cancelled event with no competitors, a final, a scheduled one
 golf_scoreboard_PGA.json	2 KB	current scoreboard, tournament not started, 3 golfers
 worldcup_standings_WC2026.json	10 KB	2 groups of 4; note.description is the advancement text; a stat with value null
@@ -97,6 +96,27 @@ leaders_core_MLB.json	5 KB	core seasons/2026/types/2/leaders limit=3, 3 categori
 season_NBA.json	6 KB	core /season: year 2027, displayName 2026-27, type 2
 season_NFL.json	7 KB	core /season: year 2026, type 2; types.items dates the off season under the season just played
 season_WNBA.json	5 KB	core /season: year 2026, type 3, in its playoffs
+byteam_NBA.json	263 KB	season=2027 seasontype=2, whole: 30 teams, own and opponent sections, pagination count 30, ESPN's ranks blank for points per game
+byteam_WNBA.json	126 KB	season=2026 seasontype=2, whole: all 15 teams
+byteam_WNBA_default.json	71 KB	no season or type, in the off season: the 8 playoff teams, requestedSeason type 3
+byteam_NFL.json	89 KB	season=2026 seasontype=2, 7 of 32 teams: no pagination; totalGiveaways tied, and ESPN's rank 1 is the most giveaways
+byteam_NHL.json	50 KB	season=2027 seasontype=2, 7 of 32 teams: no pagination, no opponent sections; a null among the values
+byteam_MLB.json	51 KB	season=2026 seasontype=2, 7 of 30 teams: no pagination, no opponent sections; errors tied
+byteam_MLB_default.json	31 KB	no season or type, in November: 4 of the 12 playoff teams, requestedSeason type 3
+byteam_NCAAF_2025.json	54 KB	season=2025 seasontype=2, 5 of 136 teams: answers with requestedSeason type 3, Postseason, however it's asked
+byteam_NCAAM.json	58 KB	season=2027 seasontype=2 on Nov 4, 2026, 8 of 365 teams, Duke among them: everyone has played once, and only Division I teams have opponent sections
+byteam_NCAAM_2026.json	36 KB	season=2026 seasontype=2, 4 of the 400 returned: pagination count 722, pages 2; UCCS with one game and a section of "-" and nulls
+byteam_NCAAM_2026_desc.json	35 KB	the same, sort=offensive.avgTurnovers:desc: 2 teams only this way round and 1 also in the next
+byteam_NCAAM_2026_asc.json	35 KB	the same, sort=offensive.avgTurnovers:asc: 2 teams only this way round and 1 also in the last
+core_team_stats_NBA_29.json	29 KB	core seasons/2027/types/2/teams/29/statistics: Grizzlies, per-game stats have no rank, totals ranked per game
+core_team_stats_NCAAM_150.json	19 KB	core seasons/2027/types/2/teams/150/statistics: Duke, ranks such as Tied-118th
+core_team_stats_NFL_22.json	77 KB	core seasons/2026/types/2/teams/22/statistics: Cardinals, including ranks that don't match the numbers, Tied-1st net punting at 39.8
+byteam_NCAAWB.json	60 KB	season=2027 seasontype=2 on Nov 4, 2026, 8 of 326 teams: 2 Division I schools moving up, with no opponent sections, 2 non-Division I schools, 4 others
+teams_NCAAWB.json	24 KB	teams?limit=1000, the 6 Division I teams of byteam_NCAAWB out of 362; none from outside Division I
+teams_NCAAM.json	55 KB	teams?limit=1000, the Division I teams of the byteam_NCAAM files out of 362
+byteam_NCAAF.json	55 KB	season=2026 seasontype=2, 5 of 138 teams, Alabama among them: every team has opponent sections
+core_team_stats_NCAAF_333_2025.json	77 KB	core seasons/2025/types/2/teams/333/statistics: Alabama, passing 3,551, 11th, which byteam's type 3 has as 3,953 through the bowls
+core_team_stats_NCAAF_149.json	71 KB	core seasons/2026/types/2/teams/149/statistics: Montana, FCS, so not in byteam; total tackles Tied-363rd
 team_WNBA_8_regular.json	6 KB	Lynx season=2026&seasontype=2: 33-11, home 15-7, road 18-4, 1st; team_WNBA_8.json is the plain answer in the playoffs, 0-2, 8th
 team_WNBA_14.json	7 KB	Storm, not in the playoffs, plain answer in them: 0-0, 4th
 team_WNBA_14_regular.json	7 KB	Storm season=2026&seasontype=2: 8-36, last, as Standings has it

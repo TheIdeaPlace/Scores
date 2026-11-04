@@ -39,7 +39,8 @@ class ESPNAPIService {
     /// The app uses `shared`. Tests pass a session that answers from fixtures.
     init(session: URLSession) {
         self.session = session
-        self.teamStatsStore = TeamStatsStore(session: session, baseURL: webAPIBaseURL)
+        self.teamStatsStore = TeamStatsStore(session: session, webBaseURL: webAPIBaseURL,
+                                             siteBaseURL: baseURL, coreBaseURL: coreAPIBaseURL)
     }
 
     // MARK: - Core API league name helper
@@ -901,23 +902,6 @@ class ESPNAPIService {
         return []
     }
     
-    private func getSeasonTypes(for sport: Sport) -> [Int] {
-        let now = Date()
-        let calendar = Calendar.current
-        let month = calendar.component(.month, from: now)
-        
-        // MLB: Spring training (type 1) in Feb-March, regular season (type 2) otherwise
-        if sport == .mlb {
-            if month >= 2 && month <= 3 {
-                return [1, 2, 3] // Try spring training, then regular, then postseason
-            }
-            return [2, 3, 1] // Try regular, then postseason, then spring training
-        }
-        
-        // Other sports: Regular season (2) first, then postseason (3)
-        return [2, 3, 1]
-    }
-    
     /// Fetch league leaders filtered to players on a specific team.
     /// Fetches the top 100 across the league, then filters to players on this team.
     /// limit=100 covers virtually all qualified hitters/pitchers (MLB has ~60-80
@@ -943,32 +927,66 @@ class ESPNAPIService {
         }
     }
 
-    /// Returns this team's rank in each stat category using the Core API
-    /// per-team statistics endpoint, which provides real team-aggregate values
-    /// (e.g. team ERA, team batting average) along with ESPN's rank display string.
+    /// Returns this team's rank in each stat category. The Core API's per-team statistics say which
+    /// stats a team has and their values, for the regular season, this year's or the most recent:
+    /// never a preseason, which the app has nowhere to say. Soccer files its whole league season
+    /// under type 1. The ranks come from the league's `byteam` list where it has the stat, so
+    /// they're what the league list says.
     func fetchTeamStatRankings(teamId: String, sport: Sport) async throws -> [TeamStatRanking] {
         let league = sport.apiPath.components(separatedBy: "/").last ?? sport.rawValue.lowercased()
         let sportType = sport.apiPath.components(separatedBy: "/").first ?? "unknown"
         let seasonYear = sport.currentSeasonYear
-        let seasonTypes = getSeasonTypes(for: sport)
+        let seasonType = sport.isSoccer ? 1 : 2
+
+        // The same list the league list has, so the second of them to ask for gets it from the
+        // store. Not having it only costs the ranks that come from it, unless the network has
+        // stalled: the core API wouldn't get through either, and that's one timeout before Retry
+        // appears rather than two.
+        var leagueStats: TeamStatsByTeamResponse?
+        if sport.hasTeamStats {
+            do {
+                leagueStats = try await teamStatsStore.payload(for: sport)
+            } catch let error as URLError {
+                throw error
+            } catch {
+                leagueStats = nil
+            }
+        }
 
         for season in [seasonYear, seasonYear - 1] {
-            for seasonType in seasonTypes {
-                let urlString = "\(coreAPIBaseURL)/\(sportType)/leagues/\(league)/seasons/\(season)/types/\(seasonType)/teams/\(teamId)/statistics"
-                guard let url = URL(string: urlString) else { continue }
-                do {
-                    let (data, response) = try await session.data(from: url)
-                    guard let http = response as? HTTPURLResponse, http.statusCode == 200 else { continue }
-                    let apiResponse = try JSONDecoder().decode(CoreTeamStatisticsResponse.self, from: data)
-                    let rankings = buildTeamStatRankings(from: apiResponse)
-                    if !rankings.isEmpty { return rankings }
-                } catch { continue }
+            let urlString = "\(coreAPIBaseURL)/\(sportType)/leagues/\(league)/seasons/\(season)/types/\(seasonType)/teams/\(teamId)/statistics"
+            guard let url = URL(string: urlString) else { continue }
+            do {
+                let (data, response) = try await session.data(from: url)
+                guard let http = response as? HTTPURLResponse, http.statusCode == 200 else { continue }
+                let apiResponse = try JSONDecoder().decode(CoreTeamStatisticsResponse.self, from: data)
+                // Only if it's the same numbers, or the rank would be for others. A past college
+                // football list is type 3 through the bowls, where these are type 2: Alabama's
+                // 3,551 passing yards in 2025 are 11th, and that list has 3,953, 6th.
+                let sameSeason = leagueStats.flatMap { $0.requestedSeason?.year == season && $0.isRegularSeason ? $0 : nil }
+                let rankings = buildTeamStatRankings(
+                    from: apiResponse,
+                    teamId: teamId,
+                    sport: sport,
+                    league: sameSeason.map { LeagueTeamStats($0, sport: sport) }
+                )
+                if !rankings.isEmpty { return rankings }
+            } catch let error as URLError {
+                // Another season won't get through a stalled network either, 30 seconds a try.
+                throw error
+            } catch {
+                continue
             }
         }
         return []
     }
 
-    private func buildTeamStatRankings(from response: CoreTeamStatisticsResponse) -> [TeamStatRanking] {
+    private func buildTeamStatRankings(
+        from response: CoreTeamStatisticsResponse,
+        teamId: String,
+        sport: Sport,
+        league: LeagueTeamStats?
+    ) -> [TeamStatRanking] {
         // Stat names that are technical, trivial, or duplicate — hide from the user.
         let excluded: Set<String> = [
             "gamesPlayed", "teamGamesPlayed", "isQualified", "isQualifiedSteals",
@@ -985,6 +1003,16 @@ class ESPNAPIService {
             "runSupportAvg", "groundToFlyRatio", "pitchesPerInning",
         ]
 
+        // A rank past the end of the league is against cross-split or individual-player pools in
+        // ESPN's data, not team against team: NFL kick return fair catch percentage reads 200th.
+        // Without a list the team is on to say how many teams there are, 34 is more than any pro
+        // league has, and 400 more than Division I. Montana is in FCS, and college football's list
+        // is FBS, so its ranks aren't out of that list's size: ESPN has its tackles Tied-363rd.
+        let listed = league.flatMap { list in list.teams.contains { $0.team.id == teamId } ? list : nil }
+        let leagueSize = listed?.teams.count
+        let highestRank = leagueSize ?? (sport.isCollegeSport ? 400 : 34)
+        let outOf = sport.isCollegeSport ? leagueSize : nil
+
         var rankings: [TeamStatRanking] = []
         for category in response.splits?.categories ?? [] {
             guard let sectionName = category.displayName, sectionName != "Fielding" else { continue }
@@ -993,23 +1021,34 @@ class ESPNAPIService {
                     let name = stat.name, !excluded.contains(name),
                     let displayName = stat.displayName,
                     let displayValue = stat.displayValue,
-                    let rank = stat.rank,
-                    // Rank > 34 is impossible in any pro league (max 32 teams: NFL/NHL).
-                    // Stats with higher ranks are ranked against cross-split or
-                    // individual-player pools in ESPN's data — not team-vs-team.
-                    rank <= 34,
-                    let rankDisplay = stat.rankDisplayValue,
-                    !rankDisplay.isEmpty, rankDisplay != "?",
-                    displayValue != "0", displayValue != "0.0",
-                    rankDisplay != "Tied-1st"
+                    displayValue != "0", displayValue != "0.0"
                 else { continue }
+
+                let rank: Int
+                let rankDisplay: String
+                if let section = category.name,
+                   let standing = listed?.standing(ofTeam: teamId, section: section, stat: name) {
+                    rank = standing.rank
+                    rankDisplay = TeamStatRanks.display(rank: rank, tied: standing.tied, outOf: outOf)
+                } else {
+                    // A stat only this feed has, with ESPN's rank for it. Its Tied-1st is usually
+                    // everyone level on nothing.
+                    guard
+                        let espnRank = stat.rank, espnRank <= highestRank,
+                        let espnDisplay = stat.rankDisplayValue,
+                        !espnDisplay.isEmpty, espnDisplay != "?", espnDisplay != "Tied-1st"
+                    else { continue }
+                    rank = espnRank
+                    rankDisplay = outOf.map { "\(espnDisplay) of \($0)" } ?? espnDisplay
+                }
 
                 rankings.append(TeamStatRanking(
                     sectionName: sectionName,
                     categoryDisplayName: displayName,
                     teamValue: displayValue,
                     leagueRank: rank,
-                    rankDisplay: rankDisplay
+                    rankDisplay: rankDisplay,
+                    leagueSize: leagueSize
                 ))
             }
         }
@@ -1031,7 +1070,12 @@ class ESPNAPIService {
         guard !specs.isEmpty else { return [] }
 
         let response = try await teamStatsStore.payload(for: sport)
-        return buildTeamLeaderCategories(from: response, specs: specs, limit: limit)
+        return buildTeamLeaderCategories(
+            from: LeagueTeamStats(response, sport: sport),
+            specs: specs,
+            limit: limit,
+            seasonLabel: response.seasonLabel
+        )
     }
 
     // MARK: - Stat Definitions
@@ -1071,57 +1115,32 @@ class ESPNAPIService {
     ]
 
     private func buildTeamLeaderCategories(
-        from response: TeamStatsByTeamResponse,
+        from league: LeagueTeamStats,
         specs: [TeamStatSpec],
-        limit: Int
+        limit: Int,
+        seasonLabel: String?
     ) -> [LeagueLeaderCategory] {
-        let teams = qualifiedTeams(in: response)
-        guard !teams.isEmpty else { return [] }
-
-        // Stat name → column index, taken from the first metadata copy of each
-        // category that actually carries the names array.
-        var columns: [String: [String: Int]] = [:]
-        for meta in response.categories ?? [] {
-            guard let section = meta.name, let names = meta.names, !names.isEmpty,
-                  columns[section] == nil else { continue }
-            var index: [String: Int] = [:]
-            // ESPN repeats a few stat keys within a category (NFL rushing lists
-            // rushingYards twice); the first occurrence is the one to use.
-            for (i, name) in names.enumerated() where index[name] == nil {
-                index[name] = i
-            }
-            columns[section] = index
-        }
+        guard !league.teams.isEmpty else { return [] }
 
         return specs.compactMap { spec -> LeagueLeaderCategory? in
-            guard let index = columns[spec.section]?[spec.stat] else { return nil }
-            let wantedSplit = spec.split == .opponent ? "900" : "0"
+            let ranked = league.ranked(
+                section: spec.section,
+                stat: spec.stat,
+                opponent: spec.split == .opponent,
+                higherIsBetter: spec.higherIsBetter
+            )
+            guard !ranked.isEmpty else { return nil }
 
-            var rows: [(value: Double, display: String, team: TeamStatsByTeamResponse.TeamStats.TeamInfo)] = []
-            for team in teams {
-                guard let category = (team.categories ?? []).first(where: {
-                    $0.name == spec.section && ($0.splitId ?? "0") == wantedSplit
-                }) else { continue }
-                guard let value = category.values?[safe: index] ?? nil,
-                      let display = category.totals?[safe: index] ?? nil,
-                      !display.isEmpty, display != "-"
-                else { continue }
-                rows.append((value, display, team.team))
-            }
-            guard !rows.isEmpty else { return nil }
-
-            rows.sort { spec.higherIsBetter ? $0.value > $1.value : $0.value < $1.value }
-
-            let leaders = rows.prefix(limit).enumerated().map { index, row in
+            let leaders = ranked.prefix(limit).map { entry in
                 LeagueLeaderCategory.LeagueLeaderEntry(
-                    rank: index + 1,
-                    displayValue: row.display,
-                    athleteName: row.team.abbreviation ?? row.team.displayName ?? "—",
+                    rank: entry.rank,
+                    displayValue: entry.row.display,
+                    athleteName: entry.row.team.abbreviation ?? entry.row.team.displayName ?? "—",
                     teamAbbreviation: "",
                     teamNames: LeagueLeaderCategory.TeamNameSet(
-                        displayName: row.team.displayName ?? row.team.abbreviation ?? "—",
-                        name: row.team.name ?? row.team.displayName ?? "",
-                        abbreviation: row.team.abbreviation ?? ""
+                        displayName: entry.row.team.displayName ?? entry.row.team.abbreviation ?? "—",
+                        name: entry.row.team.name ?? entry.row.team.displayName ?? "",
+                        abbreviation: entry.row.team.abbreviation ?? ""
                     )
                 )
             }
@@ -1129,42 +1148,10 @@ class ESPNAPIService {
                 name: spec.key,
                 displayName: spec.title,
                 leaders: Array(leaders),
-                isTeamCategory: true
+                isTeamCategory: true,
+                seasonLabel: seasonLabel
             )
         }
-    }
-
-    /// Drops teams that have played far fewer games than the rest of the league.
-    ///
-    /// ESPN's college feeds include every team that faced a Division I opponent,
-    /// so a Division II school with a single game can top a per-game category.
-    /// Teams below half the league-leading games-played count are excluded.
-    private func qualifiedTeams(in response: TeamStatsByTeamResponse) -> [TeamStatsByTeamResponse.TeamStats] {
-        let teams = response.teams ?? []
-
-        // Locate the games-played column. Its category and key vary by sport
-        // (baseball "batting"/"gamesPlayed", hockey "general"/"games").
-        var gamesColumn: (section: String, index: Int)?
-        for meta in response.categories ?? [] {
-            guard let section = meta.name, let names = meta.names else { continue }
-            if let index = names.firstIndex(where: { $0 == "gamesPlayed" || $0 == "games" }) {
-                gamesColumn = (section, index)
-                break
-            }
-        }
-        guard let gamesColumn else { return teams }
-
-        func gamesPlayed(_ team: TeamStatsByTeamResponse.TeamStats) -> Double? {
-            guard let category = (team.categories ?? []).first(where: {
-                $0.name == gamesColumn.section && ($0.splitId ?? "0") == "0"
-            }) else { return nil }
-            return category.values?[safe: gamesColumn.index] ?? nil
-        }
-
-        let played = teams.compactMap(gamesPlayed)
-        guard let mostGames = played.max(), mostGames > 0 else { return teams }
-        let threshold = mostGames / 2
-        return teams.filter { (gamesPlayed($0) ?? mostGames) >= threshold }
     }
 
     private func fetchLeadersForSeason(

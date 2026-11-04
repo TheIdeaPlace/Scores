@@ -14,7 +14,6 @@ from services.api_service import ApiService
 from .support import EMPTY_JSON, HTTP_404, HTTP_500, NOT_JSON, TIMEOUT, FakeResponse
 
 DAY = date(2026, 6, 20)
-TEAM_NOTHING = {"team_stats": [], "player_stats": []}
 
 # name, call, what it returns when a request fails or has nothing in it. This is what
 # they do today, not what they should: all but the wild card read as "nothing to show"
@@ -31,7 +30,6 @@ QUIET = [
     ("get_golf_schedule", lambda: espn_api.get_golf_schedule("PGA"), []),
     ("get_world_cup_standings", lambda: espn_api.get_world_cup_standings("WC2026"), []),
     ("get_mlb_wildcard_standings", espn_api.get_mlb_wildcard_standings, {}),
-    ("get_team_statistics", lambda: espn_api.get_team_statistics("NBA"), TEAM_NOTHING),
 ]
 
 
@@ -127,14 +125,15 @@ class TestTimeoutsReachTheCaller:
 
 @pytest.mark.parametrize("reply", [TIMEOUT, requests.ConnectionError("refused"), HTTP_404, HTTP_500, NOT_JSON, EMPTY_JSON],
                          ids=["timeout", "connection", "404", "500", "not_json", "empty"])
-def test_player_statistics_say_a_failed_request_failed(espn, reply, monkeypatch):
+def test_statistics_say_a_failed_request_failed(espn, reply, monkeypatch):
     """The Statistics dialog has a row for it, which says to try again."""
     monkeypatch.setattr(espn_api.time, "sleep", lambda seconds: None)
     espn.on(".*", reply)
-    with pytest.raises(ApiError, match="Try again"):
-        espn_api.get_player_statistics("NBA")
-    with pytest.raises(ApiError, match="Try again"):
-        ApiService.get_player_statistics("NBA")
+    for name in ("get_player_statistics", "get_team_statistics"):
+        with pytest.raises(ApiError, match="Try again"):
+            getattr(espn_api, name)("NBA")
+        with pytest.raises(ApiError, match="Try again"):
+            getattr(ApiService, name)("NBA")
 
 
 @pytest.mark.parametrize("call,expected", [

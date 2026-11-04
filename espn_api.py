@@ -6,6 +6,7 @@ from exceptions import ApiError
 from game_labels import (best_odds, broadcast_names, format_height, format_weight,
                          injured_player_count, leader_display_value, local_schedule_datetime,
                          schedule_game_label)
+from team_stats import needs_team_list, parse_team_stats
 from timezone_utils import convert_espn_time_to_local
 
 # Every ESPN request gets a timeout. requests has none by default, so one
@@ -2552,154 +2553,6 @@ def _get_team_record(team_id, league_key):
         print(f"Error getting team {team_id} record: {e}")
         return 0, 0, "0.000", ""
 
-def _get_team_statistics(league_key):
-    """Get team statistics for a league with parallel processing for speed"""
-    import concurrent.futures
-    
-    league_path = LEAGUES.get(league_key)
-    if not league_path:
-        return []
-    
-    try:
-        print(f"Fetching team statistics for {league_key}")
-        
-        # Get list of teams first
-        teams_url = f"{BASE_URL}/{league_path}/teams"
-        resp = _http_get(teams_url)
-        
-        if resp.status_code != 200:
-            print(f"Failed to get teams list: {resp.status_code}")
-            return []
-        
-        data = resp.json()
-        
-        # Navigate to teams data
-        if 'sports' not in data or not data['sports']:
-            print("No sports data found")
-            return []
-            
-        leagues = data['sports'][0].get('leagues', [])
-        if not leagues:
-            print("No leagues data found")
-            return []
-            
-        teams = leagues[0].get('teams', [])
-        if not teams:
-            print("No teams data found")
-            return []
-        
-        print(f"Found {len(teams)} teams")
-        
-        def fetch_team_stats(team_entry):
-            """Fetch statistics for a single team"""
-            team = team_entry.get('team', {})
-            team_id = team.get('id')
-            team_name = team.get('displayName') or 'Unknown'
-            
-            if not team_id:
-                return None
-            
-            try:
-                # Get team statistics
-                team_stats_url = f"{BASE_URL}/{league_path}/teams/{team_id}/statistics"
-                team_resp = _http_get(team_stats_url)
-                
-                if team_resp.status_code == 200:
-                    team_data = team_resp.json()
-                    
-                    # Parse team statistics
-                    if 'results' in team_data and 'stats' in team_data['results']:
-                        stats = team_data['results']['stats']
-                        
-                        if 'categories' in stats:
-                            categories = stats['categories']
-                            team_categories = []
-                            
-                            # Process each category for this team
-                            for category in categories:
-                                category_name = category.get('displayName') or category.get('name') or 'Unknown'
-                                category_stats = category.get('stats', [])
-                                
-                                # Create team's stats for this category
-                                season = _as_dict(team_data.get('season'))
-                                team_category_stats = {
-                                    'team_name': team_name,
-                                    'team_id': str(team_id),
-                                    'season': _season_label(season.get('displayName'), season.get('name')),
-                                    'stats': {}
-                                }
-                                
-                                # Process individual stats
-                                for stat in category_stats:
-                                    stat_name = stat.get('name', '')
-                                    stat_display_name = stat.get('displayName') or stat_name
-                                    stat_value = stat.get('displayValue', str(stat.get('value', '')))
-                                    
-                                    if stat_name and stat_value:
-                                        team_category_stats['stats'][stat_display_name] = stat_value
-                                
-                                team_categories.append({
-                                    'category': category_name,
-                                    'team_stats': team_category_stats
-                                })
-                            
-                            print(f"Processed team statistics for {team_name}")
-                            return team_categories
-                    
-                else:
-                    print(f"Failed to get statistics for {team_name}: {team_resp.status_code}")
-                    
-            except Exception as e:
-                print(f"Error getting statistics for {team_name}: {e}")
-                
-            return None
-        
-        # Use parallel processing to fetch all team stats
-        team_stats_categories = []
-        teams_processed = 0
-        
-        with concurrent.futures.ThreadPoolExecutor(max_workers=10) as executor:
-            # Submit all team stat requests in parallel
-            futures = [executor.submit(fetch_team_stats, team_entry) for team_entry in teams]
-            
-            # Collect results as they complete
-            for future in concurrent.futures.as_completed(futures):
-                try:
-                    team_categories = future.result()
-                    if team_categories:
-                        teams_processed += 1
-                        
-                        # Merge this team's categories into the main structure
-                        for team_category in team_categories:
-                            category_name = team_category['category']
-                            team_stats = team_category['team_stats']
-                            
-                            # Find or create the category
-                            existing_category = None
-                            for existing in team_stats_categories:
-                                if existing['category'] == category_name:
-                                    existing_category = existing
-                                    break
-                            
-                            if not existing_category:
-                                existing_category = {
-                                    'category': category_name,
-                                    'stats': []
-                                }
-                                team_stats_categories.append(existing_category)
-                            
-                            existing_category['stats'].append(team_stats)
-                            
-                except Exception as e:
-                    print(f"Error processing team stats result: {e}")
-        
-        print(f"Successfully processed {teams_processed} teams with {len(team_stats_categories)} stat categories")
-        return team_stats_categories
-        
-    except Exception as e:
-        print(f"Error fetching team statistics: {e}")
-        return []
-
 def _get_mlb_statistics():
     """Get MLB player statistics from the official MLB Stats API with enhanced parallel loading"""
     import concurrent.futures
@@ -2848,6 +2701,7 @@ STATISTICS_UNAVAILABLE = "ESPN isn't providing these right now. Try again in a m
 PRESEASON = 1
 REGULAR_SEASON = 2
 POSTSEASON = 3
+NEW_SEASON_DAYS = 3
 # /leaders lists these lowest first, and everything else highest first.
 LOW_IS_GOOD_LEADERS = {"avgGoalsAgainst", "ERA", "WHIP", "opponentAvg"}
 
@@ -2856,8 +2710,8 @@ def _no_leaders():
     return {"player_stats": [], "team_stats": []}
 
 
-def _current_season(league_path):
-    """(year, season type) that ESPN calls current. Raises ApiError if it can't say."""
+def core_season(league_path):
+    """ESPN's own idea of a league's season now, with a whole number for its year."""
     sport, league = league_path.split("/", 1)
     try:
         resp = _http_get(f"{CORE_BASE_URL}/{sport}/leagues/{league}/season", timeout=10)
@@ -2865,22 +2719,35 @@ def _current_season(league_path):
     except (requests.RequestException, ValueError) as e:
         raise ApiError(STATISTICS_UNAVAILABLE) from e
     season = _as_dict(season)
-    year = season.get("year")
-    if not isinstance(year, int):
+    if not isinstance(season.get("year"), int):
         raise ApiError(STATISTICS_UNAVAILABLE)
-    return year, _as_dict(season.get("type")).get("type")
+    return season
 
 
-def _regular_season_year(year, season_type):
-    """A season's playoffs and off-season come after its regular season and are filed under
-    its year, so only a preseason means that the last one is the latest."""
-    return year - 1 if season_type == PRESEASON else year
+def latest_regular_season(season):
+    """The year whose regular season to show, from core_season rather than the calendar: the NBA's
+    2026-27 season is 2027. A season's playoffs and off-season come after its regular season
+    and are filed under its year, so only a preseason means that the last one is the latest."""
+    return season["year"] - 1 if _as_dict(season.get("type")).get("type") == PRESEASON else season["year"]
 
 
 def _leaders_season(league_path):
-    """The year whose regular season to show, from ESPN rather than the calendar: the NBA's
-    2026-27 season is 2027."""
-    return _regular_season_year(*_current_season(league_path))
+    return latest_regular_season(core_season(league_path))
+
+
+def regular_season_just_began(season):
+    """Whether core_season says a regular season began in the last few days. ESPN's type turns over
+    before the first game (college basketball at 07:00 UTC on Nov 1, its first game at 14:30), and
+    until there are games, some of its feeds answer 500 for the new season."""
+    season_type = _as_dict(season.get("type"))
+    if season_type.get("type") != REGULAR_SEASON:
+        return False
+    try:
+        began = datetime.fromisoformat(str(season_type.get("startDate")).replace("Z", "+00:00"))
+        days = (datetime.now(began.tzinfo) - began).total_seconds() / 86400
+    except (ValueError, TypeError):
+        return False
+    return 0 <= days <= NEW_SEASON_DAYS
 
 
 def _fetch_leaders(league_path, year):
@@ -2991,21 +2858,140 @@ def get_player_statistics(league_key):
     return result
 
 
-def get_team_statistics(league_key):
-    """A league's team statistics. `season` says what they're from, if it's the same for every
-    team. It isn't always: during the playoffs, ESPN answers with the postseason for the teams
-    in them and the regular season for the others."""
+# Team statistics. One request has every team's whole stat line. ESPN has none for college hockey
+# (an empty answer) or soccer (a 500), and the per-team endpoint has nothing there either, so those
+# leagues have no team statistics to show.
+TEAM_STATS_BASE_URL = "https://site.web.api.espn.com/apis/common/v3/sports"
+TEAM_STAT_LEAGUES = {"NFL", "NCAAF", "NBA", "WNBA", "NCAAM", "NCAAWB", "NHL", "MLB"}
+# Football collapses to 25 teams at limit=1000.
+TEAM_STATS_LIMIT = 500
+# ESPN returns at most 400 teams, and page 2 is empty or a 500. Late in a college basketball season
+# it lists 722, half of them schools that played one Division I game, so the list is asked for
+# again sorted each way by a column every team has: 400 from each end cover them all, up to 800.
+# Only basketball says how many it has. The rest fit, so they never need it.
+TEAM_STATS_SORT = {"basketball": "offensive.avgTurnovers"}
+# Their lists have schools outside Division I. College football's is only FBS.
+TEAM_STATS_NEEDS_TEAM_LIST = {"NCAAM", "NCAAWB"}
+TEAMS_MISSING = "some teams missing"
+
+
+class _TeamStatsServerError(ApiError):
+    """ESPN answered with a 5xx, which is different from it not being reachable: see
+    regular_season_just_began."""
+
+
+def _no_team_stats():
+    return {"team_stats": [], "player_stats": []}
+
+
+def _fetch_team_stats(league_path, year, sort=None):
+    """A season's regular season team statistics, or None if ESPN has no such season. Without
+    `seasontype`, a finished season's answer is its postseason: the WNBA's 8 playoff teams, not its
+    15. A season ESPN doesn't have yet can be an empty answer, or a 500 for basketball."""
+    params = {"region": "us", "lang": "en", "season": year, "seasontype": 2, "limit": TEAM_STATS_LIMIT}
+    if sort:
+        params["sort"] = sort
     try:
-        print(f"Loading team statistics for {league_key}")
-        team_stats = _get_team_statistics(league_key)
-        result = {"team_stats": team_stats, "player_stats": []}
-        seasons = {team.get("season") for category in team_stats for team in category.get("stats", [])}
-        if len(seasons) == 1 and next(iter(seasons)):
-            result["season"] = seasons.pop()
-        return result
-    except Exception as e:
-        print(f"Error fetching team statistics for {league_key}: {str(e)}")
-        return {"team_stats": [], "player_stats": []}
+        resp = _http_get(f"{TEAM_STATS_BASE_URL}/{league_path}/statistics/byteam", params=params, timeout=20)
+        if resp.status_code == 200:
+            return _as_dict(resp.json())
+    except (requests.RequestException, ValueError) as e:
+        raise ApiError(STATISTICS_UNAVAILABLE) from e
+    if resp.status_code == 404:
+        return None
+    raise (_TeamStatsServerError if resp.status_code >= 500 else ApiError)(STATISTICS_UNAVAILABLE)
+
+
+def _division_one_ids(league_path):
+    """The ids on ESPN's team list, which for college basketball is Division I alone: 362 teams
+    for the women, with none from outside it. A failure fails the list, since it would leave
+    out real teams, and the ranks behind them would be wrong."""
+    try:
+        resp = _http_get(f"{BASE_URL}/{league_path}/teams", params={"limit": 1000}, timeout=20)
+        data = resp.json() if resp.status_code == 200 else None
+    except (requests.RequestException, ValueError) as e:
+        raise ApiError(STATISTICS_UNAVAILABLE) from e
+    if data is None:
+        raise ApiError(STATISTICS_UNAVAILABLE)
+    sports = _dicts(_as_dict(data).get("sports"))
+    leagues = _dicts(sports[0].get("leagues")) if sports else []
+    entries = _dicts(leagues[0].get("teams")) if leagues else []
+    return {str(_as_dict(entry.get("team")).get("id")) for entry in entries}
+
+
+def _with_every_team(league_path, year, data):
+    """The answer with the teams it couldn't fit, if it says it has more than it gave. A list with
+    some of them cut would still look whole, with every rank after the gap wrong, so a failure
+    here fails the lot."""
+    teams = _dicts(data.get("teams"))
+    count = _as_dict(data.get("pagination")).get("count")
+    column = TEAM_STATS_SORT.get(league_path.split("/")[0])
+    if not (column and isinstance(count, int) and count > len(teams)):
+        return data
+    every = {str(_as_dict(team.get("team")).get("id")): team for team in teams}
+    for direction in ("desc", "asc"):
+        more = _fetch_team_stats(league_path, year, f"{column}:{direction}")
+        if more is None:
+            raise ApiError(STATISTICS_UNAVAILABLE)
+        for team in _dicts(more.get("teams")):
+            every.setdefault(str(_as_dict(team.get("team")).get("id")), team)
+    return {**data, "teams": list(every.values())}
+
+
+def _parse_team_stats(key, league_path, data):
+    """The result for one season's answer. Asked for a past college football season's regular
+    season, ESPN answers with type 3, with the numbers running through the bowl games, so "Season"
+    says what they are, as it does for the leaders. If there are still fewer teams than ESPN says it
+    has, past the 800 that two sorted requests can reach, the season says so rather than the list
+    looking whole, since every rank in it could be low."""
+    requested = _as_dict(data.get("requestedSeason"))
+    season_type = _as_dict(requested.get("type"))
+    if season_type.get("type") == PRESEASON:
+        return _no_team_stats()
+    team_list = None
+    if key in TEAM_STATS_NEEDS_TEAM_LIST and needs_team_list(data):
+        team_list = _division_one_ids(league_path)
+    team_stats = parse_team_stats(data, league_path.split("/")[0], team_list)
+    if not team_stats:
+        return _no_team_stats()
+    name = "Season" if season_type.get("type") == POSTSEASON else season_type.get("name")
+    season = _season_label(requested.get("displayName"), name)
+    count = _as_dict(data.get("pagination")).get("count")
+    if isinstance(count, int) and count > len(_dicts(data.get("teams"))):
+        season = f"{season}, {TEAMS_MISSING}"
+    return {"team_stats": team_stats, "player_stats": [], "season": season}
+
+
+def get_team_statistics(league_key):
+    """A league's team statistics, as {team_stats, player_stats, season}, for the same season as
+    get_player_statistics, the one ESPN says is the latest. `season` names it, such as
+    "2026-27 Regular Season". Empty means ESPN has none for this league. A failed request raises
+    ApiError instead, so the dialog can say so."""
+    key = league_key if league_key in LEAGUES else league_key.upper()
+    if key not in TEAM_STAT_LEAGUES:
+        return _no_team_stats()
+    league_path = LEAGUES[key]
+    season = core_season(league_path)
+    year = latest_regular_season(season)
+    # A new regular season can start with nobody on the list yet, or be a 404 or for its first days
+    # a 500 for now. Any other 500 is a failure to report, not a reason to show last season's
+    # numbers. What's shown says which season it is.
+    answers = []
+    for season_year in (year, year - 1):
+        try:
+            answer = _fetch_team_stats(league_path, season_year)
+        except _TeamStatsServerError:
+            if season_year != year or not regular_season_just_began(season):
+                raise
+            answer = None
+        answers.append(answer)
+        if answer is not None:
+            result = _parse_team_stats(key, league_path, _with_every_team(league_path, season_year, answer))
+            if result["team_stats"]:
+                return result
+    if not any(answer is not None for answer in answers):
+        raise ApiError(STATISTICS_UNAVAILABLE)
+    return _no_team_stats()
 
 
 def most_used_home_venue(events, team_id):
@@ -3066,20 +3052,20 @@ def _team_record_and_standing(league_path, team_id, team):
     if league_path.startswith("soccer/"):
         return team.get("record"), team.get("standingSummary")
     try:
-        year, season_type = _current_season(league_path)
+        season = core_season(league_path)
     except ApiError as e:
         print(f"[get_team_info] current season of {league_path}: {e}")
         return None, None
     regular = {}
     try:
-        year = _regular_season_year(year, season_type)
+        year = latest_regular_season(season)
         resp = _http_get(f"{BASE_URL}/{league_path}/teams/{team_id}?season={year}&seasontype={REGULAR_SEASON}",
                          timeout=8)
         if resp.status_code == 200:
             regular = _as_dict(_as_dict(resp.json()).get("team"))
     except (requests.RequestException, ValueError) as e:
         print(f"[get_team_info] regular season of team {team_id}: {e}")
-    fallback = team if season_type == REGULAR_SEASON else {}
+    fallback = team if _as_dict(season.get("type")).get("type") == REGULAR_SEASON else {}
     record = regular.get("record") if _dicts(_as_dict(regular.get("record")).get("items")) else fallback.get("record")
     return record, regular.get("standingSummary") or fallback.get("standingSummary")
 

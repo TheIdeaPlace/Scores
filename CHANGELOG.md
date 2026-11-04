@@ -28,6 +28,38 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   general list that included goals.
 - **Screen readers no longer hear "division" for what isn't one.** Standings' tabs are "Standings",
   and a Teams tab reads "Teams in Eastern Conference".
+- **Team statistics on Windows rank the whole league, best first.** College basketball listed the
+  first 50 teams of about 360, and every list ran highest to lowest, so the team with the most
+  turnovers or the worst earned run average read as number one. Now the lowest comes first where
+  low is good and teams level share a rank. College basketball ranks every Division I team who has
+  played, and nobody else. College football ranks FBS teams only, because that's all ESPN lists. A
+  list opens much faster, since it takes one request rather than one per team. The title and the
+  list's name say which season it is, the same one as Player Statistics. What the opposing teams
+  did is now there too, such as points allowed, and so is each team's differential.
+  Windows and iPhone now use the same numbers, and ESPN doesn't give all of them this way, so
+  about half of MLB's columns and a third of the NFL's are gone, with some from every other league:
+  hit by pitch, caught stealing, runs created, passes defended, time of possession, plus/minus,
+  game-winning goals, minutes and two-point numbers among them. If ESPN doesn't answer, the list
+  says so and suggests trying again. In the first days of a new regular season, when ESPN may not
+  have it yet, you get last season's list, and it says so. College hockey and soccer still have no
+  team statistics, because ESPN has none.
+- **Team statistics on iPhone are the whole regular season, out of season too, and say which season
+  they are.** After a season ended, the WNBA listed its 8 playoff teams and MLB its 12, with playoff
+  numbers. They now list all 15 and all 30, with regular season numbers, except a past college
+  football season, whose numbers include the bowl games, as ESPN gives them, and which reads "2025
+  Season". The Teams tab and View All name the season. College basketball keeps every Division I
+  team late in the season, when ESPN's list runs past what it sends at once, and doesn't list a
+  school outside Division I at any point. Teams level share a rank, and View All lists every team
+  rather than the top 50. If ESPN fails in mid-season it says so rather than quietly showing last
+  season's numbers.
+- **A team's ranks on iPhone now match the league list.** They came from different places and
+  often disagreed: a team could read 5th in assists on its page and 11th in the league. College
+  teams had almost no ranks at all, because anything past 34th was hidden. Now 118th shows as
+  "118th of 302", and the rank's color goes by the league's size: red no longer means anything past
+  20th in a list of 300, and green is the WNBA's top quarter. An FCS team, or a past college football
+  season, keeps ESPN's own rank, since the league list doesn't have those numbers. NBA teams gain
+  their per game stats. A team's stats no longer fall back to its preseason or playoffs, and if the
+  network fails it says so, and Retry works.
 - **Venues on Windows now work for college basketball and college hockey, and name the home
   teams.** Those leagues always said "No venue data", and no league ever listed a home team. Each
   venue now says who plays there. Only a team's real homes are listed: not an arena used for a

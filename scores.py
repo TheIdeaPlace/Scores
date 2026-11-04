@@ -66,6 +66,7 @@ import error_log
 from windows_notifications import announce, set_notifier_window
 from accessible_table import AccessibleTable, StandingsTable, WildCardTable, LeadersTable, BoxscoreTable, InjuryTable, prepare_table_tabs, ButtonKeys
 from box_score import build_box_tables
+from team_stats import team_stat_lists
 from game_labels import scoreboard_today, basketball_period_label, football_period_label, football_period_sort_key, game_standings_tables, schedule_row_text, schedule_start_row
 
 # Text processing utilities
@@ -10970,10 +10971,10 @@ class StatisticsViewDialog(QDialog):
         title = QLabel(f"{self.league} {self.stat_type.title()} Statistics")
         layout.addWidget(title)
         
-        # Statistics load on a thread: team stats are one request per team
-        # (30-60+), MLB player stats are 39. Fetched here in the constructor
-        # they froze the window before the dialog even appeared. The dialog
-        # opens at once on a focusable "Loading" row, and the stats replace it.
+        # Statistics load on a thread: a college basketball league's team stats
+        # are several megabytes, MLB player stats are 39 requests. Fetched here in
+        # the constructor they froze the window before the dialog even appeared. The
+        # dialog opens at once on a focusable "Loading" row, and the stats replace it.
         self._content_layout = QVBoxLayout()
         self._loading_list = QListWidget()
         self._loading_list.setAccessibleName(f"{self.stat_type.title()} statistics")
@@ -11163,11 +11164,11 @@ class StatisticsViewDialog(QDialog):
             data = stat_info.get('data', [])
             
             # Update results label with data context
+            season = (self.statistics_data or {}).get("season") or "Season"
             if stat_type == "player":
-                season = (self.statistics_data or {}).get("season") or "Season"
                 header_text = f"{season} Leaders: {stat_info.get('name', stat_name)}"
             else:
-                header_text = f"Top Rankings: {stat_info.get('name', stat_name)}"
+                header_text = f"{season} Rankings: {stat_info.get('name', stat_name)}"
             
             self.results_label.setText(header_text)
             # The label can't take focus, so this is how a screen reader hears what the list is.
@@ -11203,19 +11204,12 @@ class StatisticsViewDialog(QDialog):
             self.results_list.setFocus()  # Move focus to results list
 
     def _setup_team_results_list(self, data, stat_name):
-        """Setup concatenated list view for team statistics results"""
-        
-        # Sort data by numeric value (descending for most stats)
-        sorted_data = sorted(data, key=lambda x: x.get('value', 0), reverse=True)
-        
-        # Populate the list with rank
-        for rank, item in enumerate(sorted_data, 1):
+        """Setup concatenated list view for team statistics results, in the order team_stat_lists
+        ranked them: best first, which for turnovers or ERA is the lowest. Teams level share a rank."""
+        for item in data:
             team_name = item.get('name', 'Unknown')
-            display_value = item.get('displayValue', str(item.get('value', '')))
-            list_text = f"{rank} {team_name} {display_value}"
-            list_item = QListWidgetItem(list_text)
-            self.results_list.addItem(list_item)
-        
+            self.results_list.addItem(QListWidgetItem(f"{item.get('rank')} {team_name} {item.get('displayValue', '')}"))
+
         # Set focus to first item in results list
         if self.results_list.count() > 0:
             self.results_list.setCurrentRow(0)
@@ -11297,52 +11291,8 @@ class StatisticsViewDialog(QDialog):
                         print(f"DEBUG: Added ESPN stat: {display_name} with {len(stats)} players")
         
         elif self.stat_type == "team":
-            team_stats = self.statistics_data.get("team_stats", [])
-            print(f"DEBUG: Found {len(team_stats)} team stat categories")
-            for category in team_stats:
-                category_name = category.get("category", "Unknown")
-                teams_list = category.get("stats", [])
-                
-                if teams_list:
-                    # Get all stat names from first team
-                    first_team = teams_list[0]
-                    team_stats_dict = first_team.get("stats", {})
-                    
-                    for stat_name in team_stats_dict.keys():
-                        # Process the teams data for this specific stat
-                        teams_data = []
-                        for team_info in teams_list:
-                            team_name = team_info.get("team_name", "Unknown")
-                            team_stats_dict = team_info.get("stats", {})
-                            
-                            if stat_name in team_stats_dict:
-                                stat_value = team_stats_dict[stat_name]
-                                
-                                # Try to convert to numeric for sorting
-                                numeric_value = 0
-                                try:
-                                    numeric_value = float(str(stat_value).replace(",", ""))
-                                except (ValueError, TypeError):
-                                    pass
-                                
-                                teams_data.append({
-                                    "name": team_name,
-                                    "value": numeric_value,
-                                    "displayValue": str(stat_value)
-                                })
-                        
-                        # Sort teams by value (descending for most stats)
-                        teams_data.sort(key=lambda x: x["value"], reverse=True)
-                        
-                        available_stats.append({
-                            'name': f"{stat_name} ({category_name})",
-                            'category': category_name,
-                            'stat_name': stat_name,
-                            'data': teams_data,  # Pre-processed data ready for display
-                            'type': 'team'
-                        })
-                        print(f"DEBUG: Added team stat: {stat_name} ({category_name}) with {len(teams_data)} teams")
-        
+            available_stats = team_stat_lists(self.statistics_data.get("team_stats", []))
+
         print(f"DEBUG: Total available stats: {len(available_stats)}")
         return available_stats
     
