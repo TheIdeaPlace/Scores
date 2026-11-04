@@ -741,9 +741,72 @@ class ESPNAPIService {
 
     // MARK: - Fetch Team Schedule
 
-    /// Fetch the schedule for a single team and season type.
-    func fetchTeamSchedule(teamId: String, sport: Sport, season: Int, seasonType: Int) async throws -> [ScheduleGame] {
-        let urlString = "\(baseURL)/\(sport.apiPath)/teams/\(teamId)/schedule?season=\(season)&seasontype=\(seasonType)"
+    /// Everything ESPN has for one team's season, in date order, for the schedule screen and
+    /// Team Hub. A season that fails to load throws, so it can't read as an empty one.
+    func fetchTeamSeasonSchedule(teamId: String, sport: Sport, season: Int) async throws -> [ScheduleGame] {
+        if sport.usesSoccerSchedule {
+            return try await fetchSoccerTeamSchedule(teamId: teamId, sport: sport, season: season)
+        }
+
+        // Losing the preseason or the playoffs leaves a schedule still worth showing. Losing
+        // the regular season doesn't, and would read as if those were all the games there are.
+        var lists: [[ScheduleGame]] = []
+        var regularSeasonFailure: Error?
+        await withTaskGroup(of: (Int, Result<[ScheduleGame], Error>).self) { group in
+            for seasonType in TeamScheduleQueries.seasonTypes {
+                group.addTask { [self] in
+                    do {
+                        let query = TeamScheduleQueries.seasonType(seasonType, season: season)
+                        let page = try await fetchTeamSchedulePage(teamId: teamId, sport: sport, query: query)
+                        return (seasonType, .success(page.events.compactMap { $0.toScheduleGame() }))
+                    } catch {
+                        return (seasonType, .failure(error))
+                    }
+                }
+            }
+            for await (seasonType, result) in group {
+                switch result {
+                case .success(let games):
+                    lists.append(games)
+                case .failure(let error):
+                    if seasonType == 2 { regularSeasonFailure = error }
+                }
+            }
+        }
+        if let regularSeasonFailure { throw regularSeasonFailure }
+        return TeamScheduleQueries.merged(lists)
+    }
+
+    /// Results, plus the games to come if this is the current season. See `TeamScheduleQueries`.
+    /// A server error on the second kind of request leaves that part out. A dropped connection
+    /// throws, because a schedule with its games to come missing would look complete.
+    private func fetchSoccerTeamSchedule(teamId: String, sport: Sport, season: Int) async throws -> [ScheduleGame] {
+        func games(_ query: String) async throws -> [ScheduleGame] {
+            do {
+                let page = try await fetchTeamSchedulePage(teamId: teamId, sport: sport, query: query)
+                return page.events.compactMap { $0.toScheduleGame() }
+            } catch APIError.invalidResponse {
+                return []
+            }
+        }
+
+        let results = try await fetchTeamSchedulePage(teamId: teamId, sport: sport,
+                                                      query: TeamScheduleQueries.soccerResults(season: season))
+        var lists = [results.events.compactMap { $0.toScheduleGame() }]
+        let next = TeamScheduleQueries.afterSoccerResults(season: season,
+                                                          currentSeason: sport.currentSeasonYear,
+                                                          espnSeason: results.season?.year)
+        if let earlier = next.earlierResults {
+            lists.append(try await games(TeamScheduleQueries.soccerResults(season: earlier)))
+        }
+        if next.fixtures {
+            lists.append(try await games(TeamScheduleQueries.soccerFixtures))
+        }
+        return TeamScheduleQueries.merged(lists)
+    }
+
+    private func fetchTeamSchedulePage(teamId: String, sport: Sport, query: String) async throws -> TeamScheduleAPIResponse {
+        let urlString = "\(baseURL)/\(sport.apiPath)/teams/\(teamId)/schedule?\(query)"
         guard let url = URL(string: urlString) else { throw APIError.invalidURL }
 
         let (data, response) = try await session.data(from: url)
@@ -752,8 +815,7 @@ class ESPNAPIService {
             throw APIError.invalidResponse
         }
 
-        let apiResponse = try JSONDecoder().decode(TeamScheduleAPIResponse.self, from: data)
-        return apiResponse.events.compactMap { $0.toScheduleGame() }
+        return try JSONDecoder().decode(TeamScheduleAPIResponse.self, from: data)
     }
 
     // MARK: - Fetch League Leaders (Phase 5)
@@ -1634,32 +1696,7 @@ class ESPNAPIService {
     /// Fetches the current season schedule for a team. Returns games sorted by date.
     func fetchTeamHubSchedule(teamId: String, sport: Sport) async throws -> [ScheduleGame] {
         // Season currently in progress — see Sport.seasonYear(containing:)
-        let season = sport.currentSeasonYear
-        let seasonTypes: [Int]
-        if sport == .mlb {
-            seasonTypes = [1, 2, 3]
-        } else if sport.isFootball {
-            seasonTypes = [1, 2, 3]
-        } else {
-            seasonTypes = [2, 3]
-        }
-        var allGames: [ScheduleGame] = []
-        await withTaskGroup(of: [ScheduleGame].self) { group in
-            for st in seasonTypes {
-                group.addTask { [self] in
-                    (try? await self.fetchTeamSchedule(
-                        teamId: teamId,
-                        sport: sport,
-                        season: season,
-                        seasonType: st
-                    )) ?? []
-                }
-            }
-            for await result in group {
-                allGames.append(contentsOf: result)
-            }
-        }
-        return allGames.sorted { $0.date < $1.date }
+        try await fetchTeamSeasonSchedule(teamId: teamId, sport: sport, season: sport.currentSeasonYear)
     }
 
     // MARK: - Multi-format date parser

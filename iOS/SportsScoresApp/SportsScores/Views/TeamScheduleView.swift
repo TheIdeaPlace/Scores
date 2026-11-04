@@ -63,10 +63,12 @@ struct TeamScheduleView: View {
                     Image(systemName: "calendar.badge.exclamationmark")
                         .font(.system(size: 48))
                         .foregroundColor(.secondary)
-                    Text("No schedule available")
+                    Text(viewModel.errorMessage ?? "No schedule available")
                         .font(.headline)
                         .foregroundColor(.secondary)
+                        .multilineTextAlignment(.center)
                 }
+                .padding()
             } else {
                 VStack(spacing: 0) {
                     switch viewMode {
@@ -136,7 +138,7 @@ struct TeamScheduleView: View {
             let vs = isHome || g.isNeutralSite
             return [Self.dayFormatter.string(from: g.date),
                     (vs ? "vs " : "@ ") + opp.abbreviation,
-                    scheduleResultText(g)]
+                    scheduleResultAndLabel(g)]
         }
         return VStack(alignment: .leading, spacing: 0) {
             Text(month)
@@ -162,7 +164,7 @@ struct TeamScheduleView: View {
                     let opp = isHome ? game.awayTeam : game.homeTeam
                     let row = [Self.dayFormatter.string(from: game.date),
                                (isHome || game.isNeutralSite ? "vs " : "@ ") + opp.abbreviation,
-                               scheduleResultText(game)]
+                               scheduleResultAndLabel(game)]
                     NavigationLink(destination: GameDetailView(game: game.toGame(), sport: sport)) {
                         HStack(spacing: 0) {
                             ForEach(row.indices, id: \.self) { colIdx in
@@ -206,6 +208,13 @@ struct TeamScheduleView: View {
         }
     }
 
+    /// The result, then what sets the game apart. The label can run long ("College Football
+    /// Playoff Quarterfinal at the Rose Bowl"), so it comes after the part you came for.
+    private func scheduleResultAndLabel(_ game: ScheduleGame) -> String {
+        let result = scheduleResultText(game)
+        return game.label.map { "\(result), \($0)" } ?? result
+    }
+
     // MARK: - Quick List view mode
 
     private var scheduleQuickListView: some View {
@@ -244,7 +253,7 @@ struct TeamScheduleView: View {
         let isHome = game.homeTeam.id == team.id
         let opp = isHome ? game.awayTeam : game.homeTeam
         let matchup = (isHome || game.isNeutralSite ? "vs " : "@ ") + opp.abbreviation
-        return "\(Self.dayFormatter.string(from: game.date)) \(matchup) \u{2014} \(scheduleResultText(game))"
+        return "\(Self.dayFormatter.string(from: game.date)) \(matchup) \u{2014} \(scheduleResultAndLabel(game))"
     }
 
     // MARK: - Schedule List
@@ -301,6 +310,11 @@ struct TeamScheduleView: View {
                     .font(.caption2)
                     .foregroundColor(.secondary)
                     .lineLimit(1)
+                if let label = game.label {
+                    Text(label)
+                        .font(.caption2)
+                        .foregroundColor(.secondary)
+                }
             }
 
             Spacer()
@@ -361,7 +375,8 @@ struct TeamScheduleView: View {
         } else {
             statusPart = (game.timeIsKnown ? Self.timeFormatter.string(from: game.date) : "Time TBD")
         }
-        return "\(dateStr), \(homeAway) \(opponent.displayName), \(statusPart)"
+        let label = game.label.map { ", \($0)" } ?? ""
+        return "\(dateStr), \(homeAway) \(opponent.displayName), \(statusPart)\(label)"
     }
 }
 

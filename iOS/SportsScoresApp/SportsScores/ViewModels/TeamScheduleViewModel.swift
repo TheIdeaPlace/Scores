@@ -43,51 +43,39 @@ class TeamScheduleViewModel: ObservableObject {
         sport.seasonDisplayName(year: year)
     }
 
-    /// Season types to fetch for a given sport and year.
-    /// MLB: pre (spring training) + regular + postseason.
-    /// Football: preseason + regular + postseason (bowls/playoffs).
-    /// All other sports: regular + postseason so playoff games appear.
-    private var seasonTypesToFetch: [Int] {
-        if sport == .mlb { return [1, 2, 3] }
-        if sport.isFootball { return [1, 2, 3] }
-        return [2, 3]
-    }
-
     func fetchSchedule() async {
         isLoading = true
         errorMessage = nil
-        var allGames: [ScheduleGame] = []
-
-        await withTaskGroup(of: [ScheduleGame].self) { group in
-            for st in seasonTypesToFetch {
-                group.addTask { [self] in
-                    (try? await self.apiService.fetchTeamSchedule(
-                        teamId: self.teamId,
-                        sport: self.sport,
-                        season: self.selectedYear,
-                        seasonType: st
-                    )) ?? []
-                }
-            }
-            for await result in group {
-                allGames.append(contentsOf: result)
-            }
+        let fetched: [ScheduleGame]
+        do {
+            fetched = try await apiService.fetchTeamSeasonSchedule(
+                teamId: teamId,
+                sport: sport,
+                season: selectedYear
+            )
+        } catch {
+            // Not the fallback below: a failed request isn't an off-season, and last
+            // season's games would read as this season's with no sign anything went wrong.
+            errorMessage = "Could not load the schedule. Check your connection and try again."
+            games = []
+            isLoading = false
+            return
         }
 
         // ESPN publishes a new season's schedule some weeks after the previous
         // one ends, so in that gap the current season year comes back empty.
         // Fall back to the season that just finished rather than showing
         // nothing at all.
-        if allGames.isEmpty && selectedYear == Self.defaultSeasonYear(for: sport) {
+        if fetched.isEmpty && selectedYear == Self.defaultSeasonYear(for: sport) {
             selectedYear -= 1
             await fetchSchedule()
             return
         }
 
-        if allGames.isEmpty {
+        if fetched.isEmpty {
             errorMessage = "No schedule data available for \(sport.seasonDisplayName(year: selectedYear))."
         }
-        games = allGames.sorted { $0.date < $1.date }
+        games = fetched
         isLoading = false
     }
 

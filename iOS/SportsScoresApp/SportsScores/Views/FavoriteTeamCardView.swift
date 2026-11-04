@@ -93,13 +93,14 @@ struct FavoriteTeamCardView: View {
         }
         let myScore = isHome ? game.homeTeam.score : game.awayTeam.score
         let oppScore = isHome ? game.awayTeam.score : game.homeTeam.score
+        let gameLabel = game.label.map { ", \($0)" } ?? ""
         if game.isCompleted {
             let my = myScore ?? 0
             let op = oppScore ?? 0
             let result = my > op ? "W" : my < op ? "L" : "T"
-            return "\(prefix): \(result) \(loc) \(opp.abbreviation) \(my)-\(op)"
+            return "\(prefix): \(result) \(loc) \(opp.abbreviation) \(my)-\(op)\(gameLabel)"
         }
-        return "\(prefix): \(loc) \(opp.abbreviation), \((game.timeIsKnown ? Self.gameDateFormatter.string(from: game.date) : DateFormatter.localizedString(from: game.date, dateStyle: .short, timeStyle: .none)))"
+        return "\(prefix): \(loc) \(opp.abbreviation), \((game.timeIsKnown ? Self.gameDateFormatter.string(from: game.date) : DateFormatter.localizedString(from: game.date, dateStyle: .short, timeStyle: .none)))\(gameLabel)"
     }
 
     // MARK: - Body

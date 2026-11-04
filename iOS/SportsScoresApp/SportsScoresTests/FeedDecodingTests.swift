@@ -392,6 +392,228 @@ final class StandingsDecodingTests: XCTestCase {
     }
 }
 
+/// Team schedules on real answers, the same payloads and expected text as
+/// tests/unit/replay/test_schedule.py and test_game_labels.py on Windows.
+final class TeamScheduleTests: XCTestCase {
+    private func games(_ fixture: String) throws -> [ScheduleGame] {
+        let response = try JSONDecoder().decode(TeamScheduleAPIResponse.self, from: Fixtures.data(fixture))
+        let games = response.events.compactMap { $0.toScheduleGame() }
+        XCTAssertEqual(games.count, response.events.count, "\(fixture) lost a game")
+        return games
+    }
+
+    private func game(id: String = "1", date: Date = Date(timeIntervalSince1970: 0), statusType: String = "STATUS_SCHEDULED",
+                      home: Int? = nil, away: Int? = nil,
+                      completed: Bool? = nil, state: String? = nil) -> ScheduleGame {
+        ScheduleGame(id: id, date: date, name: "A at H",
+                     awayTeam: .init(id: "A", abbreviation: "A", displayName: "Away", score: away),
+                     homeTeam: .init(id: "H", abbreviation: "H", displayName: "Home", score: home),
+                     statusText: "", statusType: statusType, seasonType: 2, venueName: nil,
+                     espnCompleted: completed, espnState: state)
+    }
+
+    // MARK: Labels
+
+    func testSuperBowlTakesItsNoteOverItsWeek() throws {
+        let last = try XCTUnwrap(try games("schedule_NFL_26_post.json").last)
+        XCTAssertEqual(last.label, "Super Bowl LX")
+        XCTAssertTrue(last.isNeutralSite)
+    }
+
+    func testPreseasonFootballTakesItsWeek() throws {
+        XCTAssertEqual(try games("schedule_NFL_26_pre.json").map(\.label),
+                       ["Preseason Week 1", "Preseason Week 2", "Preseason Week 3"])
+    }
+
+    func testPreseasonWithNoWeekTakesTheSeasonTypeName() throws {
+        XCTAssertEqual(try games("schedule_WNBA_8_pre.json").first?.label, "Preseason")
+    }
+
+    func testCollegePlayoffAndAConferenceTitleGame() throws {
+        XCTAssertEqual(try games("schedule_NCAAF_333_post.json").map(\.label),
+                       ["College Football Playoff First Round Game",
+                        "College Football Playoff Quarterfinal at the Rose Bowl Presented by Prudential"])
+        // Filed under the regular season, like FCS playoffs.
+        XCTAssertEqual(try games("schedule_NCAAF_333_reg.json").first?.label, "SEC Championship")
+    }
+
+    func testWNBAPlayoffRounds() throws {
+        XCTAssertEqual(try games("schedule_WNBA_8_post.json").map(\.label),
+                       ["First Round - Game 1", "WNBA Semifinals - Game 1"])
+    }
+
+    func testAnEverydayWeekHasNoLabel() throws {
+        XCTAssertEqual(try games("schedule_NFL_26_reg.json").compactMap(\.label), [])
+    }
+
+    func testSoccerSeasonIdsAreNotMistakenForAPostseason() throws {
+        // seasonType.type here is 14308, and has to stay out of the 1-and-3 test.
+        let results = try games("schedule_EPL_359_results.json")
+        XCTAssertTrue(results.allSatisfy { $0.seasonType > 3 })
+        XCTAssertEqual(results.compactMap(\.label), [])
+    }
+
+    func testANoteWithNoHeadlineIsNoLabel() throws {
+        let labels = try games("schedule_UCL_359_2025.json").map(\.label)
+        XCTAssertEqual(labels.count, 3)
+        XCTAssertTrue(labels.contains("Paris Saint-Germain win 4-3 on penalties"))
+        XCTAssertTrue(labels.contains(where: { $0?.hasPrefix("2nd Leg") == true }))
+        XCTAssertTrue(labels.contains(where: { $0 == nil }), "the league phase game's note has no headline")
+    }
+
+    // MARK: Status
+
+    func testFullTimeIsCompletedAndHasScores() throws {
+        for game in try games("schedule_EPL_359_results.json") {
+            XCTAssertEqual(game.statusType, "STATUS_FULL_TIME")
+            XCTAssertTrue(game.isCompleted)
+            XCTAssertFalse(game.isInProgress)
+            XCTAssertNotNil(game.homeTeam.score)
+            XCTAssertEqual(game.toGame().status.state, "post")
+        }
+    }
+
+    func testAFinalOnPenaltiesIsCompletedAndADraw() throws {
+        let shootout = try XCTUnwrap(try games("schedule_UCL_359_2025.json").first { $0.statusType == "STATUS_FINAL_PEN" })
+        XCTAssertTrue(shootout.isCompleted)
+        XCTAssertEqual(shootout.outcome(forTeamId: "359"), .tie)
+    }
+
+    func testFixturesAreToComeWithNoScores() throws {
+        for game in try games("schedule_EPL_359_fixture.json") {
+            XCTAssertFalse(game.isCompleted)
+            XCTAssertFalse(game.isInProgress)
+            XCTAssertNil(game.homeTeam.score)
+            XCTAssertNil(game.outcome(forTeamId: "359"))
+        }
+    }
+
+    func testFinishedStatusesWithNoWordFromESPN() {
+        // CFL games come with no `completed` of their own, and go by the status name.
+        for name in ["STATUS_FINAL", "STATUS_FULL_TIME", "STATUS_FINAL_PEN", "STATUS_FINAL_AET"] {
+            XCTAssertTrue(game(statusType: name).isCompleted, name)
+        }
+        XCTAssertFalse(game(statusType: "STATUS_SCHEDULED").isCompleted)
+        XCTAssertTrue(game(statusType: "STATUS_IN_PROGRESS").isInProgress)
+    }
+
+    func testESPNsOwnWordDecidesOtherStatuses() {
+        // Saved in scoreboard_events_by_status.json: a forfeit is finished, a postponement
+        // is not, and halftime and a delay are under way.
+        XCTAssertTrue(game(statusType: "STATUS_FORFEIT", completed: true, state: "post").isCompleted)
+        XCTAssertFalse(game(statusType: "STATUS_POSTPONED", completed: false, state: "post").isCompleted)
+        XCTAssertFalse(game(statusType: "STATUS_POSTPONED", completed: false, state: "post").isInProgress)
+        XCTAssertTrue(game(statusType: "STATUS_HALFTIME", completed: false, state: "in").isInProgress)
+        XCTAssertTrue(game(statusType: "STATUS_DELAYED", completed: false, state: "in").isInProgress)
+    }
+
+    // MARK: Outcome
+
+    func testAPreseasonTieIsNotALoss() throws {
+        let raiders = try XCTUnwrap(try games("schedule_NFL_26_pre.json").first)
+        XCTAssertEqual(raiders.homeTeam.score, 23)
+        XCTAssertEqual(raiders.outcome(forTeamId: "26"), .tie)
+    }
+
+    func testOutcomeIsForTheTeamAsked() throws {
+        let superBowl = try XCTUnwrap(try games("schedule_NFL_26_post.json").last)
+        XCTAssertEqual(superBowl.awayTeam.id, "26")
+        XCTAssertEqual(superBowl.outcome(forTeamId: "26"), .win)
+        XCTAssertEqual(superBowl.outcome(forTeamId: "17"), .loss)
+    }
+
+    // MARK: What gets asked for
+
+    func testEverySoccerLeagueAndWorldCupGoesByResultsAndFixtures() {
+        for sport in Sport.soccerLeagues + [.worldCup, .worldCupWomens] {
+            XCTAssertTrue(sport.usesSoccerSchedule, sport.rawValue)
+        }
+    }
+
+    func testOtherSportsGoBySeasonTypeAndAskForAllThree() {
+        for sport in Sport.allCases {
+            XCTAssertFalse(sport.usesSoccerSchedule, sport.rawValue)
+        }
+        XCTAssertEqual(TeamScheduleQueries.seasonTypes, [1, 2, 3])
+        XCTAssertEqual(TeamScheduleQueries.seasonType(3, season: 2025), "season=2025&seasontype=3")
+    }
+
+    func testSoccerQueriesSendNoSeasonType() {
+        XCTAssertEqual(TeamScheduleQueries.soccerResults(season: 2026), "season=2026")
+        XCTAssertEqual(TeamScheduleQueries.soccerFixtures, "fixture=true")
+    }
+
+    func testAPastSoccerSeasonAsksForNoFixtures() throws {
+        let response = try JSONDecoder().decode(TeamScheduleAPIResponse.self,
+                                                from: Fixtures.data("schedule_EPL_359_2025.json"))
+        XCTAssertEqual(response.season?.year, 2026)
+        let next = TeamScheduleQueries.afterSoccerResults(season: 2025, currentSeason: 2026,
+                                                          espnSeason: response.season?.year)
+        XCTAssertFalse(next.fixtures)
+        XCTAssertNil(next.earlierResults)
+    }
+
+    func testTheCurrentSoccerSeasonAsksForFixtures() {
+        let next = TeamScheduleQueries.afterSoccerResults(season: 2026, currentSeason: 2026, espnSeason: 2026)
+        XCTAssertTrue(next.fixtures)
+        XCTAssertNil(next.earlierResults)
+    }
+
+    func testAResponseNamingNoSeasonIsTakenAsTheOneAskedFor() {
+        let next = TeamScheduleQueries.afterSoccerResults(season: 2026, currentSeason: 2026, espnSeason: nil)
+        XCTAssertTrue(next.fixtures)
+        XCTAssertNil(next.earlierResults)
+    }
+
+    func testAcrossTheNewYearTheSeasonInPlayIsAskedForToo() {
+        // February 2027: season=2027 is empty for the Premier League, whose season.year is 2026.
+        let next = TeamScheduleQueries.afterSoccerResults(season: 2027, currentSeason: 2027, espnSeason: 2026)
+        XCTAssertTrue(next.fixtures)
+        XCTAssertEqual(next.earlierResults, 2026)
+    }
+
+    func testPickingTheSeasonESPNCallsCurrentAsksForFixtures() {
+        let next = TeamScheduleQueries.afterSoccerResults(season: 2026, currentSeason: 2027, espnSeason: 2026)
+        XCTAssertTrue(next.fixtures)
+        XCTAssertNil(next.earlierResults)
+    }
+
+    func testMLSFixturesCanBeNextSeasons() throws {
+        let response = try JSONDecoder().decode(TeamScheduleAPIResponse.self,
+                                                from: Fixtures.data("schedule_MLS_18418_fixture.json"))
+        XCTAssertEqual(response.season?.year, 2026)
+        XCTAssertFalse(response.events.isEmpty)
+    }
+
+    // MARK: Merging
+
+    func testResultsAndFixturesMergeInDateOrder() throws {
+        let merged = TeamScheduleQueries.merged([try games("schedule_EPL_359_results.json"),
+                                                 try games("schedule_EPL_359_fixture.json")])
+        XCTAssertEqual(merged.count, 6)
+        XCTAssertEqual(merged.map(\.date), merged.map(\.date).sorted())
+        XCTAssertEqual(merged.prefix(3).filter(\.isCompleted).count, 3)
+        XCTAssertEqual(merged.suffix(3).filter(\.isCompleted).count, 0)
+    }
+
+    func testAGameInBothListsKeepsItsResult() {
+        let played = game(id: "9", statusType: "STATUS_FULL_TIME", home: 1, away: 0, completed: true, state: "post")
+        let stillListed = game(id: "9", completed: false, state: "pre")
+        let merged = TeamScheduleQueries.merged([[played], [stillListed]])
+        XCTAssertEqual(merged.count, 1)
+        XCTAssertTrue(merged[0].isCompleted)
+    }
+
+    func testAllThreeFootballSeasonTypesMergeWithTheSuperBowlLast() throws {
+        let merged = TeamScheduleQueries.merged([try games("schedule_NFL_26_post.json"),
+                                                 try games("schedule_NFL_26_reg.json"),
+                                                 try games("schedule_NFL_26_pre.json")])
+        XCTAssertEqual(merged.count, 8)
+        XCTAssertEqual(merged.first?.label, "Preseason Week 1")
+        XCTAssertEqual(merged.last?.label, "Super Bowl LX")
+    }
+}
+
 final class TeamHubDecodingTests: XCTestCase {
     func testSchedulesDecode() throws {
         let files = try Fixtures.named("schedule_")

@@ -23,9 +23,32 @@ struct ScheduleGame: Identifiable {
     /// False when ESPN's time is a placeholder; `date` is then noon local on the game's date.
     var timeIsKnown: Bool = true
     var isNeutralSite: Bool = false
+    /// ESPN's own `completed` and `state` for the status, which hold whatever the status is
+    /// called. Nil for CFL games, whose feed has neither.
+    var espnCompleted: Bool? = nil
+    var espnState: String? = nil
+    /// What sets this game apart, read with the row: "Super Bowl LX", "SEC Championship",
+    /// "Preseason Week 1". Nil for an everyday game.
+    var label: String? = nil
 
-    var isCompleted: Bool { statusType == "STATUS_FINAL" }
-    var isInProgress: Bool { statusType == "STATUS_IN_PROGRESS" }
+    /// Soccer says STATUS_FULL_TIME, or STATUS_FINAL_PEN after a shootout, for a finished game.
+    private static let finishedStatuses: Set<String> = [
+        "STATUS_FINAL", "STATUS_FULL_TIME", "STATUS_FINAL_PEN", "STATUS_FINAL_AET"
+    ]
+
+    var isCompleted: Bool { espnCompleted ?? Self.finishedStatuses.contains(statusType) }
+    /// Includes halftime and a delay, which ESPN counts as under way and names differently.
+    var isInProgress: Bool { espnState.map { $0 == "in" } ?? (statusType == "STATUS_IN_PROGRESS") }
+
+    enum Outcome { case win, loss, tie }
+
+    /// How the game went for one team. Nil without two scores. A draw is a tie, including one
+    /// decided on penalties: the score is level, and `label` says who went through.
+    func outcome(forTeamId teamId: String) -> Outcome? {
+        guard let home = homeTeam.score, let away = awayTeam.score else { return nil }
+        let (mine, theirs) = homeTeam.id == teamId ? (home, away) : (away, home)
+        return mine > theirs ? .win : (mine < theirs ? .loss : .tie)
+    }
 
     /// Whether this game is today (wall-clock comparison)
     var isToday: Bool { Calendar.current.isDateInToday(date) }
@@ -85,6 +108,59 @@ struct ScheduleGame: Identifiable {
     }
 }
 
+// MARK: - How a team's schedule is asked for
+
+/// The requests behind a team's schedule, apart from the fetching so they can be tested.
+/// Windows does the same in espn_api.get_team_schedule: change both together.
+enum TeamScheduleQueries {
+    /// Preseason, regular season, postseason.
+    static let seasonTypes = [1, 2, 3]
+
+    static func seasonType(_ seasonType: Int, season: Int) -> String {
+        "season=\(season)&seasontype=\(seasonType)"
+    }
+
+    /// The games a soccer team played in a season. Soccer has no season type: 2 and 3 answer
+    /// with nothing, which is why every team's schedule used to come up empty.
+    static func soccerResults(season: Int) -> String {
+        "season=\(season)"
+    }
+
+    /// The games a soccer team has to come, whatever season is asked for.
+    static let soccerFixtures = "fixture=true"
+
+    /// What to ask for once a season's results are in. Only the current season has fixtures.
+    /// `espnSeason` is the `season.year` ESPN answers with, its own idea of the current season.
+    /// A league's seasons cross the new year on their own calendar, so in February 2027 our
+    /// year says 2027 while ESPN's Premier League is still in `season=2026`, 2026-27, and
+    /// `season=2027` is empty. Those are the results to show then.
+    static func afterSoccerResults(season: Int, currentSeason: Int,
+                                   espnSeason: Int?) -> (fixtures: Bool, earlierResults: Int?) {
+        guard season == currentSeason || season == espnSeason else { return (false, nil) }
+        if let espnSeason, espnSeason < season { return (true, espnSeason) }
+        return (true, nil)
+    }
+
+    /// One list in date order, with no game twice. The first list a game appears in wins, so
+    /// results go first: a game just played that ESPN still lists as to come keeps its score.
+    static func merged(_ lists: [[ScheduleGame]]) -> [ScheduleGame] {
+        var seen = Set<String>()
+        var games: [ScheduleGame] = []
+        for list in lists {
+            for game in list where seen.insert(game.id).inserted {
+                games.append(game)
+            }
+        }
+        return games.sorted { $0.date < $1.date }
+    }
+}
+
+extension Sport {
+    /// True where a team's schedule is asked for by results and fixtures, not by season type.
+    /// The World Cups are soccer too, though `isSoccer` means the league hub.
+    var usesSoccerSchedule: Bool { apiPath.hasPrefix("soccer/") }
+}
+
 // MARK: - API response types (Codable)
 
 struct TeamScheduleAPIResponse: Codable {
@@ -101,10 +177,16 @@ struct TeamScheduleAPIResponse: Codable {
         let timeValid: Bool?
         let name: String
         let seasonType: APISeasonType
+        let week: APIWeek?
         let competitions: [APICompetition]
 
         struct APISeasonType: Codable {
             let type: Int
+            let name: String?
+        }
+
+        struct APIWeek: Codable {
+            let text: String?
         }
 
         struct APICompetition: Codable {
@@ -113,9 +195,15 @@ struct TeamScheduleAPIResponse: Codable {
             let status: APICompetitionStatus
             let timeValid: Bool?
             let neutralSite: Bool?
+            let notes: [APINote]?
 
             struct APIVenue: Codable {
                 let fullName: String?
+            }
+
+            /// `headline` is missing on soccer's bare ingest notes.
+            struct APINote: Codable {
+                let headline: String?
             }
 
             struct APICompetitor: Codable {
@@ -140,8 +228,27 @@ struct TeamScheduleAPIResponse: Codable {
                 struct APIStatusType: Codable {
                     let name: String        // "STATUS_FINAL" etc.
                     let description: String // "Final" / "7:05 PM ET"
+                    let completed: Bool?
+                    let state: String?      // "pre" | "in" | "post"
                 }
             }
+        }
+
+        /// What sets this game apart, the same way schedule_game_label does on Windows.
+        /// ESPN's note says it best, and appears in any season type: FCS playoffs are filed
+        /// under the regular season. "Week 5" isn't worth reading on every row, so the week
+        /// and the season type's own name only count for preseason and postseason. Soccer's
+        /// season types are long ids, so they never match.
+        var gameLabel: String? {
+            func text(_ value: String?) -> String? {
+                guard let value, !value.trimmingCharacters(in: .whitespaces).isEmpty else { return nil }
+                return value
+            }
+            for note in competitions.first?.notes ?? [] {
+                if let headline = text(note.headline) { return headline }
+            }
+            guard seasonType.type == 1 || seasonType.type == 3 else { return nil }
+            return text(week?.text) ?? text(seasonType.name)
         }
 
         /// Convert to display model. Returns nil if competitors cannot be found.
@@ -181,7 +288,10 @@ struct TeamScheduleAPIResponse: Codable {
                 seasonType: seasonType.type,
                 venueName: competition.venue?.fullName,
                 timeIsKnown: timeIsKnown,
-                isNeutralSite: competition.neutralSite ?? false
+                isNeutralSite: competition.neutralSite ?? false,
+                espnCompleted: competition.status.type.completed,
+                espnState: competition.status.type.state,
+                label: gameLabel
             )
         }
 
