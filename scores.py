@@ -1808,7 +1808,7 @@ class LeagueView(BaseView):
             text, live_play_format.list_team_names(game_raw, game.teams))
 
     def _add_common_sections(self):
-        if self.league in ["MLB", "NFL", "NBA", "NHL", "NCAAF", "NCAAM", "NCAAWB", "NCAAH", "NCAAWH"]:
+        if self.league in ["MLB", "NFL", "NBA", "WNBA", "NHL", "NCAAF", "NCAAM", "NCAAWB", "NCAAH", "NCAAWH"]:
             self.scores_list.addItem("--- Standings ---")
             standings_item = self.scores_list.item(self.scores_list.count()-1)
             standings_item.setData(Qt.ItemDataRole.UserRole, "__standings__")
@@ -2009,6 +2009,8 @@ class LeagueView(BaseView):
     def _on_standings_data_error(self, error_message):
         """Handle standings data loading error"""
         QMessageBox.warning(self, "Standings", error_message)
+        if self.parent_app:
+            self.parent_app.update_window_title(self._title_items())
     
     def _show_teams_dialog(self):
         """Show teams dialog with simple tabbed interface"""
@@ -7238,12 +7240,11 @@ class StandingsDetailDialog(WildCardTabsMixin, QDialog):
     def _build_division_tabs(self, layout: QVBoxLayout):
         self.tab_widget = QTabWidget()
         prepare_table_tabs(self.tab_widget)
-        self.tab_widget.setAccessibleName(
-            "Standings" if self.league == "MLB" else "Division Standings")
+        self.tab_widget.setAccessibleName("Standings")
         self.tab_widget.setAccessibleDescription(
             "Team standings by division, plus AL and NL wild card, use arrow keys to move between tabs"
             if self.league == "MLB"
-            else "Team standings by division, use arrow keys to navigate between divisions")
+            else "Team standings, use arrow keys to move between tabs")
         
         if self.league == "MLB":
             division_order = ["AL East", "AL Central", "AL West", "NL East", "NL Central", "NL West", "League"]
@@ -8243,9 +8244,12 @@ class TeamHubDialog(QDialog):
         add("Division", info.get('division'))
         add("Standing", info.get('standing'))
         add("Conference", info.get('conference'))
-        add("Record (Overall)", info.get('record_overall'))
+        add("Record (Regular Season)" if info.get('record_regular_season_only') else "Record (Overall)",
+            info.get('record_overall'))
         add("Record (Home)", info.get('record_home'))
         add("Record (Road)", info.get('record_road'))
+        if info.get('record_unavailable'):
+            self.info_list.addItem("Record not available right now")
         add("Head Coach", info.get('head_coach'))
         add("Venue", info.get('venue_name'))
         add("Location", info.get('venue_location'))
@@ -8833,12 +8837,11 @@ class StandingsDialog(WildCardTabsMixin, QDialog):
     def _build_division_tabs(self, layout: QVBoxLayout):
         self.tab_widget = QTabWidget()
         prepare_table_tabs(self.tab_widget)
-        self.tab_widget.setAccessibleName(
-            "Standings" if self.league == "MLB" else "Division Standings")
+        self.tab_widget.setAccessibleName("Standings")
         self.tab_widget.setAccessibleDescription(
             "Team standings by division, plus AL and NL wild card, use arrow keys to move between tabs"
             if self.league == "MLB"
-            else "Team standings by division, use arrow keys to navigate between divisions")
+            else "Team standings, use arrow keys to move between tabs")
         
         if self.league == "MLB":
             division_order = ["AL East", "AL Central", "AL West", "NL East", "NL Central", "NL West", "League"]
@@ -11365,7 +11368,7 @@ class StatDefinitionsDialog(QDialog):
                 "SLG (Slugging %)": "Total bases divided by at bats. Measures power hitting.",
                 "OPS": "On-base percentage plus slugging percentage. Overall offensive measure."
             }
-        elif self.league.upper() == "NFL":
+        elif self.league.upper() in ("NFL", "NCAAF"):
             return {
                 "Passing Yards": "Total yards gained through forward passes.",
                 "Passing TDs": "Number of touchdown passes thrown by a quarterback.",
@@ -11384,7 +11387,7 @@ class StatDefinitionsDialog(QDialog):
                 "Turnovers": "Number of times possession was lost (fumbles + interceptions).",
                 "3rd Down %": "Percentage of third down attempts converted for first downs."
             }
-        elif self.league.upper() == "NBA":
+        elif self.league.upper() in ("NBA", "WNBA", "NCAAM", "NCAAWB"):
             return {
                 "PPG (Points Per Game)": "Average number of points scored per game.",
                 "FG% (Field Goal %)": "Percentage of field goal attempts made.",
@@ -11652,7 +11655,7 @@ class SimpleTeamsDialog(QDialog):
         self.tab_widget = QTabWidget()
         prepare_table_tabs(self.tab_widget)
         self.tab_widget.setAccessibleName("Team Information")
-        self.tab_widget.setAccessibleDescription("Team information by division, use arrow keys to navigate between divisions")
+        self.tab_widget.setAccessibleDescription("Team information, use arrow keys to move between tabs")
 
         # Group teams by division
         divisions = {}
@@ -11744,7 +11747,7 @@ class SimpleTeamsDialog(QDialog):
         teams_table = AccessibleTable(
             parent=self,
             accessible_name=f"{division_name} Teams Table",
-            accessible_description=f"Teams in {division_name} division with wins, losses, and other statistics"
+            accessible_description=f"Teams in {division_name} with wins, losses, and other statistics"
         )
         
         # Set up table headers - include Ties for NFL

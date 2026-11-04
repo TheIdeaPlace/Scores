@@ -753,7 +753,9 @@ final class TeamScheduleFailureTests: XCTestCase {
             .fetchTeamSeasonSchedule(teamId: "26", sport: .nfl, season: 2025)
         XCTAssertEqual(games.count, 8)
         XCTAssertEqual(games.last?.label, "Super Bowl LX")
-        let queries = Set(StubESPN.requests.compactMap(\.query))
+        // Only this season's: URLSession can still start a request of the previous test's
+        // cancelled task after that test ends, and it lands in the same static list.
+        let queries = Set(StubESPN.requests.compactMap(\.query).filter { $0.contains("season=2025") })
         XCTAssertEqual(queries, ["season=2025&seasontype=1", "season=2025&seasontype=2", "season=2025&seasontype=3"])
     }
 
@@ -1728,6 +1730,228 @@ final class TeamHubDecodingTests: XCTestCase {
         XCTAssertFalse(try XCTUnwrap(nfl.athletes).isEmpty)
         let nba = try JSONDecoder().decode(FlatRosterAPIResponse.self, from: Fixtures.data("roster_NBA_15.json"))
         XCTAssertFalse(try XCTUnwrap(nba.athletes).isEmpty)
+    }
+}
+
+/// Team Hub's record and standing are the regular season's, by the same rules as Windows, on
+/// ESPN's answers of Nov 4, 2026. `/teams/{id}` with no season has whatever the league is doing now.
+@MainActor
+final class TeamHubRecordTests: XCTestCase {
+    private func answering(season: StubESPN.Reply, plain: Data, regular: StubESPN.Reply) {
+        StubESPN.answer { url in
+            if url.path.hasSuffix("/season") { return season }
+            if (url.query ?? "").contains("seasontype=2") { return regular }
+            return .body(plain)
+        }
+    }
+
+    private func info(_ teamId: String, _ sport: Sport, season: String, plain: String, regular: String) async throws -> TeamHubTeamInfo {
+        answering(season: .body(try Fixtures.data(season)), plain: try Fixtures.data(plain),
+                  regular: .body(try Fixtures.data(regular)))
+        return try await ESPNAPIService(session: StubESPN.session()).fetchTeamHubInfo(teamId: teamId, sport: sport)
+    }
+
+    /// The plain answer's fixture must be the bug, or the tests below prove nothing.
+    private func plainTeam(_ file: String) throws -> TeamInfoAPIResponse.TeamInfoTeamData {
+        try JSONDecoder().decode(TeamInfoAPIResponse.self, from: Fixtures.data(file)).team
+    }
+
+    func testATeamInThePlayoffs() async throws {
+        XCTAssertEqual(try plainTeam("team_WNBA_8.json").record?.items?.first?.summary, "0-2")
+        let lynx = try await info("8", .wnba, season: "season_WNBA.json", plain: "team_WNBA_8.json",
+                                  regular: "team_WNBA_8_regular.json")
+        XCTAssertEqual(lynx.overallRecord, "33-11")
+        XCTAssertEqual(lynx.homeRecord, "15-7")
+        XCTAssertEqual(lynx.awayRecord, "18-4")
+        XCTAssertEqual(lynx.standingSummary, "1st in Western Conference", "and not a conference called a division")
+        XCTAssertEqual(lynx.displayName, "Minnesota Lynx")
+    }
+
+    func testATeamThatMissedThem() async throws {
+        XCTAssertEqual(try plainTeam("team_WNBA_14.json").record?.items?.first?.summary, "0-0")
+        let storm = try await info("14", .wnba, season: "season_WNBA.json", plain: "team_WNBA_14.json",
+                                   regular: "team_WNBA_14_regular.json")
+        XCTAssertEqual(storm.overallRecord, "8-36")
+        XCTAssertEqual(storm.standingSummary, "8th in Western Conference")
+    }
+
+    func testItAsksForTheSeasonAsWellAsTheType() async throws {
+        // seasontype=2 alone doesn't work: Atlanta stays 8-4.
+        _ = try await info("8", .wnba, season: "season_WNBA.json", plain: "team_WNBA_8.json",
+                           regular: "team_WNBA_8_regular.json")
+        XCTAssertTrue(StubESPN.requests.contains {
+            $0.path.hasSuffix("/basketball/wnba/teams/8") && $0.query == "season=2026&seasontype=2"
+        })
+        XCTAssertTrue(StubESPN.requests.contains { $0.path.hasSuffix("/basketball/leagues/wnba/season") })
+    }
+
+    func testMLBInItsPlayoffsKeepsTheRecordAndCorrectsTheStanding() async throws {
+        XCTAssertEqual(try plainTeam("team_MLB_19.json").standingSummary, "5th in NL West")
+        let dodgers = try await info("19", .mlb, season: "season_MLB.json", plain: "team_MLB_19.json",
+                                     regular: "team_MLB_19_regular.json")
+        XCTAssertEqual(dodgers.overallRecord, "100-62")
+        XCTAssertEqual(dodgers.standingSummary, "1st in NL West")
+    }
+
+    func testALeagueInItsRegularSeason() async throws {
+        let nets = try await info("17", .nba, season: "season_NBA.json", plain: "team_NBA_17.json",
+                                  regular: "team_NBA_17_regular.json")
+        XCTAssertEqual(nets.overallRecord, "1-6")
+        XCTAssertEqual(nets.standingSummary, "5th in Atlantic Division")
+    }
+
+    /// With its next game moved to 2099, since whether it's to come depends on today.
+    private func farAway(_ file: String) throws -> (data: Data, gameId: String) {
+        var object = try XCTUnwrap(JSONSerialization.jsonObject(with: Fixtures.data(file)) as? [String: Any])
+        var team = try XCTUnwrap(object["team"] as? [String: Any])
+        var events = try XCTUnwrap(team["nextEvent"] as? [[String: Any]])
+        events[0]["date"] = "2099-01-03T18:00Z"
+        team["nextEvent"] = events
+        object["team"] = team
+        return (try JSONSerialization.data(withJSONObject: object), try XCTUnwrap(events[0]["id"] as? String))
+    }
+
+    func testTheNextGameIsNotTheOneTheRegularSeasonAnswerHas() async throws {
+        // Asked for a season, ESPN has the Nets' next game in January, not the next day's.
+        let plain = try farAway("team_NBA_17.json")
+        let regular = try farAway("team_NBA_17_regular.json")
+        XCTAssertNotEqual(plain.gameId, regular.gameId)
+        answering(season: .body(try Fixtures.data("season_NBA.json")), plain: plain.data, regular: .body(regular.data))
+        let nets = try await ESPNAPIService(session: StubESPN.session()).fetchTeamHubInfo(teamId: "17", sport: .nba)
+        XCTAssertEqual(nets.nextGame?.gameId, plain.gameId)
+    }
+
+    func testCollegeHockeyHasARecordOnlyThisWayAndNoStandingInNothing() async throws {
+        XCTAssertNil(try plainTeam("team_NCAAH_130.json").record)
+        let michigan = try await info("130", .ncaah, season: "season_NBA.json", plain: "team_NCAAH_130.json",
+                                      regular: "team_NCAAH_130_regular.json")
+        XCTAssertEqual(michigan.overallRecord, "8-1")
+        XCTAssertNil(michigan.standingSummary, "ESPN says a bare 1st of every college hockey team")
+    }
+
+    func testAPreseasonShowsTheLastSeason() async throws {
+        var season = try XCTUnwrap(JSONSerialization.jsonObject(with: Fixtures.data("season_NBA.json")) as? [String: Any])
+        var type = try XCTUnwrap(season["type"] as? [String: Any])
+        type["type"] = 1
+        season["type"] = type
+        answering(season: .body(try JSONSerialization.data(withJSONObject: season)),
+                  plain: try Fixtures.data("team_NBA_17.json"),
+                  regular: .body(try Fixtures.data("team_NBA_17_regular.json")))
+        _ = try await ESPNAPIService(session: StubESPN.session()).fetchTeamHubInfo(teamId: "17", sport: .nba)
+        XCTAssertTrue(StubESPN.requests.contains { $0.query == "season=2026&seasontype=2" })
+    }
+
+    func testSoccerAsksForNoSeason() async throws {
+        // `isSoccer` is false for the World Cups, and they still have no season type 2.
+        let arsenal = try Fixtures.data("team_EPL_359.json")
+        for sport in [Sport.soccerEPL, .worldCup, .worldCupWomens] {
+            StubESPN.answer { _ in .body(arsenal) }
+            let info = try await ESPNAPIService(session: StubESPN.session()).fetchTeamHubInfo(teamId: "359", sport: sport)
+            XCTAssertEqual(StubESPN.requests.count, 1, sport.rawValue)
+            XCTAssertEqual(info.overallRecord, "8-0-1", sport.rawValue)
+            XCTAssertEqual(info.standingSummary, "1st in English Premier League", sport.rawValue)
+            XCTAssertFalse(info.recordIsRegularSeasonOnly, sport.rawValue)
+            XCTAssertFalse(info.recordUnavailable, sport.rawValue)
+        }
+    }
+
+    func testACollegeRecordSaysWhenItLeavesOutThePostseason() async throws {
+        // Michigan basketball's 2026 reads 31-3 here and 37-3 in Standings.
+        let postseason = try await info("130", .ncaah, season: "season_WNBA.json", plain: "team_NCAAH_130.json",
+                                        regular: "team_NCAAH_130_regular.json")
+        XCTAssertTrue(postseason.recordIsRegularSeasonOnly)
+        let regularSeason = try await info("130", .ncaah, season: "season_NBA.json", plain: "team_NCAAH_130.json",
+                                           regular: "team_NCAAH_130_regular.json")
+        XCTAssertFalse(regularSeason.recordIsRegularSeasonOnly)
+        let proLeague = try await info("8", .wnba, season: "season_WNBA.json", plain: "team_WNBA_8.json",
+                                       regular: "team_WNBA_8_regular.json")
+        XCTAssertFalse(proLeague.recordIsRegularSeasonOnly)
+    }
+
+    func testAFailureIsToldFromATeamWithNoRecord() async throws {
+        let plain = try Fixtures.data("team_WNBA_8.json")
+        let season = try Fixtures.data("season_WNBA.json")
+        let service = { ESPNAPIService(session: StubESPN.session()) }
+
+        answering(season: .failure(URLError(.timedOut)), plain: plain, regular: .status(500))
+        var lynx = try await service().fetchTeamHubInfo(teamId: "8", sport: .wnba)
+        XCTAssertTrue(lynx.recordUnavailable, "no season")
+
+        answering(season: .body(season), plain: plain, regular: .failure(URLError(.timedOut)))
+        lynx = try await service().fetchTeamHubInfo(teamId: "8", sport: .wnba)
+        XCTAssertTrue(lynx.recordUnavailable, "a timeout")
+
+        answering(season: .body(season), plain: plain, regular: .status(503))
+        lynx = try await service().fetchTeamHubInfo(teamId: "8", sport: .wnba)
+        XCTAssertTrue(lynx.recordUnavailable, "a server error")
+
+        answering(season: .body(season), plain: plain, regular: .status(404))
+        lynx = try await service().fetchTeamHubInfo(teamId: "8", sport: .wnba)
+        XCTAssertFalse(lynx.recordUnavailable, "ESPN has nothing there")
+        XCTAssertNil(lynx.overallRecord)
+
+        // Failing with a record still to show, in the league's regular season.
+        answering(season: .body(try Fixtures.data("season_NBA.json")), plain: try Fixtures.data("team_NBA_17.json"),
+                  regular: .status(500))
+        let nets = try await service().fetchTeamHubInfo(teamId: "17", sport: .nba)
+        XCTAssertFalse(nets.recordUnavailable)
+    }
+
+    func testNoSeasonKeepsThePageAndNoRecordFromThePlayoffs() async throws {
+        answering(season: .status(500), plain: try Fixtures.data("team_WNBA_8.json"),
+                  regular: .body(try Fixtures.data("team_WNBA_8_regular.json")))
+        let lynx = try await ESPNAPIService(session: StubESPN.session()).fetchTeamHubInfo(teamId: "8", sport: .wnba)
+        XCTAssertEqual(lynx.displayName, "Minnesota Lynx")
+        XCTAssertNil(lynx.overallRecord)
+        XCTAssertNil(lynx.homeRecord)
+        XCTAssertNil(lynx.standingSummary)
+    }
+
+    func testNoRegularSeasonInThePlayoffsHasNoPlayoffRecord() async throws {
+        for failure in [StubESPN.Reply.status(500), .status(404), .failure(URLError(.timedOut)), .body(Data("{}".utf8))] {
+            answering(season: .body(try Fixtures.data("season_WNBA.json")), plain: try Fixtures.data("team_WNBA_8.json"),
+                      regular: failure)
+            let lynx = try await ESPNAPIService(session: StubESPN.session()).fetchTeamHubInfo(teamId: "8", sport: .wnba)
+            XCTAssertEqual(lynx.displayName, "Minnesota Lynx")
+            XCTAssertNil(lynx.overallRecord)
+            XCTAssertNil(lynx.standingSummary)
+        }
+    }
+
+    func testNoRegularSeasonInItKeepsTheSameNumbers() async throws {
+        answering(season: .body(try Fixtures.data("season_NBA.json")), plain: try Fixtures.data("team_NBA_17.json"),
+                  regular: .status(500))
+        let nets = try await ESPNAPIService(session: StubESPN.session()).fetchTeamHubInfo(teamId: "17", sport: .nba)
+        XCTAssertEqual(nets.overallRecord, "1-6")
+        XCTAssertEqual(nets.standingSummary, "5th in Atlantic Division")
+    }
+
+    func testACancelledRequestThrowsSoTheNextCallAsksAgain() async throws {
+        // A page kept with no record would never ask again: loadInfo stops once it has one.
+        let plain = try Fixtures.data("team_WNBA_8.json")
+        let season = try Fixtures.data("season_WNBA.json")
+        let replies: [(StubESPN.Reply, StubESPN.Reply)] = [
+            (.failure(URLError(.cancelled)), .status(500)),
+            (.body(season), .failure(URLError(.cancelled))),
+        ]
+        for (seasonReply, regularReply) in replies {
+            answering(season: seasonReply, plain: plain, regular: regularReply)
+            do {
+                _ = try await ESPNAPIService(session: StubESPN.session()).fetchTeamHubInfo(teamId: "8", sport: .wnba)
+                XCTFail("it should have thrown")
+            } catch {
+                XCTAssertTrue(error.isCancellation)
+            }
+        }
+    }
+
+    func testTheCurrentSeasonDecodes() throws {
+        let playoffs = try JSONDecoder().decode(CurrentSeasonResponse.self, from: Fixtures.data("season_WNBA.json"))
+        XCTAssertFalse(playoffs.isRegularSeason)
+        XCTAssertEqual(playoffs.regularSeasonYear, 2026)
+        let regular = try JSONDecoder().decode(CurrentSeasonResponse.self, from: Fixtures.data("season_NBA.json"))
+        XCTAssertTrue(regular.isRegularSeason)
+        XCTAssertEqual(regular.regularSeasonYear, 2027)
     }
 }
 

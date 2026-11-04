@@ -108,8 +108,12 @@ CASES = [
          {"/teams": "teams_NFL.json"}),
     case("get_draft", lambda: espn_api.get_draft(2026), "draft_NFL_2026.json:draft", "/draft$",
          {"/draft/rounds": "draft_NFL_2026.json:rounds", "/draft/status": "draft_NFL_2026.json:status"}),
-    case("get_team_info NFL", lambda: espn_api.get_team_info("NFL", "9"), "team_NFL_9.json", "/teams/9"),
-    case("get_team_info NHL", lambda: espn_api.get_team_info("NHL", "129764"), "team_NHL_utah.json", "/teams/129764"),
+    case("get_team_info NFL", lambda: espn_api.get_team_info("NFL", "9"), "team_NFL_9.json", "/teams/9",
+         {"/season$": "season_NFL.json"}),
+    case("get_team_info NHL", lambda: espn_api.get_team_info("NHL", "129764"), "team_NHL_utah.json", "/teams/129764",
+         {"/season$": "season_NBA.json"}),
+    case("get_team_info season", lambda: espn_api.get_team_info("WNBA", "8", home_venue=False), "season_WNBA.json", "/season$",
+         {"/teams/8": "team_WNBA_8.json"}),
     case("get_team_roster", lambda: espn_api.get_team_roster("NFL", "9"), "roster_NFL_9.json", "/roster"),
     case("get_team_roster flat", lambda: espn_api.get_team_roster("NBA", "15"), "roster_NBA_15.json", "/roster"),
     case("get_transactions", lambda: espn_api.get_transactions("NFL"), "transactions_NFL.json", "/transactions"),
@@ -120,6 +124,7 @@ CASES = [
     case("get_standings NFL", lambda: espn_api.get_standings("NFL"), "standings_NFL.json", "/standings"),
     case("get_standings NHL", lambda: espn_api.get_standings("NHL"), "standings_NHL.json", "/standings"),
     case("get_standings NCAAH", lambda: espn_api.get_standings("NCAAH"), "standings_NCAAH.json", "/standings"),
+    case("get_standings WNBA", lambda: espn_api.get_standings("WNBA"), "standings_WNBA.json", "/standings"),
     case("get_standings soccer", lambda: espn_api.get_standings("EPL"), "team_EPL_359.json", r"/teams/\d+$",
          {"/teams$": "teams_EPL.json"}),
     case("get_player_statistics", lambda: espn_api.get_player_statistics("NBA")["player_stats"], "leaders_v3_NBA.json", "/leaders",
@@ -151,6 +156,7 @@ def test_no_single_bad_field_raises_or_reads_none(espn, call, fixture, route, ot
     failures = []
     for description, changed in mutations(served["payload"]):
         served["payload"] = changed
+        espn_api._CORE_SEASON_CACHE.clear()
         try:
             result = call()
         except Exception as e:

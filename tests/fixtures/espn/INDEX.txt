@@ -11,7 +11,7 @@ standings_NCAAF.json	122 KB	duplicate stat names by type; Sun Belt nested one le
 standings_NCAAF_group90.json	513 KB	group=90: all 25 conferences under FBS and FCS, Sun Belt flat; one team each, two in the Big Sky (Montana State 8-1)
 standings_NCAAM.json	111 KB	duplicate stat names; last 'wins' is the conference record
 standings_NCAAWB.json	112 KB	same
-standings_NCAAWH.json	14 KB	entries at the root, no children: app falls back to 0-0
+standings_NCAAWH.json	14 KB	entries at the root, no children: no conferences
 standings_NCAAH.json	27 KB	tiegames stat, three-part overall
 standings_NHL.json	46 KB	otLosses, streak; Utah is UTA here, UTAH on its team page
 standings_NFL.json	39 KB	streak present
@@ -117,3 +117,12 @@ teams_NCAAM.json	55 KB	teams?limit=1000, the Division I teams of the byteam_NCAA
 byteam_NCAAF.json	55 KB	season=2026 seasontype=2, 5 of 138 teams, Alabama among them: every team has opponent sections
 core_team_stats_NCAAF_333_2025.json	77 KB	core seasons/2025/types/2/teams/333/statistics: Alabama, passing 3,551, 11th, which byteam's type 3 has as 3,953 through the bowls
 core_team_stats_NCAAF_149.json	71 KB	core seasons/2026/types/2/teams/149/statistics: Montana, FCS, so not in byteam; total tackles Tied-363rd
+team_WNBA_8_regular.json	6 KB	Lynx season=2026&seasontype=2: 33-11, home 15-7, road 18-4, 1st; team_WNBA_8.json is the plain answer in the playoffs, 0-2, 8th
+team_WNBA_14.json	7 KB	Storm, not in the playoffs, plain answer in them: 0-0, 4th
+team_WNBA_14_regular.json	7 KB	Storm season=2026&seasontype=2: 8-36, last, as Standings has it
+team_MLB_19.json	23 KB	Dodgers, plain answer in the playoffs: 100-62 but 5th in NL West; nextEvent is spring training
+team_MLB_19_regular.json	11 KB	Dodgers season=2026&seasontype=2: 100-62, 1st in NL West, no nextEvent at all
+season_MLB.json	5 KB	core /season: year 2026, type 3, in its playoffs
+team_NBA_17_regular.json	21 KB	Nets season=2027&seasontype=2: same record as team_NBA_17.json, but nextEvent is in January rather than the next day
+team_NCAAH_130.json	10 KB	Michigan, plain answer: no record and no standing, as for every college hockey team; a next game
+team_NCAAH_130_regular.json	11 KB	Michigan season=2027&seasontype=2: 8-1, standingSummary a bare 1st, nextEvent in January

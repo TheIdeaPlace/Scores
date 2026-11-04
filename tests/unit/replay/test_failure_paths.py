@@ -107,7 +107,6 @@ RAISING = [
     ("get_team_schedule WNBA", lambda: espn_api.get_team_schedule("WNBA", "8"), lambda: ApiService.get_team_schedule("WNBA", "8")),
     ("get_standings NFL", lambda: espn_api.get_standings("NFL"), lambda: ApiService.get_standings("NFL")),
     ("get_standings soccer", lambda: espn_api.get_standings("EPL"), lambda: ApiService.get_standings("EPL")),
-    ("get_standings college", lambda: espn_api.get_standings("NCAAM"), lambda: ApiService.get_standings("NCAAM")),
 ]
 
 
@@ -122,6 +121,17 @@ class TestTimeoutsReachTheCaller:
         espn.on(".*", TIMEOUT)
         with pytest.raises(ApiError, match="read timed out"):
             through_service()
+
+
+@pytest.mark.parametrize("reply", [TIMEOUT, requests.ConnectionError("refused"), HTTP_404, HTTP_500, NOT_JSON],
+                         ids=["timeout", "connection", "404", "500", "not_json"])
+def test_standings_with_no_fallback_say_a_failed_request_failed(espn, reply):
+    """Not as no data, and not with the text of a requests exception, through the service too."""
+    espn.on(".*", reply)
+    with pytest.raises(ApiError, match="Try again"):
+        espn_api.get_standings("NCAAM")
+    with pytest.raises(ApiError, match="Try again"):
+        ApiService.get_standings("NCAAM")
 
 
 @pytest.mark.parametrize("reply", [TIMEOUT, requests.ConnectionError("refused"), HTTP_404, HTTP_500, NOT_JSON, EMPTY_JSON],

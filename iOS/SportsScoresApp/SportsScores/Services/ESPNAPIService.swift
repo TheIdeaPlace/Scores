@@ -1623,6 +1623,96 @@ class ESPNAPIService {
 
     // MARK: - Team Hub: Team Info
 
+    /// A team page's record and standing, from its regular season, as Standings has them.
+    ///
+    /// `/teams/{id}` with no season answers with whatever the league is doing now. In the WNBA
+    /// playoffs that read the Lynx, 33-11 and first, as 0-2 and 8th, and the teams left out as
+    /// 0-0. In the MLB playoffs the record holds and the standing doesn't. College hockey's has
+    /// no record at all, any time of year.
+    ///
+    /// Only these two come from the season asked for. Its `nextEvent` is wrong: the Nets' game
+    /// tomorrow reads as one in January, and in MLB's off-season there isn't one.
+    ///
+    /// If the regular season can't be had, the answer with no season stands only when the league
+    /// is in its regular season, when it's the same thing. Otherwise no record beats a wrong one.
+    /// A cancelled request throws, so the next call asks again instead of keeping a page with
+    /// no record. Soccer's team page is already the league season, and has no season type 2,
+    /// and that goes for the World Cups, which `isSoccer` leaves out.
+    /// `get_team_info` on Windows has the same rules.
+    ///
+    /// `unavailable` says a failure cost the page its record, which a league with no record
+    /// to show doesn't. `season` is nil if there was no asking, or no answer.
+    private func teamHubRecordAndStanding(
+        teamId: String,
+        sport: Sport,
+        team: TeamInfoAPIResponse.TeamInfoTeamData
+    ) async throws -> (record: TeamInfoAPIResponse.TeamInfoRecord?, standing: String?,
+                       unavailable: Bool, season: CurrentSeasonResponse?) {
+        if sport.usesSoccerSchedule { return (team.record, team.standingSummary, false, nil) }
+        let season: CurrentSeasonResponse
+        do {
+            season = try await fetchCurrentSeason(sport: sport)
+        } catch let error where error.isCancellation {
+            throw error
+        } catch {
+            return (nil, nil, true, nil)
+        }
+        var regular: TeamInfoAPIResponse.TeamInfoTeamData?
+        var failed = false
+        do {
+            regular = try await fetchRegularSeasonTeam(teamId: teamId, sport: sport, year: season.regularSeasonYear)
+        } catch let error where error.isCancellation {
+            throw error
+        } catch {
+            failed = !error.isNothingThere
+        }
+        let fallback = season.isRegularSeason ? team : nil
+        let record = regular?.record?.items?.isEmpty == false ? regular?.record : fallback?.record
+        return (record, regular?.standingSummary ?? fallback?.standingSummary,
+                failed && record?.items?.isEmpty != false, season)
+    }
+
+    /// A standing as a team page says it. College hockey says "1st" of every team, whatever its
+    /// record, and of nothing. The NBA's and WNBA's conferences aren't divisions.
+    private func shownStanding(_ standing: String?) -> String? {
+        guard let standing, standing.contains(" in ") else { return nil }
+        return standing.replacingOccurrences(of: " Conference Division", with: " Conference")
+    }
+
+    /// The team page itself has the usual 30 seconds, and the page waits for these two as well,
+    /// so a stalled ESPN doesn't get to hold it up for much longer. Windows does the same.
+    private static let teamRecordRequestTimeout: TimeInterval = 8
+
+    private func fetchCurrentSeason(sport: Sport) async throws -> CurrentSeasonResponse {
+        let path = sport.apiPath.components(separatedBy: "/")
+        guard path.count == 2,
+              let url = URL(string: "\(coreAPIBaseURL)/\(path[0])/leagues/\(path[1])/season") else {
+            throw APIError.invalidURL
+        }
+        let request = URLRequest(url: url, timeoutInterval: Self.teamRecordRequestTimeout)
+        let (data, response) = try await session.data(for: request)
+        guard let http = response as? HTTPURLResponse, http.statusCode == 200 else {
+            throw APIError.invalidResponse
+        }
+        return try JSONDecoder().decode(CurrentSeasonResponse.self, from: data)
+    }
+
+    private func fetchRegularSeasonTeam(
+        teamId: String,
+        sport: Sport,
+        year: Int
+    ) async throws -> TeamInfoAPIResponse.TeamInfoTeamData {
+        let urlString = "\(baseURL)/\(sport.apiPath)/teams/\(teamId)?season=\(year)&seasontype=2"
+        guard let url = URL(string: urlString) else { throw APIError.invalidURL }
+        let request = URLRequest(url: url, timeoutInterval: Self.teamRecordRequestTimeout)
+        let (data, response) = try await session.data(for: request)
+        guard let http = response as? HTTPURLResponse else { throw APIError.invalidResponse }
+        // 400 and 404 say ESPN has nothing there, and anything else is a failure.
+        if http.statusCode == 400 || http.statusCode == 404 { throw APIError.invalidResponse }
+        guard http.statusCode == 200 else { throw APIError.unexpectedStatus(http.statusCode) }
+        return try JSONDecoder().decode(TeamInfoAPIResponse.self, from: data).team
+    }
+
     /// Fetches team detail (colors, record, venue, next game, standing summary).
     func fetchTeamHubInfo(teamId: String, sport: Sport) async throws -> TeamHubTeamInfo {
         let urlString = "\(baseURL)/\(sport.apiPath)/teams/\(teamId)"
@@ -1633,6 +1723,7 @@ class ESPNAPIService {
         }
         let api = try JSONDecoder().decode(TeamInfoAPIResponse.self, from: data)
         let t = api.team
+        let source = try await teamHubRecordAndStanding(teamId: teamId, sport: sport, team: t)
 
         // Primary logo: prefer rel "default", fall back to first
         let logoURL: URL? = t.logos?
@@ -1641,7 +1732,7 @@ class ESPNAPIService {
             ?? t.logos?.first.flatMap { URL(string: $0.href) }
 
         // Record items
-        let items = t.record?.items ?? []
+        let items = source.record?.items ?? []
         func recordSummary(matching description: String) -> String? {
             items.first(where: { $0.description?.lowercased().contains(description) == true })?.summary
         }
@@ -1716,11 +1807,13 @@ class ESPNAPIService {
             overallRecord: overallRecord,
             homeRecord: homeRecord,
             awayRecord: awayRecord,
-            standingSummary: t.standingSummary,
+            standingSummary: shownStanding(source.standing),
             venueName: venueName,
             venueCity: venueCity,
             coachName: nil,  // populated by fetchTeamRoster
-            nextGame: nextGame
+            nextGame: nextGame,
+            recordUnavailable: source.unavailable,
+            recordIsRegularSeasonOnly: sport.isCollegeSport && source.season?.isRegularSeason == false
         )
     }
 
