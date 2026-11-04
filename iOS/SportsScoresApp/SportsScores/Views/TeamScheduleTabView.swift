@@ -109,6 +109,11 @@ struct TeamScheduleTabView: View {
                 Text((game.timeIsKnown ? Self.dateFormatter.string(from: game.date) : DateFormatter.localizedString(from: game.date, dateStyle: .medium, timeStyle: .none)))
                     .font(.caption)
                     .foregroundColor(.secondary)
+                if let label = game.label {
+                    Text(label)
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                }
             }
 
             Spacer()
@@ -127,12 +132,13 @@ struct TeamScheduleTabView: View {
     @ViewBuilder
     private func resultBadge(game: ScheduleGame, teamIsHome: Bool) -> some View {
         if game.isCompleted {
-            let won = isWin(game: game, teamIsHome: teamIsHome)
-            Text(won ? "W" : "L")
+            let outcome = game.outcome(forTeamId: viewModel.teamId)
+            let color: Color = outcome == .win ? .green : (outcome == .loss ? .red : .secondary)
+            Text(outcome == .win ? "W" : (outcome == .loss ? "L" : (outcome == .tie ? "T" : "–")))
                 .font(.caption2).bold()
                 .frame(width: 22, height: 22)
-                .background((won ? Color.green : Color.red).opacity(0.15))
-                .foregroundColor(won ? .green : .red)
+                .background(color.opacity(0.15))
+                .foregroundColor(color)
                 .cornerRadius(4)
         } else if game.isInProgress {
             Image(systemName: "circle.fill")
@@ -152,12 +158,7 @@ struct TeamScheduleTabView: View {
         let oppScore  = teamIsHome ? awayScore : homeScore
         return Text("\(teamScore)–\(oppScore)")
             .font(.subheadline).monospacedDigit()
-            .fontWeight(isWin(game: game, teamIsHome: teamIsHome) ? .bold : .regular)
-    }
-
-    private func isWin(game: ScheduleGame, teamIsHome: Bool) -> Bool {
-        guard let hs = game.homeTeam.score, let as_ = game.awayTeam.score else { return false }
-        return teamIsHome ? hs > as_ : as_ > hs
+            .fontWeight(game.outcome(forTeamId: viewModel.teamId) == .win ? .bold : .regular)
     }
 
     private func gameAccessibilityLabel(_ game: ScheduleGame) -> String {
@@ -165,13 +166,21 @@ struct TeamScheduleTabView: View {
         let opponent = teamIsHome ? game.awayTeam : game.homeTeam
         let location = teamIsHome || game.isNeutralSite ? "vs" : "at"
         let date = (game.timeIsKnown ? Self.dateFormatter.string(from: game.date) : DateFormatter.localizedString(from: game.date, dateStyle: .medium, timeStyle: .none))
+        let label = game.label.map { ", \($0)" } ?? ""
         if game.isCompleted {
-            let won = isWin(game: game, teamIsHome: teamIsHome)
             let ts = teamIsHome ? (game.homeTeam.score ?? 0) : (game.awayTeam.score ?? 0)
             let os = teamIsHome ? (game.awayTeam.score ?? 0) : (game.homeTeam.score ?? 0)
-            return "\(won ? "Win" : "Loss") \(location) \(opponent.displayName), \(ts) to \(os), on \(date)"
+            switch game.outcome(forTeamId: viewModel.teamId) {
+            case .win:  return "Win \(location) \(opponent.displayName), \(ts) to \(os), on \(date)\(label)"
+            case .loss: return "Loss \(location) \(opponent.displayName), \(ts) to \(os), on \(date)\(label)"
+            case .tie:  return "Tie \(location) \(opponent.displayName), \(ts) to \(os), on \(date)\(label)"
+            case nil:   return "Final \(location) \(opponent.displayName), on \(date)\(label)"
+            }
         }
-        return "\(location) \(opponent.displayName), \(date)"
+        if game.isCalledOff {
+            return "\(location) \(opponent.displayName), \(date), \(game.statusText)\(label)"
+        }
+        return "\(location) \(opponent.displayName), \(date)\(label)"
     }
 
     // MARK: - States

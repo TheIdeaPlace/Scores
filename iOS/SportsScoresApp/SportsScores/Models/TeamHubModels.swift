@@ -142,6 +142,21 @@ struct TeamInfoAPIResponse: Decodable {
             let timeValid: Bool?
             let neutralSite: Bool?
             let competitors: [TeamInfoCompetitor]?
+            let status: TeamInfoStatus?
+
+            struct TeamInfoStatus: Decodable {
+                let type: TeamInfoStatusType?
+
+                struct TeamInfoStatusType: Decodable {
+                    let completed: Bool?
+                    let state: String?
+                }
+            }
+
+            /// Postponed or canceled, the same test as `ScheduleGame.isCalledOff`.
+            var isCalledOff: Bool {
+                status?.type?.completed == false && status?.type?.state == "post"
+            }
 
             struct TeamInfoCompetitor: Decodable {
                 let homeAway: String?

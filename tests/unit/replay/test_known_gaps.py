@@ -35,8 +35,7 @@ FAILED_REQUEST_READS_AS_NOTHING = gap(
     lambda: espn_api.get_news("NFL"),
     lambda: espn_api.get_game_details("NFL", "1"),
     lambda: espn_api.get_standings("NFL"),
-    lambda: espn_api.get_team_schedule("NFL", "9", season=2026),
-], ids=["scores", "news", "details", "standings", "schedule"])
+], ids=["scores", "news", "details", "standings"])
 def test_a_server_error_is_told_apart_from_no_data(espn, call):
     espn.on(".*", HTTP_500)
     with pytest.raises(Exception):
@@ -71,43 +70,6 @@ def test_a_failure_elsewhere_is_told_apart_from_no_data(espn, call, reply):
     espn.on(".*", reply)
     with pytest.raises(Exception):
         call()
-
-
-@gap("get_team_schedule swallows a failed season type, so losing the regular season "
-     "shows the preseason and playoffs as if they were the whole schedule.")
-def test_a_failed_season_type_is_not_silently_left_out(espn):
-    real = load("schedule_NBA_15.json")
-    espn.on("/schedule", lambda url: HTTP_500 if "seasontype=2" in url else real)
-    with pytest.raises(Exception):
-        espn_api.get_team_schedule("NBA", "15", season=2027)
-
-
-@gap("Every season type failing looks like an off-season, so a network problem shows "
-     "last season's games as the schedule, with no sign anything went wrong.")
-def test_failing_requests_do_not_show_last_season(espn, freeze_now):
-    freeze_now(datetime(2026, 11, 3))
-    real = load("schedule_NBA_15.json")
-    espn.on("/schedule", lambda url: real if "season=2026" in url else HTTP_500)
-    assert espn_api.get_team_schedule("NBA", "15") == []
-
-
-@gap("A college football season you pick that comes back empty falls back to last "
-     "calendar year's schedule, shown as if it were the season you asked for.")
-def test_an_empty_ncaaf_season_does_not_become_another_season(espn, freeze_now):
-    freeze_now(datetime(2026, 11, 3))
-    real = load("schedule_NFL_9.json")
-    espn.on("/schedule", lambda url: real if "season=2025" in url else {"events": []})
-    assert espn_api.get_team_schedule("NCAAF", "9", season=2010) == []
-
-
-@gap("get_available_seasons offers WNBA and soccer ten past seasons, but their schedule "
-     "reads a window of months around today and ignores the season. schedule_WNBA_8.json "
-     "shows ESPN has a schedule endpoint that would work.")
-def test_a_past_wnba_season_asks_for_that_season(espn, freeze_now):
-    freeze_now(datetime(2026, 11, 3))
-    espn.on("/scoreboard", {"events": []}).on("/schedule", {"events": []})
-    espn_api.get_team_schedule("WNBA", "8", season=2024)
-    assert any("2024" in url for url in espn.calls), espn.calls
 
 
 @gap("The slow standings path gives a team whose record request failed 0-0, a record it "

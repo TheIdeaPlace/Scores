@@ -67,7 +67,6 @@ PASS, WARN, FAIL = "PASS", "WARN", "FAIL"
 INVENTED = ("sample player", "sample stat", "team1")  # the app's old made-up fallbacks
 MONTHS_TO_SEARCH = 14
 IN_SEASON_DAYS = 14
-SCHEDULE_WINDOW_DAYS = 30
 FINALS_TO_TRY = 3
 # A dead host costs minutes per request. Past this, requests stop waiting and fail, so the
 # run still ends with a report. The workflow's own limit is higher.
@@ -94,8 +93,6 @@ class League:
     player_stats: bool = True  # espn_api.LEADER_LEAGUES, and a test holds the two together
     team_stats: bool = True  # espn_api.TEAM_STAT_LEAGUES, and the same
     core_leaders: bool = True
-    # espn_api's team schedule only looks this far either side of today for these leagues.
-    schedule_window: bool = False
     # ESPN has none of these here, so an empty answer is the normal one.
     team_records: bool = True
     rosters: bool = True
@@ -116,15 +113,14 @@ class League:
 
 _COLLEGE_HOCKEY = dict(box_score=False, plays=False, rankings=True, transactions=False, player_stats=False,
                        team_stats=False, core_leaders=False, team_records=False, rosters=False)
-_SOCCER = dict(plays=False, transactions=False, player_stats=False, team_stats=False, core_leaders=False,
-               schedule_window=True)
+_SOCCER = dict(plays=False, transactions=False, player_stats=False, team_stats=False, core_leaders=False)
 
 LEAGUES = [
     League("NFL", "football/nfl", FOOTBALL),
     League("NCAAF", "football/college-football", FOOTBALL, "groups=90&limit=400", rankings=True, transactions=False,
            standings_params="group=90", standings_min_teams=200, standings_groupings=("FBS", "FCS")),
     League("NBA", "basketball/nba", BASKETBALL),
-    League("WNBA", "basketball/wnba", BASKETBALL, schedule_window=True),
+    League("WNBA", "basketball/wnba", BASKETBALL),
     League("NCAAM", "basketball/mens-college-basketball", BASKETBALL, "groups=50&limit=400",
            rankings=True, transactions=False),
     League("NCAAWB", "basketball/womens-college-basketball", BASKETBALL, "groups=50&limit=400",
@@ -142,6 +138,18 @@ LEAGUE_KEYS = {league.key: league for league in LEAGUES}
 EXPECTED_DIVISIONS = {"NFL": 8, "NBA": 6, "NHL": 4, "MLB": 6, "WNBA": 2}
 # In Sport.swift, but the iPhone gets this league from the CFL's own feed rather than ESPN.
 NOT_FROM_ESPN = {"football/cfl"}
+
+# Finished seasons that can't change, and what the team's schedule has to show from each:
+# (league, team id, team, season, words in the label of a postseason game).
+PAST_POSTSEASONS = (
+    ("NFL", "26", "Seahawks", 2025, "Super Bowl"),
+    ("NCAAF", "333", "Alabama", 2025, "College Football Playoff"),
+    ("WNBA", "8", "Lynx", 2025, "Semifinals"),
+)
+# Soccer's team schedule works differently, on both apps: league, team id, team.
+SOCCER_SCHEDULE_TEAMS = (("EPL", "359", "Arsenal"), ("MLS", "18418", "Atlanta United"))
+# A league season is 30 games or more. Fewer means ESPN lost some, or the wrong season came back.
+SOCCER_SEASON_MIN_GAMES = 20
 
 
 @dataclass
@@ -1020,16 +1028,16 @@ def check_team_hub(http, report, league, event, in_season):
             else:
                 report.ok(league.key, "App: roster", f"{name} has none. ESPN has few rosters in this league", url)
 
-    schedule = checked("App: schedule", espn_api.get_team_schedule, league.key, team_id)
+    # Every league here has a season-long schedule, and with nothing in the current season
+    # the app shows the last one, so a team that has played always has something to show.
+    # Asked as Team Hub asks: with a season, the top of its list.
+    schedule = checked("App: schedule", espn_api.get_team_schedule, league.key, team_id, 30, 30,
+                       espn_api.get_available_seasons(league.key)[0][0])
     if schedule is not None:
-        reachable = not league.schedule_window or days_since(event) <= SCHEDULE_WINDOW_DAYS
         if schedule:
             report.ok(league.key, "App: schedule", f"{len(schedule)} games")
-        elif reachable:
-            report.fail(league.key, "App: schedule", f"{name} has no games, though it played recently")
         else:
-            report.warn(league.key, "App: schedule",
-                        f"{name} has none within {SCHEDULE_WINDOW_DAYS} days, the most this path looks (#71)")
+            report.fail(league.key, "App: schedule", f"{name} has no games, though it has played")
 
     url = f"{SITE}/{league.path}/news?team={team_id}"
     status, raw = http.get(url)
@@ -1492,6 +1500,105 @@ def check_football_calendar(http, report):
             report.ok(key, "Core API: weeks (iPhone)", f"{data.get('count')} weeks", url)
 
 
+def _event_label_words(event):
+    """The words the apps could label a game with: ESPN's notes and its week."""
+    competitions = event.get("competitions") or [{}]
+    notes = [note.get("headline") or "" for note in competitions[0].get("notes") or []]
+    return " ".join(notes + [(event.get("week") or {}).get("text") or ""])
+
+
+def check_past_postseasons(http, report):
+    """A past season's playoffs, asked for the way both apps ask, and the app's rows for them."""
+    import espn_api
+
+    for key, team_id, team, season, words in PAST_POSTSEASONS:
+        league = LEAGUE_KEYS[key]
+        url = f"{SITE}/{league.path}/teams/{team_id}/schedule?season={season}&seasontype=3"
+        status, data = http.get(url)
+        events = (data or {}).get("events") if isinstance(data, dict) else None
+        if status != 200 or not isinstance(events, list):
+            report.fail(key, "Past postseason", f"got {status} for {team} {season}", url)
+            continue
+        if not any(words in _event_label_words(e) for e in events):
+            report.fail(key, "Past postseason", f"{team} {season}: {len(events)} games, none labelled {words!r}", url)
+            continue
+        report.ok(key, "Past postseason", f"{team} {season}: {len(events)} games, labelled {words!r}", url)
+
+        try:
+            rows = espn_api.get_team_schedule(key, team_id, season=season)
+        except Exception as e:
+            report.fail(key, "App: past season", f"raised {type(e).__name__}: {e}")
+            continue
+        wrong_year = [r["date"] for r in rows if r["date"][:4] not in (str(season), str(season + 1))]
+        if wrong_year:
+            report.fail(key, "App: past season", f"{team} {season} has games from another season: {wrong_year[:3]}")
+        elif not any(words in r["label"] for r in rows):
+            report.fail(key, "App: past season", f"{team} {season}: {len(rows)} rows, none labelled {words!r}")
+        else:
+            report.ok(key, "App: past season", f"{team} {season}: {len(rows)} rows, with {words!r}")
+
+
+def check_soccer_schedules(http, report):
+    """What both apps do for soccer: results by season, with no season type, plus fixture=true."""
+    import espn_api
+
+    # Two back is finished for every league, whichever way its seasons cross the new year.
+    season = date.today().year - 2
+    for key, team_id, team in SOCCER_SCHEDULE_TEAMS:
+        base = f"{SITE}/{LEAGUE_KEYS[key].path}/teams/{team_id}/schedule"
+
+        url = f"{base}?season={season}"
+        status, data = http.get(url)
+        events = (data or {}).get("events") if isinstance(data, dict) else None
+        if status != 200 or not isinstance(events, list):
+            report.fail(key, "Soccer results", f"got {status} for {team} {season}", url)
+        elif len(events) < SOCCER_SEASON_MIN_GAMES:
+            report.fail(key, "Soccer results", f"{team} {season} has {len(events)} games", url)
+        elif (data.get("requestedSeason") or {}).get("year") != season:
+            report.fail(key, "Soccer results", f"asked for {season}, got {data.get('requestedSeason')}", url)
+        elif not isinstance((data.get("season") or {}).get("year"), int):
+            report.fail(key, "Soccer results", "no season.year, which says whether to ask for fixtures", url)
+        else:
+            report.ok(key, "Soccer results", f"{team} {season}: {len(events)} games", url)
+
+        # The apps send no season type because this comes back empty. If it stops being
+        # empty nothing breaks, but it would mean ESPN has changed how soccer works.
+        url = f"{base}?season={season}&seasontype=2"
+        status, data = http.get(url)
+        events = (data or {}).get("events") if isinstance(data, dict) else None
+        if status == 200 and events == []:
+            report.ok(key, "Soccer season type", "seasontype=2 is empty, as expected", url)
+        else:
+            report.warn(key, "Soccer season type",
+                        f"seasontype=2 used to be empty; got {status} with {len(events or [])} games", url)
+
+        url = f"{base}?fixture=true"
+        status, data = http.get(url)
+        events = (data or {}).get("events") if isinstance(data, dict) else None
+        if status != 200 or not isinstance(events, list):
+            report.fail(key, "Soccer fixtures", f"got {status}", url)
+        elif events:
+            report.ok(key, "Soccer fixtures", f"{team}: {len(events)} games to come", url)
+        else:
+            report.warn(key, "Soccer fixtures", f"{team} has none, which can be between seasons", url)
+
+        try:
+            rows = espn_api.get_team_schedule(key, team_id, season=season)
+            current = espn_api.get_team_schedule(key, team_id, season=espn_api.get_available_seasons(key)[0][0])
+        except Exception as e:
+            report.fail(key, "App: soccer schedule", f"raised {type(e).__name__}: {e}")
+            continue
+        to_come = [r["date"] for r in rows if not r["completed"]]
+        if len(rows) < SOCCER_SEASON_MIN_GAMES:
+            report.fail(key, "App: soccer schedule", f"{team} {season}: {len(rows)} rows")
+        elif to_come:
+            report.fail(key, "App: soccer schedule", f"{team} {season} has games to come: {to_come[:3]}")
+        elif not current:
+            report.fail(key, "App: soccer schedule", f"{team} has nothing for the current season")
+        else:
+            report.ok(key, "App: soccer schedule", f"{team}: {len(rows)} rows for {season}, {len(current)} now")
+
+
 def check_golf(http, report):
     import espn_api
 
@@ -1706,8 +1813,8 @@ def check_others_twice(http, seasons):
 
 def check_others(http, seasons):
     report = Report()
-    for check in (check_every_league_path, check_football_calendar, check_golf, check_draft, check_world_cup,
-                  check_cfl, check_hockey_web_page, check_fantasy):
+    for check in (check_every_league_path, check_football_calendar, check_past_postseasons, check_soccer_schedules,
+                  check_golf, check_draft, check_world_cup, check_cfl, check_hockey_web_page, check_fantasy):
         try:
             check(http, report)
         except Exception as e:

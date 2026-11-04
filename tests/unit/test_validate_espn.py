@@ -584,6 +584,169 @@ class StubbedApp:
         self.monkeypatch.setattr(self.espn_api, name, lambda *a, **k: answer)
 
 
+class TestPastPostseasons:
+    SEATTLE = "football/nfl/teams/26/schedule?season=2025&seasontype=3"
+    ALABAMA = "college-football/teams/333/schedule?season=2025&seasontype=3"
+    LYNX = "wnba/teams/8/schedule?season=2025&seasontype=3"
+
+    def http(self, **changes):
+        answers = {self.SEATTLE: (200, load("schedule_NFL_26_post.json")),
+                   self.ALABAMA: (200, load("schedule_NCAAF_333_post.json")),
+                   self.LYNX: (200, load("schedule_WNBA_8_post.json"))}
+        answers.update(changes)
+        return FakeHttp(list(answers.items()))
+
+    def rows(self, monkeypatch, rows):
+        import espn_api
+        monkeypatch.setattr(espn_api, "get_team_schedule", lambda *a, **k: rows)
+
+    def good_rows(self):
+        return [{"date": "2026-02-08", "label": "Super Bowl LX College Football Playoff Semifinals"}]
+
+    def test_real_payloads_pass(self, monkeypatch):
+        self.rows(monkeypatch, self.good_rows())
+        report = v.Report()
+        v.check_past_postseasons(self.http(), report)
+        assert not report.failed
+        assert statuses(report, "Past postseason") == [v.PASS, v.PASS, v.PASS]
+
+    def test_a_bad_status_fails(self, monkeypatch):
+        self.rows(monkeypatch, self.good_rows())
+        report = v.Report()
+        v.check_past_postseasons(self.http(**{self.SEATTLE: (500, None)}), report)
+        assert FAIL_IN(report, "Past postseason")
+
+    def test_the_super_bowl_losing_its_label_fails(self, monkeypatch):
+        self.rows(monkeypatch, self.good_rows())
+        data = load("schedule_NFL_26_post.json")
+        for item in data["events"]:
+            item["competitions"][0]["notes"] = []
+            item.pop("week", None)
+        report = v.Report()
+        v.check_past_postseasons(self.http(**{self.SEATTLE: (200, data)}), report)
+        assert "none labelled" in detail(report, "Past postseason")
+
+    def test_the_app_raising_fails(self, monkeypatch):
+        import espn_api
+
+        def broken(*a, **k):
+            raise ValueError("no")
+
+        monkeypatch.setattr(espn_api, "get_team_schedule", broken)
+        report = v.Report()
+        v.check_past_postseasons(self.http(), report)
+        assert "raised ValueError" in detail(report, "App: past season")
+
+    def test_the_app_showing_another_season_fails(self, monkeypatch):
+        self.rows(monkeypatch, [{"date": "2020-11-01", "label": "Super Bowl"}])
+        report = v.Report()
+        v.check_past_postseasons(self.http(), report)
+        assert "another season" in detail(report, "App: past season")
+
+    def test_the_app_losing_the_label_fails(self, monkeypatch):
+        self.rows(monkeypatch, [{"date": "2026-02-08", "label": ""}])
+        report = v.Report()
+        v.check_past_postseasons(self.http(), report)
+        assert "none labelled" in detail(report, "App: past season")
+
+
+class TestSoccerSchedules:
+    """Arsenal's real answers. A past season is 38 games, so the fixture's three are repeated."""
+
+    def results(self, count=30, year=None):
+        data = load("schedule_EPL_359_2025.json")
+        data["events"] = (data["events"] * count)[:count]
+        data["requestedSeason"]["year"] = date.today().year - 2 if year is None else year
+        return data
+
+    def http(self, results=None, typed=None, fixtures=None):
+        fixtures = load("schedule_EPL_359_fixture.json") if fixtures is None else fixtures
+        return FakeHttp([("seasontype=2", typed or (200, {"events": []})),
+                         ("fixture=true", fixtures if isinstance(fixtures, tuple) else (200, fixtures)),
+                         ("season=", results or (200, self.results()))])
+
+    def app(self, monkeypatch, past=None, current=None):
+        import espn_api
+        past = [{"date": "2025-01-01", "completed": True}] * 30 if past is None else past
+        current = [{"date": "2026-11-01", "completed": False}] if current is None else current
+        two_back = date.today().year - 2
+        monkeypatch.setattr(espn_api, "get_team_schedule",
+                            lambda league, team, season=None: past if season == two_back else current)
+
+    def run(self, monkeypatch, http=None, past=None, current=None):
+        self.app(monkeypatch, past, current)
+        report = v.Report()
+        v.check_soccer_schedules(http or self.http(), report)
+        return report
+
+    def test_all_well_for_both_leagues(self, monkeypatch):
+        report = self.run(monkeypatch)
+        assert not report.failed and not [c for c in report.checks if c.status == v.WARN]
+        for name in ("Soccer results", "Soccer season type", "Soccer fixtures", "App: soccer schedule"):
+            assert statuses(report, name) == [v.PASS, v.PASS]
+
+    def test_never_asks_for_a_season_type_except_to_see_it_is_empty(self, monkeypatch):
+        http = self.http()
+        self.run(monkeypatch, http)
+        typed = [u for u in http.urls if "seasontype" in u]
+        assert typed and all("seasontype=2" in u for u in typed)
+
+    def test_results_refused(self, monkeypatch):
+        assert FAIL_IN(self.run(monkeypatch, self.http(results=(500, None))), "Soccer results")
+
+    def test_too_few_results(self, monkeypatch):
+        report = self.run(monkeypatch, self.http(results=(200, self.results(count=3))))
+        assert "has 3 games" in detail(report, "Soccer results")
+
+    def test_another_season_answers(self, monkeypatch):
+        report = self.run(monkeypatch, self.http(results=(200, self.results(year=1999))))
+        assert "asked for" in detail(report, "Soccer results")
+
+    def test_season_year_gone(self, monkeypatch):
+        data = self.results()
+        del data["season"]
+        report = self.run(monkeypatch, self.http(results=(200, data)))
+        assert "season.year" in detail(report, "Soccer results")
+
+    def test_a_season_type_starting_to_answer_is_worth_a_look(self, monkeypatch):
+        report = self.run(monkeypatch, self.http(typed=(200, self.results())))
+        assert statuses(report, "Soccer season type") == [v.WARN, v.WARN]
+        assert not report.failed
+
+    def test_fixtures_refused(self, monkeypatch):
+        assert FAIL_IN(self.run(monkeypatch, self.http(fixtures=(500, None))), "Soccer fixtures")
+
+    def test_no_fixtures_can_be_between_seasons(self, monkeypatch):
+        report = self.run(monkeypatch, self.http(fixtures={"events": []}))
+        assert statuses(report, "Soccer fixtures") == [v.WARN, v.WARN]
+        assert not report.failed
+
+    def test_the_app_raising_fails(self, monkeypatch):
+        import espn_api
+
+        def broken(*a, **k):
+            raise ValueError("no")
+
+        monkeypatch.setattr(espn_api, "get_team_schedule", broken)
+        report = v.Report()
+        v.check_soccer_schedules(self.http(), report)
+        assert "raised ValueError" in detail(report, "App: soccer schedule")
+
+    def test_the_app_with_too_few_rows(self, monkeypatch):
+        report = self.run(monkeypatch, past=[{"date": "2025-01-01", "completed": True}])
+        assert FAIL_IN(report, "App: soccer schedule")
+
+    def test_the_app_stamping_current_games_on_a_past_season(self, monkeypatch):
+        """What EPL season=2020 used to do: eight of this season's games."""
+        rows = [{"date": "2026-11-07", "completed": False}] * 30
+        report = self.run(monkeypatch, past=rows)
+        assert "games to come" in detail(report, "App: soccer schedule")
+
+    def test_the_app_with_nothing_for_the_current_season(self, monkeypatch):
+        report = self.run(monkeypatch, current=[])
+        assert FAIL_IN(report, "App: soccer schedule")
+
+
 class TestTeamHub:
     def run(self, key, monkeypatch, days_ago=1, in_season=True, **answers):
         app = StubbedApp(monkeypatch)
@@ -598,15 +761,25 @@ class TestTeamHub:
     def test_all_well(self, monkeypatch):
         assert not self.run("NBA", monkeypatch).failed
 
+    def test_the_schedule_is_asked_for_as_team_hub_asks(self, monkeypatch):
+        """With the top of the season list. Team Hub never leaves the season out."""
+        import espn_api
+        app = StubbedApp(monkeypatch)
+        asked = []
+        monkeypatch.setattr(espn_api, "get_team_schedule", lambda *a, **k: asked.append(a) or [{"id": "1"}])
+        played = event()
+        played["date"] = datetime.now(timezone.utc).isoformat()
+        v.check_team_hub(FakeHttp(default=(200, {})), v.Report(), league("WNBA"), played, True)
+        assert app and asked[0][4] == espn_api.get_available_seasons("WNBA")[0][0]
+
     def test_schedule_empty_after_a_recent_game_is_a_failure(self, monkeypatch):
         assert FAIL_IN(self.run("NBA", monkeypatch, get_team_schedule=[]), "App: schedule")
 
-    def test_schedule_window_reaches_a_recent_game(self, monkeypatch):
-        assert FAIL_IN(self.run("EPL", monkeypatch, days_ago=10, get_team_schedule=[]), "App: schedule")
-
-    def test_schedule_window_can_not_reach_an_old_game(self, monkeypatch):
-        report = self.run("WNBA", monkeypatch, days_ago=60, in_season=False, get_team_schedule=[])
-        assert statuses(report, "App: schedule") == [v.WARN]
+    @pytest.mark.parametrize("key", ["EPL", "WNBA"])
+    def test_no_league_excuses_an_empty_schedule_any_more(self, monkeypatch, key):
+        """WNBA and soccer used to read 30 days of scoreboard, which an old game fell outside."""
+        report = self.run(key, monkeypatch, days_ago=60, in_season=False, get_team_schedule=[])
+        assert FAIL_IN(report, "App: schedule")
 
     def test_a_decimal_height_is_caught(self, monkeypatch):
         report = self.run("NBA", monkeypatch, get_team_roster=[{"name": "A", "height": "74.0"}])
