@@ -77,7 +77,7 @@ NOT_PLAYED = ("STATUS_POSTPONED", "STATUS_CANCELED", "STATUS_CANCELLED", "STATUS
 WORLD_CUP_MATCH = "760512"
 # What the iPhone asks the core API for. ESPN has no statistics for some season types, such
 # as the NBA's preseason and play-in, so one season type on its own proves nothing.
-CORE_SEASON_TYPES = (2, 3, 1)
+CORE_SEASON_TYPES = (2,)
 
 
 @dataclass(frozen=True)
@@ -92,7 +92,7 @@ class League:
     rankings: bool = False
     transactions: bool = True
     player_stats: bool = True  # espn_api.LEADER_LEAGUES, and a test holds the two together
-    team_stats: bool = True
+    team_stats: bool = True  # espn_api.TEAM_STAT_LEAGUES, and the same
     core_leaders: bool = True
     # espn_api's team schedule only looks this far either side of today for these leagues.
     schedule_window: bool = False
@@ -1133,18 +1133,105 @@ def check_statistics(http, report, league, event, in_season):
         check_no_leaders(http, report, league)
 
     if league.team_stats:
-        # The iPhone's team statistics. Windows asks team by team, which #94 tracks.
-        url = f"{WEB}/{league.path}/statistics/byteam?region=us&lang=en&limit=1"
-        status, data = http.get(url)
-        if status != 200 or not isinstance(data, dict):
-            report.fail(league.key, "Team statistics (iPhone)", f"got {status}", url)
-        elif data.get("teams"):
-            report.ok(league.key, "Team statistics (iPhone)", "as expected", url)
-        else:
-            report.seasonal(in_season, league.key, "Team statistics (iPhone)", "no teams", url)
+        check_team_statistics(http, report, league, in_season)
+        check_app_team_statistics(report, league, in_season)
+    else:
+        check_no_team_statistics(http, report, league)
 
     if league.core_leaders:
         check_core_statistics(http, report, league, event, in_season)
+
+
+def check_team_statistics(http, report, league, in_season=True):
+    """statistics/byteam, as both apps ask. Asked this way it's the regular season at any time of
+    year, where the bare URL is the playoffs from the end of a season until the next one: that's
+    why nothing here looks at the bare URL. An empty answer can mean a new season, as it does for
+    the leaders, so only an in-season league with nothing for either year is a break."""
+    import espn_api
+
+    try:
+        year = espn_api._leaders_season(league.path)
+    except ApiError as e:
+        report.fail(league.key, "Core API: season", f"the app can't tell the season: {e}",
+                    f"{CORE}/{league.core_path}/season")
+        return
+    for season_year in (year, year - 1):
+        url = (f"{WEB}/{league.path}/statistics/byteam?region=us&lang=en&limit={espn_api.TEAM_STATS_LIMIT}"
+               f"&season={season_year}&seasontype=2")
+        status, data = http.get(url)
+        if status not in (200, 404):
+            report.fail(league.key, "Team statistics", f"got {status}, so the app says to try again", url)
+            return
+        if status == 200 and isinstance(data, dict) and data.get("teams"):
+            break
+    else:
+        report.seasonal(in_season, league.key, "Team statistics", f"no teams for {year} or {year - 1}", url)
+        return
+
+    season = data.get("requestedSeason") or {}
+    season_type = (season.get("type") or {}).get("type")
+    rows = len(data["teams"])
+    report.ok(league.key, "Team statistics", f"{season.get('displayName')} {(season.get('type') or {}).get('name')}: "
+                                             f"{rows} teams", url)
+    if season_type != 2 and (season_type, league.key) != (espn_api.POSTSEASON, "NCAAF"):
+        # College football's past seasons are type 3 however they're asked for, and the app says "Season".
+        report.warn(league.key, "Team statistics: regular season",
+                    f"asked for the regular season and got season type {season_type}, so the numbers aren't what "
+                    "the apps say they are", url)
+
+    count = (data.get("pagination") or {}).get("count")
+    if isinstance(count, int) and count > rows:
+        sort = espn_api.TEAM_STATS_SORT.get(league.path.split("/")[0])
+        if not sort:
+            report.warn(league.key, "Team statistics: every team",
+                        f"ESPN has {count} and gave {rows}, and the apps have no way to ask for the rest here", url)
+        elif count > 2 * rows:
+            report.warn(league.key, "Team statistics: every team",
+                        f"ESPN has {count} and gives {rows} at a time, so sorted each way can't reach them all", url)
+        else:
+            report.ok(league.key, "Team statistics: every team",
+                      f"ESPN has {count} and gives {rows} at a time, so the apps sort by {sort} each way", url)
+
+
+# How many teams a pro league's list should have, as a floor. The WNBA is growing: 13 in 2025 and
+# 15 in 2026. College lists move with who has played, so there isn't a number to hold them to.
+TEAM_STATS_FLOORS = {"NFL": 32, "NBA": 30, "WNBA": 13, "NHL": 32, "MLB": 30}
+
+
+def check_app_team_statistics(report, league, in_season):
+    """The real parser and ranking on what ESPN has now, the sort union included."""
+    import espn_api
+    from team_stats import team_stat_lists
+
+    try:
+        stats = espn_api.get_team_statistics(league.key)
+    except ApiError as e:
+        report.fail(league.key, "App: team statistics", f"a user would have been told: {e}")
+        return
+    except Exception as e:
+        report.fail(league.key, "App: team statistics", f"raised {type(e).__name__}: {e}")
+        return
+    categories = stats.get("team_stats") or []
+    if not categories:
+        report.seasonal(in_season, league.key, "App: team statistics", "no categories")
+        return
+    teams = max(len(category["stats"]) for category in categories)
+    report.ok(league.key, "App: team statistics",
+              f"{teams} teams, {len(team_stat_lists(categories))} stats, {stats.get('season')}")
+    floor = TEAM_STATS_FLOORS.get(league.key, 0)
+    if teams < floor:
+        # Only a warning: a new season's first days have a list of whoever has played.
+        report.warn(league.key, "App: team statistics", f"{teams} teams where the league has at least {floor}")
+
+
+def check_no_team_statistics(http, report, league):
+    """Both apps have none here because ESPN has none, so it's news if that changes."""
+    url = f"{WEB}/{league.path}/statistics/byteam?region=us&lang=en&limit=1"
+    status, data = http.get(url)
+    if status == 200 and isinstance(data, dict) and data.get("teams"):
+        report.warn(league.key, "Team statistics", "ESPN has these now. The apps could show them", url)
+    else:
+        report.ok(league.key, "Team statistics", f"none, as expected (got {status})", url)
 
 
 def fetch_leaders(http, league, year):
@@ -1255,8 +1342,8 @@ def check_no_leaders(http, report, league):
 
 
 def check_core_stats(http, report, league, year, name, tail, read):
-    """Ask as the iPhone does: this season and last, a season type at a time. Last season
-    is what a team with no games on record yet shows. `read` finds the categories."""
+    """Ask as the iPhone does: the regular season, this season and last. Last season is
+    what a team with no games on record yet shows. `read` finds the categories."""
     answers = []
     for season in (year, year - 1):
         for season_type in CORE_SEASON_TYPES:
