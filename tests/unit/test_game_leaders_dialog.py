@@ -157,12 +157,15 @@ def test_a_team_with_no_rows_gets_its_message_and_no_stray_table(open_leaders):
     assert dialog.parent().findChildren(LeadersTable, options=Qt.FindChildOption.FindDirectChildrenOnly) == []
 
 
-def test_a_failure_is_a_plain_sentence_on_a_row_with_focus(open_leaders, monkeypatch):
+def test_a_failure_is_a_plain_sentence_on_a_row_with_focus(open_leaders, monkeypatch, tmp_path):
     def fail(self, layout, data):
         raise AttributeError("'LeadersTable' object has no attribute 'setEditTriggers'")
 
+    log = tmp_path / "errors.log"
+    monkeypatch.setattr(scores.error_log, "log_path", lambda: str(log))
     monkeypatch.setattr(Host, "_add_leaders_data_to_layout", fail)
     dialog = open_leaders(NBA)
+    assert "setEditTriggers" in log.read_text(encoding="utf-8")  # the build has no console
     rows = dialog.findChildren(QListWidget)
     assert len(rows) == 1
     assert rows[0].item(0).text() == "Leaders can't be shown for this game."

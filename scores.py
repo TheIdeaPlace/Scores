@@ -12,7 +12,6 @@ import csv
 import sys
 import webbrowser
 import time
-import traceback
 from datetime import datetime, timedelta
 from functools import partial
 from typing import Dict, List, Any, Union
@@ -2506,7 +2505,7 @@ class GameDetailsView(BaseView):
             try:
                 self._add_leaders_data_to_layout(layout, field_data)
             except Exception:
-                traceback.print_exc()
+                error_log.log_handled()
                 failure_row = _message_row("Leaders can't be shown for this game.", "Leaders")
                 layout.addWidget(failure_row)
                 _focus_once_active(dlg, failure_row.setFocus)
