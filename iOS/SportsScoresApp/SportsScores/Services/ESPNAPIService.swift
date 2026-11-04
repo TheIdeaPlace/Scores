@@ -1495,7 +1495,8 @@ class ESPNAPIService {
             awayRecord = awayRecord ?? record("away")
         }
 
-        // Venue from franchise
+        // Only the fallback: franchise.venue is years out of date for some teams and
+        // missing for others, so TeamHubViewModel.teamVenue prefers the team's home games.
         let venue = t.franchise?.venue
         let venueName = venue?.fullName
         let venueCity = venue?.address?.city
@@ -1653,6 +1654,27 @@ class ESPNAPIService {
             }
         }
         return allGames.sorted { $0.date < $1.date }
+    }
+
+    /// The regular season of whichever season ESPN has for this team, by asking for none.
+    /// `currentSeasonYear` rolls forward before ESPN has that schedule. A soccer league's
+    /// season type is its own number, so 2 finds nothing there and the default is the
+    /// league season.
+    func regularSeasonScheduleURL(teamId: String, sport: Sport) -> String {
+        let query = sport.isSoccer ? "" : "?seasontype=2"
+        return "\(baseURL)/\(sport.apiPath)/teams/\(teamId)/schedule\(query)"
+    }
+
+    func fetchRegularSeasonSchedule(teamId: String, sport: Sport) async throws -> [ScheduleGame] {
+        guard let url = URL(string: regularSeasonScheduleURL(teamId: teamId, sport: sport)) else {
+            throw APIError.invalidURL
+        }
+        let (data, response) = try await session.data(from: url)
+        guard let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode == 200 else {
+            throw APIError.invalidResponse
+        }
+        return try JSONDecoder().decode(TeamScheduleAPIResponse.self, from: data)
+            .events.compactMap { $0.toScheduleGame() }
     }
 
     // MARK: - Multi-format date parser

@@ -285,14 +285,13 @@ struct TeamInfoTabView: View {
 
     private var venueCoachSection: some View {
         Group {
-            let showVenue = viewModel.teamInfo?.venueName != nil
+            let venue = viewModel.teamVenue
             let showCoach = (viewModel.teamInfo?.coachName ?? viewModel.coachName) != nil
-            if showVenue || showCoach {
+            if venue != nil || showCoach {
                 VStack(alignment: .leading, spacing: 8) {
                     sectionHeader("Details")
-                    if let venue = viewModel.teamInfo?.venueName {
-                        let city = viewModel.teamInfo?.venueCity
-                        let venueLabel = city.map { "\(venue), \($0)" } ?? venue
+                    if let venue {
+                        let venueLabel = venue.city.map { "\(venue.name), \($0)" } ?? venue.name
                         infoRow(icon: "mappin.and.ellipse", label: "Venue", value: venueLabel)
                     }
                     let coach = viewModel.teamInfo?.coachName ?? viewModel.coachName
