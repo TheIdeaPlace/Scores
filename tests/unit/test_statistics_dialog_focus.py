@@ -47,5 +47,7 @@ def test_the_nothing_available_row_takes_focus(dialog):
 def test_real_statistics_take_focus(dialog):
     leaders = [{"name": "Goals", "stats": [{"player_name": "A Player", "team": "X", "value": "9"}]}]
     dialog._on_statistics_loaded({"player_stats": leaders, "team_stats": []})
+    # This list sits inside a container the event loop still has to show.
+    QApplication.instance().processEvents()
     assert dialog.stats_list.isVisible()
     assert dialog.focusWidget() is dialog.stats_list
