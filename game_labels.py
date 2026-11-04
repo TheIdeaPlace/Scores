@@ -1,10 +1,50 @@
 """Period names and small game facts read from ESPN data. No PyQt import, so tested directly."""
 
+import re
 from datetime import datetime, timedelta
 from typing import Any, Dict, List, Optional
 
 # Men's college basketball is played in two halves; everything else here in four quarters.
 _HALVES_LEAGUES = {"NCAAM"}
+
+_PLAIN_NUMBER = re.compile(r"[+-]?[\d,]*\.?\d+$")
+_THREE_PLACE_STATS = {"avg", "ops", "onbasepct", "slugavg", "opponentavg", "savepct"}
+_TWO_PLACE_STATS = {"era", "whip"}
+_WHOLE_NUMBER_STATS = {"points", "doubledouble"}
+
+
+def leader_display_value(category: Optional[str], value: Any, display_value: Any) -> str:
+    """How a league leader's number reads. ESPN's displayValue is the right text for most
+    stats, 38.3 for 38.2857, and these are where it isn't. On the iPhone this is
+    ESPNAPIService.leaderDisplayValue, and tests/fixtures/leader_display_grid.json holds both.
+
+    Baseball's is a stat line ("179-567, 42 HR, 3B, ..."), for every category.
+    A fraction gets rounded away: 7.5 sacks reads 8, a 137.3 quarterback rating reads 137.
+    Three-point and college free throw percentages are fractions: 0.6154 reads 0.6. A save
+    percentage is one too, but reads as one: .945.
+    Season totals read as if they were averages: 268 points reads 268.0.
+    """
+    display = str(display_value or "").strip()
+    if not isinstance(value, (int, float)) or isinstance(value, bool):
+        return display
+    number = float(value)
+    name = str(category or "").lower()
+
+    if not _PLAIN_NUMBER.match(display):
+        if name in _THREE_PLACE_STATS:
+            text = f"{number:.3f}"
+            return text[1:] if text.startswith("0.") else text
+        if number.is_integer() and name not in _TWO_PLACE_STATS:
+            return str(int(number))
+        return f"{number:.2f}"
+
+    if name in _WHOLE_NUMBER_STATS and number.is_integer():
+        return str(int(number))
+    if "pct" in name and name != "savepct" and 0 <= number <= 1 and float(display.replace(",", "")) <= 1:
+        return f"{number * 100:.1f}"
+    if "." not in display and not number.is_integer():
+        return f"{number:.1f}"
+    return display
 
 
 def scoreboard_today(now: Optional[datetime] = None):

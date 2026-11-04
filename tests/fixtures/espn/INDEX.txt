@@ -17,11 +17,6 @@ standings_NHL.json	46 KB	otLosses, streak; Utah is UTA here, UTAH on its team pa
 standings_NFL.json	39 KB	streak present
 standings_NBA.json	43 KB	streak present
 standings_WNBA.json	42 KB	both conferences; total, not the playoff record; gamesbehind
-statistics_NFL.json	163 KB	stats.categories is a list: _parse_nfl_player_stats .items() raises
-statistics_NHL.json	334 KB	same for _parse_nhl_player_stats
-statistics_NBA.json	4 KB	no stats key: falls to sample data
-statistics_NCAAH.json	1 KB	no stats key: Sample Player 1
-statistics_NCAAM.json	333 KB	generic parser works
 schedule_NBA_15.json	52 KB	evening games: UTC date is the next day
 schedule_NCAAM_275.json	42 KB	dedicated endpoint
 schedule_NFL_9.json	76 KB	Sunday and Thursday night games; timeValid false on TBD
@@ -87,3 +82,18 @@ scoreboard_MLB_202606.json	97 KB	5 games from dates=202606: Athletics at Sutter 
 scoreboard_NCAAM_202611.json	30 KB	3 games from groups=50: Chicago and Misericordia host with no conferenceId and isActive false; Wisconsin has conferenceId
 scoreboard_NCAAWB_202611.json	21 KB	2 games from groups=50: Catawba hosts with no conferenceId; Wisconsin has conferenceId
 schedule_MLB_11_spring.json	73 KB	seasontype=1, 5 games: Athletics home at Hohokam Stadium 4 times, 1 away
+leaders_v3_NFL.json	91 KB	/leaders season=2026 limit=5, cut to 3 categories of 2: 2246 passing, not the preseason's 509; 7.5 sacks reads 8
+leaders_v3_NBA.json	90 KB	/leaders season=2027, 3 categories of 2: the NBA's only source of leaders; 3-point % is a fraction reading 0.6; points read 268.0
+leaders_v3_NHL.json	54 KB	/leaders season=2027, 3 categories of 2: goals 15, not the preseason's 4; goals against best first, lowest
+leaders_v3_NCAAM.json	71 KB	/leaders season=2027, 3 categories of 2: qualified, so 21.0 where core says 41.0; FG% value a fraction; PER all 0.0
+leaders_v3_MLB.json	146 KB	/leaders season=2026, 5 categories of 2: displayValue is a stat line in every category
+leaders_v3_NCAAM_full.json	364 KB	/leaders season=2027 limit=20, field goal % whole and 3-pointers made cut to 9: qualified players, then everyone else from the top again
+leaders_v3_NCAAF_2025.json	27 KB	/leaders season=2025 seasontype=2, 1 category of 2: answers with requestedSeason type 3, Postseason
+leaders_core_NFL_regular.json	5 KB	core seasons/2026/types/2/leaders limit=3, 3 categories: names by $ref only
+leaders_core_NFL_preseason.json	3 KB	core seasons/2026/types/1/leaders limit=3, 3 categories: 509, the numbers /statistics called regular season
+leaders_core_NBA.json	24 KB	core seasons/2027/types/2/leaders limit=3, whole: what the iPhone reads; athlete and team $refs
+leaders_core_NCAAM_per.json	4 KB	core seasons/2027/types/2/leaders limit=3, 2 categories: PER all 0.0, with nobody rated
+leaders_core_MLB.json	5 KB	core seasons/2026/types/2/leaders limit=3, 3 categories: displayValue is a stat line here too
+season_NBA.json	6 KB	core /season: year 2027, displayName 2026-27, type 2
+season_NFL.json	7 KB	core /season: year 2026, type 2; types.items dates the off season under the season just played
+season_WNBA.json	5 KB	core /season: year 2026, type 3, in its playoffs

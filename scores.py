@@ -10995,6 +10995,9 @@ class StatisticsViewDialog(QDialog):
 
     def _on_statistics_loaded(self, statistics_data: dict):
         self._clear_loading_row()
+        season = (statistics_data or {}).get("season")
+        if season:
+            self.setWindowTitle(f"{self.league} {self.stat_type.title()} Statistics - {season}")
         self._show_statistics(self._content_layout, statistics_data)  # catches its own errors
         if hasattr(self, 'stats_list'):
             self._focus_stats_list()
@@ -11054,33 +11057,6 @@ class StatisticsViewDialog(QDialog):
         else:
             super().keyPressEvent(event)
     
-    def _switch_to_player_stats(self):
-        """Switch to player statistics"""
-        self.stat_type = "player"
-        self.setWindowTitle(f"{self.league} {self.stat_type.title()} Statistics")
-        
-        # Clear layout and rebuild
-        layout = self.layout()
-        self._clear_layout(layout)
-        self.setup_ui()
-    
-    def _switch_to_team_stats(self):
-        """Switch to team statistics"""
-        self.stat_type = "team"
-        self.setWindowTitle(f"{self.league} {self.stat_type.title()} Statistics")
-        
-        # Clear layout and rebuild
-        layout = self.layout()
-        self._clear_layout(layout)
-        self.setup_ui()
-    
-    def _clear_layout(self, layout):
-        """Clear all widgets from layout"""
-        while layout.count():
-            child = layout.takeAt(0)
-            if child.widget():
-                child.widget().deleteLater()
-    
     def _create_working_statistics_interface(self, layout, available_stats):
         """Create working statistics interface with immediate data display"""
         
@@ -11096,14 +11072,12 @@ class StatisticsViewDialog(QDialog):
         left_layout.addWidget(stats_label)
         
         # Add note about data timeframe  
-        if self.league.upper() == "MLB":
-            note_label = QLabel("📊 Full Season Statistics")
-            note_label.setStyleSheet("color: #0066cc; font-weight: bold; font-size: 9pt;")
-        else:
-            note_label = QLabel("📊 Note: Shows recent performance leaders")
+        season = (self.statistics_data or {}).get("season")
+        if season or self.stat_type == "player":  # MLB's players come from the MLB Stats API, with no season named
+            note_label = QLabel(season or "Full Season Statistics")
             note_label.setStyleSheet("color: #666; font-style: italic; font-size: 9pt;")
-        note_label.setWordWrap(True)
-        left_layout.addWidget(note_label)
+            note_label.setWordWrap(True)
+            left_layout.addWidget(note_label)
         
         self.stats_list = QListWidget()
         self.stats_list.setAccessibleName(f"{self.stat_type.title()} Statistics List")
@@ -11170,14 +11144,14 @@ class StatisticsViewDialog(QDialog):
             
             # Update results label with data context
             if stat_type == "player":
-                if self.league.upper() == "MLB":
-                    header_text = f"Season Leaders: {stat_info.get('name', stat_name)}"
-                else:
-                    header_text = f"Recent Performance Leaders: {stat_info.get('name', stat_name)}"
+                season = (self.statistics_data or {}).get("season") or "Season"
+                header_text = f"{season} Leaders: {stat_info.get('name', stat_name)}"
             else:
                 header_text = f"Top Rankings: {stat_info.get('name', stat_name)}"
             
             self.results_label.setText(header_text)
+            # The label can't take focus, so this is how a screen reader hears what the list is.
+            self.results_list.setAccessibleName(header_text)
             
             # Clear and show results list
             self.results_list.clear()
@@ -11195,59 +11169,19 @@ class StatisticsViewDialog(QDialog):
             traceback.print_exc()
     
     def _setup_player_results_list(self, data, stat_name):
-        """Setup concatenated list view for player statistics results"""
-        
-        def safe_float_convert(value):
-            """Safely convert value to float for sorting"""
-            try:
-                if isinstance(value, (int, float)):
-                    return float(value)
-                
-                value_str = str(value).strip()
-                if not value_str or value_str.lower() in ['none', 'n/a', '']:
-                    return 0.0
-                
-                # Handle fraction format like "1-1"
-                if '-' in value_str and value_str.count('-') == 1:
-                    parts = value_str.split('-')
-                    if len(parts) == 2:
-                        try:
-                            return float(parts[0]) / max(1, float(parts[1]))
-                        except (ValueError, ZeroDivisionError):
-                            return 0.0
-                
-                return float(value_str)
-            except (ValueError, TypeError):
-                return 0.0
-        
-        # Convert data to proper format with numeric sorting
-        converted_data = []
-        for item in data:
+        """Setup concatenated list view for player statistics results, in the order they came:
+        each source lists the best first, which for ERA or goals against is the lowest."""
+        for rank, item in enumerate(data, 1):
             player_name = item.get('player_name', 'Unknown')
             team = item.get('team', '')
-            value = item.get('value', '')
-            
-            numeric_value = safe_float_convert(value)
-            converted_data.append({
-                'name': f"{player_name} ({team})" if team else player_name,
-                'value': numeric_value,
-                'display_value': str(value)
-            })
-        
-        # Sort by numeric value (descending for most stats)
-        converted_data.sort(key=lambda x: x['value'], reverse=True)
-        
-        # Populate the list with rank
-        for rank, item in enumerate(converted_data, 1):
-            list_text = f"{rank} {item['name']} {item['display_value']}"
-            list_item = QListWidgetItem(list_text)
-            self.results_list.addItem(list_item)
-        
+            name = f"{player_name} ({team})" if team else player_name
+            self.results_list.addItem(QListWidgetItem(f"{rank} {name} {item.get('value', '')}"))
+
         # Set focus to first item in results list
         if self.results_list.count() > 0:
             self.results_list.setCurrentRow(0)
             self.results_list.setFocus()  # Move focus to results list
-    
+
     def _setup_team_results_list(self, data, stat_name):
         """Setup concatenated list view for team statistics results"""
         
@@ -11266,50 +11200,6 @@ class StatisticsViewDialog(QDialog):
         if self.results_list.count() > 0:
             self.results_list.setCurrentRow(0)
             self.results_list.setFocus()  # Move focus to results list
-    
-    def _get_stat_categories(self):
-        """Get available stat categories without loading full data"""
-        # Return actual individual statistics that users want to see
-        if self.league.upper() == "MLB":
-            if self.stat_type == "team":
-                # Show actual team stats available across all categories
-                return [
-                    "Batting Average", "Home Runs", "RBIs", "Runs", "Hits", "Doubles", "Triples",
-                    "ERA", "Wins", "Strikeouts", "WHIP", "Saves", "Innings Pitched",
-                    "Fielding Percentage", "Errors", "Double Plays"
-                ]
-            else:  # player
-                # Based on actual ESPN player stats structure
-                return [
-                    "Batting Average", "Home Runs", "RBIs", "Runs", "OPS", "On Base Percentage", "Slugging Percentage",
-                    "ERA", "Wins", "Strikeouts", "WHIP", "Saves", "Quality Starts", "Opponent Batting Average",
-                    "Stolen Bases", "Hits", "Holds", "MLB Rating", "Average Game Score", "Wins Above Replacement"
-                ]
-        elif self.league.upper() == "NFL":
-            if self.stat_type == "team":
-                return [
-                    "Total Yards", "Passing Yards", "Rushing Yards", "Points For", "Points Against",
-                    "Turnovers", "Third Down Efficiency", "Red Zone Efficiency"
-                ]
-            else:  # player
-                return [
-                    "Passing Yards", "Passing TDs", "Rushing Yards", "Rushing TDs",
-                    "Receiving Yards", "Receiving TDs", "Tackles", "Sacks", "Interceptions"
-                ]
-        elif self.league.upper() == "NBA":
-            if self.stat_type == "team":
-                return [
-                    "Points Per Game", "Field Goal %", "Three Point %", "Free Throw %",
-                    "Rebounds", "Assists", "Steals", "Blocks", "Turnovers"
-                ]
-            else:  # player
-                return [
-                    "Points Per Game", "Field Goal %", "Three Point %", "Free Throw %",
-                    "Rebounds", "Assists", "Steals", "Blocks", "Minutes"
-                ]
-        else:
-            # Generic categories for other leagues
-            return ["Points", "Wins", "Goals", "Assists"] if self.stat_type == "team" else ["Points", "Goals", "Assists", "Games"]
     
     def _get_available_statistics(self):
         """Extract available statistics from the data"""
@@ -11435,227 +11325,6 @@ class StatisticsViewDialog(QDialog):
         
         print(f"DEBUG: Total available stats: {len(available_stats)}")
         return available_stats
-    
-    def _on_stat_selected(self, item):
-        """Handle when a statistic is clicked (mouse click)"""
-        print(f"DEBUG: _on_stat_selected called with item: {item}")
-        if item:
-            category_info = item.data(Qt.ItemDataRole.UserRole)
-            print(f"DEBUG: category_info: {category_info}")
-            if category_info:
-                print(f"DEBUG: About to load data for category: {category_info.get('category')}")
-                try:
-                    # Load data on demand
-                    stat_info = self._load_stat_data_for_category(category_info.get('category'))
-                    if stat_info:
-                        self._display_stat_results(stat_info)
-                        print(f"DEBUG: _display_stat_results completed successfully")
-                    else:
-                        print(f"DEBUG: No stat_info returned for category")
-                except Exception as e:
-                    print(f"DEBUG: Exception in _on_stat_selected: {str(e)}")
-                    import traceback
-                    traceback.print_exc()
-            else:
-                print(f"DEBUG: No category_info found in item data")
-        else:
-            print(f"DEBUG: _on_stat_selected called with None item")
-    
-    def _on_stat_activated(self, item):
-        """Handle when a statistic is activated (Enter key or double-click)"""
-        print(f"DEBUG: _on_stat_activated called")
-        self._on_stat_selected(item)  # Use same logic
-    
-    def _load_stat_data_for_category(self, category):
-        """Load statistics data for a specific category on demand"""
-        # Show loading message
-        if hasattr(self, 'results_label'):
-            self.results_label.setText(f"Loading {category}...")
-        
-        # Load full data if not already loaded
-        if not self.statistics_data:
-            try:
-                print(f"DEBUG: Loading statistics data for {self.league}")
-                self.statistics_data = ApiService.get_statistics(self.league)
-            except Exception as e:
-                print(f"DEBUG: Exception loading statistics data: {str(e)}")
-                if hasattr(self, 'results_label'):
-                    self.results_label.setText(f"Error loading data: {str(e)}")
-                return None
-        
-        if not self.statistics_data:
-            print(f"DEBUG: No statistics data available")
-            if hasattr(self, 'results_label'):
-                self.results_label.setText("No statistics data available")
-            return None
-        
-        # Find matching statistics for the category
-        return self._find_stat_for_category(category)
-    
-    def _find_stat_for_category(self, category):
-        """Find the best matching statistic for a given category"""
-        if self.stat_type == "team":
-            team_stats = self.statistics_data.get("team_stats", [])
-            
-            # Search across all team stat categories for the specific stat
-            for stat_category in team_stats:
-                category_name = stat_category.get("category", "")
-                teams_in_category = stat_category.get("stats", [])
-                
-                if teams_in_category:
-                    # Get the first team's stats to see what's available
-                    first_team = teams_in_category[0]
-                    team_stats_dict = first_team.get("stats", {})
-                    
-                    # Look for the exact stat name the user wants
-                    best_stat_name = None
-                    
-                    # Direct match
-                    if category in team_stats_dict:
-                        best_stat_name = category
-                    else:
-                        # Fuzzy matching
-                        for stat_name in team_stats_dict.keys():
-                            if (category.lower() in stat_name.lower() or
-                                self._is_category_match(category, stat_name, stat_name)):
-                                best_stat_name = stat_name
-                                break
-                    
-                    if best_stat_name:
-                        # Collect all teams' data for this stat
-                        teams_data = []
-                        for team_info in teams_in_category:
-                            team_name = team_info.get("team_name", "Unknown")
-                            team_stats_dict = team_info.get("stats", {})
-                            
-                            if best_stat_name in team_stats_dict:
-                                stat_value = team_stats_dict[best_stat_name]
-                                
-                                # Try to convert to numeric for sorting
-                                numeric_value = 0
-                                try:
-                                    numeric_value = float(str(stat_value).replace(",", ""))
-                                except (ValueError, TypeError):
-                                    # Keep as string, use 0 for sorting
-                                    pass
-                                
-                                teams_data.append({
-                                    "name": team_name,
-                                    "value": numeric_value,
-                                    "displayValue": str(stat_value)
-                                })
-                        
-                        if teams_data:
-                            # Sort teams by value (descending for most stats)
-                            teams_data.sort(key=lambda x: x["value"], reverse=True)
-                            
-                            return {
-                                'name': f"{best_stat_name}",
-                                'category': category,
-                                'stat_name': best_stat_name,
-                                'data': teams_data,
-                                'type': 'team'
-                            }
-        
-        else:  # player stats
-            player_stats = self.statistics_data.get("player_stats", [])
-            
-            # Player stats structure: [{'category': name, 'stats': [{'player_name': name, 'team': team, 'value': value, 'stat_name': stat}]}]
-            for stat_category in player_stats:
-                category_name = stat_category.get("category", "")
-                stats_list = stat_category.get("stats", [])
-                
-                if not stats_list:
-                    continue
-                
-                # Check if this category matches what we're looking for
-                if (category.lower() in category_name.lower() or
-                    self._is_category_match(category, category_name, category_name)):
-                    
-                    # All stats in this category should be the same stat type
-                    # Just use the data as-is since it's already in the right format
-                    players_data = []
-                    for stat in stats_list:
-                        player_name = stat.get("player_name", "Unknown")
-                        stat_value = stat.get("value", "")
-                        
-                        # Try to convert to numeric for sorting
-                        numeric_value = 0
-                        try:
-                            # Handle fraction format like "1-1" 
-                            if '-' in str(stat_value) and str(stat_value).count('-') == 1:
-                                parts = str(stat_value).split('-')
-                                if len(parts) == 2 and parts[0].isdigit() and parts[1].isdigit():
-                                    numeric_value = int(parts[0]) / max(1, int(parts[1]))  # Avoid division by zero
-                                else:
-                                    numeric_value = float(str(stat_value).replace(",", ""))
-                            else:
-                                numeric_value = float(str(stat_value).replace(",", ""))
-                        except (ValueError, TypeError):
-                            # Keep as 0 for sorting if can't convert
-                            pass
-                        
-                        players_data.append({
-                            "name": f"{player_name} ({stat.get('team', 'N/A')})",
-                            "value": numeric_value,
-                            "displayValue": str(stat_value)
-                        })
-                    
-                    if players_data:
-                        # Sort players by value (descending for most stats)
-                        players_data.sort(key=lambda x: x["value"], reverse=True)
-                        
-                        return {
-                            'name': f"{category_name}",
-                            'category': category,
-                            'stat_name': category_name,
-                            'data': players_data,
-                            'type': 'player'
-                        }
-        
-        # If no exact match found, return None
-        print(f"DEBUG: No matching stat found for category: {category}")
-        return None
-    
-    def _is_category_match(self, category, stat_name, stat_display_name):
-        """Check if a category matches a statistic using fuzzy matching"""
-        category_lower = category.lower()
-        stat_name_lower = stat_name.lower()
-        stat_display_lower = stat_display_name.lower()
-        
-        # Define mapping for common statistics
-        category_mappings = {
-            "batting average": ["avg", "average", "batting"],
-            "home runs": ["hr", "homerun", "home run"],
-            "rbis": ["rbi", "runs batted in"],
-            "runs": ["run", "r"],
-            "hits": ["hit", "h"],
-            "stolen bases": ["sb", "steal", "stolen"],
-            "era": ["era", "earned run average"],
-            "wins": ["win", "w"],
-            "strikeouts": ["so", "k", "strikeout"],
-            "whip": ["whip", "walks hits innings"],
-            "saves": ["save", "sv"],
-            "innings pitched": ["ip", "inning"],
-            "passing yards": ["passing", "pass yards"],
-            "rushing yards": ["rushing", "rush yards"],
-            "receiving yards": ["receiving", "rec yards"],
-            "touchdowns": ["td", "touchdown"],
-            "points per game": ["ppg", "points"],
-            "field goal": ["fg", "field goal"],
-            "assists": ["ast", "assist"],
-            "rebounds": ["reb", "rebound"],
-            "steals": ["stl", "steal"],
-            "blocks": ["blk", "block"]
-        }
-        
-        # Check if category has specific mappings
-        if category_lower in category_mappings:
-            for mapping in category_mappings[category_lower]:
-                if mapping in stat_name_lower or mapping in stat_display_lower:
-                    return True
-        
-        return False
     
     def _show_stat_definitions(self):
         """Show statistics definitions dialog"""
