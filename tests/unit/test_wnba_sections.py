@@ -21,16 +21,15 @@ def test_the_league_view_offers_its_sections():
 
 
 def test_standings_get_conference_tabs():
-    line = re.search(r"if has_divisions and self\.league in \[(.*?)\]", source("scores.py"))
-    assert '"WNBA"' in line.group(1)
+    lists = re.findall(r"if has_divisions and self\.league in \[(.*?)\]", source("scores.py"))
+    assert any('"NBA"' in names and '"WNBA"' in names for names in lists), lists
 
 
 @pytest.mark.parametrize("flag,action", [("--wnba", "league"), ("--wnba-teams", "teams"), ("--wnba-standings", "standings")])
 def test_the_flags_go_to_the_wnba(flag, action):
-    pytest.importorskip("PyQt6")
     import main
     with patch.object(sys, "argv", ["scores", flag]):
-        assert main.parse_command_line() == {"action": action, "league": "WNBA"}
+        assert main.determine_startup_params(main.parse_command_line()) == {"action": action, "league": "WNBA"}
 
 
 def test_both_flag_lists_have_them():
