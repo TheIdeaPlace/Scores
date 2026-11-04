@@ -157,6 +157,11 @@ class AccessibleTable(QWidget):
             if self.handle_view_key(event):
                 return True
 
+            # Holding Enter activates a row once, as it presses a button once. The row
+            # may be one the same key press has just brought up.
+            if key in (Qt.Key.Key_Return, Qt.Key.Key_Enter) and event.isAutoRepeat():
+                return True
+
             # Handle table-specific navigation for the table widget
             elif obj == self.table_widget:
                 return self._handle_table_navigation(event)
@@ -200,7 +205,12 @@ class AccessibleTable(QWidget):
         next_view = (self._current_view + 1) % 3
         self._switch_to_view(next_view)
 
-    def _switch_to_view(self, view_mode: int):
+    def adopt_saved_view(self) -> None:
+        """Take up the view last chosen on another table. A dialog builds all its tables at once,
+        so the view chosen on one has to reach the others as they come on show."""
+        self._switch_to_view(settings.get('default_view_mode', self._current_view), take_focus=False)
+
+    def _switch_to_view(self, view_mode: int, take_focus: bool = True):
         """Switch to the specified view mode with focus management"""
         if view_mode == self._current_view:
             return
@@ -220,7 +230,8 @@ class AccessibleTable(QWidget):
         self._restore_position(current_row)
         self.stacked_widget.setCurrentIndex(view_mode)
         settings.set('default_view_mode', view_mode)
-        self._set_focus_to_current_view()
+        if take_focus:
+            self._set_focus_to_current_view()
         # The new view's accessible name ("... - Quick List") says which view this
         # is when it takes focus, so nothing more needs announcing.
 
@@ -1085,8 +1096,8 @@ def tab_labels(tabs) -> List[Optional[str]]:
 
 
 class _TabBarViewKeys(QObject):
-    """F6 between the tabs or list and the content. Alt+V, Alt+T, Alt+Q, Alt+F pressed there
-    act on the table on show. Home, End, arrows that go round, and type-ahead find on the bar
+    """F6 between the tabs or list and the content. Alt+V, Alt+T, Alt+Q, Alt+F pressed on tabs
+    act on the table on show; a list has none on show. Home, End, arrows that go round, and type-ahead find on the bar
     or list itself. `tabs` is a QTabWidget or a ListPages, which share the calls used here."""
 
     def __init__(self, tabs, bar):
@@ -1196,11 +1207,16 @@ def _install_tab_keys(tabs, bar) -> _TabBarViewKeys:
     tabs.installEventFilter(keys)
 
     def focus_table_on_new_tab(_index):
+        try:
+            page = tabs.currentWidget()
+        except RuntimeError:  # The area is being destroyed, and its pages with it.
+            return
+        tables = page.findChildren(AccessibleTable) if page else []
+        for table in tables:
+            table.adopt_saved_view()
         focused = QApplication.focusWidget()
         if focused is None or focused is bar or not tabs.isAncestorOf(focused):
             return
-        page = tabs.currentWidget()
-        tables = page.findChildren(AccessibleTable) if page else []
         if tables:
             QTimer.singleShot(0, tables[0].setFocus)
 
@@ -1235,9 +1251,11 @@ def prepare_table_tabs(tab_widget: QTabWidget) -> None:
 def _focus_is_on_a_page_being_swapped(area) -> bool:
     """Hiding a page with focus in it makes Qt ask its ancestors to move focus on. That lands on
     the next control, such as Close, and a screen reader says so before the new page's table
-    takes focus. The stacked layout moves focus to the new page itself, so nothing has to."""
+    takes focus. The stacked layout moves focus to the new page itself, so nothing has to.
+    The page is hidden before the layout's index moves on, so only then is the current one hidden."""
     focused = QApplication.focusWidget()
-    return focused is not None and area.isAncestorOf(focused) and not focused.isVisible()
+    page = area.currentWidget()
+    return focused is not None and page is not None and page.isHidden() and page.isAncestorOf(focused)
 
 
 class ListPages(QWidget):
@@ -1295,6 +1313,13 @@ class ListPages(QWidget):
     def is_open(self) -> bool:
         """A page is on show, rather than the list."""
         return not self._page_area.isHidden()
+
+    def setFocus(self, *args) -> None:
+        """Whichever is on show. The proxy alone would send focus to the list while it's hidden."""
+        if self.is_open():
+            self._keys.focus_page(self.currentWidget())
+        else:
+            self._list.setFocus(*args)
 
     def open_page(self) -> None:
         """Show the list's current row as its page. The list is hidden last: hiding the widget
@@ -1361,8 +1386,10 @@ class ListPages(QWidget):
         the list or the page, and focus_table_on_new_tab takes a table's focus along."""
         key = event.key()
         modifiers = event.modifiers()
-        if key == Qt.Key.Key_Escape and self.is_open():
-            self.close_page()
+        if key == Qt.Key.Key_Escape and (self.is_open() or event.isAutoRepeat()):
+            # Held down, it goes back to the list and stops there rather than closing the dialog.
+            if not event.isAutoRepeat():
+                self.close_page()
             event.accept()
             return
         if (key in (Qt.Key.Key_Tab, Qt.Key.Key_Backtab) and modifiers & Qt.KeyboardModifier.ControlModifier

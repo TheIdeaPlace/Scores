@@ -529,6 +529,37 @@ class TestRealDialogs:
         tabs.tabBar().setFocus = lambda: calls.append("list")
         scores._focus_first_table(dialog)
         assert calls == ["list"]
+    def test_ctrl_tab_from_close_leaves_a_list_with_nothing_open_alone(self, app, rows):
+        dialog = scores.StandingsDialog(rows, "NCAAF")
+        tabs = dialog.tab_widget
+        close = next(b for b in dialog.findChildren(QPushButton) if b.text() == "Close")
+        press(close, Qt.Key.Key_Tab, CTRL)
+        assert tabs.currentIndex() == 0
+        tabs.open_page()
+        press(close, Qt.Key.Key_Tab, CTRL)
+        assert tabs.currentIndex() == 1
+
+    def test_opening_a_wild_card_while_it_loads_lands_on_the_table_when_it_comes(self, app, rows, monkeypatch):
+        names = ["AL East", "AL Central", "AL West", "NL East", "NL Central", "NL West", "League"]
+        monkeypatch.setattr(scores.DataCache(), "get_mlb_wildcard", lambda: None)
+        dialog = scores.StandingsDialog(self.rows_in_groups(rows, names), "MLB")
+        tabs = dialog.tab_widget
+        dialog.show()
+        try:
+            dialog.activateWindow()
+            QApplication.processEvents()
+            with patch.object(scores, "_start_detached_thread"), patch.object(scores, "announce"):
+                tabs.setCurrentIndex(7)
+                tabs.open_page()
+                QApplication.processEvents()
+                assert tabs.currentWidget().isAncestorOf(QApplication.focusWidget())
+                dialog._populate_wildcard_tab(7, {"AL": [{"team_name": "Yankees", "wins": 9, "losses": 4}]})
+            QApplication.processEvents()
+            table = tabs.currentWidget().table
+            assert table.isAncestorOf(QApplication.focusWidget())
+        finally:
+            dialog.close()
+
     def test_tab_goes_from_the_list_to_close_and_from_an_open_table_to_back(self, app, rows):
         dialog = scores.StandingsDialog(rows, "NCAAF")
         tabs = dialog.tab_widget
@@ -850,6 +881,90 @@ class TestListPages:
             assert seen == [tables[1].table_widget]
         finally:
             window.close()
+
+    def test_tab_moves_on_from_a_table_and_from_focus_stranded_on_a_hidden_one(self, app, monkeypatch):
+        """Only a page swap holds focus still. A load that lands on a tab someone has left
+        strands focus on it, and Tab has to get them out."""
+        saved = {"default_view_mode": 0}
+        monkeypatch.setattr(accessible_table.settings, "get", lambda k, d=None: saved.get(k, d))
+        monkeypatch.setattr(accessible_table.settings, "set", saved.__setitem__)
+        window = QWidget()
+        layout = QVBoxLayout(window)
+        area = make_tab_area(2)
+        tables = []
+        for index in range(2):
+            page = QWidget()
+            page_layout = QVBoxLayout(page)
+            table = AccessibleTable(accessible_name=f"T{index}", accessible_description="D")
+            table.setup_columns(["Player", "YDS"])
+            table.populate_data([["Avery", "10"]], set_focus=False)
+            page_layout.addWidget(table)
+            area.addTab(page, f"Table {index}")
+            tables.append(table)
+        layout.addWidget(area)
+        close = QPushButton("Close")
+        layout.addWidget(close)
+        window.resize(600, 400)
+        window.show()
+        try:
+            window.activateWindow()
+            QApplication.processEvents()
+            tables[0].setFocus()
+            QApplication.processEvents()
+            press(tables[0].table_widget, Qt.Key.Key_Tab, PLAIN, "\t")
+            QApplication.processEvents()
+            assert QApplication.focusWidget() is close
+
+            tables[1].table_widget.setFocus()  # On the tab that isn't showing.
+            QApplication.processEvents()
+            stranded = QApplication.focusWidget()
+            press(stranded, Qt.Key.Key_Tab, PLAIN, "\t")
+            QApplication.processEvents()
+            assert QApplication.focusWidget() is not stranded
+        finally:
+            window.close()
+
+    def test_setfocus_goes_to_whichever_is_on_show(self, pages_with_tables):
+        pages = pages_with_tables
+        calls = []
+        pages.tabBar().setFocus = lambda *args: calls.append("list")
+        self.table_on(pages, 0).setFocus = lambda: calls.append("table")
+        pages.setFocus()
+        assert calls == ["list"]
+        pages.open_page()
+        calls.clear()
+        pages.setFocus()
+        assert calls == ["table"]
+
+    def test_the_view_chosen_on_one_table_reaches_the_next(self, pages_with_tables):
+        pages = pages_with_tables
+        pages.open_page()
+        press(self.table_on(pages, 0).table_widget, Qt.Key.Key_Q, ALT)
+        pages.close_page()
+        pages.setCurrentIndex(1)
+        table = self.table_on(pages, 1)
+        assert table._current_view == table.VIEW_QUICK_LIST
+        assert table.quick_list.currentRow() == 0
+
+    def test_holding_escape_stops_at_the_list(self, pages_with_tables):
+        pages = pages_with_tables
+        pages.open_page()
+        view = self.table_on(pages, 0).table_widget
+        press(view, Qt.Key.Key_Escape)
+        assert not pages.is_open()
+        held = QKeyEvent(QEvent.Type.KeyPress, Qt.Key.Key_Escape, PLAIN, "", True)
+        QApplication.sendEvent(pages.tabBar(), held)
+        assert held.isAccepted()
+
+    def test_a_load_on_a_page_that_isnt_showing_takes_no_focus(self, pages_with_tables):
+        pages = pages_with_tables
+        pages.open_page()
+        pages.setCurrentIndex(1)
+        target = self.table_on(pages, 0)
+        calls = []
+        target.setFocus = lambda: calls.append("target")
+        scores._take_focus_after_load(target)
+        assert calls == []
 
     def test_ctrl_tab_and_ctrl_shift_tab_go_round_from_the_list(self, pages):
         press(pages.tabBar(), Qt.Key.Key_Backtab, CTRL | SHIFT)
