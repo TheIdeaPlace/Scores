@@ -129,7 +129,7 @@ The iOS app previously lived on a separate `iOS` branch that also carried a stal
 
 **Accessible table focus:** the `AccessibleTable` wrapper takes no focus; the view inside does. Make tab areas with `make_tab_area`, never `QTabWidget()`, and call `_focus_once_active` to focus a dialog's table, since Windows gives the first widget focus as a dialog activates.
 
-**Tab areas:** 8 tabs or fewer stay tabs, and more become a list, through `make_tab_area` (Kelly's rule). Both have Home, End, wrapping arrows and type-ahead find. JAWS reading a tab twice is known and accepted.
+**Tab areas:** 8 tabs or fewer stay tabs, and more become a list, through `make_tab_area` (Kelly's rule). A list stands alone: Enter opens a row's table in its place, and Escape comes back. A list and a table never share a screen. Both have Home, End, wrapping arrows and type-ahead find. JAWS reading a tab twice is known and accepted.
 
 **No test framework for UI** — UI correctness is verified manually. `tests/` covers data parsing and utility functions.
 

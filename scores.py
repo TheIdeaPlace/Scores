@@ -213,8 +213,12 @@ def _take_focus_after_load(widget):
 
 
 def _focus_first_table(dialog):
-    """Focus the first table a dialog shows: on its open tab or list row if it has them."""
+    """Focus the first table a dialog shows, on its open tab if it has them. A list of pages
+    takes the focus itself, until one of them is opened."""
     tabs = dialog.findChildren(QTabWidget) or dialog.findChildren(ListPages)
+    if tabs and isinstance(tabs[0], ListPages) and not tabs[0].is_open():
+        tabs[0].tabBar().setFocus()
+        return
     holder = tabs[0].currentWidget() if tabs else dialog
     tables = holder.findChildren(AccessibleTable) if holder else []
     if tables and tables[0].rowCount() > 0:
@@ -7095,7 +7099,7 @@ class WildCardTabsMixin:
         return make_tab_area(
             len(group_names) + wildcards, "Standings", description,
             list_name="Divisions and Wild Cards" if wildcards else group_noun(group_names),
-            list_description="Arrow to one to show its standings. Tab goes to its table.")
+            list_description="Press Enter on one to open its standings. Escape comes back to this list.")
 
     def _build_wildcard_tabs(self):
         self._wildcard_tabs = {}
@@ -11634,7 +11638,7 @@ class SimpleTeamsDialog(QDialog):
         self.tab_widget = make_tab_area(
             len(ordered), "Team Information", "Team information, use arrow keys to move between tabs",
             list_name=group_noun(ordered),
-            list_description="Arrow to one to show its teams. Tab goes to its table.")
+            list_description="Press Enter on one to open its teams. Escape comes back to this list.")
         for div_name in ordered:
             self.create_division_tab(div_name, divisions[div_name])
 
