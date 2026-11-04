@@ -112,6 +112,15 @@ class TeamHubViewModel: ObservableObject {
 
     // MARK: - Derived schedule data
 
+    /// Where the team plays, from the home games on the schedule `loadInfo` already loads.
+    /// ESPN's franchise venue is the fallback, once there's no schedule to be had: showing
+    /// it while the schedule loads would put up an old name and then change it.
+    var teamVenue: (name: String, city: String?)? {
+        if let venue = schedule.mostUsedHomeVenue(teamId: teamId) { return venue }
+        guard !isLoadingSchedule, let name = teamInfo?.venueName else { return nil }
+        return (name, teamInfo?.venueCity)
+    }
+
     /// The most recently completed game.
     var previousGame: ScheduleGame? {
         schedule.filter { $0.isCompleted }.last

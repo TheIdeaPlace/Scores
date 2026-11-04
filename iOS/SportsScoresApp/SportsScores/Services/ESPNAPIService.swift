@@ -1502,7 +1502,8 @@ class ESPNAPIService {
             awayRecord = awayRecord ?? record("away")
         }
 
-        // Venue from franchise
+        // Only the fallback: franchise.venue is years out of date for some teams and
+        // missing for others, so TeamHubViewModel.teamVenue prefers the team's home games.
         let venue = t.franchise?.venue
         let venueName = venue?.fullName
         let venueCity = venue?.address?.city
