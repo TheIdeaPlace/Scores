@@ -139,10 +139,39 @@ class TestRealLeaders:
         nba.on("/leaders", load("leaders_v3_NBA.json"))
         assert espn_api.get_player_statistics("NBA")["season"] == "2026-27 Regular Season"
 
-    def test_a_past_college_football_season_is_labelled_as_what_espn_sent(self, espn):
-        """ESPN answers seasontype=2 for 2025 with type 3, cumulative to the end of the bowls."""
-        espn.on("/season$", load("season_NFL.json")).on("/leaders", load("leaders_v3_NCAAF_2025.json"))
-        assert espn_api.get_player_statistics("NCAAF")["season"] == "2025 Postseason"
+    def test_a_past_college_football_season_says_season_since_it_runs_through_the_bowls(self, espn):
+        """ESPN answers seasontype=2 for 2025 with type 3: 4379 yards, where core's type 2 says 4129."""
+        data = load("leaders_v3_NCAAF_2025.json")
+        assert data["requestedSeason"]["type"]["type"] == 3, "the fixture should show the problem"
+        espn.on("/season$", load("season_NFL.json")).on("/leaders", data)
+        result = espn_api.get_player_statistics("NCAAF")
+        assert result["season"] == "2025 Season"
+        assert by_category(result)["Passing Yards"][0]["value"] == "4379"
+
+    def test_a_list_stops_where_espn_goes_back_to_the_top(self, espn):
+        """A real, whole category: qualified players, then everyone else on 100 percent."""
+        data = load("leaders_v3_NCAAM_full.json")
+        whole = data["leaders"]["categories"][0]["leaders"]
+        assert len(whole) == 20 and whole[6]["value"] > whole[5]["value"], "the fixture should show the problem"
+        espn.on("/season$", load("season_NBA.json")).on("/leaders", data)
+        rows = by_category(espn_api.get_player_statistics("NCAAM"))
+        assert [r["value"] for r in rows["Field Goal Percentage"]] == ["71.4", "64.3", "55.6", "50.0", "46.2", "42.9"]
+        assert [r["value"] for r in rows["Average 3-Point Field Goals Made"]] == ["5.0", "3.0", "3.0", "3.0"]
+
+    @pytest.mark.parametrize("fixture,category", [
+        ("leaders_v3_NHL.json", "Goals Against Average"),
+        ("leaders_v3_MLB.json", "Earned Run Average"),
+        ("leaders_v3_MLB.json", "Walks Plus Hits Per Inning Pitched"),
+    ])
+    def test_a_low_is_good_list_is_not_cut_short(self, espn, fixture, category):
+        espn.on("/season$", load("season_NBA.json")).on("/leaders", load(fixture))
+        espn.on("statsapi.mlb.com", HTTP_500)
+        league = "NHL" if "NHL" in fixture else "MLB"
+        assert len(by_category(espn_api.get_player_statistics(league))[category]) == 2
+
+    def test_ties_and_a_row_with_no_value_do_not_end_a_list(self):
+        leaders = [{"value": 5}, {"value": 5}, {}, {"value": 4}, {"value": 9}, {"value": 3}]
+        assert [x.get("value") for x in espn_api._leaders_in_order("goals", leaders)] == [5, 5, None, 4]
 
     def test_preseason_numbers_are_never_shown(self, espn):
         """Even if ESPN answers with them: this is the bug that started all this."""
@@ -316,6 +345,32 @@ class TestTeamStatistics:
         stubbed.on("/teams/2/statistics", HTTP_500).on("/teams/17/statistics", TIMEOUT)
         general = next(c for c in espn_api.get_team_statistics("NBA")["team_stats"] if c["category"] == "General")
         assert [t["team_name"] for t in general["stats"]] == ["Atlanta Hawks"]
+
+    def with_seasons(self, espn, seasons):
+        """The real team statistics, with the season block ESPN sends, by team id."""
+        espn.on("/nba/teams$", load("teams_NBA.json"))
+
+        def team(url):
+            data = load("team_stats_NBA_15.json")
+            team_id = url.split("/teams/")[1].split("/")[0]
+            data["season"] = seasons[team_id]
+            return data
+
+        espn.on("/nba/teams/.*/statistics", team)
+
+    REGULAR = {"year": 2027, "type": 2, "name": "Regular Season", "displayName": "2026-27"}
+    POSTSEASON = {"year": 2026, "type": 3, "name": "Postseason", "displayName": "2026"}
+
+    def test_says_the_season_when_every_team_has_the_same(self, espn):
+        self.with_seasons(espn, {"1": self.REGULAR, "2": self.REGULAR, "17": self.REGULAR})
+        assert espn_api.get_team_statistics("NBA")["season"] == "2026-27 Regular Season"
+
+    def test_says_nothing_when_they_differ_as_in_the_playoffs(self, espn):
+        self.with_seasons(espn, {"1": self.POSTSEASON, "2": self.REGULAR, "17": self.REGULAR})
+        assert "season" not in espn_api.get_team_statistics("NBA")
+
+    def test_says_nothing_without_a_season_block(self, stubbed):
+        assert "season" not in espn_api.get_team_statistics("NBA")
 
     def test_a_team_without_stats_or_id_is_left_out(self, espn):
         teams = load("teams_NBA.json")

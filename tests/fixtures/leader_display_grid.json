@@ -1,5 +1,5 @@
 {
-  "note": "How a league leader's number reads, on both apps. The values are ESPN's, from /leaders and the core API on Nov 4, 2026. tests/unit/test_game_labels.py holds game_labels.leader_display_value to it, and LeaderDisplayValueGridTests.swift holds ESPNAPIService.leaderDisplayValue. Change both in the same commit.",
+  "note": "How a league leader's number reads, on both apps. The values are ESPN's, from /leaders and the core API on Nov 4, 2026, except where a case's why says made up. tests/unit/test_game_labels.py holds game_labels.leader_display_value to it, and LeaderDisplayValueGridTests in LeagueLeadersTests.swift holds ESPNAPIService.leaderDisplayValue. Change both in the same commit.",
   "cases": [
     {"why": "per game: ESPN rounds it", "category": "pointsPerGame", "value": 38.28571319580078, "display": "38.3", "reads": "38.3"},
     {"why": "per game under one, which read .900 on the iPhone", "category": "stealsPerGame", "value": 0.9, "display": "0.9", "reads": "0.9"},
@@ -10,10 +10,12 @@
     {"why": "a hockey count", "category": "points", "value": 40.0, "display": "40", "reads": "40"},
     {"why": "a hockey count", "category": "goals", "value": 15.0, "display": "15", "reads": "15"},
     {"why": "a save percentage has its own form", "category": "savePct", "value": 0.945, "display": ".945", "reads": ".945"},
+    {"why": "made up: a perfect save percentage, which read 100.0 beside .945", "category": "savePct", "value": 1.0, "display": "1.000", "reads": "1.000"},
+    {"why": "made up: a save percentage with no text, which read 0.94", "category": "savePct", "value": 0.94, "display": null, "reads": ".940"},
     {"why": "goals against", "category": "avgGoalsAgainst", "value": 1.333, "display": "1.33", "reads": "1.33"},
     {"why": "goals against under one", "category": "avgGoalsAgainst", "value": 0.92, "display": "0.92", "reads": "0.92"},
     {"why": "a negative count, which read -3.000 on the iPhone", "category": "plusMinus", "value": -3.0, "display": "-3", "reads": "-3"},
-    {"why": "a thousands separator", "category": "passingYards", "value": 2246.0, "display": "2,246", "reads": "2,246"},
+    {"why": "made up: ESPN sends 2246, and a thousands separator must still read as a number", "category": "passingYards", "value": 2246.0, "display": "2,246", "reads": "2,246"},
     {"why": "half a sack, which ESPN rounds to a whole one", "category": "sacks", "value": 7.5, "display": "8", "reads": "7.5"},
     {"why": "half a sack", "category": "sacks", "value": 10.5, "display": "10", "reads": "10.5"},
     {"why": "a whole sack", "category": "sacks", "value": 13.0, "display": "13", "reads": "13"},

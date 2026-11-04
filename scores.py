@@ -11023,6 +11023,9 @@ class StatisticsViewDialog(QDialog):
 
     def _on_statistics_loaded(self, statistics_data: dict):
         self._clear_loading_row()
+        season = (statistics_data or {}).get("season")
+        if season:
+            self.setWindowTitle(f"{self.league} {self.stat_type.title()} Statistics - {season}")
         self._show_statistics(self._content_layout, statistics_data)  # catches its own errors
         if hasattr(self, 'stats_list'):
             self._focus_stats_list()
@@ -11082,33 +11085,6 @@ class StatisticsViewDialog(QDialog):
         else:
             super().keyPressEvent(event)
     
-    def _switch_to_player_stats(self):
-        """Switch to player statistics"""
-        self.stat_type = "player"
-        self.setWindowTitle(f"{self.league} {self.stat_type.title()} Statistics")
-        
-        # Clear layout and rebuild
-        layout = self.layout()
-        self._clear_layout(layout)
-        self.setup_ui()
-    
-    def _switch_to_team_stats(self):
-        """Switch to team statistics"""
-        self.stat_type = "team"
-        self.setWindowTitle(f"{self.league} {self.stat_type.title()} Statistics")
-        
-        # Clear layout and rebuild
-        layout = self.layout()
-        self._clear_layout(layout)
-        self.setup_ui()
-    
-    def _clear_layout(self, layout):
-        """Clear all widgets from layout"""
-        while layout.count():
-            child = layout.takeAt(0)
-            if child.widget():
-                child.widget().deleteLater()
-    
     def _create_working_statistics_interface(self, layout, available_stats):
         """Create working statistics interface with immediate data display"""
         
@@ -11125,14 +11101,11 @@ class StatisticsViewDialog(QDialog):
         
         # Add note about data timeframe  
         season = (self.statistics_data or {}).get("season")
-        if self.stat_type == "player" and season:
-            note_label = QLabel(f"📊 {season}")
+        if season or self.stat_type == "player":  # MLB's players come from the MLB Stats API, with no season named
+            note_label = QLabel(season or "Full Season Statistics")
             note_label.setStyleSheet("color: #666; font-style: italic; font-size: 9pt;")
-        else:
-            note_label = QLabel("📊 Full Season Statistics")
-            note_label.setStyleSheet("color: #0066cc; font-weight: bold; font-size: 9pt;")
-        note_label.setWordWrap(True)
-        left_layout.addWidget(note_label)
+            note_label.setWordWrap(True)
+            left_layout.addWidget(note_label)
         
         self.stats_list = QListWidget()
         self.stats_list.setAccessibleName(f"{self.stat_type.title()} Statistics List")
@@ -11205,6 +11178,8 @@ class StatisticsViewDialog(QDialog):
                 header_text = f"Top Rankings: {stat_info.get('name', stat_name)}"
             
             self.results_label.setText(header_text)
+            # The label can't take focus, so this is how a screen reader hears what the list is.
+            self.results_list.setAccessibleName(header_text)
             
             # Clear and show results list
             self.results_list.clear()

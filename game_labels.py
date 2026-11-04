@@ -8,7 +8,7 @@ from typing import Any, Dict, List, Optional
 _HALVES_LEAGUES = {"NCAAM"}
 
 _PLAIN_NUMBER = re.compile(r"[+-]?[\d,]*\.?\d+$")
-_THREE_PLACE_STATS = {"avg", "ops", "onbasepct", "slugavg", "opponentavg"}
+_THREE_PLACE_STATS = {"avg", "ops", "onbasepct", "slugavg", "opponentavg", "savepct"}
 _TWO_PLACE_STATS = {"era", "whip"}
 _WHOLE_NUMBER_STATS = {"points", "doubledouble"}
 
@@ -20,7 +20,8 @@ def leader_display_value(category: Optional[str], value: Any, display_value: Any
 
     Baseball's is a stat line ("179-567, 42 HR, 3B, ..."), for every category.
     A fraction gets rounded away: 7.5 sacks reads 8, a 137.3 quarterback rating reads 137.
-    Three-point and college free throw percentages are fractions: 0.6154 reads 0.6.
+    Three-point and college free throw percentages are fractions: 0.6154 reads 0.6. A save
+    percentage is one too, but reads as one: .945.
     Season totals read as if they were averages: 268 points reads 268.0.
     """
     display = str(display_value or "").strip()
@@ -39,7 +40,7 @@ def leader_display_value(category: Optional[str], value: Any, display_value: Any
 
     if name in _WHOLE_NUMBER_STATS and number.is_integer():
         return str(int(number))
-    if "pct" in name and 0 <= number <= 1 and not display.startswith(".") and float(display.replace(",", "")) <= 1:
+    if "pct" in name and name != "savepct" and 0 <= number <= 1 and float(display.replace(",", "")) <= 1:
         return f"{number * 100:.1f}"
     if "." not in display and not number.is_integer():
         return f"{number:.1f}"

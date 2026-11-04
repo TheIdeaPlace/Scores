@@ -75,10 +75,12 @@ leaders_v3_NBA.json	90 KB	/leaders season=2027, 3 categories of 2: the NBA's onl
 leaders_v3_NHL.json	54 KB	/leaders season=2027, 3 categories of 2: goals 15, not the preseason's 4; goals against best first, lowest
 leaders_v3_NCAAM.json	71 KB	/leaders season=2027, 3 categories of 2: qualified, so 21.0 where core says 41.0; FG% value a fraction; PER all 0.0
 leaders_v3_MLB.json	146 KB	/leaders season=2026, 5 categories of 2: displayValue is a stat line in every category
+leaders_v3_NCAAM_full.json	364 KB	/leaders season=2027 limit=20, field goal % whole and 3-pointers made cut to 9: qualified players, then everyone else from the top again
 leaders_v3_NCAAF_2025.json	27 KB	/leaders season=2025 seasontype=2, 1 category of 2: answers with requestedSeason type 3, Postseason
 leaders_core_NFL_regular.json	5 KB	core seasons/2026/types/2/leaders limit=3, 3 categories: names by $ref only
 leaders_core_NFL_preseason.json	3 KB	core seasons/2026/types/1/leaders limit=3, 3 categories: 509, the numbers /statistics called regular season
 leaders_core_NBA.json	24 KB	core seasons/2027/types/2/leaders limit=3, whole: what the iPhone reads; athlete and team $refs
+leaders_core_NCAAM_per.json	4 KB	core seasons/2027/types/2/leaders limit=3, 2 categories: PER all 0.0, with nobody rated
 leaders_core_MLB.json	5 KB	core seasons/2026/types/2/leaders limit=3, 3 categories: displayValue is a stat line here too
 season_NBA.json	6 KB	core /season: year 2027, displayName 2026-27, type 2
 season_NFL.json	7 KB	core /season: year 2026, type 2; types.items dates the off season under the season just played

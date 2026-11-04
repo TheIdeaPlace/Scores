@@ -119,7 +119,7 @@ def leader_display_cases():
 
 @pytest.mark.parametrize("case", leader_display_cases(), ids=lambda case: f"{case['category']}-{case['why']}")
 def test_a_leaders_number_reads_as_the_shared_grid_says(case):
-    """LeaderDisplayValueGridTests.swift holds the iPhone to the same grid."""
+    """LeaderDisplayValueGridTests in LeagueLeadersTests.swift holds the iPhone to the same grid."""
     assert leader_display_value(case["category"], case["value"], case["display"]) == case["reads"]
 
 

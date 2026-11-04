@@ -2594,9 +2594,11 @@ def _get_team_statistics(league_key):
                                 category_stats = category.get('stats', [])
                                 
                                 # Create team's stats for this category
+                                season = _as_dict(team_data.get('season'))
                                 team_category_stats = {
                                     'team_name': team_name,
                                     'team_id': str(team_id),
+                                    'season': _season_label(season.get('displayName'), season.get('name')),
                                     'stats': {}
                                 }
                                 
@@ -2817,6 +2819,9 @@ LEADERS_LIMIT = 20
 LEADERS_SMALLER_LIMITS = (10, 5)
 STATISTICS_UNAVAILABLE = "ESPN isn't providing these right now. Try again in a minute."
 PRESEASON = 1
+POSTSEASON = 3
+# /leaders lists these lowest first, and everything else highest first.
+LOW_IS_GOOD_LEADERS = {"avgGoalsAgainst", "ERA", "WHIP", "opponentAvg"}
 
 
 def _no_leaders():
@@ -2863,10 +2868,28 @@ def _fetch_leaders(league_path, year):
     raise ApiError(STATISTICS_UNAVAILABLE)
 
 
+def _leaders_in_order(key, leaders):
+    """The leaders up to the first who breaks the category's direction. ESPN can follow its
+    qualified players with everyone else: on Nov 4, 2026, NCAAM field goal percentage read
+    71.4, 64.3, 55.6, 50.0, 46.2, 42.9, then 100.0 fourteen times. Those aren't the next best."""
+    kept, last = [], None
+    for leader in leaders:
+        value = leader.get("value")
+        if isinstance(value, (int, float)):
+            if last is not None and (value > last if key not in LOW_IS_GOOD_LEADERS else value < last):
+                break
+            last = value
+        kept.append(leader)
+    return kept
+
+
 def _parse_leaders(data):
     """/leaders to the rows the dialog shows, in ESPN's order, which is best first even for a
     stat where low is good. A league's ratings can be there with nobody rated, such as the WNBA's
-    Player Efficiency Rating, where the leaders all read 0.0: that isn't a list of leaders."""
+    Player Efficiency Rating, where the leaders all read 0.0: that isn't a list of leaders.
+    Asked for a past college football season's regular season, ESPN answers with type 3, and
+    the numbers run through the bowl games, so "Season" says what they are and "Postseason"
+    doesn't: 4379 passing yards for 2025, where the core API's type 2 says 4129."""
     data = _as_dict(data)
     requested = _as_dict(data.get("requestedSeason"))
     season_type = _as_dict(requested.get("type"))
@@ -2877,7 +2900,7 @@ def _parse_leaders(data):
     for category in _dicts(_as_dict(data.get("leaders")).get("categories")):
         key = category.get("name") or "unknown"
         title = category.get("displayName") or key.title()
-        leaders = _dicts(category.get("leaders"))
+        leaders = _leaders_in_order(key, _dicts(category.get("leaders")))
         if all(not leader.get("value") for leader in leaders):
             continue
         stats = []
@@ -2896,8 +2919,12 @@ def _parse_leaders(data):
             categories.append({"category": title, "stats": stats})
     if not categories:
         return _no_leaders()
-    season = " ".join(str(part) for part in (requested.get("displayName"), season_type.get("name")) if part)
-    return {"player_stats": categories, "team_stats": [], "season": season}
+    name = "Season" if season_type.get("type") == POSTSEASON else season_type.get("name")
+    return {"player_stats": categories, "team_stats": [], "season": _season_label(requested.get("displayName"), name)}
+
+
+def _season_label(year_name, type_name):
+    return " ".join(str(part) for part in (year_name, type_name) if part)
 
 
 def get_player_statistics(league_key):
@@ -2927,11 +2954,17 @@ def get_player_statistics(league_key):
 
 
 def get_team_statistics(league_key):
-    """Get only team statistics for a league (optimized for speed)"""
+    """A league's team statistics. `season` says what they're from, if it's the same for every
+    team. It isn't always: during the playoffs, ESPN answers with the postseason for the teams
+    in them and the regular season for the others."""
     try:
         print(f"Loading team statistics for {league_key}")
         team_stats = _get_team_statistics(league_key)
-        return {"team_stats": team_stats, "player_stats": []}
+        result = {"team_stats": team_stats, "player_stats": []}
+        seasons = {team.get("season") for category in team_stats for team in category.get("stats", [])}
+        if len(seasons) == 1 and next(iter(seasons)):
+            result["season"] = seasons.pop()
+        return result
     except Exception as e:
         print(f"Error fetching team statistics for {league_key}: {str(e)}")
         return {"team_stats": [], "player_stats": []}
