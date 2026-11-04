@@ -9,8 +9,9 @@ import pytest
 pytest.importorskip("PyQt6")
 
 from PyQt6.QtCore import Qt  # noqa: E402
-from PyQt6.QtWidgets import QApplication, QToolButton  # noqa: E402
+from PyQt6.QtWidgets import QApplication, QTabWidget, QToolButton  # noqa: E402
 
+from accessible_table import ListPages  # noqa: E402
 import espn_api  # noqa: E402
 import scores  # noqa: E402
 import settings  # noqa: E402
@@ -54,14 +55,21 @@ class TestTabs:
         assert standings[11] == "Big Sky Conference"
         assert standings[11:] == sorted(standings[11:])
 
-    def test_the_teams_tabs_keep_their_scroll_buttons(self, app, rows):
-        """Without them, Qt's tab bar asks for the width of every tab, and 25 run off the screen."""
-        dialog = scores.SimpleTeamsDialog(rows, "NCAAF")
-        assert dialog.tab_widget.usesScrollButtons()
+    @pytest.mark.parametrize("dialog_class", ["StandingsDialog", "SimpleTeamsDialog"])
+    def test_the_25_conferences_are_a_named_list_with_one_tab_stop(self, app, rows, dialog_class):
+        tabs = getattr(scores, dialog_class)(rows, "NCAAF").tab_widget
+        assert isinstance(tabs, ListPages)
+        assert tabs.tabBar().accessibleName() == "Conferences"
+        assert tabs.focusPolicy() == Qt.FocusPolicy.NoFocus
+        assert tabs.tabBar().focusPolicy() & Qt.FocusPolicy.TabFocus
 
-    def test_the_teams_tabs_are_one_tab_stop(self, app, rows):
-        dialog = scores.SimpleTeamsDialog(rows, "NCAAF")
-        tabs = dialog.tab_widget
+    def test_a_shorter_area_stays_tabs_with_one_tab_stop(self, app, rows):
+        """Without its scroll buttons a tab bar asks for the width of every tab."""
+        division = ["AFC East", "AFC North", "NFC East", "NFC North"]
+        short = [dict(row, division=division[i % 4]) for i, row in enumerate(rows)]
+        tabs = scores.SimpleTeamsDialog(short, "NFL").tab_widget
+        assert isinstance(tabs, QTabWidget)
+        assert tabs.usesScrollButtons()
         assert tabs.focusPolicy() == Qt.FocusPolicy.NoFocus
         assert tabs.tabBar().focusPolicy() == Qt.FocusPolicy.TabFocus
         buttons = tabs.tabBar().findChildren(QToolButton)
