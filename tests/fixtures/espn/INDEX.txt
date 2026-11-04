@@ -126,3 +126,5 @@ season_MLB.json	5 KB	core /season: year 2026, type 3, in its playoffs
 team_NBA_17_regular.json	21 KB	Nets season=2027&seasontype=2: same record as team_NBA_17.json, but nextEvent is in January rather than the next day
 team_NCAAH_130.json	10 KB	Michigan, plain answer: no record and no standing, as for every college hockey team; a next game
 team_NCAAH_130_regular.json	11 KB	Michigan season=2027&seasontype=2: 8-1, standingSummary a bare 1st, nextEvent in January
+summary_leaders_NBA_401909906.json	3 KB	game summary's leaders block only, athletes cut to names: 2 teams, one leader per category, displayValue a plain number
+summary_leaders_NFL_401873035.json	5 KB	game summary's leaders block only, athletes cut to names: displayValue a stat line such as 16/29, 217 YDS, 1 TD

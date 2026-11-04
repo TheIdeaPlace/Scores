@@ -64,10 +64,10 @@ import live_play_format
 from models.standings import StandingsData
 import error_log
 from windows_notifications import announce, set_notifier_window
-from accessible_table import AccessibleTable, StandingsTable, WildCardTable, LeadersTable, BoxscoreTable, InjuryTable, ListPages, is_tab_bar, keep_in_tab_order, make_tab_area, ButtonKeys
+from accessible_table import AccessibleTable, StandingsTable, WildCardTable, LeadersTable, RankingsTable, BoxscoreTable, InjuryTable, ListPages, is_tab_bar, keep_in_tab_order, make_tab_area, ButtonKeys
 from tab_keys import group_noun
 from box_score import build_box_tables
-from team_stats import team_stat_lists
+from team_stats import RANKING_HEADERS, ranking_rows, team_stat_lists
 from game_labels import scoreboard_today, basketball_period_label, football_period_label, football_period_sort_key, game_standings_tables, schedule_row_text, schedule_start_row
 
 # Text processing utilities
@@ -221,6 +221,15 @@ def _focus_first_table(dialog):
         tables[0].setFocus()
     elif tabs:
         tabs[0].setFocus()
+
+
+def _message_row(text, name):
+    """A label can't take focus, so a screen reader user would hear nothing at all."""
+    row = QListWidget()
+    row.setAccessibleName(name)
+    row.addItem(text)
+    row.setCurrentRow(0)
+    return row
 
 
 class AudioOnFocusAction(QAction):
@@ -1981,6 +1990,8 @@ class LeagueView(BaseView):
                         print(f"DEBUG: About to show StatisticsViewDialog")
                         result = stats_dialog.exec()
                         print(f"DEBUG: StatisticsViewDialog returned with result: {result}")
+                        # It's parented to this view, which outlives this loop's every pass.
+                        stats_dialog.deleteLater()
                         
                         # If the user clicked OK or closed normally, exit the loop
                         # If they pressed Escape (result == 0), continue the loop to show choice again
@@ -2494,9 +2505,11 @@ class GameDetailsView(BaseView):
         if field_name == "leaders" and isinstance(field_data, (list, dict)):
             try:
                 self._add_leaders_data_to_layout(layout, field_data)
-            except Exception as e:
-                error_label = QLabel(f"Leaders display error: {str(e)}")
-                layout.addWidget(error_label)
+            except Exception:
+                error_log.log_handled()
+                failure_row = _message_row("Leaders can't be shown for this game.", "Leaders")
+                layout.addWidget(failure_row)
+                _focus_once_active(dlg, failure_row.setFocus)
         elif field_name == "boxscore" and isinstance(field_data, dict):
             self._add_boxscore_data_to_layout(layout, field_data)
         elif field_name == "standings" and isinstance(field_data, dict):
@@ -3119,9 +3132,6 @@ class GameDetailsView(BaseView):
             team_widget = QWidget()
             team_layout = QVBoxLayout()
             
-            # Create leaders table for this team
-            leaders_table = LeadersTable(parent=self)
-            
             # Parse this team's statistical leaders
             team_leaders = team_data.get("leaders", [])
             rows = []
@@ -3149,31 +3159,12 @@ class GameDetailsView(BaseView):
                     ])
             
             if rows:
-                # Use custom headers for individual team view (no team column needed)
-                leaders_table.setColumnCount(3)
-                leaders_table.setHorizontalHeaderLabels(["Category", "Player", "Value"])
-                leaders_table.setRowCount(len(rows))
-                
-                for row, data_row in enumerate(rows):
-                    for col, value in enumerate(data_row):
-                        item = QTableWidgetItem(str(value))
-                        leaders_table.setItem(row, col, item)
-                
-                # Configure table appearance
-                leaders_table.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
-                leaders_table.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
-                leaders_table.setAlternatingRowColors(True)
-                leaders_table.verticalHeader().setVisible(False)
-                
-                # Resize columns
-                header = leaders_table.horizontalHeader()
-                header.setSectionResizeMode(QHeaderView.ResizeMode.ResizeToContents)
-                header.setSectionResizeMode(1, QHeaderView.ResizeMode.Stretch)  # Player name stretches
-                
-                # Set accessibility
-                leaders_table.setAccessibleName(f"{team_name} Statistical Leaders")
-                leaders_table.setAccessibleDescription(f"Statistical leaders for {team_name}. Use arrow keys to navigate.")
-                
+                leaders_table = LeadersTable()
+                # A tab is one team, so there's no Team column. The player's name stretches.
+                leaders_table.setup_columns(["Category", "Player", "Value"], stretch_column=1)
+                leaders_table.populate_data(rows, set_focus=False)
+                leaders_table.update_accessible_name(f"{team_name} Statistical Leaders")
+                leaders_table.update_accessible_description(f"Statistical leaders for {team_name}")
                 team_layout.addWidget(leaders_table)
             else:
                 team_layout.addWidget(QLabel(f"No statistical leaders available for {team_name}."))
@@ -11023,11 +11014,7 @@ class StatisticsViewDialog(QDialog):
             self._focus_stats_list()
 
     def _show_statistics_message(self, layout, message):
-        """A label can't take focus, so a screen reader user would hear nothing at all."""
-        self.stats_list = QListWidget()
-        self.stats_list.setAccessibleName(f"{self.stat_type.title()} statistics")
-        self.stats_list.addItem(message)
-        self.stats_list.setCurrentRow(0)
+        self.stats_list = _message_row(message, f"{self.stat_type.title()} statistics")
         layout.addWidget(self.stats_list)
 
     def _show_statistics(self, layout, statistics_data):
@@ -11058,11 +11045,11 @@ class StatisticsViewDialog(QDialog):
         if event.key() == Qt.Key.Key_F6:
             # Cycle between stats list and results list
             current_focus = self.focusWidget()
-            if hasattr(self, 'stats_list') and hasattr(self, 'results_list'):
+            if hasattr(self, 'stats_list') and hasattr(self, 'results_table'):
                 if current_focus == self.stats_list:
-                    # Move to results list if visible
-                    if self.results_list.isVisible():
-                        self.results_list.setFocus()
+                    # Move to the results if visible
+                    if self.results_table.isVisible():
+                        self.results_table.setFocus()
                     else:
                         # If no results visible, stay on stats list
                         self.stats_list.setFocus()
@@ -11124,13 +11111,10 @@ class StatisticsViewDialog(QDialog):
         self.results_label = QLabel("Select a statistic to view rankings")
         right_layout.addWidget(self.results_label)
         
-        # Results list (concatenated format: rank team value)
-        self.results_list = QListWidget()
-        self.results_list.setAccessibleName("Statistics Results List")
-        self.results_list.setAccessibleDescription("List showing rankings for the selected statistic")
-        self.results_list.hide()  # Hide until stat is selected
-        right_layout.addWidget(self.results_list)
-        
+        self.results_table = RankingsTable(RANKING_HEADERS[self.stat_type])
+        self.results_table.hide()  # Hide until stat is selected
+        right_layout.addWidget(self.results_table)
+
         right_widget.setLayout(right_layout)
         
         # Add to horizontal layout
@@ -11156,7 +11140,7 @@ class StatisticsViewDialog(QDialog):
             print(f"DEBUG: _on_working_stat_selected called with None item")
     
     def _display_stat_results(self, stat_info):
-        """Display results in concatenated list format for the selected statistic"""
+        """Show the selected statistic's ranked list and move to its first row."""
         try:
             stat_name = stat_info.get('stat_name', 'Unknown')
             stat_type = stat_info.get('type', 'unknown')
@@ -11170,49 +11154,17 @@ class StatisticsViewDialog(QDialog):
                 header_text = f"{season} Rankings: {stat_info.get('name', stat_name)}"
             
             self.results_label.setText(header_text)
-            # The label can't take focus, so this is how a screen reader hears what the list is.
-            self.results_list.setAccessibleName(header_text)
-            
-            # Clear and show results list
-            self.results_list.clear()
-            self.results_list.show()
-            
-            # Display in concatenated list format
-            if stat_type == "player":
-                self._setup_player_results_list(data, stat_name)
-            elif stat_type == "team":
-                self._setup_team_results_list(data, stat_name)
-            
+            # The label can't take focus, so this is how a screen reader hears what the table is.
+            self.results_table.update_accessible_name(header_text)
+
+            self.results_table.show()
+            # Fills all three views and, if there are rows, focuses the first in the current view.
+            self.results_table.populate_data(ranking_rows(stat_type, data))
+
         except Exception as e:
             print(f"ERROR in _display_stat_results: {str(e)}")
             import traceback
             traceback.print_exc()
-    
-    def _setup_player_results_list(self, data, stat_name):
-        """Setup concatenated list view for player statistics results, in the order they came:
-        each source lists the best first, which for ERA or goals against is the lowest."""
-        for rank, item in enumerate(data, 1):
-            player_name = item.get('player_name', 'Unknown')
-            team = item.get('team', '')
-            name = f"{player_name} ({team})" if team else player_name
-            self.results_list.addItem(QListWidgetItem(f"{rank} {name} {item.get('value', '')}"))
-
-        # Set focus to first item in results list
-        if self.results_list.count() > 0:
-            self.results_list.setCurrentRow(0)
-            self.results_list.setFocus()  # Move focus to results list
-
-    def _setup_team_results_list(self, data, stat_name):
-        """Setup concatenated list view for team statistics results, in the order team_stat_lists
-        ranked them: best first, which for turnovers or ERA is the lowest. Teams level share a rank."""
-        for item in data:
-            team_name = item.get('name', 'Unknown')
-            self.results_list.addItem(QListWidgetItem(f"{item.get('rank')} {team_name} {item.get('displayValue', '')}"))
-
-        # Set focus to first item in results list
-        if self.results_list.count() > 0:
-            self.results_list.setCurrentRow(0)
-            self.results_list.setFocus()  # Move focus to results list
     
     def _get_available_statistics(self):
         """Extract available statistics from the data"""

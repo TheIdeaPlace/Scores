@@ -208,12 +208,18 @@ def rank_teams(rows, low_first):
     """The rows best first, each with its rank. Teams level on the number share a rank, and the
     next one's rank counts them, so it matches a rank read off the league list on the iPhone."""
     ordered = sorted(rows, key=lambda row: (row["value"] if low_first else -row["value"], row["name"]))
-    ranked, rank, previous = [], 0, None
-    for position, row in enumerate(ordered, 1):
-        if row["value"] != previous:
-            rank, previous = position, row["value"]
-        ranked.append({**row, "rank": rank})
-    return ranked
+    ranks = _shared_ranks(row["value"] for row in ordered)
+    return [{**row, "rank": rank} for row, rank in zip(ordered, ranks)]
+
+
+def _shared_ranks(values):
+    """Each value's rank, best first: one level with the one before shares its rank, and the next
+    rank counts them, so 1, 1, 3."""
+    rank, previous = 0, None
+    for position, value in enumerate(values, 1):
+        if value != previous:
+            rank, previous = position, value
+        yield rank
 
 
 def team_stat_lists(team_stats):
@@ -231,3 +237,26 @@ def team_stat_lists(team_stats):
             lists.append({"name": f"{title} ({name})", "category": name, "stat_name": title,
                           "data": rank_teams(rows, title in category.get("low_is_good", ())), "type": "team"})
     return lists
+
+
+RANKING_HEADERS = {
+    "player": ["Rank", "Player", "Team", "Value"],
+    "team": ["Rank", "Team", "Value"],
+}
+
+
+def _shown(value):
+    return "" if value is None else value
+
+
+def ranking_rows(stat_type, data):
+    """A ranked list as rows for RANKING_HEADERS, in the order it came, which is best first.
+    A team's rows carry their rank. A player's comes from the list, by the same rule, comparing the
+    number as shown: /leaders has no rank, and the MLB Stats API's own 1, 1, 3 comes out the same.
+    A player with no team reads N/A, so no cell of the table is silent."""
+    if stat_type == "team":
+        return [[item.get("rank"), item.get("name") or "Unknown", _shown(item.get("displayValue"))]
+                for item in data]
+    values = [_shown(item.get("value")) for item in data]
+    return [[rank, item.get("player_name") or "Unknown", item.get("team") or "N/A", value]
+            for rank, item, value in zip(_shared_ranks(values), data, values)]

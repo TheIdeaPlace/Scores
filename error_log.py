@@ -20,10 +20,7 @@ def log_path():
     return os.path.join(base, "Scores", "errors.log")
 
 
-def report_uncaught(exc_type, exc, tb, announce=None, now=time.monotonic):
-    """Log it and say so. Never raises: this runs when something has already gone wrong."""
-    global _last_announced
-    text = "".join(traceback.format_exception(exc_type, exc, tb))
+def _write(text):
     try:
         if sys.stderr:
             sys.stderr.write(text)
@@ -33,6 +30,18 @@ def report_uncaught(exc_type, exc, tb, announce=None, now=time.monotonic):
             f.write(f"--- {time.strftime('%Y-%m-%d %H:%M:%S')}\n{text}\n")
     except Exception:
         pass
+
+
+def log_handled():
+    """Log the exception being handled, for a screen that has already said in its own words that
+    something failed. Without this, the windowed build would keep no trace of it."""
+    _write(traceback.format_exc())
+
+
+def report_uncaught(exc_type, exc, tb, announce=None, now=time.monotonic):
+    """Log it and say so. Never raises: this runs when something has already gone wrong."""
+    global _last_announced
+    _write("".join(traceback.format_exception(exc_type, exc, tb)))
     try:
         if announce is None:
             from windows_notifications import announce

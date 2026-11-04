@@ -1,0 +1,242 @@
+{
+ "leaders": [
+  {
+   "team": {
+    "id": "28",
+    "abbreviation": "WSH",
+    "displayName": "Washington Commanders"
+   },
+   "leaders": [
+    {
+     "name": "passingYards",
+     "displayName": "Passing Yards",
+     "leaders": [
+      {
+       "displayValue": "16/29, 217 YDS, 1 TD",
+       "value": 217.0,
+       "athlete": {
+        "id": "4426348",
+        "lastName": "Daniels",
+        "fullName": "Jayden Daniels",
+        "displayName": "Jayden Daniels",
+        "shortName": "J. Daniels"
+       },
+       "mainStat": {
+        "value": "217",
+        "label": "YDS"
+       },
+       "summary": "16/29, 1 TD"
+      }
+     ]
+    },
+    {
+     "name": "rushingYards",
+     "displayName": "Rushing Yards",
+     "leaders": [
+      {
+       "displayValue": "11 CAR, 55 YDS, 1 TD",
+       "value": 55.0,
+       "athlete": {
+        "id": "4697815",
+        "lastName": "White",
+        "fullName": "Rachaad White",
+        "displayName": "Rachaad White",
+        "shortName": "R. White"
+       },
+       "mainStat": {
+        "value": "55",
+        "label": "YDS"
+       },
+       "summary": "11 CAR, 1 TD"
+      }
+     ]
+    },
+    {
+     "name": "receivingYards",
+     "displayName": "Receiving Yards",
+     "leaders": [
+      {
+       "displayValue": "3 REC, 81 YDS",
+       "value": 81.0,
+       "athlete": {
+        "id": "4567156",
+        "lastName": "Burks",
+        "fullName": "Treylon Burks",
+        "displayName": "Treylon Burks",
+        "shortName": "T. Burks"
+       },
+       "mainStat": {
+        "value": "81",
+        "label": "YDS"
+       },
+       "summary": "3 REC"
+      }
+     ]
+    },
+    {
+     "name": "sacks",
+     "displayName": "Sacks",
+     "leaders": [
+      {
+       "displayValue": "1",
+       "value": 1.0,
+       "athlete": {
+        "id": "3886601",
+        "lastName": "Tuttle",
+        "fullName": "Shy Tuttle",
+        "displayName": "Shy Tuttle",
+        "shortName": "S. Tuttle"
+       },
+       "mainStat": {
+        "value": "1",
+        "label": "SACKS"
+       },
+       "summary": ""
+      }
+     ]
+    },
+    {
+     "name": "totalTackles",
+     "displayName": "Tackles",
+     "leaders": [
+      {
+       "displayValue": "9",
+       "value": 9.0,
+       "athlete": {
+        "id": "4426403",
+        "lastName": "Cross",
+        "fullName": "Nick Cross",
+        "displayName": "Nick Cross",
+        "shortName": "N. Cross"
+       },
+       "mainStat": {
+        "value": "9",
+        "label": "TOT"
+       },
+       "summary": "5 SOLO"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "team": {
+    "id": "21",
+    "abbreviation": "PHI",
+    "displayName": "Philadelphia Eagles"
+   },
+   "leaders": [
+    {
+     "name": "passingYards",
+     "displayName": "Passing Yards",
+     "leaders": [
+      {
+       "displayValue": "23/34, 212 YDS, 1 INT",
+       "value": 212.0,
+       "athlete": {
+        "id": "4685201",
+        "lastName": "McKee",
+        "fullName": "Tanner McKee",
+        "displayName": "Tanner McKee",
+        "shortName": "T. McKee"
+       },
+       "mainStat": {
+        "value": "212",
+        "label": "YDS"
+       },
+       "summary": "23/34, 1 INT"
+      }
+     ]
+    },
+    {
+     "name": "rushingYards",
+     "displayName": "Rushing Yards",
+     "leaders": [
+      {
+       "displayValue": "11 CAR, 34 YDS",
+       "value": 34.0,
+       "athlete": {
+        "id": "4241555",
+        "lastName": "Mitchell",
+        "fullName": "Elijah Mitchell",
+        "displayName": "Elijah Mitchell",
+        "shortName": "E. Mitchell"
+       },
+       "mainStat": {
+        "value": "34",
+        "label": "YDS"
+       },
+       "summary": "11 CAR"
+      }
+     ]
+    },
+    {
+     "name": "receivingYards",
+     "displayName": "Receiving Yards",
+     "leaders": [
+      {
+       "displayValue": "6 REC, 57 YDS",
+       "value": 57.0,
+       "athlete": {
+        "id": "4870795",
+        "lastName": "Lemon",
+        "fullName": "Makai Lemon",
+        "displayName": "Makai Lemon",
+        "shortName": "M. Lemon"
+       },
+       "mainStat": {
+        "value": "57",
+        "label": "YDS"
+       },
+       "summary": "6 REC"
+      }
+     ]
+    },
+    {
+     "name": "sacks",
+     "displayName": "Sacks",
+     "leaders": [
+      {
+       "displayValue": "1",
+       "value": 1.0,
+       "athlete": {
+        "id": "4426331",
+        "lastName": "Smith Jr.",
+        "fullName": "Nolan Smith Jr.",
+        "displayName": "Nolan Smith Jr.",
+        "shortName": "N. Smith Jr."
+       },
+       "mainStat": {
+        "value": "1",
+        "label": "SACKS"
+       },
+       "summary": ""
+      }
+     ]
+    },
+    {
+     "name": "totalTackles",
+     "displayName": "Tackles",
+     "leaders": [
+      {
+       "displayValue": "10",
+       "value": 10.0,
+       "athlete": {
+        "id": "4432777",
+        "lastName": "Trotter Jr.",
+        "fullName": "Jeremiah Trotter Jr.",
+        "displayName": "Jeremiah Trotter Jr.",
+        "shortName": "J. Trotter Jr."
+       },
+       "mainStat": {
+        "value": "10",
+        "label": "TOT"
+       },
+       "summary": "6 SOLO"
+      }
+     ]
+    }
+   ]
+  }
+ ]
+}

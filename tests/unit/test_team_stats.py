@@ -9,8 +9,18 @@ from pathlib import Path
 
 import pytest
 
+import espn_api
 import team_stats
-from team_stats import low_is_good, needs_team_list, parse_team_stats, qualified_teams, rank_teams, team_stat_lists
+from team_stats import (
+    RANKING_HEADERS,
+    low_is_good,
+    needs_team_list,
+    parse_team_stats,
+    qualified_teams,
+    rank_teams,
+    ranking_rows,
+    team_stat_lists,
+)
 
 FIXTURES = Path(__file__).parent.parent / "fixtures"
 DIRECTIONS = json.loads((FIXTURES / "team_stat_directions.json").read_text(encoding="utf-8"))
@@ -317,3 +327,71 @@ class TestBadShapes:
                 del block["displayName"]
         titles = [c["category"] for c in parse_team_stats(data, "basketball")]
         assert "General" in titles and "Opponent General" in titles
+
+
+class TestRankingRows:
+    def test_each_row_lines_up_with_its_headers(self):
+        player = ranking_rows("player", [{"player_name": "A", "team": "X", "value": "9"}])
+        team = ranking_rows("team", [{"name": "B", "rank": 1, "displayValue": "9", "value": 9.0}])
+        assert len(player[0]) == len(RANKING_HEADERS["player"])
+        assert len(team[0]) == len(RANKING_HEADERS["team"])
+
+    def test_a_players_rank_is_their_place_in_the_list(self):
+        rows = ranking_rows("player", [{"player_name": "Luka Doncic", "team": "LAL", "value": "38.3"},
+                                       {"player_name": "Shai", "team": "OKC", "value": "31.0"}])
+        assert rows == [[1, "Luka Doncic", "LAL", "38.3"], [2, "Shai", "OKC", "31.0"]]
+
+    def test_players_level_on_the_number_share_a_rank(self):
+        categories = espn_api._parse_leaders(load("leaders_v3_NFL.json"))["player_stats"]
+        sacks = next(c for c in categories if c["category"] == "Sacks")
+        rows = ranking_rows("player", sacks["stats"])
+        assert [row[3] for row in rows] == ["7.5", "7.5"]
+        assert [row[0] for row in rows] == [1, 1]
+        assert [row[1] for row in rows] == ["T.J. Watt", "Will Anderson Jr."]
+
+    def test_the_next_rank_counts_the_players_level(self):
+        rows = ranking_rows("player", [{"player_name": name, "value": value}
+                                       for name, value in (("A", "9"), ("B", "9"), ("C", "9"), ("D", "4"), ("E", "4"))])
+        assert [row[0] for row in rows] == [1, 1, 1, 4, 4]
+
+    def test_mlb_comes_out_with_the_ranks_its_feed_gives(self):
+        leaders = load("mlb_leaders_homeRuns.json")["leagueLeaders"][0]["leaders"]
+        rows = ranking_rows("player", [{"player_name": leader["person"]["fullName"], "value": leader["value"]}
+                                       for leader in leaders])
+        assert [row[0] for row in rows] == [leader["rank"] for leader in leaders] == [1, 1, 3]
+
+    def test_real_leaders_become_rows(self):
+        categories = espn_api._parse_leaders(load("leaders_v3_NBA.json"))["player_stats"]
+        points = next(c for c in categories if c["category"] == "Points Per Game")
+        assert ranking_rows("player", points["stats"])[0] == [1, "Luka Doncic", "LAL", "38.3"]
+
+    def test_the_shape_the_dialog_makes_of_mlb_leaders(self):
+        rows = ranking_rows("player", [{"player_name": "Pete Crow-Armstrong", "stat_value": "45", "value": "45",
+                                        "team": "Chicago Cubs", "position": None}])
+        assert rows == [[1, "Pete Crow-Armstrong", "Chicago Cubs", "45"]]
+
+    def test_teams_keep_the_rank_they_share(self):
+        lists = team_stat_lists(parse_team_stats(load("byteam_NBA.json"), "basketball"))
+        ranked = lists[0]["data"]
+        rows = ranking_rows("team", ranked)
+        assert [row[0] for row in rows] == [team["rank"] for team in ranked]
+        assert [row[1] for row in rows] == [team["name"] for team in ranked]
+        assert [row[2] for row in rows] == [team["displayValue"] for team in ranked]
+        level = ranking_rows("team", rank_teams([{"name": "B", "value": 5.0, "displayValue": "5"},
+                                                 {"name": "A", "value": 5.0, "displayValue": "5"},
+                                                 {"name": "C", "value": 1.0, "displayValue": "1"}], False))
+        assert level == [[1, "A", "5"], [1, "B", "5"], [3, "C", "1"]]
+
+    @pytest.mark.parametrize("team", ["", None])
+    def test_a_player_with_no_team_reads_na_rather_than_a_silent_cell(self, team):
+        assert ranking_rows("player", [{"player_name": "A", "team": team, "value": "1"}])[0][2] == "N/A"
+
+    def test_missing_names_and_numbers(self):
+        assert ranking_rows("player", [{}]) == [[1, "Unknown", "N/A", ""]]
+        assert ranking_rows("team", [{"rank": 2}]) == [[2, "Unknown", ""]]
+
+    def test_a_zero_is_a_number_and_not_a_gap(self):
+        assert ranking_rows("player", [{"player_name": "A", "team": "X", "value": 0}])[0][3] == 0
+
+    def test_no_rows(self):
+        assert ranking_rows("player", []) == [] and ranking_rows("team", []) == []

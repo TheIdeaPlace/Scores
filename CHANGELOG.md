@@ -8,6 +8,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Fixed
+- **Player and Team Statistics results are a real table.** Alt+V, Alt+T, Alt+Q and Alt+F now work on
+  them, as they do on every other table, and they open in your saved view. Player statistics have
+  Rank, Player, Team and Value, and team statistics Rank, Team and Value. A row used to be one line
+  of text, such as "1 Luka Doncic (LAL) 38.3". On any cell a screen reader now hears whose row it
+  is: "Luka Doncic, Value, 38.3". Players level on a number now share a rank, as teams do: two
+  players on 7.5 sacks are both 1st, where one used to read 1st and the other 2nd.
+- **Switching a table's view stays on your row.** The new view could report the row it was last left
+  on before moving to yours, so a screen reader might read the wrong row first.
+- **A game's Leaders opens on Windows.** It showed only an error message, which a screen reader may
+  not have read, for any game with leaders. Each team now has a tab with a table, in all three views,
+  and focus lands on its first row. If the table ever can't be built, a row you can arrow to says so
+  in a plain sentence.
 - **Tab bars work from the keyboard the way Windows lists do, everywhere there are tabs.** Home and
   End go to the first and last tab, and Left and Right go round past the ends rather than stopping.
   With focus on the tabs, type a conference's first letter to go to it, and the same letter again
