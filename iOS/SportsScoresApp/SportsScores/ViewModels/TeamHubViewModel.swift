@@ -32,13 +32,22 @@ class TeamHubViewModel: ObservableObject {
     @Published var errorNews: String?
     @Published var errorSchedule: String?
 
+    /// Asked for only when the schedule above has no home game in it.
+    @Published var regularSeason: [ScheduleGame] = []
+    @Published var isLoadingHomeVenue = false
+
     private let apiService = ESPNAPIService.shared
+    private let fetchRegularSeason: (String, Sport) async throws -> [ScheduleGame]
 
     // MARK: - Init
 
-    init(teamId: String, sport: Sport) {
+    init(teamId: String, sport: Sport,
+         fetchRegularSeason: @escaping (String, Sport) async throws -> [ScheduleGame] = { id, sport in
+             try await ESPNAPIService.shared.fetchRegularSeasonSchedule(teamId: id, sport: sport)
+         }) {
         self.teamId = teamId
         self.sport = sport
+        self.fetchRegularSeason = fetchRegularSeason
     }
 
     // MARK: - Load functions
@@ -48,6 +57,7 @@ class TeamHubViewModel: ObservableObject {
     func loadInfo() async {
         guard teamInfo == nil, !isLoadingInfo else { return }
         isLoadingInfo = true
+        isLoadingHomeVenue = true
         errorInfo = nil
         async let scheduleTask: Void = loadSchedule()
         do {
@@ -61,6 +71,19 @@ class TeamHubViewModel: ObservableObject {
         }
         isLoadingInfo = false
         await scheduleTask
+        await loadHomeVenue()
+    }
+
+    /// `fetchTeamHubSchedule` asks for `currentSeasonYear`, which rolls forward before ESPN
+    /// has that schedule: the NFL from March, the NBA from July, the WNBA from January. With
+    /// no home game on it, ask for the regular season ESPN does have before settling for
+    /// the franchise venue. A World Cup team has no home, and the CFL has no ESPN schedule.
+    func loadHomeVenue() async {
+        isLoadingHomeVenue = true
+        defer { isLoadingHomeVenue = false }
+        guard !sport.isWorldCup, !sport.usesCFLSource,
+              schedule.mostUsedHomeVenue(teamId: teamId) == nil else { return }
+        regularSeason = (try? await fetchRegularSeason(teamId, sport)) ?? []
     }
 
     func loadRoster() async {
@@ -114,10 +137,14 @@ class TeamHubViewModel: ObservableObject {
 
     /// Where the team plays, from the home games on the schedule `loadInfo` already loads.
     /// ESPN's franchise venue is the fallback, once there's no schedule to be had: showing
-    /// it while the schedule loads would put up an old name and then change it.
+    /// it while the schedules load would put up an old name and then change it. A World Cup
+    /// team's "home" games are tournament draws, so Brazil would read MetLife Stadium.
     var teamVenue: (name: String, city: String?)? {
-        if let venue = schedule.mostUsedHomeVenue(teamId: teamId) { return venue }
-        guard !isLoadingSchedule, let name = teamInfo?.venueName else { return nil }
+        if !sport.isWorldCup {
+            if let venue = schedule.mostUsedHomeVenue(teamId: teamId) { return venue }
+            if let venue = regularSeason.mostUsedHomeVenue(teamId: teamId) { return venue }
+        }
+        guard !isLoadingSchedule, !isLoadingHomeVenue, let name = teamInfo?.venueName else { return nil }
         return (name, teamInfo?.venueCity)
     }
 
