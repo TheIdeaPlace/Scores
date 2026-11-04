@@ -1183,7 +1183,7 @@ class _TabBarViewKeys(QObject):
                 # widget too, and mustn't change the tab under someone who's in the table.
                 if self._handle_bar_key(bar, event):
                     return True
-        elif event.type() == QEvent.Type.FocusOut and obj is self._bar:
+        elif event.type() == QEvent.Type.FocusOut and obj is self._tabs.tabBar():
             self.search.reset()
         return super().eventFilter(obj, event)
 
