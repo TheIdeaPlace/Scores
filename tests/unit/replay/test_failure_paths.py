@@ -109,7 +109,6 @@ RAISING = [
     ("get_team_schedule WNBA", lambda: espn_api.get_team_schedule("WNBA", "8"), lambda: ApiService.get_team_schedule("WNBA", "8")),
     ("get_standings NFL", lambda: espn_api.get_standings("NFL"), lambda: ApiService.get_standings("NFL")),
     ("get_standings soccer", lambda: espn_api.get_standings("EPL"), lambda: ApiService.get_standings("EPL")),
-    ("get_standings college", lambda: espn_api.get_standings("NCAAM"), lambda: ApiService.get_standings("NCAAM")),
 ]
 
 

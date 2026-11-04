@@ -336,5 +336,12 @@ def test_wnba_standings_are_the_regular_season_not_the_playoffs(monkeypatch):
     total = next(st for st in entry["stats"] if st.get("type") == "total")
     row = next(r for r in rows if r["team_name"] == entry["team"]["displayName"])
     assert f"{row['wins']}-{row['losses']}" == total["summary"]
-    behind = next(st for st in entry["stats"] if st.get("type") == "gamesbehind")
-    assert row["games_back"] == behind["displayValue"]
+
+    # ESPN's "-" and "2" read as the NBA's do.
+    by_name = {r["team_name"]: r for r in rows}
+    assert by_name["Atlanta Dream"]["games_back"] == "—"
+    assert by_name["Washington Mystics"]["games_back"] == "2.0"
+    half = {"type": "gamesbehind", "value": 2.5, "displayValue": "2.5"}
+    assert espn_api._games_back(half) == "2.5"
+    assert espn_api._games_back({}) == "—"
+    assert espn_api._games_back({"value": "-"}) == "—"

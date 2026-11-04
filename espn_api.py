@@ -1682,8 +1682,8 @@ def get_standings(league_key):
     elif league_key == "NHL":
         return _get_nhl_standings_fast()
     elif league_key == "WNBA":
-        # The older path reads a team's playoff record once the season has ended.
-        return _fetch_college_standings("WNBA", "basketball/wnba")
+        # See _standings_or_nothing: the team list would read a team's playoff record, too.
+        return _standings_or_nothing("WNBA", "basketball/wnba")
     elif league_key == "NCAAF":
         return _get_ncaaf_standings_fast()
     elif league_key == "NCAAM":
@@ -2283,6 +2283,12 @@ def _record_parts(summary):
     return tuple(parts)
 
 
+def _games_back(stat):
+    """ESPN's 0 and 2 read "-" and "2" there. These read as the NBA's do, "—" and "2.0"."""
+    value = stat.get("value")
+    return f"{value:.1f}" if isinstance(value, (int, float)) and value > 0 else "—"
+
+
 def _college_standing_row(entry, conference):
     team_info = entry.get("team", {})
     stats = entry.get("stats", [])
@@ -2298,8 +2304,7 @@ def _college_standing_row(entry, conference):
         "losses": losses,
         "ties": ties,
         "win_percentage": f"{(wins + ties / 2) / games:.3f}" if games else "0.000",
-        # College conferences rank by record. A pro league's games back comes straight from ESPN.
-        "games_back": _standing_stat(stats, "gamesbehind").get("displayValue") or "—",
+        "games_back": _games_back(_standing_stat(stats, "gamesbehind")),
         "conference_record": conf.get("summary") or conf.get("displayValue") or "",
         "division": conference,
         "streak": _standing_stat(stats, "streak").get("displayValue") or "",
@@ -2325,8 +2330,11 @@ def parse_college_standings(data):
     return rows
 
 
-def _college_standings_rows(league, path, query=""):
-    """A college league's rows from /standings, or [] if that failed or had none."""
+def _standings_or_nothing(league, path, query=""):
+    """A league's rows from /standings, or [] if that failed or had none, so that the screens
+    say there's no data. The WNBA and college leagues have no fallback to the team list: its
+    rows have no division, which Teams leaves out, so it opened with no tabs and said nothing,
+    and college's are the first 50 teams of all of them, with one request each."""
     try:
         resp = _http_get(f"https://site.api.espn.com/apis/v2/sports/{path}/standings{query}")
         if resp.status_code == 200:
@@ -2336,21 +2344,13 @@ def _college_standings_rows(league, path, query=""):
     return []
 
 
-def _fetch_college_standings(league, path):
-    return _college_standings_rows(league, path) or _get_standings_original(league)
-
-
 def _get_ncaaf_standings_fast():
     """College football standings, every conference in the user's coverage setting.
 
     With no `group=`, ESPN returns FBS only, while the scoreboard shows FCS games too.
-
-    No fallback to the team list, as other college leagues have. Here it would be the first
-    50 teams of all 762, Division III included, with no conferences and one request each. An
-    empty answer lets the screens say there's no data.
     """
-    return _college_standings_rows("NCAAF", "football/college-football",
-                                   f"?group={_ncaaf_coverage_group()}")
+    return _standings_or_nothing("NCAAF", "football/college-football",
+                                 f"?group={_ncaaf_coverage_group()}")
 
 
 def standings_cache_key(league_key):
@@ -2361,22 +2361,22 @@ def standings_cache_key(league_key):
 
 def _get_ncaam_standings_fast():
     """Men's college basketball standings, every conference."""
-    return _fetch_college_standings("NCAAM", "basketball/mens-college-basketball")
+    return _standings_or_nothing("NCAAM", "basketball/mens-college-basketball")
 
 
 def _get_ncaawb_standings_fast():
     """Women's college basketball standings, every conference."""
-    return _fetch_college_standings("NCAAWB", "basketball/womens-college-basketball")
+    return _standings_or_nothing("NCAAWB", "basketball/womens-college-basketball")
 
 
 def _get_ncaah_standings_fast():
     """Men's college hockey standings, every conference."""
-    return _fetch_college_standings("NCAAH", "hockey/mens-college-hockey")
+    return _standings_or_nothing("NCAAH", "hockey/mens-college-hockey")
 
 
 def _get_ncaawh_standings_fast():
     """Women's college hockey standings. ESPN sends these at the root, with no conferences."""
-    return _fetch_college_standings("NCAAWH", "hockey/womens-college-hockey")
+    return _standings_or_nothing("NCAAWH", "hockey/womens-college-hockey")
 
 
 def _get_standings_original(league_key):
