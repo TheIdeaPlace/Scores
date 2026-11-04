@@ -1167,10 +1167,21 @@ class _TabBarViewKeys(QObject):
                 widget.setFocus()
                 return
 
+    def _adopt_saved_view_everywhere(self):
+        for index in range(self._tabs.count()):
+            page = self._tabs.widget(index)
+            for table in page.findChildren(AccessibleTable) if page else []:
+                table.adopt_saved_view()
+
     def eventFilter(self, obj, event):
         if event.type() == QEvent.Type.KeyPress:
             bar = self._bar
             page = self._tabs.currentWidget()
+            if (event.key() in (Qt.Key.Key_Tab, Qt.Key.Key_Backtab)
+                    and event.modifiers() & Qt.KeyboardModifier.ControlModifier):
+                # Before the page changes: Qt moves focus to the next table as it comes on show,
+                # and it would read the row in its old view and then again in the new one.
+                self._adopt_saved_view_everywhere()
             if event.key() == Qt.Key.Key_F6 and event.modifiers() == Qt.KeyboardModifier.NoModifier:
                 # F6 moves between the tabs or list and what's on show.
                 if isinstance(self._tabs, ListPages):
@@ -1286,8 +1297,8 @@ class ListPages(QWidget):
         layout.addWidget(self._list)
         layout.addWidget(self._page_area)
         self._dialog_title = ""
+        # No focus proxy to the list: Tab would follow it to the list while it's hidden.
         self.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        self.setFocusProxy(self._list)
         self._list.currentRowChanged.connect(self._show_page)
         self._keys = _install_tab_keys(self, self._list)
         self._list.itemActivated.connect(lambda _item: self.open_page())
@@ -1315,7 +1326,7 @@ class ListPages(QWidget):
         return not self._page_area.isHidden()
 
     def setFocus(self, *args) -> None:
-        """Whichever is on show. The proxy alone would send focus to the list while it's hidden."""
+        """Whichever is on show."""
         if self.is_open():
             self._keys.focus_page(self.currentWidget())
         else:

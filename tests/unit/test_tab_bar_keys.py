@@ -695,7 +695,7 @@ class TestListPages:
     def test_the_list_is_the_only_tab_stop_of_its_own(self, pages):
         assert pages.focusPolicy() == Qt.FocusPolicy.NoFocus
         assert pages.tabBar().focusPolicy() & Qt.FocusPolicy.TabFocus
-        assert pages.focusProxy() is pages.tabBar()
+        assert pages.focusProxy() is None  # Tab would follow it to the list while it's hidden.
 
     def test_the_list_stands_alone_until_a_row_is_opened(self, pages):
         pages.tabBar().setCurrentRow(3)
@@ -965,6 +965,73 @@ class TestListPages:
         target.setFocus = lambda: calls.append("target")
         scores._take_focus_after_load(target)
         assert calls == []
+
+    def test_tab_goes_round_an_open_page_and_never_stops_on_the_hidden_list(self, pages_with_tables):
+        pages = pages_with_tables
+        window = QWidget()
+        layout = QVBoxLayout(window)
+        layout.addWidget(pages)
+        close = QPushButton("Close")
+        layout.addWidget(close)
+        window.resize(600, 400)
+        window.show()
+        try:
+            window.activateWindow()
+            QApplication.processEvents()
+            pages.open_page()
+            QApplication.processEvents()
+            view = self.table_on(pages, 0).table_widget
+            assert QApplication.focusWidget() is view
+            stops = []
+            for _ in range(3):
+                press(QApplication.focusWidget(), Qt.Key.Key_Tab, PLAIN, "\t")
+                QApplication.processEvents()
+                stops.append(QApplication.focusWidget())
+            assert stops == [pages._back, close, view]
+        finally:
+            window.close()
+
+    @pytest.mark.parametrize("count", [3, 9], ids=["tabs", "list"])
+    def test_ctrl_tab_lands_once_on_the_next_table_in_the_chosen_view(self, app, monkeypatch, count):
+        """It used to land in the table's old view, and read the row again as it changed."""
+        saved = {"default_view_mode": 0}
+        monkeypatch.setattr(accessible_table.settings, "get", lambda k, d=None: saved.get(k, d))
+        monkeypatch.setattr(accessible_table.settings, "set", saved.__setitem__)
+        window = QWidget()
+        layout = QVBoxLayout(window)
+        area = make_tab_area(count, list_name="Tables")
+        tables = []
+        for index in range(count):
+            page = QWidget()
+            page_layout = QVBoxLayout(page)
+            table = AccessibleTable(accessible_name=f"T{index}", accessible_description="D")
+            table.setup_columns(["Player", "YDS"])
+            table.populate_data([["Avery", "10"]], set_focus=False)
+            page_layout.addWidget(table)
+            area.addTab(page, f"Table {index}")
+            tables.append(table)
+        layout.addWidget(area)
+        layout.addWidget(QPushButton("Close"))
+        window.resize(600, 400)
+        window.show()
+        try:
+            window.activateWindow()
+            QApplication.processEvents()
+            if isinstance(area, ListPages):
+                area.open_page()
+            tables[0].setFocus()
+            QApplication.processEvents()
+            press(tables[0].table_widget, Qt.Key.Key_Q, ALT)
+            QApplication.processEvents()
+            assert QApplication.focusWidget() is tables[0].quick_list
+
+            seen = []
+            app.focusChanged.connect(lambda _old, new: seen.append(new))
+            press(tables[0].quick_list, Qt.Key.Key_Tab, CTRL)
+            QApplication.processEvents()
+            assert seen == [tables[1].quick_list]
+        finally:
+            window.close()
 
     def test_ctrl_tab_and_ctrl_shift_tab_go_round_from_the_list(self, pages):
         press(pages.tabBar(), Qt.Key.Key_Backtab, CTRL | SHIFT)
