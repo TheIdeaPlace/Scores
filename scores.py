@@ -12319,7 +12319,8 @@ class VenueDetailsDialog(QDialog):
         
         # Create list widget for venue details
         self.details_list = QListWidget()
-        
+        self.details_list.setAccessibleName(self.windowTitle())
+
         # Get venue information sections
         basic_info = self.venue_details.get('basic_info', {})
         characteristics = self.venue_details.get('characteristics', {})
@@ -12360,6 +12361,8 @@ class VenueDetailsDialog(QDialog):
             for fact in interesting_facts:
                 self.details_list.addItem(QListWidgetItem(f"• {fact}"))
 
+        self.details_list.setCurrentRow(0)
+        _focus_once_active(self, self.details_list.setFocus)
         layout.addWidget(self.details_list)
         
         # Close button

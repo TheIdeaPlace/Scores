@@ -3,43 +3,62 @@ Venues and their home teams, built from a league's scoreboard.
 
 ESPN has no list of a league's venues. /teams carries no venue at all, and a team's
 franchise.venue is years out of date for some teams. A scoreboard names the venue of
-every game and which team is at home there, so one month of it gives both. A game at
-a neutral site is nobody's home game, so a venue used only for those is left out.
+every game and which team is at home there, so one month of it gives both.
+
+Being listed as home isn't enough to make a venue a team's home. A game at a neutral
+site, a preseason game, and a one-off that ESPN doesn't mark neutral all list a home
+team. venues_from_events leaves those out.
 """
 
 import requests
+from collections import Counter, defaultdict
 from datetime import datetime
 from typing import Dict, Iterator, List
 
 from espn_api import LEAGUES, NCAAB_GROUP, _as_dict, _dicts, college_scoreboard_params
 from exceptions import ApiError
 
-# The months of a league's regular season when every team has a home game, measured
-# against ESPN's scoreboards in November 2026. The other months lose teams or add
-# venues nobody calls home: NBA and NHL preseason arenas in October, All-Star teams and
-# the Olympic break in February, the WNBA's All-Star team and arena in July, only the
-# playoff teams in MLB's October, 22 of 63 men's college hockey teams idle in December,
-# and college basketball's December reaching the 1000 game limit with 20 teams still to
-# play at home.
+# The regular season months with the most teams at home, measured against ESPN's
+# scoreboards in November 2026. Most leagues have every team at home in these. The
+# others lose teams or add venues nobody calls home: preseason arenas in the NBA's and
+# NHL's October, All-Star teams and the Olympic break in February, the WNBA's All-Star
+# team in July, Toronto away from its usual arena in August and a thin September, only
+# the playoff teams in MLB's October, and 22 of 63 men's college hockey teams idle in
+# December.
 IN_SEASON_MONTHS = {
     "mlb": {4, 5, 6, 7, 8, 9},
     "nfl": {9, 11, 12},
     "nba": {11, 1, 3},
     "nhl": {11, 12, 1, 3},
-    "wnba": {5, 6, 8, 9},
+    "wnba": {6},
     "ncaaf": {10, 11},
-    "ncaam": {11, 1, 2},
-    "ncaawb": {11, 1, 2},
-    "ncaah": {11, 1, 2},
-    "ncaawh": {10, 11, 1, 2},
+    "ncaam": {2},
+    "ncaawb": {2},
+    "ncaah": {2},
+    "ncaawh": {1},
 }
+
+# These can look this many months ahead, because ESPN has the conference schedule long
+# before it's played. Conference play is the only time every college team is at home.
+# November reaches ESPN's 1000 game limit by the 19th, with 5 men's teams and 9 women's
+# still to play at home, and the games it does have include some at non-Division I
+# hosts. ESPN also answers a past November with groups=50 with no games at all.
+MONTHS_AHEAD = {"ncaam": 3, "ncaawb": 3, "ncaah": 3, "ncaawh": 3}
 
 # ESPN has marked American Airlines Center as not indoors for a WNBA game. Football,
 # baseball and hockey really do play outdoors, so only these leagues ignore that.
 ALWAYS_INDOORS = {"nba", "wnba", "ncaam", "ncaawb"}
 
+# groups=50 keeps any game with a Division I team in it, so a visit to a Division III
+# host stays on the board. ESPN gives Division I teams a conferenceId and those hosts
+# none. It gives no team a conferenceId in the other leagues, so this can't apply there.
+HOSTS_NEED_A_CONFERENCE = {"ncaam", "ncaawb"}
+
+PRESEASON = 1
+
 # In-season months to try before giving up, the latest first. Off-season, the first of
-# them is already last season's. The others are only for a month ESPN won't answer.
+# them is already last season's. The others are for a month ESPN won't answer or has
+# nothing for.
 MONTHS_TO_TRY = 3
 
 # A month of college basketball is up to 19 MB. A year would be no better: ESPN stops
@@ -62,13 +81,14 @@ LEAGUE_FACTS = {
 }
 
 
-def _months_back(now: datetime, in_season: set) -> Iterator[str]:
-    """In-season months as YYYYMM, from the latest at or before now."""
-    year, month = now.year, now.month
+def _months_back(now: datetime, in_season: set, ahead: int = 0) -> Iterator[str]:
+    """In-season months as YYYYMM, from the latest at or before `ahead` months from now."""
+    month_count = now.year * 12 + now.month - 1 + ahead
     while True:
+        year, month = month_count // 12, month_count % 12 + 1
         if month in in_season:
             yield f"{year}{month:02d}"
-        year, month = (year - 1, 12) if month == 1 else (year, month - 1)
+        month_count -= 1
 
 
 def _scoreboard_query(league_key: str) -> str:
@@ -84,12 +104,12 @@ def _location(city: str, state: str) -> str:
     return ", ".join(part for part in (city, state) if part)
 
 
-def _home_team(competition: Dict) -> Dict:
-    """The team at home in this game, or {} if ESPN doesn't name one."""
+def _home_team(competition: Dict, needs_conference: bool) -> Dict:
+    """The team at home in this game, or {} if ESPN doesn't name one or it doesn't count."""
     competitor = next((c for c in _dicts(competition.get("competitors")) if c.get("homeAway") == "home"), {})
     team = _as_dict(competitor.get("team"))
     name = team.get("displayName") or team.get("name")
-    if not team.get("id") or not name:
+    if not team.get("id") or not name or (needs_conference and not team.get("conferenceId")):
         return {}
     return {
         "id": str(team["id"]),
@@ -99,16 +119,24 @@ def _home_team(competition: Dict) -> Dict:
     }
 
 
-def venues_from_events(events, always_indoors: bool = False) -> Dict[str, Dict]:
-    """Every venue that is some team's home in these scoreboard events, by venue id."""
+def venues_from_events(events, league_key: str = "") -> Dict[str, Dict]:
+    """Every venue that is some team's home in these scoreboard events, by venue id.
+
+    A team's home is a venue it uses at least half as often as the one it uses most, which
+    keeps the Athletics' 9 games in Sacramento and 6 in Las Vegas, and loses the Mammoth's
+    one game at a football stadium. A month is few games, so one of two has to stay: the
+    UConn men split theirs between two arenas.
+    """
     venues = {}
+    teams = {}
+    uses = defaultdict(Counter)
     for event in _dicts(events):
         competition = next(iter(_dicts(event.get("competitions"))), {})
-        if competition.get("neutralSite"):
+        if competition.get("neutralSite") or _as_dict(event.get("season")).get("type") == PRESEASON:
             continue
         raw = _as_dict(competition.get("venue"))
         name = raw.get("fullName") or raw.get("displayName")
-        team = _home_team(competition)
+        team = _home_team(competition, league_key in HOSTS_NEED_A_CONFERENCE)
         if not raw.get("id") or not name or not team:
             continue
         address = _as_dict(raw.get("address"))
@@ -122,13 +150,19 @@ def venues_from_events(events, always_indoors: bool = False) -> Dict[str, Dict]:
             "home_teams": [],
         })
         # Left out when ESPN doesn't say: no answer isn't the same as outdoors.
-        if raw.get("indoor") is True or (raw.get("indoor") is False and not always_indoors):
+        if raw.get("indoor") is True or (raw.get("indoor") is False and league_key not in ALWAYS_INDOORS):
             venue["indoor"] = raw["indoor"]
-        if all(known["id"] != team["id"] for known in venue["home_teams"]):
-            venue["home_teams"].append(team)
+        teams[team["id"]] = team
+        uses[team["id"]][venue["id"]] += 1
+
+    for team_id, team_uses in uses.items():
+        most_used = max(team_uses.values())
+        for venue_id, count in team_uses.items():
+            if count * 2 >= most_used:
+                venues[venue_id]["home_teams"].append(teams[team_id])
     for venue in venues.values():
         venue["home_teams"].sort(key=lambda team: team["name"])
-    return venues
+    return {venue_id: venue for venue_id, venue in venues.items() if venue["home_teams"]}
 
 
 def venue_summary(venue: Dict) -> str:
@@ -174,17 +208,22 @@ class VenueService:
         if cache_key in self.venue_cache:
             return self.venue_cache[cache_key]
 
-        months = _months_back(datetime.now(), IN_SEASON_MONTHS[league_key])
+        months = _months_back(datetime.now(), IN_SEASON_MONTHS[league_key], MONTHS_AHEAD.get(league_key, 0))
         failed = False
         for _ in range(MONTHS_TO_TRY):
             month = next(months)
             try:
                 events = self._month_events(league_key, month, query)
+            except (requests.Timeout, requests.ConnectionError) as e:
+                # With no network an older month won't answer either, and at 15 seconds
+                # each, asking would only make the message later.
+                print(f"Error getting venues for {league_key}, {month}: {e}")
+                raise ApiError("ESPN did not answer. Try again in a minute.") from e
             except Exception as e:
                 print(f"Error getting venues for {league_key}, {month}: {e}")
                 failed = True
                 continue
-            venues = venues_from_events(events, league_key in ALWAYS_INDOORS)
+            venues = venues_from_events(events, league_key)
             if venues:
                 # An older month standing in for a failed one is only for now.
                 if not failed:
