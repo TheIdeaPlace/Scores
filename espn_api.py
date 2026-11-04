@@ -76,6 +76,18 @@ def _ncaaf_coverage_group():
     return NCAAF_COVERAGE_GROUPS.get(coverage, NCAAF_COVERAGE_GROUPS['all_d1'])
 
 
+# Which college football conferences come first in Standings and Teams, under ESPN's names.
+# All of FBS is here, and the FCS conferences follow alphabetically. ESPN splits the Sun
+# Belt into East and West only when asked for FBS alone.
+NCAAF_CONFERENCE_ORDER = (
+    "Southeastern Conference", "Big Ten Conference", "Big 12 Conference",
+    "Atlantic Coast Conference", "Pac-12 Conference", "American Conference",
+    "Conference USA", "Mid-American Conference", "Mountain West Conference",
+    "Sun Belt Conference", "Sun Belt - East", "Sun Belt - West",
+    "FBS Independents",
+)
+
+
 # ESPN's college football scoreboard *doubles* `limit` internally on any query
 # that is not a `dates=A-B` range: limit=5 returns 10 events, limit=50 returns
 # 100. The effective (post-doubling) value must stay at or below 1000 — past
@@ -2286,25 +2298,32 @@ def parse_college_standings(data):
     return rows
 
 
-def _fetch_college_standings(league, path, query=""):
+def _college_standings_rows(league, path, query=""):
+    """A college league's rows from /standings, or [] if that failed or had none."""
     try:
         resp = _http_get(f"https://site.api.espn.com/apis/v2/sports/{path}/standings{query}")
         if resp.status_code == 200:
-            rows = parse_college_standings(resp.json())
-            if rows:
-                return rows
+            return parse_college_standings(resp.json())
     except Exception as e:
         print(f"Error in {league} standings: {e}")
-    return _get_standings_original(league)
+    return []
+
+
+def _fetch_college_standings(league, path):
+    return _college_standings_rows(league, path) or _get_standings_original(league)
 
 
 def _get_ncaaf_standings_fast():
     """College football standings, every conference in the user's coverage setting.
 
     With no `group=`, ESPN returns FBS only, while the scoreboard shows FCS games too.
+
+    No fallback to the team list, as other college leagues have. Here it would be the first
+    50 teams of all 762, Division III included, with no conferences and one request each. An
+    empty answer lets the screens say there's no data.
     """
-    return _fetch_college_standings("NCAAF", "football/college-football",
-                                    f"?group={_ncaaf_coverage_group()}")
+    return _college_standings_rows("NCAAF", "football/college-football",
+                                   f"?group={_ncaaf_coverage_group()}")
 
 
 def standings_cache_key(league_key):

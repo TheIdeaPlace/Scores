@@ -238,11 +238,19 @@ class TestCollegeFootballCoverage:
         assert row(rows, "App State Mountaineers")["division"] == "Sun Belt - East"
         assert "Sun Belt Conference" not in {r["division"] for r in rows}
 
-    def test_a_failed_request_falls_back_as_the_others_do(self, espn):
-        espn.on("/college-football/standings", TIMEOUT)
-        espn.on("/college-football/teams$", {"sports": []})
+    @pytest.mark.parametrize("answer", [
+        TIMEOUT, HTTP_500, {"children": []}, {"children": "not a list of conferences"},
+    ], ids=["timeout", "500", "no conferences", "bad payload"])
+    def test_no_standings_means_no_rows_not_the_team_list(self, espn, answer):
+        """/teams would be the first 50 of 762 teams, Division III included. It isn't stubbed,
+        so asking for it fails the test, and the screens get to say there's no data."""
+        espn.on("/college-football/standings", answer)
         assert espn_api.get_standings("NCAAF") == []
-        assert espn.calls[-1] == f"{SITE}/football/college-football/teams"
+        assert espn.calls == [f"{V2}/football/college-football/standings?group=90"]
+
+    def test_the_order_covers_fbs_and_leaves_fcs_to_follow(self):
+        assert FBS_CONFERENCES <= set(espn_api.NCAAF_CONFERENCE_ORDER)
+        assert not FCS_CONFERENCES & set(espn_api.NCAAF_CONFERENCE_ORDER)
 
 
 class TestStandingsCacheKey:
