@@ -1980,6 +1980,8 @@ class LeagueView(BaseView):
                         print(f"DEBUG: About to show StatisticsViewDialog")
                         result = stats_dialog.exec()
                         print(f"DEBUG: StatisticsViewDialog returned with result: {result}")
+                        # It's parented to this view, which outlives this loop's every pass.
+                        stats_dialog.deleteLater()
                         
                         # If the user clicked OK or closed normally, exit the loop
                         # If they pressed Escape (result == 0), continue the loop to show choice again
