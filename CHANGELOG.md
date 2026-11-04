@@ -10,6 +10,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 - **The WNBA has Standings, Statistics, Teams, Transactions and Venues on Windows,** and `--wnba`,
   `--wnba-teams` and `--wnba-standings` go straight to them. The league view only had games and news.
+  Its games back reads like the NBA's, and if ESPN's standings don't answer, Standings and Teams say
+  there's no data rather than opening empty.
+- **Team Hub shows a team's real record and standing, on Windows and iPhone.** During the WNBA
+  playoffs the Lynx, 33-11 and first in the West, read 0-2 and 8th, and teams that missed the playoffs
+  read 0-0. In the MLB playoffs the Dodgers read 5th in the division they won. It's now the regular
+  season's record and standing, the same as Standings, in every league but soccer, whose team pages
+  were already right. A college team's record leaves out its postseason once that starts, which
+  Standings counts. Favorites get the same record. If ESPN doesn't say what season it is, the record
+  stays off the page rather than risk showing the wrong one, and the rest of the page still loads.
+- **College hockey teams have a record in Team Hub, on both apps.** ESPN's team page had none for men's
+  college hockey. "Standing: 1st", which ESPN says of every college hockey team, is gone.
+- **College basketball and college hockey say when there's no standings data.** If ESPN's standings
+  don't answer, Standings and Teams say so, as college football already did, rather than listing
+  the first 50 teams in the country. A timeout now reads the same way in those leagues.
+- **Stat definitions on Alt+D are basketball's for the WNBA and college basketball.** They had a
+  general list that included goals.
+- **Screen readers no longer hear "division" for what isn't one.** Standings' tabs are "Standings",
+  and a Teams tab reads "Teams in Eastern Conference".
 - **Venues on Windows now work for college basketball and college hockey, and name the home
   teams.** Those leagues always said "No venue data", and no league ever listed a home team. Each
   venue now says who plays there. Only a team's real homes are listed: not an arena used for a
