@@ -11018,6 +11018,8 @@ class StatisticsViewDialog(QDialog):
         """A widget just added to a layout isn't visible until the event loop comes round, and
         setFocus can't take effect on it then. NVDA still spoke the row, but UI Automation went on
         reporting the window as focused."""
+        if self.stat_pages is not None:
+            self.stat_pages.show()  # The list sits inside it, and can't show until it does.
         self.stats_list.show()
         self.stats_list.setFocus()
 
@@ -11110,20 +11112,20 @@ class StatisticsViewDialog(QDialog):
         stat_type = stat_info.get('type', 'unknown')
         try:
             rows = ranking_rows(stat_type, stat_info.get('data', []))
+            if not rows:
+                page_layout.addWidget(_message_row(f"No rankings are available for {name}.", name))
+                return
+            season = (self.statistics_data or {}).get("season") or "Season"
+            heading = f"{season} {'Leaders' if stat_type == 'player' else 'Rankings'}: {name}"
+            table = RankingsTable(RANKING_HEADERS[self.stat_type])
+            # The label can't take focus, so this is how a screen reader hears what the table is.
+            table.update_accessible_name(heading)
+            table.populate_data(rows, set_focus=False)
         except Exception:
             error_log.log_handled()
             page_layout.addWidget(_message_row(f"Unable to show {name}.", name))
             return
-        if not rows:
-            page_layout.addWidget(_message_row(f"No rankings are available for {name}.", name))
-            return
-        season = (self.statistics_data or {}).get("season") or "Season"
-        heading = f"{season} {'Leaders' if stat_type == 'player' else 'Rankings'}: {name}"
         page_layout.addWidget(QLabel(heading))
-        table = RankingsTable(RANKING_HEADERS[self.stat_type])
-        # The label can't take focus, so this is how a screen reader hears what the table is.
-        table.update_accessible_name(heading)
-        table.populate_data(rows, set_focus=False)
         page_layout.addWidget(table)
 
     def _get_available_statistics(self):

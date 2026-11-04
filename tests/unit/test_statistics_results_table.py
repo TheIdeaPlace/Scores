@@ -122,6 +122,83 @@ def test_enter_puts_the_results_in_the_lists_place_and_the_title_says_which(open
     assert view.windowTitle() == f"Points Per Game - {title}"
 
 
+def test_arrowing_the_list_builds_nothing(open_dialog):
+    """A college league has 300 rows on each of dozens of statistics."""
+    view = open_dialog("NBA", "player", NBA_LEADERS)
+    opening = []
+    view.stat_pages.pageOpening.connect(opening.append)
+    press(Qt.Key.Key_Down, widget=view.stats_list)
+    assert view.stat_pages.currentIndex() == 1
+    assert opening == []
+    assert results(view) is None
+
+
+def test_a_stat_that_cant_be_built_says_so_and_escape_comes_back(open_dialog):
+    view = open_dialog("NBA", "player", NBA_LEADERS)
+    name = view.stats_list.item(0).text()
+    with patch.object(scores, "ranking_rows", side_effect=ValueError("bad row")), \
+            patch.object(scores.error_log, "log_handled") as logged:
+        select_stat(view, name)
+    logged.assert_called_once()
+    row = view.focusWidget()
+    assert isinstance(row, QListWidget) and row.item(0).text() == f"Unable to show {name}."
+    press(Qt.Key.Key_Escape, widget=row)
+    assert view.focusWidget() is view.stats_list
+
+
+@pytest.mark.parametrize("start_on_back", [False, True], ids=["from the table", "from Back"])
+def test_ctrl_tab_onto_a_stat_with_no_rows_lands_on_its_message(open_dialog, start_on_back):
+    view = open_dialog("MLB", "player", MLB_LEADERS)
+    select_stat(view, "Home Runs")
+    start = results(view).table_widget
+    if start_on_back:
+        press(Qt.Key.Key_Tab, widget=start)
+        start = view.focusWidget()
+        assert isinstance(start, QPushButton)
+    press(Qt.Key.Key_Tab, Qt.KeyboardModifier.ControlModifier, start)
+    row = view.focusWidget()
+    assert isinstance(row, QListWidget) and row is not view.stats_list
+    assert row.item(0).text() == "No rankings are available for Nobody Yet."
+
+
+def test_ctrl_tab_keeps_the_chosen_view(open_dialog, saved_view):
+    view = open_dialog("NBA", "player", NBA_LEADERS)
+    names = [view.stats_list.item(row).text() for row in range(view.stats_list.count())]
+    select_stat(view, names[0])
+    press(Qt.Key.Key_Q, Qt.KeyboardModifier.AltModifier, results(view).table_widget)
+    press(Qt.Key.Key_Tab, Qt.KeyboardModifier.ControlModifier, results(view).quick_list)
+    assert view.windowTitle().startswith(f"{names[1]} - ")
+    assert view.focusWidget() is results(view).quick_list
+
+
+def test_escape_from_close_comes_back_to_the_list_and_then_closes(open_dialog):
+    view = open_dialog("NBA", "player", NBA_LEADERS)
+    select_stat(view, "Points Per Game")
+    close = next(b for b in view.findChildren(QPushButton) if b.text() == "Close")
+    close.setFocus()
+    press(Qt.Key.Key_Escape, widget=close)
+    assert view.isVisible()
+    assert view.focusWidget() is view.stats_list
+    close.setFocus()
+    press(Qt.Key.Key_Escape, widget=close)
+    assert not view.isVisible()
+
+
+@pytest.mark.parametrize("where", ["list", "table", "back"])
+def test_alt_d_opens_the_definitions_from_anywhere(open_dialog, where):
+    view = open_dialog("NBA", "player", NBA_LEADERS)
+    target = view.stats_list
+    if where != "list":
+        select_stat(view, "Points Per Game")
+        target = results(view).table_widget
+    if where == "back":
+        press(Qt.Key.Key_Tab, widget=target)
+        target = view.focusWidget()
+    with patch.object(view, "_show_stat_definitions") as shown:
+        press(Qt.Key.Key_D, Qt.KeyboardModifier.AltModifier, target)
+    shown.assert_called_once()
+
+
 def test_ctrl_tab_goes_on_to_the_next_stats_results(open_dialog):
     view = open_dialog("NBA", "player", NBA_LEADERS)
     names = [view.stats_list.item(row).text() for row in range(view.stats_list.count())]

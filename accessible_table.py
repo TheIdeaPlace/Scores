@@ -1174,6 +1174,13 @@ class _TabBarViewKeys(QObject):
                 table.adopt_saved_view()
 
     def eventFilter(self, obj, event):
+        if (event.type() == QEvent.Type.KeyPress and event.key() == Qt.Key.Key_Escape
+                and obj is not self._tabs and obj is not self._bar):
+            # Coming up to the window from outside the list and its pages, such as from Close.
+            if self._tabs.is_open():
+                self._tabs.close_page()
+                return True
+            return False
         if event.type() == QEvent.Type.KeyPress:
             bar = self._bar
             page = self._tabs.currentWidget()
@@ -1230,6 +1237,9 @@ def _install_tab_keys(tabs, bar) -> _TabBarViewKeys:
             return
         if tables:
             QTimer.singleShot(0, tables[0].setFocus)
+        elif isinstance(tabs, ListPages):
+            # From the Back button, onto a page that only has a message to say.
+            QTimer.singleShot(0, lambda: keys.focus_page(page))
 
     tabs.currentChanged.connect(focus_table_on_new_tab)
     return keys
@@ -1342,6 +1352,8 @@ class ListPages(QWidget):
         if self.is_open() or self.currentWidget() is None:
             return
         self._dialog_title = self.window().windowTitle()
+        # Escape from Close never comes through here, so it's caught on its way to the window.
+        self.window().installEventFilter(self._keys)
         self.pageOpening.emit(self.currentIndex())
         self._page_area.show()
         self._settle_open_page()
