@@ -523,6 +523,63 @@ class TestRows:
         assert espn.calls == []
 
 
+class TestSeasonItCameFrom:
+    """Team Hub moves its season list to this, so it can't name a season with no games."""
+
+    def test_a_season_that_has_games_is_itself(self, espn, freeze_now):
+        freeze_now(datetime(2026, 11, 3, 12))
+        espn.on("/schedule", load("schedule_NFL_26_reg.json"))
+        for asked in (2026, 2025):
+            rows, used = espn_api.get_team_schedule_and_season("NFL", "26", season=asked)
+            assert rows and used == asked
+
+    def test_no_season_asked_for_is_the_current_one(self, espn, freeze_now):
+        freeze_now(datetime(2026, 11, 3, 12))
+        espn.on("/schedule", load("schedule_NBA_15.json"))
+        assert espn_api.get_team_schedule_and_season("NBA", "15")[1] == 2027
+
+    @pytest.mark.parametrize("season", [None, 2027], ids=["no_season", "top_of_the_list"])
+    def test_the_fallback_says_it_fell_back(self, espn, freeze_now, season):
+        """March 2027: the NFL's list reads 2027 Season, and its games are 2026's."""
+        freeze_now(datetime(2027, 3, 15, 12))
+        real = load("schedule_NFL_26_reg.json")
+        espn.on("/schedule", lambda url: real if "season=2026&seasontype=2" in url else {"events": []})
+        rows, used = espn_api.get_team_schedule_and_season("NFL", "26", season=season)
+        assert rows and used == 2026
+
+    def test_a_fallback_that_finds_nothing_stays_on_the_season_asked_for(self, espn, freeze_now):
+        freeze_now(datetime(2027, 3, 15, 12))
+        espn.on("/schedule", {"events": []})
+        assert espn_api.get_team_schedule_and_season("NFL", "26", season=2027) == ([], 2027)
+
+    def test_an_empty_past_season_is_itself(self, espn, freeze_now):
+        freeze_now(datetime(2026, 11, 3, 12))
+        espn.on("/schedule", {"events": []})
+        assert espn_api.get_team_schedule_and_season("NFL", "26", season=2010) == ([], 2010)
+
+    def test_espn_refusing_the_request_is_the_season_asked_for(self, espn, freeze_now):
+        freeze_now(datetime(2026, 11, 3, 12))
+        espn.on("/schedule", HTTP_404)
+        assert espn_api.get_team_schedule_and_season("NFL", "26", season=2026) == ([], 2026)
+
+    def test_soccers_fallback_too(self, espn, freeze_now):
+        freeze_now(datetime(2026, 11, 3, 12))
+        past = load("schedule_EPL_359_2025.json")
+        espn.on("/schedule", lambda url: past if "season=2025" in url else {"events": [], "season": {"year": 2026}})
+        rows, used = espn_api.get_team_schedule_and_season("EPL", "359", season=2026)
+        assert rows and used == 2025
+
+    def test_an_unknown_league(self, espn):
+        assert espn_api.get_team_schedule_and_season("CRICKET", "1", season=2020) == ([], 2020)
+        assert espn.calls == []
+
+    def test_the_scoreboard_path(self, espn, freeze_now, no_schedule_league):
+        freeze_now(datetime(2026, 11, 3, 12))
+        espn.on("/scoreboard", {"events": []})
+        assert espn_api.get_team_schedule_and_season(no_schedule_league, "8") == ([], 2026)
+        assert espn_api.get_team_schedule_and_season(no_schedule_league, "8", season=2020) == ([], 2020)
+
+
 class TestSeasonFallback:
     def test_an_empty_current_season_falls_back_to_the_last_one(self, espn, freeze_now):
         freeze_now(datetime(2026, 7, 15, 12))
@@ -672,6 +729,14 @@ class TestParseScheduleFromApi:
 
     def test_past_season_shows_the_year(self, espn):
         assert re.search(r", \d{4}$", self.parse(espn, self.event(), season=2001)[0]["date_display"])
+
+    def test_a_game_outside_this_year_shows_the_year_and_one_in_it_does_not(self, espn, local_zone):
+        local_zone(-6)
+        event = self.event()
+        event["date"] = "2027-02-20T18:00Z"
+        assert self.parse(espn, event)[0]["date_display"] == "Sat, Feb 20, 2027"
+        event["date"] = "2026-11-07T18:00Z"
+        assert self.parse(espn, event)[0]["date_display"] == "Sat, Nov 07"
 
     def test_bad_date_falls_back_to_today(self, espn):
         event = self.event()

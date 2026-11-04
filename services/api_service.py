@@ -50,6 +50,11 @@ class ApiService:
     def get_team_schedule(league: str, team_id: str, days_ahead: int = 30, days_behind: int = 30, season=None) -> List[Dict]:
         return ApiService._call(espn_api.get_team_schedule, league, team_id, days_ahead, days_behind, season)
 
+    @staticmethod
+    def get_team_schedule_and_season(league: str, team_id: str, season=None) -> tuple:
+        """(schedule, the season it is from), which isn't the one asked for when it falls back."""
+        return ApiService._call(espn_api.get_team_schedule_and_season, league, team_id, season=season)
+
     @staticmethod  
     def get_available_seasons(league: str) -> List[tuple]:
         return ApiService._call(espn_api.get_available_seasons, league)

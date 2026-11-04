@@ -66,8 +66,10 @@ class TestScheduleFailures:
     """A schedule with a part missing looks complete, and one with everything missing looks
     like an off-season, so a failure reaches the dialog. ESPN saying it has nothing doesn't."""
 
-    @pytest.mark.parametrize("reply", [HTTP_500, FakeResponse({}, status=503), NOT_JSON], ids=["500", "503", "not_json"])
-    def test_a_server_failure_comes_out_and_the_service_wraps_it(self, espn, league, team, season, reply):
+    @pytest.mark.parametrize("reply", [HTTP_500, FakeResponse({}, status=503), FakeResponse({}, status=403),
+                                       FakeResponse({}, status=429), NOT_JSON],
+                             ids=["500", "503", "403", "429", "not_json"])
+    def test_a_failure_comes_out_and_the_service_wraps_it(self, espn, league, team, season, reply):
         espn.on(".*", reply)
         with pytest.raises(Exception):
             espn_api.get_team_schedule(league, team, season=season)

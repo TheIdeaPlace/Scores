@@ -8290,14 +8290,32 @@ class TeamHubDialog(QDialog):
         current = lambda: gen == self._schedule_generation
         loader = TeamScheduleLoader(self.team_id, self.team_name, self.league, season)
         loader.data_loaded.connect(
-            lambda data, name, league: current() and self._on_schedule_loaded(data, name, league))
+            lambda data, name, league, used: current() and self._on_schedule_loaded(data, name, league, used))
         loader.error_occurred.connect(
-            lambda e: current() and self._show_list_error(self.schedule_list, e))
+            lambda e: current() and self._on_schedule_failed(e))
         loader.loading_progress.connect(lambda msg: current() and loading_item.setText(msg))
         self._loaders.append(loader)
         _start_detached_thread(loader)
 
-    def _on_schedule_loaded(self, schedule_data: List[Dict], team_name: str, league: str):
+    def _on_schedule_failed(self, message: str):
+        self.schedule_list.clear()
+        self.schedule_list.addItem(message)
+        self.schedule_list.setCurrentRow(0)
+        # So coming back to the tab asks again.
+        self._tabs_loaded.discard(2)
+        _take_focus_after_load(self.schedule_list)
+
+    def _on_schedule_loaded(self, schedule_data: List[Dict], team_name: str, league: str, season_used: int):
+        # The season list runs newest first, so its top entry is the current season. This
+        # has to be read before the list moves, below.
+        current_season = self.season_combo.currentIndex() <= 0
+        # With nothing yet in the current season, the last one comes back. The list says
+        # so rather than naming a season with no games, and moving it isn't a new choice.
+        used_index = self.season_combo.findData(season_used)
+        if used_index >= 0 and used_index != self.season_combo.currentIndex():
+            was_blocked = self.season_combo.blockSignals(True)
+            self.season_combo.setCurrentIndex(used_index)
+            self.season_combo.blockSignals(was_blocked)
         self.schedule_list.clear()
         if not schedule_data:
             self.schedule_list.addItem("No games found in schedule.")
@@ -8310,9 +8328,7 @@ class TeamHubDialog(QDialog):
                 item.setFont(f)
                 item.setBackground(QColor(255, 255, 200))
             self.schedule_list.addItem(item)
-        # The season list runs newest first, so its top entry is the current season.
-        self.schedule_list.setCurrentRow(
-            schedule_start_row(schedule_data, current_season=self.season_combo.currentIndex() <= 0))
+        self.schedule_list.setCurrentRow(schedule_start_row(schedule_data, current_season=current_season))
         _take_focus_after_load(self.schedule_list)
 
     def _on_game_selected(self, item):
@@ -8427,9 +8443,13 @@ TeamScheduleDialog = TeamHubDialog
 
 class TeamScheduleLoader(QThread):
     """Background thread for loading team schedule data"""
-    data_loaded = pyqtSignal(list, str, str)  # schedule_data, team_name, league
+    data_loaded = pyqtSignal(list, str, str, int)  # schedule_data, team_name, league, season it is from
     error_occurred = pyqtSignal(str)
     loading_progress = pyqtSignal(str)  # progress message
+
+    # A raw requests exception runs to hundreds of characters of host, port and URL, and a
+    # screen reader reads every one of them.
+    FAILED = "ESPN didn't answer. Try again in a minute."
 
     def __init__(self, team_id: str, team_name: str, league: str, season=None):
         super().__init__()
@@ -8441,11 +8461,13 @@ class TeamScheduleLoader(QThread):
     def run(self):
         try:
             self.loading_progress.emit("Loading schedule...")
-            schedule_data = ApiService.get_team_schedule(self.league, self.team_id, season=self.season)
+            schedule_data, season_used = ApiService.get_team_schedule_and_season(
+                self.league, self.team_id, season=self.season)
             self.loading_progress.emit(f"Loaded {len(schedule_data)} games")
-            self.data_loaded.emit(schedule_data, self.team_name, self.league)
+            self.data_loaded.emit(schedule_data, self.team_name, self.league, season_used)
         except Exception as e:
-            self.error_occurred.emit(f"Failed to load schedule: {str(e)}")
+            print(f"Team schedule failed for {self.league} {self.team_id}: {e}")
+            self.error_occurred.emit(self.FAILED)
 
 
 class FavoriteCardLoader(QThread):

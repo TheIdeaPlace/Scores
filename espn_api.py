@@ -379,14 +379,17 @@ SEASON_TYPE_SCHEDULE_LEAGUES = ("NFL", "NCAAF", "MLB", "NBA", "NHL", "WNBA", "NC
 
 
 def _schedule_answer(url):
-    """ESPN's answer to one team schedule request, or None for a 4xx, which says it has
-    nothing there. A timeout or a 5xx reaches the caller, and the dialog reports it: a
-    schedule missing its playoffs or its games to come would look complete, and one
-    missing everything would look like an off-season."""
+    """ESPN's answer to one team schedule request, or None for a 400 or 404, which say it
+    has nothing there. Anything else, a timeout, a 5xx, a 403 or a 429, reaches the caller,
+    and the dialog reports it: a schedule missing its playoffs or its games to come would
+    look complete, and one missing everything would look like an off-season. The iPhone
+    has the same rule, in ESPNAPIService.fetchTeamSchedulePage."""
     resp = _http_get(url)
-    if resp.status_code >= 500:
-        raise ApiError(f"ESPN's server answered with an error ({resp.status_code})")
-    return _as_dict(resp.json()) if resp.status_code == 200 else None
+    if resp.status_code in (400, 404):
+        return None
+    if resp.status_code != 200:
+        raise ApiError(f"ESPN answered with an error ({resp.status_code})")
+    return _as_dict(resp.json())
 
 
 def _season_type_schedule_events(base_url, season_year):
@@ -462,17 +465,23 @@ def _schedule_row_facts(event, comp, status_type):
 
 
 def get_team_schedule(league_key, team_id, days_ahead=30, days_behind=30, season=None):
-    """A team's schedule for one season, from ESPN's team schedule endpoint.
+    """A team's schedule for one season. See get_team_schedule_and_season."""
+    return get_team_schedule_and_season(league_key, team_id, days_ahead, days_behind, season)[0]
+
+
+def get_team_schedule_and_season(league_key, team_id, days_ahead=30, days_behind=30, season=None):
+    """(a team's schedule, the season it is from), from ESPN's team schedule endpoint.
 
     A past season asked for is that season or nothing, never another year's games. The
     current season can fall back to the last one (below), and those rows show their year.
-    Team Hub always asks for a season, the top of its list being the current one.
+    Team Hub always asks for a season, the top of its list being the current one, and moves
+    that list to the season that comes back, so it doesn't name a season with no games.
     """
     from datetime import timedelta
 
     league_path = LEAGUES.get(league_key)
     if not league_path:
-        return []
+        return [], season
 
     # Determine if we're viewing a historical season (not the current one)
     current_season = get_current_season_year(league_key)
@@ -488,7 +497,7 @@ def get_team_schedule(league_key, team_id, days_ahead=30, days_behind=30, season
         # The last resort, for a league with no team schedule: the scoreboard, filtered
         # to this team. It knows only the days around today, so it has no past seasons.
         if is_historical_season:
-            return []
+            return [], season_year
         today = datetime.now()
         start_date = today - timedelta(days=days_behind)
         end_date = today + timedelta(days=days_ahead)
@@ -503,18 +512,19 @@ def get_team_schedule(league_key, team_id, days_ahead=30, days_behind=30, season
         first, last = start_date.strftime("%Y-%m-%d"), end_date.strftime("%Y-%m-%d")
         schedule = [g for g in schedule if first <= g['date'] <= last]
         schedule.sort(key=lambda g: g['date'])
-        return schedule
+        return schedule, season_year
 
     # A request ESPN refused is no sign of an off-season.
     if events is None:
-        return []
+        return [], season_year
 
     # Offseason fallback: ESPN publishes a new season's schedule some weeks
     # after the previous one ends, so in that gap the current season year comes
     # back empty. Fall back to the season that just finished.
     if not events and season in (None, current_season):
-        return get_team_schedule(league_key, team_id, days_ahead, days_behind,
-                                 season=current_season - 1)
+        schedule, used = get_team_schedule_and_season(league_key, team_id, days_ahead, days_behind,
+                                                      season=current_season - 1)
+        return (schedule, used) if schedule else ([], season_year)
 
     # ESPN's dates all read the same way, so as text they sort in time order. That
     # keeps a doubleheader in order within its day, after the sort by day below.
@@ -618,7 +628,7 @@ def get_team_schedule(league_key, team_id, days_ahead=30, days_behind=30, season
         
     # Sort by date
     schedule.sort(key=lambda x: x['date'])
-    return schedule
+    return schedule, season_year
 
 def parse_schedule_from_api(url, team_id, today, season=None):
     """Parse schedule data from ESPN API response"""

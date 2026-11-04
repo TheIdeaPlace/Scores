@@ -66,6 +66,10 @@ class TestApiService:
             getattr(ApiService, method)(*args)
         assert isinstance(info.value.__cause__, ValueError)
 
+    def test_the_schedule_and_its_season_are_passed_along_and_failures_wrapped(self, espn, monkeypatch):
+        monkeypatch.setattr(espn_api, "get_team_schedule_and_season", lambda *a, **k: ([a], k["season"]))
+        assert ApiService.get_team_schedule_and_season("NFL", "9", season=2025) == ([("NFL", "9")], 2025)
+
     def test_defaults_it_fills_in(self, monkeypatch):
         seen = []
         monkeypatch.setattr(espn_api, "get_news", lambda *a: seen.append(a))
