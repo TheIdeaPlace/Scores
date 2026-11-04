@@ -8,6 +8,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Fixed
+- **Tab bars work from the keyboard the way Windows lists do, everywhere there are tabs.** Home and
+  End go to the first and last tab, and Left and Right go round past the ends rather than stopping.
+  With focus on the tabs, type a conference's first letter to go to it, and the same letter again
+  goes on to the next one starting with it. Different letters typed quickly narrow it down, so S, U,
+  N reaches Sun Belt. How quick is twice your Windows double-click time, about a second unless you've
+  changed it. Disabled and hidden tabs are skipped, and letters typed in a table on a tab still go
+  to the table.
 - **The WNBA has Standings, Statistics, Teams, Transactions and Venues on Windows,** and `--wnba`,
   `--wnba-teams` and `--wnba-standings` go straight to them. The league view only had games and news.
   Its games back reads like the NBA's.
