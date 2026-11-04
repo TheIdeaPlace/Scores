@@ -152,6 +152,28 @@ def test_a_views_row_is_on_screen_after_a_switch(app, source, target):
         table.close()
 
 
+def test_holding_enter_activates_a_row_once(app):
+    """It may be a row the same press has just brought up, opening a list's table."""
+    table = make_table(app)
+    activated = []
+    table.table_widget.itemActivated.connect(activated.append)
+    held = QKeyEvent(QEvent.Type.KeyPress, Qt.Key.Key_Return, Qt.KeyboardModifier.NoModifier, "\r", True)
+    QApplication.sendEvent(table.table_widget, held)
+    assert activated == []
+
+
+def test_adopting_the_saved_view_keeps_the_row_and_takes_no_focus(app, view_setting):
+    table = make_table(app)
+    table.table_widget.setCurrentCell(2, 0)
+    focused = []
+    table.quick_list.setFocus = lambda: focused.append("quick")
+    view_setting["default_view_mode"] = table.VIEW_QUICK_LIST
+    table.adopt_saved_view()
+    assert table._current_view == table.VIEW_QUICK_LIST
+    assert table.quick_list.currentRow() == 2
+    assert focused == []
+
+
 def test_saved_view_used_by_a_new_table(app, view_setting):
     view_setting["default_view_mode"] = 2
     table = make_table(app)

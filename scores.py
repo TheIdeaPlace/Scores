@@ -206,15 +206,28 @@ def _focus_once_active(dialog, set_focus):
 
 def _take_focus_after_load(widget):
     """Move to freshly loaded data, unless someone is on a tab bar or a combo box: pulling
-    them off it while they arrow through its choices loses their place and cuts off speech."""
+    them off it while they arrow through its choices loses their place and cuts off speech.
+    Nor if it's on a tab they have since left, where focus would be on something unseen."""
+    if not (widget.isWindow() or widget.isVisibleTo(widget.window())):
+        return
     focused = QApplication.focusWidget()
     if not (is_tab_bar(focused) or isinstance(focused, QComboBox)):
         widget.setFocus()
 
 
+def _pages_on_show(tabs):
+    """Tabs, or a list with a page open. Ctrl+Tab on a list with none open would move its row
+    with nothing said, and the next Enter would open one nobody heard."""
+    return tabs and not (isinstance(tabs, ListPages) and not tabs.is_open())
+
+
 def _focus_first_table(dialog):
-    """Focus the first table a dialog shows: on its open tab or list row if it has them."""
+    """Focus the first table a dialog shows, on its open tab if it has them. A list of pages
+    takes the focus itself, until one of them is opened."""
     tabs = dialog.findChildren(QTabWidget) or dialog.findChildren(ListPages)
+    if tabs and isinstance(tabs[0], ListPages) and not tabs[0].is_open():
+        tabs[0].tabBar().setFocus()
+        return
     holder = tabs[0].currentWidget() if tabs else dialog
     tables = holder.findChildren(AccessibleTable) if holder else []
     if tables and tables[0].rowCount() > 0:
@@ -7095,7 +7108,7 @@ class WildCardTabsMixin:
         return make_tab_area(
             len(group_names) + wildcards, "Standings", description,
             list_name="Divisions and Wild Cards" if wildcards else group_noun(group_names),
-            list_description="Arrow to one to show its standings. Tab goes to its table.")
+            list_description="Press Enter on one to open its standings. Escape comes back to this list.")
 
     def _build_wildcard_tabs(self):
         self._wildcard_tabs = {}
@@ -7164,6 +7177,8 @@ class WildCardTabsMixin:
         league_key, label, _ = entry
 
         container = self.tab_widget.widget(index)
+        focused = QApplication.focusWidget()
+        focus_inside = focused is not None and container.isAncestorOf(focused)
         container_layout = container.layout()
         while container_layout.count():
             item = container_layout.takeAt(0)
@@ -7182,18 +7197,23 @@ class WildCardTabsMixin:
             status.setAccessibleName(f"{label} unavailable")
             container_layout.addWidget(status)
             keep_in_tab_order(self.tab_widget, status)
+            if focus_inside:
+                status.setFocus()
             container.table = None  # type: ignore[attr-defined]
             self._announce_wildcard(f"{label} standings unavailable")
             return
 
-        # set_focus=False, and no setFocus() here: currentChanged fires for any
-        # tab change including a plain arrow along the tab bar, so grabbing focus
-        # would trap a keyboard user in the table and stop them arrowing on.
+        # set_focus=False: currentChanged fires for any tab change including a plain
+        # arrow along the tab bar, so grabbing focus would trap a keyboard user in the
+        # table and stop them arrowing on. Only someone on the "Loading" row moves, or
+        # they'd be left on nothing when it goes.
         table = WildCardTable(parent=self, division_name=label)
         table.populate_standings(teams, set_focus=False)
         container_layout.addWidget(table)
         keep_in_tab_order(self.tab_widget, table)
         container.table = table  # type: ignore[attr-defined]
+        if focus_inside:
+            table.setFocus()
         self._announce_wildcard(f"{label} standings ready, {len(teams)} teams")
 
     def _announce_wildcard(self, message: str):
@@ -7316,7 +7336,7 @@ class StandingsDetailDialog(WildCardTabsMixin, QDialog):
         if self.tab_widget:
             if event.key() == Qt.Key.Key_F6:
                 self.tab_widget.setFocus(); event.accept(); return
-            if event.modifiers() == Qt.KeyboardModifier.ControlModifier:
+            if event.modifiers() == Qt.KeyboardModifier.ControlModifier and _pages_on_show(self.tab_widget):
                 if event.key() == Qt.Key.Key_Tab:
                     i = (self.tab_widget.currentIndex() + 1) % self.tab_widget.count()
                     self.tab_widget.setCurrentIndex(i)
@@ -8907,7 +8927,7 @@ class StandingsDialog(WildCardTabsMixin, QDialog):
             self.reject()
             return
         if self.tab_widget:
-            if event.modifiers() == Qt.KeyboardModifier.ControlModifier:
+            if event.modifiers() == Qt.KeyboardModifier.ControlModifier and _pages_on_show(self.tab_widget):
                 if event.key() == Qt.Key.Key_Tab:
                     i = (self.tab_widget.currentIndex() + 1) % self.tab_widget.count()
                     self.tab_widget.setCurrentIndex(i)
@@ -9077,7 +9097,7 @@ class PollsDialog(QDialog):
         
         # Tab navigation between polls
         if self.tab_widget:
-            if event.modifiers() == Qt.KeyboardModifier.ControlModifier:
+            if event.modifiers() == Qt.KeyboardModifier.ControlModifier and _pages_on_show(self.tab_widget):
                 if event.key() == Qt.Key.Key_Tab:
                     # Next tab
                     i = (self.tab_widget.currentIndex() + 1) % self.tab_widget.count()
@@ -11586,7 +11606,7 @@ class SimpleTeamsDialog(QDialog):
         self.teams_data = teams_data
         self.league = league
         self.setWindowTitle(f"{league} Teams")
-        self.resize(800, 500)  # Room for a table beside a list of conferences.
+        self.resize(800, 500)  # Room for a table with several columns.
         self.setup_ui()
         _focus_once_active(self, lambda: _focus_first_table(self))
     
@@ -11634,7 +11654,7 @@ class SimpleTeamsDialog(QDialog):
         self.tab_widget = make_tab_area(
             len(ordered), "Team Information", "Team information, use arrow keys to move between tabs",
             list_name=group_noun(ordered),
-            list_description="Arrow to one to show its teams. Tab goes to its table.")
+            list_description="Press Enter on one to open its teams. Escape comes back to this list.")
         for div_name in ordered:
             self.create_division_tab(div_name, divisions[div_name])
 

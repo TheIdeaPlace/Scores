@@ -26,14 +26,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   goes on to the next one starting with it. Different letters typed quickly narrow it down, so S, U,
   N reaches Sun Belt. How quick is twice your Windows double-click time, about a second unless you've
   changed it. Letters typed in a table on a tab still go to the table.
+- **Ctrl+Tab goes straight to the next tab's table.** Focus stopped on the Close button on the way, so
+  a screen reader could say "Close, button" before the new table.
 - **A tab keeps an ampersand in its name.** Texas A&M's tabs lost the & from their text, and Alt+M
   became a shortcut to one of them.
 - **Tab from MLB's wild card tabs and the NFL Draft's rounds goes to what's on the tab, not to Close.**
 - **More than eight tabs is now a list.** College football, men's and women's college basketball
-  conferences in Standings and Teams, and football box scores, have a list beside the table instead
-  of a long row of tabs. Up and Down go round it, Home, End and typing work as they do on tabs, and
-  the table changes as you move. Tab or Enter goes to the table, and Ctrl+Tab, F6 and the view keys
-  work as before. Eight or fewer stay as tabs.
+  conferences in Standings and Teams, and football box scores, have a list instead of a long row of
+  tabs. Press Enter on the one you want to open its table, and Escape or the Back button to come back
+  to the list on the same row. Up and Down go round past the ends, Home, End and type-ahead find work
+  as they do on tabs, and the window title names what's open. Eight or fewer stay as tabs.
 - **The WNBA has Standings, Statistics, Teams, Transactions and Venues on Windows,** and `--wnba`,
   `--wnba-teams` and `--wnba-standings` go straight to them. The league view only had games and news.
   Its games back reads like the NBA's.
