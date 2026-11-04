@@ -10,14 +10,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 - **Venues on Windows now work for college basketball and college hockey, and name the home
   teams.** Those leagues always said "No venue data", and no league ever listed a home team. Each
-  venue now says who plays there, and only places that are some team's home are listed, not arenas
-  used for a neutral site game. If ESPN doesn't answer, it says so instead of saying there are no
-  venues, and one month failing no longer loses the list.
-- **Venue Details only says what's known.** Playing surface and capacity lines are gone, since
-  ESPN's scoreboard has neither, and a venue with no state no longer reads "City, Unknown".
+  venue now says who plays there. Only a team's real homes are listed: not an arena used for a
+  neutral site game, a preseason game or a one-off, and not a non-Division I school a college
+  basketball team visited. If ESPN doesn't answer, it says so instead of saying there are no venues,
+  and one month with a server error no longer loses the list.
+- **The venue list only says what's known.** "Unknown Surface" is gone from every row, a venue
+  ESPN says nothing about no longer reads "Outdoor", and a venue with no state no longer reads
+  "City, Unknown".
 - **Team Info shows where a team plays now, on Windows and iPhone.** ESPN's team page still had the
   Nets at Prudential Center and the Warriors at Oracle Arena. The venue now comes from the team's
-  home games, which also gives college, WNBA and soccer teams a venue on Windows.
+  home games. Teams that had no venue at all, in college, the WNBA and soccer, now have one on both
+  apps, and a World Cup team stays blank since its games are at tournament stadiums.
 - **Utah is in the Central Division in the NHL standings on Windows.** 1.0.1 said it was, but ESPN
   spells it differently in standings than on its team page, so it stayed in a group of its own.
 - **No more blank rows in Live Scores, Venue Details and the bowl list.** They were only spacing,
