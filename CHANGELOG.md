@@ -8,6 +8,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Fixed
+- **Team statistics on Windows rank the whole league, best first.** College basketball listed the
+  first 50 teams of about 360, and every list ran highest to lowest, so the team with the most
+  turnovers or the worst earned run average read as number one. Now the lowest comes first where
+  low is good, teams level share a rank, and only Division I teams are ranked in college. A list
+  opens much faster, since it takes one request rather than one per team. The title and the list's
+  name say which season it is, the same one as Player Statistics. What the opposing teams did is
+  now there too, such as points allowed, and so is each team's differential. Some columns the old
+  way had are gone, because ESPN doesn't give them this way: NFL tackles and red zone numbers, MLB
+  wins above replacement and holds, NHL faceoffs. If ESPN doesn't answer, the list says so and
+  suggests trying again. College hockey and soccer still have no team statistics, because ESPN
+  has none.
+- **Team statistics on iPhone are the whole regular season, out of season too.** After a season
+  ended, the WNBA listed its 8 playoff teams and MLB its 12, with playoff numbers. They now list all
+  15 and all 30, with regular season numbers. College basketball keeps every Division I team late
+  in the season, when ESPN's list runs past what it sends at once, and doesn't list a school that
+  isn't Division I in the first weeks of one. Teams level share a rank, and View All lists every
+  team rather than the top 50.
+- **A team's ranks on iPhone now match the league list.** They came from different places and
+  often disagreed: a team could read 5th in assists on its page and 11th in the league. College
+  teams had almost no ranks at all, because anything past 34th was hidden. Now 118th shows as
+  "118th of 302", and red no longer means anything past 20th in a list of 300. NBA teams gain their
+  per game stats. A team's stats no longer fall back to its preseason or playoffs, and if the
+  network fails it says so, and Retry works.
 - **Venues on Windows now work for college basketball and college hockey, and name the home
   teams.** Those leagues always said "No venue data", and no league ever listed a home team. Each
   venue now says who plays there. Only a team's real homes are listed: not an arena used for a
