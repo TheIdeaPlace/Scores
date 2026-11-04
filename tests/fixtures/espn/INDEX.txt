@@ -111,3 +111,9 @@ byteam_NCAAM_2026_asc.json	35 KB	the same, sort=offensive.avgTurnovers:asc: 2 te
 core_team_stats_NBA_29.json	29 KB	core seasons/2027/types/2/teams/29/statistics: Grizzlies, per-game stats have no rank, totals ranked per game
 core_team_stats_NCAAM_150.json	19 KB	core seasons/2027/types/2/teams/150/statistics: Duke, ranks such as Tied-118th
 core_team_stats_NFL_22.json	77 KB	core seasons/2026/types/2/teams/22/statistics: Cardinals, including ranks that don't match the numbers, Tied-1st net punting at 39.8
+byteam_NCAAWB.json	60 KB	season=2027 seasontype=2 on Nov 4, 2026, 8 of 326 teams: 2 Division I schools moving up, with no opponent sections, 2 non-Division I schools, 4 others
+teams_NCAAWB.json	24 KB	teams?limit=1000, the 6 Division I teams of byteam_NCAAWB out of 362; none from outside Division I
+teams_NCAAM.json	55 KB	teams?limit=1000, the Division I teams of the byteam_NCAAM files out of 362
+byteam_NCAAF.json	55 KB	season=2026 seasontype=2, 5 of 138 teams, Alabama among them: every team has opponent sections
+core_team_stats_NCAAF_333_2025.json	77 KB	core seasons/2025/types/2/teams/333/statistics: Alabama, passing 3,551, 11th, which byteam's type 3 has as 3,953 through the bowls
+core_team_stats_NCAAF_149.json	71 KB	core seasons/2026/types/2/teams/149/statistics: Montana, FCS, so not in byteam; total tackles Tied-363rd

@@ -6,7 +6,7 @@ from exceptions import ApiError
 from game_labels import (best_odds, broadcast_names, format_height, format_weight,
                          injured_player_count, leader_display_value, local_schedule_datetime,
                          schedule_game_label)
-from team_stats import parse_team_stats
+from team_stats import needs_team_list, parse_team_stats
 from timezone_utils import convert_espn_time_to_local
 
 # Every ESPN request gets a timeout. requests has none by default, so one
@@ -2699,7 +2699,9 @@ LEADERS_LIMIT = 20
 LEADERS_SMALLER_LIMITS = (10, 5)
 STATISTICS_UNAVAILABLE = "ESPN isn't providing these right now. Try again in a minute."
 PRESEASON = 1
+REGULAR_SEASON = 2
 POSTSEASON = 3
+NEW_SEASON_DAYS = 3
 # /leaders lists these lowest first, and everything else highest first.
 LOW_IS_GOOD_LEADERS = {"avgGoalsAgainst", "ERA", "WHIP", "opponentAvg"}
 
@@ -2708,10 +2710,8 @@ def _no_leaders():
     return {"player_stats": [], "team_stats": []}
 
 
-def _leaders_season(league_path):
-    """The year whose regular season to show, from ESPN rather than the calendar: the NBA's
-    2026-27 season is 2027. A season's playoffs and off-season come after its regular season
-    and are filed under its year, so only a preseason means that the last one is the latest."""
+def core_season(league_path):
+    """ESPN's own idea of a league's season now, with a whole number for its year."""
     sport, league = league_path.split("/", 1)
     try:
         resp = _http_get(f"{CORE_BASE_URL}/{sport}/leagues/{league}/season", timeout=10)
@@ -2719,10 +2719,35 @@ def _leaders_season(league_path):
     except (requests.RequestException, ValueError) as e:
         raise ApiError(STATISTICS_UNAVAILABLE) from e
     season = _as_dict(season)
-    year = season.get("year")
-    if not isinstance(year, int):
+    if not isinstance(season.get("year"), int):
         raise ApiError(STATISTICS_UNAVAILABLE)
-    return year - 1 if _as_dict(season.get("type")).get("type") == PRESEASON else year
+    return season
+
+
+def latest_regular_season(season):
+    """The year whose regular season to show, from core_season rather than the calendar: the NBA's
+    2026-27 season is 2027. A season's playoffs and off-season come after its regular season
+    and are filed under its year, so only a preseason means that the last one is the latest."""
+    return season["year"] - 1 if _as_dict(season.get("type")).get("type") == PRESEASON else season["year"]
+
+
+def _leaders_season(league_path):
+    return latest_regular_season(core_season(league_path))
+
+
+def regular_season_just_began(season):
+    """Whether core_season says a regular season began in the last few days. ESPN's type turns over
+    before the first game (college basketball at 07:00 UTC on Nov 1, its first game at 14:30), and
+    until there are games, some of its feeds answer 500 for the new season."""
+    season_type = _as_dict(season.get("type"))
+    if season_type.get("type") != REGULAR_SEASON:
+        return False
+    try:
+        began = datetime.fromisoformat(str(season_type.get("startDate")).replace("Z", "+00:00"))
+        days = (datetime.now(began.tzinfo) - began).total_seconds() / 86400
+    except (ValueError, TypeError):
+        return False
+    return 0 <= days <= NEW_SEASON_DAYS
 
 
 def _fetch_leaders(league_path, year):
@@ -2845,6 +2870,14 @@ TEAM_STATS_LIMIT = 500
 # again sorted each way by a column every team has: 400 from each end cover them all, up to 800.
 # Only basketball says how many it has. The rest fit, so they never need it.
 TEAM_STATS_SORT = {"basketball": "offensive.avgTurnovers"}
+# Their lists have schools outside Division I. College football's is only FBS.
+TEAM_STATS_NEEDS_TEAM_LIST = {"NCAAM", "NCAAWB"}
+TEAMS_MISSING = "some teams missing"
+
+
+class _TeamStatsServerError(ApiError):
+    """ESPN answered with a 5xx, which is different from it not being reachable: see
+    regular_season_just_began."""
 
 
 def _no_team_stats():
@@ -2854,8 +2887,7 @@ def _no_team_stats():
 def _fetch_team_stats(league_path, year, sort=None):
     """A season's regular season team statistics, or None if ESPN has no such season. Without
     `seasontype`, a finished season's answer is its postseason: the WNBA's 8 playoff teams, not its
-    15. A season ESPN doesn't have yet can be an empty answer, or a 500 for the NBA and college
-    basketball, which reads as a failure for the hours before a new season's first game."""
+    15. A season ESPN doesn't have yet can be an empty answer, or a 500 for basketball."""
     params = {"region": "us", "lang": "en", "season": year, "seasontype": 2, "limit": TEAM_STATS_LIMIT}
     if sort:
         params["sort"] = sort
@@ -2867,7 +2899,24 @@ def _fetch_team_stats(league_path, year, sort=None):
         raise ApiError(STATISTICS_UNAVAILABLE) from e
     if resp.status_code == 404:
         return None
-    raise ApiError(STATISTICS_UNAVAILABLE)
+    raise (_TeamStatsServerError if resp.status_code >= 500 else ApiError)(STATISTICS_UNAVAILABLE)
+
+
+def _division_one_ids(league_path):
+    """The ids on ESPN's team list, which for college basketball is Division I alone: 362 teams
+    for the women, with none from outside it. A failure fails the list, since it would leave
+    out real teams, and the ranks behind them would be wrong."""
+    try:
+        resp = _http_get(f"{BASE_URL}/{league_path}/teams", params={"limit": 1000}, timeout=20)
+        data = resp.json() if resp.status_code == 200 else None
+    except (requests.RequestException, ValueError) as e:
+        raise ApiError(STATISTICS_UNAVAILABLE) from e
+    if data is None:
+        raise ApiError(STATISTICS_UNAVAILABLE)
+    sports = _dicts(_as_dict(data).get("sports"))
+    leagues = _dicts(sports[0].get("leagues")) if sports else []
+    entries = _dicts(leagues[0].get("teams")) if leagues else []
+    return {str(_as_dict(entry.get("team")).get("id")) for entry in entries}
 
 
 def _with_every_team(league_path, year, data):
@@ -2892,17 +2941,25 @@ def _with_every_team(league_path, year, data):
 def _parse_team_stats(key, league_path, data):
     """The result for one season's answer. Asked for a past college football season's regular
     season, ESPN answers with type 3, with the numbers running through the bowl games, so "Season"
-    says what they are, as it does for the leaders."""
+    says what they are, as it does for the leaders. If there are still fewer teams than ESPN says it
+    has, past the 800 that two sorted requests can reach, the season says so rather than the list
+    looking whole, since every rank in it could be low."""
     requested = _as_dict(data.get("requestedSeason"))
     season_type = _as_dict(requested.get("type"))
     if season_type.get("type") == PRESEASON:
         return _no_team_stats()
-    team_stats = parse_team_stats(data, league_path.split("/")[0], college=key.startswith("NCAA"))
+    team_list = None
+    if key in TEAM_STATS_NEEDS_TEAM_LIST and needs_team_list(data):
+        team_list = _division_one_ids(league_path)
+    team_stats = parse_team_stats(data, league_path.split("/")[0], team_list)
     if not team_stats:
         return _no_team_stats()
     name = "Season" if season_type.get("type") == POSTSEASON else season_type.get("name")
-    return {"team_stats": team_stats, "player_stats": [],
-            "season": _season_label(requested.get("displayName"), name)}
+    season = _season_label(requested.get("displayName"), name)
+    count = _as_dict(data.get("pagination")).get("count")
+    if isinstance(count, int) and count > len(_dicts(data.get("teams"))):
+        season = f"{season}, {TEAMS_MISSING}"
+    return {"team_stats": team_stats, "player_stats": [], "season": season}
 
 
 def get_team_statistics(league_key):
@@ -2914,13 +2971,22 @@ def get_team_statistics(league_key):
     if key not in TEAM_STAT_LEAGUES:
         return _no_team_stats()
     league_path = LEAGUES[key]
-    year = _leaders_season(league_path)
-    # A new regular season can start with nobody on the list yet, or be a 404 for now.
+    season = core_season(league_path)
+    year = latest_regular_season(season)
+    # A new regular season can start with nobody on the list yet, or be a 404 or for its first days
+    # a 500 for now. Any other 500 is a failure to report, not a reason to show last season's
+    # numbers. What's shown says which season it is.
     answers = []
     for season_year in (year, year - 1):
-        answers.append(_fetch_team_stats(league_path, season_year))
-        if answers[-1] is not None:
-            result = _parse_team_stats(key, league_path, _with_every_team(league_path, season_year, answers[-1]))
+        try:
+            answer = _fetch_team_stats(league_path, season_year)
+        except _TeamStatsServerError:
+            if season_year != year or not regular_season_just_began(season):
+                raise
+            answer = None
+        answers.append(answer)
+        if answer is not None:
+            result = _parse_team_stats(key, league_path, _with_every_team(league_path, season_year, answer))
             if result["team_stats"]:
                 return result
     if not any(answer is not None for answer in answers):

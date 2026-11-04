@@ -1230,7 +1230,7 @@ class TestTeamStatistics:
     @pytest.fixture(autouse=True)
     def a_season(self, monkeypatch):
         import espn_api
-        monkeypatch.setattr(espn_api, "_leaders_season", lambda path: 2026)
+        monkeypatch.setattr(espn_api, "core_season", lambda path: {"year": 2026, "type": {"type": 3}})
 
     def run(self, http, key="NBA", in_season=True):
         report = v.Report()
@@ -1325,10 +1325,72 @@ class TestTeamStatistics:
         def fails(path):
             raise v.ApiError("no")
 
-        monkeypatch.setattr(espn_api, "_leaders_season", fails)
+        monkeypatch.setattr(espn_api, "core_season", fails)
         report = self.run(FakeHttp())
         assert statuses(report, "Core API: season") == [v.FAIL]
         assert statuses(report, "Team statistics") == []
+
+    # A new season's first days, when the nightly run lands in the window every year
+
+    def begun(self, monkeypatch, days_ago):
+        import espn_api
+        start = (datetime.now(timezone.utc) - timedelta(days=days_ago)).strftime("%Y-%m-%dT%H:%MZ")
+        monkeypatch.setattr(espn_api, "core_season", lambda path: {"year": 2026, "type": {"type": 2, "startDate": start}})
+
+    def test_a_500_as_a_regular_season_begins_is_no_failure(self, monkeypatch):
+        self.begun(monkeypatch, days_ago=0.2)
+        http = FakeHttp([("season=2026", (500, None)), ("season=2025", (200, load("byteam_NBA.json")))])
+        report = self.run(http)
+        assert not report.failed
+        assert statuses(report, "Team statistics") == [v.WARN, v.PASS]
+        assert "only just begun" in detail(report, "Team statistics")
+
+    def test_a_500_a_week_in_fails(self, monkeypatch):
+        self.begun(monkeypatch, days_ago=7)
+        report = self.run(FakeHttp([("season=2026", (500, None)), ("season=2025", (200, load("byteam_NBA.json")))]))
+        assert FAIL_IN(report, "Team statistics")
+
+    def test_last_season_failing_too_fails(self, monkeypatch):
+        self.begun(monkeypatch, days_ago=0.2)
+        assert FAIL_IN(self.run(FakeHttp(default=(500, None))), "Team statistics")
+
+    # A column nobody has decided about
+
+    def test_every_real_column_passes_without_a_warning(self):
+        for key, fixture in (("NFL", "byteam_NFL.json"), ("NBA", "byteam_NBA.json"), ("NHL", "byteam_NHL.json"),
+                             ("MLB", "byteam_MLB.json"), ("NCAAF", "byteam_NCAAF.json"), ("NCAAM", "byteam_NCAAM.json")):
+            assert statuses(self.run(FakeHttp(default=(200, load(fixture))), key=key), "Team statistics: new columns") == []
+
+    def test_a_new_column_warns_and_names_it(self):
+        data = load("byteam_NHL.json")
+        next(m for m in data["categories"] if m["name"] == "defensive")["names"].append("giveaways")
+        report = self.run(FakeHttp(default=(200, data)), key="NHL")
+        assert statuses(report, "Team statistics: new columns") == [v.WARN]
+        assert "defensive.giveaways" in detail(report, "Team statistics: new columns")
+        assert not report.failed
+
+    def test_a_new_section_warns(self):
+        data = load("byteam_NHL.json")
+        data["categories"].append({"name": "faceoffs", "names": ["faceoffsWon"], "displayNames": ["Faceoffs Won"]})
+        assert v.unknown_team_stats(data, "hockey") == ["faceoffs.faceoffsWon"]
+
+    def test_a_sport_it_knows_nothing_of_has_nothing_to_say(self):
+        assert v.unknown_team_stats(load("byteam_NHL.json"), "cricket") == []
+
+    def test_a_copy_of_the_script_with_no_directions_file_has_nothing_to_say(self, monkeypatch):
+        monkeypatch.setattr(v, "known_team_stats", lambda: None)
+        data = load("byteam_NHL.json")
+        data["categories"][0]["names"].append("new")
+        assert v.unknown_team_stats(data, "hockey") == []
+
+    def test_the_directions_file_is_found_and_can_go_missing(self, monkeypatch):
+        assert "football" in v.known_team_stats()
+
+        def fails(*a, **k):
+            raise OSError("no")
+
+        monkeypatch.setattr(v, "open", fails, raising=False)
+        assert v.known_team_stats() is None
 
     def test_a_league_without_them_being_empty_is_expected(self):
         report = v.Report()

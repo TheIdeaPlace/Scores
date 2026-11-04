@@ -74,8 +74,7 @@ DEADLINE_SECONDS = 15 * 60
 NOT_PLAYED = ("STATUS_POSTPONED", "STATUS_CANCELED", "STATUS_CANCELLED", "STATUS_FORFEIT")
 # A World Cup match from the core API, which is where the iPhone gets match numbers.
 WORLD_CUP_MATCH = "760512"
-# What the iPhone asks the core API for. ESPN has no statistics for some season types, such
-# as the NBA's preseason and play-in, so one season type on its own proves nothing.
+# What the iPhone asks the core API for: the regular season, this year's or last's.
 CORE_SEASON_TYPES = (2,)
 
 
@@ -1150,15 +1149,43 @@ def check_statistics(http, report, league, event, in_season):
         check_core_statistics(http, report, league, event, in_season)
 
 
+def known_team_stats():
+    """The columns the apps know which way to rank, by sport. None if it can't be read, as in a copy
+    of this script on its own, which isn't worth failing over."""
+    path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "tests", "fixtures",
+                        "team_stat_directions.json")
+    try:
+        with open(path, encoding="utf-8") as f:
+            return json.load(f)["knownStats"]
+    except (OSError, ValueError, KeyError):
+        return None
+
+
+def unknown_team_stats(data, sport):
+    """Stats in a byteam payload that aren't in the shared directions, as section.stat."""
+    known = known_team_stats()
+    if known is None or sport not in known:
+        return []
+    unknown = set()
+    for meta in data.get("categories") or []:
+        section = meta.get("name")
+        for name in meta.get("names") or []:
+            if name not in known[sport].get(section, ()):
+                unknown.add(f"{section}.{name}")
+    return sorted(unknown)
+
+
 def check_team_statistics(http, report, league, in_season=True):
     """statistics/byteam, as both apps ask. Asked this way it's the regular season at any time of
     year, where the bare URL is the playoffs from the end of a season until the next one: that's
     why nothing here looks at the bare URL. An empty answer can mean a new season, as it does for
-    the leaders, so only an in-season league with nothing for either year is a break."""
+    the leaders, so only an in-season league with nothing for either year is a break. So can a 500
+    in a regular season's first days, as it does for the apps."""
     import espn_api
 
     try:
-        year = espn_api._leaders_season(league.path)
+        core = espn_api.core_season(league.path)
+        year = espn_api.latest_regular_season(core)
     except ApiError as e:
         report.fail(league.key, "Core API: season", f"the app can't tell the season: {e}",
                     f"{CORE}/{league.core_path}/season")
@@ -1168,6 +1195,10 @@ def check_team_statistics(http, report, league, in_season=True):
                f"&season={season_year}&seasontype=2")
         status, data = http.get(url)
         if status not in (200, 404):
+            if season_year == year and isinstance(status, int) and status >= 500 and espn_api.regular_season_just_began(core):
+                report.warn(league.key, "Team statistics", f"got {status} for {year}, whose regular season has "
+                                                           f"only just begun, so the apps show {year - 1}", url)
+                continue
             report.fail(league.key, "Team statistics", f"got {status}, so the app says to try again", url)
             return
         if status == 200 and isinstance(data, dict) and data.get("teams"):
@@ -1186,6 +1217,12 @@ def check_team_statistics(http, report, league, in_season=True):
         report.warn(league.key, "Team statistics: regular season",
                     f"asked for the regular season and got season type {season_type}, so the numbers aren't what "
                     "the apps say they are", url)
+
+    unknown = unknown_team_stats(data, league.path.split("/")[0])
+    if unknown:
+        report.warn(league.key, "Team statistics: new columns",
+                    f"ESPN has {first_problems(unknown)}, which read highest first until they're added to "
+                    "tests/fixtures/team_stat_directions.json and, if low is good, both apps", url)
 
     count = (data.get("pagination") or {}).get("count")
     if isinstance(count, int) and count > rows:

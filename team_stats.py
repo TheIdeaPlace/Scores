@@ -13,11 +13,11 @@ same table, with tests/fixtures/team_stat_directions.json checking both.
 
 OPPONENT_SPLIT = "900"
 GAMES_PLAYED = {"gamesPlayed", "games"}
-SEASON_UNDER_WAY = 10  # games. Before this, games played says nothing about who's Division I.
 
 # The team's own stats where less is better, by the sport in the league's path. The opponent's
 # version of a stat goes the other way: a team wants its opponents to score less, and to turn it
-# over more. A column that's only a count of tries (punts, field goal attempts) reads highest first.
+# over more. A stat nobody has listed here reads highest first, and the validator warns about a
+# stat it doesn't know.
 LOW_IS_GOOD = {
     "baseball": {
         "batting.strikeouts",
@@ -49,11 +49,50 @@ LOW_IS_GOOD = {
 }
 
 
+# Counts of tries, which aren't good or bad in themselves, so they read highest first for the team
+# and its opponents alike: a defense wants to force punts, and an attempt isn't a miss.
+COUNTS_OF_TRIES = {
+    "baseball": {"batting.atBats", "pitching.innings", "fielding.totalChances"},
+    "football": {
+        "passing.passingAttempts", "rushing.rushingAttempts",
+        "miscellaneous.thirdDownAttempts", "miscellaneous.fourthDownAttempts",
+        "kicking.fieldGoalAttempts", "kicking.fieldGoalAttempts1_19", "kicking.fieldGoalAttempts20_29",
+        "kicking.fieldGoalAttempts30_39", "kicking.fieldGoalAttempts40_49", "kicking.fieldGoalAttempts50",
+        "kicking.extraPointAttempts",
+        "punting.punts", "returning.kickReturns", "returning.puntReturns",
+    },
+    "basketball": {
+        "offensive.fieldGoalsAttempted", "offensive.avgFieldGoalsAttempted",
+        "offensive.threePointFieldGoalsAttempted", "offensive.avgThreePointFieldGoalsAttempted",
+        "offensive.freeThrowsAttempted", "offensive.avgFreeThrowsAttempted",
+    },
+    "hockey": {"offensive.powerPlayOpportunities", "offensive.shootoutAttempts"},
+}
+
+# ESPN's name for a stat where it says something else. Passing's "Yards Per Game" is the whole
+# offense's. "First Downs Attempts" is fourth down tries. A punting team's punt returns are the ones
+# it gave up.
+STAT_TITLES = {
+    "football": {
+        "passing.sacks": "Sacks Taken",
+        "passing.interceptions": "Interceptions Thrown",
+        "passing.yardsPerGame": "Total Yards Per Game",
+        "receiving.yardsPerGame": "Total Yards Per Game",
+        "miscellaneous.fourthDownAttempts": "Fourth Down Attempts",
+        "miscellaneous.turnOverDifferential": "Turnover Differential",
+        "punting.puntReturns": "Punt Returns Allowed",
+        "punting.puntReturnYards": "Punt Return Yards Allowed",
+        "punting.avgPuntReturnYards": "Average Punt Return Yards Allowed",
+    },
+}
+
+
 def low_is_good(sport, section, stat, opponent=False):
     """Whether the lowest number ranks first. `sport` is the first part of a league's path."""
-    if stat in GAMES_PLAYED:
+    key = f"{section}.{stat}"
+    if stat in GAMES_PLAYED or key in COUNTS_OF_TRIES.get(sport, ()):
         return False
-    low = f"{section}.{stat}" in LOW_IS_GOOD.get(sport, ())
+    low = key in LOW_IS_GOOD.get(sport, ())
     return not low if opponent else low
 
 
@@ -89,32 +128,26 @@ def _is_opponent(block):
     return str(block.get("splitId")) == OPPONENT_SPLIT
 
 
-def _games_played(team, column):
-    section, index = column
-    for block in _dicts(team.get("categories")):
-        if block.get("name") == section and not _is_opponent(block):
-            values = _list(block.get("values"))
-            value = values[index] if index < len(values) else None
-            return value if _is_number(value) else None
-    return None
+def _has_opponents(team):
+    return any(_is_opponent(block) for block in _dicts(team.get("categories")))
 
 
-def qualified_teams(data):
-    """The Division I teams of a college list. ESPN's has every school that played a Division I
-    team, so a Division II school with one game can top a per-game stat: 722 teams in 2025-26's men's
-    basketball, 362 of them Division I. ESPN only has opponents' numbers for Division I teams, which
-    on Nov 4, 2026 told apart all 365 teams then listed, 302 of them Division I, when everyone had
-    played once. A few schools moving up have none (6 in 2025-26's women's basketball), so once a
-    season is under way, so does a team with at least half the games of whoever has played most."""
-    teams = _dicts(data.get("teams"))
-    column = next(((section, names.index(name)) for section, (names, _) in _columns(data).items()
-                   for name in names if name in GAMES_PLAYED), None)
-    games = [_games_played(team, column) if column else None for team in teams]
-    split = [any(_is_opponent(block) for block in _dicts(team.get("categories"))) for team in teams]
-    most = max((played for played in games if played is not None), default=0)
-    under_way = most >= SEASON_UNDER_WAY or not any(split)
-    return [team for team, played, opponents in zip(teams, games, split)
-            if opponents or (under_way and (most if played is None else played) >= most / 2)]
+def needs_team_list(data):
+    """Whether any team in the answer has no opponents' numbers, so only ESPN's team list can say
+    if it's Division I."""
+    return not all(_has_opponents(team) for team in _dicts(data.get("teams")))
+
+
+def qualified_teams(data, team_list):
+    """The Division I teams of a college basketball list. ESPN's has every school that played a
+    Division I team, so a Division II school with one game can top a per-game stat: 722 teams in
+    2025-26's men's basketball, 362 of them Division I. ESPN only has opponents' numbers for
+    Division I teams, which tells them apart when everyone has played once. A few schools moving up
+    to Division I have none (East Texas A&M, Southern Indiana, Queens and Lindenwood in the women's
+    game in 2026-27), and those are on ESPN's team list, `team_list`, which has no other schools."""
+    return [team for team in _dicts(data.get("teams"))
+            if _has_opponents(team)
+            or str((team.get("team") if isinstance(team.get("team"), dict) else {}).get("id")) in team_list]
 
 
 def _category_title(block, section):
@@ -125,15 +158,17 @@ def _category_title(block, section):
     return f"Opponent {title}" if _is_opponent(block) else title
 
 
-def parse_team_stats(data, sport, college=False):
+def parse_team_stats(data, sport, team_list=None):
     """The categories of a byteam payload: {category, low_is_good, stats}, the team's own numbers
-    before its opponents'. Each of `stats` is a team: {team_name, team_id, stats, values}, with
-    what to show and what to rank by, under ESPN's name for the stat. A stat ESPN has no number
-    for is left out, rather than ranking as a zero."""
+    before its opponents'. Each of `stats` is a team: {team_name, team_id, stats, values}, with what
+    to show and what to rank by, under the stat's name. A stat ESPN has no number for is left out,
+    rather than ranking as a zero, unless it shows a zero: an NHL team that has yet to go to a
+    shootout has "0" with a null. `team_list` is for college basketball: see qualified_teams."""
     data = data if isinstance(data, dict) else {}
     columns = _columns(data)
+    titles_for_sport = STAT_TITLES.get(sport, {})
     own, opponents = {}, {}
-    for team in (qualified_teams(data) if college else _dicts(data.get("teams"))):
+    for team in (_dicts(data.get("teams")) if team_list is None else qualified_teams(data, team_list)):
         info = team.get("team") if isinstance(team.get("team"), dict) else {}
         team_name = info.get("displayName") or info.get("name")
         if not team_name:
@@ -151,7 +186,10 @@ def parse_team_stats(data, sport, college=False):
             for index, (name, title) in enumerate(zip(names, titles)):
                 total = totals[index] if index < len(totals) else None
                 value = values[index] if index < len(values) else None
+                if value is None and total == "0":
+                    value = 0
                 if title and total not in (None, "", "-") and _is_number(value):
+                    title = titles_for_sport.get(f"{section}.{name}", title)
                     shown[title], numbers[title] = str(total), value
                     directions[title] = low_is_good(sport, section, name, opponent)
             if not shown:

@@ -1,5 +1,5 @@
 {
- "why": "Which way each team stat ranks, on both apps. team_stats.py and TeamStatCatalog.swift each hold lowIsGood, the team's own stats where less is better; the opponent's version of a stat goes the other way, and games played always reads highest first. catalog is every stat the iPhone's league list shows, in its order. beyondTheCatalog is a few the Windows list and the iPhone's Team Hub rank as well. rankGrid is how a column of numbers becomes ranks: teams level share a rank, and the next rank counts them. tests/unit/test_team_stats.py holds Windows to this and TeamStatsTests.swift the iPhone. A change to any of it is a change to both apps.",
+ "why": "Which way each team stat ranks, on both apps. team_stats.py and TeamStatCatalog.swift each hold lowIsGood, the team's own stats where less is better; the opponent's version of a stat goes the other way. countsOfTries read highest first for a team and its opponents alike, as does games played. catalog is every stat the iPhone's league list shows, in its order. beyondTheCatalog is a few the Windows list and the iPhone's Team Hub rank as well. rankGrid is how a column of numbers becomes ranks: teams level share a rank, and the next rank counts them. knownStats is every column ESPN has given, by sport, and the validator warns about one that isn't here. tests/unit/test_team_stats.py holds Windows to this and TeamStatsTests.swift the iPhone. A change to any of it but knownStats is a change to both apps.",
  "lowIsGood": {
   "baseball": [
    "batting.strikeouts",
@@ -660,6 +660,55 @@
    "section": "batting",
    "stat": "runs",
    "higherIsBetter": true
+  },
+  {
+   "sport": "football",
+   "split": "own",
+   "section": "punting",
+   "stat": "punts",
+   "higherIsBetter": true
+  },
+  {
+   "sport": "football",
+   "split": "opponent",
+   "section": "punting",
+   "stat": "punts",
+   "higherIsBetter": true
+  },
+  {
+   "sport": "football",
+   "split": "opponent",
+   "section": "passing",
+   "stat": "passingAttempts",
+   "higherIsBetter": true
+  },
+  {
+   "sport": "football",
+   "split": "own",
+   "section": "punting",
+   "stat": "puntReturns",
+   "higherIsBetter": false
+  },
+  {
+   "sport": "football",
+   "split": "opponent",
+   "section": "punting",
+   "stat": "puntReturns",
+   "higherIsBetter": true
+  },
+  {
+   "sport": "basketball",
+   "split": "opponent",
+   "section": "offensive",
+   "stat": "avgFieldGoalsAttempted",
+   "higherIsBetter": true
+  },
+  {
+   "sport": "hockey",
+   "split": "own",
+   "section": "offensive",
+   "stat": "shootoutAttempts",
+   "higherIsBetter": true
   }
  ],
  "rankGrid": [
@@ -791,5 +840,324 @@
     1
    ]
   }
- ]
+ ],
+ "countsOfTries": {
+  "baseball": [
+   "batting.atBats",
+   "fielding.totalChances",
+   "pitching.innings"
+  ],
+  "football": [
+   "kicking.extraPointAttempts",
+   "kicking.fieldGoalAttempts",
+   "kicking.fieldGoalAttempts1_19",
+   "kicking.fieldGoalAttempts20_29",
+   "kicking.fieldGoalAttempts30_39",
+   "kicking.fieldGoalAttempts40_49",
+   "kicking.fieldGoalAttempts50",
+   "miscellaneous.fourthDownAttempts",
+   "miscellaneous.thirdDownAttempts",
+   "passing.passingAttempts",
+   "punting.punts",
+   "returning.kickReturns",
+   "returning.puntReturns",
+   "rushing.rushingAttempts"
+  ],
+  "basketball": [
+   "offensive.avgFieldGoalsAttempted",
+   "offensive.avgFreeThrowsAttempted",
+   "offensive.avgThreePointFieldGoalsAttempted",
+   "offensive.fieldGoalsAttempted",
+   "offensive.freeThrowsAttempted",
+   "offensive.threePointFieldGoalsAttempted"
+  ],
+  "hockey": [
+   "offensive.powerPlayOpportunities",
+   "offensive.shootoutAttempts"
+  ]
+ },
+ "knownStats": {
+  "baseball": {
+   "batting": [
+    "OPS",
+    "RBIs",
+    "atBats",
+    "avg",
+    "doubles",
+    "gamesPlayed",
+    "hits",
+    "homeRuns",
+    "onBasePct",
+    "runs",
+    "slugAvg",
+    "stolenBases",
+    "strikeouts",
+    "totalBases",
+    "triples",
+    "walks"
+   ],
+   "pitching": [
+    "ERA",
+    "WHIP",
+    "completeGames",
+    "earnedRuns",
+    "gamesPlayed",
+    "hits",
+    "homeRuns",
+    "innings",
+    "losses",
+    "opponentAvg",
+    "qualityStarts",
+    "saves",
+    "shutouts",
+    "strikeouts",
+    "walks",
+    "wins"
+   ],
+   "fielding": [
+    "assists",
+    "errors",
+    "fieldingPct",
+    "gamesPlayed",
+    "putouts",
+    "totalChances"
+   ]
+  },
+  "football": {
+   "general": [
+    "fumblesLost",
+    "fumblesRecovered",
+    "gamesPlayed"
+   ],
+   "passing": [
+    "QBRating",
+    "completionPct",
+    "completions",
+    "interceptions",
+    "longPassing",
+    "netPassingYards",
+    "netPassingYardsPerGame",
+    "netTotalYards",
+    "netYardsPerGame",
+    "netYardsPerPassAttempt",
+    "passingAttempts",
+    "passingTouchdowns",
+    "passingYards",
+    "passingYardsPerGame",
+    "sackYardsLost",
+    "sacks",
+    "totalPoints",
+    "totalPointsPerGame",
+    "totalYards",
+    "yardsPerGame",
+    "yardsPerPassAttempt"
+   ],
+   "rushing": [
+    "longRushing",
+    "rushingAttempts",
+    "rushingFumbles",
+    "rushingFumblesLost",
+    "rushingTouchdowns",
+    "rushingYards",
+    "rushingYardsPerGame",
+    "yardsPerRushAttempt"
+   ],
+   "receiving": [
+    "longReception",
+    "receivingFumbles",
+    "receivingFumblesLost",
+    "receivingTouchdowns",
+    "receivingYards",
+    "receivingYardsPerGame",
+    "receptions",
+    "yardsPerGame",
+    "yardsPerReception"
+   ],
+   "miscellaneous": [
+    "firstDowns",
+    "firstDownsPassing",
+    "firstDownsPenalty",
+    "firstDownsRushing",
+    "fourthDownAttempts",
+    "fourthDownConvPct",
+    "fourthDownConvs",
+    "thirdDownAttempts",
+    "thirdDownConvPct",
+    "thirdDownConvs",
+    "totalGiveaways",
+    "totalPenalties",
+    "totalPenaltyYards",
+    "totalTakeaways",
+    "turnOverDifferential"
+   ],
+   "returning": [
+    "kickReturnTouchdowns",
+    "kickReturnYards",
+    "kickReturns",
+    "longKickReturn",
+    "longPuntReturn",
+    "puntReturnFairCatches",
+    "puntReturnTouchdowns",
+    "puntReturnYards",
+    "puntReturns",
+    "yardsPerKickReturn",
+    "yardsPerPuntReturn"
+   ],
+   "kicking": [
+    "extraPointAttempts",
+    "extraPointPct",
+    "extraPointsMade",
+    "fieldGoalAttempts",
+    "fieldGoalAttempts1_19",
+    "fieldGoalAttempts20_29",
+    "fieldGoalAttempts30_39",
+    "fieldGoalAttempts40_49",
+    "fieldGoalAttempts50",
+    "fieldGoalPct",
+    "fieldGoalsMade",
+    "fieldGoalsMade1_19",
+    "fieldGoalsMade20_29",
+    "fieldGoalsMade30_39",
+    "fieldGoalsMade40_49",
+    "fieldGoalsMade50",
+    "longFieldGoalMade"
+   ],
+   "punting": [
+    "avgPuntReturnYards",
+    "fairCatches",
+    "grossAvgPuntYards",
+    "longPunt",
+    "netAvgPuntYards",
+    "puntReturnYards",
+    "puntReturns",
+    "puntYards",
+    "punts",
+    "puntsBlocked",
+    "puntsInside20",
+    "touchbacks"
+   ],
+   "defensiveinterceptions": [
+    "interceptions"
+   ]
+  },
+  "basketball": {
+   "general": [
+    "assistTurnoverRatio",
+    "avgFouls",
+    "avgRebounds",
+    "fouls",
+    "gamesPlayed",
+    "rebounds",
+    "teamAssistTurnoverRatio",
+    "technicalFouls",
+    "totalRebounds"
+   ],
+   "defensive": [
+    "avgBlocks",
+    "avgDefensiveRebounds",
+    "avgSteals",
+    "blocks",
+    "defensiveRebounds",
+    "steals"
+   ],
+   "offensive": [
+    "assists",
+    "avgAssists",
+    "avgFieldGoalsAttempted",
+    "avgFieldGoalsMade",
+    "avgFreeThrowsAttempted",
+    "avgFreeThrowsMade",
+    "avgOffensiveRebounds",
+    "avgPoints",
+    "avgThreePointFieldGoalsAttempted",
+    "avgThreePointFieldGoalsMade",
+    "avgTurnovers",
+    "fieldGoalPct",
+    "fieldGoalsAttempted",
+    "fieldGoalsMade",
+    "freeThrowPct",
+    "freeThrowsAttempted",
+    "freeThrowsMade",
+    "offensiveReboundPct",
+    "offensiveRebounds",
+    "points",
+    "scoringEfficiency",
+    "shootingEfficiency",
+    "threePointFieldGoalPct",
+    "threePointFieldGoalsAttempted",
+    "threePointFieldGoalsMade",
+    "threePointPct",
+    "turnovers"
+   ],
+   "differential": [
+    "avgAssistsDifferential",
+    "avgBlocksDifferential",
+    "avgDefensiveReboundsDifferential",
+    "avgFieldGoalsAttemptedDifferential",
+    "avgFieldGoalsMadeDifferential",
+    "avgFoulsDifferential",
+    "avgFreeThrowsAttemptedDifferential",
+    "avgFreeThrowsMadeDifferential",
+    "avgOffensiveReboundsDifferential",
+    "avgPointsDifferential",
+    "avgReboundsDifferential",
+    "avgStealsDifferential",
+    "avgThreePointFieldGoalsAttemptedDifferential",
+    "avgThreePointFieldGoalsMadeDifferential",
+    "avgTurnoversDifferential",
+    "fieldGoalPctDifferential",
+    "fieldGoalsAttemptedDifferential",
+    "fieldGoalsMadeDifferential",
+    "freeThrowPctDifferential",
+    "freeThrowsAttemptedDifferential",
+    "freeThrowsMadeDifferential",
+    "pointsDifferential",
+    "reboundsDifferential",
+    "scoringEfficiencyDifferential",
+    "shootingEfficiencyDifferential",
+    "threePointFieldGoalPctDifferential",
+    "threePointFieldGoalsAttemptedDifferential",
+    "threePointFieldGoalsMadeDifferential",
+    "turnoversDifferential"
+   ]
+  },
+  "hockey": {
+   "general": [
+    "games",
+    "losses",
+    "wins"
+   ],
+   "offensive": [
+    "assists",
+    "avgGoals",
+    "goals",
+    "points",
+    "powerPlayGoals",
+    "powerPlayOpportunities",
+    "powerPlayPct",
+    "shootingPct",
+    "shootoutAttempts",
+    "shootoutGoals",
+    "shootoutShotPct",
+    "shortHandedGoals",
+    "shotsTotal"
+   ],
+   "defensive": [
+    "avgGoalsAgainst",
+    "goalsAgainst",
+    "overtimeLosses",
+    "penaltyKillPct",
+    "savePct",
+    "saves",
+    "shootoutSavePct",
+    "shootoutSaves",
+    "shootoutShotsAgainst",
+    "shotsAgainst",
+    "shutouts"
+   ],
+   "penalties": [
+    "penaltyMinutes"
+   ]
+  }
+ }
 }

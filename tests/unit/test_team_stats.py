@@ -10,7 +10,7 @@ from pathlib import Path
 import pytest
 
 import team_stats
-from team_stats import low_is_good, parse_team_stats, qualified_teams, rank_teams, team_stat_lists
+from team_stats import low_is_good, needs_team_list, parse_team_stats, qualified_teams, rank_teams, team_stat_lists
 
 FIXTURES = Path(__file__).parent.parent / "fixtures"
 DIRECTIONS = json.loads((FIXTURES / "team_stat_directions.json").read_text(encoding="utf-8"))
@@ -21,8 +21,8 @@ def load(name):
         return json.load(f)
 
 
-def the_list(payload, sport, name, college=False):
-    lists = team_stat_lists(parse_team_stats(payload, sport, college))
+def the_list(payload, sport, name, team_list=None):
+    lists = team_stat_lists(parse_team_stats(payload, sport, team_list))
     return next(item for item in lists if item["name"] == name)["data"]
 
 
@@ -33,6 +33,30 @@ def team_ids(teams):
 class TestTheSharedDirections:
     def test_the_table_matches(self):
         assert {sport: sorted(stats) for sport, stats in team_stats.LOW_IS_GOOD.items()} == DIRECTIONS["lowIsGood"]
+
+    def test_the_counts_of_tries_match(self):
+        assert {sport: sorted(stats) for sport, stats in team_stats.COUNTS_OF_TRIES.items()} == DIRECTIONS["countsOfTries"]
+
+    @pytest.mark.parametrize("table", [team_stats.LOW_IS_GOOD, team_stats.COUNTS_OF_TRIES, team_stats.STAT_TITLES],
+                             ids=["low_is_good", "counts_of_tries", "titles"])
+    def test_every_stat_the_tables_name_is_a_real_column(self, table):
+        """A typo here would quietly rank the real column the wrong way."""
+        for sport, stats in table.items():
+            known = DIRECTIONS["knownStats"][sport]
+            for key in stats:
+                section, stat = key.split(".")
+                assert stat in known.get(section, ()), f"{sport} {key}"
+
+    @pytest.mark.parametrize("fixture,sport", [
+        ("byteam_NFL.json", "football"), ("byteam_NCAAF.json", "football"), ("byteam_NCAAF_2025.json", "football"),
+        ("byteam_NBA.json", "basketball"), ("byteam_WNBA.json", "basketball"), ("byteam_NCAAM.json", "basketball"),
+        ("byteam_NCAAWB.json", "basketball"), ("byteam_NHL.json", "hockey"), ("byteam_MLB.json", "baseball"),
+    ])
+    def test_every_real_column_is_known(self, fixture, sport):
+        known = DIRECTIONS["knownStats"][sport]
+        for meta in load(fixture)["categories"]:
+            for name in meta.get("names") or []:
+                assert name in known[meta["name"]], f"{meta['name']}.{name}"
 
     @pytest.mark.parametrize("sport", sorted(DIRECTIONS["catalog"]))
     def test_every_stat_the_iphone_lists_goes_the_same_way(self, sport):
@@ -75,8 +99,11 @@ class TestColumns:
         data = load("byteam_NFL.json")
         names = {meta["name"]: meta for meta in data["categories"] if meta.get("names")}
         categories = {c["category"]: c for c in parse_team_stats(data, "football")}
+        titles = team_stats.STAT_TITLES["football"]
         for section, title in (("passing", "Passing"), ("kicking", "Kicking"), ("punting", "Punting")):
-            assert set(categories[title]["stats"][0]["stats"]) == set(names[section]["displayNames"])
+            expected = {titles.get(f"{section}.{name}", shown)
+                        for name, shown in zip(names[section]["names"], names[section]["displayNames"])}
+            assert set(categories[title]["stats"][0]["stats"]) == expected
         assert categories["Opponent Passing"]["stats"][0]["stats"]
 
     def test_hockey_and_baseball_have_no_opponents_section(self):
@@ -91,6 +118,35 @@ class TestColumns:
         general = next(c for c in categories if c["category"] == "General")
         grizzlies = next(t for t in general["stats"] if t["team_id"] == "29")
         assert grizzlies["stats"]["Assist To Turnover Ratio"] == "1.8"
+
+    @pytest.mark.parametrize("name,kept", [
+        ("Shootout Attempts (Offensive)", True), ("Shootout Goals (Offensive)", True), ("Shootout Saves (Defensive)", True),
+    ])
+    def test_a_null_showing_zero_ranks_as_zero(self, name, kept):
+        """An NHL team yet to go to a shootout has "0" with a null. Three lists had 18 of 32."""
+        data = load("byteam_NHL.json")
+        rows = the_list(data, "hockey", name)
+        assert len(rows) == len(data["teams"])
+        assert any(row["value"] == 0 and row["displayValue"] == "0" for row in rows)
+
+    def test_a_null_showing_anything_else_is_still_left_out(self):
+        data = load("byteam_NHL.json")
+        block = next(c for c in data["teams"][0]["categories"] if c["name"] == "general")
+        block["values"] = [None] * len(block["values"])
+        general = next(c for c in parse_team_stats(data, "hockey") if c["category"] == "General")
+        assert data["teams"][0]["team"]["displayName"] not in {t["team_name"] for t in general["stats"]}
+
+    @pytest.mark.parametrize("name", ["Sacks Taken (Passing)", "Interceptions Thrown (Passing)",
+                                      "Total Yards Per Game (Passing)", "Fourth Down Attempts (Miscellaneous)",
+                                      "Turnover Differential (Miscellaneous)", "Punt Returns Allowed (Punting)",
+                                      "Sacks Taken (Opponent Passing)"])
+    def test_a_name_that_would_mislead_is_put_right(self, name):
+        assert the_list(load("byteam_NFL.json"), "football", name)
+
+    @pytest.mark.parametrize("name", ["First Downs Attempts (Miscellaneous)", "Total Sacks (Passing)"])
+    def test_espns_words_for_them_are_gone(self, name):
+        names = [item["name"] for item in team_stat_lists(parse_team_stats(load("byteam_NFL.json"), "football"))]
+        assert name not in names
 
     def test_a_section_with_nothing_for_a_team_leaves_the_team_out_of_it(self):
         """ESPN's differential section is all "-" and nulls for a school with one Division I game."""
@@ -121,6 +177,17 @@ class TestRankingOnRealPayloads:
     def test_lowest_first_where_low_is_good(self, fixture, sport, name):
         values = [row["value"] for row in the_list(load(fixture), sport, name)]
         assert len(values) > 1 and values == sorted(values) and values[0] < values[-1]
+
+    @pytest.mark.parametrize("fixture,sport,name", [
+        ("byteam_NFL.json", "football", "Punts (Punting)"),
+        ("byteam_NFL.json", "football", "Punts (Opponent Punting)"),
+        ("byteam_NFL.json", "football", "Passing Attempts (Opponent Passing)"),
+        ("byteam_NBA.json", "basketball", "Field Goals Attempted (Opponent Offensive)"),
+    ])
+    def test_a_count_of_tries_reads_highest_first_for_opponents_too(self, fixture, sport, name):
+        """A defense wants to force punts: the most forced comes first, not the fewest."""
+        values = [row["value"] for row in the_list(load(fixture), sport, name)]
+        assert len(values) > 1 and values == sorted(values, reverse=True)
 
     def test_the_most_giveaways_is_not_first_as_espn_has_it(self):
         data = load("byteam_NFL.json")
@@ -164,89 +231,59 @@ class TestRankingOnRealPayloads:
 
 
 class TestDivisionOne:
+    def on_the_list(self, name):
+        return {str(entry["team"]["id"]) for entry in load(name)["sports"][0]["leagues"][0]["teams"]}
+
     def test_a_school_with_one_game_is_dropped_late_in_a_season(self):
         data = load("byteam_NCAAM_2026.json")
         assert "2145" in team_ids(data["teams"]), "the fixture should have UCCS, with one game"
-        assert team_ids(qualified_teams(data)) == team_ids(data["teams"]) - {"2145"}
+        assert team_ids(qualified_teams(data, self.on_the_list("teams_NCAAM.json"))) == team_ids(data["teams"]) - {"2145"}
 
     def test_it_can_top_a_stat_otherwise(self):
         data = load("byteam_NCAAM_2026.json")
-        assert the_list(data, "basketball", "Points Per Game (Offensive)")[0]["name"].startswith("Colorado Colorado Springs")
-        assert not the_list(data, "basketball", "Points Per Game (Offensive)", college=True)[0]["name"].startswith("Colorado Colorado Springs")
+        name = "Points Per Game (Offensive)"
+        assert the_list(data, "basketball", name)[0]["name"].startswith("Colorado Colorado Springs")
+        ranked = the_list(data, "basketball", name, self.on_the_list("teams_NCAAM.json"))
+        assert not ranked[0]["name"].startswith("Colorado Colorado Springs")
 
     def test_opening_week_tells_them_apart_though_everyone_has_played_once(self):
         data = load("byteam_NCAAM.json")
-        kept = qualified_teams(data)
+        kept = qualified_teams(data, self.on_the_list("teams_NCAAM.json"))
         assert 0 < len(kept) < len(data["teams"]), "the fixture should have a non-Division I school"
         assert "150" in team_ids(kept), "Duke"
-        for team in data["teams"]:
-            has_opponents = any(c.get("splitId") == "900" for c in team["categories"])
-            assert (team in kept) is has_opponents, team["team"]["displayName"]
+        assert not {"2358", "2650"} & team_ids(kept), "Lyon and Tougaloo"
 
-    def game_counts(self, *teams):
-        """(games played, whether ESPN has its opponents' numbers), by team. Team 0, 1, ..."""
-        data = load("byteam_NCAAM_2026.json")
-        names = next(m["names"] for m in data["categories"] if m["name"] == "general")
-        values = [None] * len(names)
-        built = []
-        for i, (games, opponents) in enumerate(teams):
-            row = list(values)
-            row[names.index("gamesPlayed")] = games
-            blocks = [{"name": "general", "splitId": "0", "values": row, "totals": []}]
-            if opponents:
-                blocks.append({"name": "general", "splitId": "900", "values": row, "totals": []})
-            built.append({"team": {"id": str(i), "displayName": f"T{i}"}, "categories": blocks})
-        return {**data, "teams": built}
+    def test_a_school_moving_up_stays_with_no_opponents_numbers(self):
+        """East Texas A&M and Southern Indiana are Division I, on ESPN's team list. It's the only
+        thing that says so: they've played one game, as have the schools that aren't."""
+        data = load("byteam_NCAAWB.json")
+        no_opponents = [t for t in data["teams"] if not any(c.get("splitId") == "900" for c in t["categories"])]
+        assert len(no_opponents) == 4, "the fixture should have 2 of each"
+        kept = {t["team"]["displayName"] for t in qualified_teams(data, self.on_the_list("teams_NCAAWB.json"))}
+        assert {"East Texas A&M Lions", "Southern Indiana Screaming Eagles"} <= kept
+        assert len(kept) == len(data["teams"]) - 2
 
-    def test_a_school_moving_up_stays_once_the_season_is_under_way(self):
-        """Lindenwood played 33 games in 2025-26 with no opponents' numbers."""
-        data = self.game_counts((33, True), (33, False), (1, False))
-        assert team_ids(qualified_teams(data)) == {"0", "1"}
+    def test_an_empty_team_list_only_keeps_those_with_opponents_numbers(self):
+        data = load("byteam_NCAAWB.json")
+        assert len(qualified_teams(data, set())) == 4
 
-    def test_a_school_moving_up_is_out_for_the_first_few_games(self):
-        data = self.game_counts((3, True), (3, False))
-        assert team_ids(qualified_teams(data)) == {"0"}
+    def test_it_only_needs_the_list_when_someone_has_no_opponents_numbers(self):
+        assert needs_team_list(load("byteam_NCAAWB.json"))
+        assert not needs_team_list(load("byteam_NFL.json"))
+        assert not needs_team_list({"teams": []})
 
-    def test_a_division_one_team_with_few_games_stays(self):
-        data = self.game_counts((30, True), (3, True))
-        assert team_ids(qualified_teams(data)) == {"0", "1"}
-
-    def test_a_list_with_no_opponents_numbers_falls_back_to_games(self):
-        data = self.game_counts((4, False), (2, False), (1, False))
-        assert team_ids(qualified_teams(data)) == {"0", "1"}
-
-    def test_a_team_with_no_games_column_stays_rather_than_vanishing(self):
-        data = self.game_counts((4, False), (None, False))
-        assert team_ids(qualified_teams(data)) == {"0", "1"}
-
-    def test_a_team_missing_the_section_with_the_games_stays_rather_than_vanishing(self):
-        data = self.game_counts((4, False), (2, False))
-        data["teams"].append({"team": {"id": "9", "displayName": "T9"}, "categories": []})
-        assert team_ids(qualified_teams(data)) == {"0", "1", "9"}
-
-    def test_no_column_for_games_keeps_everyone(self):
-        data = {"categories": [{"name": "x", "names": ["a"], "displayNames": ["A"]}],
-                "teams": [{"team": {"id": "1"}, "categories": []}, {"team": {"id": "2"}, "categories": []}]}
-        assert team_ids(qualified_teams(data)) == {"1", "2"}
-
-    def test_a_pro_league_is_never_filtered(self):
-        """In a season's first days a team with one game can sit behind one with three."""
+    def test_no_list_means_no_filter(self):
+        """Pro leagues and college football, whose list is only FBS."""
         data = load("byteam_NHL.json")
-        names = next(m["names"] for m in data["categories"] if m["name"] == "general")
-        block = next(c for c in data["teams"][0]["categories"] if c["name"] == "general")
-        block["values"][names.index("games")] = 1
-        count = len(data["teams"])
         general = next(c for c in parse_team_stats(data, "hockey") if c["category"] == "General")
-        assert len(general["stats"]) == count
-        general = next(c for c in parse_team_stats(data, "hockey", college=True) if c["category"] == "General")
-        assert len(general["stats"]) == count - 1
+        assert len(general["stats"]) == len(data["teams"])
 
 
 class TestBadShapes:
     @pytest.mark.parametrize("data", [None, [], {}, {"teams": None}, {"teams": [None]}, {"categories": None, "teams": [{}]}])
     def test_nothing_usable_is_nothing(self, data):
         assert parse_team_stats(data, "basketball") == []
-        assert parse_team_stats(data, "basketball", college=True) == []
+        assert parse_team_stats(data, "basketball", team_list=set()) == []
 
     def real(self):
         return load("byteam_NHL.json")
@@ -280,9 +317,3 @@ class TestBadShapes:
                 del block["displayName"]
         titles = [c["category"] for c in parse_team_stats(data, "basketball")]
         assert "General" in titles and "Opponent General" in titles
-
-    def test_the_games_column_can_be_short(self):
-        data = load("byteam_NCAAM_2026.json")
-        for block in data["teams"][0]["categories"]:
-            block["values"] = []
-        assert qualified_teams(data)
