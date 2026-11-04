@@ -58,3 +58,11 @@ scoreboard_NWSL.json	3 KB	2 games from dates=202610, used by the month-by-month 
 standings_MLB.json	14 KB	AL and NL trimmed to 5 and 3 teams, CHW and ATH included; streak is a signed value
 mlb_leaders_homeRuns.json	1 KB	statsapi.mlb.com leaders, 3 players; team has a name but no abbreviation
 schedule_MLB_10.json	4 KB	3 finals; score is a dict with displayValue
+scoreboard_NFL_202611.json	73 KB	5 games from dates=202611: Falcons listed as home at a neutral site in Madrid, Giants and Jets sharing MetLife
+scoreboard_NBA_202611.json	59 KB	3 games from dates=202611: Nets and Warriors at home, Pacers listed as home at a neutral site in Mexico City
+scoreboard_NCAAH_202611.json	12 KB	3 games from dates=202611: 2 at home, Providence listed as home at a neutral site in Belfast
+team_NBA_17.json	20 KB	Nets: franchise.venue still says Prudential Center
+schedule_NBA_17.json	87 KB	seasontype=2, 5 games: 3 home at Barclays Center, 2 away
+schedule_MLB_11.json	101 KB	seasontype=2, 6 games: Athletics home at Sutter Health Park 3 times, then Las Vegas Ballpark twice, 1 away; state is spelled out
+schedule_NFL_1.json	56 KB	seasontype=2, 3 games: Falcons home at Mercedes-Benz Stadium, then listed as home at a neutral site in Madrid, 1 away
+scoreboard_WNBA_202607.json	55 KB	3 games from dates=202607: American Airlines Center marked not indoor, an All-Star game with TEAM COOP at home
