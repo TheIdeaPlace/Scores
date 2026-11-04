@@ -362,7 +362,8 @@ enum NCAAFCoverage: String, CaseIterable, Identifiable {
 
     var id: String { rawValue }
 
-    /// The value to send as ESPN's `groups=` scoreboard parameter.
+    /// The value to send as ESPN's `groups=` scoreboard parameter, and as `group=` to
+    /// standings. Each ignores the other's spelling.
     var espnGroupsID: String {
         switch self {
         case .fbs:          return "80"
@@ -388,9 +389,9 @@ enum NCAAFCoverage: String, CaseIterable, Identifiable {
     var settingsDescription: String {
         switch self {
         case .fbs:
-            return "Football Bowl Subdivision only — the roughly 100 games a week most college football coverage means."
+            return "Football Bowl Subdivision only — the roughly 100 games a week most college football coverage means. Standings and team lists show the same teams."
         case .allDivisionI:
-            return "FBS and FCS together — around 200 games a week, and the only way to see most of opening weekend, which is largely FCS."
+            return "FBS and FCS together — around 200 games a week, and the only way to see most of opening weekend, which is largely FCS. Standings and team lists show the same teams."
         }
     }
 }

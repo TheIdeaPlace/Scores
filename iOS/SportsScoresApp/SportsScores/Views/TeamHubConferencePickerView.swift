@@ -67,9 +67,11 @@ struct TeamHubConferencePickerView: View {
         do {
             let fetched = try await apiService.fetchConferencesWithTeams(for: sport)
             if fetched.isEmpty {
-                // No conference structure — skip to team picker
+                // No conference structure — skip to team picker. A failure here shows the
+                // error and Retry below, rather than a row reading "All Teams, 0 teams".
+                let teams = try await apiService.fetchTeamsForSport(sport: sport)
                 conferences = [ConferenceGroup(id: "all", name: "All Teams",
-                                               teams: (try? await apiService.fetchTeamsForSport(sport: sport))?.sorted { $0.displayName < $1.displayName } ?? [])]
+                                               teams: teams.sorted { $0.displayName < $1.displayName })]
             } else {
                 conferences = fetched
             }

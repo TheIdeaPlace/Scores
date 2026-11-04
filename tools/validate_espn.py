@@ -101,6 +101,10 @@ class League:
     # ESPN has none of these here, so an empty answer is the normal one.
     team_records: bool = True
     rosters: bool = True
+    # What the app asks standings for, and what the answer has to hold to be the whole league.
+    standings_params: str = ""
+    standings_min_teams: int = 0
+    standings_groupings: tuple = ()  # the levels above the conferences, each with teams under it
 
     @property
     def is_college(self) -> bool:
@@ -118,7 +122,8 @@ _SOCCER = dict(plays=False, transactions=False, player_stats=False, team_stats=F
 
 LEAGUES = [
     League("NFL", "football/nfl", FOOTBALL),
-    League("NCAAF", "football/college-football", FOOTBALL, "groups=90&limit=400", rankings=True, transactions=False),
+    League("NCAAF", "football/college-football", FOOTBALL, "groups=90&limit=400", rankings=True, transactions=False,
+           standings_params="group=90", standings_min_teams=200, standings_groupings=("FBS", "FCS")),
     League("NBA", "basketball/nba", BASKETBALL,
            player_stats_gap="ESPN's /statistics has no leaders for the NBA, so Windows shows none (#95)"),
     League("WNBA", "basketball/wnba", BASKETBALL),
@@ -456,6 +461,20 @@ def standings_entries(data):
     for node in _standing_nodes(data or {}):
         entries.extend((node.get("standings") or {}).get("entries") or [])
     return entries
+
+
+def standings_coverage_problems(data, league):
+    """What's missing for this to be the whole league. Without group=, ESPN sends FBS alone."""
+    problems = []
+    count = len(standings_entries(data))
+    if count < league.standings_min_teams:
+        problems.append(f"{count} teams, expected at least {league.standings_min_teams}")
+    for grouping in league.standings_groupings:
+        node = next((n for n in _standing_nodes(data or {}) if n.get("name") == grouping), {})
+        conferences = [c for c in node.get("children") or [] if standings_entries(c)]
+        if not conferences:
+            problems.append(f"no {grouping} conference has teams")
+    return problems
 
 
 def _total_stat(entry):
@@ -857,6 +876,8 @@ def check_standings(http, report, league, in_season):
     import espn_api
 
     url = f"{STANDINGS}/{league.path}/standings"
+    if league.standings_params:
+        url += f"?{league.standings_params}"
     status, data = http.get(url)
     if status != 200 or not isinstance(data, dict):
         report.fail(league.key, "Standings", f"got {status}", url)
@@ -865,7 +886,7 @@ def check_standings(http, report, league, in_season):
     if not entries:
         report.seasonal(in_season, league.key, "Standings", "no entries anywhere in the response", url)
         return
-    problems = standings_problems(data, league)
+    problems = standings_problems(data, league) + standings_coverage_problems(data, league)
     if problems:
         report.fail(league.key, "Standings", first_problems(problems), url)
         return
@@ -892,6 +913,8 @@ def check_standings(http, report, league, in_season):
         report.fail(league.key, "App: standings", f"{len(wrong)} wrong records: {first_problems(wrong)}")
     elif expected and len(divisions) != expected:
         report.fail(league.key, "App: standings", f"{len(divisions)} divisions, expected {expected}: {sorted(map(str, divisions))}")
+    elif divisions & set(league.standings_groupings):
+        report.fail(league.key, "App: standings", f"a conference is named {sorted(divisions & set(league.standings_groupings))}")
     else:
         report.ok(league.key, "App: standings", f"{len(rows)} teams, every record matches ESPN's")
 

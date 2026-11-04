@@ -60,12 +60,33 @@ LEAGUES = {
     "WWC2027":    "soccer/fifa.wwc",
 }
 
-# ESPN's `groups=` scoreboard parameter, per college football coverage setting.
-# 80 is the Football Bowl Subdivision; 90 is all of Division I, FBS plus FCS.
+# ESPN's college football division id, per coverage setting. 80 is the Football Bowl
+# Subdivision; 90 is all of Division I, FBS plus FCS. The scoreboard takes it as
+# `groups=` and standings as singular `group=`; each ignores the other's spelling.
 NCAAF_COVERAGE_GROUPS = {
     "fbs": "80",
     "all_d1": "90",
 }
+
+
+def _ncaaf_coverage_group():
+    """The division id for the user's college football coverage setting."""
+    import settings
+    coverage = settings.get('ncaaf_coverage', 'all_d1')
+    return NCAAF_COVERAGE_GROUPS.get(coverage, NCAAF_COVERAGE_GROUPS['all_d1'])
+
+
+# Which college football conferences come first in Standings and Teams, under ESPN's names.
+# All of FBS is here, and the FCS conferences follow alphabetically. ESPN splits the Sun
+# Belt into East and West only when asked for FBS alone.
+NCAAF_CONFERENCE_ORDER = (
+    "Southeastern Conference", "Big Ten Conference", "Big 12 Conference",
+    "Atlantic Coast Conference", "Pac-12 Conference", "American Conference",
+    "Conference USA", "Mid-American Conference", "Mountain West Conference",
+    "Sun Belt Conference", "Sun Belt - East", "Sun Belt - West",
+    "FBS Independents",
+)
+
 
 # ESPN's college football scoreboard *doubles* `limit` internally on any query
 # that is not a `dates=A-B` range: limit=5 returns 10 events, limit=50 returns
@@ -100,10 +121,7 @@ def college_scoreboard_params(league_key):
     Football follows the user's coverage setting. Basketball has only the one division.
     """
     if league_key == "NCAAF":
-        import settings
-        coverage = settings.get('ncaaf_coverage', 'all_d1')
-        group = NCAAF_COVERAGE_GROUPS.get(coverage, NCAAF_COVERAGE_GROUPS['all_d1'])
-        return [f"groups={group}", f"limit={NCAAF_SCOREBOARD_LIMIT}"]
+        return [f"groups={_ncaaf_coverage_group()}", f"limit={NCAAF_SCOREBOARD_LIMIT}"]
     if league_key in ("NCAAM", "NCAAWB"):
         return [f"groups={NCAAB_GROUP}", f"limit={NCAAB_SCOREBOARD_LIMIT}"]
     return []
@@ -2296,21 +2314,38 @@ def parse_college_standings(data):
     return rows
 
 
-def _fetch_college_standings(league, path):
+def _college_standings_rows(league, path, query=""):
+    """A college league's rows from /standings, or [] if that failed or had none."""
     try:
-        resp = _http_get(f"https://site.api.espn.com/apis/v2/sports/{path}/standings")
+        resp = _http_get(f"https://site.api.espn.com/apis/v2/sports/{path}/standings{query}")
         if resp.status_code == 200:
-            rows = parse_college_standings(resp.json())
-            if rows:
-                return rows
+            return parse_college_standings(resp.json())
     except Exception as e:
         print(f"Error in {league} standings: {e}")
-    return _get_standings_original(league)
+    return []
+
+
+def _fetch_college_standings(league, path):
+    return _college_standings_rows(league, path) or _get_standings_original(league)
 
 
 def _get_ncaaf_standings_fast():
-    """College football standings, every conference."""
-    return _fetch_college_standings("NCAAF", "football/college-football")
+    """College football standings, every conference in the user's coverage setting.
+
+    With no `group=`, ESPN returns FBS only, while the scoreboard shows FCS games too.
+
+    No fallback to the team list, as other college leagues have. Here it would be the first
+    50 teams of all 762, Division III included, with no conferences and one request each. An
+    empty answer lets the screens say there's no data.
+    """
+    return _college_standings_rows("NCAAF", "football/college-football",
+                                   f"?group={_ncaaf_coverage_group()}")
+
+
+def standings_cache_key(league_key):
+    """What to cache a league's standings under. College football's depend on a setting."""
+    key = f"standings_{league_key}"
+    return f"{key}_group{_ncaaf_coverage_group()}" if league_key == "NCAAF" else key
 
 
 def _get_ncaam_standings_fast():

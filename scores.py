@@ -13,6 +13,7 @@ import sys
 import webbrowser
 import time
 from datetime import datetime, timedelta
+from functools import partial
 from typing import Dict, List, Any, Union
 # Add project root to sys.path if running as script
 import os
@@ -54,6 +55,7 @@ except ImportError:
 
 # New separated modules
 from exceptions import ApiError, DataModelError
+from espn_api import NCAAF_CONFERENCE_ORDER, standings_cache_key
 from services.api_service import ApiService
 from services.venue_service import venue_service
 from models.game import GameData
@@ -334,7 +336,8 @@ class HomeSettingsDialog(QDialog):
         self.ncaaf_coverage_combo.setAccessibleName("College football games shown")
         self.ncaaf_coverage_combo.setAccessibleDescription(
             "All Division I shows FBS and FCS together, around 200 games a week, and is the only "
-            "setting that shows opening weekend in full. FBS only shows about 100 games a week.")
+            "setting that shows opening weekend in full. FBS only shows about 100 games a week. "
+            "Standings and Teams list the same teams.")
         cfb_layout.addWidget(self.ncaaf_coverage_combo)
         cfb_layout.addStretch()
         layout.addLayout(cfb_layout)
@@ -1883,7 +1886,10 @@ class LeagueView(BaseView):
             else:
                 # Load in background (now fast enough to not need loading dialog)
                 self.standings_loader = StandingsLoader(self.league)
-                self.standings_loader.data_loaded.connect(self._on_standings_data_loaded)
+                # A partial, not a lambda: PyQt still sees this view as the receiver, so
+                # the answer goes nowhere if the view has gone by the time it arrives.
+                self.standings_loader.data_loaded.connect(
+                    partial(self._on_standings_data_loaded, self.standings_loader.cache_key))
                 self.standings_loader.error_occurred.connect(self._on_standings_data_error)
                 # A second press, or leaving the view, replaces this reference mid-load.
                 _start_detached_thread(self.standings_loader)
@@ -1894,13 +1900,13 @@ class LeagueView(BaseView):
         """Update standings loading progress (no longer used)"""
         pass
     
-    def _on_standings_data_loaded(self, standings_data):
+    def _on_standings_data_loaded(self, cache_key, standings_data):
         """Handle standings data loaded from background thread"""
         try:
-            # Cache the data
+            # Cache the data under what was asked for, even if the setting has changed since
             cache = DataCache()
-            cache.set_standings(self.league, standings_data)
-            
+            cache.set_standings(cache_key, standings_data)
+
             # Show the dialog immediately (no loading dialog to close)
             dialog = StandingsDialog(standings_data, self.league, self)
             dialog.exec()
@@ -7956,7 +7962,8 @@ class StandingsLoader(QThread):
     def __init__(self, league: str):
         super().__init__()
         self.league = league
-    
+        self.cache_key = standings_cache_key(league)
+
     def run(self):
         try:
             standings_data = ApiService.get_standings(self.league)
@@ -8677,17 +8684,16 @@ class DataCache:
     
     def get_standings(self, league: str):
         """Get cached standings data"""
-        key = f"standings_{league}"
+        key = standings_cache_key(league)
         if key in self.standings_cache:
             data, timestamp = self.standings_cache[key]
             if time.time() - timestamp < self.cache_timeout:
                 return data
         return None
     
-    def set_standings(self, league: str, data):
-        """Cache standings data"""
-        key = f"standings_{league}"
-        self.standings_cache[key] = (data, time.time())
+    def set_standings(self, cache_key: str, data):
+        """Cache standings data under the standings_cache_key taken when the fetch started"""
+        self.standings_cache[cache_key] = (data, time.time())
 
     def get_mlb_wildcard(self):
         """Get cached MLB wild card standings, or None when stale/absent."""
@@ -8814,11 +8820,13 @@ class StandingsDialog(WildCardTabsMixin, QDialog):
         if self.league == "MLB":
             division_order = ["AL East", "AL Central", "AL West", "NL East", "NL Central", "NL West", "League"]
         elif self.league == "NFL":
-            division_order = ["AFC East", "AFC North", "AFC South", "AFC West", 
+            division_order = ["AFC East", "AFC North", "AFC South", "AFC West",
                             "NFC East", "NFC North", "NFC South", "NFC West", "League"]
+        elif self.league == "NCAAF":
+            division_order = NCAAF_CONFERENCE_ORDER
         else:
             division_order = ["League"]
-            
+
         ordered: List[tuple[str, List[Dict]]] = []
         for name in division_order:
             if name in self.standings_data.divisions:
@@ -8838,7 +8846,7 @@ class StandingsDialog(WildCardTabsMixin, QDialog):
             first = self.tab_widget.widget(0)
             if hasattr(first, "table"):
                 first.table.setFocus()  # type: ignore[attr-defined]
-    
+
     def _create_division_table(self, division_name: str, teams: List[Dict]) -> QWidget:
         widget = QWidget()
         layout = QVBoxLayout()
@@ -12004,9 +12012,7 @@ class SimpleTeamsDialog(QDialog):
         prepare_table_tabs(self.tab_widget)
         self.tab_widget.setAccessibleName("Team Information")
         self.tab_widget.setAccessibleDescription("Team information by division, use arrow keys to navigate between divisions")
-        self.tab_widget.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
-        self.tab_widget.setUsesScrollButtons(False)  # Disable scroll buttons as requested
-        
+
         # Group teams by division
         divisions = {}
         for team in self.teams_data:
@@ -12026,11 +12032,7 @@ class SimpleTeamsDialog(QDialog):
         elif self.league == "NBA":
             division_order = ["Atlantic", "Central", "Southeast", "Northwest", "Pacific", "Southwest"]
         elif self.league == "NCAAF":
-            # Use actual ESPN conference names
-            division_order = ["Southeastern Conference", "Big Ten Conference", "Big 12 Conference", 
-                            "Atlantic Coast Conference", "Pac-12 Conference", "American Conference", 
-                            "Conference USA", "Mid-American Conference", "Mountain West Conference", 
-                            "FBS Independents"]
+            division_order = NCAAF_CONFERENCE_ORDER
         elif self.league in ["NCAAB", "NCAAM", "NCAAW"]:
             # College basketball conferences (major conferences first)
             division_order = ["Southeastern Conference", "Big Ten Conference", "Big 12 Conference",
