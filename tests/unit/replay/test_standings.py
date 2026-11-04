@@ -4,6 +4,7 @@ from datetime import datetime
 import pytest
 
 import espn_api
+import settings
 
 from .support import HTTP_500, TIMEOUT, load
 
@@ -143,16 +144,16 @@ class TestNhl:
 
 class TestCollege:
     @pytest.mark.parametrize("league,path,fixture", [
-        ("NCAAF", "football/college-football", "standings_NCAAF.json"),
-        ("NCAAM", "basketball/mens-college-basketball", "standings_NCAAM.json"),
-        ("NCAAWB", "basketball/womens-college-basketball", "standings_NCAAWB.json"),
-        ("NCAAH", "hockey/mens-college-hockey", "standings_NCAAH.json"),
-        ("NCAAWH", "hockey/womens-college-hockey", "standings_NCAAWH.json"),
+        ("NCAAF", "football/college-football/standings?group=90", "standings_NCAAF.json"),
+        ("NCAAM", "basketball/mens-college-basketball/standings", "standings_NCAAM.json"),
+        ("NCAAWB", "basketball/womens-college-basketball/standings", "standings_NCAAWB.json"),
+        ("NCAAH", "hockey/mens-college-hockey/standings", "standings_NCAAH.json"),
+        ("NCAAWH", "hockey/womens-college-hockey/standings", "standings_NCAAWH.json"),
     ])
     def test_url_and_rows(self, espn, league, path, fixture):
         espn.on("/standings", load(fixture))
         rows = espn_api.get_standings(league)
-        assert espn.calls == [f"{V2}/{path}/standings"]
+        assert espn.calls == [f"{V2}/{path}"]
         assert rows and all(r["team_name"] != "Unknown" and r["team_id"] for r in rows)
 
     def test_no_rows_falls_back_to_team_records(self, espn):
@@ -165,6 +166,105 @@ class TestCollege:
         espn.on("/mens-college-hockey/standings", TIMEOUT)
         espn.on("/mens-college-hockey/teams$", {"sports": []})
         assert espn_api.get_standings("NCAAH") == []
+
+
+FCS_CONFERENCES = {
+    "Big Sky Conference", "Coastal Athletic Association", "FCS Independents", "Ivy League",
+    "Mid-Eastern Athletic Conference", "Missouri Valley Football Conference", "Northeast Conference",
+    "Ohio Valley Conference", "Patriot League", "Pioneer Football League", "Southern Conference",
+    "Southland Conference", "Southwestern Athletic Conference", "United Athletic Conference",
+}
+FBS_CONFERENCES = {
+    "American Conference", "Atlantic Coast Conference", "Big 12 Conference", "Big Ten Conference",
+    "Conference USA", "FBS Independents", "Mid-American Conference", "Mountain West Conference",
+    "Pac-12 Conference", "Southeastern Conference", "Sun Belt Conference",
+}
+
+
+class TestCollegeFootballCoverage:
+    """ESPN's real group=90 answer, trimmed to a team or two in each of its conferences."""
+
+    @pytest.fixture
+    def rows(self, espn):
+        espn.on("/college-football/standings", load("standings_NCAAF_group90.json"))
+        return espn_api.get_standings("NCAAF")
+
+    def test_every_conference_is_there_under_its_own_name(self, rows):
+        assert {r["division"] for r in rows} == FCS_CONFERENCES | FBS_CONFERENCES
+
+    def test_the_groupings_above_the_conferences_name_nothing(self, rows):
+        assert not {r["division"] for r in rows} & {"FBS", "FCS", "NCAA Division I", "League"}
+
+    def test_an_fcs_team_reads_its_overall_record(self, rows):
+        team = row(rows, "Montana State Bobcats")
+        assert (team["wins"], team["losses"], team["win_percentage"]) == (8, 1, "0.889")
+        assert team["conference_record"] == "5-1"
+        assert team["division"] == "Big Sky Conference"
+        assert team["team_id"] == "147"
+
+    def test_a_conference_sorts_by_record(self, rows):
+        big_sky = [r["team_name"] for r in rows if r["division"] == "Big Sky Conference"]
+        assert big_sky == ["Montana State Bobcats", "Montana Grizzlies"]
+
+    def test_the_model_groups_them_for_the_tabs(self, rows):
+        from models.standings import StandingsData
+        divisions = StandingsData(rows).divisions
+        assert FCS_CONFERENCES <= set(divisions)
+        assert divisions["Big Sky Conference"][0]["record"] == "8-1"
+
+    @pytest.mark.parametrize("coverage,group", [("all_d1", "90"), ("fbs", "80")])
+    def test_the_setting_picks_the_request(self, espn, coverage, group):
+        settings.set("ncaaf_coverage", coverage)
+        espn.on("/college-football/standings", load("standings_NCAAF.json"))
+        espn_api.get_standings("NCAAF")
+        assert espn.calls == [f"{V2}/football/college-football/standings?group={group}"]
+
+    def test_an_unknown_setting_means_all_of_division_one(self, espn):
+        settings.set("ncaaf_coverage", "something else")
+        espn.on("/college-football/standings", load("standings_NCAAF.json"))
+        espn_api.get_standings("NCAAF")
+        assert espn.calls == [f"{V2}/football/college-football/standings?group=90"]
+
+    def test_only_college_football_sends_a_group(self, espn):
+        espn.on("/mens-college-basketball/standings", load("standings_NCAAM.json"))
+        espn_api.get_standings("NCAAM")
+        assert "group" not in espn.calls[0]
+
+    def test_the_sun_belts_nesting_still_gives_its_teams(self, espn):
+        """FBS alone splits the Sun Belt into East and West, a level below the conferences."""
+        settings.set("ncaaf_coverage", "fbs")
+        espn.on("/college-football/standings", load("standings_NCAAF.json"))
+        rows = espn_api.get_standings("NCAAF")
+        assert row(rows, "App State Mountaineers")["division"] == "Sun Belt - East"
+        assert "Sun Belt Conference" not in {r["division"] for r in rows}
+
+    @pytest.mark.parametrize("answer", [
+        TIMEOUT, HTTP_500, {"children": []}, {"children": "not a list of conferences"},
+    ], ids=["timeout", "500", "no conferences", "bad payload"])
+    def test_no_standings_means_no_rows_not_the_team_list(self, espn, answer):
+        """/teams would be the first 50 of 762 teams, Division III included. It isn't stubbed,
+        so asking for it fails the test, and the screens get to say there's no data."""
+        espn.on("/college-football/standings", answer)
+        assert espn_api.get_standings("NCAAF") == []
+        assert espn.calls == [f"{V2}/football/college-football/standings?group=90"]
+
+    def test_the_order_covers_fbs_and_leaves_fcs_to_follow(self):
+        assert FBS_CONFERENCES <= set(espn_api.NCAAF_CONFERENCE_ORDER)
+        assert not FCS_CONFERENCES & set(espn_api.NCAAF_CONFERENCE_ORDER)
+
+
+class TestStandingsCacheKey:
+    def test_changing_the_setting_changes_college_footballs_key(self):
+        settings.set("ncaaf_coverage", "all_d1")
+        everything = espn_api.standings_cache_key("NCAAF")
+        settings.set("ncaaf_coverage", "fbs")
+        assert espn_api.standings_cache_key("NCAAF") != everything
+
+    def test_other_leagues_ignore_the_setting(self):
+        settings.set("ncaaf_coverage", "all_d1")
+        everything = espn_api.standings_cache_key("NCAAM")
+        settings.set("ncaaf_coverage", "fbs")
+        assert espn_api.standings_cache_key("NCAAM") == everything == "standings_NCAAM"
 
 
 class TestFallbackFromTeamRecords:

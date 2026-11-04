@@ -4,6 +4,7 @@ A validator that can't fail is worse than none, so each check is shown catching 
 it exists for. Nothing here touches the network.
 """
 import copy
+import dataclasses
 import glob
 import json
 import os
@@ -183,6 +184,31 @@ class TestStandings:
 
     def test_empty_is_for_the_season_to_judge(self):
         assert v.standings_problems({"children": []}, league("NFL")) == []
+
+    def test_group_90_passes_the_shape_checks(self):
+        assert v.standings_problems(load("standings_NCAAF_group90.json"), league("NCAAF")) == []
+
+    def test_coverage_needs_the_teams_and_both_divisions(self):
+        data = load("standings_NCAAF_group90.json")
+        trimmed = league("NCAAF")
+        assert v.standings_coverage_problems(data, trimmed) == [
+            f"{len(v.standings_entries(data))} teams, expected at least 200"]
+        assert v.standings_coverage_problems(data, dataclasses.replace(trimmed, standings_min_teams=20)) == []
+
+    def test_coverage_finds_a_division_with_no_conferences(self):
+        data = copy.deepcopy(load("standings_NCAAF_group90.json"))
+        fcs = next(n for n in v._standing_nodes(data) if n.get("name") == "FCS")
+        fcs["children"] = []
+        problems = v.standings_coverage_problems(data, dataclasses.replace(league("NCAAF"), standings_min_teams=0))
+        assert problems == ["no FCS conference has teams"]
+
+    def test_coverage_of_an_empty_answer(self):
+        problems = v.standings_coverage_problems({}, league("NCAAF"))
+        assert problems == ["0 teams, expected at least 200", "no FBS conference has teams", "no FCS conference has teams"]
+
+    def test_leagues_with_no_coverage_rule_have_no_coverage_problems(self):
+        assert v.standings_coverage_problems(load("standings_NFL.json"), league("NFL")) == []
+        assert "NCAAF" not in v.EXPECTED_DIVISIONS
 
     def test_overall_record_stat_gone(self):
         data = copy.deepcopy(load("standings_NFL.json"))
@@ -1444,6 +1470,78 @@ class TestRemainingChecks:
         report = v.Report()
         v.check_world_cup(FakeHttp(default=(200, data)), report)
         assert FAIL_IN(report, "App: standings")
+
+    def college_football(self, **changes):
+        # The fixture keeps every conference but only a team or two of each.
+        return dataclasses.replace(league("NCAAF"), standings_min_teams=20, **changes)
+
+    def app_rows(self, data, division=None):
+        rows = []
+        for conference in v._standing_nodes(data):
+            for entry in (conference.get("standings") or {}).get("entries") or []:
+                total = next(s for s in entry["stats"] if s.get("type") == "total")
+                wins, losses = v.parse_record(total["summary"])
+                rows.append({"team_name": entry["team"]["displayName"], "wins": wins, "losses": losses,
+                             "division": division or conference["name"]})
+        return rows
+
+    def test_college_football_asks_for_all_of_division_one(self, monkeypatch):
+        import espn_api
+        data = load("standings_NCAAF_group90.json")
+        monkeypatch.setattr(espn_api, "get_standings", lambda k: self.app_rows(data))
+        http, report = FakeHttp(default=(200, data)), v.Report()
+        v.check_standings(http, report, self.college_football(), True)
+        assert http.urls == [f"{v.STANDINGS}/football/college-football/standings?group=90"]
+        assert statuses(report, "Standings") == [v.PASS]
+        assert statuses(report, "App: standings") == [v.PASS]
+
+    def test_college_football_with_only_fbs_fails(self, monkeypatch):
+        import espn_api
+        monkeypatch.setattr(espn_api, "get_standings", lambda k: [])
+        report = v.Report()
+        v.check_standings(FakeHttp(default=(200, load("standings_NCAAF.json"))), report, league("NCAAF"), True)
+        assert statuses(report, "Standings") == [v.FAIL]
+        assert "no FCS conference" in detail(report, "Standings")
+        assert "expected at least 200" in detail(report, "Standings")
+
+    def test_app_loses_an_fcs_team(self, monkeypatch):
+        """Asks for all of Division I, as the app does in the validator, so a miss is a miss."""
+        import espn_api
+        data = load("standings_NCAAF_group90.json")
+        rows = [r for r in self.app_rows(data) if r["team_name"] != "Montana State Bobcats"]
+        monkeypatch.setattr(espn_api, "get_standings", lambda k: rows)
+        report = v.Report()
+        v.check_standings(FakeHttp(default=(200, data)), report, self.college_football(), True)
+        assert "Montana State Bobcats" in detail(report, "App: standings")
+
+    def test_app_names_a_conference_for_the_level_above_it(self, monkeypatch):
+        import espn_api
+        data = load("standings_NCAAF_group90.json")
+        monkeypatch.setattr(espn_api, "get_standings", lambda k: self.app_rows(data, division="FCS"))
+        report = v.Report()
+        v.check_standings(FakeHttp(default=(200, data)), report, self.college_football(), True)
+        assert statuses(report, "App: standings") == [v.FAIL]
+        assert "named ['FCS']" in detail(report, "App: standings")
+
+    def test_real_app_rows_match_the_real_payload(self, monkeypatch):
+        """The real parser, forced to all of Division I as main() does, on ESPN's real answer."""
+        import espn_api
+        import settings
+        data = load("standings_NCAAF_group90.json")
+        monkeypatch.setattr(settings, "_cache", {"ncaaf_coverage": "all_d1"})
+        calls = []
+
+        class Response:
+            status_code = 200
+
+            def json(self):
+                return data
+
+        monkeypatch.setattr(espn_api, "_http_get", lambda url, **k: calls.append(url) or Response())
+        report = v.Report()
+        v.check_standings(FakeHttp(default=(200, data)), report, self.college_football(), True)
+        assert statuses(report, "App: standings") == [v.PASS], detail(report, "App: standings")
+        assert calls == [f"{v.STANDINGS}/football/college-football/standings?group=90"]
 
     def test_app_standings_lose_a_team_or_a_division(self, monkeypatch):
         import espn_api

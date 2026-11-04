@@ -21,6 +21,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   Nets at Prudential Center and the Warriors at Oracle Arena. The venue now comes from the team's
   home games. Teams that had no venue at all, in college, the WNBA and soccer, now have one on both
   apps, and a World Cup team stays blank since its games are at tournament stadiums.
+- **FCS teams are in college football standings and Teams, on Windows and iPhone.** You could see
+  their games but not the teams: the Big Sky and 13 other conferences were missing. Standings and
+  team lists now follow the "College football games shown" setting, so All Division I lists all 25
+  conferences and FBS only lists the conferences you had before. With All Division I, the Sun Belt
+  shows as one conference rather than East and West, because that's how ESPN answers. Changing the
+  setting takes effect the next time you open them.
+- **If ESPN can't give college football standings on Windows, Standings and Teams say so.** Standings
+  used to list the first 50 teams in the alphabet from every division, Division III included, and
+  Teams opened with nothing in it.
+- **College teams past the first 50 appear in Transactions on iPhone.** The list stopped at 50, part
+  way through the alphabet.
 - **Utah is in the Central Division in the NHL standings on Windows.** 1.0.1 said it was, but ESPN
   spells it differently in standings than on its team page, so it stayed in a group of its own.
 - **No more blank rows in Live Scores, Venue Details and the bowl list.** They were only spacing,

@@ -384,11 +384,198 @@ final class StandingsDecodingTests: XCTestCase {
         XCTAssertTrue(groups.contains { $0.contains("Sun Belt") }, "\(groups)")
     }
 
+    func testGroup90HasEveryConferenceUnderItsOwnName() throws {
+        let groups = try response("NCAAF_group90").groupsWithEntries.map(\.name)
+        XCTAssertEqual(Set(groups), CollegeFootball.allConferences)
+        XCTAssertEqual(groups.count, 25, "\(groups)")
+    }
+
+    func testAnFCSTeamReadsItsOverallRecord() throws {
+        let team = try XCTUnwrap(try entries("NCAAF_group90").first { $0.team.displayName == "Montana State Bobcats" })
+        XCTAssertEqual(team.stats.wins, 8)
+        XCTAssertEqual(team.stats.losses, 1)
+    }
+
     func testLivePayloadsDecode() throws {
         for file in try Fixtures.live("standings") {
             let decoded = try JSONDecoder().decode(APIStandingsResponse.self, from: Data(contentsOf: file))
             XCTAssertFalse(decoded.groupsWithEntries.isEmpty, file.lastPathComponent)
         }
+    }
+}
+
+enum CollegeFootball {
+    static let fcsConferences: Set<String> = [
+        "Big Sky Conference", "Coastal Athletic Association", "FCS Independents", "Ivy League",
+        "Mid-Eastern Athletic Conference", "Missouri Valley Football Conference", "Northeast Conference",
+        "Ohio Valley Conference", "Patriot League", "Pioneer Football League", "Southern Conference",
+        "Southland Conference", "Southwestern Athletic Conference", "United Athletic Conference",
+    ]
+    static let fbsConferences: Set<String> = [
+        "American Conference", "Atlantic Coast Conference", "Big 12 Conference", "Big Ten Conference",
+        "Conference USA", "FBS Independents", "Mid-American Conference", "Mountain West Conference",
+        "Pac-12 Conference", "Southeastern Conference", "Sun Belt Conference",
+    ]
+    static var allConferences: Set<String> { fcsConferences.union(fbsConferences) }
+}
+
+/// Team Hub's conference list and the Transactions team list, which read standings their own way.
+final class ConferenceListTests: XCTestCase {
+    private func groups(_ data: Data) throws -> [ConferenceGroup] {
+        try JSONDecoder().decode(ConferencesAPIResponse.self, from: data).conferenceGroups
+    }
+
+    private func groups(_ file: String) throws -> [ConferenceGroup] {
+        try groups(Fixtures.data(file))
+    }
+
+    func testGroup90GivesEveryConferenceAndNeverFBSOrFCS() throws {
+        let names = try groups("standings_NCAAF_group90.json").map(\.name)
+        XCTAssertEqual(Set(names), CollegeFootball.allConferences)
+        XCTAssertEqual(names.count, 25, "\(names)")
+        XCTAssertFalse(names.contains("FBS"))
+        XCTAssertFalse(names.contains("FCS"))
+    }
+
+    func testFBSComesBeforeFCS() throws {
+        let names = try groups("standings_NCAAF_group90.json").map(\.name)
+        let firstFCS = try XCTUnwrap(names.firstIndex { CollegeFootball.fcsConferences.contains($0) })
+        let lastFBS = try XCTUnwrap(names.lastIndex { CollegeFootball.fbsConferences.contains($0) })
+        XCTAssertLessThan(lastFBS, firstFCS, "\(names)")
+    }
+
+    func testTheBigSkyHoldsMontanaState() throws {
+        let bigSky = try XCTUnwrap(try groups("standings_NCAAF_group90.json").first { $0.name == "Big Sky Conference" })
+        XCTAssertEqual(bigSky.teams.map(\.displayName), ["Montana Grizzlies", "Montana State Bobcats"])
+        XCTAssertEqual(bigSky.teams.last?.id, "147")
+    }
+
+    func testTheSunBeltKeepsItsSubDivisionsInsideIt() throws {
+        // FBS on its own: the Sun Belt's teams are a level below the conference.
+        let names = try groups("standings_NCAAF.json").map(\.name)
+        XCTAssertEqual(names, ["American Conference", "Sun Belt Conference"])
+        let sunBelt = try XCTUnwrap(try groups("standings_NCAAF.json").last)
+        XCTAssertTrue(sunBelt.teams.contains { $0.displayName == "App State Mountaineers" })
+    }
+
+    func testTheSunBeltNestedUnderDivisionOneToo() throws {
+        // ESPN's own nodes one level further down, the deepest this tree could go.
+        let fbs = try JSONSerialization.jsonObject(with: Fixtures.data("standings_NCAAF.json"))
+        let wrapped = try JSONSerialization.data(withJSONObject: [
+            "name": "NCAA Division I", "isConference": false, "children": [fbs],
+        ])
+        let names = try groups(wrapped).map(\.name)
+        XCTAssertEqual(names, ["American Conference", "Sun Belt Conference"])
+    }
+
+    func testSportsThatSendNoFlagStillListTheirConferences() throws {
+        // Women's college basketball and college hockey don't send isConference.
+        let hockey = try groups("standings_NCAAH.json")
+        XCTAssertFalse(hockey.isEmpty)
+        XCTAssertTrue(hockey.allSatisfy { !$0.teams.isEmpty })
+        XCTAssertFalse(try groups("standings_NCAAWB.json").isEmpty)
+        XCTAssertFalse(try groups("standings_NCAAM.json").isEmpty)
+    }
+
+    func testEntriesAtTheRootAreLeftToTheFallback() throws {
+        XCTAssertEqual(try groups("standings_NCAAWH.json").count, 0)
+    }
+
+    func testOneBadTeamCostsOnlyThatTeam() throws {
+        let json = """
+        {"children": [{"id": "20", "name": "Big Sky Conference", "isConference": true, "standings": {"entries": [
+            {"team": {"id": "147", "displayName": "Montana State Bobcats", "abbreviation": "MTST"}},
+            {"team": {"id": "149"}}
+        ]}}]}
+        """
+        let bigSky = try XCTUnwrap(try groups(Data(json.utf8)).first)
+        XCTAssertEqual(bigSky.teams.map(\.id), ["147"])
+    }
+}
+
+/// Answers every request from the routes, in order, by the first text found in the URL.
+final class StubbedESPN: URLProtocol {
+    static var routes: [(text: String, status: Int, body: Data)] = []
+    static var requested: [String] = []
+
+    static func service(_ routes: [(text: String, status: Int, body: Data)]) -> ESPNAPIService {
+        self.routes = routes
+        requested = []
+        let config = URLSessionConfiguration.ephemeral
+        config.protocolClasses = [StubbedESPN.self]
+        return ESPNAPIService(session: URLSession(configuration: config))
+    }
+
+    override class func canInit(with request: URLRequest) -> Bool { true }
+    override class func canonicalRequest(for request: URLRequest) -> URLRequest { request }
+    override func stopLoading() {}
+
+    override func startLoading() {
+        let url = request.url!
+        Self.requested.append(url.absoluteString)
+        let route = Self.routes.first { url.absoluteString.contains($0.text) }
+        let response = HTTPURLResponse(url: url, statusCode: route?.status ?? 404, httpVersion: nil, headerFields: nil)!
+        client?.urlProtocol(self, didReceive: response, cacheStoragePolicy: .notAllowed)
+        client?.urlProtocol(self, didLoad: route?.body ?? Data())
+        client?.urlProtocolDidFinishLoading(self)
+    }
+}
+
+/// `fetchTeamsForSport`, which Transactions and Team Hub's fallback both rely on.
+final class TeamListRequestTests: XCTestCase {
+    private func everyTeam() throws -> (text: String, status: Int, body: Data) {
+        // A real team list, there to be found if the code goes looking for it.
+        ("/teams", 200, try Fixtures.data("teams_NBA.json"))
+    }
+
+    private func assertThrowsWithoutAskingForEveryTeam(_ standings: (text: String, status: Int, body: Data)) async throws {
+        let service = StubbedESPN.service([standings, try everyTeam()])
+        do {
+            let teams = try await service.fetchTeamsForSport(sport: .ncaaf)
+            XCTFail("Expected an error, got \(teams.count) teams")
+        } catch {
+            XCTAssertEqual(StubbedESPN.requested.count, 1, "\(StubbedESPN.requested)")
+            XCTAssertTrue(StubbedESPN.requested[0].contains("/standings?group="), StubbedESPN.requested[0])
+        }
+    }
+
+    func testCollegeFootballListsTheTeamsInItsStandings() async throws {
+        let body = try Fixtures.data("standings_NCAAF_group90.json")
+        let service = StubbedESPN.service([("/standings", 200, body), try everyTeam()])
+        let teams = try await service.fetchTeamsForSport(sport: .ncaaf)
+        XCTAssertEqual(teams.count, 26)
+        XCTAssertTrue(teams.contains { $0.displayName == "Montana State Bobcats" })
+        XCTAssertEqual(StubbedESPN.requested.count, 1, "one request, not the list of 762 as well")
+    }
+
+    func testAFailedStandingsRequestIsAnError() async throws {
+        try await assertThrowsWithoutAskingForEveryTeam(("/standings", 500, Data()))
+    }
+
+    func testStandingsWithNoConferencesAreAnError() async throws {
+        try await assertThrowsWithoutAskingForEveryTeam(("/standings", 200, Data(#"{"name": "FBS"}"#.utf8)))
+    }
+
+    func testStandingsWithTooFewTeamsToTrustAreAnError() async throws {
+        // A real answer trimmed to 6 teams, under what fetchConferencesWithTeams accepts.
+        try await assertThrowsWithoutAskingForEveryTeam(("/standings", 200, try Fixtures.data("standings_NCAAF.json")))
+    }
+
+    func testOtherSportsAskTheTeamListForEveryTeam() async throws {
+        let service = StubbedESPN.service([try everyTeam()])
+        let teams = try await service.fetchTeamsForSport(sport: .ncaam)
+        XCTAssertEqual(teams.count, 3)
+        XCTAssertEqual(StubbedESPN.requested.count, 1)
+        XCTAssertTrue(StubbedESPN.requested[0].hasSuffix("/basketball/mens-college-basketball/teams?limit=1000"),
+                      StubbedESPN.requested[0])
+    }
+
+    func testAFailedTeamListIsAnError() async throws {
+        let service = StubbedESPN.service([("/teams", 500, Data())])
+        do {
+            _ = try await service.fetchTeamsForSport(sport: .ncaam)
+            XCTFail("Expected an error")
+        } catch {}
     }
 }
 
@@ -619,6 +806,26 @@ final class ScoreboardDayTests: XCTestCase {
 }
 
 final class RequestShapeTests: XCTestCase {
+    func testTheCoverageSettingPicksTheCollegeFootballStandings() {
+        let service = ESPNAPIService.shared
+        XCTAssertTrue(service.standingsURLString(for: .ncaaf, coverage: .allDivisionI)
+            .hasSuffix("/football/college-football/standings?group=90"))
+        XCTAssertTrue(service.standingsURLString(for: .ncaaf, coverage: .fbs)
+            .hasSuffix("/football/college-football/standings?group=80"))
+    }
+
+    func testOnlyCollegeFootballSendsAStandingsGroup() {
+        for sport in [Sport.nfl, .ncaam, .ncaawb, .ncaah] {
+            XCTAssertTrue(ESPNAPIService.shared.standingsURLString(for: sport, coverage: .fbs).hasSuffix("/standings"),
+                          sport.displayName)
+        }
+    }
+
+    func testTeamListsAskForEveryTeam() {
+        // ESPN stops at 50 without a limit, which left most college teams out of Transactions.
+        XCTAssertTrue(ESPNAPIService.shared.teamsURLString(for: .ncaam).hasSuffix("/teams?limit=1000"))
+    }
+
     /// ESPN's scoreboard answers `dates=START-END` with a 400 since September 2026. That
     /// broke the week arrows and the World Cup bracket, and nothing noticed until a bug
     /// bash (#70). Transactions is a different endpoint and still takes a range.

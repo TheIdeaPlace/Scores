@@ -8,6 +8,7 @@ box_NHL_401892628.json	80 KB	hockey groups: forwards, defenses, goalies; no name
 box_NCAAH_401923148.json	11 KB	college hockey: teams present, athletes empty, zero tabs
 box_NCAAWH_401903813.json	11 KB	women's college hockey, same
 standings_NCAAF.json	122 KB	duplicate stat names by type; Sun Belt nested one level deeper
+standings_NCAAF_group90.json	513 KB	group=90: all 25 conferences under FBS and FCS, Sun Belt flat; one team each, two in the Big Sky (Montana State 8-1)
 standings_NCAAM.json	111 KB	duplicate stat names; last 'wins' is the conference record
 standings_NCAAWB.json	112 KB	same
 standings_NCAAWH.json	14 KB	entries at the root, no children: app falls back to 0-0
