@@ -35,7 +35,6 @@ class TestApiService:
         ("get_game_details", "get_game_details", ("NFL", "1")),
         ("extract_meaningful_game_info", "extract_meaningful_game_info", ({},)),
         ("format_complex_data", "format_complex_data", ("news", [])),
-        ("get_statistics", "get_statistics", ("NFL",)),
         ("get_player_statistics", "get_player_statistics", ("NFL",)),
         ("get_team_statistics", "get_team_statistics", ("NFL",)),
         ("get_rankings", "get_rankings", ("NCAAF",)),

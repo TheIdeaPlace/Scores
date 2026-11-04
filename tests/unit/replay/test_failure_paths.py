@@ -15,7 +15,6 @@ from services.venue_service import VenueService
 from .support import EMPTY_JSON, HTTP_404, HTTP_500, NOT_JSON, TIMEOUT, FakeResponse
 
 DAY = date(2026, 6, 20)
-NOTHING = {"player_stats": [], "team_stats": []}
 TEAM_NOTHING = {"team_stats": [], "player_stats": []}
 
 # name, call, what it returns when a request fails or has nothing in it. This is what
@@ -33,9 +32,7 @@ QUIET = [
     ("get_golf_schedule", lambda: espn_api.get_golf_schedule("PGA"), []),
     ("get_world_cup_standings", lambda: espn_api.get_world_cup_standings("WC2026"), []),
     ("get_mlb_wildcard_standings", espn_api.get_mlb_wildcard_standings, {}),
-    ("get_player_statistics", lambda: espn_api.get_player_statistics("NBA"), NOTHING),
     ("get_team_statistics", lambda: espn_api.get_team_statistics("NBA"), TEAM_NOTHING),
-    ("get_statistics", lambda: espn_api.get_statistics("NBA"), NOTHING),
     ("get_venues_for_league", lambda: VenueService().get_venues_for_league("nfl"), {}),
     ("get_team_schedule NBA", lambda: espn_api.get_team_schedule("NBA", "15", season=2027), []),
     ("get_team_schedule scoreboard", lambda: espn_api.get_team_schedule("WNBA", "8", season=2026), []),
@@ -103,6 +100,18 @@ class TestTimeoutsReachTheCaller:
         espn.on(".*", TIMEOUT)
         with pytest.raises(ApiError, match="read timed out"):
             through_service()
+
+
+@pytest.mark.parametrize("reply", [TIMEOUT, requests.ConnectionError("refused"), HTTP_404, HTTP_500, NOT_JSON, EMPTY_JSON],
+                         ids=["timeout", "connection", "404", "500", "not_json", "empty"])
+def test_player_statistics_say_a_failed_request_failed(espn, reply, monkeypatch):
+    """The Statistics dialog has a row for it, which says to try again."""
+    monkeypatch.setattr(espn_api.time, "sleep", lambda seconds: None)
+    espn.on(".*", reply)
+    with pytest.raises(ApiError, match="Try again"):
+        espn_api.get_player_statistics("NBA")
+    with pytest.raises(ApiError, match="Try again"):
+        ApiService.get_player_statistics("NBA")
 
 
 @pytest.mark.parametrize("call,expected", [

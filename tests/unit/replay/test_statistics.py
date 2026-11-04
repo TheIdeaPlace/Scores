@@ -1,144 +1,252 @@
 """Statistics on real payloads. Sample players used to fill these gaps: never again."""
+import copy
 from datetime import datetime
 
 import pytest
+import requests
 
 import espn_api
 
 from exceptions import ApiError
 from services.api_service import ApiService
 
-from .support import HTTP_404, HTTP_500, TIMEOUT, FakeResponse, load
+from .support import EMPTY_JSON, HTTP_404, HTTP_500, NOT_JSON, TIMEOUT, FakeResponse, load
 
 SITE = espn_api.BASE_URL
+LEADERS = espn_api.LEADERS_BASE_URL
 NOTHING = {"player_stats": [], "team_stats": []}
 
 
-def categories(fixture):
-    return load(fixture)["stats"]["categories"]
+def with_season_type(fixture, season_type):
+    """A real season as ESPN would send it at another point in the year."""
+    season = load(fixture)
+    season["type"]["type"] = season_type
+    return season
 
 
-class TestEspnsBlip:
-    """ESPN's /statistics fails like this on a good share of requests (#133)."""
+def by_category(result):
+    return {c["category"]: c["stats"] for c in result["player_stats"]}
 
-    BLIP = FakeResponse({"code": 404, "message": espn_api.STATISTICS_BLIP}, status=404)
 
-    @pytest.fixture(autouse=True)
-    def no_waiting(self, monkeypatch):
-        self.pauses = []
-        monkeypatch.setattr(espn_api.time, "sleep", self.pauses.append)
+@pytest.fixture(autouse=True)
+def pauses(monkeypatch):
+    seen = []
+    monkeypatch.setattr(espn_api.time, "sleep", seen.append)
+    return seen
+
+
+@pytest.fixture
+def nba(espn):
+    espn.on("/season$", load("season_NBA.json"))
+    return espn
+
+
+class TestWhichSeason:
+    def test_the_url(self, nba):
+        """Asked with no region or language, ESPN fails far more often, even at 20."""
+        nba.on("/leaders", load("leaders_v3_NBA.json"))
+        espn_api.get_player_statistics("NBA")
+        assert nba.calls == [
+            "https://sports.core.api.espn.com/v2/sports/basketball/leagues/nba/season",
+            f"{LEADERS}/basketball/nba/leaders?region=us&lang=en&season=2027&seasontype=2&limit=20",
+        ]
+
+    def test_not_the_calendar_year(self, nba, freeze_now):
+        freeze_now(datetime(2026, 11, 4))
+        nba.on("/leaders", load("leaders_v3_NBA.json"))
+        espn_api.get_player_statistics("NBA")
+        assert "season=2027" in nba.calls[1]
+
+    def test_the_playoffs_show_that_seasons_regular_season(self, espn):
+        """The real WNBA season, in its playoffs. Left to itself ESPN answers with those."""
+        espn.on("/season$", load("season_WNBA.json")).on("/leaders", load("leaders_v3_NBA.json"))
+        espn_api.get_player_statistics("WNBA")
+        assert "season=2026&seasontype=2" in espn.calls[1]
+
+    def test_the_off_season_is_filed_under_the_season_just_played(self, espn):
+        espn.on("/season$", with_season_type("season_NFL.json", 4)).on("/leaders", load("leaders_v3_NFL.json"))
+        espn_api.get_player_statistics("NFL")
+        assert "season=2026&seasontype=2" in espn.calls[1]
+
+    def test_a_preseason_shows_the_last_regular_season(self, espn):
+        espn.on("/season$", with_season_type("season_NBA.json", 1)).on("/leaders", load("leaders_v3_NBA.json"))
+        espn_api.get_player_statistics("NBA")
+        assert "season=2026&seasontype=2" in espn.calls[1]
+        assert len(espn.urls("/leaders")) == 1
+
+    @pytest.mark.parametrize("reply", [TIMEOUT, HTTP_404, HTTP_500, NOT_JSON, EMPTY_JSON, {"year": None}, {"year": "2027"}],
+                             ids=["timeout", "404", "500", "not_json", "empty", "null", "text"])
+    def test_not_knowing_the_season_is_a_failure_not_a_guess(self, espn, reply):
+        espn.on("/season$", reply)
+        with pytest.raises(ApiError, match="Try again"):
+            espn_api.get_player_statistics("NBA")
+        assert not espn.urls("/leaders")
+
+    def test_a_regular_season_with_nobody_on_the_list_yet_shows_the_last_one(self, nba):
+        empty = load("leaders_v3_NBA.json")
+        empty["leaders"]["categories"] = []
+        nba.on("/leaders", lambda url: empty if "season=2027" in url else load("leaders_v3_NBA.json"))
+        assert espn_api.get_player_statistics("NBA")["player_stats"]
+        assert len(nba.urls("/leaders")) == 2
+
+    def test_a_season_espn_does_not_have_yet_shows_the_last_one(self, nba):
+        """ESPN's real answer for a season not begun, for most leagues."""
+        nba.on("/leaders", lambda url: HTTP_404 if "season=2027" in url else load("leaders_v3_NBA.json"))
+        assert espn_api.get_player_statistics("NBA")["player_stats"]
+
+    def test_nobody_on_the_list_in_either_season_is_no_leaders(self, nba):
+        nba.on("/leaders", {"leaders": {"categories": []}})
+        assert espn_api.get_player_statistics("NBA") == NOTHING
+        assert len(nba.urls("/leaders")) == 2
+
+    def test_no_season_on_file_this_year_or_last_is_a_failure(self, nba):
+        nba.on("/leaders", HTTP_404)
+        with pytest.raises(ApiError, match="Try again"):
+            espn_api.get_player_statistics("NBA")
+
+
+class TestRealLeaders:
+    @pytest.mark.parametrize("league,fixture,season,category,first,value,team", [
+        # 509 and 4 are what /statistics showed as these leaders, from the preseason.
+        ("NFL", "leaders_v3_NFL.json", "season_NFL.json", "Passing Yards", "Jordan Love", "2246", "GB"),
+        ("NHL", "leaders_v3_NHL.json", "season_NBA.json", "Goals", "Kirill Kaprizov", "15", "MIN"),
+        ("NBA", "leaders_v3_NBA.json", "season_NBA.json", "Points Per Game", "Luka Doncic", "38.3", "LAL"),
+        ("NCAAM", "leaders_v3_NCAAM.json", "season_NBA.json", "Points Per Game", "Zander Carter", "21.0", "LIB"),
+    ])
+    def test_the_rows_the_dialog_reads(self, espn, league, fixture, season, category, first, value, team):
+        espn.on("/season$", load(season)).on("/leaders", load(fixture))
+        result = espn_api.get_player_statistics(league)
+        assert result["team_stats"] == []
+        assert by_category(result)[category][0] == {
+            "player_name": first, "team": team, "value": value, "stat_name": category}
+
+    def test_they_match_the_core_apis_regular_season_and_not_its_preseason(self, espn):
+        espn.on("/season$", load("season_NFL.json")).on("/leaders", load("leaders_v3_NFL.json"))
+        rows = by_category(espn_api.get_player_statistics("NFL"))["Passing Yards"]
+
+        def passing(fixture):
+            return next(c for c in load(fixture)["categories"] if c["name"] == "passingYards")["leaders"]
+
+        assert [float(r["value"]) for r in rows] == [x["value"] for x in passing("leaders_core_NFL_regular.json")[:2]]
+        assert float(rows[0]["value"]) != passing("leaders_core_NFL_preseason.json")[0]["value"]
+
+    def test_espns_order_is_kept_so_low_is_good_reads_best_first(self, espn):
+        espn.on("/season$", load("season_NBA.json")).on("/leaders", load("leaders_v3_NHL.json"))
+        rows = by_category(espn_api.get_player_statistics("NHL"))["Goals Against Average"]
+        assert [r["value"] for r in rows] == ["1.33", "1.49"]
+
+    def test_says_what_season_they_are_from(self, nba):
+        nba.on("/leaders", load("leaders_v3_NBA.json"))
+        assert espn_api.get_player_statistics("NBA")["season"] == "2026-27 Regular Season"
+
+    def test_a_past_college_football_season_is_labelled_as_what_espn_sent(self, espn):
+        """ESPN answers seasontype=2 for 2025 with type 3, cumulative to the end of the bowls."""
+        espn.on("/season$", load("season_NFL.json")).on("/leaders", load("leaders_v3_NCAAF_2025.json"))
+        assert espn_api.get_player_statistics("NCAAF")["season"] == "2025 Postseason"
+
+    def test_preseason_numbers_are_never_shown(self, espn):
+        """Even if ESPN answers with them: this is the bug that started all this."""
+        preseason = load("leaders_v3_NFL.json")
+        preseason["requestedSeason"]["type"]["type"] = 1
+        espn.on("/season$", load("season_NFL.json")).on("/leaders", preseason)
+        assert espn_api.get_player_statistics("NFL") == NOTHING
+
+    def test_a_rating_with_nobody_rated_is_not_a_list_of_leaders(self, espn):
+        espn.on("/season$", load("season_NBA.json")).on("/leaders", load("leaders_v3_NCAAM.json"))
+        raw = next(c for c in load("leaders_v3_NCAAM.json")["leaders"]["categories"] if c["name"] == "PER")
+        assert all(leader["value"] == 0 for leader in raw["leaders"]), "the fixture should show the problem"
+        assert raw["displayName"] not in by_category(espn_api.get_player_statistics("NCAAM"))
+
+    def test_a_row_with_no_name_loses_only_that_row(self, nba):
+        data = load("leaders_v3_NBA.json")
+        data["leaders"]["categories"][0]["leaders"][0]["athlete"] = {}
+        nba.on("/leaders", data)
+        assert len(by_category(espn_api.get_player_statistics("NBA"))["Points Per Game"]) == 1
+
+    @pytest.mark.parametrize("data", [
+        {"leaders": None}, {"leaders": {"categories": None}}, {"leaders": {"categories": ["text", None]}},
+        {"leaders": {"categories": [{"name": None, "leaders": [{}]}]}},
+        {"leaders": {"categories": [{"name": "x", "leaders": ["text", None]}]}},
+        {"leaders": {"categories": [{"name": "x", "leaders": [{"value": 3, "athlete": {}}]}]}},
+    ], ids=["no_leaders", "no_categories", "text_categories", "blank_leader", "text_leaders", "nameless"])
+    def test_a_bad_payload_is_no_leaders_rather_than_an_exception(self, nba, data):
+        nba.on("/leaders", data)
+        assert espn_api.get_player_statistics("NBA") == NOTHING
+
+    def test_a_category_with_no_display_name_uses_its_own(self, nba):
+        data = {"leaders": {"categories": [{"name": "goals", "leaders": [
+            {"value": 3, "displayValue": "3", "athlete": {"shortName": "A. Bee"}, "team": {"displayName": "Bees"}}]}]}}
+        nba.on("/leaders", data)
+        result = espn_api.get_player_statistics("NBA")
+        assert result["player_stats"] == [{"category": "Goals", "stats": [
+            {"player_name": "A. Bee", "team": "Bees", "value": "3", "stat_name": "Goals"}]}]
+        assert result["season"] == ""
+
+    def test_lower_case(self, nba):
+        nba.on("/leaders", load("leaders_v3_NBA.json"))
+        assert espn_api.get_player_statistics("nba")["player_stats"]
+
+
+class TestEspnFailing:
+    """/leaders answers 500 often, and more often the more it's asked for (see espn_api)."""
 
     def replies(self, espn, *answers):
         answers = list(answers)
-        espn.on("/statistics", lambda url: answers.pop(0))
+        espn.on("/leaders", lambda url: answers.pop(0))
 
-    def test_a_blip_is_asked_again_past_the_cache(self, espn):
-        self.replies(espn, self.BLIP, load("statistics_NFL.json"))
-        result = espn_api.get_player_statistics("NFL")
-        assert result["player_stats"]
-        assert len(espn.calls) == 2
-        assert self.pauses == [1], "asking again at once would hit the same failure"
-        assert espn.calls[0] == f"{SITE}/football/nfl/statistics"
-        assert espn.calls[1] != espn.calls[0], "the same URL can read the cached failure"
+    def test_one_500_is_asked_again_past_the_cache(self, nba, pauses):
+        self.replies(nba, HTTP_500, load("leaders_v3_NBA.json"))
+        assert espn_api.get_player_statistics("NBA")["player_stats"]
+        first, second = nba.urls("/leaders")
+        assert "limit=20" in first and "limit=20" in second
+        assert second != first, "the same URL can read the cached failure"
+        assert pauses == [1]
 
-    def test_it_can_take_every_try(self, espn):
-        self.replies(espn, self.BLIP, self.BLIP, load("statistics_NFL.json"))
-        assert espn_api.get_player_statistics("NFL")["player_stats"]
+    def test_two_500s_step_down_to_a_shorter_list(self, nba, pauses):
+        self.replies(nba, HTTP_500, HTTP_500, load("leaders_v3_NBA.json"))
+        assert espn_api.get_player_statistics("NBA")["player_stats"]
+        assert "limit=10" in nba.urls("/leaders")[2]
+        assert pauses == [1], "stepping down has no cached failure to wait out"
 
-    def test_a_blip_that_lasts_says_so_rather_than_showing_nothing(self, espn):
-        self.replies(espn, self.BLIP, self.BLIP, self.BLIP)
-        with pytest.raises(ApiError, match="Try again"):
-            espn_api.get_player_statistics("NFL")
-        assert len(espn.calls) == espn_api.STATISTICS_TRIES
+    def test_it_steps_down_as_far_as_five(self, nba):
+        self.replies(nba, HTTP_500, HTTP_500, HTTP_500, load("leaders_v3_NBA.json"))
+        assert espn_api.get_player_statistics("NBA")["player_stats"]
+        assert "limit=5" in nba.urls("/leaders")[3]
 
-    @pytest.mark.parametrize("later", [TIMEOUT, HTTP_500, HTTP_404], ids=["timeout", "500", "other 404"])
-    def test_a_blip_then_a_different_failure_still_says_so(self, espn, later):
-        self.replies(espn, self.BLIP, later, later)
-        with pytest.raises(ApiError, match="Try again"):
-            espn_api.get_player_statistics("NCAAM")
-
-    def test_a_404_that_is_not_json_is_not_a_blip(self, espn):
-        espn.on("/statistics", FakeResponse(status=404, bad_json=True))
-        assert espn_api.get_player_statistics("NFL") == NOTHING
-        assert len(espn.calls) == 1
-
-    def test_a_404_whose_body_is_a_list_is_not_a_blip(self, espn):
-        espn.on("/statistics", FakeResponse([], status=404))
-        assert espn_api.get_player_statistics("NFL") == NOTHING
-        assert len(espn.calls) == 1
-
-    def test_mlb_falling_back_to_espn_during_a_blip_says_so_too(self, espn):
-        espn.on("statsapi.mlb.com", HTTP_500)
-        self.replies(espn, self.BLIP, self.BLIP, self.BLIP)
-        with pytest.raises(ApiError, match="Try again"):
-            espn_api.get_player_statistics("MLB")
-
-    def test_the_message_reaches_the_dialog_through_the_service(self, espn):
-        self.replies(espn, self.BLIP, self.BLIP, self.BLIP)
+    def test_failing_at_every_limit_says_so(self, nba):
+        nba.on("/leaders", HTTP_500)
         with pytest.raises(ApiError) as caught:
-            ApiService.get_player_statistics("NFL")
+            espn_api.get_player_statistics("NBA")
         assert str(caught.value) == espn_api.STATISTICS_UNAVAILABLE
+        assert len(nba.urls("/leaders")) == 4
 
-    def test_any_other_404_is_not_retried(self, espn):
-        espn.on("/statistics", HTTP_404)
-        assert espn_api.get_player_statistics("NFL") == NOTHING
-        assert len(espn.calls) == 1
+    def test_the_message_reaches_the_dialog_through_the_service(self, nba):
+        nba.on("/leaders", HTTP_500)
+        with pytest.raises(ApiError, match="Try again in a minute"):
+            ApiService.get_player_statistics("NBA")
 
-    def test_the_full_statistics_call_also_gets_past_it(self, espn):
-        self.replies(espn, self.BLIP, load("statistics_NFL.json"))
-        espn.on("/teams", {"sports": []})
-        assert espn_api.get_statistics("NFL")["player_stats"]
+    @pytest.mark.parametrize("reply", [TIMEOUT, requests.ConnectionError("refused"), NOT_JSON],
+                             ids=["timeout", "connection", "not_json"])
+    def test_a_broken_answer_says_so_without_more_waiting(self, nba, reply):
+        nba.on("/leaders", reply)
+        with pytest.raises(ApiError, match="Try again"):
+            espn_api.get_player_statistics("NBA")
+        assert len(nba.urls("/leaders")) == 1
 
-    def test_the_full_statistics_call_does_not_raise_when_it_lasts(self, espn):
-        """Its team statistics may still be fine."""
-        self.replies(espn, self.BLIP, self.BLIP, self.BLIP)
-        espn.on("/teams", {"sports": []})
-        assert espn_api.get_statistics("NFL")["player_stats"] == []
+    def test_being_refused_is_not_asked_again(self, nba):
+        nba.on("/leaders", FakeResponse({"code": 403}, status=403))
+        with pytest.raises(ApiError, match="Try again"):
+            espn_api.get_player_statistics("NBA")
+        assert len(nba.urls("/leaders")) == 1
 
 
-class TestPlayerStatistics:
-    def test_asks_only_for_statistics(self, espn):
-        """/leaders and /athletes are 404 in every league, up to 10 seconds each when stalled."""
-        espn.on("/nfl/statistics", load("statistics_NFL.json"))
-        espn_api.get_player_statistics("NFL")
-        assert espn.calls == [f"{SITE}/football/nfl/statistics"]
-
-    @pytest.mark.parametrize("league,path,fixture", [
-        ("NFL", "nfl", "statistics_NFL.json"),
-        ("NHL", "nhl", "statistics_NHL.json"),
-        ("NCAAM", "mens-college-basketball", "statistics_NCAAM.json"),
-    ])
-    def test_real_leaders(self, espn, league, path, fixture):
-        espn.on(f"/{path}/statistics", load(fixture))
-        result = espn_api.get_player_statistics(league)
-        assert result["team_stats"] == []
-        raw = categories(fixture)
-        assert [c["category"] for c in result["player_stats"]] == [c["displayName"] for c in raw if c.get("leaders")]
-        first = result["player_stats"][0]["stats"][0]
-        leader = raw[0]["leaders"][0]
-        assert first["player_name"] == leader["athlete"]["displayName"]
-        assert first["value"] == str(leader["value"])
-        assert first["stat_name"] == raw[0]["displayName"]
-
-    @pytest.mark.parametrize("league,fixture", [("NBA", "statistics_NBA.json"), ("NCAAH", "statistics_NCAAH.json")])
-    def test_no_stats_in_the_payload_means_no_players(self, espn, league, fixture):
-        espn.on(".*", load(fixture))
+class TestLeaguesWithNoLeaders:
+    @pytest.mark.parametrize("league", ["NCAAH", "NCAAWH", "EPL", "MLS", "La Liga", "PGA", "CRICKET"])
+    def test_none_without_asking(self, espn, league):
+        """/leaders is a 404 here, which would otherwise read as a failure. The dialog says
+        no player statistics are available, and for these that's the truth."""
         assert espn_api.get_player_statistics(league) == NOTHING
-
-    def test_every_endpoint_failing_means_no_players(self, espn):
-        espn.on(".*", TIMEOUT)
-        assert espn_api.get_player_statistics("NFL") == NOTHING
-
-    def test_unknown_league_and_lower_case(self, espn):
-        assert espn_api.get_player_statistics("CRICKET") == NOTHING
         assert espn.calls == []
-        espn.on(".*", HTTP_500)
-        assert espn_api.get_player_statistics("nfl") == NOTHING
-        assert espn.calls[0] == f"{SITE}/football/nfl/statistics"
-
-    def test_a_bad_payload_is_nothing_rather_than_an_exception(self, espn):
-        espn.on(".*", {"stats": {"categories": [{"name": None, "leaders": [{}]}]}})
-        assert espn_api.get_player_statistics("NCAAM") == NOTHING
 
 
 class TestMlbStatistics:
@@ -168,18 +276,19 @@ class TestMlbStatistics:
         names = {c["name"] for c in espn_api.get_player_statistics("MLB")["player_stats"]}
         assert "RBIs" not in names and "Home Runs" in names and len(names) == 38
 
-    def test_the_mlb_api_down_falls_back_to_espn(self, espn):
+    def test_the_mlb_api_down_falls_back_to_espn_and_reads_numbers_not_stat_lines(self, espn):
         espn.on("statsapi.mlb.com", HTTP_500)
-        espn.on("/mlb/statistics", load("statistics_NFL.json"))
-        result = espn_api.get_player_statistics("MLB")
-        assert result["player_stats"][0]["stats"][0]["player_name"] == categories("statistics_NFL.json")[0]["leaders"][0]["athlete"]["displayName"]
+        espn.on("/season$", load("season_NFL.json")).on("/leaders", load("leaders_v3_MLB.json"))
+        rows = by_category(espn_api.get_player_statistics("MLB"))
+        assert rows["Batting Average"][0]["value"] == ".316"
+        assert rows["Earned Run Average"][0]["value"] == "1.80"
+        assert rows["Home Runs"][0]["value"] == "45"
+        assert rows["On-Base-Plus-Slugging"][0]["value"] == "1.033"
 
-    def test_get_statistics_adds_team_stats(self, espn):
-        espn.on("statsapi.mlb.com", self.by_category)
-        espn.on("/mlb/teams$", load("teams_NBA.json")).on("/mlb/teams/.*/statistics", load("team_stats_NBA_15.json"))
-        result = espn_api.get_statistics("MLB")
-        assert [c["name"] for c in result["player_stats"]] == ["Home Runs"]
-        assert {c["category"] for c in result["team_stats"]} == {"General", "Offensive"}
+    def test_the_mlb_api_down_and_espn_failing_says_so(self, espn):
+        espn.on("statsapi.mlb.com", HTTP_500).on("/season$", load("season_NFL.json")).on("/leaders", HTTP_500)
+        with pytest.raises(ApiError, match="Try again"):
+            espn_api.get_player_statistics("MLB")
 
 
 class TestTeamStatistics:
@@ -229,76 +338,3 @@ class TestTeamStatistics:
             raise RuntimeError("boom")
         monkeypatch.setattr(espn_api, "_get_team_statistics", boom)
         assert espn_api.get_team_statistics("NBA") == NOTHING
-
-
-class TestGetStatistics:
-    def test_players_and_teams_together(self, espn):
-        espn.on("/nfl/statistics", load("statistics_NFL.json"))
-        espn.on("/nfl/teams$", load("teams_NFL.json")).on("/nfl/teams/.*/statistics", load("team_stats_NBA_15.json"))
-        result = espn_api.get_statistics("NFL")
-        assert result["player_stats"][0]["category"] == categories("statistics_NFL.json")[0]["displayName"]
-        assert {c["category"] for c in result["team_stats"]} == {"General", "Offensive"}
-
-    def test_statistics_then_team_stats_when_it_fails(self, espn):
-        espn.on(".*", HTTP_404)
-        assert espn_api.get_statistics("NFL") == NOTHING
-        assert espn.calls == [
-            f"{SITE}/football/nfl/statistics",
-            f"{SITE}/football/nfl/teams",
-        ]
-
-    def test_timeouts_are_nothing(self, espn):
-        espn.on(".*", TIMEOUT)
-        assert espn_api.get_statistics("NFL") == NOTHING
-
-    def test_team_stats_without_player_stats(self, espn):
-        espn.on(".*", HTTP_404)
-        espn.on("/nba/teams$", load("teams_NBA.json")).on("/nba/teams/.*/statistics", load("team_stats_NBA_15.json"))
-        result = espn_api.get_statistics("NBA")
-        assert result["player_stats"] == []
-        assert {c["category"] for c in result["team_stats"]} == {"General", "Offensive"}
-
-    def test_a_payload_with_no_stats_moves_on(self, espn):
-        """statistics_NBA.json is what ESPN sends the NBA today: no stats key."""
-        espn.on(".*", HTTP_404).on("/nba/statistics", load("statistics_NBA.json"))
-        assert espn_api.get_statistics("NBA") == NOTHING
-        assert espn.calls == [f"{SITE}/basketball/nba/statistics", f"{SITE}/basketball/nba/teams"]
-
-    def test_unknown_league_and_lower_case(self, espn):
-        assert espn_api.get_statistics("CRICKET") == NOTHING
-        espn.on(".*", HTTP_404)
-        assert espn_api.get_statistics("nfl") == NOTHING
-
-    def test_the_mlb_api_down_falls_through_to_espn(self, espn):
-        espn.on(".*", HTTP_404)
-        assert espn_api.get_statistics("MLB") == NOTHING
-        assert f"{SITE}/baseball/mlb/statistics" in espn.calls
-
-
-class TestParsing:
-    LEADERS = [{"athlete": {"displayName": "A", "team": {"abbreviation": "TM"}}, "value": 0.3125, "displayValue": ".313"}]
-
-    def test_ratio_stats_get_three_places(self):
-        data = {"stats": {"categories": [{"name": "avg", "displayName": "Batting Average", "leaders": self.LEADERS}]}}
-        assert espn_api._parse_statistics_data(data)["player_stats"] == [{"category": "Batting Average", "stats": [
-            {"player_name": "A", "team": "TM", "value": "0.312", "stat_name": "Batting Average"}]}]
-
-    def test_edge_cases(self):
-        parser = espn_api._parse_generic_player_stats
-        assert parser([{"name": "x", "leaders": []}]) == []
-        result = parser([{"name": "era", "leaders": [{"athlete": {}}, {"athlete": {"name": "B"}, "value": "n/a"}]}])
-        assert result == [{"category": "Era", "stats": [{"player_name": "B", "team": "", "value": "n/a", "stat_name": "Era"}]}]
-
-    def test_soccers_list_of_leaders_is_not_read_yet(self):
-        """Real shape, from /soccer/eng.1/statistics. Not built: it comes out as no players."""
-        data = {"stats": [{"name": "goalsLeaders", "displayName": "Goals",
-                           "leaders": [{"athlete": {"displayName": "A"}, "value": 9.0}]}]}
-        assert espn_api._parse_statistics_data(data) == NOTHING
-
-    @pytest.mark.parametrize("data", [{}, "text", [], {"stats": None}, {"stats": {"categories": None}}, load("statistics_NBA.json")])
-    def test_no_stats_key_is_nothing(self, data):
-        assert espn_api._parse_statistics_data(data) == NOTHING
-
-    def test_text_in_the_lists_is_dropped(self):
-        data = {"stats": {"categories": ["text", {"name": "pts", "leaders": ["text", {"athlete": {"name": "B"}, "value": 3}]}]}}
-        assert espn_api._parse_statistics_data(data)["player_stats"][0]["stats"][0]["player_name"] == "B"

@@ -9,7 +9,7 @@ import espn_api
 from game_labels import (basketball_period_label, best_odds, broadcast_names,
                          football_period_label, football_period_sort_key, format_height,
                          format_weight, game_standings_tables, injured_player_count,
-                         local_schedule_datetime, scoreboard_today)
+                         leader_display_value, local_schedule_datetime, scoreboard_today)
 
 FIXTURES = os.path.join(os.path.dirname(__file__), "..", "fixtures", "espn")
 
@@ -111,16 +111,22 @@ class TestCollegeStandings:
         assert espn_api.parse_college_standings({}) == []
 
 
-def test_statistics_never_invented():
-    assert espn_api._get_sample_statistics_data("NBA") == {"player_stats": [], "team_stats": []}
+def leader_display_cases():
+    path = os.path.join(os.path.dirname(__file__), "..", "fixtures", "leader_display_grid.json")
+    with open(path, encoding="utf-8") as f:
+        return json.load(f)["cases"]
 
 
-@pytest.mark.parametrize("league", ["NFL", "NHL"])
-def test_list_shaped_player_statistics_parse(league):
-    stats = load(f"statistics_{league}.json")["stats"]["categories"]
-    categories = espn_api._parse_generic_player_stats(stats)
-    assert len(categories) >= 2  # the fixture is trimmed
-    assert categories[0]["stats"]
+@pytest.mark.parametrize("case", leader_display_cases(), ids=lambda case: f"{case['category']}-{case['why']}")
+def test_a_leaders_number_reads_as_the_shared_grid_says(case):
+    """LeaderDisplayValueGridTests.swift holds the iPhone to the same grid."""
+    assert leader_display_value(case["category"], case["value"], case["display"]) == case["reads"]
+
+
+def test_a_value_that_is_not_a_number_falls_back_to_espns_text():
+    assert leader_display_value("goals", "15", "15") == "15"
+    assert leader_display_value("goals", True, "15") == "15"
+    assert leader_display_value(None, 15.0, None) == "15"
 
 
 @pytest.mark.parametrize("now,day", [
