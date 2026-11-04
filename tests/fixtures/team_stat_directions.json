@@ -1,0 +1,795 @@
+{
+ "why": "Which way each team stat ranks, on both apps. team_stats.py and TeamStatCatalog.swift each hold lowIsGood, the team's own stats where less is better; the opponent's version of a stat goes the other way, and games played always reads highest first. catalog is every stat the iPhone's league list shows, in its order. beyondTheCatalog is a few the Windows list and the iPhone's Team Hub rank as well. rankGrid is how a column of numbers becomes ranks: teams level share a rank, and the next rank counts them. tests/unit/test_team_stats.py holds Windows to this and TeamStatsTests.swift the iPhone. A change to any of it is a change to both apps.",
+ "lowIsGood": {
+  "baseball": [
+   "batting.strikeouts",
+   "fielding.errors",
+   "pitching.ERA",
+   "pitching.WHIP",
+   "pitching.earnedRuns",
+   "pitching.hits",
+   "pitching.homeRuns",
+   "pitching.losses",
+   "pitching.opponentAvg",
+   "pitching.walks"
+  ],
+  "football": [
+   "general.fumblesLost",
+   "miscellaneous.totalGiveaways",
+   "miscellaneous.totalPenalties",
+   "miscellaneous.totalPenaltyYards",
+   "passing.interceptions",
+   "passing.sackYardsLost",
+   "passing.sacks",
+   "punting.avgPuntReturnYards",
+   "punting.puntReturnYards",
+   "punting.puntReturns",
+   "punting.puntsBlocked",
+   "punting.touchbacks",
+   "receiving.receivingFumbles",
+   "receiving.receivingFumblesLost",
+   "rushing.rushingFumbles",
+   "rushing.rushingFumblesLost"
+  ],
+  "basketball": [
+   "differential.avgFoulsDifferential",
+   "differential.avgTurnoversDifferential",
+   "differential.turnoversDifferential",
+   "general.avgFouls",
+   "general.fouls",
+   "general.technicalFouls",
+   "offensive.avgTurnovers",
+   "offensive.turnovers"
+  ],
+  "hockey": [
+   "defensive.avgGoalsAgainst",
+   "defensive.goalsAgainst",
+   "defensive.overtimeLosses",
+   "defensive.shootoutShotsAgainst",
+   "defensive.shotsAgainst",
+   "general.losses",
+   "penalties.penaltyMinutes"
+  ]
+ },
+ "catalog": {
+  "baseball": [
+   {
+    "split": "own",
+    "section": "batting",
+    "stat": "runs",
+    "higherIsBetter": true
+   },
+   {
+    "split": "own",
+    "section": "batting",
+    "stat": "homeRuns",
+    "higherIsBetter": true
+   },
+   {
+    "split": "own",
+    "section": "batting",
+    "stat": "avg",
+    "higherIsBetter": true
+   },
+   {
+    "split": "own",
+    "section": "batting",
+    "stat": "onBasePct",
+    "higherIsBetter": true
+   },
+   {
+    "split": "own",
+    "section": "batting",
+    "stat": "slugAvg",
+    "higherIsBetter": true
+   },
+   {
+    "split": "own",
+    "section": "batting",
+    "stat": "OPS",
+    "higherIsBetter": true
+   },
+   {
+    "split": "own",
+    "section": "batting",
+    "stat": "hits",
+    "higherIsBetter": true
+   },
+   {
+    "split": "own",
+    "section": "batting",
+    "stat": "doubles",
+    "higherIsBetter": true
+   },
+   {
+    "split": "own",
+    "section": "batting",
+    "stat": "triples",
+    "higherIsBetter": true
+   },
+   {
+    "split": "own",
+    "section": "batting",
+    "stat": "walks",
+    "higherIsBetter": true
+   },
+   {
+    "split": "own",
+    "section": "batting",
+    "stat": "stolenBases",
+    "higherIsBetter": true
+   },
+   {
+    "split": "own",
+    "section": "batting",
+    "stat": "strikeouts",
+    "higherIsBetter": false
+   },
+   {
+    "split": "own",
+    "section": "pitching",
+    "stat": "ERA",
+    "higherIsBetter": false
+   },
+   {
+    "split": "own",
+    "section": "pitching",
+    "stat": "WHIP",
+    "higherIsBetter": false
+   },
+   {
+    "split": "own",
+    "section": "pitching",
+    "stat": "opponentAvg",
+    "higherIsBetter": false
+   },
+   {
+    "split": "own",
+    "section": "pitching",
+    "stat": "strikeouts",
+    "higherIsBetter": true
+   },
+   {
+    "split": "own",
+    "section": "pitching",
+    "stat": "qualityStarts",
+    "higherIsBetter": true
+   },
+   {
+    "split": "own",
+    "section": "pitching",
+    "stat": "saves",
+    "higherIsBetter": true
+   },
+   {
+    "split": "own",
+    "section": "pitching",
+    "stat": "shutouts",
+    "higherIsBetter": true
+   },
+   {
+    "split": "own",
+    "section": "pitching",
+    "stat": "homeRuns",
+    "higherIsBetter": false
+   },
+   {
+    "split": "own",
+    "section": "pitching",
+    "stat": "walks",
+    "higherIsBetter": false
+   },
+   {
+    "split": "own",
+    "section": "fielding",
+    "stat": "fieldingPct",
+    "higherIsBetter": true
+   },
+   {
+    "split": "own",
+    "section": "fielding",
+    "stat": "errors",
+    "higherIsBetter": false
+   }
+  ],
+  "football": [
+   {
+    "split": "own",
+    "section": "passing",
+    "stat": "totalPointsPerGame",
+    "higherIsBetter": true
+   },
+   {
+    "split": "opponent",
+    "section": "passing",
+    "stat": "totalPointsPerGame",
+    "higherIsBetter": false
+   },
+   {
+    "split": "own",
+    "section": "passing",
+    "stat": "yardsPerGame",
+    "higherIsBetter": true
+   },
+   {
+    "split": "opponent",
+    "section": "passing",
+    "stat": "yardsPerGame",
+    "higherIsBetter": false
+   },
+   {
+    "split": "own",
+    "section": "passing",
+    "stat": "passingYardsPerGame",
+    "higherIsBetter": true
+   },
+   {
+    "split": "opponent",
+    "section": "passing",
+    "stat": "passingYardsPerGame",
+    "higherIsBetter": false
+   },
+   {
+    "split": "own",
+    "section": "passing",
+    "stat": "passingTouchdowns",
+    "higherIsBetter": true
+   },
+   {
+    "split": "own",
+    "section": "passing",
+    "stat": "completionPct",
+    "higherIsBetter": true
+   },
+   {
+    "split": "own",
+    "section": "passing",
+    "stat": "QBRating",
+    "higherIsBetter": true
+   },
+   {
+    "split": "own",
+    "section": "rushing",
+    "stat": "rushingYardsPerGame",
+    "higherIsBetter": true
+   },
+   {
+    "split": "opponent",
+    "section": "rushing",
+    "stat": "rushingYardsPerGame",
+    "higherIsBetter": false
+   },
+   {
+    "split": "own",
+    "section": "rushing",
+    "stat": "rushingTouchdowns",
+    "higherIsBetter": true
+   },
+   {
+    "split": "own",
+    "section": "rushing",
+    "stat": "yardsPerRushAttempt",
+    "higherIsBetter": true
+   },
+   {
+    "split": "own",
+    "section": "miscellaneous",
+    "stat": "firstDowns",
+    "higherIsBetter": true
+   },
+   {
+    "split": "own",
+    "section": "miscellaneous",
+    "stat": "thirdDownConvPct",
+    "higherIsBetter": true
+   },
+   {
+    "split": "own",
+    "section": "miscellaneous",
+    "stat": "fourthDownConvPct",
+    "higherIsBetter": true
+   },
+   {
+    "split": "own",
+    "section": "miscellaneous",
+    "stat": "turnOverDifferential",
+    "higherIsBetter": true
+   },
+   {
+    "split": "own",
+    "section": "miscellaneous",
+    "stat": "totalTakeaways",
+    "higherIsBetter": true
+   },
+   {
+    "split": "own",
+    "section": "miscellaneous",
+    "stat": "totalGiveaways",
+    "higherIsBetter": false
+   },
+   {
+    "split": "own",
+    "section": "miscellaneous",
+    "stat": "totalPenaltyYards",
+    "higherIsBetter": false
+   },
+   {
+    "split": "opponent",
+    "section": "passing",
+    "stat": "sacks",
+    "higherIsBetter": true
+   },
+   {
+    "split": "opponent",
+    "section": "passing",
+    "stat": "interceptions",
+    "higherIsBetter": true
+   },
+   {
+    "split": "own",
+    "section": "kicking",
+    "stat": "fieldGoalPct",
+    "higherIsBetter": true
+   },
+   {
+    "split": "own",
+    "section": "punting",
+    "stat": "netAvgPuntYards",
+    "higherIsBetter": true
+   }
+  ],
+  "basketball": [
+   {
+    "split": "own",
+    "section": "offensive",
+    "stat": "avgPoints",
+    "higherIsBetter": true
+   },
+   {
+    "split": "opponent",
+    "section": "offensive",
+    "stat": "avgPoints",
+    "higherIsBetter": false
+   },
+   {
+    "split": "own",
+    "section": "differential",
+    "stat": "avgPointsDifferential",
+    "higherIsBetter": true
+   },
+   {
+    "split": "own",
+    "section": "offensive",
+    "stat": "fieldGoalPct",
+    "higherIsBetter": true
+   },
+   {
+    "split": "opponent",
+    "section": "offensive",
+    "stat": "fieldGoalPct",
+    "higherIsBetter": false
+   },
+   {
+    "split": "own",
+    "section": "offensive",
+    "stat": "threePointFieldGoalPct",
+    "higherIsBetter": true
+   },
+   {
+    "split": "own",
+    "section": "offensive",
+    "stat": "avgThreePointFieldGoalsMade",
+    "higherIsBetter": true
+   },
+   {
+    "split": "own",
+    "section": "offensive",
+    "stat": "freeThrowPct",
+    "higherIsBetter": true
+   },
+   {
+    "split": "own",
+    "section": "offensive",
+    "stat": "avgAssists",
+    "higherIsBetter": true
+   },
+   {
+    "split": "own",
+    "section": "general",
+    "stat": "avgRebounds",
+    "higherIsBetter": true
+   },
+   {
+    "split": "own",
+    "section": "offensive",
+    "stat": "avgOffensiveRebounds",
+    "higherIsBetter": true
+   },
+   {
+    "split": "own",
+    "section": "defensive",
+    "stat": "avgDefensiveRebounds",
+    "higherIsBetter": true
+   },
+   {
+    "split": "own",
+    "section": "defensive",
+    "stat": "avgSteals",
+    "higherIsBetter": true
+   },
+   {
+    "split": "own",
+    "section": "defensive",
+    "stat": "avgBlocks",
+    "higherIsBetter": true
+   },
+   {
+    "split": "own",
+    "section": "general",
+    "stat": "assistTurnoverRatio",
+    "higherIsBetter": true
+   },
+   {
+    "split": "own",
+    "section": "offensive",
+    "stat": "avgTurnovers",
+    "higherIsBetter": false
+   },
+   {
+    "split": "own",
+    "section": "general",
+    "stat": "avgFouls",
+    "higherIsBetter": false
+   }
+  ],
+  "hockey": [
+   {
+    "split": "own",
+    "section": "offensive",
+    "stat": "avgGoals",
+    "higherIsBetter": true
+   },
+   {
+    "split": "own",
+    "section": "defensive",
+    "stat": "avgGoalsAgainst",
+    "higherIsBetter": false
+   },
+   {
+    "split": "own",
+    "section": "offensive",
+    "stat": "goals",
+    "higherIsBetter": true
+   },
+   {
+    "split": "own",
+    "section": "offensive",
+    "stat": "assists",
+    "higherIsBetter": true
+   },
+   {
+    "split": "own",
+    "section": "offensive",
+    "stat": "powerPlayPct",
+    "higherIsBetter": true
+   },
+   {
+    "split": "own",
+    "section": "defensive",
+    "stat": "penaltyKillPct",
+    "higherIsBetter": true
+   },
+   {
+    "split": "own",
+    "section": "offensive",
+    "stat": "powerPlayGoals",
+    "higherIsBetter": true
+   },
+   {
+    "split": "own",
+    "section": "offensive",
+    "stat": "shortHandedGoals",
+    "higherIsBetter": true
+   },
+   {
+    "split": "own",
+    "section": "offensive",
+    "stat": "shotsTotal",
+    "higherIsBetter": true
+   },
+   {
+    "split": "own",
+    "section": "offensive",
+    "stat": "shootingPct",
+    "higherIsBetter": true
+   },
+   {
+    "split": "own",
+    "section": "defensive",
+    "stat": "savePct",
+    "higherIsBetter": true
+   },
+   {
+    "split": "own",
+    "section": "defensive",
+    "stat": "saves",
+    "higherIsBetter": true
+   },
+   {
+    "split": "own",
+    "section": "defensive",
+    "stat": "shutouts",
+    "higherIsBetter": true
+   },
+   {
+    "split": "own",
+    "section": "defensive",
+    "stat": "shotsAgainst",
+    "higherIsBetter": false
+   },
+   {
+    "split": "own",
+    "section": "penalties",
+    "stat": "penaltyMinutes",
+    "higherIsBetter": false
+   },
+   {
+    "split": "own",
+    "section": "general",
+    "stat": "wins",
+    "higherIsBetter": true
+   }
+  ]
+ },
+ "beyondTheCatalog": [
+  {
+   "sport": "football",
+   "split": "own",
+   "section": "general",
+   "stat": "gamesPlayed",
+   "higherIsBetter": true
+  },
+  {
+   "sport": "football",
+   "split": "opponent",
+   "section": "general",
+   "stat": "gamesPlayed",
+   "higherIsBetter": true
+  },
+  {
+   "sport": "hockey",
+   "split": "own",
+   "section": "general",
+   "stat": "games",
+   "higherIsBetter": true
+  },
+  {
+   "sport": "football",
+   "split": "own",
+   "section": "passing",
+   "stat": "sacks",
+   "higherIsBetter": false
+  },
+  {
+   "sport": "football",
+   "split": "own",
+   "section": "passing",
+   "stat": "interceptions",
+   "higherIsBetter": false
+  },
+  {
+   "sport": "football",
+   "split": "own",
+   "section": "defensiveinterceptions",
+   "stat": "interceptions",
+   "higherIsBetter": true
+  },
+  {
+   "sport": "football",
+   "split": "opponent",
+   "section": "miscellaneous",
+   "stat": "totalGiveaways",
+   "higherIsBetter": true
+  },
+  {
+   "sport": "football",
+   "split": "opponent",
+   "section": "miscellaneous",
+   "stat": "totalTakeaways",
+   "higherIsBetter": false
+  },
+  {
+   "sport": "basketball",
+   "split": "own",
+   "section": "offensive",
+   "stat": "turnovers",
+   "higherIsBetter": false
+  },
+  {
+   "sport": "basketball",
+   "split": "opponent",
+   "section": "offensive",
+   "stat": "avgTurnovers",
+   "higherIsBetter": true
+  },
+  {
+   "sport": "basketball",
+   "split": "own",
+   "section": "differential",
+   "stat": "avgTurnoversDifferential",
+   "higherIsBetter": false
+  },
+  {
+   "sport": "basketball",
+   "split": "own",
+   "section": "differential",
+   "stat": "avgPointsDifferential",
+   "higherIsBetter": true
+  },
+  {
+   "sport": "hockey",
+   "split": "own",
+   "section": "defensive",
+   "stat": "goalsAgainst",
+   "higherIsBetter": false
+  },
+  {
+   "sport": "hockey",
+   "split": "own",
+   "section": "general",
+   "stat": "losses",
+   "higherIsBetter": false
+  },
+  {
+   "sport": "baseball",
+   "split": "own",
+   "section": "pitching",
+   "stat": "losses",
+   "higherIsBetter": false
+  },
+  {
+   "sport": "baseball",
+   "split": "own",
+   "section": "pitching",
+   "stat": "wins",
+   "higherIsBetter": true
+  },
+  {
+   "sport": "cricket",
+   "split": "own",
+   "section": "batting",
+   "stat": "runs",
+   "higherIsBetter": true
+  }
+ ],
+ "rankGrid": [
+  {
+   "why": "highest first, no ties",
+   "higherIsBetter": true,
+   "values": [
+    10,
+    30,
+    20
+   ],
+   "ranks": [
+    3,
+    1,
+    2
+   ]
+  },
+  {
+   "why": "lowest first, no ties",
+   "higherIsBetter": false,
+   "values": [
+    10,
+    30,
+    20
+   ],
+   "ranks": [
+    1,
+    3,
+    2
+   ]
+  },
+  {
+   "why": "a tie at the top: the next rank counts both",
+   "higherIsBetter": true,
+   "values": [
+    5,
+    5,
+    4,
+    3
+   ],
+   "ranks": [
+    1,
+    1,
+    3,
+    4
+   ]
+  },
+  {
+   "why": "a tie at the top, lowest first",
+   "higherIsBetter": false,
+   "values": [
+    1.5,
+    1.5,
+    2.5
+   ],
+   "ranks": [
+    1,
+    1,
+    3
+   ]
+  },
+  {
+   "why": "a tie in the middle",
+   "higherIsBetter": true,
+   "values": [
+    9,
+    7,
+    7,
+    7,
+    1
+   ],
+   "ranks": [
+    1,
+    2,
+    2,
+    2,
+    5
+   ]
+  },
+  {
+   "why": "a tie at the bottom, lowest first",
+   "higherIsBetter": false,
+   "values": [
+    1,
+    2,
+    3,
+    3
+   ],
+   "ranks": [
+    1,
+    2,
+    3,
+    3
+   ]
+  },
+  {
+   "why": "everyone level",
+   "higherIsBetter": false,
+   "values": [
+    0,
+    0,
+    0
+   ],
+   "ranks": [
+    1,
+    1,
+    1
+   ]
+  },
+  {
+   "why": "rounding isn't a tie: both read 49.7",
+   "higherIsBetter": true,
+   "values": [
+    49.714287,
+    49.71
+   ],
+   "ranks": [
+    1,
+    2
+   ]
+  },
+  {
+   "why": "one team",
+   "higherIsBetter": true,
+   "values": [
+    3
+   ],
+   "ranks": [
+    1
+   ]
+  }
+ ]
+}

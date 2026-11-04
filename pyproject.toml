@@ -7,6 +7,7 @@ source_pkgs = [
     "espn_api",
     "box_score",
     "game_labels",
+    "team_stats",
     "text_utils",
     "timezone_utils",
     "live_play_format",

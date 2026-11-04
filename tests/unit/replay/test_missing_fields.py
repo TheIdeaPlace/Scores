@@ -119,8 +119,8 @@ CASES = [
          {"/teams$": "teams_EPL.json"}),
     case("get_player_statistics", lambda: espn_api.get_player_statistics("NBA")["player_stats"], "leaders_v3_NBA.json", "/leaders",
          {"/season$": "season_NBA.json"}),
-    case("get_team_statistics", lambda: espn_api.get_team_statistics("NBA"), "team_stats_NBA_15.json", r"/statistics",
-         {"/teams$": "teams_NBA.json"}),
+    case("get_team_statistics", lambda: espn_api.get_team_statistics("NBA")["team_stats"], "byteam_NBA.json", "/byteam",
+         {"/season$": "season_NBA.json"}),
 ]
 
 

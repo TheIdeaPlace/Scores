@@ -1,6 +1,7 @@
 """Statistics on real payloads. Sample players used to fill these gaps: never again."""
 import copy
 from datetime import datetime
+from urllib.parse import unquote
 
 import pytest
 import requests
@@ -321,75 +322,214 @@ class TestMlbStatistics:
 
 
 class TestTeamStatistics:
-    @pytest.fixture
-    def stubbed(self, espn):
-        espn.on("/nba/teams$", load("teams_NBA.json"))
-        espn.on("/nba/teams/.*/statistics", load("team_stats_NBA_15.json"))
+    """Real byteam payloads, with ESPN stubbed the way it behaves."""
+
+    BYTEAM = "/statistics/byteam"
+    WNBA_REGULAR = load("byteam_WNBA.json")
+    WNBA_DEFAULT = load("byteam_WNBA_default.json")
+
+    def stubbed(self, espn, league="NBA", byteam="byteam_NBA.json", season="season_NBA.json"):
+        espn.on("/season$", load(season)).on(self.BYTEAM, load(byteam))
         return espn
 
-    def test_urls(self, stubbed):
+    def test_one_request_for_the_season_and_one_for_the_teams(self, espn):
+        self.stubbed(espn)
         espn_api.get_team_statistics("NBA")
-        assert stubbed.calls[0] == f"{SITE}/basketball/nba/teams"
-        assert sorted(stubbed.calls[1:]) == sorted(f"{SITE}/basketball/nba/teams/{i}/statistics" for i in ("1", "2", "17"))
+        assert len(espn.calls) == 2
+        assert espn.calls[0].endswith("/basketball/leagues/nba/season")
+        assert espn.calls[1] == ("https://site.web.api.espn.com/apis/common/v3/sports/basketball/nba/statistics/byteam"
+                                 "?region=us&lang=en&season=2027&seasontype=2&limit=500")
+        assert not espn.urls("/teams")
 
-    def test_real_categories_and_stats(self, stubbed):
-        result = espn_api.get_team_statistics("NBA")
+    @pytest.mark.parametrize("key,byteam,season,teams", [
+        ("NBA", "byteam_NBA.json", "season_NBA.json", 30),
+        ("WNBA", "byteam_WNBA.json", "season_WNBA.json", 15),
+        ("NFL", "byteam_NFL.json", "season_NFL.json", 7),
+        ("NHL", "byteam_NHL.json", "season_NBA.json", 7),
+        ("MLB", "byteam_MLB.json", "season_NFL.json", 7),
+    ])
+    def test_every_team_in_the_answer(self, espn, key, byteam, season, teams):
+        espn.on("/season$", load(season)).on(self.BYTEAM, load(byteam))
+        result = espn_api.get_team_statistics(key)
         assert result["player_stats"] == []
+        assert max(len(c["stats"]) for c in result["team_stats"]) == teams
+
+    def test_lowest_first_comes_through_for_the_dialog(self, espn):
+        self.stubbed(espn)
+        result = espn_api.get_team_statistics("NBA")
+        offensive = next(c for c in result["team_stats"] if c["category"] == "Offensive")
+        assert "Turnovers Per Game" in offensive["low_is_good"]
+        assert "Points Per Game" not in offensive["low_is_good"]
+        opponents = next(c for c in result["team_stats"] if c["category"] == "Opponent Offensive")
+        assert "Points Per Game" in opponents["low_is_good"]
+        assert "Turnovers Per Game" not in opponents["low_is_good"]
+
+    # Which season
+
+    def test_the_regular_season_not_the_playoffs_espn_defaults_to(self, espn):
+        """ESPN answers the postseason unless it's asked for the regular season: the WNBA's 8
+        playoff teams where it has 15. So the regular season is asked for, the first time."""
+        espn.on("/season$", load("season_WNBA.json"))
+        espn.on(self.BYTEAM, lambda url: self.WNBA_REGULAR if "seasontype=2" in url else self.WNBA_DEFAULT)
+        result = espn_api.get_team_statistics("WNBA")
+        assert result["season"] == "2026 Regular Season"
+        assert max(len(c["stats"]) for c in result["team_stats"]) == 15
+        assert all("seasontype=2" in url for url in espn.urls(self.BYTEAM))
+        assert len(espn.urls(self.BYTEAM)) == 1
+        assert self.WNBA_DEFAULT["requestedSeason"]["type"]["type"] == 3, "the fixture should be the playoffs"
+
+    def test_the_same_season_as_the_leaders(self, espn):
+        self.stubbed(espn, byteam="byteam_WNBA.json", season="season_WNBA.json")
+        espn.on("/leaders", load("leaders_v3_NBA.json"))
+        espn_api.get_team_statistics("WNBA")
+        espn_api.get_player_statistics("WNBA")
+        assert "season=2026" in espn.urls(self.BYTEAM)[0]
+        assert "season=2026" in espn.urls("/leaders")[0]
+
+    def test_preseason_means_the_last_regular_season(self, espn):
+        season = load("season_NBA.json")
+        season["type"]["type"] = 1
+        espn.on("/season$", season).on(self.BYTEAM, load("byteam_NBA.json"))
+        espn_api.get_team_statistics("NBA")
+        assert "season=2026&seasontype=2" in espn.urls(self.BYTEAM)[0]
+
+    def test_a_new_season_with_nothing_yet_is_the_last_one(self, espn):
+        last = load("byteam_NBA.json")
+        last["requestedSeason"]["displayName"] = "2025-26"
+        espn.on("/season$", load("season_NBA.json"))
+        espn.on(self.BYTEAM, lambda url: last if "season=2026" in url else {})
+        result = espn_api.get_team_statistics("NBA")
+        assert result["season"] == "2025-26 Regular Season"
+        assert [u.split("season=")[1][:4] for u in espn.urls(self.BYTEAM)] == ["2027", "2026"]
+
+    def test_a_404_this_season_is_the_last_one_too(self, espn):
+        espn.on("/season$", load("season_NBA.json"))
+        espn.on(self.BYTEAM, lambda url: load("byteam_NBA.json") if "season=2026" in url else HTTP_404)
+        assert espn_api.get_team_statistics("NBA")["team_stats"]
+
+    def test_a_past_college_football_season_says_season_not_postseason(self, espn):
+        """ESPN answers type 3 however it's asked, with the numbers through the bowl games."""
+        espn.on("/season$", load("season_NFL.json")).on(self.BYTEAM, load("byteam_NCAAF_2025.json"))
+        result = espn_api.get_team_statistics("NCAAF")
+        assert result["season"] == "2025 Season"
+        assert result["team_stats"]
+
+    def test_an_answer_that_turns_out_a_preseason_is_not_shown(self, espn):
+        preseason = load("byteam_NBA.json")
+        preseason["requestedSeason"]["type"]["type"] = 1
+        espn.on("/season$", load("season_NBA.json"))
+        espn.on(self.BYTEAM, lambda url: load("byteam_NBA.json") if "season=2026" in url else preseason)
+        result = espn_api.get_team_statistics("NBA")
+        assert result["season"] == "2026-27 Regular Season" and "season=2026" in espn.calls[-1]
+
+    def test_nothing_for_either_season_is_nothing_to_show(self, espn):
+        espn.on("/season$", load("season_NBA.json")).on(self.BYTEAM, {})
+        assert espn_api.get_team_statistics("NBA") == NOTHING
+        assert len(espn.urls(self.BYTEAM)) == 2
+
+    # Past the most ESPN returns
+
+    def union(self, espn, plain="byteam_NCAAM_2026.json"):
+        def answer(url):
+            if "sort=" not in url:
+                return load(plain)
+            direction = "desc" if ":desc" in unquote(url) else "asc"
+            return load(f"byteam_NCAAM_2026_{direction}.json")
+
+        return espn.on("/season$", load("season_NBA.json")).on(self.BYTEAM, answer)
+
+    def test_a_list_cut_short_is_asked_for_each_way(self, espn):
+        self.union(espn)
+        result = espn_api.get_team_statistics("NCAAM")
+        asked = [unquote(url) for url in espn.urls(self.BYTEAM)]
+        assert len(asked) == 3
+        assert "sort=" not in asked[0]
+        assert "sort=offensive.avgTurnovers:desc" in asked[1] and "sort=offensive.avgTurnovers:asc" in asked[2]
+        assert all("season=2027&seasontype=2" in url for url in asked)
         general = next(c for c in result["team_stats"] if c["category"] == "General")
-        hawks = next(t for t in general["stats"] if t["team_name"] == "Atlanta Hawks")
-        assert hawks["team_id"] == "1"
-        assert hawks["stats"] == {"Rebounds Per Game": "49.6", "Assist To Turnover Ratio": "1.6", "Fouls Per Game": "22.6"}
-        assert len(general["stats"]) == 3
+        ids = {team["team_id"] for team in general["stats"]}
+        wanted = set()
+        for name in ("byteam_NCAAM_2026.json", "byteam_NCAAM_2026_desc.json", "byteam_NCAAM_2026_asc.json"):
+            wanted |= {team["team"]["id"] for team in load(name)["teams"]}
+        assert ids == wanted - {"2145"}, "every team from each answer, once, less the school with one game"
+        assert len(general["stats"]) == len(ids)
 
-    def test_one_team_failing_keeps_the_others(self, stubbed):
-        stubbed.on("/teams/2/statistics", HTTP_500).on("/teams/17/statistics", TIMEOUT)
-        general = next(c for c in espn_api.get_team_statistics("NBA")["team_stats"] if c["category"] == "General")
-        assert [t["team_name"] for t in general["stats"]] == ["Atlanta Hawks"]
+    def test_the_fixture_is_cut_short_as_espn_cut_it(self):
+        pagination = load("byteam_NCAAM_2026.json")["pagination"]
+        assert pagination["count"] == 722 and pagination["pages"] == 2
 
-    def with_seasons(self, espn, seasons):
-        """The real team statistics, with the season block ESPN sends, by team id."""
-        espn.on("/nba/teams$", load("teams_NBA.json"))
+    @pytest.mark.parametrize("failure", [HTTP_500, HTTP_404, TIMEOUT, NOT_JSON], ids=["500", "404", "timeout", "not_json"])
+    @pytest.mark.parametrize("direction", ["desc", "asc"])
+    def test_a_failure_part_way_fails_the_lot(self, espn, failure, direction):
+        """A list with teams cut out of it would still look whole, with the ranks after them wrong."""
+        def answer(url):
+            if "sort=" not in url:
+                return load("byteam_NCAAM_2026.json")
+            return failure if f":{direction}" in unquote(url) else load("byteam_NCAAM_2026_asc.json")
 
-        def team(url):
-            data = load("team_stats_NBA_15.json")
-            team_id = url.split("/teams/")[1].split("/")[0]
-            data["season"] = seasons[team_id]
-            return data
+        espn.on("/season$", load("season_NBA.json")).on(self.BYTEAM, answer)
+        with pytest.raises(ApiError, match="Try again"):
+            espn_api.get_team_statistics("NCAAM")
 
-        espn.on("/nba/teams/.*/statistics", team)
+    def test_a_list_that_fits_is_asked_for_once(self, espn):
+        self.stubbed(espn)
+        espn_api.get_team_statistics("NBA")
+        assert len(espn.urls(self.BYTEAM)) == 1
 
-    REGULAR = {"year": 2027, "type": 2, "name": "Regular Season", "displayName": "2026-27"}
-    POSTSEASON = {"year": 2026, "type": 3, "name": "Postseason", "displayName": "2026"}
+    def test_football_has_no_column_to_sort_by_and_never_asks(self, espn):
+        """ESPN doesn't say how many it has outside basketball. If it starts to, the validator warns."""
+        data = load("byteam_NFL.json")
+        data["pagination"] = {"count": 400}
+        espn.on("/season$", load("season_NFL.json")).on(self.BYTEAM, data)
+        assert espn_api.get_team_statistics("NFL")["team_stats"]
+        assert len(espn.urls(self.BYTEAM)) == 1
 
-    def test_says_the_season_when_every_team_has_the_same(self, espn):
-        self.with_seasons(espn, {"1": self.REGULAR, "2": self.REGULAR, "17": self.REGULAR})
-        assert espn_api.get_team_statistics("NBA")["season"] == "2026-27 Regular Season"
+    @pytest.mark.parametrize("pagination", [None, {}, {"count": None}, {"count": "many"}, []])
+    def test_a_strange_count_is_no_count(self, espn, pagination):
+        data = load("byteam_NCAAM_2026.json")
+        data["pagination"] = pagination
+        espn.on("/season$", load("season_NBA.json")).on(self.BYTEAM, data)
+        assert espn_api.get_team_statistics("NCAAM")["team_stats"]
+        assert len(espn.urls(self.BYTEAM)) == 1
 
-    def test_says_nothing_when_they_differ_as_in_the_playoffs(self, espn):
-        self.with_seasons(espn, {"1": self.POSTSEASON, "2": self.REGULAR, "17": self.REGULAR})
-        assert "season" not in espn_api.get_team_statistics("NBA")
+    # Nothing there, and failures
 
-    def test_says_nothing_without_a_season_block(self, stubbed):
-        assert "season" not in espn_api.get_team_statistics("NBA")
-
-    def test_a_team_without_stats_or_id_is_left_out(self, espn):
-        teams = load("teams_NBA.json")
-        del teams["sports"][0]["leagues"][0]["teams"][0]["team"]["id"]
-        espn.on("/nba/teams$", teams).on("/nba/teams/.*/statistics", {"results": {}})
-        assert espn_api.get_team_statistics("NBA") == NOTHING
-
-    @pytest.mark.parametrize("teams", [HTTP_500, TIMEOUT, {}, {"sports": []}, {"sports": [{"leagues": []}]},
-                                       {"sports": [{"leagues": [{"teams": []}]}]}])
-    def test_no_teams_means_no_stats(self, espn, teams):
-        espn.on("/nba/teams$", teams)
-        assert espn_api.get_team_statistics("NBA") == NOTHING
+    @pytest.mark.parametrize("key", ["NCAAH", "NCAAWH", "EPL", "MLS", "PGA", "WC2026"])
+    def test_a_league_espn_has_none_for_asks_nothing(self, espn, key):
+        """College hockey's answer is empty and soccer's a 500, which would read as trying again
+        forever. The old per-team endpoint had nothing for them either."""
+        assert espn_api.get_team_statistics(key) == NOTHING
+        assert espn.calls == []
 
     def test_unknown_league(self, espn):
         assert espn_api.get_team_statistics("CRICKET") == NOTHING
         assert espn.calls == []
 
-    def test_an_exception_past_the_inner_handlers_is_still_nothing(self, monkeypatch):
-        def boom(league):
-            raise RuntimeError("boom")
-        monkeypatch.setattr(espn_api, "_get_team_statistics", boom)
+    def test_lower_case_is_the_same_league(self, espn):
+        self.stubbed(espn)
+        assert espn_api.get_team_statistics("nba")["team_stats"]
+
+    @pytest.mark.parametrize("failure", [HTTP_500, TIMEOUT, NOT_JSON, requests.ConnectionError("refused")],
+                             ids=["500", "timeout", "not_json", "connection"])
+    def test_a_failed_request_says_so_rather_than_last_season(self, espn, failure):
+        espn.on("/season$", load("season_NBA.json"))
+        espn.on(self.BYTEAM, lambda url: load("byteam_NBA.json") if "season=2026" in url else failure)
+        with pytest.raises(ApiError, match="Try again"):
+            espn_api.get_team_statistics("NBA")
+        assert len(espn.urls(self.BYTEAM)) == 1
+
+    def test_no_such_season_either_year_says_so(self, espn):
+        espn.on("/season$", load("season_NBA.json")).on(self.BYTEAM, HTTP_404)
+        with pytest.raises(ApiError, match="Try again"):
+            espn_api.get_team_statistics("NBA")
+
+    @pytest.mark.parametrize("season", [HTTP_500, TIMEOUT, {}, {"year": None}])
+    def test_not_knowing_the_season_says_so(self, espn, season):
+        espn.on("/season$", season)
+        with pytest.raises(ApiError, match="Try again"):
+            espn_api.get_team_statistics("NBA")
+        assert not espn.urls(self.BYTEAM)
+
+    def test_a_body_that_isnt_an_object_is_nothing(self, espn):
+        espn.on("/season$", load("season_NBA.json")).on(self.BYTEAM, [])
         assert espn_api.get_team_statistics("NBA") == NOTHING
