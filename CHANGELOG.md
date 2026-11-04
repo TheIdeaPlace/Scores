@@ -12,10 +12,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   spells it differently in standings than on its team page, so it stayed in a group of its own.
 - **No more blank rows in Live Scores, Venue Details and the bowl list.** They were only spacing,
   and a screen reader stopped on each one to say "blank".
-- **Player statistics on Windows get past ESPN's frequent failures.** ESPN's feed often answers
-  with an error for a league it served a moment ago, mostly college basketball, and the dialog came
-  up with no leaders. It now asks again, and if ESPN still won't answer, it says so and suggests
-  trying again in a minute.
+- **Player statistics on Windows are the regular season.** NFL and NHL leaders were preseason
+  numbers shown as if they were the regular season: 509 passing yards for a leader who has 2,246.
+  The NBA and WNBA have leaders now. ERA, goals against and the like read best first rather than
+  worst first, and the dialog says which season you're looking at. Lists go to 20 players, or fewer
+  if that's all ESPN will give, down from 50; MLB stays at 50. If ESPN won't answer at all, the
+  dialog says so and suggests trying again in a minute. Between seasons you get the last regular
+  season. College hockey and soccer say there are no leaders, since ESPN has none.
+- **A team's stats tab on iPhone asks ESPN for far less.** It could make over a thousand requests
+  to name players on other teams. It now looks up only that team's, a few at a time, and tries
+  again if a name doesn't come back.
+- **League leaders on iPhone read as they should.** 38.3 points per game read 38.29, 0.9 steals
+  read .900, and a plus-minus of -3 read -3.000. Half a sack and a passer rating keep their
+  fractions, and a three-point percentage reads as a percentage. Windows now reads these the same.
 - **Times on Windows in summer.** Eastern and Pacific users fell through to Central, and Mountain
   users to Eastern.
 - **A blank field from ESPN no longer reads out as "None"** in game details, or costs a whole list
