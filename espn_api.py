@@ -60,12 +60,33 @@ LEAGUES = {
     "WWC2027":    "soccer/fifa.wwc",
 }
 
-# ESPN's `groups=` scoreboard parameter, per college football coverage setting.
-# 80 is the Football Bowl Subdivision; 90 is all of Division I, FBS plus FCS.
+# ESPN's college football division id, per coverage setting. 80 is the Football Bowl
+# Subdivision; 90 is all of Division I, FBS plus FCS. The scoreboard takes it as
+# `groups=` and standings as singular `group=`; each ignores the other's spelling.
 NCAAF_COVERAGE_GROUPS = {
     "fbs": "80",
     "all_d1": "90",
 }
+
+
+def _ncaaf_coverage_group():
+    """The division id for the user's college football coverage setting."""
+    import settings
+    coverage = settings.get('ncaaf_coverage', 'all_d1')
+    return NCAAF_COVERAGE_GROUPS.get(coverage, NCAAF_COVERAGE_GROUPS['all_d1'])
+
+
+# Which college football conferences come first in Standings and Teams, under ESPN's names.
+# All of FBS is here, and the FCS conferences follow alphabetically. ESPN splits the Sun
+# Belt into East and West only when asked for FBS alone.
+NCAAF_CONFERENCE_ORDER = (
+    "Southeastern Conference", "Big Ten Conference", "Big 12 Conference",
+    "Atlantic Coast Conference", "Pac-12 Conference", "American Conference",
+    "Conference USA", "Mid-American Conference", "Mountain West Conference",
+    "Sun Belt Conference", "Sun Belt - East", "Sun Belt - West",
+    "FBS Independents",
+)
+
 
 # ESPN's college football scoreboard *doubles* `limit` internally on any query
 # that is not a `dates=A-B` range: limit=5 returns 10 events, limit=50 returns
@@ -100,10 +121,7 @@ def college_scoreboard_params(league_key):
     Football follows the user's coverage setting. Basketball has only the one division.
     """
     if league_key == "NCAAF":
-        import settings
-        coverage = settings.get('ncaaf_coverage', 'all_d1')
-        group = NCAAF_COVERAGE_GROUPS.get(coverage, NCAAF_COVERAGE_GROUPS['all_d1'])
-        return [f"groups={group}", f"limit={NCAAF_SCOREBOARD_LIMIT}"]
+        return [f"groups={_ncaaf_coverage_group()}", f"limit={NCAAF_SCOREBOARD_LIMIT}"]
     if league_key in ("NCAAM", "NCAAWB"):
         return [f"groups={NCAAB_GROUP}", f"limit={NCAAB_SCOREBOARD_LIMIT}"]
     return []
@@ -2280,21 +2298,38 @@ def parse_college_standings(data):
     return rows
 
 
-def _fetch_college_standings(league, path):
+def _college_standings_rows(league, path, query=""):
+    """A college league's rows from /standings, or [] if that failed or had none."""
     try:
-        resp = _http_get(f"https://site.api.espn.com/apis/v2/sports/{path}/standings")
+        resp = _http_get(f"https://site.api.espn.com/apis/v2/sports/{path}/standings{query}")
         if resp.status_code == 200:
-            rows = parse_college_standings(resp.json())
-            if rows:
-                return rows
+            return parse_college_standings(resp.json())
     except Exception as e:
         print(f"Error in {league} standings: {e}")
-    return _get_standings_original(league)
+    return []
+
+
+def _fetch_college_standings(league, path):
+    return _college_standings_rows(league, path) or _get_standings_original(league)
 
 
 def _get_ncaaf_standings_fast():
-    """College football standings, every conference."""
-    return _fetch_college_standings("NCAAF", "football/college-football")
+    """College football standings, every conference in the user's coverage setting.
+
+    With no `group=`, ESPN returns FBS only, while the scoreboard shows FCS games too.
+
+    No fallback to the team list, as other college leagues have. Here it would be the first
+    50 teams of all 762, Division III included, with no conferences and one request each. An
+    empty answer lets the screens say there's no data.
+    """
+    return _college_standings_rows("NCAAF", "football/college-football",
+                                   f"?group={_ncaaf_coverage_group()}")
+
+
+def standings_cache_key(league_key):
+    """What to cache a league's standings under. College football's depend on a setting."""
+    key = f"standings_{league_key}"
+    return f"{key}_group{_ncaaf_coverage_group()}" if league_key == "NCAAF" else key
 
 
 def _get_ncaam_standings_fast():
@@ -2902,8 +2937,52 @@ def get_team_statistics(league_key):
         return {"team_stats": [], "player_stats": []}
 
 
-def get_team_info(league_key, team_id):
-    """Get full team details: record splits, venue, head coach, next game."""
+def most_used_home_venue(events, team_id):
+    """The venue of most of a team's home games in these schedule events, or None. The
+    later one wins a tie. A one-off doesn't count as the team moving, and a game at a
+    neutral site isn't a home game even when ESPN lists the team as home for it."""
+    uses = {}
+    for order, event in enumerate(_dicts(events)):
+        comp = next(iter(_dicts(event.get("competitions"))), {})
+        venue = _as_dict(comp.get("venue"))
+        name = venue.get("fullName") or venue.get("displayName")
+        if comp.get("neutralSite") or not name:
+            continue
+        home = next((c for c in _dicts(comp.get("competitors")) if c.get("homeAway") == "home"), {})
+        if str(_as_dict(home.get("team")).get("id")) == str(team_id):
+            count = uses[name][0] + 1 if name in uses else 1
+            uses[name] = (count, order, venue)
+    return max(uses.values(), key=lambda use: use[:2])[2] if uses else None
+
+
+def _team_home_venue(league_path, team_id):
+    """Where a team is playing its home games this season, or None. Asks for the regular
+    season, since the default can be an empty postseason (MLB, November) and spring
+    training is somewhere else. A soccer league's season type is its own number, so 2
+    finds nothing there and the default is the league season. A World Cup team has no
+    home: its "home" games are tournament draws, so Brazil would read MetLife Stadium."""
+    if league_path.startswith("soccer/fifa."):
+        return None
+    query = "" if league_path.startswith("soccer/") else "?seasontype=2"
+    try:
+        # Only one line of the page, so it doesn't get to hold the rest up for long.
+        resp = _http_get(f"{BASE_URL}/{league_path}/teams/{team_id}/schedule{query}", timeout=8)
+        if resp.status_code != 200:
+            return None
+        return most_used_home_venue(_as_dict(resp.json()).get("events"), team_id)
+    except Exception as e:
+        print(f"[get_team_info] schedule of team {team_id}: {e}")
+        return None
+
+
+def get_team_info(league_key, team_id, home_venue=True):
+    """Get full team details: record splits, venue, head coach, next game.
+
+    franchise.venue is years out of date for some teams (Nets at Prudential Center,
+    Warriors at Oracle) and missing for college, WNBA and soccer, so the venue comes from
+    the team's home games, at the cost of one more request. Pass home_venue=False if the
+    venue isn't going to be shown.
+    """
     league_path = LEAGUES.get(league_key)
     if not league_path or not team_id:
         return {}
@@ -2921,7 +3000,8 @@ def get_team_info(league_key, team_id):
             "location":     team.get("location") or "",
         }
         # Venue
-        venue = team.get("venue") or (team.get("franchise") or {}).get("venue") or {}
+        venue = (home_venue and _team_home_venue(league_path, team_id)) \
+            or team.get("venue") or (team.get("franchise") or {}).get("venue") or {}
         result["venue_name"] = venue.get("fullName") or venue.get("displayName") or ""
         addr = _as_dict(venue.get("address"))
         city, state = addr.get("city") or "", addr.get("state") or ""

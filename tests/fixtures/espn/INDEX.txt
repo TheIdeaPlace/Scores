@@ -8,6 +8,7 @@ box_NHL_401892628.json	80 KB	hockey groups: forwards, defenses, goalies; no name
 box_NCAAH_401923148.json	11 KB	college hockey: teams present, athletes empty, zero tabs
 box_NCAAWH_401903813.json	11 KB	women's college hockey, same
 standings_NCAAF.json	122 KB	duplicate stat names by type; Sun Belt nested one level deeper
+standings_NCAAF_group90.json	513 KB	group=90: all 25 conferences under FBS and FCS, Sun Belt flat; one team each, two in the Big Sky (Montana State 8-1)
 standings_NCAAM.json	111 KB	duplicate stat names; last 'wins' is the conference record
 standings_NCAAWB.json	112 KB	same
 standings_NCAAWH.json	14 KB	entries at the root, no children: app falls back to 0-0
@@ -53,6 +54,22 @@ scoreboard_NWSL.json	3 KB	2 games from dates=202610, used by the month-by-month 
 standings_MLB.json	14 KB	AL and NL trimmed to 5 and 3 teams, CHW and ATH included; streak is a signed value
 mlb_leaders_homeRuns.json	1 KB	statsapi.mlb.com leaders, 3 players; team has a name but no abbreviation
 schedule_MLB_10.json	4 KB	3 finals; score is a dict with displayValue
+scoreboard_NFL_202611.json	73 KB	5 games from dates=202611: Falcons listed as home at a neutral site in Madrid, Giants and Jets sharing MetLife
+scoreboard_NBA_202611.json	59 KB	3 games from dates=202611: Nets and Warriors at home, Pacers listed as home at a neutral site in Mexico City
+scoreboard_NCAAH_202611.json	12 KB	3 games from dates=202611: 2 at home, Providence listed as home at a neutral site in Belfast
+team_NBA_17.json	20 KB	Nets: franchise.venue still says Prudential Center
+schedule_NBA_17.json	87 KB	seasontype=2, 5 games: 3 home at Barclays Center, 2 away
+schedule_MLB_11.json	101 KB	seasontype=2, 6 games: Athletics home at Sutter Health Park 3 times, then Las Vegas Ballpark twice, 1 away; state is spelled out
+schedule_NFL_1.json	56 KB	seasontype=2, 3 games: Falcons home at Mercedes-Benz Stadium, then listed as home at a neutral site in Madrid, 1 away
+scoreboard_WNBA_202607.json	55 KB	3 games from dates=202607: American Airlines Center marked not indoor, an All-Star game with TEAM COOP at home
+scoreboard_NHL_202612.json	53 KB	4 games from dates=202612: Mammoth at Delta Center 3 times and a one-off at Rice-Eccles Stadium, not marked neutral
+scoreboard_WNBA_202608.json	82 KB	4 games from dates=202608: Sun at Mohegan Sun Arena 3 times and a one-off at TD Garden, not marked neutral
+scoreboard_WNBA_202605.json	39 KB	2 games from dates=202605: a preseason game with season.type 1, and a regular season one
+scoreboard_NCAAH_202602.json	23 KB	5 games from dates=202602: Providence at Schneider Arena 3 times and once at Harvard's Bright-Landry; Harvard at home
+scoreboard_MLB_202606.json	97 KB	5 games from dates=202606: Athletics at Sutter Health Park 3 times and Las Vegas Ballpark twice
+scoreboard_NCAAM_202611.json	30 KB	3 games from groups=50: Chicago and Misericordia host with no conferenceId and isActive false; Wisconsin has conferenceId
+scoreboard_NCAAWB_202611.json	21 KB	2 games from groups=50: Catawba hosts with no conferenceId; Wisconsin has conferenceId
+schedule_MLB_11_spring.json	73 KB	seasontype=1, 5 games: Athletics home at Hohokam Stadium 4 times, 1 away
 leaders_v3_NFL.json	91 KB	/leaders season=2026 limit=5, cut to 3 categories of 2: 2246 passing, not the preseason's 509; 7.5 sacks reads 8
 leaders_v3_NBA.json	90 KB	/leaders season=2027, 3 categories of 2: the NBA's only source of leaders; 3-point % is a fraction reading 0.6; points read 268.0
 leaders_v3_NHL.json	54 KB	/leaders season=2027, 3 categories of 2: goals 15, not the preseason's 4; goals against best first, lowest

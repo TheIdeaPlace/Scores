@@ -13,6 +13,7 @@ import sys
 import webbrowser
 import time
 from datetime import datetime, timedelta
+from functools import partial
 from typing import Dict, List, Any, Union
 # Add project root to sys.path if running as script
 import os
@@ -54,8 +55,9 @@ except ImportError:
 
 # New separated modules
 from exceptions import ApiError, DataModelError
+from espn_api import NCAAF_CONFERENCE_ORDER, standings_cache_key
 from services.api_service import ApiService
-from services.venue_service import venue_service
+from services.venue_service import venue_service, venue_summary
 from models.game import GameData
 from models.news import NewsData
 import live_play_format
@@ -334,7 +336,8 @@ class HomeSettingsDialog(QDialog):
         self.ncaaf_coverage_combo.setAccessibleName("College football games shown")
         self.ncaaf_coverage_combo.setAccessibleDescription(
             "All Division I shows FBS and FCS together, around 200 games a week, and is the only "
-            "setting that shows opening weekend in full. FBS only shows about 100 games a week.")
+            "setting that shows opening weekend in full. FBS only shows about 100 games a week. "
+            "Standings and Teams list the same teams.")
         cfb_layout.addWidget(self.ncaaf_coverage_combo)
         cfb_layout.addStretch()
         layout.addLayout(cfb_layout)
@@ -1883,7 +1886,10 @@ class LeagueView(BaseView):
             else:
                 # Load in background (now fast enough to not need loading dialog)
                 self.standings_loader = StandingsLoader(self.league)
-                self.standings_loader.data_loaded.connect(self._on_standings_data_loaded)
+                # A partial, not a lambda: PyQt still sees this view as the receiver, so
+                # the answer goes nowhere if the view has gone by the time it arrives.
+                self.standings_loader.data_loaded.connect(
+                    partial(self._on_standings_data_loaded, self.standings_loader.cache_key))
                 self.standings_loader.error_occurred.connect(self._on_standings_data_error)
                 # A second press, or leaving the view, replaces this reference mid-load.
                 _start_detached_thread(self.standings_loader)
@@ -1894,13 +1900,13 @@ class LeagueView(BaseView):
         """Update standings loading progress (no longer used)"""
         pass
     
-    def _on_standings_data_loaded(self, standings_data):
+    def _on_standings_data_loaded(self, cache_key, standings_data):
         """Handle standings data loaded from background thread"""
         try:
-            # Cache the data
+            # Cache the data under what was asked for, even if the setting has changed since
             cache = DataCache()
-            cache.set_standings(self.league, standings_data)
-            
+            cache.set_standings(cache_key, standings_data)
+
             # Show the dialog immediately (no loading dialog to close)
             dialog = StandingsDialog(standings_data, self.league, self)
             dialog.exec()
@@ -7956,7 +7962,8 @@ class StandingsLoader(QThread):
     def __init__(self, league: str):
         super().__init__()
         self.league = league
-    
+        self.cache_key = standings_cache_key(league)
+
     def run(self):
         try:
             standings_data = ApiService.get_standings(self.league)
@@ -8505,7 +8512,7 @@ class FavoriteCardLoader(QThread):
 
         if not summary:
             try:
-                info = espn_api.get_team_info(self.league, self.team_id)
+                info = espn_api.get_team_info(self.league, self.team_id, home_venue=False)
                 rec = info.get('record_overall', '')
                 opp = info.get('next_game_opponent', '')
                 ha = info.get('next_game_home_away', '')
@@ -8705,17 +8712,16 @@ class DataCache:
     
     def get_standings(self, league: str):
         """Get cached standings data"""
-        key = f"standings_{league}"
+        key = standings_cache_key(league)
         if key in self.standings_cache:
             data, timestamp = self.standings_cache[key]
             if time.time() - timestamp < self.cache_timeout:
                 return data
         return None
     
-    def set_standings(self, league: str, data):
-        """Cache standings data"""
-        key = f"standings_{league}"
-        self.standings_cache[key] = (data, time.time())
+    def set_standings(self, cache_key: str, data):
+        """Cache standings data under the standings_cache_key taken when the fetch started"""
+        self.standings_cache[cache_key] = (data, time.time())
 
     def get_mlb_wildcard(self):
         """Get cached MLB wild card standings, or None when stale/absent."""
@@ -8842,11 +8848,13 @@ class StandingsDialog(WildCardTabsMixin, QDialog):
         if self.league == "MLB":
             division_order = ["AL East", "AL Central", "AL West", "NL East", "NL Central", "NL West", "League"]
         elif self.league == "NFL":
-            division_order = ["AFC East", "AFC North", "AFC South", "AFC West", 
+            division_order = ["AFC East", "AFC North", "AFC South", "AFC West",
                             "NFC East", "NFC North", "NFC South", "NFC West", "League"]
+        elif self.league == "NCAAF":
+            division_order = NCAAF_CONFERENCE_ORDER
         else:
             division_order = ["League"]
-            
+
         ordered: List[tuple[str, List[Dict]]] = []
         for name in division_order:
             if name in self.standings_data.divisions:
@@ -8866,7 +8874,7 @@ class StandingsDialog(WildCardTabsMixin, QDialog):
             first = self.tab_widget.widget(0)
             if hasattr(first, "table"):
                 first.table.setFocus()  # type: ignore[attr-defined]
-    
+
     def _create_division_table(self, division_name: str, teams: List[Dict]) -> QWidget:
         widget = QWidget()
         layout = QVBoxLayout()
@@ -11726,9 +11734,7 @@ class SimpleTeamsDialog(QDialog):
         prepare_table_tabs(self.tab_widget)
         self.tab_widget.setAccessibleName("Team Information")
         self.tab_widget.setAccessibleDescription("Team information by division, use arrow keys to navigate between divisions")
-        self.tab_widget.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
-        self.tab_widget.setUsesScrollButtons(False)  # Disable scroll buttons as requested
-        
+
         # Group teams by division
         divisions = {}
         for team in self.teams_data:
@@ -11748,11 +11754,7 @@ class SimpleTeamsDialog(QDialog):
         elif self.league == "NBA":
             division_order = ["Atlantic", "Central", "Southeast", "Northwest", "Pacific", "Southwest"]
         elif self.league == "NCAAF":
-            # Use actual ESPN conference names
-            division_order = ["Southeastern Conference", "Big Ten Conference", "Big 12 Conference", 
-                            "Atlantic Coast Conference", "Pac-12 Conference", "American Conference", 
-                            "Conference USA", "Mid-American Conference", "Mountain West Conference", 
-                            "FBS Independents"]
+            division_order = NCAAF_CONFERENCE_ORDER
         elif self.league in ["NCAAB", "NCAAM", "NCAAW"]:
             # College basketball conferences (major conferences first)
             division_order = ["Southeastern Conference", "Big Ten Conference", "Big 12 Conference",
@@ -11956,38 +11958,7 @@ class VenuesDialog(QDialog):
         
         # Add venues to list with summary info
         for venue in sorted_venues:
-            venue_name = venue.get('name', 'Unknown Venue')
-            city = venue.get('city', 'Unknown')
-            state = venue.get('state', 'Unknown')
-            
-            # Add visual indicators for venue characteristics
-            indicators = []
-            if venue.get('indoor'):
-                indicators.append("Indoor")
-            else:
-                indicators.append("Outdoor")
-            
-            if venue.get('grass') is True:
-                indicators.append("Grass")
-            elif venue.get('grass') is False:
-                indicators.append("Turf")
-            else:
-                indicators.append("Unknown Surface")
-            
-            # Show home teams if available
-            home_teams = venue.get('home_teams', [])
-            team_info = ""
-            if home_teams:
-                if len(home_teams) == 1:
-                    team_info = f" - {home_teams[0].get('name', 'Unknown Team')}"
-                else:
-                    team_info = f" - {len(home_teams)} teams"
-            
-            # Format: "Stadium Name (City, State) [Indoor, Grass] - Team Name" 
-            surface_info = " | ".join(indicators)
-            display_text = f"{venue_name} ({city}, {state}) [{surface_info}]{team_info}"
-            
-            item = QListWidgetItem(display_text)
+            item = QListWidgetItem(venue_summary(venue))
             item.setData(Qt.ItemDataRole.UserRole, venue)
             self.venues_list.addItem(item)
         
@@ -12015,16 +11986,8 @@ class VenuesDialog(QDialog):
         if not venue_data:
             return
         
-        # Get detailed venue information
-        venue_id = venue_data.get('id')
-        league_key = self.league.lower()
-        venue_details = venue_service.get_venue_details(venue_id, league_key)
-        
-        if not venue_details:
-            QMessageBox.information(self, "Venue Details", "No detailed information available for this venue.")
-            return
-        
-        # Show venue details dialog
+        # Everything it shows came with the list, so nothing waits on the network here.
+        venue_details = venue_service.venue_details(venue_data, self.league.lower())
         details_dialog = VenueDetailsDialog(venue_details, self)
         details_dialog.exec()
     
@@ -12052,48 +12015,31 @@ class VenueDetailsDialog(QDialog):
         
         # Create list widget for venue details
         self.details_list = QListWidget()
-        
+        self.details_list.setAccessibleName(self.windowTitle())
+
         # Get venue information sections
         basic_info = self.venue_details.get('basic_info', {})
         characteristics = self.venue_details.get('characteristics', {})
         home_teams = self.venue_details.get('home_teams', [])
         interesting_facts = self.venue_details.get('interesting_facts', [])
-        media = self.venue_details.get('media', {})
-        images = media.get('images', [])
-        
+
         # Venue name header
         venue_name = basic_info.get('name', 'Unknown Venue')
         self.details_list.addItem(QListWidgetItem(f"=== {venue_name} ==="))
         
         # Basic Information Section
         self.details_list.addItem(QListWidgetItem("--- Basic Information ---"))
-        if basic_info.get('city') and basic_info.get('state'):
-            self.details_list.addItem(QListWidgetItem(f"Location: {basic_info['city']}, {basic_info['state']}"))
+        if basic_info.get('location'):
+            self.details_list.addItem(QListWidgetItem(f"Location: {basic_info['location']}"))
         if basic_info.get('league'):
             self.details_list.addItem(QListWidgetItem(f"League: {basic_info['league']}"))
-        if basic_info.get('zip_code'):
-            self.details_list.addItem(QListWidgetItem(f"ZIP Code: {basic_info['zip_code']}"))
-        
+
         # Characteristics Section
-        if characteristics:
+        if characteristics.get('indoor') is not None:
             self.details_list.addItem(QListWidgetItem("--- Stadium Characteristics ---"))
-            if characteristics.get('indoor') is not None:
-                venue_type = "Indoor stadium" if characteristics['indoor'] else "Outdoor stadium"
-                self.details_list.addItem(QListWidgetItem(f"Type: {venue_type}"))
-            
-            if characteristics.get('grass') is not None:
-                if characteristics['grass']:
-                    self.details_list.addItem(QListWidgetItem("Playing Surface: Natural grass"))
-                else:
-                    self.details_list.addItem(QListWidgetItem("Playing Surface: Artificial turf"))
-            
-            if characteristics.get('capacity'):
-                try:
-                    capacity = int(characteristics['capacity'])
-                    self.details_list.addItem(QListWidgetItem(f"Capacity: {capacity:,} fans"))
-                except (ValueError, TypeError):
-                    self.details_list.addItem(QListWidgetItem(f"Capacity: {characteristics['capacity']}"))
-        
+            venue_type = "Indoor stadium" if characteristics['indoor'] else "Outdoor stadium"
+            self.details_list.addItem(QListWidgetItem(f"Type: {venue_type}"))
+
         # Home Teams Section
         if home_teams:
             self.details_list.addItem(QListWidgetItem("--- Home Teams ---"))
@@ -12110,20 +12056,9 @@ class VenueDetailsDialog(QDialog):
             self.details_list.addItem(QListWidgetItem("--- Interesting Facts ---"))
             for fact in interesting_facts:
                 self.details_list.addItem(QListWidgetItem(f"• {fact}"))
-        
-        # Images Section
-        if images:
-            self.details_list.addItem(QListWidgetItem("--- Available Media ---"))
-            self.details_list.addItem(QListWidgetItem(f"{len(images)} high-quality images available"))
-            # Show first few image types for information
-            for i, img in enumerate(images[:3]):
-                rel_info = ", ".join(img.get('rel', []))
-                if rel_info:
-                    self.details_list.addItem(QListWidgetItem(f"  • {rel_info.title()} view"))
-            
-            if len(images) > 3:
-                self.details_list.addItem(QListWidgetItem(f"  • ... and {len(images) - 3} more"))
-        
+
+        self.details_list.setCurrentRow(0)
+        _focus_once_active(self, self.details_list.setFocus)
         layout.addWidget(self.details_list)
         
         # Close button

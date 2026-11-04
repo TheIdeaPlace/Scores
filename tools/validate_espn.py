@@ -99,6 +99,10 @@ class League:
     # ESPN has none of these here, so an empty answer is the normal one.
     team_records: bool = True
     rosters: bool = True
+    # What the app asks standings for, and what the answer has to hold to be the whole league.
+    standings_params: str = ""
+    standings_min_teams: int = 0
+    standings_groupings: tuple = ()  # the levels above the conferences, each with teams under it
 
     @property
     def is_college(self) -> bool:
@@ -117,7 +121,8 @@ _SOCCER = dict(plays=False, transactions=False, player_stats=False, team_stats=F
 
 LEAGUES = [
     League("NFL", "football/nfl", FOOTBALL),
-    League("NCAAF", "football/college-football", FOOTBALL, "groups=90&limit=400", rankings=True, transactions=False),
+    League("NCAAF", "football/college-football", FOOTBALL, "groups=90&limit=400", rankings=True, transactions=False,
+           standings_params="group=90", standings_min_teams=200, standings_groupings=("FBS", "FCS")),
     League("NBA", "basketball/nba", BASKETBALL),
     League("WNBA", "basketball/wnba", BASKETBALL, schedule_window=True),
     League("NCAAM", "basketball/mens-college-basketball", BASKETBALL, "groups=50&limit=400",
@@ -442,6 +447,20 @@ def standings_entries(data):
     for node in _standing_nodes(data or {}):
         entries.extend((node.get("standings") or {}).get("entries") or [])
     return entries
+
+
+def standings_coverage_problems(data, league):
+    """What's missing for this to be the whole league. Without group=, ESPN sends FBS alone."""
+    problems = []
+    count = len(standings_entries(data))
+    if count < league.standings_min_teams:
+        problems.append(f"{count} teams, expected at least {league.standings_min_teams}")
+    for grouping in league.standings_groupings:
+        node = next((n for n in _standing_nodes(data or {}) if n.get("name") == grouping), {})
+        conferences = [c for c in node.get("children") or [] if standings_entries(c)]
+        if not conferences:
+            problems.append(f"no {grouping} conference has teams")
+    return problems
 
 
 def _total_stat(entry):
@@ -893,6 +912,8 @@ def check_standings(http, report, league, in_season):
     import espn_api
 
     url = f"{STANDINGS}/{league.path}/standings"
+    if league.standings_params:
+        url += f"?{league.standings_params}"
     status, data = http.get(url)
     if status != 200 or not isinstance(data, dict):
         report.fail(league.key, "Standings", f"got {status}", url)
@@ -901,7 +922,7 @@ def check_standings(http, report, league, in_season):
     if not entries:
         report.seasonal(in_season, league.key, "Standings", "no entries anywhere in the response", url)
         return
-    problems = standings_problems(data, league)
+    problems = standings_problems(data, league) + standings_coverage_problems(data, league)
     if problems:
         report.fail(league.key, "Standings", first_problems(problems), url)
         return
@@ -928,6 +949,8 @@ def check_standings(http, report, league, in_season):
         report.fail(league.key, "App: standings", f"{len(wrong)} wrong records: {first_problems(wrong)}")
     elif expected and len(divisions) != expected:
         report.fail(league.key, "App: standings", f"{len(divisions)} divisions, expected {expected}: {sorted(map(str, divisions))}")
+    elif divisions & set(league.standings_groupings):
+        report.fail(league.key, "App: standings", f"a conference is named {sorted(divisions & set(league.standings_groupings))}")
     else:
         report.ok(league.key, "App: standings", f"{len(rows)} teams, every record matches ESPN's")
 
@@ -1490,22 +1513,49 @@ def check_hockey_web_page(http, report):
     report.ok("NHL", "espn.com game page", f"{len(plays)} plays" if plays else "none, as usual from a server")
 
 
+# How many home teams the Venues list should find: a little under what one month of each
+# league had in November 2026. College football's is for the narrower coverage setting.
+VENUE_HOME_TEAMS = {"MLB": 28, "NFL": 28, "NBA": 28, "NHL": 28, "WNBA": 12, "NCAAF": 120,
+                    "NCAAM": 300, "NCAAWB": 300, "NCAAH": 50, "NCAAWH": 35}
+
+# Team Info's venue comes from the team's home games. ESPN has no other venue for these.
+TEAM_INFO_VENUES = (("WNBA", "8"), ("NCAAM", "275"))
+
+
 def check_venues(http, report, seasons):
-    """Windows' venue list, which only looks a couple of months either side of today."""
+    """Windows' venue list, with its home teams, from one month of each league's scoreboard.
+    It reaches back to last season when out of season, so no venues is always a failure."""
+    import espn_api
     from services.venue_service import VenueService
 
-    for key in ("NFL", "NHL"):
+    for key, expected_teams in VENUE_HOME_TEAMS.items():
         try:
             venues = VenueService().get_venues_for_league(key.lower())
         except Exception as e:
             report.fail(key, "App: venues", f"raised {type(e).__name__}: {e}")
             continue
+        teams = {team["id"] for venue in venues.values() for team in venue["home_teams"]}
         if not venues:
-            report.seasonal(seasons.get(key, False), key, "App: venues", "no venues")
+            report.fail(key, "App: venues", "no venues")
         elif not all(v.get("name") for v in venues.values()):
             report.fail(key, "App: venues", "a venue has no name")
+        elif not all(v["home_teams"] for v in venues.values()):
+            report.fail(key, "App: venues", "a venue has no home team")
+        elif len(teams) < expected_teams:
+            report.warn(key, "App: venues", f"only {len(teams)} home teams at {len(venues)} venues, expected {expected_teams}")
         else:
-            report.ok(key, "App: venues", f"{len(venues)} venues")
+            report.ok(key, "App: venues", f"{len(venues)} venues, {len(teams)} home teams")
+
+    for key, team_id in TEAM_INFO_VENUES:
+        try:
+            venue = espn_api.get_team_info(key, team_id).get("venue_name")
+        except Exception as e:
+            report.fail(key, "App: team info venue", f"raised {type(e).__name__}: {e}")
+            continue
+        if venue:
+            report.ok(key, "App: team info venue", venue)
+        else:
+            report.seasonal(seasons.get(key, False), key, "App: team info venue", f"no venue for team {team_id}")
 
 
 def check_fantasy(http, report):

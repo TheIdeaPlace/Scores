@@ -4,6 +4,7 @@ A validator that can't fail is worse than none, so each check is shown catching 
 it exists for. Nothing here touches the network.
 """
 import copy
+import dataclasses
 import glob
 import json
 import os
@@ -183,6 +184,31 @@ class TestStandings:
 
     def test_empty_is_for_the_season_to_judge(self):
         assert v.standings_problems({"children": []}, league("NFL")) == []
+
+    def test_group_90_passes_the_shape_checks(self):
+        assert v.standings_problems(load("standings_NCAAF_group90.json"), league("NCAAF")) == []
+
+    def test_coverage_needs_the_teams_and_both_divisions(self):
+        data = load("standings_NCAAF_group90.json")
+        trimmed = league("NCAAF")
+        assert v.standings_coverage_problems(data, trimmed) == [
+            f"{len(v.standings_entries(data))} teams, expected at least 200"]
+        assert v.standings_coverage_problems(data, dataclasses.replace(trimmed, standings_min_teams=20)) == []
+
+    def test_coverage_finds_a_division_with_no_conferences(self):
+        data = copy.deepcopy(load("standings_NCAAF_group90.json"))
+        fcs = next(n for n in v._standing_nodes(data) if n.get("name") == "FCS")
+        fcs["children"] = []
+        problems = v.standings_coverage_problems(data, dataclasses.replace(league("NCAAF"), standings_min_teams=0))
+        assert problems == ["no FCS conference has teams"]
+
+    def test_coverage_of_an_empty_answer(self):
+        problems = v.standings_coverage_problems({}, league("NCAAF"))
+        assert problems == ["0 teams, expected at least 200", "no FBS conference has teams", "no FCS conference has teams"]
+
+    def test_leagues_with_no_coverage_rule_have_no_coverage_problems(self):
+        assert v.standings_coverage_problems(load("standings_NFL.json"), league("NFL")) == []
+        assert "NCAAF" not in v.EXPECTED_DIVISIONS
 
     def test_overall_record_stat_gone(self):
         data = copy.deepcopy(load("standings_NFL.json"))
@@ -1165,29 +1191,93 @@ class TestOtherSources:
         v.check_mlb_extras(FakeHttp(default=(200, {"leagueLeaders": []})), report, {"MLB": in_season})
         assert statuses(report, "App: wild card") == [expected]
 
-    @pytest.mark.parametrize("in_season,expected", [(True, v.FAIL), (False, v.WARN)])
-    def test_no_venues(self, monkeypatch, in_season, expected):
+    def venues_of(self, monkeypatch, venues, info=None, seasons=None):
+        """check_venues with these venues for every league, and a team page with this venue."""
+        import espn_api
         from services import venue_service
-        monkeypatch.setattr(venue_service.VenueService, "get_venues_for_league", lambda self, key: {})
-        report = v.Report()
-        v.check_venues(FakeHttp(), report, {"NFL": in_season, "NHL": in_season})
-        assert statuses(report, "App: venues") == [expected, expected]
 
-    def test_venues_are_asked_for_by_the_key_the_service_knows(self, monkeypatch):
+        def get_venues(self, key):
+            if isinstance(venues, Exception):
+                raise venues
+            return venues
+
+        def get_info(league, team):
+            if isinstance(info, Exception):
+                raise info
+            return {"venue_name": "A Stadium"} if info is None else info
+
+        monkeypatch.setattr(venue_service.VenueService, "get_venues_for_league", get_venues)
+        monkeypatch.setattr(espn_api, "get_team_info", get_info)
+        report = v.Report()
+        v.check_venues(FakeHttp(), report, seasons or {})
+        return report
+
+    @staticmethod
+    def venues(count):
+        return {str(i): {"name": f"Venue {i}", "home_teams": [{"id": str(i)}]} for i in range(count)}
+
+    def test_every_league_is_asked_for_by_the_key_the_service_knows(self, monkeypatch):
         """The service's keys are lower case. "NFL" gets nothing, whatever ESPN says."""
+        import espn_api
         from services import venue_service
         asked = []
 
         def fake(self, key):
             asked.append(key)
             assert key in self.leagues
-            return {"1": {"name": "A Stadium"}}
+            return TestOtherSources.venues(400)
 
         monkeypatch.setattr(venue_service.VenueService, "get_venues_for_league", fake)
+        monkeypatch.setattr(espn_api, "get_team_info", lambda league, team: {"venue_name": "A Stadium"})
         report = v.Report()
         v.check_venues(FakeHttp(), report, {})
-        assert asked == ["nfl", "nhl"]
+        assert asked == ["mlb", "nfl", "nba", "nhl", "wnba", "ncaaf", "ncaam", "ncaawb", "ncaah", "ncaawh"]
         assert not report.failed
+        assert statuses(report, "App: venues") == [v.PASS] * 10
+        assert "400 venues, 400 home teams" in detail(report, "App: venues")
+
+    def test_no_venues_fails_even_out_of_season(self, monkeypatch):
+        """It reaches back to last season, so an off-season is no excuse."""
+        report = self.venues_of(monkeypatch, {}, seasons={"NFL": False})
+        assert statuses(report, "App: venues") == [v.FAIL] * 10
+
+    def test_it_raising_is_a_failure(self, monkeypatch):
+        report = self.venues_of(monkeypatch, RuntimeError("ESPN did not answer"))
+        assert statuses(report, "App: venues") == [v.FAIL] * 10
+        assert "ESPN did not answer" in detail(report, "App: venues")
+
+    def test_a_venue_with_no_name_fails(self, monkeypatch):
+        report = self.venues_of(monkeypatch, {"1": {"name": "", "home_teams": [{"id": "1"}]}})
+        assert statuses(report, "App: venues") == [v.FAIL] * 10
+        assert "no name" in detail(report, "App: venues")
+
+    def test_a_venue_with_no_home_team_fails(self, monkeypatch):
+        report = self.venues_of(monkeypatch, {"1": {"name": "A Stadium", "home_teams": []}})
+        assert statuses(report, "App: venues") == [v.FAIL] * 10
+        assert "no home team" in detail(report, "App: venues")
+
+    def test_too_few_home_teams_warns(self, monkeypatch):
+        report = self.venues_of(monkeypatch, self.venues(13))
+        by_league = {c.source: c.status for c in report.checks if c.name == "App: venues"}
+        assert by_league["WNBA"] == v.PASS
+        assert by_league["NFL"] == v.WARN
+        assert "only 13 home teams" in detail(report, "App: venues")
+
+    def test_a_shared_venue_counts_each_team(self, monkeypatch):
+        shared = {"1": {"name": "A", "home_teams": [{"id": str(i)} for i in range(400)]}}
+        assert statuses(self.venues_of(monkeypatch, shared), "App: venues") == [v.PASS] * 10
+
+    def test_team_info_venue(self, monkeypatch):
+        report = self.venues_of(monkeypatch, {})
+        assert statuses(report, "App: team info venue") == [v.PASS, v.PASS]
+
+    def test_team_info_with_no_venue_only_breaks_in_season(self, monkeypatch):
+        report = self.venues_of(monkeypatch, {}, info={"venue_name": ""}, seasons={"WNBA": False, "NCAAM": True})
+        assert statuses(report, "App: team info venue") == [v.WARN, v.FAIL]
+
+    def test_team_info_raising_is_a_failure(self, monkeypatch):
+        report = self.venues_of(monkeypatch, {}, info=RuntimeError("boom"))
+        assert statuses(report, "App: team info venue") == [v.FAIL, v.FAIL]
 
 
 class TestRetries:
@@ -1500,6 +1590,78 @@ class TestRemainingChecks:
         report = v.Report()
         v.check_world_cup(FakeHttp(default=(200, data)), report)
         assert FAIL_IN(report, "App: standings")
+
+    def college_football(self, **changes):
+        # The fixture keeps every conference but only a team or two of each.
+        return dataclasses.replace(league("NCAAF"), standings_min_teams=20, **changes)
+
+    def app_rows(self, data, division=None):
+        rows = []
+        for conference in v._standing_nodes(data):
+            for entry in (conference.get("standings") or {}).get("entries") or []:
+                total = next(s for s in entry["stats"] if s.get("type") == "total")
+                wins, losses = v.parse_record(total["summary"])
+                rows.append({"team_name": entry["team"]["displayName"], "wins": wins, "losses": losses,
+                             "division": division or conference["name"]})
+        return rows
+
+    def test_college_football_asks_for_all_of_division_one(self, monkeypatch):
+        import espn_api
+        data = load("standings_NCAAF_group90.json")
+        monkeypatch.setattr(espn_api, "get_standings", lambda k: self.app_rows(data))
+        http, report = FakeHttp(default=(200, data)), v.Report()
+        v.check_standings(http, report, self.college_football(), True)
+        assert http.urls == [f"{v.STANDINGS}/football/college-football/standings?group=90"]
+        assert statuses(report, "Standings") == [v.PASS]
+        assert statuses(report, "App: standings") == [v.PASS]
+
+    def test_college_football_with_only_fbs_fails(self, monkeypatch):
+        import espn_api
+        monkeypatch.setattr(espn_api, "get_standings", lambda k: [])
+        report = v.Report()
+        v.check_standings(FakeHttp(default=(200, load("standings_NCAAF.json"))), report, league("NCAAF"), True)
+        assert statuses(report, "Standings") == [v.FAIL]
+        assert "no FCS conference" in detail(report, "Standings")
+        assert "expected at least 200" in detail(report, "Standings")
+
+    def test_app_loses_an_fcs_team(self, monkeypatch):
+        """Asks for all of Division I, as the app does in the validator, so a miss is a miss."""
+        import espn_api
+        data = load("standings_NCAAF_group90.json")
+        rows = [r for r in self.app_rows(data) if r["team_name"] != "Montana State Bobcats"]
+        monkeypatch.setattr(espn_api, "get_standings", lambda k: rows)
+        report = v.Report()
+        v.check_standings(FakeHttp(default=(200, data)), report, self.college_football(), True)
+        assert "Montana State Bobcats" in detail(report, "App: standings")
+
+    def test_app_names_a_conference_for_the_level_above_it(self, monkeypatch):
+        import espn_api
+        data = load("standings_NCAAF_group90.json")
+        monkeypatch.setattr(espn_api, "get_standings", lambda k: self.app_rows(data, division="FCS"))
+        report = v.Report()
+        v.check_standings(FakeHttp(default=(200, data)), report, self.college_football(), True)
+        assert statuses(report, "App: standings") == [v.FAIL]
+        assert "named ['FCS']" in detail(report, "App: standings")
+
+    def test_real_app_rows_match_the_real_payload(self, monkeypatch):
+        """The real parser, forced to all of Division I as main() does, on ESPN's real answer."""
+        import espn_api
+        import settings
+        data = load("standings_NCAAF_group90.json")
+        monkeypatch.setattr(settings, "_cache", {"ncaaf_coverage": "all_d1"})
+        calls = []
+
+        class Response:
+            status_code = 200
+
+            def json(self):
+                return data
+
+        monkeypatch.setattr(espn_api, "_http_get", lambda url, **k: calls.append(url) or Response())
+        report = v.Report()
+        v.check_standings(FakeHttp(default=(200, data)), report, self.college_football(), True)
+        assert statuses(report, "App: standings") == [v.PASS], detail(report, "App: standings")
+        assert calls == [f"{v.STANDINGS}/football/college-football/standings?group=90"]
 
     def test_app_standings_lose_a_team_or_a_division(self, monkeypatch):
         import espn_api
