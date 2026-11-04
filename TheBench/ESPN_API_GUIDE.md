@@ -131,7 +131,13 @@ scoreboard date-range fallback truncates at the `limit` — for basketball,
 covering 12 days of the 61 requested, silently and with HTTP 200.
 
 Both apps expose 80 vs 90 as a user setting (`ncaaf_coverage` on Windows,
-`NCAAFCoverage` on iOS), defaulting to all of Division I.
+`NCAAFCoverage` on iOS), defaulting to all of Division I. Standings and team lists
+follow it too, but `/standings` spells the parameter singular, `group=`, and ignores
+`groups=`. No group means FBS only: 138 teams, against 128 for `group=81` and 266 for
+`group=90`. `group=90` nests FBS and FCS above the conferences. It gives the Sun Belt
+and the SWAC flat, where `group=80` and `group=81` split them into East and West.
+`/teams` ignores both spellings and has no division on a team, so `limit=1000` is all
+762 teams in every division, with nothing to filter them by.
 
 **Do not send `groups=` to the NFL** — `football/nfl?groups=80` returns 0 games.
 An NFL week is at most 16 games, under the 25-game default, so it needs neither

@@ -334,7 +334,8 @@ class HomeSettingsDialog(QDialog):
         self.ncaaf_coverage_combo.setAccessibleName("College football games shown")
         self.ncaaf_coverage_combo.setAccessibleDescription(
             "All Division I shows FBS and FCS together, around 200 games a week, and is the only "
-            "setting that shows opening weekend in full. FBS only shows about 100 games a week.")
+            "setting that shows opening weekend in full. FBS only shows about 100 games a week. "
+            "Standings and Teams list the same teams.")
         cfb_layout.addWidget(self.ncaaf_coverage_combo)
         cfb_layout.addStretch()
         layout.addLayout(cfb_layout)
@@ -8705,7 +8706,8 @@ class DataCache:
     
     def get_standings(self, league: str):
         """Get cached standings data"""
-        key = f"standings_{league}"
+        from espn_api import standings_cache_key
+        key = standings_cache_key(league)
         if key in self.standings_cache:
             data, timestamp = self.standings_cache[key]
             if time.time() - timestamp < self.cache_timeout:
@@ -8714,8 +8716,8 @@ class DataCache:
     
     def set_standings(self, league: str, data):
         """Cache standings data"""
-        key = f"standings_{league}"
-        self.standings_cache[key] = (data, time.time())
+        from espn_api import standings_cache_key
+        self.standings_cache[standings_cache_key(league)] = (data, time.time())
 
     def get_mlb_wildcard(self):
         """Get cached MLB wild card standings, or None when stale/absent."""
@@ -12054,10 +12056,12 @@ class SimpleTeamsDialog(QDialog):
         elif self.league == "NBA":
             division_order = ["Atlantic", "Central", "Southeast", "Northwest", "Pacific", "Southwest"]
         elif self.league == "NCAAF":
-            # Use actual ESPN conference names
-            division_order = ["Southeastern Conference", "Big Ten Conference", "Big 12 Conference", 
-                            "Atlantic Coast Conference", "Pac-12 Conference", "American Conference", 
-                            "Conference USA", "Mid-American Conference", "Mountain West Conference", 
+            # Use actual ESPN conference names. FBS comes first and the FCS conferences follow
+            # alphabetically. ESPN splits the Sun Belt in two only when asked for FBS alone.
+            division_order = ["Southeastern Conference", "Big Ten Conference", "Big 12 Conference",
+                            "Atlantic Coast Conference", "Pac-12 Conference", "American Conference",
+                            "Conference USA", "Mid-American Conference", "Mountain West Conference",
+                            "Sun Belt Conference", "Sun Belt - East", "Sun Belt - West",
                             "FBS Independents"]
         elif self.league in ["NCAAB", "NCAAM", "NCAAW"]:
             # College basketball conferences (major conferences first)
