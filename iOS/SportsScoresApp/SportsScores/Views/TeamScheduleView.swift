@@ -31,6 +31,20 @@ struct TeamScheduleView: View {
         return f
     }()
 
+    private static let dayAndYearFormatter: DateFormatter = {
+        let f = DateFormatter()
+        f.dateFormat = "EEE, MMM d, yyyy"
+        return f
+    }()
+
+    /// The day, with the year when it isn't this one, for text read on its own. A list has
+    /// a month and year heading, but a screen reader moving row by row doesn't hear it, and
+    /// a season can cross new year: MLS's list has 2027's games beside 2026's.
+    private func dayText(_ date: Date) -> String {
+        let thisYear = Calendar.current.isDate(date, equalTo: Date(), toGranularity: .year)
+        return (thisYear ? Self.dayFormatter : Self.dayAndYearFormatter).string(from: date)
+    }
+
     private static let timeFormatter: DateFormatter = {
         let f = DateFormatter()
         f.dateStyle = .none
@@ -56,7 +70,9 @@ struct TeamScheduleView: View {
 
     var body: some View {
         Group {
-            if viewModel.isLoading {
+            // A refresh keeps the list up: swapping it out would cancel the pull to refresh
+            // that started the load, and lose the place in the list.
+            if viewModel.isLoading && viewModel.games.isEmpty {
                 ProgressView("Loading schedule…")
             } else if viewModel.games.isEmpty {
                 VStack(spacing: 16) {
@@ -67,6 +83,10 @@ struct TeamScheduleView: View {
                         .font(.headline)
                         .foregroundColor(.secondary)
                         .multilineTextAlignment(.center)
+                    if viewModel.loadFailed {
+                        Button("Retry") { Task { await viewModel.fetchSchedule() } }
+                            .buttonStyle(.borderedProminent)
+                    }
                 }
                 .padding()
             } else {
@@ -132,11 +152,14 @@ struct TeamScheduleView: View {
 
     private func scheduleTableSection(month: String, games: [ScheduleGame]) -> some View {
         let headers = ["Date", "Opp", "Result"]
+        // What VoiceOver reads, in frames from an even grid, with the year and the label.
+        // The visible cells below leave those out: a long label wraps a row to many lines,
+        // and the grid would no longer line up with what's on screen.
         let tableRows = games.map { g -> [String] in
             let isHome = g.homeTeam.id == team.id
             let opp = isHome ? g.awayTeam : g.homeTeam
             let vs = isHome || g.isNeutralSite
-            return [Self.dayFormatter.string(from: g.date),
+            return [dayText(g.date),
                     (vs ? "vs " : "@ ") + opp.abbreviation,
                     scheduleResultAndLabel(g)]
         }
@@ -164,7 +187,7 @@ struct TeamScheduleView: View {
                     let opp = isHome ? game.awayTeam : game.homeTeam
                     let row = [Self.dayFormatter.string(from: game.date),
                                (isHome || game.isNeutralSite ? "vs " : "@ ") + opp.abbreviation,
-                               scheduleResultAndLabel(game)]
+                               scheduleResultText(game)]
                     NavigationLink(destination: GameDetailView(game: game.toGame(), sport: sport)) {
                         HStack(spacing: 0) {
                             ForEach(row.indices, id: \.self) { colIdx in
@@ -201,7 +224,7 @@ struct TeamScheduleView: View {
                 return "\(wl) \(my)-\(opp)"
             }
             return "Final"
-        } else if game.isInProgress {
+        } else if game.isInProgress || game.isCalledOff {
             return game.statusText
         } else {
             return (game.timeIsKnown ? Self.timeFormatter.string(from: game.date) : "Time TBD")
@@ -253,7 +276,7 @@ struct TeamScheduleView: View {
         let isHome = game.homeTeam.id == team.id
         let opp = isHome ? game.awayTeam : game.homeTeam
         let matchup = (isHome || game.isNeutralSite ? "vs " : "@ ") + opp.abbreviation
-        return "\(Self.dayFormatter.string(from: game.date)) \(matchup) \u{2014} \(scheduleResultAndLabel(game))"
+        return "\(dayText(game.date)) \(matchup) \u{2014} \(scheduleResultAndLabel(game))"
     }
 
     // MARK: - Schedule List
@@ -342,6 +365,11 @@ struct TeamScheduleView: View {
                         .font(.caption)
                         .foregroundColor(.green)
                         .multilineTextAlignment(.trailing)
+                } else if game.isCalledOff {
+                    Text(game.statusText)
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                        .multilineTextAlignment(.trailing)
                 } else {
                     // Scheduled: show local game time derived from the parsed date
                     Text((game.timeIsKnown ? Self.timeFormatter.string(from: game.date) : "Time TBD"))
@@ -359,7 +387,7 @@ struct TeamScheduleView: View {
         let isHome = game.homeTeam.id == team.id
         let opponent = isHome ? game.awayTeam : game.homeTeam
         let homeAway = isHome || game.isNeutralSite ? "vs" : "at"
-        let dateStr = Self.dayFormatter.string(from: game.date)
+        let dateStr = dayText(game.date)
         let statusPart: String
         if game.isCompleted {
             let myTeam  = game.homeTeam.id == team.id ? game.homeTeam : game.awayTeam
@@ -370,7 +398,7 @@ struct TeamScheduleView: View {
             } else {
                 statusPart = "Final"
             }
-        } else if game.isInProgress {
+        } else if game.isInProgress || game.isCalledOff {
             statusPart = game.statusText
         } else {
             statusPart = (game.timeIsKnown ? Self.timeFormatter.string(from: game.date) : "Time TBD")

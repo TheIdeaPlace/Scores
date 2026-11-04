@@ -32,13 +32,14 @@ class TeamHubViewModel: ObservableObject {
     @Published var errorNews: String?
     @Published var errorSchedule: String?
 
-    private let apiService = ESPNAPIService.shared
+    private let apiService: ESPNAPIService
 
     // MARK: - Init
 
-    init(teamId: String, sport: Sport) {
+    init(teamId: String, sport: Sport, apiService: ESPNAPIService = .shared) {
         self.teamId = teamId
         self.sport = sport
+        self.apiService = apiService
     }
 
     // MARK: - Load functions
@@ -104,6 +105,8 @@ class TeamHubViewModel: ObservableObject {
             } else {
                 schedule = try await apiService.fetchTeamHubSchedule(teamId: teamId, sport: sport)
             }
+        } catch let error where error.isCancellation {
+            // Switching tabs mid-load. Nothing is known, and coming back asks again.
         } catch {
             errorSchedule = "Could not load schedule."
         }
@@ -120,7 +123,7 @@ class TeamHubViewModel: ObservableObject {
     /// The next unplayed game (date must be in the future to skip postponed/old games).
     var upcomingGame: ScheduleGame? {
         let now = Date()
-        return schedule.first { !$0.isCompleted && !$0.isInProgress && $0.isAhead(of: now) }
+        return schedule.first { !$0.isCompleted && !$0.isInProgress && !$0.isCalledOff && $0.isAhead(of: now) }
     }
 
     /// Last 5 completed games (for the Schedule tab "Recent" section).

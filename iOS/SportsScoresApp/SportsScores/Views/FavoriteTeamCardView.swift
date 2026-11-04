@@ -53,7 +53,7 @@ struct FavoriteTeamCardView: View {
 
     private var nextGame: ScheduleGame? {
         let now = Date()
-        return schedule.first { !$0.isCompleted && !$0.isInProgress && $0.isAhead(of: now) }
+        return schedule.first { !$0.isCompleted && !$0.isInProgress && !$0.isCalledOff && $0.isAhead(of: now) }
     }
 
     private func gameLabel(for game: ScheduleGame, prefix: String) -> String {

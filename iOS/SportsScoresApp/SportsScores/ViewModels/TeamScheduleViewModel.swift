@@ -12,18 +12,22 @@ class TeamScheduleViewModel: ObservableObject {
     @Published var games: [ScheduleGame] = []
     @Published var isLoading = false
     @Published var errorMessage: String?
+    /// True when `errorMessage` is a failed request, which trying again might fix, rather
+    /// than a season with nothing in it.
+    @Published var loadFailed = false
     @Published var selectedYear: Int
 
-    private let apiService = ESPNAPIService.shared
+    private let apiService: ESPNAPIService
     private let teamId: String
     private let sport: Sport
 
     // Available years to display in the picker (current year and 4 prior)
     let availableYears: [Int]
 
-    init(teamId: String, sport: Sport) {
+    init(teamId: String, sport: Sport, apiService: ESPNAPIService = .shared) {
         self.teamId = teamId
         self.sport = sport
+        self.apiService = apiService
         let year = Self.defaultSeasonYear(for: sport)
         self.selectedYear = year
         self.availableYears = (0..<5).map { year - $0 }
@@ -46,6 +50,7 @@ class TeamScheduleViewModel: ObservableObject {
     func fetchSchedule() async {
         isLoading = true
         errorMessage = nil
+        loadFailed = false
         let fetched: [ScheduleGame]
         do {
             fetched = try await apiService.fetchTeamSeasonSchedule(
@@ -53,10 +58,16 @@ class TeamScheduleViewModel: ObservableObject {
                 sport: sport,
                 season: selectedYear
             )
+        } catch let error where error.isCancellation {
+            // The view went away mid-load, and nothing is known about the schedule. Keep
+            // what's there, and the next load, when it's back, asks again.
+            isLoading = false
+            return
         } catch {
             // Not the fallback below: a failed request isn't an off-season, and last
             // season's games would read as this season's with no sign anything went wrong.
             errorMessage = "Could not load the schedule. Check your connection and try again."
+            loadFailed = true
             games = []
             isLoading = false
             return
@@ -81,6 +92,8 @@ class TeamScheduleViewModel: ObservableObject {
 
     func changeYear(_ year: Int) async {
         selectedYear = year
+        // The view keeps a list up during a refresh, but this one is the wrong season.
+        games = []
         await fetchSchedule()
     }
 }

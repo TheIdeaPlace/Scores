@@ -178,10 +178,18 @@ struct TeamInfoTabView: View {
                     nextGameFromInfoRow(nextGame: nextGame)
                 }
                 if viewModel.previousGame == nil && viewModel.upcomingGame == nil && !viewModel.isLoadingSchedule {
-                    Text("No recent or upcoming games")
-                        .font(.subheadline)
-                        .foregroundColor(.secondary)
-                        .padding(.vertical, 4)
+                    if let error = viewModel.errorSchedule {
+                        Text(error)
+                            .font(.subheadline)
+                            .foregroundColor(.secondary)
+                            .padding(.vertical, 4)
+                        Button("Retry") { Task { await viewModel.loadSchedule() } }
+                    } else {
+                        Text("No recent or upcoming games")
+                            .font(.subheadline)
+                            .foregroundColor(.secondary)
+                            .padding(.vertical, 4)
+                    }
                 }
             }
         }

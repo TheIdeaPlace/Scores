@@ -29,17 +29,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   "Preseason Week 1". A bowl or Super Bowl at a neutral site reads "vs", not "@".
 - **WNBA team schedules on Windows show the whole season, in any year.** They only looked a month
   either side of today, so out of season a team had no games at all, and past seasons showed nothing.
+  Before a new season's schedule is out, the current season shows the last one, as the iPhone does.
 - **Soccer team schedules on Windows show the season you picked.** Picking 2020 showed this season's
   games with old dates on them. A past season now shows its results, and the current one its results
   and the games to come. Finished matches read as a win, loss or tie with the score, not "FT".
 - **Soccer team schedules work on iPhone.** They read "No schedule available" in every league.
 - **The iPhone's team schedules match Windows.** The NBA, NHL, WNBA and college sports have their
-  preseason games, every sport's preseason and postseason games say what they were, and a game at
-  halftime or in a delay reads as under way rather than giving its start time.
+  preseason games, and every sport's preseason and postseason games say what they were, except in
+  the Table view's visible column. A game at halftime or in a delay reads as under way, and a
+  postponed or canceled one says so, rather than giving its start time.
 - **A tied game on iPhone no longer reads as a loss** in a team's Recent list and on its Info tab.
-- **A college football season that comes back empty on Windows stays empty.** It used to show last
+- **A past season on Windows that comes back empty stays empty.** College football used to show last
   year's games as if they were the season you asked for.
-- **A failed schedule on iPhone says so.** It used to read as no schedule, or show last season's games.
+- **A team schedule that fails to load says so, on both apps.** Windows read "No games found", or
+  left out the playoffs with no sign, when ESPN's server had a problem or a request timed out, and
+  now shows the error. The iPhone read as no schedule or showed last season's games, and now says it
+  couldn't load, with a Retry button. Leaving a screen mid-load on iPhone isn't counted as a failure.
+- **A team's schedule on Windows opens somewhere useful when the season is over.** The current
+  season opens on its last game, not its first preseason game. A past season still opens at its start.
+- **Games in another year show the year on Windows and iPhone**, since a season can cross new year.
 
 ### In Progress
 - **Game Wrap Up Feature**: ESPN text processing and game story extraction (under construction)

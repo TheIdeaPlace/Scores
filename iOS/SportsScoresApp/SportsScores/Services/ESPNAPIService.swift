@@ -8,8 +8,14 @@
 import Foundation
 
 class ESPNAPIService {
-    static let shared = ESPNAPIService()
-    
+    static let shared: ESPNAPIService = {
+        let config = URLSessionConfiguration.default
+        config.timeoutIntervalForRequest = 30
+        config.timeoutIntervalForResource = 60
+        return ESPNAPIService(session: URLSession(configuration: config))
+    }()
+
+
     private let baseURL = "https://site.api.espn.com/apis/site/v2/sports"
     /// Standings uses a different ESPN API base path (v2, not site/v2)
     private let standingsBaseURL = "https://site.api.espn.com/apis/v2/sports"
@@ -29,11 +35,8 @@ class ESPNAPIService {
     /// stat headings request definitions concurrently — see `TeamStatsStore`.
     private let teamStatsStore: TeamStatsStore
 
-    private init() {
-        let config = URLSessionConfiguration.default
-        config.timeoutIntervalForRequest = 30
-        config.timeoutIntervalForResource = 60
-        let session = URLSession(configuration: config)
+    /// The app uses `shared`. The tests pass a session of their own, to stub ESPN.
+    init(session: URLSession) {
         self.session = session
         self.teamStatsStore = TeamStatsStore(session: session, baseURL: webAPIBaseURL)
     }
@@ -742,16 +745,17 @@ class ESPNAPIService {
     // MARK: - Fetch Team Schedule
 
     /// Everything ESPN has for one team's season, in date order, for the schedule screen and
-    /// Team Hub. A season that fails to load throws, so it can't read as an empty one.
+    /// Team Hub. A season that fails to load throws, so it can't read as an empty one, and
+    /// the same for a part of it: a list with no playoffs, and no sign why, looks complete.
+    /// The one exception is ESPN saying it has no preseason or postseason here. Windows
+    /// follows the same rule in espn_api.get_team_schedule.
     func fetchTeamSeasonSchedule(teamId: String, sport: Sport, season: Int) async throws -> [ScheduleGame] {
         if sport.usesSoccerSchedule {
             return try await fetchSoccerTeamSchedule(teamId: teamId, sport: sport, season: season)
         }
 
-        // Losing the preseason or the playoffs leaves a schedule still worth showing. Losing
-        // the regular season doesn't, and would read as if those were all the games there are.
         var lists: [[ScheduleGame]] = []
-        var regularSeasonFailure: Error?
+        var failure: Error?
         await withTaskGroup(of: (Int, Result<[ScheduleGame], Error>).self) { group in
             for seasonType in TeamScheduleQueries.seasonTypes {
                 group.addTask { [self] in
@@ -769,16 +773,17 @@ class ESPNAPIService {
                 case .success(let games):
                     lists.append(games)
                 case .failure(let error):
-                    if seasonType == 2 { regularSeasonFailure = error }
+                    let mayLeaveOut = seasonType != 2 && error.isNothingThere
+                    if !mayLeaveOut && failure == nil { failure = error }
                 }
             }
         }
-        if let regularSeasonFailure { throw regularSeasonFailure }
+        if let failure { throw failure }
         return TeamScheduleQueries.merged(lists)
     }
 
     /// Results, plus the games to come if this is the current season. See `TeamScheduleQueries`.
-    /// A server error on the second kind of request leaves that part out. A dropped connection
+    /// Past the results, ESPN saying it has nothing there leaves that part out. Anything else
     /// throws, because a schedule with its games to come missing would look complete.
     private func fetchSoccerTeamSchedule(teamId: String, sport: Sport, season: Int) async throws -> [ScheduleGame] {
         func games(_ query: String) async throws -> [ScheduleGame] {
@@ -810,10 +815,9 @@ class ESPNAPIService {
         guard let url = URL(string: urlString) else { throw APIError.invalidURL }
 
         let (data, response) = try await session.data(from: url)
-        guard let httpResponse = response as? HTTPURLResponse,
-              httpResponse.statusCode == 200 else {
-            throw APIError.invalidResponse
-        }
+        guard let httpResponse = response as? HTTPURLResponse else { throw APIError.invalidResponse }
+        if httpResponse.statusCode >= 500 { throw APIError.serverError(httpResponse.statusCode) }
+        guard httpResponse.statusCode == 200 else { throw APIError.invalidResponse }
 
         return try JSONDecoder().decode(TeamScheduleAPIResponse.self, from: data)
     }

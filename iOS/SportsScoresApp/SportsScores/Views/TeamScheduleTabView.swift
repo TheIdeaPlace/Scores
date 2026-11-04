@@ -177,6 +177,9 @@ struct TeamScheduleTabView: View {
             case nil:   return "Final \(location) \(opponent.displayName), on \(date)\(label)"
             }
         }
+        if game.isCalledOff {
+            return "\(location) \(opponent.displayName), \(date), \(game.statusText)\(label)"
+        }
         return "\(location) \(opponent.displayName), \(date)\(label)"
     }
 

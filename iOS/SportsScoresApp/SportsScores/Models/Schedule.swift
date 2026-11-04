@@ -39,6 +39,9 @@ struct ScheduleGame: Identifiable {
     var isCompleted: Bool { espnCompleted ?? Self.finishedStatuses.contains(statusType) }
     /// Includes halftime and a delay, which ESPN counts as under way and names differently.
     var isInProgress: Bool { espnState.map { $0 == "in" } ?? (statusType == "STATUS_IN_PROGRESS") }
+    /// Postponed or canceled: over, as far as this date goes, with nothing played. `statusText`
+    /// says which, and its start time means nothing now.
+    var isCalledOff: Bool { espnCompleted == false && espnState == "post" }
 
     enum Outcome { case win, loss, tie }
 
@@ -67,7 +70,7 @@ struct ScheduleGame: Identifiable {
             shortName: "\(awayTeam.abbreviation) @ \(homeTeam.abbreviation)",
             date: date,
             status: Game.GameStatus(
-                state: isCompleted ? "post" : isInProgress ? "in" : "pre",
+                state: isCompleted || isCalledOff ? "post" : isInProgress ? "in" : "pre",
                 detail: statusText,
                 period: nil,
                 clock: nil,
@@ -133,12 +136,12 @@ enum TeamScheduleQueries {
     /// `espnSeason` is the `season.year` ESPN answers with, its own idea of the current season.
     /// A league's seasons cross the new year on their own calendar, so in February 2027 our
     /// year says 2027 while ESPN's Premier League is still in `season=2026`, 2026-27, and
-    /// `season=2027` is empty. Those are the results to show then.
+    /// `season=2027` is empty. Those are the results to show then. Only the year before
+    /// counts: the Women's World Cup's `season.year` stays at 2023 until the next one.
     static func afterSoccerResults(season: Int, currentSeason: Int,
                                    espnSeason: Int?) -> (fixtures: Bool, earlierResults: Int?) {
         guard season == currentSeason || season == espnSeason else { return (false, nil) }
-        if let espnSeason, espnSeason < season { return (true, espnSeason) }
-        return (true, nil)
+        return (true, espnSeason == season - 1 ? espnSeason : nil)
     }
 
     /// One list in date order, with no game twice. The first list a game appears in wins, so
@@ -155,6 +158,20 @@ enum TeamScheduleQueries {
     }
 }
 
+extension Error {
+    /// The task was cancelled, as when a view goes away mid-load. It says nothing about
+    /// the schedule, so it's neither a failure to report nor an empty season.
+    var isCancellation: Bool {
+        self is CancellationError || (self as? URLError)?.code == .cancelled
+    }
+
+    /// ESPN answered, and has nothing there. See `APIError.serverError` for the other kind.
+    var isNothingThere: Bool {
+        if let error = self as? APIError, case .invalidResponse = error { return true }
+        return false
+    }
+}
+
 extension Sport {
     /// True where a team's schedule is asked for by results and fixtures, not by season type.
     /// The World Cups are soccer too, though `isSoccer` means the league hub.
@@ -166,6 +183,16 @@ extension Sport {
 struct TeamScheduleAPIResponse: Codable {
     let season: APISeason?
     let events: [APIScheduleEvent]
+
+    private enum CodingKeys: String, CodingKey {
+        case season, events
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        season = try container.decodeIfPresent(APISeason.self, forKey: .season)
+        events = try LossyEvents.decode(from: container, forKey: .events)
+    }
 
     struct APISeason: Codable {
         let year: Int
