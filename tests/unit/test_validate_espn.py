@@ -579,6 +579,8 @@ class StubbedApp:
         self.set("get_team_roster", [{"name": "A Player", "height": "6' 2\""}])
         self.set("get_team_schedule", [{"id": "1"}])
         self.set("get_team_news", [{"headline": "x"}])
+        self.set("_current_season", (2026, 2))
+        self.set("get_standings", [])
 
     def set(self, name, answer):
         self.monkeypatch.setattr(self.espn_api, name, lambda *a, **k: answer)
@@ -830,6 +832,94 @@ class TestTeamHub:
         report = v.Report()
         v.check_team_hub(FakeHttp(default=(200, {})), report, league("NBA"), played, True)
         assert FAIL_IN(report, "App: team info")
+
+
+class TestTeamRecordAgreesWithStandings:
+    LYNX = {"team_id": "8", "wins": 33, "losses": 11}
+
+    def run(self, monkeypatch, key="WNBA", record="33-11", season=(2026, 3), standings=None):
+        import espn_api
+        monkeypatch.setattr(espn_api, "_current_season", lambda path: season)
+        monkeypatch.setattr(espn_api, "get_standings", lambda league: [self.LYNX] if standings is None else standings)
+        report = v.Report()
+        v.check_team_record(report, league(key), "8", "Lynx", record)
+        return report
+
+    def test_the_regular_season_record_in_the_playoffs_passes(self, monkeypatch):
+        assert statuses(self.run(monkeypatch), "App: team record") == [v.PASS]
+
+    @pytest.mark.parametrize("record", ["0-2", "0-0"])
+    def test_a_playoff_record_fails(self, monkeypatch, record):
+        """The Lynx in the 2026 playoffs, and a team that missed them."""
+        assert FAIL_IN(self.run(monkeypatch, record=record), "App: team record")
+
+    def test_a_wrong_record_in_the_regular_season_fails(self, monkeypatch):
+        assert FAIL_IN(self.run(monkeypatch, record="0-2", season=(2026, 2)), "App: team record")
+
+    def test_a_game_one_feed_has_first_is_not_a_break(self, monkeypatch):
+        assert statuses(self.run(monkeypatch, record="34-11", season=(2026, 2)), "App: team record") == [v.PASS]
+        assert statuses(self.run(monkeypatch, record="34-12", season=(2026, 2)), "App: team record") == [v.PASS]
+
+    def test_an_nhl_record_with_overtime_losses(self, monkeypatch):
+        report = self.run(monkeypatch, "NHL", "33-11-4", season=(2027, 2))
+        assert statuses(report, "App: team record") == [v.PASS]
+
+    @pytest.mark.parametrize("season_type", [1, 4], ids=["preseason", "off_season"])
+    def test_no_false_alarm_between_seasons(self, monkeypatch, season_type):
+        """Team Info has the last season, and Standings can be on the new one at 0-0."""
+        standings = [{"team_id": "8", "wins": 0, "losses": 0}]
+        report = self.run(monkeypatch, season=(2026, season_type), standings=standings)
+        assert statuses(report, "App: team record") == [v.PASS]
+
+    def test_no_false_alarm_in_a_college_postseason(self, monkeypatch):
+        """College standings count the postseason: Michigan 37-3, and 31-3 on its team page."""
+        standings = [{"team_id": "8", "wins": 37, "losses": 3}]
+        report = self.run(monkeypatch, "NCAAM", "31-3", season=(2026, 3), standings=standings)
+        assert statuses(report, "App: team record") == [v.PASS]
+
+    def test_college_in_its_regular_season_is_checked(self, monkeypatch):
+        assert FAIL_IN(self.run(monkeypatch, "NCAAM", "0-2", season=(2027, 2)), "App: team record")
+
+    def test_soccer_has_nothing_to_agree_with(self, monkeypatch):
+        import espn_api
+
+        def not_asked(*a):
+            raise AssertionError("soccer asked for standings")
+
+        monkeypatch.setattr(espn_api, "_current_season", not_asked)
+        report = v.Report()
+        v.check_team_record(report, league("EPL"), "359", "Arsenal", "8-0-1")
+        assert statuses(report, "App: team record") == [v.PASS]
+
+    def test_a_team_not_in_the_standings(self, monkeypatch):
+        """A college team's opponent can be outside the coverage setting's conferences."""
+        report = self.run(monkeypatch, "NCAAF", "9-1", season=(2026, 2), standings=[])
+        assert statuses(report, "App: team record") == [v.PASS]
+
+    def test_not_knowing_the_season_only_warns(self, monkeypatch):
+        import espn_api
+        from exceptions import ApiError
+
+        def fails(path):
+            raise ApiError("no answer")
+
+        monkeypatch.setattr(espn_api, "_current_season", fails)
+        report = v.Report()
+        v.check_team_record(report, league("WNBA"), "8", "Lynx", "33-11")
+        assert statuses(report, "App: team record") == [v.WARN]
+
+    def test_the_team_hub_check_asks(self, monkeypatch):
+        """Through check_team_hub, on a record that's wrong."""
+        app = StubbedApp(monkeypatch)
+        app.set("get_team_info", {"name": "T0", "record_overall": "0-2"})
+        app.set("_current_season", (2026, 3))
+        played = event()
+        played["date"] = datetime.now(timezone.utc).isoformat()
+        team_id = str(played["competitions"][0]["competitors"][0]["team"]["id"])
+        app.set("get_standings", [{"team_id": team_id, "wins": 33, "losses": 11}])
+        report = v.Report()
+        v.check_team_hub(FakeHttp(default=(200, {})), report, league("WNBA"), played, True)
+        assert FAIL_IN(report, "App: team record")
 
 
 class TestAppGame:

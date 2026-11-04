@@ -2846,6 +2846,7 @@ LEADERS_LIMIT = 20
 LEADERS_SMALLER_LIMITS = (10, 5)
 STATISTICS_UNAVAILABLE = "ESPN isn't providing these right now. Try again in a minute."
 PRESEASON = 1
+REGULAR_SEASON = 2
 POSTSEASON = 3
 # /leaders lists these lowest first, and everything else highest first.
 LOW_IS_GOOD_LEADERS = {"avgGoalsAgainst", "ERA", "WHIP", "opponentAvg"}
@@ -2855,10 +2856,8 @@ def _no_leaders():
     return {"player_stats": [], "team_stats": []}
 
 
-def _leaders_season(league_path):
-    """The year whose regular season to show, from ESPN rather than the calendar: the NBA's
-    2026-27 season is 2027. A season's playoffs and off-season come after its regular season
-    and are filed under its year, so only a preseason means that the last one is the latest."""
+def _current_season(league_path):
+    """(year, season type) that ESPN calls current. Raises ApiError if it can't say."""
     sport, league = league_path.split("/", 1)
     try:
         resp = _http_get(f"{CORE_BASE_URL}/{sport}/leagues/{league}/season", timeout=10)
@@ -2869,7 +2868,19 @@ def _leaders_season(league_path):
     year = season.get("year")
     if not isinstance(year, int):
         raise ApiError(STATISTICS_UNAVAILABLE)
-    return year - 1 if _as_dict(season.get("type")).get("type") == PRESEASON else year
+    return year, _as_dict(season.get("type")).get("type")
+
+
+def _regular_season_year(year, season_type):
+    """A season's playoffs and off-season come after its regular season and are filed under
+    its year, so only a preseason means that the last one is the latest."""
+    return year - 1 if season_type == PRESEASON else year
+
+
+def _leaders_season(league_path):
+    """The year whose regular season to show, from ESPN rather than the calendar: the NBA's
+    2026-27 season is 2027."""
+    return _regular_season_year(*_current_season(league_path))
 
 
 def _fetch_leaders(league_path, year):
@@ -3035,8 +3046,49 @@ def _team_home_venue(league_path, team_id):
         return None
 
 
+def _team_record_and_standing(league_path, team_id, team):
+    """(record, standingSummary) for a team page, from its regular season, as Standings has it.
+
+    `team` is /teams/{id} with no season, which answers with whatever the league is doing now.
+    In the WNBA playoffs that read the Lynx, 33-11 and first, as 0-2 and 8th, and the teams left
+    out as 0-0. In the MLB playoffs the record holds and the standing doesn't: the Dodgers read
+    5th in a division they won. College hockey's has no record at all, any time of year.
+
+    Only these two come from the season asked for. Its nextEvent is wrong: the Nets' game
+    tomorrow reads as one in January, and in MLB's off-season there isn't one.
+
+    If the regular season can't be had, the answer with no season stands only when the league
+    is in its regular season, when it's the same thing. Otherwise no record beats a wrong one.
+
+    Soccer has no such thing as season type 2: its team page is already the league season,
+    even in the NWSL's playoffs, and asking can name another competition's standing.
+    """
+    if league_path.startswith("soccer/"):
+        return team.get("record"), team.get("standingSummary")
+    try:
+        year, season_type = _current_season(league_path)
+    except ApiError as e:
+        print(f"[get_team_info] current season of {league_path}: {e}")
+        return None, None
+    regular = {}
+    try:
+        year = _regular_season_year(year, season_type)
+        resp = _http_get(f"{BASE_URL}/{league_path}/teams/{team_id}?season={year}&seasontype={REGULAR_SEASON}",
+                         timeout=8)
+        if resp.status_code == 200:
+            regular = _as_dict(_as_dict(resp.json()).get("team"))
+    except (requests.RequestException, ValueError) as e:
+        print(f"[get_team_info] regular season of team {team_id}: {e}")
+    fallback = team if season_type == REGULAR_SEASON else {}
+    record = regular.get("record") if _dicts(_as_dict(regular.get("record")).get("items")) else fallback.get("record")
+    return record, regular.get("standingSummary") or fallback.get("standingSummary")
+
+
 def get_team_info(league_key, team_id, home_venue=True):
     """Get full team details: record splits, venue, head coach, next game.
+
+    The record and standing are the regular season's, see _team_record_and_standing, at the
+    cost of up to two more requests.
 
     franchise.venue is years out of date for some teams (Nets at Prudential Center,
     Warriors at Oracle) and missing for college, WNBA and soccer, so the venue comes from
@@ -3066,8 +3118,9 @@ def get_team_info(league_key, team_id, home_venue=True):
         addr = _as_dict(venue.get("address"))
         city, state = addr.get("city") or "", addr.get("state") or ""
         result["venue_location"] = f"{city}, {state}" if city and state else city or state
+        record, standing = _team_record_and_standing(league_path, team_id, team)
         # Record splits
-        for item in _dicts(_as_dict(team.get("record")).get("items")):
+        for item in _dicts(_as_dict(record).get("items")):
             rtype = item.get("type", "")
             summary = item.get("summary") or ""
             if rtype == "total":
@@ -3084,7 +3137,8 @@ def get_team_info(league_key, team_id, home_venue=True):
         # Division / Conference
         groups = _as_dict(team.get("groups"))
         result["division"] = groups.get("name") or ""
-        result["standing"] = team.get("standingSummary") or ""
+        # College hockey says "1st" of every team, whatever its record, and of nothing.
+        result["standing"] = standing if standing and " in " in standing else ""
         result["conference"] = _as_dict(groups.get("parent")).get("name") or ""
         # Head coach
         coaches = _dicts(team.get("coaches"))

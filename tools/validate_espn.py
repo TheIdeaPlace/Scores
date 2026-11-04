@@ -978,6 +978,45 @@ def check_standings(http, report, league, in_season):
         report.ok(league.key, "App: standings", f"{len(rows)} teams, every record matches ESPN's")
 
 
+# A game one feed has and the other doesn't yet isn't a break. A playoff record is much further off.
+TEAM_RECORD_GAMES_APART = 2
+
+
+def check_team_record(report, league, team_id, name, record):
+    """Team Info's record is the one Standings has, in the regular season and the playoffs.
+
+    Not in a preseason or off-season, when Team Info has the last season and Standings can be on
+    the new one. Not in college's postseason, when its Standings count those games, and Team Info
+    and past seasons don't: Michigan's 2026 basketball season reads 37-3 and 31-3. Not in soccer,
+    which Windows has no standings for.
+    """
+    import espn_api
+
+    label = "App: team record"
+    if league.family == SOCCER:
+        report.ok(league.key, label, "not checked: Windows has no soccer standings")
+        return
+    try:
+        _, season_type = espn_api._current_season(league.path)
+        if season_type != espn_api.REGULAR_SEASON and (
+                league.is_college or season_type != espn_api.POSTSEASON):
+            report.ok(league.key, label, f"not checked: season type {season_type}")
+            return
+        rows = espn_api.get_standings(league.key)
+    except Exception as e:
+        report.warn(league.key, label, f"not checked: {type(e).__name__}: {e}")
+        return
+    row = next((r for r in rows if str(r.get("team_id")) == team_id), None)
+    if row is None:
+        report.ok(league.key, label, f"not checked: {name} isn't in the standings")
+        return
+    wins, losses, _ = espn_api._record_parts(record)
+    if abs(wins - row["wins"]) + abs(losses - row["losses"]) > TEAM_RECORD_GAMES_APART:
+        report.fail(league.key, label, f"{name} reads {record}, and standings have {row['wins']}-{row['losses']}")
+    else:
+        report.ok(league.key, label, f"{name}, {record}, agrees with the standings")
+
+
 def check_team_hub(http, report, league, event, in_season):
     import espn_api
 
@@ -1001,6 +1040,7 @@ def check_team_hub(http, report, league, event, in_season):
             report.fail(league.key, "App: team info", f"no name for team {team_id}")
         elif info.get("record_overall"):
             report.ok(league.key, "App: team info", f"{name}, {info['record_overall']}")
+            check_team_record(report, league, team_id, name, info["record_overall"])
         elif league.team_records:
             report.seasonal(in_season, league.key, "App: team info", f"{name} has no overall record")
         else:
