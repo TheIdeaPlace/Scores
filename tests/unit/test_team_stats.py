@@ -365,11 +365,6 @@ class TestRankingRows:
         points = next(c for c in categories if c["category"] == "Points Per Game")
         assert ranking_rows("player", points["stats"])[0] == [1, "Luka Doncic", "LAL", "38.3"]
 
-    def test_the_shape_the_dialog_makes_of_mlb_leaders(self):
-        rows = ranking_rows("player", [{"player_name": "Pete Crow-Armstrong", "stat_value": "45", "value": "45",
-                                        "team": "Chicago Cubs", "position": None}])
-        assert rows == [[1, "Pete Crow-Armstrong", "Chicago Cubs", "45"]]
-
     def test_teams_keep_the_rank_they_share(self):
         lists = team_stat_lists(parse_team_stats(load("byteam_NBA.json"), "basketball"))
         ranked = lists[0]["data"]

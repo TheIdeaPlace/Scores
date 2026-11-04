@@ -1339,9 +1339,32 @@ def fetch_leaders(http, league, year):
     return first_status, None, first_url, espn_api.LEADERS_LIMIT
 
 
+def check_leaders_for_a_team(http, report, league, data, year):
+    """The iPhone's team stats ask /leaders for one team's players. If ESPN stopped honoring `team`,
+    they'd be the league's leaders under the team's name."""
+    team_id = None
+    for category in data["leaders"]["categories"]:
+        for leader in category.get("leaders") or []:
+            team_id = team_id or (leader.get("team") or {}).get("id")
+    if not team_id:
+        report.warn(league.key, "Leaders for one team (iPhone)", "no team id on a leader to ask with")
+        return
+    url = f"{V3}/{league.path}/leaders?region=us&lang=en&season={year}&seasontype=2&limit=20&team={team_id}"
+    status, answer = http.get(url)
+    categories = ((answer or {}).get("leaders") or {}).get("categories") if isinstance(answer, dict) else None
+    if status != 200 or not categories:
+        report.warn(league.key, "Leaders for one team (iPhone)", f"got {status} with no categories", url)
+        return
+    others = {str((leader.get("team") or {}).get("id")) for category in categories
+              for leader in category.get("leaders") or []} - {str(team_id)}
+    if others:
+        report.fail(league.key, "Leaders for one team (iPhone)", f"other teams in the answer: {sorted(others)[:3]}", url)
+    else:
+        report.ok(league.key, "Leaders for one team (iPhone)", f"{len(categories)} categories", url)
+
+
 def check_leaders(http, report, league, in_season=True):
-    """ESPN's /leaders, as the app asks, and that it's really the regular season. It's the app's
-    source everywhere but MLB, where it's the fallback if the MLB Stats API has nothing."""
+    """ESPN's /leaders, as both apps ask, and that it's really the regular season."""
     import espn_api
 
     try:
@@ -1372,6 +1395,7 @@ def check_leaders(http, report, league, in_season=True):
     season = data["requestedSeason"]
     report.ok(league.key, "Leaders", f"{season.get('displayName')} {season['type'].get('name')}: "
                                      f"{len(data['leaders']['categories'])} categories", url)
+    check_leaders_for_a_team(http, report, league, data, season_year)
     wrong_way = leaders_direction_problems(data, espn_api.LOW_IS_GOOD_LEADERS)
     if wrong_way:
         report.warn(league.key, "Leaders",
@@ -1416,7 +1440,7 @@ def check_app_leaders(report, league, in_season):
     elif unreadable:
         report.fail(league.key, "App: player statistics", f"values that don't read as numbers: {first_problems(unreadable)}")
     elif categories:
-        report.ok(league.key, "App: player statistics", f"{len(categories)} categories, {stats.get('season') or 'MLB Stats API'}")
+        report.ok(league.key, "App: player statistics", f"{len(categories)} categories, {stats.get('season')}")
     else:
         report.seasonal(in_season, league.key, "App: player statistics", "no categories")
 
@@ -1453,10 +1477,12 @@ def check_core_statistics(http, report, league, event, in_season):
     if not (year and team_id):
         report.fail(league.key, "Core API (iPhone)", f"final {event['id']} has no season or team id")
         return
-    for name, tail, read in (
-            ("Core API: leaders (iPhone)", "leaders", lambda d: d.get("categories")),
-            ("Core API: team statistics (iPhone)", f"teams/{team_id}/statistics",
-             lambda d: (d.get("splits") or {}).get("categories"))):
+    # Only the leagues with no /leaders read their leaders from the core API.
+    checks = [("Core API: team statistics (iPhone)", f"teams/{team_id}/statistics",
+               lambda d: (d.get("splits") or {}).get("categories"))]
+    if not league.player_stats:
+        checks.append(("Core API: leaders (iPhone)", "leaders", lambda d: d.get("categories")))
+    for name, tail, read in checks:
         answers = check_core_stats(http, report, league, year, name, tail, read)
         if answers is not True:
             report.seasonal(in_season, league.key, name,
@@ -1717,18 +1743,6 @@ def check_mlb_extras(http, report, seasons):
             report.ok("MLB", "App: wild card", f"AL {len(race['AL'])}, NL {len(race['NL'])}")
         else:
             report.seasonal(in_season, "MLB", "App: wild card", "empty")
-
-    today = date.today()
-    season = today.year if today.month >= 4 else today.year - 1
-    url = ("https://statsapi.mlb.com/api/v1/stats/leaders?leaderCategories=homeRuns&statGroup=hitting"
-           f"&season={season}&limit=3")
-    status, data = http.get(url)
-    if status != 200 or not isinstance(data, dict):
-        report.fail("MLB Stats API", "Leaders", f"got {status}", url)
-    elif "leagueLeaders" not in data:
-        report.fail("MLB Stats API", "Leaders", "no leagueLeaders key", url)
-    else:
-        report.ok("MLB Stats API", "Leaders", "as expected", url)
 
 
 def check_draft(http, report):

@@ -2,8 +2,9 @@
 //  LeagueLeadersTests.swift
 //  SportsScoresTests
 //
-//  How a leader's number reads, against the grid Windows is also held to, and how many
-//  requests a team's leaders take, against the real core API payload with a stand-in for ESPN.
+//  How a leader's number reads and what /leaders reads as, against the grids Windows is also
+//  held to. What's asked of ESPN, against real payloads with a stand-in for it. The core API is
+//  for the leagues with no /leaders, which soccer stands for here.
 //
 
 import XCTest
@@ -184,6 +185,7 @@ private final class NoConnection: URLProtocol {
 final class LeagueLeadersRequestTests: XCTestCase {
     private var service: ESPNAPIService!
     private var realLeaders: CoreLeadersAPIResponse!
+    private let soccer = Sport.soccerLeagues.first!
 
     override func setUpWithError() throws {
         let data = try Fixtures.data("leaders_core_NBA.json")
@@ -215,7 +217,7 @@ final class LeagueLeadersRequestTests: XCTestCase {
     }
 
     func testTheWholeLeagueLooksUpEveryName() async throws {
-        let categories = try await service.fetchLeagueLeaders(for: .nba, limit: 3)
+        let categories = try await service.fetchLeagueLeaders(for: soccer, limit: 3)
         let names = categories.flatMap(\.leaders).map(\.athleteName)
         XCTAssertFalse(names.isEmpty)
         XCTAssertFalse(names.contains("—"))
@@ -225,7 +227,7 @@ final class LeagueLeadersRequestTests: XCTestCase {
 
     func testOneTeamLooksUpOnlyItsOwnPlayers() async throws {
         let (team, athletes) = try aTeamAndItsAthletes()
-        let categories = try await service.fetchLeagueLeadersForTeam(teamAbbreviation: team, sport: .nba)
+        let categories = try await service.fetchLeagueLeadersForTeam(teamId: "unused", teamAbbreviation: team, sport: soccer)
         XCTAssertFalse(categories.isEmpty)
         let names = categories.flatMap(\.leaders).map(\.athleteName)
         XCTAssertFalse(names.isEmpty)
@@ -235,13 +237,13 @@ final class LeagueLeadersRequestTests: XCTestCase {
 
     func testAOneOffFailureGetsANameOnTheSecondTry() async throws {
         StandInESPN.lock.withLock { StandInESPN.failuresFirst = 1 }
-        let categories = try await service.fetchLeagueLeaders(for: .nba, limit: 3)
+        let categories = try await service.fetchLeagueLeaders(for: soccer, limit: 3)
         XCTAssertFalse(categories.flatMap(\.leaders).map(\.athleteName).contains("—"))
     }
 
     func testAFailureThatLastsReadsAsADashWithoutLosingTheRow() async throws {
         StandInESPN.lock.withLock { StandInESPN.failuresFirst = 10 }
-        let categories = try await service.fetchLeagueLeaders(for: .nba, limit: 3)
+        let categories = try await service.fetchLeagueLeaders(for: soccer, limit: 3)
         let names = categories.flatMap(\.leaders).map(\.athleteName)
         XCTAssertFalse(names.isEmpty)
         XCTAssertTrue(names.allSatisfy { $0 == "—" })
@@ -254,7 +256,7 @@ final class LeagueLeadersRequestTests: XCTestCase {
 
     func testATimeoutIsNotAskedAgain() async throws {
         StandInESPN.lock.withLock { StandInESPN.referenceError = .timedOut }
-        _ = try await service.fetchLeagueLeaders(for: .nba, limit: 3)
+        _ = try await service.fetchLeagueLeaders(for: soccer, limit: 3)
         let requests = StandInESPN.referenceRequests
         XCTAssertEqual(requests.count, Set(requests).count)
     }
@@ -263,7 +265,7 @@ final class LeagueLeadersRequestTests: XCTestCase {
         XCTAssertGreaterThan(uniqueReferences, ESPNAPIService.refFailuresBeforeGivingUp + ESPNAPIService.maxConcurrentRefRequests,
                              "the fixture should have enough references to show it")
         StandInESPN.lock.withLock { StandInESPN.referenceError = .timedOut }
-        let categories = try await service.fetchLeagueLeaders(for: .nba, limit: 3)
+        let categories = try await service.fetchLeagueLeaders(for: soccer, limit: 3)
         XCTAssertLessThan(StandInESPN.referenceRequests.count, uniqueReferences)
         XCTAssertTrue(categories.flatMap(\.leaders).allSatisfy { $0.athleteName == "—" }, "the rows are still there")
         XCTAssertFalse(categories.isEmpty)
@@ -271,7 +273,7 @@ final class LeagueLeadersRequestTests: XCTestCase {
 
     func testALostConnectionIsAskedAgain() async throws {
         StandInESPN.lock.withLock { StandInESPN.referenceError = .networkConnectionLost }
-        _ = try await service.fetchLeagueLeaders(for: .nba, limit: 3)
+        _ = try await service.fetchLeagueLeaders(for: soccer, limit: 3)
         let requests = StandInESPN.referenceRequests
         XCTAssertGreaterThan(requests.count, Set(requests).count)
     }
@@ -283,43 +285,15 @@ final class LeagueLeadersRequestTests: XCTestCase {
             return URLSession(configuration: config)
         }()
         do {
-            _ = try await ESPNAPIService(session: session).fetchLeagueLeaders(for: .nba)
+            _ = try await ESPNAPIService(session: session).fetchLeagueLeaders(for: soccer)
             XCTFail("it should have thrown")
         } catch is URLError {
             XCTAssertEqual(NoConnection.count, 1)
         }
     }
 
-    // MARK: Which season
-
-    func testBetweenSeasonsIsLastSeasonsRegularSeasonNeverAPreseason() async throws {
-        let thisYear = Sport.nfl.currentSeasonYear
-        // As in August: the core API has a preseason this year, and 404s the rest.
-        StandInESPN.lock.withLock {
-            StandInESPN.leadersStatus = { url in
-                url.contains("/seasons/\(thisYear)/types/1/") || url.contains("/seasons/\(thisYear - 1)/types/2/") ? 200 : 404
-            }
-        }
-        let categories = try await service.fetchLeagueLeaders(for: .nfl, limit: 3)
-        XCTAssertFalse(categories.isEmpty)
-        let asked = StandInESPN.leadersRequests
-        XCTAssertFalse(asked.contains { $0.contains("/types/1/") }, "\(asked)")
-        XCTAssertFalse(asked.contains { $0.contains("/types/3/") }, "\(asked)")
-        XCTAssertTrue(asked.last?.contains("/seasons/\(thisYear - 1)/types/2/") ?? false, "\(asked)")
-    }
-
-    func testMLBDoesNotShowSpringTrainingEither() async throws {
-        let thisYear = Sport.mlb.currentSeasonYear
-        StandInESPN.lock.withLock {
-            StandInESPN.leadersStatus = { url in url.contains("/seasons/\(thisYear - 1)/types/2/") ? 200 : 404 }
-        }
-        _ = try await service.fetchLeagueLeaders(for: .mlb, limit: 3)
-        XCTAssertFalse(StandInESPN.leadersRequests.contains { $0.contains("/types/1/") })
-    }
-
     func testSoccerIsFiledUnderTypeOne() async throws {
-        let sport = try XCTUnwrap(Sport.soccerLeagues.first)
-        _ = try await service.fetchLeagueLeaders(for: sport, limit: 3)
+        _ = try await service.fetchLeagueLeaders(for: soccer, limit: 3)
         XCTAssertTrue(StandInESPN.leadersRequests.first?.contains("/types/1/") ?? false)
     }
 
@@ -331,7 +305,7 @@ final class LeagueLeadersRequestTests: XCTestCase {
         let per = try XCTUnwrap(raw.categories?.first { $0.name == "PER" })
         XCTAssertTrue((per.leaders ?? []).allSatisfy { $0.value == 0 }, "the fixture should show the problem")
         StandInESPN.reset(leaders: data)
-        let names = try await service.fetchLeagueLeaders(for: .ncaam, limit: 3).map(\.name)
+        let names = try await service.fetchLeagueLeaders(for: soccer, limit: 3).map(\.name)
         XCTAssertFalse(names.contains("PER"))
         XCTAssertTrue(names.contains("pointsPerGame"))
     }
@@ -341,8 +315,279 @@ final class LeagueLeadersRequestTests: XCTestCase {
             StandInESPN.failuresFirst = 10
             StandInESPN.failureStatus = 404
         }
-        _ = try await service.fetchLeagueLeaders(for: .nba, limit: 3)
+        _ = try await service.fetchLeagueLeaders(for: soccer, limit: 3)
         let requests = StandInESPN.athleteRequests
         XCTAssertEqual(requests.count, Set(requests).count)
+    }
+}
+
+// MARK: - /leaders
+
+final class LeaderListGridTests: XCTestCase {
+    private struct Grid: Decodable {
+        struct Case: Decodable {
+            let fixture: String
+            let season: String?
+            let categories: [Category]
+        }
+        struct Category: Decodable {
+            let title: String
+            let rows: [Row]
+        }
+        struct Row: Decodable {
+            let rank: Int
+            let player: String
+            let team: String
+            let value: String
+        }
+        let cases: [Case]
+    }
+
+    func testEveryRealAnswerReadsAsTheSharedGridSays() throws {
+        let url = Fixtures.repoRoot.appendingPathComponent("tests/fixtures/leader_lists_grid.json")
+        let grid = try JSONDecoder().decode(Grid.self, from: Data(contentsOf: url))
+        XCTAssertGreaterThanOrEqual(grid.cases.count, 7)
+        for item in grid.cases {
+            let response = try JSONDecoder().decode(SiteLeadersResponse.self, from: Fixtures.data(item.fixture))
+            let categories = ESPNAPIService.leaderCategories(from: response)
+            XCTAssertEqual(categories.map(\.displayName), item.categories.map(\.title), item.fixture)
+            for (category, expected) in zip(categories, item.categories) {
+                XCTAssertEqual(category.seasonLabel, item.season, item.fixture)
+                XCTAssertEqual(category.leaders.map(\.rank), expected.rows.map(\.rank), "\(item.fixture) \(expected.title)")
+                XCTAssertEqual(category.leaders.map(\.athleteName), expected.rows.map(\.player), "\(item.fixture) \(expected.title)")
+                XCTAssertEqual(category.leaders.map(\.teamAbbreviation), expected.rows.map(\.team), "\(item.fixture) \(expected.title)")
+                XCTAssertEqual(category.leaders.map(\.displayValue), expected.rows.map(\.value), "\(item.fixture) \(expected.title)")
+            }
+        }
+    }
+
+    func testAPreseasonIsNothingToShow() throws {
+        let json = #"{"requestedSeason":{"displayName":"2026","type":{"type":1,"name":"Preseason"}},"leaders":{"categories":[{"name":"sacks","displayName":"Sacks","leaders":[{"value":3,"displayValue":"3","athlete":{"displayName":"A"}}]}]}}"#
+        let response = try JSONDecoder().decode(SiteLeadersResponse.self, from: Data(json.utf8))
+        XCTAssertTrue(ESPNAPIService.leaderCategories(from: response).isEmpty)
+    }
+
+    func testARatingWithNobodyRatedIsLeftOut() throws {
+        let json = #"{"leaders":{"categories":[{"name":"PER","displayName":"PER","leaders":[{"value":0,"displayValue":"0.0","athlete":{"displayName":"A"}}]},{"name":"sacks","displayName":"Sacks","leaders":[{"value":3,"displayValue":"3","athlete":{"displayName":"A"}}]}]}}"#
+        let response = try JSONDecoder().decode(SiteLeadersResponse.self, from: Data(json.utf8))
+        XCTAssertEqual(ESPNAPIService.leaderCategories(from: response).map(\.name), ["sacks"])
+    }
+
+    func testAListStopsAtTheFirstWhoBreaksItsDirection() throws {
+        let row = { (value: Double) in #"{"value":\#(value),"displayValue":"\#(value)","athlete":{"displayName":"P\#(value)"}}"# }
+        let highFirst = [71.4, 64.3, 100.0, 100.0].map(row).joined(separator: ",")
+        let lowFirst = [1.8, 2.1, 0.5].map(row).joined(separator: ",")
+        let json = #"{"leaders":{"categories":[{"name":"fieldGoalPercentage","displayName":"FG","leaders":[\#(highFirst)]},{"name":"ERA","displayName":"ERA","leaders":[\#(lowFirst)]}]}}"#
+        let response = try JSONDecoder().decode(SiteLeadersResponse.self, from: Data(json.utf8))
+        let categories = ESPNAPIService.leaderCategories(from: response)
+        XCTAssertEqual(categories[0].leaders.count, 2)
+        XCTAssertEqual(categories[1].leaders.count, 2)
+    }
+
+    func testPlayersLevelOnANumberShareARank() {
+        XCTAssertEqual(ESPNAPIService.sharedRanks(["7.5", "7.5", "7", "7", "6.5"]), [1, 1, 3, 3, 5])
+        XCTAssertEqual(ESPNAPIService.sharedRanks([]), [])
+    }
+
+    func testAnOddValueDoesNotLoseTheList() throws {
+        let json = #"{"leaders":{"categories":[{"name":"sacks","displayName":"Sacks","leaders":[{"value":"n/a","displayValue":"3","athlete":{"displayName":"A"}},{"value":3,"displayValue":"3","athlete":{"displayName":"B"}}]}]}}"#
+        let response = try JSONDecoder().decode(SiteLeadersResponse.self, from: Data(json.utf8))
+        XCTAssertEqual(ESPNAPIService.leaderCategories(from: response).first?.leaders.count, 2)
+    }
+}
+
+/// Stands in for ESPN's /leaders and its idea of the season.
+private final class StandInSiteLeaders: URLProtocol {
+    static let lock = NSLock()
+    static var leaders = Data()
+    static var seasonYear = 2027
+    static var seasonType = 2
+    static var requests = [URL]()
+    /// The status of a /leaders request, by its URL. 200 sends `leaders`.
+    static var leadersStatus: (URL) -> Int = { _ in 200 }
+    static var leadersAnswer: ((URL) -> Data)?
+
+    static func reset(leaders: Data) {
+        lock.withLock {
+            self.leaders = leaders
+            seasonYear = 2027
+            seasonType = 2
+            requests = []
+            leadersStatus = { _ in 200 }
+            leadersAnswer = nil
+        }
+    }
+
+    static var leadersRequests: [URL] {
+        lock.withLock { requests.filter { $0.path.hasSuffix("/leaders") } }
+    }
+
+    override class func canInit(with request: URLRequest) -> Bool { true }
+    override class func canonicalRequest(for request: URLRequest) -> URLRequest { request }
+    override func stopLoading() {}
+
+    override func startLoading() {
+        guard let url = request.url else { return }
+        let (status, body): (Int, Data) = Self.lock.withLock {
+            Self.requests.append(url)
+            if url.path.hasSuffix("/season") {
+                return (200, Data(#"{"year":\#(Self.seasonYear),"type":{"type":\#(Self.seasonType)}}"#.utf8))
+            }
+            let status = Self.leadersStatus(url)
+            guard status == 200 else { return (status, Data()) }
+            return (200, Self.leadersAnswer?(url) ?? Self.leaders)
+        }
+        let response = HTTPURLResponse(url: url, statusCode: status, httpVersion: nil, headerFields: nil)!
+        client?.urlProtocol(self, didReceive: response, cacheStoragePolicy: .notAllowed)
+        client?.urlProtocol(self, didLoad: body)
+        client?.urlProtocolDidFinishLoading(self)
+    }
+}
+
+final class SiteLeadersRequestTests: XCTestCase {
+    private var service: ESPNAPIService!
+    private let nobodyYet = Data(#"{"requestedSeason":{"displayName":"2026-27","type":{"type":2}},"leaders":{"categories":[]}}"#.utf8)
+
+    override func setUpWithError() throws {
+        StandInSiteLeaders.reset(leaders: try Fixtures.data("leaders_v3_NBA.json"))
+        let config = URLSessionConfiguration.ephemeral
+        config.protocolClasses = [StandInSiteLeaders.self]
+        service = ESPNAPIService(session: URLSession(configuration: config))
+    }
+
+    private func query(_ url: URL, _ name: String) -> String? {
+        URLComponents(url: url, resolvingAgainstBaseURL: false)?.queryItems?.first { $0.name == name }?.value
+    }
+
+    func testItAsksWhatWindowsAsks() async throws {
+        _ = try await service.fetchLeagueLeaders(for: .nba)
+        let url = try XCTUnwrap(StandInSiteLeaders.leadersRequests.first)
+        XCTAssertEqual(url.host, "site.web.api.espn.com")
+        XCTAssertEqual(url.path, "/apis/site/v3/sports/basketball/nba/leaders")
+        XCTAssertEqual(query(url, "region"), "us")
+        XCTAssertEqual(query(url, "lang"), "en")
+        XCTAssertEqual(query(url, "season"), "2027")
+        XCTAssertEqual(query(url, "seasontype"), "2")
+        XCTAssertEqual(query(url, "limit"), "20")
+        XCTAssertNil(query(url, "team"))
+    }
+
+    func testEveryLeagueWindowsHasLeadersForAsksThere() async throws {
+        for sport: Sport in [.nfl, .ncaaf, .nba, .wnba, .ncaam, .ncaawb, .nhl, .mlb] {
+            StandInSiteLeaders.lock.withLock { StandInSiteLeaders.requests = [] }
+            _ = try await service.fetchLeagueLeaders(for: sport)
+            XCTAssertEqual(StandInSiteLeaders.leadersRequests.first?.host, "site.web.api.espn.com", sport.rawValue)
+        }
+    }
+
+    func testNamesComeFromTheAnswerWithNoLookups() async throws {
+        let categories = try await service.fetchLeagueLeaders(for: .nba)
+        XCTAssertFalse(categories.flatMap(\.leaders).map(\.athleteName).contains("—"))
+        let lookups = StandInSiteLeaders.lock.withLock {
+            StandInSiteLeaders.requests.filter { !$0.path.hasSuffix("/leaders") && !$0.path.hasSuffix("/season") }
+        }
+        XCTAssertEqual(lookups, [])
+    }
+
+    func testItSaysWhichSeason() async throws {
+        let categories = try await service.fetchLeagueLeaders(for: .nba)
+        XCTAssertEqual(categories.first?.seasonLabel, "2026-27 Regular Season")
+    }
+
+    func testTheLimitCutsTheListAndKeepsTheSeason() async throws {
+        let categories = try await service.fetchLeagueLeaders(for: .nba, limit: 1)
+        XCTAssertTrue(categories.allSatisfy { $0.leaders.count == 1 })
+        XCTAssertEqual(categories.first?.seasonLabel, "2026-27 Regular Season")
+    }
+
+    func testAPreseasonMeansLastSeason() async throws {
+        StandInSiteLeaders.lock.withLock { StandInSiteLeaders.seasonType = 1 }
+        _ = try await service.fetchLeagueLeaders(for: .nba)
+        XCTAssertEqual(query(try XCTUnwrap(StandInSiteLeaders.leadersRequests.first), "season"), "2026")
+    }
+
+    func testAPlayoffOrOffSeasonIsStillItsOwnYear() async throws {
+        StandInSiteLeaders.lock.withLock { StandInSiteLeaders.seasonType = 4 }
+        _ = try await service.fetchLeagueLeaders(for: .nba)
+        XCTAssertEqual(query(try XCTUnwrap(StandInSiteLeaders.leadersRequests.first), "season"), "2027")
+    }
+
+    func testANewSeasonWithNobodyOnTheListMeansLastSeason() async throws {
+        let empty = nobodyYet
+        let real = StandInSiteLeaders.lock.withLock { StandInSiteLeaders.leaders }
+        StandInSiteLeaders.lock.withLock {
+            StandInSiteLeaders.leadersAnswer = { url in url.absoluteString.contains("season=2027") ? empty : real }
+        }
+        let categories = try await service.fetchLeagueLeaders(for: .nba)
+        XCTAssertFalse(categories.isEmpty)
+        XCTAssertEqual(StandInSiteLeaders.leadersRequests.map { self.query($0, "season") }, ["2027", "2026"])
+    }
+
+    func testANewSeasonThatIsA404MeansLastSeason() async throws {
+        StandInSiteLeaders.lock.withLock {
+            StandInSiteLeaders.leadersStatus = { $0.absoluteString.contains("season=2027") ? 404 : 200 }
+        }
+        let categories = try await service.fetchLeagueLeaders(for: .nba)
+        XCTAssertFalse(categories.isEmpty)
+    }
+
+    func testNeitherSeasonExistingIsAFailureNotNoData() async throws {
+        StandInSiteLeaders.lock.withLock { StandInSiteLeaders.leadersStatus = { _ in 404 } }
+        do {
+            _ = try await service.fetchLeagueLeaders(for: .nba)
+            XCTFail("it should have thrown")
+        } catch is APIError {}
+    }
+
+    func testAFailureIsTriedAgainFreshThenStepsDown() async throws {
+        StandInSiteLeaders.lock.withLock {
+            StandInSiteLeaders.leadersStatus = { $0.absoluteString.contains("limit=10") ? 200 : 500 }
+        }
+        let categories = try await service.fetchLeagueLeaders(for: .nba)
+        XCTAssertFalse(categories.isEmpty)
+        let asked = StandInSiteLeaders.leadersRequests
+        XCTAssertEqual(asked.map { self.query($0, "limit") }, ["20", "20", "10"])
+        XCTAssertNil(query(asked[0], "_"))
+        XCTAssertNotNil(query(asked[1], "_"), "ESPN can cache a 500")
+    }
+
+    func testFailingAtEveryLimitIsAFailure() async throws {
+        StandInSiteLeaders.lock.withLock { StandInSiteLeaders.leadersStatus = { _ in 500 } }
+        do {
+            _ = try await service.fetchLeagueLeaders(for: .nba)
+            XCTFail("it should have thrown")
+        } catch {
+            XCTAssertEqual(StandInSiteLeaders.leadersRequests.map { self.query($0, "limit") }, ["20", "20", "10", "5"])
+        }
+    }
+
+    func testARefusalIsNotAskedAgain() async throws {
+        StandInSiteLeaders.lock.withLock { StandInSiteLeaders.leadersStatus = { _ in 403 } }
+        do {
+            _ = try await service.fetchLeagueLeaders(for: .nba)
+            XCTFail("it should have thrown")
+        } catch {
+            XCTAssertEqual(StandInSiteLeaders.leadersRequests.count, 1)
+        }
+    }
+
+    func testOneTeamAsksForThatTeamAndClearsTheTeamColumn() async throws {
+        let categories = try await service.fetchLeagueLeadersForTeam(teamId: "13", teamAbbreviation: "LAL", sport: .nba)
+        XCTAssertFalse(categories.isEmpty)
+        XCTAssertEqual(query(try XCTUnwrap(StandInSiteLeaders.leadersRequests.first), "team"), "13")
+        XCTAssertTrue(categories.flatMap(\.leaders).allSatisfy { $0.teamAbbreviation.isEmpty })
+        XCTAssertEqual(categories.first?.seasonLabel, "2026-27 Regular Season")
+    }
+
+    func testOneTeamRanksItsPlayersFromOne() async throws {
+        let categories = try await service.fetchLeagueLeadersForTeam(teamId: "13", teamAbbreviation: "LAL", sport: .nba)
+        XCTAssertEqual(categories.first?.leaders.first?.rank, 1)
+    }
+
+    func testALeagueWithNoLeadersThereNeverAsksThere() async throws {
+        let sport = try XCTUnwrap(Sport.soccerLeagues.first)
+        StandInSiteLeaders.lock.withLock { StandInSiteLeaders.leadersStatus = { _ in 404 } }
+        _ = try await service.fetchLeagueLeaders(for: sport)
+        XCTAssertFalse(StandInSiteLeaders.leadersRequests.contains { $0.host == "site.web.api.espn.com" })
     }
 }

@@ -123,6 +123,12 @@ struct LeagueLeaderCategory: Identifiable {
         self.seasonLabel = seasonLabel
     }
 
+    /// The same list, cut to its first `limit` rows.
+    func keepingFirst(_ limit: Int) -> LeagueLeaderCategory {
+        LeagueLeaderCategory(name: name, displayName: displayName, leaders: Array(leaders.prefix(limit)),
+                             isTeamCategory: isTeamCategory, seasonLabel: seasonLabel)
+    }
+
     /// The bare ESPN stat key, used to look up this category's definition.
     /// Team categories are named "section.stat" (or "opponent.section.stat");
     /// player categories are already a bare key like "homeRuns".
@@ -164,6 +170,64 @@ struct CoreLeadersAPIResponse: Codable {
                 }
             }
         }
+    }
+}
+
+/// A league's leaders from `site.web.api.espn.com/apis/site/v3/sports/{sport}/{league}/leaders`,
+/// with names and teams inside the response.
+struct SiteLeadersResponse: Decodable {
+    let requestedSeason: Season?
+    let leaders: Leaders?
+
+    struct Season: Decodable {
+        let displayName: String?
+        let type: SeasonType?
+
+        struct SeasonType: Decodable {
+            let type: Int?
+            let name: String?
+        }
+    }
+
+    struct Leaders: Decodable {
+        let categories: [Category]?
+    }
+
+    struct Category: Decodable {
+        let name: String?
+        let displayName: String?
+        let leaders: [Leader]?
+    }
+
+    struct Leader: Decodable {
+        let displayValue: String?
+        let value: Double?
+        let athlete: Athlete?
+        let team: Team?
+
+        enum CodingKeys: String, CodingKey {
+            case displayValue, value, athlete, team
+        }
+
+        /// One odd field shouldn't lose the league's whole list.
+        init(from decoder: Decoder) throws {
+            let container = try decoder.container(keyedBy: CodingKeys.self)
+            displayValue = try? container.decodeIfPresent(String.self, forKey: .displayValue)
+            value = try? container.decodeIfPresent(Double.self, forKey: .value)
+            athlete = try? container.decodeIfPresent(Athlete.self, forKey: .athlete)
+            team = try? container.decodeIfPresent(Team.self, forKey: .team)
+        }
+    }
+
+    struct Athlete: Decodable {
+        let displayName: String?
+        let fullName: String?
+        let shortName: String?
+    }
+
+    struct Team: Decodable {
+        let abbreviation: String?
+        let displayName: String?
     }
 }
 

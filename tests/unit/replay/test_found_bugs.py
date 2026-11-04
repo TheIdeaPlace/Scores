@@ -106,15 +106,6 @@ def test_team_info_with_no_team_in_the_body_is_empty_not_a_blank_team(espn):
     assert espn_api.get_team_info("NFL", "9") == {}
 
 
-def test_mlb_statistics_survive_a_console_that_cannot_print_emoji(espn, monkeypatch):
-    """With stdout redirected on Windows, print() encodes as cp1252. Emoji in the progress
-    lines raised UnicodeEncodeError, and every MLB leader was lost."""
-    console = io.TextIOWrapper(io.BytesIO(), encoding="cp1252")
-    monkeypatch.setattr(sys, "stdout", console)
-    espn.on("statsapi.mlb.com", load("mlb_leaders_homeRuns.json"))
-    assert len(espn_api.get_player_statistics("MLB")["player_stats"]) == 39
-
-
 def test_a_null_venue_name_does_not_lose_the_mlb_facts():
     """Making the league facts reachable made this `"Field" in None` reachable too."""
     facts = VenueService()._generate_interesting_facts({"name": None}, "mlb")
