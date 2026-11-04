@@ -8,6 +8,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Fixed
+- **Venues on Windows now work for college basketball and college hockey, and name the home
+  teams.** Those leagues always said "No venue data", and no league ever listed a home team. Each
+  venue now says who plays there, and only places that are some team's home are listed, not arenas
+  used for a neutral site game. If ESPN doesn't answer, it says so instead of saying there are no
+  venues, and one month failing no longer loses the list.
+- **Venue Details only says what's known.** Playing surface and capacity lines are gone, since
+  ESPN's scoreboard has neither, and a venue with no state no longer reads "City, Unknown".
+- **Team Info shows where a team plays now, on Windows and iPhone.** ESPN's team page still had the
+  Nets at Prudential Center and the Warriors at Oracle Arena. The venue now comes from the team's
+  home games, which also gives college, WNBA and soccer teams a venue on Windows.
 - **Utah is in the Central Division in the NHL standings on Windows.** 1.0.1 said it was, but ESPN
   spells it differently in standings than on its team page, so it stayed in a group of its own.
 - **No more blank rows in Live Scores, Venue Details and the bowl list.** They were only spacing,
