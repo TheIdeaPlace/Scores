@@ -107,6 +107,84 @@ def local_schedule_datetime(date_str: str, time_valid: bool = True) -> datetime:
     return parsed.replace(tzinfo=None)
 
 
+def _first_text(*values: Any) -> str:
+    return next((v for v in values if isinstance(v, str) and v.strip()), "")
+
+
+def schedule_game_label(event: Any) -> str:
+    """What sets a game apart on a team's schedule, from ESPN's event: "Super Bowl LX",
+    "SEC Championship", "Preseason Week 1". Empty for an everyday game.
+
+    ESPN's note says it best, and appears in any season type: FCS playoffs are filed
+    under the regular season. Soccer has no season types, only long ids, and a note can
+    be a bare ingest record with no headline. "Week 5" isn't worth reading on every row,
+    so the week and the season type's own name only count for preseason and postseason.
+    """
+    if not isinstance(event, dict):
+        return ""
+    competitions = event.get("competitions")
+    competition = competitions[0] if isinstance(competitions, list) and competitions else None
+    notes = competition.get("notes") if isinstance(competition, dict) else None
+    for note in notes if isinstance(notes, list) else []:
+        if isinstance(note, dict):
+            headline = _first_text(note.get("headline"))
+            if headline:
+                return headline
+    season_type = event.get("seasonType")
+    season_type = season_type if isinstance(season_type, dict) else {}
+    if season_type.get("type") in (1, 3):
+        week = event.get("week")
+        return _first_text(week.get("text") if isinstance(week, dict) else None, season_type.get("name"))
+    return ""
+
+
+_CALLED_OFF = ("Canceled", "Cancelled", "Postponed")
+
+
+def schedule_game_is_over(game: Dict[str, Any]) -> bool:
+    """True for a row with nothing still to come. Soccer's finals say "Full Time", or
+    "Final Score - After Penalties", so the word Final doesn't settle it."""
+    return bool(game.get("completed")) or game.get("status") in _CALLED_OFF
+
+
+def _schedule_result(game: Dict[str, Any]) -> str:
+    """W 29-13, the team asked for first. Empty unless there are two scores."""
+    home, away = game.get("home_score"), game.get("away_score")
+    try:
+        home_points, away_points = int(home), int(away)
+    except (TypeError, ValueError):
+        return ""
+    if home_points == away_points:
+        return f"T {home}-{away}"
+    if game.get("home_away") == "vs":
+        return f"{'W' if home_points > away_points else 'L'} {home}-{away}"
+    return f"{'W' if away_points > home_points else 'L'} {away}-{home}"
+
+
+def schedule_row_text(game: Dict[str, Any]) -> str:
+    """One row of a team's schedule, which is all a screen reader gets for it:
+    "Sun, Feb 08, 2026: vs New England Patriots - W 29-13, Super Bowl LX".
+
+    The result or time comes before the label because a label can run long, and
+    this way the part you came for isn't behind it. A neutral site isn't an away
+    game, whichever team ESPN files as the home one.
+    """
+    where = "vs" if game.get("neutral_site") else game.get("home_away", "")
+    status = game.get("status", "")
+    if game.get("completed"):
+        outcome = _schedule_result(game) or status
+    elif status in _CALLED_OFF:
+        outcome = status
+    else:
+        outcome = game.get("time", "")
+        venue = game.get("venue", "")
+        if venue and venue != "TBD":
+            outcome += f" ({venue})"
+    text = f"{game.get('date_display', '')}: {where} {game.get('opponent', 'Unknown')} - {outcome}"
+    label = game.get("label")
+    return f"{text}, {label}" if label else text
+
+
 def format_height(height: Any) -> str:
     """ESPN sends inches, sometimes as a float: 77.0 is 6'5"."""
     try:

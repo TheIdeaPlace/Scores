@@ -9,7 +9,8 @@ import espn_api
 from game_labels import (basketball_period_label, best_odds, broadcast_names,
                          football_period_label, football_period_sort_key, format_height,
                          format_weight, game_standings_tables, injured_player_count,
-                         local_schedule_datetime, scoreboard_today)
+                         local_schedule_datetime, schedule_game_is_over, schedule_game_label,
+                         schedule_row_text, scoreboard_today)
 
 FIXTURES = os.path.join(os.path.dirname(__file__), "..", "fixtures", "espn")
 
@@ -17,6 +18,105 @@ FIXTURES = os.path.join(os.path.dirname(__file__), "..", "fixtures", "espn")
 def load(name):
     with open(os.path.join(FIXTURES, name), encoding="utf-8") as f:
         return json.load(f)
+
+
+class TestScheduleGameLabel:
+    def label(self, fixture, game_id):
+        return schedule_game_label(next(e for e in load(fixture)["events"] if e["id"] == game_id))
+
+    def test_the_note_on_a_postseason_game(self):
+        event = load("schedule_NFL_26_post.json")["events"][-1]
+        assert event["week"]["text"] == "Super Bowl"
+        assert schedule_game_label(event) == "Super Bowl LX"
+
+    def test_the_week_where_a_preseason_game_has_no_note(self):
+        assert [schedule_game_label(e) for e in load("schedule_NFL_26_pre.json")["events"]] == [
+            "Preseason Week 1", "Preseason Week 2", "Preseason Week 3"]
+
+    def test_the_season_type_where_there_is_no_week_either(self):
+        assert schedule_game_label(load("schedule_WNBA_8_pre.json")["events"][0]) == "Preseason"
+
+    def test_a_note_on_a_regular_season_game(self):
+        """FCS playoffs and conference title games are filed under the regular season."""
+        assert schedule_game_label(load("schedule_NCAAF_333_reg.json")["events"][0]) == "SEC Championship"
+
+    def test_an_everyday_week_is_not_read_on_every_row(self):
+        for event in load("schedule_NFL_26_reg.json")["events"]:
+            assert event["week"]["text"].startswith("Week ")
+            assert schedule_game_label(event) == ""
+
+    def test_a_soccer_season_id_is_not_mistaken_for_a_postseason(self):
+        for event in load("schedule_EPL_359_results.json")["events"]:
+            assert event["seasonType"]["type"] > 3
+            assert schedule_game_label(event) == ""
+
+    def test_a_note_with_no_headline_is_passed_over(self):
+        events = load("schedule_UCL_359_2025.json")["events"]
+        bare = next(e for e in events if not any(n.get("headline") for n in e["competitions"][0]["notes"]))
+        assert bare["competitions"][0]["notes"] and schedule_game_label(bare) == ""
+
+    @pytest.mark.parametrize("event", [
+        None, [], {}, {"competitions": None}, {"competitions": []}, {"competitions": [None]},
+        {"competitions": [{"notes": None}]}, {"competitions": [{"notes": [None, {"headline": None}, {"headline": "  "}]}]},
+        {"seasonType": None}, {"seasonType": {"type": 2, "name": "Regular Season"}},
+        {"seasonType": {"type": 3}}, {"seasonType": {"type": 1, "name": None}, "week": None},
+    ])
+    def test_nothing_to_go_on_is_no_label(self, event):
+        assert schedule_game_label(event) == ""
+
+
+class TestScheduleRowText:
+    def game(self, **changes):
+        game = {"date_display": "Sun, Oct 18", "opponent": "Dallas Cowboys", "home_away": "vs", "time": "Final",
+                "status": "Final", "venue": "Lambeau Field", "home_score": "23", "away_score": "13", "game_id": "1",
+                "is_today": False, "label": "", "completed": True, "neutral_site": False}
+        game.update(changes)
+        return game
+
+    @pytest.mark.parametrize("home_away,home,away,result", [
+        ("vs", "23", "13", "W 23-13"), ("vs", "13", "23", "L 13-23"),
+        ("@", "23", "13", "L 13-23"), ("@", "13", "23", "W 23-13"),
+        ("vs", "2", "2", "T 2-2"), ("@", "0", "0", "T 0-0"),
+    ])
+    def test_the_result_has_the_team_asked_for_first(self, home_away, home, away, result):
+        text = schedule_row_text(self.game(home_away=home_away, home_score=home, away_score=away))
+        assert text == f"Sun, Oct 18: {home_away} Dallas Cowboys - {result}"
+
+    def test_a_finished_soccer_match_reads_as_a_result(self):
+        game = self.game(status="Full Time", time="FT", home_score="1", away_score="0")
+        assert schedule_row_text(game) == "Sun, Oct 18: vs Dallas Cowboys - W 1-0"
+
+    def test_a_label_follows_the_result(self):
+        assert schedule_row_text(self.game(label="Super Bowl LX")) == "Sun, Oct 18: vs Dallas Cowboys - W 23-13, Super Bowl LX"
+
+    def test_a_label_follows_the_time_and_venue(self):
+        game = self.game(completed=False, status="Scheduled", time="9/10 - 7:20 PM CDT", label="NFC Championship")
+        assert schedule_row_text(game) == "Sun, Oct 18: vs Dallas Cowboys - 9/10 - 7:20 PM CDT (Lambeau Field), NFC Championship"
+
+    def test_a_neutral_site_is_not_read_as_away_and_the_result_is_still_right(self):
+        game = self.game(home_away="@", neutral_site=True, home_score="13", away_score="29")
+        assert schedule_row_text(game) == "Sun, Oct 18: vs Dallas Cowboys - W 29-13"
+
+    @pytest.mark.parametrize("home,away", [("", ""), ("", "3"), (None, "3"), ("x", "3")])
+    def test_a_finished_game_with_no_usable_scores_says_its_status(self, home, away):
+        assert schedule_row_text(self.game(home_score=home, away_score=away)) == "Sun, Oct 18: vs Dallas Cowboys - Final"
+
+    @pytest.mark.parametrize("status", ["Canceled", "Cancelled", "Postponed"])
+    def test_a_game_called_off_says_so_and_not_0_0(self, status):
+        game = self.game(completed=False, status=status, home_score="0", away_score="0", time="9/10")
+        assert schedule_row_text(game) == f"Sun, Oct 18: vs Dallas Cowboys - {status}"
+        assert schedule_game_is_over(game) is True
+
+    def test_a_game_to_come_with_no_venue_known(self):
+        game = self.game(completed=False, status="Scheduled", time="TBD", venue="TBD", home_score="", away_score="")
+        assert schedule_row_text(game) == "Sun, Oct 18: vs Dallas Cowboys - TBD"
+        assert schedule_game_is_over(game) is False
+
+    def test_a_game_under_way_is_not_over(self):
+        assert schedule_game_is_over(self.game(completed=False, status="Halftime", time="Halftime")) is False
+
+    def test_a_row_with_almost_nothing_still_reads(self):
+        assert schedule_row_text({}) == ":  Unknown - "
 
 
 @pytest.mark.parametrize("league,period,label", [

@@ -38,7 +38,7 @@ QUIET = [
     ("get_statistics", lambda: espn_api.get_statistics("NBA"), NOTHING),
     ("get_venues_for_league", lambda: VenueService().get_venues_for_league("nfl"), {}),
     ("get_team_schedule NBA", lambda: espn_api.get_team_schedule("NBA", "15", season=2027), []),
-    ("get_team_schedule scoreboard", lambda: espn_api.get_team_schedule("WNBA", "8", season=2026), []),
+    ("get_team_schedule WNBA", lambda: espn_api.get_team_schedule("WNBA", "8", season=2026), []),
 ]
 
 
@@ -86,6 +86,7 @@ RAISING = [
     ("get_game_details", lambda: espn_api.get_game_details("NFL", "1"), lambda: ApiService.get_game_details("NFL", "1")),
     ("get_team_schedule NFL", lambda: espn_api.get_team_schedule("NFL", "9"), lambda: ApiService.get_team_schedule("NFL", "9")),
     ("get_team_schedule NCAAF", lambda: espn_api.get_team_schedule("NCAAF", "333"), lambda: ApiService.get_team_schedule("NCAAF", "333")),
+    ("get_team_schedule EPL", lambda: espn_api.get_team_schedule("EPL", "359"), lambda: ApiService.get_team_schedule("EPL", "359")),
     ("get_standings NFL", lambda: espn_api.get_standings("NFL"), lambda: ApiService.get_standings("NFL")),
     ("get_standings soccer", lambda: espn_api.get_standings("EPL"), lambda: ApiService.get_standings("EPL")),
     ("get_standings college", lambda: espn_api.get_standings("NCAAM"), lambda: ApiService.get_standings("NCAAM")),
@@ -111,12 +112,13 @@ class TestTimeoutsReachTheCaller:
     (lambda: espn_api.get_game_details("NFL", "1"), {}),
     (lambda: espn_api.get_team_schedule("NFL", "9", season=2026), []),
     (lambda: espn_api.get_team_schedule("NCAAF", "333", season=2026), []),
+    (lambda: espn_api.get_team_schedule("EPL", "359", season=2026), []),
     (lambda: espn_api.get_standings("NFL"), []),
     (lambda: espn_api.get_standings("MLB"), []),
     (lambda: espn_api.get_standings("NHL"), []),
     (lambda: espn_api.get_standings("NBA"), []),
     (lambda: espn_api.get_live_golf_tournament("PGA"), None),
-], ids=["scores", "news", "details", "schedule_nfl", "schedule_ncaaf", "nfl", "mlb", "nhl", "nba", "live_golf"])
+], ids=["scores", "news", "details", "schedule_nfl", "schedule_ncaaf", "schedule_soccer", "nfl", "mlb", "nhl", "nba", "live_golf"])
 class TestHttpErrorsOnTheOthers:
     @pytest.mark.parametrize("reply", [HTTP_404, HTTP_500], ids=["404", "500"])
     def test_are_empty(self, espn, call, expected, reply):

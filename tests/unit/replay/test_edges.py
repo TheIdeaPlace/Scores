@@ -50,7 +50,8 @@ class TestScheduleFailures:
         ids = {g["game_id"] for g in espn_api.get_team_schedule("NCAAM", "275", season=2027)}
         assert ids == {e["id"] for e in real["events"]}
 
-    def test_a_timeout_on_the_college_football_fallback_is_empty(self, espn):
+    def test_an_empty_college_football_season_asks_for_no_other(self, espn):
+        """Any other season would time out here, so asking for one would raise."""
         espn.on("/schedule", lambda url: {"events": []} if "season=2010" in url else TIMEOUT)
         assert espn_api.get_team_schedule("NCAAF", "333", season=2010) == []
 
@@ -94,7 +95,7 @@ def test_fresh_nba_standings_cover_the_west_and_an_unknown_team(espn):
     assert divisions == {"Lakers": "Western Conference Pacific", "Newcomers": "Unknown Conference"}
 
 
-def test_a_failed_college_football_season_falls_back_only_for_that_league(espn):
+def test_a_failed_college_football_regular_season_stops_there(espn):
     espn.on("/schedule", HTTP_500)
     assert espn_api.get_team_schedule("NCAAF", "333", season=2020) == []
     assert len(espn.calls) == 1

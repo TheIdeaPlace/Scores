@@ -91,25 +91,6 @@ def test_failing_requests_do_not_show_last_season(espn, freeze_now):
     assert espn_api.get_team_schedule("NBA", "15") == []
 
 
-@gap("A college football season you pick that comes back empty falls back to last "
-     "calendar year's schedule, shown as if it were the season you asked for.")
-def test_an_empty_ncaaf_season_does_not_become_another_season(espn, freeze_now):
-    freeze_now(datetime(2026, 11, 3))
-    real = load("schedule_NFL_9.json")
-    espn.on("/schedule", lambda url: real if "season=2025" in url else {"events": []})
-    assert espn_api.get_team_schedule("NCAAF", "9", season=2010) == []
-
-
-@gap("get_available_seasons offers WNBA and soccer ten past seasons, but their schedule "
-     "reads a window of months around today and ignores the season. schedule_WNBA_8.json "
-     "shows ESPN has a schedule endpoint that would work.")
-def test_a_past_wnba_season_asks_for_that_season(espn, freeze_now):
-    freeze_now(datetime(2026, 11, 3))
-    espn.on("/scoreboard", {"events": []}).on("/schedule", {"events": []})
-    espn_api.get_team_schedule("WNBA", "8", season=2024)
-    assert any("2024" in url for url in espn.calls), espn.calls
-
-
 @gap("The slow standings path gives a team whose record request failed 0-0, a record it "
      "doesn't have. Blank would be honest. This is every team if the failure is general.")
 def test_a_failed_team_record_is_not_shown_as_0_0(espn):

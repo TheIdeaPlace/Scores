@@ -64,7 +64,7 @@ import error_log
 from windows_notifications import announce, set_notifier_window
 from accessible_table import AccessibleTable, StandingsTable, WildCardTable, LeadersTable, BoxscoreTable, InjuryTable, prepare_table_tabs, ButtonKeys
 from box_score import build_box_tables
-from game_labels import scoreboard_today, basketball_period_label, football_period_label, football_period_sort_key, game_standings_tables
+from game_labels import scoreboard_today, basketball_period_label, football_period_label, football_period_sort_key, game_standings_tables, schedule_game_is_over, schedule_row_text
 
 # Text processing utilities
 try:
@@ -8297,30 +8297,7 @@ class TeamHubDialog(QDialog):
             return
         today_idx = -1
         for i, game in enumerate(schedule_data):
-            date_str   = game.get('date_display', '')
-            opponent   = game.get('opponent', 'Unknown')
-            home_away  = game.get('home_away', '')
-            time_str   = game.get('time', '')
-            status     = game.get('status', '')
-            venue      = game.get('venue', '')
-            if status in ('Final', 'Cancelled', 'Postponed'):
-                hs = game.get('home_score', '')
-                as_ = game.get('away_score', '')
-                if hs and as_:
-                    hi, ai = int(hs), int(as_)
-                    if hi == ai:
-                        txt = f"{date_str}: {home_away} {opponent} - T {hs}-{as_}"
-                    elif home_away == 'vs':
-                        txt = f"{date_str}: {home_away} {opponent} - {'W' if hi>ai else 'L'} {hs}-{as_}"
-                    else:
-                        txt = f"{date_str}: {home_away} {opponent} - {'W' if ai>hi else 'L'} {as_}-{hs}"
-                else:
-                    txt = f"{date_str}: {home_away} {opponent} - {status}"
-            else:
-                txt = f"{date_str}: {home_away} {opponent} - {time_str}"
-                if venue and venue != "TBD":
-                    txt += f" ({venue})"
-            item = QListWidgetItem(txt)
+            item = QListWidgetItem(schedule_row_text(game))
             item.setData(Qt.ItemDataRole.UserRole, game)
             if game.get('is_today', False):
                 f = QFont(); f.setBold(True)
@@ -8332,7 +8309,7 @@ class TeamHubDialog(QDialog):
             self.schedule_list.setCurrentRow(today_idx)
         else:
             future = next((i for i, g in enumerate(schedule_data)
-                           if g.get('status', '') not in ('Final', 'Cancelled', 'Postponed')), 0)
+                           if not schedule_game_is_over(g)), 0)
             self.schedule_list.setCurrentRow(future)
         _take_focus_after_load(self.schedule_list)
 
