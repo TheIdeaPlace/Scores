@@ -8,6 +8,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Fixed
+- **FCS teams are in college football standings and Teams, on Windows and iPhone.** You could see
+  their games but not the teams: the Big Sky and 13 other conferences were missing. Standings and
+  team lists now follow the "College football games shown" setting, so All Division I lists all 25
+  conferences and FBS only lists the 11 you had before. Changing the setting takes effect the next
+  time you open them.
+- **College teams past the first 50 appear in Transactions on iPhone.** The list stopped at 50, part
+  way through the alphabet.
 - **Utah is in the Central Division in the NHL standings on Windows.** 1.0.1 said it was, but ESPN
   spells it differently in standings than on its team page, so it stayed in a group of its own.
 - **No more blank rows in Live Scores, Venue Details and the bowl list.** They were only spacing,
