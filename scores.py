@@ -8505,7 +8505,7 @@ class FavoriteCardLoader(QThread):
 
         if not summary:
             try:
-                info = espn_api.get_team_info(self.league, self.team_id)
+                info = espn_api.get_team_info(self.league, self.team_id, home_venue=False)
                 rec = info.get('record_overall', '')
                 opp = info.get('next_game_opponent', '')
                 ha = info.get('next_game_home_away', '')

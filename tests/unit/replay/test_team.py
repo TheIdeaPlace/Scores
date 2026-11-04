@@ -3,19 +3,97 @@ import pytest
 
 import espn_api
 
-from .support import load
+from .support import HTTP_500, NOT_JSON, TIMEOUT, load
 
 SITE = espn_api.BASE_URL
 
 
 class TestTeamInfo:
+    @pytest.fixture(autouse=True)
+    def no_home_games(self, espn):
+        """Most of these aren't about the venue. A team with no games keeps franchise.venue."""
+        espn.on("/schedule", {"events": []})
+
     def info(self, espn, league="NFL", team="9", fixture="team_NFL_9.json"):
         espn.on(f"/teams/{team}$", load(fixture))
         return espn_api.get_team_info(league, team)
 
-    def test_url(self, espn):
+    def test_urls(self, espn):
         self.info(espn)
+        assert espn.calls == [f"{SITE}/football/nfl/teams/9", f"{SITE}/football/nfl/teams/9/schedule?seasontype=2"]
+
+    def test_soccer_has_no_season_type_two(self, espn):
+        espn.on("/teams/359$", load("team_EPL_359.json"))
+        espn_api.get_team_info("EPL", "359")
+        assert espn.calls[-1] == f"{SITE}/soccer/eng.1/teams/359/schedule"
+
+    def test_a_venue_not_shown_costs_no_request(self, espn):
+        """Favorites asks for a team's record and next game, once per favorite."""
+        espn.on("/teams/9$", load("team_NFL_9.json"))
+        info = espn_api.get_team_info("NFL", "9", home_venue=False)
         assert espn.calls == [f"{SITE}/football/nfl/teams/9"]
+        assert info["venue_name"] == "Lambeau Field"
+
+    class TestHomeVenue:
+        def nets(self, espn):
+            espn.on("/teams/17$", load("team_NBA_17.json"))
+            return espn_api.get_team_info("NBA", "17")
+
+        def test_the_fixture_has_the_stale_name(self):
+            assert load("team_NBA_17.json")["team"]["franchise"]["venue"]["fullName"] == "Prudential Center"
+
+        def test_the_nets_play_at_barclays(self, espn):
+            espn.on("/schedule", load("schedule_NBA_17.json"))
+            info = self.nets(espn)
+            assert (info["venue_name"], info["venue_location"]) == ("Barclays Center", "Brooklyn, NY")
+
+        def test_an_opponents_home_is_theirs(self):
+            venue = espn_api.most_used_home_venue(load("schedule_NBA_17.json")["events"], "2")
+            assert venue["fullName"] == "TD Garden"
+
+        def test_most_of_the_games_beats_the_latest(self):
+            """The Athletics played most of their season in Sacramento, then some in Las Vegas."""
+            events = load("schedule_MLB_11.json")["events"]
+            assert events[-1]["competitions"][0]["venue"]["fullName"] == "Las Vegas Ballpark"
+            assert espn_api.most_used_home_venue(events, "11")["fullName"] == "Sutter Health Park"
+
+        def test_the_later_venue_wins_a_tie(self):
+            events = load("schedule_MLB_11.json")["events"]
+            sutter = [e for e in events if e["competitions"][0]["venue"]["fullName"] == "Sutter Health Park"]
+            events.remove(sutter[0])
+            assert espn_api.most_used_home_venue(events, "11")["fullName"] == "Las Vegas Ballpark"
+
+        def test_a_neutral_site_does_not_count(self):
+            """ESPN lists the Falcons as home in Madrid, and that game is the later one."""
+            events = load("schedule_NFL_1.json")["events"]
+            madrid = events[-1]["competitions"][0]
+            assert madrid["neutralSite"] and madrid["venue"]["fullName"].startswith("Santiago")
+            assert espn_api.most_used_home_venue(events, "1")["fullName"] == "Mercedes-Benz Stadium"
+
+        @pytest.mark.parametrize("events", [None, [], [None, {}, {"competitions": None}, {"competitions": [None]}]])
+        def test_no_usable_games(self, events):
+            assert espn_api.most_used_home_venue(events, "17") is None
+
+        def test_a_team_with_no_home_game_listed(self):
+            assert espn_api.most_used_home_venue(load("schedule_NBA_17.json")["events"], "99999") is None
+
+        def test_a_home_game_with_no_venue_name_does_not_count(self):
+            events = load("schedule_NBA_17.json")["events"]
+            for event in events:
+                event["competitions"][0]["venue"]["fullName"] = None
+            assert espn_api.most_used_home_venue(events, "17") is None
+
+        @pytest.mark.parametrize("reply", [TIMEOUT, HTTP_500, NOT_JSON, {"events": None}, {}, []],
+                                 ids=["timeout", "500", "not_json", "null", "no_key", "a_list"])
+        def test_losing_the_schedule_falls_back_and_keeps_the_page(self, espn, reply):
+            espn.on("/schedule", reply)
+            info = self.nets(espn)
+            assert (info["name"], info["venue_name"]) == ("Brooklyn Nets", "Prudential Center")
+
+        def test_it_does_not_wait_long_for_one_line(self, espn):
+            self.nets(espn)
+            assert espn.calls[-1].endswith("/schedule?seasontype=2")
+            assert espn.kwargs[-1]["timeout"] == 8
 
     def test_names(self, espn):
         info = self.info(espn)
