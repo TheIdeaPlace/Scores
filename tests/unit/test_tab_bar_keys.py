@@ -15,7 +15,7 @@ from PyQt6.QtGui import QFocusEvent, QKeyEvent  # noqa: E402
 from PyQt6.QtWidgets import QApplication, QLabel, QListWidget, QTabWidget, QVBoxLayout, QWidget  # noqa: E402
 
 import accessible_table  # noqa: E402
-from accessible_table import AccessibleTable, _TabBarViewKeys, prepare_table_tabs, tab_labels  # noqa: E402
+from accessible_table import AccessibleTable, ListPages, _TabBarViewKeys, make_tab_area, prepare_table_tabs, tab_labels  # noqa: E402
 import espn_api  # noqa: E402
 import scores  # noqa: E402
 import settings  # noqa: E402
@@ -227,7 +227,7 @@ class TestTypeAhead:
     def test_tab_labels_are_what_is_heard(self, app):
         tabs = make_tabs(["&Info", "R&oster", "Gone"])
         tabs.setTabEnabled(2, False)
-        assert tab_labels(tabs.tabBar()) == ["Info", "Roster", None]
+        assert tab_labels(tabs) == ["Info", "Roster", None]
 
     def test_moving_away_with_an_arrow_or_home_ends_the_search(self, tabs):
         type_text(tabs, "s")
@@ -352,19 +352,105 @@ class TestRealDialogs:
         with open(fixture, encoding="utf-8") as f:
             return espn_api.parse_college_standings(json.load(f))
 
+    @staticmethod
+    def rows_in_groups(rows, names):
+        return [dict(row, division=names[i % len(names)]) for i, row in enumerate(rows)]
+
     @pytest.mark.parametrize("dialog_class", ["StandingsDialog", "SimpleTeamsDialog"])
-    def test_the_college_football_conferences(self, app, rows, dialog_class):
+    def test_the_college_football_conferences_are_a_list(self, app, rows, dialog_class):
         dialog = getattr(scores, dialog_class)(rows, "NCAAF")
         tabs = dialog.tab_widget
+        assert isinstance(tabs, ListPages)
+        assert tabs.tabBar().accessibleName() == "Conferences"
         bar = tabs.tabBar()
         press(bar, Qt.Key.Key_End)
         assert tabs.currentIndex() == tabs.count() - 1
-        press(bar, Qt.Key.Key_Right)
+        press(bar, Qt.Key.Key_Down)
         assert tabs.currentIndex() == 0
         type_text(tabs, "sun")
         assert tabs.tabText(tabs.currentIndex()) == "Sun Belt Conference"
         press(bar, Qt.Key.Key_Home)
         assert tabs.currentIndex() == 0
+        assert tabs.currentWidget() is tabs.widget(0)
+
+    @pytest.mark.parametrize("dialog_class", ["StandingsDialog", "SimpleTeamsDialog"])
+    def test_eight_groups_stay_tabs_and_nine_are_a_list(self, app, rows, dialog_class):
+        names = [f"Group {i} Conference" for i in range(9)]
+        eight = getattr(scores, dialog_class)(self.rows_in_groups(rows, names[:8]), "NCAAM")
+        nine = getattr(scores, dialog_class)(self.rows_in_groups(rows, names), "NCAAM")
+        assert isinstance(eight.tab_widget, QTabWidget)
+        assert eight.tab_widget.count() == 8
+        assert isinstance(nine.tab_widget, ListPages)
+        assert nine.tab_widget.count() == 9
+
+    def test_nfl_divisions_stay_tabs(self, app, rows):
+        names = ["AFC East", "AFC North", "AFC South", "AFC West", "NFC East", "NFC North", "NFC South", "NFC West"]
+        dialog = scores.StandingsDialog(self.rows_in_groups(rows, names), "NFL")
+        assert isinstance(dialog.tab_widget, QTabWidget)
+        assert dialog.tab_widget.tabText(0) == "AFC East"
+
+    def test_mlb_with_its_wild_cards_is_eight_tabs(self, app, rows):
+        names = ["AL East", "AL Central", "AL West", "NL East", "NL Central", "NL West"]
+        dialog = scores.StandingsDialog(self.rows_in_groups(rows, names), "MLB")
+        tabs = dialog.tab_widget
+        assert isinstance(tabs, QTabWidget)
+        assert [tabs.tabText(i) for i in (6, 7)] == ["AL Wild Card", "NL Wild Card"]
+
+    def test_wild_cards_on_a_list_are_reachable_and_load(self, app, rows, monkeypatch):
+        names = ["AL East", "AL Central", "AL West", "NL East", "NL Central", "NL West", "League"]
+        monkeypatch.setattr(scores.DataCache(), "get_mlb_wildcard", lambda: None)
+        dialog = scores.StandingsDialog(self.rows_in_groups(rows, names), "MLB")
+        tabs = dialog.tab_widget
+        assert isinstance(tabs, ListPages)
+        assert tabs.tabBar().accessibleName() == "Divisions and Wild Cards"
+        assert tabs.tabText(7) == "AL Wild Card"
+        with patch.object(scores, "_start_detached_thread") as started, patch.object(scores, "announce") as said:
+            type_text(tabs, "al wi")
+        assert tabs.currentIndex() == 7
+        started.assert_called_once()
+        said.assert_called_once_with("Loading AL Wild Card standings")
+
+    def test_the_noun_comes_from_the_names(self, app, rows):
+        names = [f"Area {i}" for i in range(9)]
+        dialog = scores.SimpleTeamsDialog(self.rows_in_groups(rows, names), "NHL")
+        assert dialog.tab_widget.tabBar().accessibleName() == "Divisions"
+
+    @pytest.mark.parametrize("dialog_class", ["StandingsDialog", "SimpleTeamsDialog"])
+    def test_a_dialog_still_opens_on_the_first_table(self, app, rows, dialog_class):
+        dialog = getattr(scores, dialog_class)(rows, "NCAAF")
+        table = dialog.tab_widget.widget(0).findChildren(AccessibleTable)[0]
+        calls = []
+        table.setFocus = lambda: calls.append("table")
+        scores._focus_first_table(dialog)
+        assert calls == ["table"]
+
+    def test_tab_from_the_list_goes_to_the_table_on_show(self, app, rows):
+        dialog = scores.StandingsDialog(rows, "NCAAF")
+        table = dialog.tab_widget.currentWidget().findChildren(AccessibleTable)[0]
+        widget = dialog.tab_widget.tabBar().nextInFocusChain()
+        while not (widget.focusPolicy() & Qt.FocusPolicy.TabFocus and widget.isVisibleTo(dialog)):
+            widget = widget.nextInFocusChain()
+        assert table.isAncestorOf(widget)
+
+    @pytest.mark.parametrize("box,area,count,name", [
+        ("box_NFL_401873035.json", ListPages, 20, "Boxscore Tables"),
+        ("box_NCAAF_401860924.json", ListPages, 19, "Boxscore Tables"),
+        ("box_MLB_401817091.json", QTabWidget, 7, "Boxscore Tabs"),
+        ("box_NHL_401892628.json", QTabWidget, 7, "Boxscore Tabs"),
+        ("box_NBA_401909906.json", QTabWidget, 3, "Boxscore Tabs"),
+    ])
+    def test_a_box_score_picks_by_how_many_tables_it_has(self, app, box, area, count, name):
+        path = os.path.join(os.path.dirname(__file__), "..", "fixtures", "espn", box)
+        with open(path, encoding="utf-8") as f:
+            data = json.load(f)
+        host = QWidget()
+        layout = QVBoxLayout(host)
+        scores.GameDetailsView._add_boxscore_data_to_layout(None, layout, data.get("boxscore", data))
+        made = layout.itemAt(0).widget()
+        assert isinstance(made, area)
+        assert made.count() == count
+        named = made.tabBar() if area is ListPages else made
+        assert named.accessibleName() == name
 
     def test_team_hub_keeps_its_mnemonics_out_of_the_search(self, app):
         # No loading from ESPN when a tab opens.
@@ -373,3 +459,218 @@ class TestRealDialogs:
         tabs = hub.tab_widget
         type_text(tabs, "ro")
         assert tabs.tabText(tabs.currentIndex()) == "R&oster"
+
+
+class TestListPages:
+    NAMES = ["Southeastern", "Big Ten", "Big 12", "Sun Belt", "Big Sky", "Mountain West", "Ivy", "Patriot", "A&M Group"]
+
+    @pytest.fixture
+    def pages(self, app, clock):
+        pages = make_tab_area(len(self.NAMES), "Tabs name", "Tabs text", list_name="Conferences", list_description="Help")
+        for name in self.NAMES:
+            pages.addTab(QLabel(name), name)
+        pages.findChild(_TabBarViewKeys).search.clock = clock
+        return pages
+
+    @pytest.fixture
+    def pages_with_tables(self, app, monkeypatch):
+        saved = {"default_view_mode": 0}
+        monkeypatch.setattr(accessible_table.settings, "get", lambda k, d=None: saved.get(k, d))
+        monkeypatch.setattr(accessible_table.settings, "set", saved.__setitem__)
+        pages = ListPages()
+        for name in ("Passing", "Rushing", "Kicking"):
+            page = QWidget()
+            layout = QVBoxLayout(page)
+            table = AccessibleTable(accessible_name=name, accessible_description=name)
+            table.setup_columns(["Player", "YDS"])
+            table.populate_data([["Avery", "10"], ["Rushing Rob", "4"]], set_focus=False)
+            layout.addWidget(table)
+            pages.addTab(page, name)
+        return pages
+
+    @staticmethod
+    def table_on(pages, index):
+        return pages.widget(index).findChildren(AccessibleTable)[0]
+
+    def test_make_tab_area_names_the_list_and_leaves_the_rest_unnamed(self, pages):
+        assert isinstance(pages, ListPages)
+        assert pages.tabBar().accessibleName() == "Conferences"
+        assert pages.tabBar().accessibleDescription() == "Help"
+        assert pages.accessibleName() == ""
+        assert pages.accessibleDescription() == ""
+
+    def test_make_tab_area_gives_tabs_their_keys_and_names(self, app):
+        tabs = make_tab_area(8, "Tabs name", "Tabs text", list_name="Conferences")
+        assert isinstance(tabs, QTabWidget)
+        assert tabs.accessibleName() == "Tabs name"
+        assert tabs.accessibleDescription() == "Tabs text"
+        assert tabs.findChild(_TabBarViewKeys) is not None
+        assert tabs.focusPolicy() == Qt.FocusPolicy.NoFocus
+
+    def test_it_answers_as_a_tab_widget_does(self, pages):
+        assert pages.count() == len(self.NAMES)
+        assert pages.tabText(3) == "Sun Belt"
+        assert pages.currentIndex() == 0
+        assert pages.currentWidget().text() == "Southeastern"
+        assert pages.widget(3).text() == "Sun Belt"
+        assert pages.widget(99) is None
+
+    def test_the_first_row_is_chosen_from_the_start(self, pages):
+        assert pages.tabBar().currentRow() == 0
+        assert pages.tabBar().currentItem().isSelected()
+
+    def test_the_page_follows_the_list(self, pages):
+        seen = []
+        pages.currentChanged.connect(seen.append)
+        pages.tabBar().setCurrentRow(3)
+        assert pages.currentWidget().text() == "Sun Belt"
+        assert seen == [3]
+        pages.setCurrentIndex(5)
+        assert pages.tabBar().currentRow() == 5
+        assert pages.currentWidget().text() == "Mountain West"
+        assert seen == [3, 5]
+
+    def test_the_list_is_the_only_tab_stop_of_its_own(self, pages):
+        assert pages.focusPolicy() == Qt.FocusPolicy.NoFocus
+        assert pages.tabBar().focusPolicy() & Qt.FocusPolicy.TabFocus
+        assert pages.focusProxy() is pages.tabBar()
+
+    def test_the_list_fits_its_longest_name(self, pages):
+        width = pages.tabBar().width()
+        assert width <= ListPages._WIDEST_LIST
+        assert pages.tabBar().minimumWidth() == pages.tabBar().maximumWidth()
+
+    def test_down_and_up_go_round_the_ends(self, pages):
+        press(pages.tabBar(), Qt.Key.Key_Up)
+        assert pages.currentIndex() == len(self.NAMES) - 1
+        press(pages.tabBar(), Qt.Key.Key_Down)
+        assert pages.currentIndex() == 0
+        press(pages.tabBar(), Qt.Key.Key_Down)
+        assert pages.currentIndex() == 1
+
+    def test_left_and_right_are_not_list_moves(self, pages):
+        pages.resize(400, 300)
+        pages.show()
+        QApplication.processEvents()
+        pages.setCurrentIndex(3)
+        press(pages.tabBar(), Qt.Key.Key_Left)
+        press(pages.tabBar(), Qt.Key.Key_Right)
+        assert pages.currentIndex() == 3
+        pages.close()
+
+    def test_home_and_end(self, pages):
+        press(pages.tabBar(), Qt.Key.Key_End)
+        assert pages.currentIndex() == len(self.NAMES) - 1
+        press(pages.tabBar(), Qt.Key.Key_Home)
+        assert pages.currentIndex() == 0
+
+    def test_type_ahead_cycles_and_builds_a_prefix(self, pages):
+        seen = []
+        for _ in range(4):
+            type_text(pages, "b")
+            seen.append(pages.currentIndex())
+        assert seen == [1, 2, 4, 1]
+        pages.findChild(_TabBarViewKeys).search.reset()
+        type_text(pages, "sun")
+        assert pages.currentIndex() == 3
+
+    def test_type_ahead_uses_the_system_window_not_qts_400_ms(self, pages, clock):
+        saved = QApplication.doubleClickInterval()
+        QApplication.setDoubleClickInterval(500)
+        try:
+            type_text(pages, "s")
+            assert pages.currentIndex() == 3
+            clock.now += 0.9  # Past Qt's fixed 400 ms, inside 2 x 500.
+            type_text(pages, "o")
+            assert pages.currentIndex() == 0
+        finally:
+            QApplication.setDoubleClickInterval(saved)
+
+    def test_an_ampersand_in_a_name_is_just_that(self, pages):
+        assert tab_labels(pages)[-1] == "A&M Group"
+        type_text(pages, "a")
+        assert pages.currentIndex() == len(self.NAMES) - 1
+
+    def test_a_modified_letter_is_left_alone(self, pages):
+        press(pages.tabBar(), Qt.Key.Key_M, CTRL, "m")
+        assert pages.currentIndex() == 0
+
+    def test_focus_stays_on_the_list_as_it_moves(self, pages_with_tables, monkeypatch):
+        pages = pages_with_tables
+        bar = pages.tabBar()
+        monkeypatch.setattr(QApplication, "focusWidget", staticmethod(lambda: bar))
+        table = self.table_on(pages, 1)
+        calls = []
+        table.setFocus = lambda: calls.append("table")
+        press(bar, Qt.Key.Key_Down)
+        QApplication.processEvents()
+        assert pages.currentIndex() == 1
+        assert calls == []
+
+    def test_ctrl_tab_from_a_table_lands_in_the_next_table(self, pages_with_tables, monkeypatch):
+        pages = pages_with_tables
+        here = self.table_on(pages, 0).table_widget
+        monkeypatch.setattr(QApplication, "focusWidget", staticmethod(lambda: here))
+        table = self.table_on(pages, 1)
+        calls = []
+        table.setFocus = lambda: calls.append("table")
+        press(here, Qt.Key.Key_Tab, CTRL)
+        QApplication.processEvents()
+        assert pages.currentIndex() == 1
+        assert calls == ["table"]
+
+    def test_ctrl_tab_and_ctrl_shift_tab_go_round_from_the_list(self, pages):
+        press(pages.tabBar(), Qt.Key.Key_Backtab, CTRL | SHIFT)
+        assert pages.currentIndex() == len(self.NAMES) - 1
+        press(pages.tabBar(), Qt.Key.Key_Tab, CTRL)
+        assert pages.currentIndex() == 0
+
+    def test_f6_moves_between_the_list_and_the_table(self, pages_with_tables):
+        pages = pages_with_tables
+        bar = pages.tabBar()
+        table = self.table_on(pages, 0)
+        calls = []
+        table.setFocus = lambda: calls.append("table")
+        bar.setFocus = lambda: calls.append("list")
+        bar.hasFocus = lambda: True
+        press(bar, Qt.Key.Key_F6)
+        bar.hasFocus = lambda: False
+        press(table.table_widget, Qt.Key.Key_F6)
+        assert calls == ["table", "list"]
+
+    def test_f6_lands_on_a_page_that_is_itself_a_list(self, app):
+        pages = ListPages()
+        page = QListWidget()
+        pages.addTab(page, "Fruit")
+        pages.resize(400, 300)
+        pages.show()
+        QApplication.processEvents()
+        calls = []
+        page.setFocus = lambda: calls.append("page")
+        bar = pages.tabBar()
+        bar.hasFocus = lambda: True
+        press(bar, Qt.Key.Key_F6)
+        assert calls == ["page"]
+        pages.close()
+
+    def test_view_keys_on_the_list_act_on_the_table(self, pages_with_tables):
+        pages = pages_with_tables
+        table = self.table_on(pages, 0)
+        press(pages.tabBar(), Qt.Key.Key_Q, ALT)
+        assert table._current_view == table.VIEW_QUICK_LIST
+
+    def test_enter_on_the_list_goes_to_the_table(self, pages_with_tables):
+        pages = pages_with_tables
+        table = self.table_on(pages, 0)
+        calls = []
+        table.setFocus = lambda: calls.append("table")
+        press(pages.tabBar(), Qt.Key.Key_Return, PLAIN, "\r")
+        assert calls == ["table"]
+
+    def test_a_tables_own_letters_and_arrows_stay_with_it(self, pages_with_tables):
+        pages = pages_with_tables
+        view = self.table_on(pages, 0).table_widget
+        press(view, Qt.Key.Key_R, PLAIN, "r")
+        press(pages, Qt.Key.Key_R, PLAIN, "r")
+        press(pages, Qt.Key.Key_Down)
+        assert pages.currentIndex() == 0

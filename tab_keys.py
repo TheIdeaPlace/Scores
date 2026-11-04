@@ -17,7 +17,26 @@ from typing import Callable, List, Optional
 # hint (qwindowsintegration.cpp), so it's a fixed 400 ms whatever Windows is set to.
 TYPE_AHEAD_DOUBLE_CLICK_TIMES = 2
 
+# Kelly's rule: "if an area has say more than seven or eight tabs, it is probably better as a
+# list." A long row of tabs is slow to go through and has no sense of where you are in it.
+MAX_TABS = 8
+
 Labels = List[Optional[str]]
+
+
+def use_list(count: int) -> bool:
+    """Whether a tab area of this many pages should be a list rather than tabs."""
+    return count > MAX_TABS
+
+
+def group_noun(names: List[str]) -> str:
+    """What to call a list of a league's groups, from their names: "Conferences" if any is one.
+
+    ESPN's names say so: "Big Ten Conference" and "Eastern Conference" are, and the NBA's
+    "Eastern Conference Atlantic" is a division inside one. Some conferences don't say, such as
+    Patriot League and Hockey East, but a league has at least one that does.
+    """
+    return "Conferences" if any(name.endswith("Conference") for name in names) else "Divisions"
 
 
 def tab_label(text: str) -> str:

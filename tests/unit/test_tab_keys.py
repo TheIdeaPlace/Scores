@@ -4,7 +4,7 @@ from pathlib import Path
 
 import pytest
 
-from tab_keys import TabTypeAhead, first_tab, last_tab, tab_label, wrapped_tab
+from tab_keys import MAX_TABS, TabTypeAhead, first_tab, group_noun, last_tab, tab_label, use_list, wrapped_tab
 
 REPO = Path(__file__).resolve().parents[2]
 WINDOW_MS = 1000
@@ -181,50 +181,50 @@ class TestTypeAhead:
         assert TabTypeAhead().press("b", CONFERENCES, 0, WINDOW_MS) == 1
 
 
-class TestEveryTabWidgetGetsTheKeys:
-    @staticmethod
-    def _bodies(tree):
-        """Every statement list in the file, wherever it's nested."""
-        for node in ast.walk(tree):
-            for field in ("body", "orelse", "finalbody"):
-                statements = getattr(node, field, None)
-                if isinstance(statements, list):
-                    yield statements
+class TestListOrTabs:
+    @pytest.mark.parametrize("count,expected", [(0, False), (1, False), (7, False), (8, False), (9, True), (32, True)])
+    def test_more_than_eight_is_a_list(self, count, expected):
+        assert use_list(count) is expected
 
-    @staticmethod
-    def _is_tab_widget_made(statement):
-        value = getattr(statement, "value", None)
-        return (isinstance(value, ast.Call) and isinstance(value.func, ast.Name)
-                and value.func.id == "QTabWidget")
+    def test_the_line_is_kellys(self):
+        assert MAX_TABS == 8
 
+
+class TestGroupNoun:
+    @pytest.mark.parametrize("names,noun", [
+        (["Southeastern Conference", "Patriot League", "FBS Independents"], "Conferences"),
+        (["Big Ten Conference", "Hockey East", "Atlantic Hockey America"], "Conferences"),
+        (["Eastern Conference", "Western Conference"], "Conferences"),
+        (["AFC East", "NFC West"], "Divisions"),
+        (["AL East", "NL West"], "Divisions"),
+        (["Eastern Conference Atlantic", "Western Conference Pacific"], "Divisions"),
+        ([], "Divisions"),
+    ])
+    def test_the_names_say_which_it_is(self, names, noun):
+        assert group_noun(names) == noun
+
+
+class TestEveryTabAreaGoesThroughOneHelper:
     @staticmethod
-    def _prepares(statement, target):
-        value = getattr(statement, "value", None)
-        if not (isinstance(value, ast.Call) and isinstance(value.func, ast.Name)
-                and value.func.id == "prepare_table_tabs"):
-            return False
-        return ast.dump(value.args[0], annotate_fields=False) == target
+    def _calls(source, name):
+        return [node for node in ast.walk(ast.parse(source))
+                if isinstance(node, ast.Call) and isinstance(node.func, ast.Name) and node.func.id == name]
 
     @pytest.mark.parametrize("path", sorted(REPO.glob("*.py")), ids=lambda p: p.name)
-    def test_each_tab_widget_is_prepared_right_after_it_is_made(self, path):
+    def test_only_make_tab_area_builds_a_tab_widget(self, path):
         source = path.read_text(encoding="utf-8")
-        if "QTabWidget(" not in source:
-            return
-        tree = ast.parse(source)
-        for statements in self._bodies(tree):
-            for position, statement in enumerate(statements):
-                if not self._is_tab_widget_made(statement):
-                    continue
-                target = statement.targets[0] if isinstance(statement, ast.Assign) else statement.target
-                name = ast.dump(target, annotate_fields=False).replace("Store()", "Load()")
-                assert self._prepares(statements[position + 1], name), (
-                    f"{path.name}:{statement.lineno} makes a QTabWidget without calling prepare_table_tabs "
-                    "on the next line, so its bar has none of the app's keys")
+        made = self._calls(source, "QTabWidget")
+        if path.name == "accessible_table.py":
+            assert len(made) == 1
+            helper = next(node for node in ast.walk(ast.parse(source))
+                          if isinstance(node, ast.FunctionDef) and node.name == "make_tab_area")
+            assert any(isinstance(n, ast.Call) and getattr(n.func, "id", "") == "QTabWidget" for n in ast.walk(helper))
+        else:
+            assert not made, f"{path.name}:{made[0].lineno} should call make_tab_area, which picks tabs or a list"
 
-    def test_the_scan_finds_the_tab_widgets_in_scores(self):
-        tree = ast.parse((REPO / "scores.py").read_text(encoding="utf-8"))
-        made = sum(self._is_tab_widget_made(s) for body in self._bodies(tree) for s in body)
-        assert made >= 15
+    def test_the_scan_finds_the_tab_areas_in_scores(self):
+        calls = self._calls((REPO / "scores.py").read_text(encoding="utf-8"), "make_tab_area")
+        assert len(calls) >= 14  # 15 areas, and the two standings dialogs share one call.
 
     def test_nothing_builds_a_bare_tab_bar(self):
         for path in REPO.glob("*.py"):

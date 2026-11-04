@@ -64,7 +64,8 @@ import live_play_format
 from models.standings import StandingsData
 import error_log
 from windows_notifications import announce, set_notifier_window
-from accessible_table import AccessibleTable, StandingsTable, WildCardTable, LeadersTable, BoxscoreTable, InjuryTable, prepare_table_tabs, ButtonKeys
+from accessible_table import AccessibleTable, StandingsTable, WildCardTable, LeadersTable, BoxscoreTable, InjuryTable, ListPages, make_tab_area, ButtonKeys
+from tab_keys import group_noun
 from box_score import build_box_tables
 from team_stats import team_stat_lists
 from game_labels import scoreboard_today, basketball_period_label, football_period_label, football_period_sort_key, game_standings_tables, schedule_row_text, schedule_start_row
@@ -212,8 +213,8 @@ def _take_focus_after_load(widget):
 
 
 def _focus_first_table(dialog):
-    """Focus the first table a dialog shows: on its open tab if it has tabs."""
-    tabs = dialog.findChildren(QTabWidget)
+    """Focus the first table a dialog shows: on its open tab or list row if it has them."""
+    tabs = dialog.findChildren(QTabWidget) or dialog.findChildren(ListPages)
     holder = tabs[0].currentWidget() if tabs else dialog
     tables = holder.findChildren(AccessibleTable) if holder else []
     if tables and tables[0].rowCount() > 0:
@@ -3105,10 +3106,9 @@ class GameDetailsView(BaseView):
             return
         
         # Create tab widget for teams
-        tab_widget = QTabWidget()
-        prepare_table_tabs(tab_widget)
-        tab_widget.setAccessibleName("Team Leaders")
-        tab_widget.setAccessibleDescription("Statistical leaders by team. Use arrow keys to navigate between teams, Tab to enter table.")
+        tab_widget = make_tab_area(
+            len(valid_teams), "Team Leaders",
+            "Statistical leaders by team. Use arrow keys to navigate between teams, Tab to enter table.")
         
         # Create a tab for each team
         for team_data in valid_teams:
@@ -3195,11 +3195,10 @@ class GameDetailsView(BaseView):
             layout.addWidget(QLabel("No box score is available for this game."))
             return
 
-        tab_widget = QTabWidget()
-
-        prepare_table_tabs(tab_widget)
-        tab_widget.setAccessibleName("Boxscore Tabs")
-        tab_widget.setAccessibleDescription("Tabbed view of team and player statistics.")
+        # Football runs to 20 tables and most other sports to 7 or fewer.
+        tab_widget = make_tab_area(
+            len(tables), "Boxscore Tabs", "Tabbed view of team and player statistics.",
+            list_name="Boxscore Tables")
         for index, box in enumerate(tables):
             page = QWidget()
             page_layout = QVBoxLayout()
@@ -3217,9 +3216,7 @@ class GameDetailsView(BaseView):
         if not tables:
             layout.addWidget(QLabel("No standings are available for this game."))
             return
-        tab_widget = QTabWidget()
-        prepare_table_tabs(tab_widget)
-        tab_widget.setAccessibleName("Standings Tabs")
+        tab_widget = make_tab_area(len(tables), "Standings Tabs", list_name="Standings Tables")
         for index, data_table in enumerate(tables):
             page = QWidget()
             page_layout = QVBoxLayout()
@@ -7098,10 +7095,21 @@ class WildCardTabsMixin:
 
     WILDCARD_TABS = (("AL", "AL Wild Card"), ("NL", "NL Wild Card"))
 
+    def _wildcard_tab_count(self) -> int:
+        return len(self.WILDCARD_TABS) if self.league == "MLB" else 0
+
+    def _make_group_area(self, group_names: List[str], description: str):
+        """The dialog's groups as tabs or as a list, counting the wild card tabs still to come."""
+        wildcards = self._wildcard_tab_count()
+        return make_tab_area(
+            len(group_names) + wildcards, "Standings", description,
+            list_name="Divisions and Wild Cards" if wildcards else group_noun(group_names),
+            list_description="Arrow to one to show its standings. Tab goes to its table.")
+
     def _build_wildcard_tabs(self):
         self._wildcard_tabs = {}
         self._wildcard_loader = None
-        if self.league != "MLB" or not self.tab_widget:
+        if not self._wildcard_tab_count() or not self.tab_widget:
             return
         for league_key, label in self.WILDCARD_TABS:
             placeholder = QWidget()
@@ -7209,9 +7217,9 @@ class StandingsDetailDialog(WildCardTabsMixin, QDialog):
         self.setWindowTitle(f"{league} Standings Details")
         self.resize(STANDINGS_DIALOG_WIDTH, STANDINGS_DIALOG_HEIGHT)
         
-        self.tab_widget: QTabWidget | None = None
+        self.tab_widget: QTabWidget | ListPages | None = None
         self.single_table: StandingsTable | None = None
-        
+
         self.setup_ui()
         _focus_once_active(self, lambda: _focus_first_table(self))
     
@@ -7238,22 +7246,14 @@ class StandingsDetailDialog(WildCardTabsMixin, QDialog):
         self.setLayout(layout)
     
     def _build_division_tabs(self, layout: QVBoxLayout):
-        self.tab_widget = QTabWidget()
-        prepare_table_tabs(self.tab_widget)
-        self.tab_widget.setAccessibleName("Standings")
-        self.tab_widget.setAccessibleDescription(
-            "Team standings by division, plus AL and NL wild card, use arrow keys to move between tabs"
-            if self.league == "MLB"
-            else "Team standings, use arrow keys to move between tabs")
-        
         if self.league == "MLB":
             division_order = ["AL East", "AL Central", "AL West", "NL East", "NL Central", "NL West", "League"]
         elif self.league == "NFL":
-            division_order = ["AFC East", "AFC North", "AFC South", "AFC West", 
+            division_order = ["AFC East", "AFC North", "AFC South", "AFC West",
                             "NFC East", "NFC North", "NFC South", "NFC West", "League"]
         else:
             division_order = ["League"]
-            
+
         ordered: List[tuple[str, List[Dict]]] = []
         for name in division_order:
             if name in self.standings_data.divisions:
@@ -7261,10 +7261,16 @@ class StandingsDetailDialog(WildCardTabsMixin, QDialog):
         for name, teams in self.standings_data.divisions.items():
             if name not in division_order:
                 ordered.append((name, teams))
+        ordered = [(name, teams) for name, teams in ordered if teams]
+
+        self.tab_widget = self._make_group_area(
+            [name for name, _ in ordered],
+            "Team standings by division, plus AL and NL wild card, use arrow keys to move between tabs"
+            if self.league == "MLB"
+            else "Team standings, use arrow keys to move between tabs")
         for name, teams in ordered:
-            if teams:
-                tab = self._create_division_table(name, teams)
-                self.tab_widget.addTab(tab, name)
+            tab = self._create_division_table(name, teams)
+            self.tab_widget.addTab(tab, name)
 
         self._build_wildcard_tabs()
 
@@ -7349,11 +7355,9 @@ class KitchenSinkDialog(QDialog):
     def setup_ui(self):
         layout = QVBoxLayout()
         
-        # Create tabs for different data types
-        self.tab_widget = QTabWidget()
-        prepare_table_tabs(self.tab_widget)
-        self.tab_widget.setAccessibleName("Kitchen Sink Data")
-        self.tab_widget.setAccessibleDescription("Additional baseball data features, use arrow keys to navigate between sections")
+        # Create tabs for different data types: at most the seven added below
+        self.tab_widget = make_tab_area(
+            7, "Kitchen Sink Data", "Additional baseball data features, use arrow keys to navigate between sections")
         
         # Add tabs for each available feature (only if data exists)
         self._add_rosters_tab()
@@ -8124,9 +8128,7 @@ class TeamHubDialog(QDialog):
 
         layout.addLayout(header_layout)
 
-        self.tab_widget = QTabWidget()
-
-        prepare_table_tabs(self.tab_widget)
+        self.tab_widget = make_tab_area(5)
         self.tab_widget.currentChanged.connect(self._on_tab_changed)
 
         # Tab 0 — Info
@@ -8759,7 +8761,7 @@ class StandingsDialog(WildCardTabsMixin, QDialog):
         self.league = league
         self.setWindowTitle(f"{league} Standings")
         self.resize(STANDINGS_DIALOG_WIDTH, STANDINGS_DIALOG_HEIGHT)
-        self.tab_widget: QTabWidget | None = None
+        self.tab_widget: QTabWidget | ListPages | None = None
         self.single_table: StandingsTable | None = None
         self.expanded_view = False
         self.division_tables: List[StandingsTable] = []
@@ -8835,14 +8837,6 @@ class StandingsDialog(WildCardTabsMixin, QDialog):
             QTimer.singleShot(50, restore_focus)
     
     def _build_division_tabs(self, layout: QVBoxLayout):
-        self.tab_widget = QTabWidget()
-        prepare_table_tabs(self.tab_widget)
-        self.tab_widget.setAccessibleName("Standings")
-        self.tab_widget.setAccessibleDescription(
-            "Team standings by division, plus AL and NL wild card, use arrow keys to move between tabs"
-            if self.league == "MLB"
-            else "Team standings, use arrow keys to move between tabs")
-        
         if self.league == "MLB":
             division_order = ["AL East", "AL Central", "AL West", "NL East", "NL Central", "NL West", "League"]
         elif self.league == "NFL":
@@ -8860,10 +8854,16 @@ class StandingsDialog(WildCardTabsMixin, QDialog):
         for name, teams in self.standings_data.divisions.items():
             if name not in division_order:
                 ordered.append((name, teams))
+        ordered = [(name, teams) for name, teams in ordered if teams]
+
+        self.tab_widget = self._make_group_area(
+            [name for name, _ in ordered],
+            "Team standings by division, plus AL and NL wild card, use arrow keys to move between tabs"
+            if self.league == "MLB"
+            else "Team standings, use arrow keys to move between tabs")
         for name, teams in ordered:
-            if teams:
-                tab = self._create_division_table(name, teams)
-                self.tab_widget.addTab(tab, name)
+            tab = self._create_division_table(name, teams)
+            self.tab_widget.addTab(tab, name)
 
         self._build_wildcard_tabs()
 
@@ -9008,14 +9008,14 @@ class PollsDialog(QDialog):
         self.league = league
         self.setWindowTitle(f"{league} Polls & Rankings")
         self.resize(STANDINGS_DIALOG_WIDTH, STANDINGS_DIALOG_HEIGHT)
-        self.tab_widget: QTabWidget | None = None
+        self.tab_widget: QTabWidget | ListPages | None = None
         self.setup_ui()
         _focus_once_active(self, lambda: _focus_first_table(self))
-    
+
     def setup_ui(self):
         layout = QVBoxLayout()
-        
-        polls = self.polls_data.get('polls', [])
+
+        polls =self.polls_data.get('polls', [])
         
         if not polls:
             layout.addWidget(QLabel(f"No poll data available for {self.league}."))
@@ -9036,11 +9036,10 @@ class PollsDialog(QDialog):
     
     def _build_poll_tabs(self, layout: QVBoxLayout, polls: List[Dict]):
         """Build tabbed interface for multiple polls"""
-        self.tab_widget = QTabWidget()
-        prepare_table_tabs(self.tab_widget)
-        self.tab_widget.setAccessibleName("Poll Rankings")
-        self.tab_widget.setAccessibleDescription("Rankings from different polls. Use arrow keys to navigate between polls.")
-        
+        self.tab_widget = make_tab_area(
+            len(polls), "Poll Rankings", "Rankings from different polls. Use arrow keys to navigate between polls.",
+            list_name="Polls")
+
         for poll in polls:
             poll_name = poll.get('shortName', poll.get('name', 'Poll'))
             table = self._create_poll_table(poll)
@@ -9265,10 +9264,8 @@ class NFLDraftDialog(QDialog):
         header.addStretch()
         layout.addLayout(header)
 
-        self.tab_widget = QTabWidget()
-
-        prepare_table_tabs(self.tab_widget)
-        self.tab_widget.setAccessibleName("Draft rounds")
+        # Built before the rounds are known and refilled per year, and it's been 7 since 1994.
+        self.tab_widget = make_tab_area(7, "Draft rounds")
         self.tab_widget.currentChanged.connect(self._on_tab_changed)
         layout.addWidget(self.tab_widget)
 
@@ -10193,10 +10190,7 @@ class GolfTournamentDialog(QDialog):
         self.tournament_label.setAccessibleName("Current tournament")
         layout.addWidget(self.tournament_label)
 
-        self.tab_widget = QTabWidget()
-
-        prepare_table_tabs(self.tab_widget)
-        self.tab_widget.setAccessibleName(f"{tour_name} sections")
+        self.tab_widget = make_tab_area(2, f"{tour_name} sections")
 
         self.leaderboard_list = QListWidget()
         self.leaderboard_list.setAccessibleName(f"{tour_name} Leaderboard")
@@ -10478,10 +10472,7 @@ class WorldCupDialog(QDialog):
         self.phase_label.setAccessibleName("Current tournament phase")
         layout.addWidget(self.phase_label)
 
-        self.tab_widget = QTabWidget()
-
-        prepare_table_tabs(self.tab_widget)
-        self.tab_widget.setAccessibleName(f"{self.display_name} sections")
+        self.tab_widget = make_tab_area(4, f"{self.display_name} sections")
 
         self.tab_widget.addTab(self._build_scores_tab(),  "Scores")
         self.tab_widget.addTab(self._build_groups_tab(),  "Groups")
@@ -11450,10 +11441,8 @@ class StatisticsDialog(QDialog):
             return
         
         # Create tab widget for Player/Team separation
-        self.tab_widget = QTabWidget()
-        prepare_table_tabs(self.tab_widget)
-        self.tab_widget.setAccessibleName("Statistics")
-        self.tab_widget.setAccessibleDescription("Statistics data with player and team tabs. Use Left/Right arrow keys to navigate tabs.")
+        self.tab_widget = make_tab_area(
+            2, "Statistics", "Statistics data with player and team tabs. Use Left/Right arrow keys to navigate tabs.")
         self.tab_widget.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
         
         # Add Player Statistics tab
@@ -11489,10 +11478,9 @@ class StatisticsDialog(QDialog):
             return widget
         
         # Create a tab widget for different player stat categories
-        category_tabs = QTabWidget()
-        prepare_table_tabs(category_tabs)
-        category_tabs.setAccessibleName("Player Statistics Categories")
-        category_tabs.setAccessibleDescription("Statistics organized by category. Use Ctrl+Tab to switch between categories.")
+        category_tabs = make_tab_area(
+            sum(1 for category in player_stats if category.get("stats")), "Player Statistics Categories",
+            "Statistics organized by category. Use Ctrl+Tab to switch between categories.")
         
         for category in player_stats:
             category_name = category.get("category", "Unknown")
@@ -11563,10 +11551,9 @@ class StatisticsDialog(QDialog):
             return widget
         
         # Create a tab widget for different team stat categories
-        category_tabs = QTabWidget()
-        prepare_table_tabs(category_tabs)
-        category_tabs.setAccessibleName("Team Statistics Categories")
-        category_tabs.setAccessibleDescription("Team statistics organized by category. Use Ctrl+Tab to switch between categories.")
+        category_tabs = make_tab_area(
+            sum(1 for category in team_stats if category.get("stats")), "Team Statistics Categories",
+            "Team statistics organized by category. Use Ctrl+Tab to switch between categories.")
         
         for category in team_stats:
             category_name = category.get("category", "Unknown")
@@ -11637,25 +11624,19 @@ class StatisticsDialog(QDialog):
 
 
 class SimpleTeamsDialog(QDialog):
-    """Simple teams dialog with tabs for divisions"""
+    """Simple teams dialog with tabs for divisions, or a list when there are too many"""
     
     def __init__(self, teams_data: List, league: str, parent=None):
         super().__init__(parent)
         self.teams_data = teams_data
         self.league = league
         self.setWindowTitle(f"{league} Teams")
-        self.resize(600, 400)
+        self.resize(800, 500)  # Room for a table beside a list of conferences.
         self.setup_ui()
         _focus_once_active(self, lambda: _focus_first_table(self))
     
     def setup_ui(self):
         layout = QVBoxLayout()
-        
-        # Create tab widget
-        self.tab_widget = QTabWidget()
-        prepare_table_tabs(self.tab_widget)
-        self.tab_widget.setAccessibleName("Team Information")
-        self.tab_widget.setAccessibleDescription("Team information, use arrow keys to move between tabs")
 
         # Group teams by division
         divisions = {}
@@ -11691,16 +11672,17 @@ class SimpleTeamsDialog(QDialog):
         else:
             division_order = []
         
-        # Add tabs in order
-        for div_name in division_order:
-            if div_name in divisions:
-                self.create_division_tab(div_name, divisions[div_name])
-        
-        # Add any remaining divisions not in the standard order
-        for div_name, teams in divisions.items():
-            if div_name not in division_order:
-                self.create_division_tab(div_name, teams)
-        
+        # The standard order, then any remaining divisions not in it
+        ordered = [name for name in division_order if name in divisions]
+        ordered += [name for name in divisions if name not in division_order]
+
+        self.tab_widget = make_tab_area(
+            len(ordered), "Team Information", "Team information, use arrow keys to move between tabs",
+            list_name=group_noun(ordered),
+            list_description="Arrow to one to show its teams. Tab goes to its table.")
+        for div_name in ordered:
+            self.create_division_tab(div_name, divisions[div_name])
+
         layout.addWidget(self.tab_widget)
         
         # Close button
@@ -11716,27 +11698,6 @@ class SimpleTeamsDialog(QDialog):
             tables = first_widget.findChildren(AccessibleTable) if first_widget else []
             if tables:
                 tables[0].setFocus()
-    
-    def keyPressEvent(self, event):
-        """Handle key press events to keep focus in tab widget for left/right arrows"""
-        key = event.key()
-        
-        # Handle left/right arrows to stay in tab widget
-        if key in (Qt.Key.Key_Left, Qt.Key.Key_Right):
-            # Ensure focus stays on tab widget navigation
-            self.tab_widget.setFocus()
-            current_index = self.tab_widget.currentIndex()
-            
-            if key == Qt.Key.Key_Left:
-                new_index = current_index - 1 if current_index > 0 else self.tab_widget.count() - 1
-            else:  # Right arrow
-                new_index = current_index + 1 if current_index < self.tab_widget.count() - 1 else 0
-            
-            self.tab_widget.setCurrentIndex(new_index)
-            return
-        
-        # For all other keys, use default behavior
-        super().keyPressEvent(event)
     
     def create_division_tab(self, division_name: str, teams: List):
         """Create a tab for a division with team table"""
