@@ -10,6 +10,7 @@ from PyQt6.QtWidgets import (
 from PyQt6.QtCore import Qt, QEvent, QObject, QTimer
 from typing import List, Dict, Any, Optional
 import settings
+import tab_keys
 
 
 class AccessibleTable(QWidget):
@@ -1081,13 +1082,57 @@ class ButtonKeys(QObject):
         return super().eventFilter(obj, event)
 
 
+def tab_labels(bar) -> List[Optional[str]]:
+    """What tab_keys wants: each tab's label as it's heard, None if it's disabled or hidden."""
+    return [tab_keys.tab_label(bar.tabText(i)) if bar.isTabEnabled(i) and bar.isTabVisible(i) else None
+            for i in range(bar.count())]
+
+
 class _TabBarViewKeys(QObject):
     """F6 between the tabs and the tab's content. Alt+V, Alt+T, Alt+Q, Alt+F pressed on
-    a tab bar act on the table on that tab."""
+    a tab bar act on the table on that tab. Home, End, arrows that go round, and type-ahead
+    find on the bar itself."""
 
     def __init__(self, tab_widget: QTabWidget):
         super().__init__(tab_widget)
         self._tabs = tab_widget
+        self.search = tab_keys.TabTypeAhead()
+
+    def _handle_bar_key(self, bar, event) -> bool:
+        """True when the key was a tab bar move or part of a type-ahead find.
+
+        All of these end in QTabBar.setCurrentIndex, the same call the arrow keys make, so a
+        screen reader gets what it gets from an arrow. Anything with Ctrl, Alt or Meta held
+        passes straight through: mnemonics, Ctrl+Tab and AltGr characters keep working.
+        """
+        modifiers = event.modifiers() & ~Qt.KeyboardModifier.KeypadModifier
+        key = event.key()
+        if modifiers == Qt.KeyboardModifier.NoModifier and key in (
+                Qt.Key.Key_Left, Qt.Key.Key_Right, Qt.Key.Key_Home, Qt.Key.Key_End):
+            self.search.reset()
+            labels = tab_labels(bar)
+            if key == Qt.Key.Key_Home:
+                target = tab_keys.first_tab(labels)
+            elif key == Qt.Key.Key_End:
+                target = tab_keys.last_tab(labels)
+            else:
+                # Which way an arrow goes flips in a right-to-left layout, as it does in QTabBar.
+                backward = Qt.Key.Key_Right if bar.isRightToLeft() else Qt.Key.Key_Left
+                target = tab_keys.wrapped_tab(labels, bar.currentIndex(), -1 if key == backward else 1)
+            if target is None:
+                return False
+            bar.setCurrentIndex(target)
+            return True
+        text = event.text()
+        if modifiers not in (Qt.KeyboardModifier.NoModifier, Qt.KeyboardModifier.ShiftModifier) or len(text) != 1:
+            return False
+        window_ms = tab_keys.TYPE_AHEAD_DOUBLE_CLICK_TIMES * QApplication.doubleClickInterval()
+        if not self.search.accepts(text, window_ms):
+            return False
+        target = self.search.press(text, tab_labels(bar), bar.currentIndex(), window_ms)
+        if target is not None:
+            bar.setCurrentIndex(target)
+        return True
 
     def _focus_page(self, page):
         tables = page.findChildren(AccessibleTable) if page else []
@@ -1115,13 +1160,23 @@ class _TabBarViewKeys(QObject):
                 if tables and tables[0].handle_view_key(event):
                     tables[0].setFocus()
                     return True
+                # Only on the bar: a letter a table leaves alone comes up through the tab
+                # widget too, and mustn't change the tab under someone who's in the table.
+                if self._handle_bar_key(bar, event):
+                    return True
+        elif event.type() == QEvent.Type.FocusOut and obj is self._tabs.tabBar():
+            self.search.reset()
         return super().eventFilter(obj, event)
 
 
 def prepare_table_tabs(tab_widget: QTabWidget) -> None:
-    """Keyboard behaviour for a tab widget whose pages hold accessible tables.
+    """Keyboard behaviour for every tab widget in the app, whatever its pages hold.
+    tests/unit/test_tab_keys.py checks that each QTabWidget gets this.
 
     - The tab bar is one Tab stop; its scroll buttons aren't. Arrow keys already scroll it.
+    - Left and Right go round past the ends, Home and End go to the first and last tab, and
+      typing goes to the tab starting with those letters (tab_keys.TabTypeAhead). All of it
+      skips disabled and hidden tabs.
     - F6 moves between the tabs and the tab's content.
     - The view keys work from the tab bar, not only from inside a table.
     - Ctrl+Tab from inside a table lands in the next tab's table. Left alone, focus
