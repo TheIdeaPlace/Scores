@@ -8,6 +8,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Fixed
+- **Tab bars work from the keyboard the way Windows lists do, everywhere there are tabs.** Home and
+  End go to the first and last tab, and Left and Right go round past the ends rather than stopping.
+  With focus on the tabs, type a conference's first letter to go to it, and the same letter again
+  goes on to the next one starting with it. Different letters typed quickly narrow it down, so S, U,
+  N reaches Sun Belt. How quick is twice your Windows double-click time, about a second unless you've
+  changed it. Letters typed in a table on a tab still go to the table.
+- **A tab keeps an ampersand in its name.** Texas A&M's tabs lost the & from their text, and Alt+M
+  became a shortcut to one of them.
+- **Tab from MLB's wild card tabs and the NFL Draft's rounds goes to what's on the tab, not to Close.**
+- **More than eight tabs is now a list.** College football, men's and women's college basketball
+  conferences in Standings and Teams, and football box scores, have a list beside the table instead
+  of a long row of tabs. Up and Down go round it, Home, End and typing work as they do on tabs, and
+  the table changes as you move. Tab or Enter goes to the table, and Ctrl+Tab, F6 and the view keys
+  work as before. Eight or fewer stay as tabs.
 - **The WNBA has Standings, Statistics, Teams, Transactions and Venues on Windows,** and `--wnba`,
   `--wnba-teams` and `--wnba-standings` go straight to them. The league view only had games and news.
   Its games back reads like the NBA's.
