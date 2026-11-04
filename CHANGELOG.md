@@ -8,6 +8,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Fixed
+- **Player and Team Statistics results are a real table.** Alt+V, Alt+T, Alt+Q and Alt+F now work on
+  them, as they do on every other table, and they open in your saved view. Player statistics have
+  Rank, Player, Team and Value, and team statistics Rank, Team and Value. A row used to be one line
+  of text, such as "1 Luka Doncic (LAL) 38.3". On any cell a screen reader now hears whose row it
+  is: "Luka Doncic, Value, 38.3".
 - **The WNBA has Standings, Statistics, Teams, Transactions and Venues on Windows,** and `--wnba`,
   `--wnba-teams` and `--wnba-standings` go straight to them. The league view only had games and news.
   Its games back reads like the NBA's.
