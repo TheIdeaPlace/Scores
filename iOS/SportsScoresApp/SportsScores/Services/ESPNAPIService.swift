@@ -29,11 +29,15 @@ class ESPNAPIService {
     /// stat headings request definitions concurrently — see `TeamStatsStore`.
     private let teamStatsStore: TeamStatsStore
 
-    private init() {
+    private convenience init() {
         let config = URLSessionConfiguration.default
         config.timeoutIntervalForRequest = 30
         config.timeoutIntervalForResource = 60
-        let session = URLSession(configuration: config)
+        self.init(session: URLSession(configuration: config))
+    }
+
+    /// The app uses `shared`. Tests pass a session that answers from fixtures.
+    init(session: URLSession) {
         self.session = session
         self.teamStatsStore = TeamStatsStore(session: session, baseURL: webAPIBaseURL)
     }
@@ -1405,12 +1409,13 @@ class ESPNAPIService {
     ///
     /// College football's `/teams` is every team ESPN knows, 762 across all divisions, with
     /// nothing on a team to say which and no parameter to narrow it. Its standings are the one
-    /// request that lists just the teams in the coverage setting, so they come first, and
-    /// `/teams` is only the fallback.
+    /// request that lists just the teams in the coverage setting, so if they fail this throws
+    /// rather than listing Division III to someone who chose FBS only.
     func fetchTeamsForSport(sport: Sport) async throws -> [TransactionTeam] {
-        if sport == .ncaaf,
-           let conferences = try? await fetchConferencesWithTeams(for: sport), !conferences.isEmpty {
-            return conferences.flatMap(\.teams)
+        if sport == .ncaaf {
+            let teams = try await fetchConferencesWithTeams(for: sport).flatMap(\.teams)
+            guard !teams.isEmpty else { throw APIError.invalidResponse }
+            return teams
         }
         let urlString = teamsURLString(for: sport)
         guard let url = URL(string: urlString) else { throw APIError.invalidURL }

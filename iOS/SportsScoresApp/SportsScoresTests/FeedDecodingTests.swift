@@ -493,6 +493,92 @@ final class ConferenceListTests: XCTestCase {
     }
 }
 
+/// Answers every request from the routes, in order, by the first text found in the URL.
+final class StubbedESPN: URLProtocol {
+    static var routes: [(text: String, status: Int, body: Data)] = []
+    static var requested: [String] = []
+
+    static func service(_ routes: [(text: String, status: Int, body: Data)]) -> ESPNAPIService {
+        self.routes = routes
+        requested = []
+        let config = URLSessionConfiguration.ephemeral
+        config.protocolClasses = [StubbedESPN.self]
+        return ESPNAPIService(session: URLSession(configuration: config))
+    }
+
+    override class func canInit(with request: URLRequest) -> Bool { true }
+    override class func canonicalRequest(for request: URLRequest) -> URLRequest { request }
+    override func stopLoading() {}
+
+    override func startLoading() {
+        let url = request.url!
+        Self.requested.append(url.absoluteString)
+        let route = Self.routes.first { url.absoluteString.contains($0.text) }
+        let response = HTTPURLResponse(url: url, statusCode: route?.status ?? 404, httpVersion: nil, headerFields: nil)!
+        client?.urlProtocol(self, didReceive: response, cacheStoragePolicy: .notAllowed)
+        client?.urlProtocol(self, didLoad: route?.body ?? Data())
+        client?.urlProtocolDidFinishLoading(self)
+    }
+}
+
+/// `fetchTeamsForSport`, which Transactions and Team Hub's fallback both rely on.
+final class TeamListRequestTests: XCTestCase {
+    private func everyTeam() throws -> (text: String, status: Int, body: Data) {
+        // A real team list, there to be found if the code goes looking for it.
+        ("/teams", 200, try Fixtures.data("teams_NBA.json"))
+    }
+
+    private func assertThrowsWithoutAskingForEveryTeam(_ standings: (text: String, status: Int, body: Data)) async throws {
+        let service = StubbedESPN.service([standings, try everyTeam()])
+        do {
+            let teams = try await service.fetchTeamsForSport(sport: .ncaaf)
+            XCTFail("Expected an error, got \(teams.count) teams")
+        } catch {
+            XCTAssertEqual(StubbedESPN.requested.count, 1, "\(StubbedESPN.requested)")
+            XCTAssertTrue(StubbedESPN.requested[0].contains("/standings?group="), StubbedESPN.requested[0])
+        }
+    }
+
+    func testCollegeFootballListsTheTeamsInItsStandings() async throws {
+        let body = try Fixtures.data("standings_NCAAF_group90.json")
+        let service = StubbedESPN.service([("/standings", 200, body), try everyTeam()])
+        let teams = try await service.fetchTeamsForSport(sport: .ncaaf)
+        XCTAssertEqual(teams.count, 26)
+        XCTAssertTrue(teams.contains { $0.displayName == "Montana State Bobcats" })
+        XCTAssertEqual(StubbedESPN.requested.count, 1, "one request, not the list of 762 as well")
+    }
+
+    func testAFailedStandingsRequestIsAnError() async throws {
+        try await assertThrowsWithoutAskingForEveryTeam(("/standings", 500, Data()))
+    }
+
+    func testStandingsWithNoConferencesAreAnError() async throws {
+        try await assertThrowsWithoutAskingForEveryTeam(("/standings", 200, Data(#"{"name": "FBS"}"#.utf8)))
+    }
+
+    func testStandingsWithTooFewTeamsToTrustAreAnError() async throws {
+        // A real answer trimmed to 6 teams, under what fetchConferencesWithTeams accepts.
+        try await assertThrowsWithoutAskingForEveryTeam(("/standings", 200, try Fixtures.data("standings_NCAAF.json")))
+    }
+
+    func testOtherSportsAskTheTeamListForEveryTeam() async throws {
+        let service = StubbedESPN.service([try everyTeam()])
+        let teams = try await service.fetchTeamsForSport(sport: .ncaam)
+        XCTAssertEqual(teams.count, 3)
+        XCTAssertEqual(StubbedESPN.requested.count, 1)
+        XCTAssertTrue(StubbedESPN.requested[0].hasSuffix("/basketball/mens-college-basketball/teams?limit=1000"),
+                      StubbedESPN.requested[0])
+    }
+
+    func testAFailedTeamListIsAnError() async throws {
+        let service = StubbedESPN.service([("/teams", 500, Data())])
+        do {
+            _ = try await service.fetchTeamsForSport(sport: .ncaam)
+            XCTFail("Expected an error")
+        } catch {}
+    }
+}
+
 final class TeamHubDecodingTests: XCTestCase {
     func testSchedulesDecode() throws {
         let files = try Fixtures.named("schedule_")
