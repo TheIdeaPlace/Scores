@@ -1,5 +1,6 @@
 """Home, End, arrows that go round and type-ahead find on a real tab bar. Builds Qt objects: CI or
 the VM only. Which tab each key picks is in test_tab_keys.py; this is that it reaches the bar."""
+import gc
 import json
 import os
 from unittest.mock import patch
@@ -791,6 +792,25 @@ class TestListPages:
         sip.delete(area)
         QApplication.processEvents()
         assert sip.isdeleted(area)
+
+    @pytest.mark.parametrize("make", [lambda: make_tab_area(9), lambda: make_tab_area(2)], ids=["list", "tabs"])
+    def test_an_area_left_open_for_the_garbage_collector_is_safe(self, app, make):
+        """CI once stopped dead after a failing test left a ListPages open like this. The destroy
+        test above doesn't reproduce that for a list, since calling its tabBar can't raise."""
+        area = make()
+        area.addTab(QLabel("One"), "One")
+        area.addTab(QLabel("Two"), "Two")
+        area.show()
+        area.activateWindow()
+        QApplication.processEvents()
+        area.tabBar().setFocus()
+        QApplication.processEvents()
+        assert area.tabBar().hasFocus()
+        del area
+        gc.collect()
+        QApplication.processEvents()
+        for leftover in QApplication.topLevelWidgets():  # In case it wasn't collected after all.
+            leftover.close()
 
     def test_view_keys_on_the_list_act_on_the_table(self, pages_with_tables):
         pages = pages_with_tables
