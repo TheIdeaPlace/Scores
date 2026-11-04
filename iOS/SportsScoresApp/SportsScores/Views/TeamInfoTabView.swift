@@ -178,10 +178,18 @@ struct TeamInfoTabView: View {
                     nextGameFromInfoRow(nextGame: nextGame)
                 }
                 if viewModel.previousGame == nil && viewModel.upcomingGame == nil && !viewModel.isLoadingSchedule {
-                    Text("No recent or upcoming games")
-                        .font(.subheadline)
-                        .foregroundColor(.secondary)
-                        .padding(.vertical, 4)
+                    if let error = viewModel.errorSchedule {
+                        Text(error)
+                            .font(.subheadline)
+                            .foregroundColor(.secondary)
+                            .padding(.vertical, 4)
+                        Button("Retry") { Task { await viewModel.loadSchedule() } }
+                    } else {
+                        Text("No recent or upcoming games")
+                            .font(.subheadline)
+                            .foregroundColor(.secondary)
+                            .padding(.vertical, 4)
+                    }
                 }
             }
         }
@@ -189,16 +197,19 @@ struct TeamInfoTabView: View {
     }
 
     private func previousGameRow(game: ScheduleGame) -> some View {
-        let isWin = isWinFor(game: game)
+        let outcome = game.outcome(forTeamId: viewModel.teamId)
+        let color: Color = outcome == .win ? .green : (outcome == .loss ? .red : .secondary)
         let opponentTeam = opponentOf(game: game)
         let scoreText: String = {
             guard let hs = game.homeTeam.score, let as_ = game.awayTeam.score else { return game.statusText }
             return "\(game.awayTeam.abbreviation) \(as_) – \(hs) \(game.homeTeam.abbreviation)"
         }()
+        let outcomeWord = outcome == .win ? "Win" : (outcome == .loss ? "Loss" : (outcome == .tie ? "Tie" : "Final"))
+        let labelSuffix = game.label.map { ". \($0)" } ?? ""
 
         return HStack(spacing: 12) {
             Circle()
-                .fill(isWin ? Color.green : Color.red)
+                .fill(color)
                 .frame(width: 8, height: 8)
             VStack(alignment: .leading, spacing: 2) {
                 Text("vs \(opponentTeam.abbreviation)")
@@ -206,19 +217,24 @@ struct TeamInfoTabView: View {
                 Text(scoreText)
                     .font(.caption)
                     .foregroundColor(.secondary)
+                if let label = game.label {
+                    Text(label)
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                }
             }
             Spacer()
-            Text(isWin ? "W" : "L")
+            Text(outcome == .win ? "W" : (outcome == .loss ? "L" : (outcome == .tie ? "T" : "–")))
                 .font(.caption).bold()
                 .padding(.horizontal, 8)
                 .padding(.vertical, 4)
-                .background((isWin ? Color.green : Color.red).opacity(0.15))
+                .background(color.opacity(0.15))
                 .cornerRadius(6)
-                .foregroundColor(isWin ? .green : .red)
+                .foregroundColor(color)
         }
         .padding(.vertical, 4)
         .accessibilityElement(children: .combine)
-        .accessibilityLabel("Previous game: \(scoreText). \(isWin ? "Win" : "Loss")")
+        .accessibilityLabel("Previous game: \(scoreText). \(outcomeWord)\(labelSuffix)")
     }
 
     private func upcomingGameRow(game: ScheduleGame) -> some View {
@@ -238,6 +254,11 @@ struct TeamInfoTabView: View {
                 Text(dateText)
                     .font(.caption)
                     .foregroundColor(.secondary)
+                if let label = game.label {
+                    Text(label)
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                }
             }
             Spacer()
             Text("Next")
@@ -250,7 +271,7 @@ struct TeamInfoTabView: View {
         }
         .padding(.vertical, 4)
         .accessibilityElement(children: .combine)
-        .accessibilityLabel("Next game: \(locationText) \(opponentTeam.displayName) on \(dateText)")
+        .accessibilityLabel("Next game: \(locationText) \(opponentTeam.displayName) on \(dateText)\(game.label.map { ". \($0)" } ?? "")")
     }
 
     private func nextGameFromInfoRow(nextGame: TeamHubNextGame) -> some View {
@@ -334,12 +355,6 @@ struct TeamInfoTabView: View {
     }
 
     // MARK: - Helpers
-
-    private func isWinFor(game: ScheduleGame) -> Bool {
-        guard let hs = game.homeTeam.score, let as_ = game.awayTeam.score else { return false }
-        let teamIsHome = game.homeTeam.id == viewModel.teamId
-        return teamIsHome ? hs > as_ : as_ > hs
-    }
 
     private func opponentOf(game: ScheduleGame) -> ScheduleGame.ScheduleTeam {
         game.homeTeam.id == viewModel.teamId ? game.awayTeam : game.homeTeam

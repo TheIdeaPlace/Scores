@@ -59,8 +59,8 @@ def venue_facts():
 
 
 def scoreboard_with_one_team():
-    """A real NWSL board with the same team in both games, as the WNBA and soccer
-    schedule path reads it, a month at a time."""
+    """A real NWSL board with the same team in both games, as the last-resort schedule
+    path reads it, a month at a time."""
     data = load("scoreboard_NWSL.json")
     for event in data["events"]:
         event["competitions"][0]["competitors"][0]["team"]["id"] = "TEAM"
@@ -89,6 +89,11 @@ CASES = [
     case("get_team_schedule NBA", lambda: espn_api.get_team_schedule("NBA", "15"), "schedule_NBA_15.json", "/schedule"),
     case("get_team_schedule MLB", lambda: espn_api.get_team_schedule("MLB", "10"), "schedule_MLB_10.json", "/schedule"),
     case("get_team_schedule NCAAM", lambda: espn_api.get_team_schedule("NCAAM", "275"), "schedule_NCAAM_275.json", "/schedule"),
+    case("get_team_schedule WNBA", lambda: espn_api.get_team_schedule("WNBA", "8"), "schedule_WNBA_8_post.json", "/schedule"),
+    case("get_team_schedule postseason", lambda: espn_api.get_team_schedule("NFL", "26"), "schedule_NFL_26_post.json", "/schedule"),
+    case("get_team_schedule preseason", lambda: espn_api.get_team_schedule("NFL", "26"), "schedule_NFL_26_pre.json", "/schedule"),
+    case("get_team_schedule soccer", lambda: espn_api.get_team_schedule("EPL", "359"), "schedule_EPL_359_results.json", "/schedule"),
+    case("get_team_schedule soccer cup", lambda: espn_api.get_team_schedule("UCL", "359"), "schedule_UCL_359_2025.json", "/schedule"),
     case("parse_schedule_from_api", scoreboard_schedule, scoreboard_with_one_team, "/scoreboard"),
     case("game details NFL", lambda: espn_api.extract_meaningful_game_info(espn_api.get_game_details("NFL", "1")),
          "details_NFL_pieces.json", "/summary"),

@@ -20,7 +20,7 @@ standings_WNBA.json	42 KB	both conferences; total, not the playoff record; games
 schedule_NBA_15.json	52 KB	evening games: UTC date is the next day
 schedule_NCAAM_275.json	42 KB	dedicated endpoint
 schedule_NFL_9.json	76 KB	Sunday and Thursday night games; timeValid false on TBD
-schedule_WNBA_8.json	47 KB	ESPN has the whole season; the app uses a 60 day scoreboard window
+schedule_WNBA_8.json	47 KB	season=2026&seasontype=2, trimmed; notes on Commissioner's Cup games only
 scoreboard_events_by_status.json	85 KB	one real event per status name: STATUS_DELAYED, STATUS_END_PERIOD, STATUS_FINAL, STATUS_FORFEIT, STATUS_HALFTIME, STATUS_IN_PROGRESS, STATUS_POSTPONED, STATUS_SCHEDULED
 plays_NCAAM_401845838_3OT.json	44 KB	halves as 1st/2nd Half, periods 3-5 OT/2OT/3OT; (25,0) placeholder coordinates
 plays_NCAAWB_401911736.json	41 KB	(25,0) placeholder coordinates on substitutions and timeouts
@@ -54,6 +54,18 @@ scoreboard_NWSL.json	3 KB	2 games from dates=202610, used by the month-by-month 
 standings_MLB.json	14 KB	AL and NL trimmed to 5 and 3 teams, CHW and ATH included; streak is a signed value
 mlb_leaders_homeRuns.json	1 KB	statsapi.mlb.com leaders, 3 players; team has a name but no abbreviation
 schedule_MLB_10.json	4 KB	3 finals; score is a dict with displayValue
+schedule_WNBA_8_pre.json	16 KB	seasontype=1, 1 of 3 games: no note and no week, so only the season type names it
+schedule_WNBA_8_post.json	33 KB	season=2025&seasontype=3, 2 of 6: First Round and Semifinals notes, no week
+schedule_NFL_26_pre.json	63 KB	SEA season=2025&seasontype=1: week.text Preseason Week 1 to 3, no notes; a 23-23 tie
+schedule_NFL_26_reg.json	42 KB	SEA season=2025&seasontype=2, 2 of 17: week.text Week 1, Week 2; byeWeek at the top
+schedule_NFL_26_post.json	64 KB	SEA season=2025&seasontype=3: note Super Bowl LX, week.text Super Bowl, neutralSite true, Seattle filed as away
+schedule_NCAAF_333_reg.json	45 KB	Alabama season=2025&seasontype=2, 1 of 13: SEC Championship note on a regular season game
+schedule_NCAAF_333_post.json	91 KB	Alabama season=2025&seasontype=3: playoff notes, week.text Bowls, Rose Bowl at a neutral site
+schedule_EPL_359_results.json	28 KB	Arsenal season=2026, no seasontype, 3 of 9: STATUS_FULL_TIME, seasonType.type is a long id
+schedule_EPL_359_fixture.json	32 KB	Arsenal fixture=true, 3 of 29: games to come, no scores, odds and tickets on each
+schedule_EPL_359_2025.json	27 KB	Arsenal season=2025, 3 of 38: season.year says 2026, requestedSeason 2025
+schedule_UCL_359_2025.json	27 KB	Arsenal season=2025, 3 of 15: STATUS_FINAL_PEN with shootoutScore; 2nd Leg note; a note with no headline
+schedule_MLS_18418_fixture.json	27 KB	Atlanta fixture=true, 2 of 14: requestedSeason is 2027's Sprint season, season.year still 2026
 scoreboard_NFL_202611.json	73 KB	5 games from dates=202611: Falcons listed as home at a neutral site in Madrid, Giants and Jets sharing MetLife
 scoreboard_NBA_202611.json	59 KB	3 games from dates=202611: Nets and Warriors at home, Pacers listed as home at a neutral site in Mexico City
 scoreboard_NCAAH_202611.json	12 KB	3 games from dates=202611: 2 at home, Providence listed as home at a neutral site in Belfast

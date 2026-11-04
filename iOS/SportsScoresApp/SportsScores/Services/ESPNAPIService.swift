@@ -755,19 +755,107 @@ class ESPNAPIService {
 
     // MARK: - Fetch Team Schedule
 
-    /// Fetch the schedule for a single team and season type.
-    func fetchTeamSchedule(teamId: String, sport: Sport, season: Int, seasonType: Int) async throws -> [ScheduleGame] {
-        let urlString = "\(baseURL)/\(sport.apiPath)/teams/\(teamId)/schedule?season=\(season)&seasontype=\(seasonType)"
+    /// Everything ESPN has for one team's season, in date order, for the schedule screen and
+    /// Team Hub. A season that fails to load throws, so it can't read as an empty one, and
+    /// the same for a part of it: a list with no playoffs, and no sign why, looks complete.
+    ///
+    /// Only a 400 or 404 means ESPN has nothing there, as on Windows in
+    /// espn_api.get_team_schedule. For a preseason or postseason, that leaves out only that
+    /// part. For a regular season or soccer results it throws `APIError.invalidResponse`, for
+    /// which the view models read as no schedule, and not as an off-season or a failure.
+    ///
+    /// `lenient` is for a caller that can use whatever part loaded, and throws only when
+    /// nothing did.
+    func fetchTeamSeasonSchedule(teamId: String, sport: Sport, season: Int,
+                                 lenient: Bool = false) async throws -> [ScheduleGame] {
+        if sport.usesSoccerSchedule {
+            return try await fetchSoccerTeamSchedule(teamId: teamId, sport: sport, season: season, lenient: lenient)
+        }
+
+        var lists: [[ScheduleGame]] = []
+        var failure: Error?
+        var anyFailure: Error?
+        await withTaskGroup(of: (Int, Result<[ScheduleGame], Error>).self) { group in
+            for seasonType in TeamScheduleQueries.seasonTypes {
+                group.addTask { [self] in
+                    do {
+                        let query = TeamScheduleQueries.seasonType(seasonType, season: season)
+                        let page = try await fetchTeamSchedulePage(teamId: teamId, sport: sport, query: query)
+                        return (seasonType, .success(page.events.compactMap { $0.toScheduleGame() }))
+                    } catch {
+                        return (seasonType, .failure(error))
+                    }
+                }
+            }
+            for await (seasonType, result) in group {
+                switch result {
+                case .success(let games):
+                    lists.append(games)
+                case .failure(let error):
+                    anyFailure = anyFailure ?? error
+                    let mayLeaveOut = seasonType != 2 && error.isNothingThere
+                    if !mayLeaveOut && failure == nil { failure = error }
+                }
+            }
+        }
+        if lenient {
+            if lists.isEmpty, let anyFailure { throw anyFailure }
+        } else if let failure {
+            throw failure
+        }
+        return TeamScheduleQueries.merged(lists)
+    }
+
+    /// Results, plus the games to come if this is the current season. See `TeamScheduleQueries`.
+    /// Past the results, ESPN saying it has nothing there leaves that part out. Anything else
+    /// throws, because a schedule with its games to come missing would look complete.
+    private func fetchSoccerTeamSchedule(teamId: String, sport: Sport, season: Int,
+                                         lenient: Bool) async throws -> [ScheduleGame] {
+        func games(_ query: String) async throws -> [ScheduleGame] {
+            do {
+                let page = try await fetchTeamSchedulePage(teamId: teamId, sport: sport, query: query)
+                return page.events.compactMap { $0.toScheduleGame() }
+            } catch let error where error.isNothingThere || (lenient && !error.isCancellation) {
+                return []
+            }
+        }
+
+        var lists: [[ScheduleGame]] = []
+        var espnSeason: Int?
+        var resultsFailure: Error?
+        do {
+            let results = try await fetchTeamSchedulePage(teamId: teamId, sport: sport,
+                                                          query: TeamScheduleQueries.soccerResults(season: season))
+            lists.append(results.events.compactMap { $0.toScheduleGame() })
+            espnSeason = results.season?.year
+        } catch let error where lenient && !error.isCancellation {
+            resultsFailure = error
+        }
+        let next = TeamScheduleQueries.afterSoccerResults(season: season,
+                                                          currentSeason: sport.currentSeasonYear,
+                                                          espnSeason: espnSeason)
+        if let earlier = next.earlierResults {
+            lists.append(try await games(TeamScheduleQueries.soccerResults(season: earlier)))
+        }
+        if next.fixtures {
+            lists.append(try await games(TeamScheduleQueries.soccerFixtures))
+        }
+        if let resultsFailure, lists.allSatisfy(\.isEmpty) { throw resultsFailure }
+        return TeamScheduleQueries.merged(lists)
+    }
+
+    private func fetchTeamSchedulePage(teamId: String, sport: Sport, query: String) async throws -> TeamScheduleAPIResponse {
+        let urlString = "\(baseURL)/\(sport.apiPath)/teams/\(teamId)/schedule?\(query)"
         guard let url = URL(string: urlString) else { throw APIError.invalidURL }
 
         let (data, response) = try await session.data(from: url)
-        guard let httpResponse = response as? HTTPURLResponse,
-              httpResponse.statusCode == 200 else {
-            throw APIError.invalidResponse
-        }
+        // Only these two mean ESPN has nothing there. A 403, a 429 or a 5xx says nothing about
+        // the schedule. Windows reads them the same way, in espn_api._schedule_answer.
+        let status = (response as? HTTPURLResponse)?.statusCode ?? 0
+        if status == 400 || status == 404 { throw APIError.invalidResponse }
+        guard status == 200 else { throw APIError.unexpectedStatus(status) }
 
-        let apiResponse = try JSONDecoder().decode(TeamScheduleAPIResponse.self, from: data)
-        return apiResponse.events.compactMap { $0.toScheduleGame() }
+        return try JSONDecoder().decode(TeamScheduleAPIResponse.self, from: data)
     }
 
     // MARK: - Fetch League Leaders (Phase 5)
@@ -1603,7 +1691,8 @@ class ESPNAPIService {
         // Next game from nextEvent[0]
         var nextGame: TeamHubNextGame?
         if let ev = t.nextEvent?.first,
-           let comp = ev.competitions?.first {
+           let comp = ev.competitions?.first,
+           !comp.isCalledOff {
             // Identify which competitor is the opponent (not our team)
             let opponent = comp.competitors?.first(where: { $0.team?.id != teamId })
             let isHome = comp.competitors?.first(where: { $0.team?.id == teamId })?.homeAway == "home"
@@ -1726,33 +1815,24 @@ class ESPNAPIService {
 
     /// Fetches the current season schedule for a team. Returns games sorted by date.
     func fetchTeamHubSchedule(teamId: String, sport: Sport) async throws -> [ScheduleGame] {
-        // Season currently in progress — see Sport.seasonYear(containing:)
+        try await fetchCurrentOrLastSeason(teamId: teamId, sport: sport, lenient: false)
+    }
+
+    /// The same for a favorite's card, which only needs the last and next games: a request
+    /// failing for the preseason shouldn't cost it the regular season it does have.
+    func fetchFavoriteCardSchedule(teamId: String, sport: Sport) async throws -> [ScheduleGame] {
+        try await fetchCurrentOrLastSeason(teamId: teamId, sport: sport, lenient: true)
+    }
+
+    /// The season in progress, see Sport.seasonYear(containing:). ESPN publishes a new
+    /// season's schedule some weeks after the last one ends, so in that gap, the NFL in March
+    /// or the WNBA in January, it's empty and the season that just finished stands in.
+    /// A failure throws before it gets that far. TeamScheduleViewModel does the same.
+    private func fetchCurrentOrLastSeason(teamId: String, sport: Sport, lenient: Bool) async throws -> [ScheduleGame] {
         let season = sport.currentSeasonYear
-        let seasonTypes: [Int]
-        if sport == .mlb {
-            seasonTypes = [1, 2, 3]
-        } else if sport.isFootball {
-            seasonTypes = [1, 2, 3]
-        } else {
-            seasonTypes = [2, 3]
-        }
-        var allGames: [ScheduleGame] = []
-        await withTaskGroup(of: [ScheduleGame].self) { group in
-            for st in seasonTypes {
-                group.addTask { [self] in
-                    (try? await self.fetchTeamSchedule(
-                        teamId: teamId,
-                        sport: sport,
-                        season: season,
-                        seasonType: st
-                    )) ?? []
-                }
-            }
-            for await result in group {
-                allGames.append(contentsOf: result)
-            }
-        }
-        return allGames.sorted { $0.date < $1.date }
+        let games = try await fetchTeamSeasonSchedule(teamId: teamId, sport: sport, season: season, lenient: lenient)
+        if !games.isEmpty { return games }
+        return try await fetchTeamSeasonSchedule(teamId: teamId, sport: sport, season: season - 1, lenient: lenient)
     }
 
     /// The regular season of whichever season ESPN has for this team, by asking for none.

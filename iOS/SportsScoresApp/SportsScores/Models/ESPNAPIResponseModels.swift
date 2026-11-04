@@ -333,15 +333,13 @@ struct RankingsAPIResponse: Codable {
 
 // MARK: - Scoreboard Response
 
-/// One event ESPN sent oddly costs that event, not the board. ESPN's own list for week 8
+/// One event ESPN sent oddly costs that event, not the list. ESPN's own list for week 8
 /// of college football in 2025 has a literal {} in it, which used to lose the whole week.
 /// If most of the real entries can't be read, that's a change in the feed rather than a
-/// stray entry, and a short list would look normal, so it's still an error.
-extension ScoreboardResponse {
-    private enum CodingKeys: String, CodingKey {
-        case events, week, season, leagues
-    }
-
+/// stray entry, and a short list would look normal, so it's still an error. `judgingAbove`
+/// is for a list short enough for that to mean nothing: a team schedule's postseason page
+/// can be one bowl game, and losing it isn't a reason to lose the season.
+enum LossyEvents {
     private struct AnyKey: CodingKey {
         var stringValue: String
         var intValue: Int? { nil }
@@ -349,26 +347,39 @@ extension ScoreboardResponse {
         init?(intValue: Int) { nil }
     }
 
-    /// An entry of `events`: its game if it can be read, and whether it was a blank {}.
-    private struct Row: Decodable {
-        let game: APIGame?
+    /// An entry of `events`: its event if it can be read, and whether it was a blank {}.
+    private struct Row<Event: Decodable>: Decodable {
+        let event: Event?
         let isBlank: Bool
 
         init(from decoder: Decoder) throws {
-            game = try? APIGame(from: decoder)
+            event = try? Event(from: decoder)
             isBlank = (try? decoder.container(keyedBy: AnyKey.self))?.allKeys.isEmpty ?? false
         }
     }
 
-    init(from decoder: Decoder) throws {
-        let container = try decoder.container(keyedBy: CodingKeys.self)
-        let rows = try container.decode([Row].self, forKey: .events)
-        events = rows.compactMap { $0.game }
+    static func decode<Event: Decodable, Key: CodingKey>(from container: KeyedDecodingContainer<Key>,
+                                                         forKey key: Key,
+                                                         judgingAbove minimum: Int = 0) throws -> [Event] {
+        let rows = try container.decode([Row<Event>].self, forKey: key)
+        let events = rows.compactMap { $0.event }
         let sent = rows.filter { !$0.isBlank }.count
-        if (sent - events.count) * 2 > sent {
-            throw DecodingError.dataCorruptedError(forKey: .events, in: container,
+        if sent > minimum && (sent - events.count) * 2 > sent {
+            throw DecodingError.dataCorruptedError(forKey: key, in: container,
                                                    debugDescription: "Only \(events.count) of \(sent) events could be read")
         }
+        return events
+    }
+}
+
+extension ScoreboardResponse {
+    private enum CodingKeys: String, CodingKey {
+        case events, week, season, leagues
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        events = try LossyEvents.decode(from: container, forKey: .events)
         week = try container.decodeIfPresent(APIWeek.self, forKey: .week)
         season = try container.decodeIfPresent(APISeason.self, forKey: .season)
         leagues = try container.decodeIfPresent([APILeague].self, forKey: .leagues)
@@ -433,15 +444,20 @@ struct ScoreboardResponse: Decodable {
 enum APIError: LocalizedError {
     case invalidURL
     case invalidResponse
+    /// Any status but 400 or 404, where `invalidResponse` is ESPN answering that it has
+    /// nothing there. Only team schedules tell them apart so far.
+    case unexpectedStatus(Int)
     case decodingError
     case networkError(Error)
-    
+
     var errorDescription: String? {
         switch self {
         case .invalidURL:
             return "Invalid URL"
         case .invalidResponse:
             return "Invalid response from server"
+        case .unexpectedStatus(let status):
+            return "The server answered with an error (\(status))"
         case .decodingError:
             return "Failed to decode response"
         case .networkError(let error):
