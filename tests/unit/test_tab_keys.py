@@ -210,17 +210,37 @@ class TestEveryTabAreaGoesThroughOneHelper:
         return [node for node in ast.walk(ast.parse(source))
                 if isinstance(node, ast.Call) and isinstance(node.func, ast.Name) and node.func.id == name]
 
+    @staticmethod
+    def _names_tab_widget(node):
+        """QTabWidget or anything.QTabWidget, as a name in the code."""
+        return (isinstance(node, ast.Name) and node.id == "QTabWidget"
+                or isinstance(node, ast.Attribute) and node.attr == "QTabWidget")
+
     @pytest.mark.parametrize("path", sorted(REPO.glob("*.py")), ids=lambda p: p.name)
     def test_only_make_tab_area_builds_a_tab_widget(self, path):
-        source = path.read_text(encoding="utf-8")
-        made = self._calls(source, "QTabWidget")
+        tree = ast.parse(path.read_text(encoding="utf-8"))
+        made = [node for node in ast.walk(tree) if isinstance(node, ast.Call) and self._names_tab_widget(node.func)]
+        made += [node for node in ast.walk(tree) if isinstance(node, ast.ClassDef)
+                 and any(self._names_tab_widget(base) for base in node.bases)]
         if path.name == "accessible_table.py":
-            assert len(made) == 1
-            helper = next(node for node in ast.walk(ast.parse(source))
+            # The helper's QTabWidget() and _LiteralTabWidget, which only the helper makes.
+            assert sorted(getattr(node, "name", "call") for node in made) == ["_LiteralTabWidget", "call"]
+            helper = next(node for node in ast.walk(tree)
                           if isinstance(node, ast.FunctionDef) and node.name == "make_tab_area")
-            assert any(isinstance(n, ast.Call) and getattr(n.func, "id", "") == "QTabWidget" for n in ast.walk(helper))
+            assert any(node in made for node in ast.walk(helper))
         else:
             assert not made, f"{path.name}:{made[0].lineno} should call make_tab_area, which picks tabs or a list"
+
+    @pytest.mark.parametrize("source", [
+        "tabs = QTabWidget()",
+        "tabs = QtWidgets.QTabWidget()",
+        "class Mine(QTabWidget):\n    pass",
+        "class Mine(QtWidgets.QTabWidget):\n    pass",
+    ])
+    def test_the_scan_sees_every_way_of_making_one(self, source):
+        tree = ast.parse(source)
+        assert any(self._names_tab_widget(n.func) for n in ast.walk(tree) if isinstance(n, ast.Call)) or any(
+            self._names_tab_widget(base) for n in ast.walk(tree) if isinstance(n, ast.ClassDef) for base in n.bases)
 
     def test_the_scan_finds_the_tab_areas_in_scores(self):
         calls = self._calls((REPO / "scores.py").read_text(encoding="utf-8"), "make_tab_area")

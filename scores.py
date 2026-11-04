@@ -64,7 +64,7 @@ import live_play_format
 from models.standings import StandingsData
 import error_log
 from windows_notifications import announce, set_notifier_window
-from accessible_table import AccessibleTable, StandingsTable, WildCardTable, LeadersTable, BoxscoreTable, InjuryTable, ListPages, make_tab_area, ButtonKeys
+from accessible_table import AccessibleTable, StandingsTable, WildCardTable, LeadersTable, BoxscoreTable, InjuryTable, ListPages, is_tab_bar, keep_in_tab_order, make_tab_area, ButtonKeys
 from tab_keys import group_noun
 from box_score import build_box_tables
 from team_stats import team_stat_lists
@@ -208,7 +208,7 @@ def _take_focus_after_load(widget):
     """Move to freshly loaded data, unless someone is on a tab bar or a combo box: pulling
     them off it while they arrow through its choices loses their place and cuts off speech."""
     focused = QApplication.focusWidget()
-    if not isinstance(focused, (QTabBar, QComboBox)):
+    if not (is_tab_bar(focused) or isinstance(focused, QComboBox)):
         widget.setFocus()
 
 
@@ -7190,6 +7190,7 @@ class WildCardTabsMixin:
                            "Leave this tab and return to try again.")
             status.setAccessibleName(f"{label} unavailable")
             container_layout.addWidget(status)
+            keep_in_tab_order(self.tab_widget, status)
             container.table = None  # type: ignore[attr-defined]
             self._announce_wildcard(f"{label} standings unavailable")
             return
@@ -7200,6 +7201,7 @@ class WildCardTabsMixin:
         table = WildCardTable(parent=self, division_name=label)
         table.populate_standings(teams, set_focus=False)
         container_layout.addWidget(table)
+        keep_in_tab_order(self.tab_widget, table)
         container.table = table  # type: ignore[attr-defined]
         self._announce_wildcard(f"{label} standings ready, {len(teams)} teams")
 
@@ -7219,7 +7221,7 @@ class StandingsDetailDialog(WildCardTabsMixin, QDialog):
         
         self.tab_widget: QTabWidget | ListPages | None = None
         self.single_table: StandingsTable | None = None
-
+        
         self.setup_ui()
         _focus_once_active(self, lambda: _focus_first_table(self))
     
@@ -7249,11 +7251,11 @@ class StandingsDetailDialog(WildCardTabsMixin, QDialog):
         if self.league == "MLB":
             division_order = ["AL East", "AL Central", "AL West", "NL East", "NL Central", "NL West", "League"]
         elif self.league == "NFL":
-            division_order = ["AFC East", "AFC North", "AFC South", "AFC West",
+            division_order = ["AFC East", "AFC North", "AFC South", "AFC West", 
                             "NFC East", "NFC North", "NFC South", "NFC West", "League"]
         else:
             division_order = ["League"]
-
+            
         ordered: List[tuple[str, List[Dict]]] = []
         for name in division_order:
             if name in self.standings_data.divisions:
@@ -7279,7 +7281,7 @@ class StandingsDetailDialog(WildCardTabsMixin, QDialog):
             first = self.tab_widget.widget(0)
             if hasattr(first, "table"):
                 first.table.setFocus()  # type: ignore[attr-defined]
-    
+
     def _create_division_table(self, division_name: str, teams: List[Dict]) -> QWidget:
         widget = QWidget()
         layout = QVBoxLayout()
@@ -8128,7 +8130,7 @@ class TeamHubDialog(QDialog):
 
         layout.addLayout(header_layout)
 
-        self.tab_widget = make_tab_area(5)
+        self.tab_widget = make_tab_area(5, mnemonics=True)
         self.tab_widget.currentChanged.connect(self._on_tab_changed)
 
         # Tab 0 — Info
@@ -9011,11 +9013,11 @@ class PollsDialog(QDialog):
         self.tab_widget: QTabWidget | ListPages | None = None
         self.setup_ui()
         _focus_once_active(self, lambda: _focus_first_table(self))
-
+    
     def setup_ui(self):
         layout = QVBoxLayout()
-
-        polls =self.polls_data.get('polls', [])
+        
+        polls = self.polls_data.get('polls', [])
         
         if not polls:
             layout.addWidget(QLabel(f"No poll data available for {self.league}."))
@@ -9039,7 +9041,7 @@ class PollsDialog(QDialog):
         self.tab_widget = make_tab_area(
             len(polls), "Poll Rankings", "Rankings from different polls. Use arrow keys to navigate between polls.",
             list_name="Polls")
-
+        
         for poll in polls:
             poll_name = poll.get('shortName', poll.get('name', 'Poll'))
             table = self._create_poll_table(poll)
@@ -9314,6 +9316,7 @@ class NFLDraftDialog(QDialog):
             lw.addItem(f"Loading Round {rd['number']}…")
             lw.setProperty('round_num', rd['number'])
             self.tab_widget.addTab(lw, rd.get('short_name', str(rd['number'])))
+            keep_in_tab_order(self.tab_widget, lw)
         self.tab_widget.blockSignals(False)
 
         if self.tab_widget.count() > 0:

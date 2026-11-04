@@ -5,7 +5,8 @@ Provides consistent keyboard navigation and screen reader support.
 
 from PyQt6.QtWidgets import (
     QTableWidget, QTableWidgetItem, QHeaderView, QStackedWidget, QStyle,
-    QListWidget, QListWidgetItem, QWidget, QVBoxLayout, QHBoxLayout, QTabWidget, QToolButton, QApplication, QPushButton
+    QListWidget, QListWidgetItem, QWidget, QVBoxLayout, QHBoxLayout, QTabBar, QTabWidget, QToolButton, QApplication,
+    QPushButton
 )
 from PyQt6.QtCore import Qt, QEvent, QObject, QTimer, pyqtSignal
 from typing import List, Dict, Any, Optional
@@ -1321,18 +1322,44 @@ class ListPages(QWidget):
         super().keyPressEvent(event)
 
 
+def is_tab_bar(widget) -> bool:
+    """A tab bar, or the list that stands in for one in a ListPages."""
+    return isinstance(widget, QTabBar) or (widget is not None and isinstance(widget.parentWidget(), ListPages))
+
+
+def keep_in_tab_order(tabs, widget: QWidget) -> None:
+    """Call after adding `widget` to a page once its dialog is built. Left alone it sits at the
+    end of the dialog's focus chain, after Close, so Tab from the bar reaches Close first.
+    setTabOrder moves only the widget it's given, so each one inside that takes focus is moved."""
+    previous = tabs.tabBar()
+    for candidate in [widget] + widget.findChildren(QWidget):
+        if candidate.focusPolicy() & Qt.FocusPolicy.TabFocus:
+            QWidget.setTabOrder(previous, candidate)
+            previous = candidate
+
+
+class _LiteralTabWidget(QTabWidget):
+    """Tabs named from data. To a tab bar & marks a mnemonic: Texas A&M loses the & from its text,
+    shown and exposed, and Alt+M becomes a shortcut to it, unless it's written A&&M. A ListPages
+    shows its text as it is already."""
+
+    def addTab(self, page: QWidget, label: str) -> int:
+        return super().addTab(page, label.replace("&", "&&"))
+
+
 def make_tab_area(count: int, name: str = "", description: str = "", list_name: str = "",
-                  list_description: str = "Arrow to one to show it. Tab goes to it."):
+                  list_description: str = "Arrow to one to show it. Tab goes to it.", mnemonics: bool = False):
     """The one way the app makes a tab area: tabs up to tab_keys.MAX_TABS, and a list past that.
 
     `count` is how many pages it's about to have. `name` and `description` are for the tabs, and
     `list_name` says what the rows are if it's a list ("Conferences"), or falls back on `name`.
+    A tab's text is taken as it is, unless `mnemonics` says the labels are written with & keys.
     """
     if tab_keys.use_list(count):
         pages = ListPages()
         pages.set_list_name(list_name or name, list_description)
         return pages
-    tab_widget = QTabWidget()
+    tab_widget = QTabWidget() if mnemonics else _LiteralTabWidget()
     prepare_table_tabs(tab_widget)
     if name:
         tab_widget.setAccessibleName(name)

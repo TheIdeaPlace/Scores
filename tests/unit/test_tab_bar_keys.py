@@ -12,11 +12,12 @@ pytest.importorskip("PyQt6")
 
 from PyQt6 import sip  # noqa: E402
 from PyQt6.QtCore import QEvent, Qt  # noqa: E402
-from PyQt6.QtGui import QFocusEvent, QKeyEvent  # noqa: E402
-from PyQt6.QtWidgets import QApplication, QLabel, QListWidget, QTabWidget, QVBoxLayout, QWidget  # noqa: E402
+from PyQt6.QtGui import QFocusEvent, QKeyEvent, QKeySequence  # noqa: E402
+from PyQt6.QtWidgets import QApplication, QLabel, QListWidget, QPushButton, QTabWidget, QVBoxLayout, QWidget  # noqa: E402
 
 import accessible_table  # noqa: E402
-from accessible_table import AccessibleTable, ListPages, _TabBarViewKeys, make_tab_area, prepare_table_tabs, tab_labels  # noqa: E402
+from accessible_table import (  # noqa: E402
+    AccessibleTable, ButtonKeys, ListPages, _TabBarViewKeys, is_tab_bar, make_tab_area, prepare_table_tabs, tab_labels)
 import espn_api  # noqa: E402
 import scores  # noqa: E402
 import settings  # noqa: E402
@@ -247,6 +248,46 @@ class TestTypeAhead:
         assert tabs.currentWidget().text() == "Sun Belt"
 
 
+class TestAnAmpersandInAName:
+    NAME = "Texas A&M Players"
+
+    def test_qt_takes_a_plain_ampersand_as_a_mnemonic(self, app):
+        """What the escaping is for. complexwidgets.cpp strips it from the exposed name too."""
+        assert QKeySequence.mnemonic(self.NAME).toString() == "Alt+M"
+
+    def test_a_tab_keeps_it_rather_than_making_a_mnemonic(self, app):
+        tabs = make_tab_area(2)
+        tabs.addTab(QLabel("One"), "Ohio Players")
+        tabs.addTab(QLabel("Two"), self.NAME)
+        assert tabs.tabText(1) == "Texas A&&M Players"
+        assert QKeySequence.mnemonic(tabs.tabText(1)).isEmpty()
+
+    def test_a_list_keeps_it_once(self, app):
+        pages = make_tab_area(9)
+        pages.addTab(QLabel("One"), self.NAME)
+        assert pages.tabText(0) == self.NAME
+        assert pages.tabBar().item(0).text() == self.NAME
+
+    @pytest.mark.parametrize("count", [2, 9], ids=["tabs", "list"])
+    def test_type_ahead_finds_it_with_the_ampersand(self, app, clock, count):
+        area = make_tab_area(count)
+        area.addTab(QLabel("One"), "Ohio Players")
+        area.addTab(QLabel("Two"), "Texas Tech Players")
+        area.addTab(QLabel("Three"), self.NAME)
+        area.findChild(_TabBarViewKeys).search.clock = clock
+        assert tab_labels(area)[2] == self.NAME
+        type_text(area, "texas a")
+        press(area.tabBar(), Qt.Key.Key_Ampersand, SHIFT, "&")
+        press(area.tabBar(), Qt.Key.Key_M, SHIFT, "M")
+        assert area.currentIndex() == 2
+
+    def test_team_hub_asks_for_its_mnemonics(self, app):
+        tabs = make_tab_area(5, mnemonics=True)
+        tabs.addTab(QLabel("Roster"), "R&oster")
+        assert tabs.tabText(0) == "R&oster"
+        assert not QKeySequence.mnemonic(tabs.tabText(0)).isEmpty()
+
+
 class TestLeftAlone:
     @pytest.mark.parametrize("modifiers", [CTRL, ALT, CTRL | ALT, Qt.KeyboardModifier.MetaModifier])
     def test_a_letter_with_a_modifier_is_not_typed(self, tabs, modifiers):
@@ -383,6 +424,65 @@ class TestRealDialogs:
         assert eight.tab_widget.count() == 8
         assert isinstance(nine.tab_widget, ListPages)
         assert nine.tab_widget.count() == 9
+
+    def test_enter_on_the_list_goes_to_the_table_and_leaves_the_dialog_open(self, app, rows):
+        """Inside a dialog Qt would carry Enter on up to the dialog, which would press Close."""
+        keys = ButtonKeys()
+        app.installEventFilter(keys)
+        dialog = scores.StandingsDialog(rows, "NCAAF")
+        try:
+            close = next(b for b in dialog.findChildren(QPushButton) if b.text() == "Close")
+            clicks = []
+            close.clicked.connect(lambda: clicks.append(1))
+            dialog.show()
+            dialog.activateWindow()
+            QApplication.processEvents()
+            bar = dialog.tab_widget.tabBar()
+            bar.setFocus()
+            QApplication.processEvents()
+            press(bar, Qt.Key.Key_Return, PLAIN, "\r")
+            QApplication.processEvents()
+            assert clicks == []
+            assert dialog.isVisible()
+            table = dialog.tab_widget.currentWidget().findChildren(AccessibleTable)[0]
+            assert table.isAncestorOf(QApplication.focusWidget())
+        finally:
+            app.removeEventFilter(keys)
+            dialog.close()
+
+    @staticmethod
+    def first_tab_stop_after(bar, dialog):
+        widget = bar.nextInFocusChain()
+        while not (widget.focusPolicy() & Qt.FocusPolicy.TabFocus and widget.isVisibleTo(dialog)):
+            widget = widget.nextInFocusChain()
+        return widget
+
+    @pytest.mark.parametrize("names,wildcard", [
+        (["AL East", "AL Central", "AL West", "NL East", "NL Central", "NL West"],
+         {"AL": [{"team_name": "Yankees", "wins": 9, "losses": 4}]}),
+        (["AL East", "AL Central", "AL West", "NL East", "NL Central", "NL West", "League"],
+         {"AL": [{"team_name": "Yankees", "wins": 9, "losses": 4}]}),
+        (["AL East", "AL Central", "AL West", "NL East", "NL Central", "NL West"], {}),
+    ], ids=["tabs", "list", "unavailable"])
+    def test_tab_from_a_wild_card_goes_to_it_and_not_to_close(self, app, rows, monkeypatch, names, wildcard):
+        monkeypatch.setattr(scores.DataCache(), "get_mlb_wildcard", lambda: wildcard)
+        dialog = scores.StandingsDialog(self.rows_in_groups(rows, names), "MLB")
+        tabs = dialog.tab_widget
+        index = next(i for i in range(tabs.count()) if tabs.tabText(i) == "AL Wild Card")
+        with patch.object(scores, "announce"), patch.object(scores, "_start_detached_thread"):
+            tabs.setCurrentIndex(index)
+        stop =self.first_tab_stop_after(tabs.tabBar(), dialog)
+        assert tabs.currentWidget().isAncestorOf(stop)
+
+    def test_tab_from_a_draft_round_goes_to_its_picks_and_not_to_close(self, app):
+        with patch.object(scores.NFLDraftDialog, "_load_year"), patch.object(scores.NFLDraftDialog, "_load_round"):
+            dialog = scores.NFLDraftDialog()
+            dialog._on_meta_loaded({"status": "post", "rounds": [
+                {"number": 1, "short_name": "Round 1"}, {"number": 2, "short_name": "Round 2"}]})
+            tabs = dialog.tab_widget
+            assert self.first_tab_stop_after(tabs.tabBar(), dialog) is tabs.widget(0)
+            tabs.setCurrentIndex(1)
+            assert self.first_tab_stop_after(tabs.tabBar(), dialog) is tabs.widget(1)
 
     def test_nfl_divisions_stay_tabs(self, app, rows):
         names = ["AFC East", "AFC North", "AFC South", "AFC West", "NFC East", "NFC North", "NFC South", "NFC West"]
@@ -598,17 +698,35 @@ class TestListPages:
         press(pages.tabBar(), Qt.Key.Key_M, CTRL, "m")
         assert pages.currentIndex() == 0
 
-    def test_focus_stays_on_the_list_as_it_moves(self, pages_with_tables, monkeypatch):
+    def test_focus_stays_on_the_list_as_it_moves_and_tab_goes_to_the_table(self, pages_with_tables):
         pages = pages_with_tables
         bar = pages.tabBar()
-        monkeypatch.setattr(QApplication, "focusWidget", staticmethod(lambda: bar))
-        table = self.table_on(pages, 1)
-        calls = []
-        table.setFocus = lambda: calls.append("table")
-        press(bar, Qt.Key.Key_Down)
-        QApplication.processEvents()
-        assert pages.currentIndex() == 1
-        assert calls == []
+        pages.resize(600, 400)
+        pages.show()
+        try:
+            pages.activateWindow()
+            QApplication.processEvents()
+            bar.setFocus()
+            QApplication.processEvents()
+            assert QApplication.focusWidget() is bar
+            for row in (1, 2):
+                press(bar, Qt.Key.Key_Down)
+                QApplication.processEvents()
+                assert pages.currentIndex() == row
+                assert QApplication.focusWidget() is bar
+
+            press(bar, Qt.Key.Key_Tab, PLAIN, "\t")
+            QApplication.processEvents()
+            view = QApplication.focusWidget()
+            assert self.table_on(pages, 2).isAncestorOf(view)
+            assert pages.currentIndex() == 2
+
+            press(view, Qt.Key.Key_Backtab, SHIFT)
+            QApplication.processEvents()
+            assert QApplication.focusWidget() is bar
+            assert pages.currentIndex() == 2
+        finally:
+            pages.close()
 
     def test_ctrl_tab_from_a_table_lands_in_the_next_table(self, pages_with_tables, monkeypatch):
         pages = pages_with_tables
@@ -666,8 +784,10 @@ class TestListPages:
         area.addTab(QLabel("Two"), "Two")
         area.show()
         area.activateWindow()
+        QApplication.processEvents()
         area.tabBar().setFocus()
         QApplication.processEvents()
+        assert area.tabBar().hasFocus()
         sip.delete(area)
         QApplication.processEvents()
         assert sip.isdeleted(area)
@@ -678,13 +798,23 @@ class TestListPages:
         press(pages.tabBar(), Qt.Key.Key_Q, ALT)
         assert table._current_view == table.VIEW_QUICK_LIST
 
-    def test_enter_on_the_list_goes_to_the_table(self, pages_with_tables):
-        pages = pages_with_tables
-        table = self.table_on(pages, 0)
+    def test_is_tab_bar_knows_the_list_from_any_other(self, pages, app):
+        tabs = QTabWidget()
+        assert is_tab_bar(pages.tabBar())
+        assert is_tab_bar(tabs.tabBar())
+        assert not is_tab_bar(QListWidget())
+        assert not is_tab_bar(None)
+
+    def test_a_load_doesnt_pull_someone_off_the_list(self, pages, monkeypatch):
         calls = []
-        table.setFocus = lambda: calls.append("table")
-        press(pages.tabBar(), Qt.Key.Key_Return, PLAIN, "\r")
-        assert calls == ["table"]
+        target = QListWidget()
+        target.setFocus = lambda: calls.append("target")
+        monkeypatch.setattr(QApplication, "focusWidget", staticmethod(lambda: pages.tabBar()))
+        scores._take_focus_after_load(target)
+        assert calls == []
+        monkeypatch.setattr(QApplication, "focusWidget", staticmethod(lambda: None))
+        scores._take_focus_after_load(target)
+        assert calls == ["target"]
 
     def test_a_tables_own_letters_and_arrows_stay_with_it(self, pages_with_tables):
         pages = pages_with_tables
