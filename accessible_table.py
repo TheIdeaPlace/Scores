@@ -1174,10 +1174,11 @@ class _TabBarViewKeys(QObject):
                 table.adopt_saved_view()
 
     def eventFilter(self, obj, event):
-        if (event.type() == QEvent.Type.KeyPress and event.key() == Qt.Key.Key_Escape
-                and obj is not self._tabs and obj is not self._bar):
-            # Coming up to the window from outside the list and its pages, such as from Close.
-            if self._tabs.is_open():
+        if obj is not self._tabs and obj is not self._bar:
+            # The window, which only a ListPages watches, for Escape from outside the list and
+            # its pages, such as from Close. Every other key there is the window's own.
+            if (event.type() == QEvent.Type.KeyPress and event.key() == Qt.Key.Key_Escape
+                    and self._tabs.is_open()):
                 self._tabs.close_page()
                 return True
             return False
