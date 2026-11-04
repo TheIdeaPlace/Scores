@@ -86,23 +86,70 @@ def test_row_and_column_survive_a_round_trip(app):
     assert (table.table_widget.currentRow(), table.table_widget.currentColumn()) == (1, 2)
 
 
-def test_a_view_has_its_row_before_it_is_shown(app):
+VIEW_KEYS = {"table": Qt.Key.Key_T, "quick": Qt.Key.Key_Q, "full": Qt.Key.Key_F}
+SWITCHES = [("table", "quick"), ("quick", "full"), ("full", "table"), ("quick", "table")]
+
+
+def view_widget(table, name):
+    return {"table": table.table_widget, "quick": table.quick_list, "full": table.full_list}[name]
+
+
+def go_to_row(table, name, row):
+    """Move one view only, leaving the others on the row they were last left on."""
+    view = view_widget(table, name)
+    if name == "table":
+        view.setCurrentCell(row, 0)
+    else:
+        view.setCurrentRow(row)
+
+
+@pytest.mark.parametrize("source,target", SWITCHES)
+def test_a_view_has_its_row_before_it_is_shown(app, source, target):
     """Showing a view moves focus to it, so a stale row there gets announced first."""
     table = make_table(app)
-    table.handle_view_key(alt(Qt.Key.Key_Q))
-    table.handle_view_key(alt(Qt.Key.Key_T))
-    table.table_widget.setCurrentCell(2, 0)
+    table.handle_view_key(alt(VIEW_KEYS[source]))
+    go_to_row(table, source, 2)
+    assert view_widget(table, target).currentRow() == 0
 
-    rows_when_shown = []
+    seen = []
     show = table.stacked_widget.setCurrentIndex
+    focus = table._set_focus_to_current_view
 
-    def spy(index):
-        rows_when_shown.append((table.table_widget.currentRow(), table.quick_list.currentRow()))
+    def spy_show(index):
+        seen.append(("shown", view_widget(table, target).currentRow()))
         show(index)
 
-    table.stacked_widget.setCurrentIndex = spy
-    table.handle_view_key(alt(Qt.Key.Key_Q))
-    assert rows_when_shown == [(2, 2)]
+    def spy_focus():
+        seen.append(("focused", view_widget(table, target).currentRow()))
+        focus()
+
+    table.stacked_widget.setCurrentIndex = spy_show
+    table._set_focus_to_current_view = spy_focus
+    table.handle_view_key(alt(VIEW_KEYS[target]))
+    assert seen == [("shown", 2), ("focused", 2)]
+
+
+@pytest.mark.parametrize("source,target", SWITCHES)
+def test_a_views_row_is_on_screen_after_a_switch(app, source, target):
+    """The row is set while the view is hidden, so the scroll has to happen on show."""
+    table = AccessibleTable(accessible_name="T", accessible_description="D")
+    table.setup_columns(HEADERS)
+    table.populate_data([[f"P{i}", "G", str(i)] for i in range(200)], set_focus=False)
+    table.resize(400, 200)
+    table.show()
+    app.processEvents()
+    try:
+        table.handle_view_key(alt(VIEW_KEYS[source]))
+        app.processEvents()
+        go_to_row(table, source, 150)
+        table.handle_view_key(alt(VIEW_KEYS[target]))
+        app.processEvents()
+
+        view = view_widget(table, target)
+        assert view.currentRow() == 150
+        assert view.viewport().rect().contains(view.visualItemRect(view.currentItem()))
+    finally:
+        table.close()
 
 
 def test_saved_view_used_by_a_new_table(app, view_setting):
