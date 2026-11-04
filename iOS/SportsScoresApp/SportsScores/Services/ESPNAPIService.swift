@@ -29,11 +29,15 @@ class ESPNAPIService {
     /// stat headings request definitions concurrently — see `TeamStatsStore`.
     private let teamStatsStore: TeamStatsStore
 
-    private init() {
+    private convenience init() {
         let config = URLSessionConfiguration.default
         config.timeoutIntervalForRequest = 30
         config.timeoutIntervalForResource = 60
-        let session = URLSession(configuration: config)
+        self.init(session: URLSession(configuration: config))
+    }
+
+    /// The tests pass a session of their own, so that nothing reaches ESPN.
+    init(session: URLSession) {
         self.session = session
         self.teamStatsStore = TeamStatsStore(session: session, baseURL: webAPIBaseURL)
     }
@@ -758,7 +762,9 @@ class ESPNAPIService {
 
     // MARK: - Fetch League Leaders (Phase 5)
 
-    func fetchLeagueLeaders(for sport: Sport, limit: Int = 10) async throws -> [LeagueLeaderCategory] {
+    /// `onlyTeam` is for a caller that will keep just that team's rows: the other rows' names
+    /// aren't looked up, which for one team's stats tab is most of a thousand requests.
+    func fetchLeagueLeaders(for sport: Sport, limit: Int = 10, onlyTeam: String? = nil) async throws -> [LeagueLeaderCategory] {
         // Extract league from apiPath (e.g., "basketball/nba" → "nba")
         let league = sport.apiPath.components(separatedBy: "/").last ?? sport.rawValue.lowercased()
         let sportType = sport.apiPath.components(separatedBy: "/").first ?? "unknown"
@@ -780,7 +786,8 @@ class ESPNAPIService {
                         league: league,
                         season: season,
                         seasonType: seasonType,
-                        limit: limit
+                        limit: limit,
+                        onlyTeam: onlyTeam
                     )
                     if !categories.isEmpty {
                         return categories
@@ -819,7 +826,7 @@ class ESPNAPIService {
     /// qualifiers per batting stat), so every team player with qualifying stats appears.
     /// Categories where this team has no players in the top 100 are dropped.
     func fetchLeagueLeadersForTeam(teamAbbreviation: String, sport: Sport) async throws -> [LeagueLeaderCategory] {
-        let all = try await fetchLeagueLeaders(for: sport, limit: 100)
+        let all = try await fetchLeagueLeaders(for: sport, limit: 100, onlyTeam: teamAbbreviation)
         return all.compactMap { category in
             let teamEntries = category.leaders
                 .filter { $0.teamAbbreviation == teamAbbreviation }
@@ -1067,7 +1074,8 @@ class ESPNAPIService {
         league: String,
         season: Int,
         seasonType: Int,
-        limit: Int = 50
+        limit: Int = 50,
+        onlyTeam: String? = nil
     ) async throws -> [LeagueLeaderCategory] {
         let urlString = "\(coreAPIBaseURL)/\(sportType)/leagues/\(league)/seasons/\(season)/types/\(seasonType)/leaders?limit=\(limit)"
         guard let url = URL(string: urlString) else { throw APIError.invalidURL }
@@ -1085,29 +1093,29 @@ class ESPNAPIService {
         let apiResponse = try JSONDecoder().decode(CoreLeadersAPIResponse.self, from: data)
         let categories = apiResponse.categories ?? []
         
-        // Collect all unique $ref URLs across all categories so we can resolve
-        // them all in parallel (one TaskGroup), not sequentially per leader.
-        // Sequential resolution for MLB (20 cats × 10 leaders × 2 refs = 400 calls)
-        // would exceed the 30-second URLSession timeout. Parallel cuts this to ~1-2s.
+        // Collect all unique $ref URLs across all categories, so each is only asked for once.
+        // The teams come first, since `onlyTeam` needs them to tell which athletes matter.
         // NOTE: ESPN Core API $refs use http://, which iOS ATS blocks. Upgrade to https://.
-        var athleteRefs = Set<String>()
-        var teamRefs    = Set<String>()
+        var teamRefs = Set<String>()
         for category in categories {
             for leader in category.leaders ?? [] {
-                if let ref = leader.athlete?.ref { athleteRefs.insert(secureURL(ref)) }
-                if let ref = leader.team?.ref    { teamRefs.insert(secureURL(ref)) }
+                if let ref = leader.team?.ref { teamRefs.insert(secureURL(ref)) }
             }
         }
-        
-        // Copy to immutable constants before concurrent use (Swift 6: var capture in async let is an error)
-        let frozenAthleteRefs = athleteRefs
-        let frozenTeamRefs    = teamRefs
-        
-        // Resolve all unique refs in parallel
-        async let athleteTask = resolveRefs(frozenAthleteRefs, as: CoreAthleteResponse.self)
-        async let teamTask    = resolveRefs(frozenTeamRefs,    as: CoreTeamResponse.self)
-        let (athletes, teams) = await (athleteTask, teamTask)
-        
+        let teams = await resolveRefs(teamRefs, as: CoreTeamResponse.self)
+
+        var athleteRefs = Set<String>()
+        for category in categories {
+            for leader in category.leaders ?? [] {
+                guard let ref = leader.athlete?.ref else { continue }
+                if let onlyTeam, leader.team?.ref.flatMap({ teams[secureURL($0)]?.abbreviation }) != onlyTeam {
+                    continue
+                }
+                athleteRefs.insert(secureURL(ref))
+            }
+        }
+        let athletes = await resolveRefs(athleteRefs, as: CoreAthleteResponse.self)
+
         // Build results using the resolved caches
         return categories.map { category in
             let leaders = (category.leaders ?? []).enumerated().map { index, leader -> LeagueLeaderCategory.LeagueLeaderEntry in
@@ -1121,17 +1129,14 @@ class ESPNAPIService {
                     entityName = "—"
                 }
 
-                // MLB displayValue is a full stats-line (e.g. "9-17, 4 HR, 2B, 6 RBI...").
-                // Use the numeric value field with smart formatting instead.
-                let statDisplay: String
-                if let v = leader.value {
-                    statDisplay = formatLeaderStatValue(v)
-                } else {
-                    statDisplay = leader.displayValue ?? "-"
-                }
+                let statDisplay = Self.leaderDisplayValue(
+                    category: category.name,
+                    value: leader.value,
+                    displayValue: leader.displayValue
+                )
                 return LeagueLeaderCategory.LeagueLeaderEntry(
                     rank: index + 1,
-                    displayValue: statDisplay,
+                    displayValue: statDisplay.isEmpty ? "-" : statDisplay,
                     athleteName: entityName,
                     teamAbbreviation: entityTeam
                 )
@@ -1149,50 +1154,109 @@ class ESPNAPIService {
         ref.hasPrefix("http://") ? "https://" + ref.dropFirst(7) : ref
     }
 
-    /// Format a raw numeric stat value for display in the leaders table.
-    ///  - Values < 1.0  → 3-decimal batting-average style  (e.g. 0.331 → ".331")
-    ///  - Whole numbers  → integer counting stat            (e.g. 4.0  → "4")
-    ///  - Decimal ≥ 1   → 2-decimal rate stat              (e.g. 2.75 → "2.75")
-    private func formatLeaderStatValue(_ value: Double) -> String {
-        if value < 1.0 {
-            // batting average / OBP / SLG / OPS-under-1 style
-            let s = String(format: "%.3f", value)
-            return s.hasPrefix("0.") ? String(s.dropFirst()) : s  // ".333" not "0.333"
-        } else if value == floor(value) {
-            // counting stat: HR, RBI, K, SB, W, etc.
-            return "\(Int(value))"
-        } else {
-            // rate stat ≥ 1: ERA, WHIP, etc.
-            return String(format: "%.2f", value)
+    /// How a league leader's number reads. ESPN's displayValue is the right text for most
+    /// stats, 38.3 for 38.2857, and these are where it isn't. On Windows this is
+    /// game_labels.leader_display_value, and tests/fixtures/leader_display_grid.json holds both.
+    ///  - Baseball's is a stat line ("179-567, 42 HR, 3B, ..."), for every category.
+    ///  - A fraction gets rounded away: 7.5 sacks reads 8, a 137.3 quarterback rating reads 137.
+    ///  - Three-point and college free throw percentages are fractions: 0.6154 reads 0.6.
+    ///  - Season totals read as if they were averages: 268 points reads 268.0.
+    static func leaderDisplayValue(category: String?, value: Double?, displayValue: String?) -> String {
+        let display = (displayValue ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+        guard let number = value else { return display }
+        let name = (category ?? "").lowercased()
+        let isWhole = number == number.rounded()
+
+        guard display.range(of: #"^[+-]?[\d,]*\.?\d+$"#, options: .regularExpression) != nil else {
+            if ["avg", "ops", "onbasepct", "slugavg", "opponentavg"].contains(name) {
+                let text = String(format: "%.3f", number)
+                return text.hasPrefix("0.") ? String(text.dropFirst()) : text
+            }
+            if isWhole && !["era", "whip"].contains(name) {
+                return String(Int(number))
+            }
+            return String(format: "%.2f", number)
+        }
+
+        if ["points", "doubledouble"].contains(name) && isWhole {
+            return String(Int(number))
+        }
+        if name.contains("pct"), (0...1).contains(number), !display.hasPrefix("."),
+           let shown = Double(display.replacingOccurrences(of: ",", with: "")), shown <= 1 {
+            return String(format: "%.1f", number * 100)
+        }
+        if !display.contains(".") && !isWhole {
+            return String(format: "%.1f", number)
+        }
+        return display
+    }
+
+    /// Runs `operation` on every item, at most `limit` at a time, in no particular order.
+    /// One team's stats tab can have a thousand references. Sent all at once, the wait for a
+    /// free connection counts against the request's timeout.
+    static func concurrentMap<Item: Sendable, Output: Sendable>(
+        _ items: [Item],
+        limit: Int,
+        _ operation: @escaping @Sendable (Item) async -> Output
+    ) async -> [Output] {
+        await withTaskGroup(of: Output.self) { group in
+            var remaining = items[...]
+            for _ in 0..<min(max(limit, 1), items.count) {
+                let item = remaining.removeFirst()
+                group.addTask { await operation(item) }
+            }
+            var outputs = [Output]()
+            outputs.reserveCapacity(items.count)
+            for await output in group {
+                outputs.append(output)
+                if let next = remaining.popFirst() {
+                    group.addTask { await operation(next) }
+                }
+            }
+            return outputs
         }
     }
 
-    /// Resolve a set of Core API $ref URLs in parallel. Returns a dictionary
-    /// mapping each original ref URL string to the decoded response object.
-    /// Failed resolutions are silently dropped rather than failing the whole batch.
+    /// The most Core API references asked for at once. 125 took about 4 seconds at 8.
+    static let maxConcurrentRefRequests = 8
+
+    /// Resolve a set of Core API $ref URLs, some at a time. Returns a dictionary mapping each
+    /// original ref URL string to the decoded response object. One that still fails after
+    /// `fetchRef`'s retry is left out rather than failing the whole batch, and its row reads "—".
     private func resolveRefs<T: Decodable & Sendable>(
         _ refs: Set<String>,
         as type: T.Type
     ) async -> [String: T] {
+        let results = await Self.concurrentMap(Array(refs), limit: Self.maxConcurrentRefRequests) { ref in
+            (ref, await self.fetchRef(ref, as: type))
+        }
         var cache = [String: T]()
-        await withTaskGroup(of: (String, T?).self) { group in
-            for ref in refs {
-                group.addTask {
-                    guard let url = URL(string: ref) else { return (ref, nil) }
-                    let result = try? await {
-                        let (data, response) = try await self.session.data(from: url)
-                        guard let http = response as? HTTPURLResponse,
-                              http.statusCode == 200 else { return nil as T? }
-                        return try? JSONDecoder().decode(T.self, from: data)
-                    }()
-                    return (ref, result)
-                }
-            }
-            for await (ref, result) in group {
-                if let result { cache[ref] = result }
-            }
+        for (ref, result) in results {
+            if let result { cache[ref] = result }
         }
         return cache
+    }
+
+    /// One Core API reference, with a second try if ESPN or the connection fails: a name
+    /// missing from a row of leaders is worth one more request. A 404 won't change, so it's final.
+    private func fetchRef<T: Decodable>(_ ref: String, as type: T.Type) async -> T? {
+        guard let url = URL(string: ref) else { return nil }
+        for attempt in 0..<2 {
+            if attempt > 0 {
+                try? await Task.sleep(nanoseconds: 300_000_000)
+            }
+            guard let (data, response) = try? await session.data(from: url),
+                  let status = (response as? HTTPURLResponse)?.statusCode else {
+                continue
+            }
+            if status == 200 {
+                return try? JSONDecoder().decode(T.self, from: data)
+            }
+            if status < 500 && status != 429 {
+                return nil
+            }
+        }
+        return nil
     }
 
     // MARK: - Fetch Rankings / Polls (Phase 6)
