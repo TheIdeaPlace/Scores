@@ -10,24 +10,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 - **The WNBA has Standings, Statistics, Teams, Transactions and Venues on Windows,** and `--wnba`,
   `--wnba-teams` and `--wnba-standings` go straight to them. The league view only had games and news.
-  Its games back reads like the NBA's, and if ESPN's standings don't answer, Standings and Teams say
-  there's no data rather than opening empty.
+  Its games back reads like the NBA's.
 - **Team Hub shows a team's real record and standing, on Windows and iPhone.** During the WNBA
   playoffs the Lynx, 33-11 and first in the West, read 0-2 and 8th, and teams that missed the playoffs
   read 0-0. In the MLB playoffs the Dodgers read 5th in the division they won. It's now the regular
   season's record and standing, the same as Standings, in every league but soccer, whose team pages
-  were already right. A college team's record leaves out its postseason once that starts, which
-  Standings counts. Favorites get the same record. If ESPN doesn't say what season it is, the record
-  stays off the page rather than risk showing the wrong one, and the rest of the page still loads.
+  were already right. From the start of a college team's postseason until the next regular season,
+  the record is labelled Regular Season, because Standings counts those postseason games and this
+  doesn't: Michigan basketball's 2026 reads 31-3 here and 37-3 there. Favorites on Windows get the
+  same record. If ESPN doesn't answer, the page says "Record not available right now" rather than
+  risk showing the wrong one, and the rest of the page still loads. On iPhone, Favorites no longer
+  asks ESPN for team details it never showed.
 - **College hockey teams have a record in Team Hub, on both apps.** ESPN's team page had none for men's
   college hockey. "Standing: 1st", which ESPN says of every college hockey team, is gone.
-- **College basketball and college hockey say when there's no standings data.** If ESPN's standings
-  don't answer, Standings and Teams say so, as college football already did, rather than listing
-  the first 50 teams in the country. A timeout now reads the same way in those leagues.
-- **Stat definitions on Alt+D are basketball's for the WNBA and college basketball.** They had a
-  general list that included goals.
+- **The WNBA and college leagues tell a failure from no data in Standings and Teams on Windows.** If
+  ESPN doesn't answer, or answers with an error, they say it isn't providing standings and to try
+  again, rather than opening empty or listing the first 50 teams in the country. College football
+  used to read that as no data, and now says the same. If ESPN answers and has none, they say
+  there's no data. The window title also goes back to what it was after a standings error.
+- **Stat definitions on Alt+D fit the league.** The WNBA and college basketball get the basketball
+  list and college football the football one. They had a general list that included goals.
 - **Screen readers no longer hear "division" for what isn't one.** Standings' tabs are "Standings",
-  and a Teams tab reads "Teams in Eastern Conference".
+  a Teams tab reads "Teams in Eastern Conference", and Team Hub says "1st in Western Conference" on
+  both apps rather than "1st in Western Conference Division".
 - **Team statistics on Windows rank the whole league, best first.** College basketball listed the
   first 50 teams of about 360, and every list ran highest to lowest, so the team with the most
   turnovers or the worst earned run average read as number one. Now the lowest comes first where
