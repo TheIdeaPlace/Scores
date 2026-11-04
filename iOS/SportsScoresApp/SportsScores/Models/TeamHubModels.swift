@@ -25,6 +25,11 @@ struct TeamHubTeamInfo {
     let venueCity: String?
     let coachName: String?
     let nextGame: TeamHubNextGame?
+    /// A failure cost the page its record, which a league with no record to show doesn't.
+    var recordUnavailable = false
+    /// A college team's postseason counts in Standings but not here, from when it starts until
+    /// the next regular season, so "overall" would be wrong: 31-3 here, 37-3 there.
+    var recordIsRegularSeasonOnly = false
 }
 
 struct TeamHubNextGame {

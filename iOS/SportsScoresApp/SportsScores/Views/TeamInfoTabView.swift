@@ -96,7 +96,8 @@ struct TeamInfoTabView: View {
                         Text(record)
                             .font(.headline)
                             .foregroundColor(accentColor)
-                            .accessibilityLabel("Record: \(record)")
+                            .accessibilityLabel(viewModel.teamInfo?.recordIsRegularSeasonOnly == true
+                                                ? "Regular season record: \(record)" : "Record: \(record)")
                     }
                 }
                 Spacer()
@@ -112,15 +113,22 @@ struct TeamInfoTabView: View {
         VStack(alignment: .leading, spacing: 8) {
             sectionHeader("Record")
 
-            HStack(spacing: 0) {
-                recordCell(label: "Overall", value: info.overallRecord ?? "–")
-                Divider().frame(height: 44).accessibilityHidden(true)
-                recordCell(label: "Home", value: info.homeRecord ?? "–")
-                Divider().frame(height: 44).accessibilityHidden(true)
-                recordCell(label: "Away", value: info.awayRecord ?? "–")
+            if info.recordUnavailable {
+                Text("Record not available right now")
+                    .font(.subheadline)
+                    .foregroundColor(.secondary)
+            } else {
+                HStack(spacing: 0) {
+                    recordCell(label: info.recordIsRegularSeasonOnly ? "Regular Season" : "Overall",
+                               value: info.overallRecord ?? "–")
+                    Divider().frame(height: 44).accessibilityHidden(true)
+                    recordCell(label: "Home", value: info.homeRecord ?? "–")
+                    Divider().frame(height: 44).accessibilityHidden(true)
+                    recordCell(label: "Away", value: info.awayRecord ?? "–")
+                }
+                .background(Color.secondary.opacity(0.05))
+                .cornerRadius(10)
             }
-            .background(Color.secondary.opacity(0.05))
-            .cornerRadius(10)
         }
         .padding(.bottom, 16)
     }
