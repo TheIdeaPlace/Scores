@@ -12,6 +12,7 @@ import csv
 import sys
 import webbrowser
 import time
+import traceback
 from datetime import datetime, timedelta
 from functools import partial
 from typing import Dict, List, Any, Union
@@ -220,6 +221,15 @@ def _focus_first_table(dialog):
         tables[0].setFocus()
     elif tabs:
         tabs[0].setFocus()
+
+
+def _message_row(text, name):
+    """A label can't take focus, so a screen reader user would hear nothing at all."""
+    row = QListWidget()
+    row.setAccessibleName(name)
+    row.addItem(text)
+    row.setCurrentRow(0)
+    return row
 
 
 class AudioOnFocusAction(QAction):
@@ -2495,9 +2505,11 @@ class GameDetailsView(BaseView):
         if field_name == "leaders" and isinstance(field_data, (list, dict)):
             try:
                 self._add_leaders_data_to_layout(layout, field_data)
-            except Exception as e:
-                error_label = QLabel(f"Leaders display error: {str(e)}")
-                layout.addWidget(error_label)
+            except Exception:
+                traceback.print_exc()
+                failure_row = _message_row("Leaders can't be shown for this game.", "Leaders")
+                layout.addWidget(failure_row)
+                _focus_once_active(dlg, failure_row.setFocus)
         elif field_name == "boxscore" and isinstance(field_data, dict):
             self._add_boxscore_data_to_layout(layout, field_data)
         elif field_name == "standings" and isinstance(field_data, dict):
@@ -3121,9 +3133,6 @@ class GameDetailsView(BaseView):
             team_widget = QWidget()
             team_layout = QVBoxLayout()
             
-            # Create leaders table for this team
-            leaders_table = LeadersTable(parent=self)
-            
             # Parse this team's statistical leaders
             team_leaders = team_data.get("leaders", [])
             rows = []
@@ -3151,31 +3160,12 @@ class GameDetailsView(BaseView):
                     ])
             
             if rows:
-                # Use custom headers for individual team view (no team column needed)
-                leaders_table.setColumnCount(3)
-                leaders_table.setHorizontalHeaderLabels(["Category", "Player", "Value"])
-                leaders_table.setRowCount(len(rows))
-                
-                for row, data_row in enumerate(rows):
-                    for col, value in enumerate(data_row):
-                        item = QTableWidgetItem(str(value))
-                        leaders_table.setItem(row, col, item)
-                
-                # Configure table appearance
-                leaders_table.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
-                leaders_table.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
-                leaders_table.setAlternatingRowColors(True)
-                leaders_table.verticalHeader().setVisible(False)
-                
-                # Resize columns
-                header = leaders_table.horizontalHeader()
-                header.setSectionResizeMode(QHeaderView.ResizeMode.ResizeToContents)
-                header.setSectionResizeMode(1, QHeaderView.ResizeMode.Stretch)  # Player name stretches
-                
-                # Set accessibility
-                leaders_table.setAccessibleName(f"{team_name} Statistical Leaders")
-                leaders_table.setAccessibleDescription(f"Statistical leaders for {team_name}. Use arrow keys to navigate.")
-                
+                leaders_table = LeadersTable()
+                # A tab is one team, so there's no Team column. The player's name stretches.
+                leaders_table.setup_columns(["Category", "Player", "Value"], stretch_column=1)
+                leaders_table.populate_data(rows, set_focus=False)
+                leaders_table.update_accessible_name(f"{team_name} Statistical Leaders")
+                leaders_table.update_accessible_description(f"Statistical leaders for {team_name}")
                 team_layout.addWidget(leaders_table)
             else:
                 team_layout.addWidget(QLabel(f"No statistical leaders available for {team_name}."))
@@ -11031,11 +11021,7 @@ class StatisticsViewDialog(QDialog):
             self._focus_stats_list()
 
     def _show_statistics_message(self, layout, message):
-        """A label can't take focus, so a screen reader user would hear nothing at all."""
-        self.stats_list = QListWidget()
-        self.stats_list.setAccessibleName(f"{self.stat_type.title()} statistics")
-        self.stats_list.addItem(message)
-        self.stats_list.setCurrentRow(0)
+        self.stats_list = _message_row(message, f"{self.stat_type.title()} statistics")
         layout.addWidget(self.stats_list)
 
     def _show_statistics(self, layout, statistics_data):
