@@ -17,7 +17,8 @@ struct TeamStatRanking: Identifiable {
     let categoryDisplayName: String  // "ERA", "Home Runs"
     let teamValue: String            // "3.58"
     let leagueRank: Int             // numeric rank, used for color coding
-    let rankDisplay: String          // ESPN display string: "2nd", "Tied-9th"
+    let rankDisplay: String          // "2nd", "Tied-9th", or in college "118th of 302"
+    let leagueSize: Int?             // how many teams the rank is out of, when known
 }
 
 // MARK: - Core API Team Statistics Response
@@ -175,6 +176,26 @@ struct TeamStatsByTeamResponse: Codable {
     /// Column metadata. ESPN repeats a category name once per split, and only
     /// the first copy is guaranteed to carry the `names` array.
     let categories: [CategoryMetadata]?
+    /// Only basketball has this. `count` can exceed the teams sent: ESPN sends 400 at most.
+    let pagination: Pagination?
+    /// Which season this really is, whatever was asked for. A past college football season is
+    /// type 3 even when asked for type 2.
+    let requestedSeason: RequestedSeason?
+
+    struct Pagination: Codable {
+        let count: Int?
+    }
+
+    struct RequestedSeason: Codable {
+        let year: Int?
+        let displayName: String?
+        let type: SeasonType?
+
+        struct SeasonType: Codable {
+            let type: Int?
+            let name: String?
+        }
+    }
 
     struct CategoryMetadata: Codable {
         let name: String?

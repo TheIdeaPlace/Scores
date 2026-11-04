@@ -131,7 +131,7 @@ struct TeamStatsTabView: View {
                             .font(.subheadline.bold()).monospacedDigit()
                         Text(r.rankDisplay)
                             .font(.caption)
-                            .foregroundColor(rankColor(r.leagueRank))
+                            .foregroundColor(rankColor(r))
                     }
                     .padding(.horizontal, 12).padding(.vertical, 5)
                     .background(idx % 2 == 0 ? Color.clear : Color.secondary.opacity(0.05))
@@ -163,7 +163,7 @@ struct TeamStatsTabView: View {
                         .frame(width: 70, alignment: .trailing)
                     Text("Rank")
                         .font(.caption.bold()).foregroundColor(.secondary)
-                        .frame(width: 80, alignment: .trailing)
+                        .frame(width: 100, alignment: .trailing)
                 }
                 .padding(.horizontal, 12).padding(.vertical, 6)
                 .background(Color.secondary.opacity(0.15))
@@ -179,8 +179,8 @@ struct TeamStatsTabView: View {
                             .frame(width: 70, alignment: .trailing)
                         Text(r.rankDisplay)
                             .font(.subheadline)
-                            .foregroundColor(rankColor(r.leagueRank))
-                            .frame(width: 80, alignment: .trailing)
+                            .foregroundColor(rankColor(r))
+                            .frame(width: 100, alignment: .trailing)
                     }
                     .padding(.horizontal, 12).padding(.vertical, 7)
                     .background(idx % 2 == 0 ? Color.clear : Color.secondary.opacity(0.05))
@@ -217,7 +217,7 @@ struct TeamStatsTabView: View {
                             .font(.subheadline.bold()).monospacedDigit()
                         Text(r.rankDisplay)
                             .font(.caption)
-                            .foregroundColor(rankColor(r.leagueRank))
+                            .foregroundColor(rankColor(r))
                     }
                     .padding(.horizontal, 12).padding(.vertical, 5)
                     .background(idx % 2 == 0 ? Color.clear : Color.secondary.opacity(0.05))
@@ -232,9 +232,13 @@ struct TeamStatsTabView: View {
 
     // MARK: - Helpers
 
-    private func rankColor(_ rank: Int) -> Color {
-        if rank <= 8  { return .green }
-        if rank <= 20 { return .primary }
+    /// Top quarter, middle, bottom. These are the places in a league of 32, so a college list
+    /// scales up to its own size: 118th of 302 isn't red.
+    private func rankColor(_ ranking: TeamStatRanking) -> Color {
+        let scale = Double(max(ranking.leagueSize ?? 32, 32)) / 32
+        let place = Double(ranking.leagueRank) / scale
+        if place <= 8  { return .green }
+        if place <= 20 { return .primary }
         return Color(.systemRed)
     }
 

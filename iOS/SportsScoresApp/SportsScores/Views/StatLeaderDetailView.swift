@@ -3,8 +3,9 @@
 //  SportsScores
 //
 //  Full leader list for a single stat category, opened via "View All".
-//  Immediately shows the 10 summary entries already in memory, then
-//  fetches the full list (limit=50) in the background.
+//  Immediately shows the 10 summary entries already in memory, then fetches
+//  the full list in the background: 50 players, or every team, so a college
+//  team's rank on its Team Hub can be found here too.
 //
 
 import SwiftUI
@@ -62,7 +63,7 @@ struct StatLeaderDetailView: View {
         loadError = nil
         do {
             let allCategories = summary.isTeamCategory
-                ? try await ESPNAPIService.shared.fetchTeamLeaders(for: sport, limit: 50)
+                ? try await ESPNAPIService.shared.fetchTeamLeaders(for: sport, limit: .max)
                 : try await ESPNAPIService.shared.fetchLeagueLeaders(for: sport, limit: 50)
             fullCategory = allCategories.first { $0.name == summary.name }
         } catch {

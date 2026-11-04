@@ -340,7 +340,7 @@ struct LeaderCategorySection: View {
                 HStack {
                     Text("#\(entry.rank)")
                         .font(.caption.bold()).foregroundColor(.secondary)
-                        .monospacedDigit().frame(width: 36, alignment: .trailing)
+                        .monospacedDigit().frame(width: 44, alignment: .trailing)
                     Text(entry.athleteName)
                         .font(.subheadline)
                     if hasTeams {
@@ -374,7 +374,7 @@ struct LeaderCategorySection: View {
                 HStack {
                     Text("#\(entry.rank)")
                         .font(.caption.bold()).foregroundColor(.secondary)
-                        .monospacedDigit().frame(width: 36, alignment: .trailing)
+                        .monospacedDigit().frame(width: 44, alignment: .trailing)
                     Text(entry.athleteName)
                         .font(.subheadline)
                     if hasTeams {

@@ -1,0 +1,646 @@
+//
+//  TeamStatsTests.swift
+//  SportsScoresTests
+//
+//  League team statistics and a team's ranks on its Team Hub, on real byteam and core API
+//  payloads with a stand-in for ESPN. tests/fixtures/team_stat_directions.json is the shared
+//  reference for which way a stat ranks; tests/unit/test_team_stats.py holds Windows to it.
+//
+
+import XCTest
+@testable import SportsScores
+
+final class TeamStatDirectionGridTests: XCTestCase {
+    private struct Grid: Decodable {
+        struct Row: Decodable {
+            let sport: String?
+            let split: String
+            let section: String
+            let stat: String
+            let higherIsBetter: Bool
+        }
+        struct RankCase: Decodable {
+            let why: String
+            let higherIsBetter: Bool
+            let values: [Double]
+            let ranks: [Int]
+        }
+        let lowIsGood: [String: [String]]
+        let catalog: [String: [Row]]
+        let beyondTheCatalog: [Row]
+        let rankGrid: [RankCase]
+    }
+
+    private func grid() throws -> Grid {
+        let url = Fixtures.repoRoot.appendingPathComponent("tests/fixtures/team_stat_directions.json")
+        return try JSONDecoder().decode(Grid.self, from: Data(contentsOf: url))
+    }
+
+    func testTheTableMatches() throws {
+        let shared = try grid().lowIsGood.mapValues { Set($0) }
+        XCTAssertEqual(TeamStatCatalog.lowIsGood, shared)
+    }
+
+    func testTheCatalogIsTheSharedOneInTheSameOrder() throws {
+        let catalog = try grid().catalog
+        let sports: [(String, Sport)] = [("baseball", .mlb), ("football", .nfl), ("basketball", .nba), ("hockey", .nhl)]
+        XCTAssertEqual(Set(catalog.keys), Set(sports.map { $0.0 }))
+        for (key, sport) in sports {
+            let specs = TeamStatCatalog.specs(for: sport)
+            let rows = try XCTUnwrap(catalog[key])
+            XCTAssertEqual(specs.map(\.key), rows.map { ($0.split == "opponent" ? "opponent." : "") + "\($0.section).\($0.stat)" })
+            XCTAssertEqual(specs.map(\.higherIsBetter), rows.map(\.higherIsBetter))
+        }
+    }
+
+    func testEverySpecGoesTheWayTheTableSays() throws {
+        for (key, rows) in try grid().catalog {
+            for row in rows {
+                let higher = TeamStatCatalog.higherIsBetter(sportKey: key, section: row.section, stat: row.stat,
+                                                            opponent: row.split == "opponent")
+                XCTAssertEqual(higher, row.higherIsBetter, "\(key) \(row.split) \(row.section).\(row.stat)")
+            }
+        }
+    }
+
+    func testTheRest() throws {
+        for row in try grid().beyondTheCatalog {
+            let higher = TeamStatCatalog.higherIsBetter(sportKey: try XCTUnwrap(row.sport), section: row.section,
+                                                        stat: row.stat, opponent: row.split == "opponent")
+            XCTAssertEqual(higher, row.higherIsBetter, "\(row.split) \(row.section).\(row.stat)")
+        }
+    }
+
+    func testTheRankGrid() throws {
+        for item in try grid().rankGrid {
+            let ranks = item.values.map {
+                TeamStatRanks.rank(of: $0, among: item.values, higherIsBetter: item.higherIsBetter)
+            }
+            XCTAssertEqual(ranks, item.ranks, item.why)
+        }
+    }
+
+    func testOrdinals() {
+        let reads = [1: "1st", 2: "2nd", 3: "3rd", 4: "4th", 11: "11th", 12: "12th", 13: "13th", 21: "21st", 22: "22nd",
+                     101: "101st", 111: "111th", 113: "113th", 118: "118th", 123: "123rd", 302: "302nd"]
+        for (number, text) in reads {
+            XCTAssertEqual(TeamStatRanks.ordinal(number), text)
+        }
+    }
+
+    func testHowARankReads() {
+        XCTAssertEqual(TeamStatRanks.display(rank: 9, tied: false, outOf: nil), "9th")
+        XCTAssertEqual(TeamStatRanks.display(rank: 9, tied: true, outOf: nil), "Tied-9th")
+        XCTAssertEqual(TeamStatRanks.display(rank: 118, tied: false, outOf: 302), "118th of 302")
+        XCTAssertEqual(TeamStatRanks.display(rank: 118, tied: true, outOf: 302), "Tied-118th of 302")
+    }
+}
+
+/// Stands in for ESPN. A route's answer is real data, and the byteam ones say they're from the
+/// season that was asked for, since "this season" depends on the day the tests run.
+private final class TeamStatsESPN: URLProtocol {
+    static let lock = NSLock()
+    static var requests = [String]()
+    static var answer: (String) -> (Int, Data) = { _ in (404, Data()) }
+    static var networkError: URLError.Code?
+
+    static func reset(_ answer: @escaping (String) -> (Int, Data)) {
+        lock.withLock {
+            requests = []
+            networkError = nil
+            self.answer = answer
+        }
+    }
+
+    static var byteamRequests: [String] {
+        lock.withLock { requests.filter { $0.contains("/statistics/byteam") } }
+    }
+
+    static var coreRequests: [String] {
+        lock.withLock { requests.filter { $0.contains("/seasons/") } }
+    }
+
+    override class func canInit(with request: URLRequest) -> Bool { true }
+    override class func canonicalRequest(for request: URLRequest) -> URLRequest { request }
+    override func stopLoading() {}
+
+    override func startLoading() {
+        guard let url = request.url else { return }
+        let (error, reply) = Self.lock.withLock { () -> (URLError.Code?, (Int, Data)) in
+            Self.requests.append(url.absoluteString)
+            return (Self.networkError, Self.answer(url.absoluteString))
+        }
+        if let error {
+            client?.urlProtocol(self, didFailWithError: URLError(error))
+            return
+        }
+        let response = HTTPURLResponse(url: url, statusCode: reply.0, httpVersion: nil, headerFields: nil)!
+        client?.urlProtocol(self, didReceive: response, cacheStoragePolicy: .notAllowed)
+        client?.urlProtocol(self, didLoad: reply.1)
+        client?.urlProtocolDidFinishLoading(self)
+    }
+}
+
+/// A real payload saying it's from the season in the URL. The rest of it is as ESPN sent it.
+private func byteam(_ name: String, askedBy url: String) -> (Int, Data) {
+    guard let data = try? Fixtures.data(name),
+          var object = (try? JSONSerialization.jsonObject(with: data)) as? [String: Any],
+          var season = object["requestedSeason"] as? [String: Any],
+          let range = url.range(of: #"season=\d+"#, options: .regularExpression),
+          let year = Int(url[range].dropFirst("season=".count)) else {
+        return (200, (try? Fixtures.data(name)) ?? Data())
+    }
+    season["year"] = year
+    object["requestedSeason"] = season
+    return (200, (try? JSONSerialization.data(withJSONObject: object)) ?? Data())
+}
+
+private func core(_ name: String) -> (Int, Data) {
+    (200, (try? Fixtures.data(name)) ?? Data())
+}
+
+final class TeamStatsFixtureTests: XCTestCase {
+    func testEveryByteamFixtureDecodes() throws {
+        let files = try Fixtures.named("byteam_")
+        XCTAssertGreaterThanOrEqual(files.count, 12)
+        for file in files {
+            let data = try Data(contentsOf: file)
+            let response = try JSONDecoder().decode(TeamStatsByTeamResponse.self, from: data)
+            XCTAssertEqual(response.teams?.count, try Fixtures.rawCount("teams", of: data), file.lastPathComponent)
+            XCTAssertNotNil(response.requestedSeason?.type?.type, file.lastPathComponent)
+        }
+    }
+
+    func testPaginationAndTheSeasonAreRead() throws {
+        let response = try JSONDecoder().decode(TeamStatsByTeamResponse.self, from: Fixtures.data("byteam_NCAAM_2026.json"))
+        XCTAssertEqual(response.pagination?.count, 722)
+        XCTAssertEqual(response.requestedSeason?.year, 2026)
+        XCTAssertEqual(response.requestedSeason?.type?.name, "Regular Season")
+    }
+
+    func testFootballHasNoPagination() throws {
+        let response = try JSONDecoder().decode(TeamStatsByTeamResponse.self, from: Fixtures.data("byteam_NFL.json"))
+        XCTAssertNil(response.pagination)
+    }
+
+    func testEveryCoreFixtureDecodes() throws {
+        for name in ["core_team_stats_NBA_29.json", "core_team_stats_NCAAM_150.json", "core_team_stats_NFL_22.json"] {
+            let response = try JSONDecoder().decode(CoreTeamStatisticsResponse.self, from: Fixtures.data(name))
+            XCTAssertFalse(response.splits?.categories?.isEmpty ?? true, name)
+        }
+    }
+}
+
+final class DivisionOneTests: XCTestCase {
+    private func load(_ name: String) throws -> TeamStatsByTeamResponse {
+        try JSONDecoder().decode(TeamStatsByTeamResponse.self, from: Fixtures.data(name))
+    }
+
+    private func ids(_ teams: [LeagueTeamStats.Team]) -> Set<String> {
+        Set(teams.compactMap(\.team.id))
+    }
+
+    func testASchoolWithOneGameIsDroppedLateInASeason() throws {
+        let response = try load("byteam_NCAAM_2026.json")
+        XCTAssertTrue(ids(response.teams ?? []).contains("2145"), "the fixture should have UCCS, with one game")
+        var expected = ids(response.teams ?? [])
+        expected.remove("2145")
+        XCTAssertEqual(ids(LeagueTeamStats.divisionOneTeams(in: response)), expected)
+    }
+
+    func testOpeningWeekTellsThemApartThoughEveryoneHasPlayedOnce() throws {
+        let response = try load("byteam_NCAAM.json")
+        let kept = LeagueTeamStats.divisionOneTeams(in: response)
+        XCTAssertLessThan(kept.count, response.teams?.count ?? 0, "the fixture should have a non-Division I school")
+        XCTAssertTrue(ids(kept).contains("150"), "Duke")
+        for team in kept {
+            XCTAssertTrue((team.categories ?? []).contains { $0.splitId == "900" }, team.team.displayName ?? "")
+        }
+    }
+
+    /// (games played, whether ESPN has its opponents' numbers), for teams named by position.
+    private func league(_ teams: [(Double?, Bool)]) -> TeamStatsByTeamResponse {
+        let built = teams.enumerated().map { index, team -> TeamStatsByTeamResponse.TeamStats in
+            var categories = [TeamStatsByTeamResponse.TeamStats.TeamCategory(
+                name: "general", splitId: "0", totals: [team.0.map { "\($0)" } ?? "-"], values: [team.0])]
+            if team.1 {
+                categories.append(.init(name: "general", splitId: "900", totals: ["1"], values: [1]))
+            }
+            return .init(team: .init(id: "\(index)", abbreviation: nil, displayName: "T\(index)", name: nil), categories: categories)
+        }
+        let meta = TeamStatsByTeamResponse.CategoryMetadata(name: "general", names: ["gamesPlayed"],
+                                                            displayNames: ["Games Played"], descriptions: nil)
+        return TeamStatsByTeamResponse(teams: built, categories: [meta], pagination: nil, requestedSeason: nil)
+    }
+
+    func testASchoolMovingUpStaysOnceTheSeasonIsUnderWay() {
+        XCTAssertEqual(ids(LeagueTeamStats.divisionOneTeams(in: league([(33, true), (33, false), (1, false)]))), ["0", "1"])
+    }
+
+    func testASchoolMovingUpIsOutForTheFirstFewGames() {
+        XCTAssertEqual(ids(LeagueTeamStats.divisionOneTeams(in: league([(3, true), (3, false)]))), ["0"])
+    }
+
+    func testADivisionOneTeamWithFewGamesStays() {
+        XCTAssertEqual(ids(LeagueTeamStats.divisionOneTeams(in: league([(30, true), (3, true)]))), ["0", "1"])
+    }
+
+    func testAListWithNoOpponentsNumbersFallsBackToGames() {
+        XCTAssertEqual(ids(LeagueTeamStats.divisionOneTeams(in: league([(4, false), (2, false), (1, false)]))), ["0", "1"])
+    }
+
+    func testATeamWithNoGamesNumberStaysRatherThanVanishing() {
+        XCTAssertEqual(ids(LeagueTeamStats.divisionOneTeams(in: league([(4, false), (nil, false)]))), ["0", "1"])
+    }
+
+    func testAProLeagueIsNeverFiltered() {
+        let teams = league([(3, false), (1, false)])
+        XCTAssertEqual(LeagueTeamStats(teams, sport: .nba).teams.count, 2)
+        XCTAssertEqual(LeagueTeamStats(teams, sport: .ncaam).teams.count, 1)
+    }
+}
+
+final class TeamStatsRequestTests: XCTestCase {
+    private var service: ESPNAPIService!
+
+    override func setUp() {
+        let config = URLSessionConfiguration.ephemeral
+        config.protocolClasses = [TeamStatsESPN.self]
+        service = ESPNAPIService(session: URLSession(configuration: config))
+    }
+
+    private func category(_ categories: [LeagueLeaderCategory], _ key: String) throws -> LeagueLeaderCategory {
+        try XCTUnwrap(categories.first { $0.name == key }, key)
+    }
+
+    // MARK: Which season
+
+    func testAsksForTheRegularSeasonOfThisSeasonAtOnce() async throws {
+        TeamStatsESPN.reset { byteam("byteam_NBA.json", askedBy: $0) }
+        let categories = try await service.fetchTeamLeaders(for: .nba, limit: 50)
+        XCTAssertFalse(categories.isEmpty)
+        let asked = TeamStatsESPN.byteamRequests
+        XCTAssertEqual(asked.count, 1)
+        XCTAssertTrue(asked[0].contains("season=\(Sport.nba.currentSeasonYear)&seasontype=2"), asked[0])
+        XCTAssertTrue(asked[0].contains("limit=500"), asked[0])
+        XCTAssertEqual(try category(categories, "offensive.avgPoints").leaders.count, 30)
+    }
+
+    func testThePlayoffTeamsAreNotWhatItShowsOutOfSeason() async throws {
+        // ESPN's own default, once a season ends: the 8 playoff teams, where it has 15.
+        TeamStatsESPN.reset { url in
+            byteam(url.contains("seasontype=2") ? "byteam_WNBA.json" : "byteam_WNBA_default.json", askedBy: url)
+        }
+        let categories = try await service.fetchTeamLeaders(for: .wnba, limit: 50)
+        XCTAssertEqual(try category(categories, "offensive.avgPoints").leaders.count, 15)
+        XCTAssertEqual(TeamStatsESPN.byteamRequests.count, 1)
+    }
+
+    func testMLBsWholeLeagueNotItsPlayoffTeams() async throws {
+        TeamStatsESPN.reset { url in
+            byteam(url.contains("seasontype=2") ? "byteam_MLB.json" : "byteam_MLB_default.json", askedBy: url)
+        }
+        let categories = try await service.fetchTeamLeaders(for: .mlb, limit: 50)
+        let raw = try JSONDecoder().decode(TeamStatsByTeamResponse.self, from: Fixtures.data("byteam_MLB.json"))
+        XCTAssertEqual(try category(categories, "batting.runs").leaders.count, raw.teams?.count)
+    }
+
+    func testANewSeasonWithNothingYetIsLastSeasons() async throws {
+        let thisYear = Sport.nfl.currentSeasonYear
+        TeamStatsESPN.reset { url in
+            url.contains("season=\(thisYear)&") ? (200, Data("{}".utf8)) : byteam("byteam_NFL.json", askedBy: url)
+        }
+        let categories = try await service.fetchTeamLeaders(for: .nfl)
+        XCTAssertFalse(categories.isEmpty)
+        let asked = TeamStatsESPN.byteamRequests
+        XCTAssertEqual(asked.count, 2)
+        XCTAssertTrue(asked[1].contains("season=\(thisYear - 1)&seasontype=2"), asked[1])
+    }
+
+    func testASeasonESPNHasNotGotYetCanBeA500() async throws {
+        // July to October for the NBA and college basketball, by the calendar.
+        let thisYear = Sport.nba.currentSeasonYear
+        TeamStatsESPN.reset { url in
+            url.contains("season=\(thisYear)&") ? (500, Data()) : byteam("byteam_NBA.json", askedBy: url)
+        }
+        let categories = try await service.fetchTeamLeaders(for: .nba)
+        XCTAssertFalse(categories.isEmpty)
+    }
+
+    func testEverySeasonFailingIsAnErrorNotNoData() async throws {
+        TeamStatsESPN.reset { _ in (500, Data()) }
+        do {
+            _ = try await service.fetchTeamLeaders(for: .nba)
+            XCTFail("it should have thrown")
+        } catch is APIError {
+            XCTAssertEqual(TeamStatsESPN.byteamRequests.count, 2)
+        }
+    }
+
+    func testNothingForEitherSeasonIsNothingToShow() async throws {
+        TeamStatsESPN.reset { _ in (200, Data("{}".utf8)) }
+        let categories = try await service.fetchTeamLeaders(for: .nba)
+        XCTAssertTrue(categories.isEmpty)
+    }
+
+    func testAStalledNetworkIsAnErrorNotAnotherSeason() async throws {
+        TeamStatsESPN.reset { _ in (200, Data()) }
+        TeamStatsESPN.lock.withLock { TeamStatsESPN.networkError = .timedOut }
+        do {
+            _ = try await service.fetchTeamLeaders(for: .nba)
+            XCTFail("it should have thrown")
+        } catch is URLError {
+            XCTAssertEqual(TeamStatsESPN.byteamRequests.count, 1)
+        }
+    }
+
+    func testAPreseasonAnswerIsNotShown() async throws {
+        let thisYear = Sport.nba.currentSeasonYear
+        TeamStatsESPN.reset { url in
+            let (status, data) = byteam("byteam_NBA.json", askedBy: url)
+            guard url.contains("season=\(thisYear)&"),
+                  var object = (try? JSONSerialization.jsonObject(with: data)) as? [String: Any],
+                  var season = object["requestedSeason"] as? [String: Any] else { return (status, data) }
+            season["type"] = ["type": 1, "name": "Preseason"]
+            object["requestedSeason"] = season
+            return (status, (try? JSONSerialization.data(withJSONObject: object)) ?? Data())
+        }
+        _ = try await service.fetchTeamLeaders(for: .nba)
+        XCTAssertTrue(TeamStatsESPN.byteamRequests.last?.contains("season=\(thisYear - 1)&") ?? false)
+    }
+
+    func testAPayloadIsAskedForOnceAcrossItsUsers() async throws {
+        TeamStatsESPN.reset { byteam("byteam_NBA.json", askedBy: $0) }
+        _ = try await service.fetchTeamLeaders(for: .nba)
+        _ = try await service.fetchTeamLeaders(for: .nba, limit: 50)
+        XCTAssertEqual(TeamStatsESPN.byteamRequests.count, 1)
+    }
+
+    // MARK: Past the most ESPN returns
+
+    private func answerByDirection(_ url: String) -> (Int, Data) {
+        if url.contains(":desc") { return byteam("byteam_NCAAM_2026_desc.json", askedBy: url) }
+        if url.contains(":asc") { return byteam("byteam_NCAAM_2026_asc.json", askedBy: url) }
+        return byteam("byteam_NCAAM_2026.json", askedBy: url)
+    }
+
+    func testAListCutShortIsAskedForEachWay() async throws {
+        TeamStatsESPN.reset { [self] in answerByDirection($0) }
+        let categories = try await service.fetchTeamLeaders(for: .ncaam, limit: .max)
+        let asked = TeamStatsESPN.byteamRequests
+        XCTAssertEqual(asked.count, 3)
+        XCTAssertFalse(asked[0].contains("sort="))
+        XCTAssertTrue(asked[1].contains("sort=offensive.avgTurnovers:desc"), asked[1])
+        XCTAssertTrue(asked[2].contains("sort=offensive.avgTurnovers:asc"), asked[2])
+
+        var wanted = Set<String>()
+        for name in ["byteam_NCAAM_2026.json", "byteam_NCAAM_2026_desc.json", "byteam_NCAAM_2026_asc.json"] {
+            let raw = try JSONDecoder().decode(TeamStatsByTeamResponse.self, from: Fixtures.data(name))
+            wanted.formUnion((raw.teams ?? []).compactMap(\.team.displayName))
+        }
+        wanted = wanted.filter { !$0.hasPrefix("Colorado Colorado Springs") }  // one game
+        let listed = try category(categories, "offensive.avgPoints").leaders.compactMap { $0.teamNames?.displayName }
+        XCTAssertEqual(Set(listed), wanted)
+        XCTAssertEqual(listed.count, wanted.count, "each team once")
+    }
+
+    func testAFailurePartWayFailsTheLot() async throws {
+        for direction in [":desc", ":asc"] {
+            let config = URLSessionConfiguration.ephemeral
+            config.protocolClasses = [TeamStatsESPN.self]
+            let fresh = ESPNAPIService(session: URLSession(configuration: config))
+            TeamStatsESPN.reset { [self] url in url.contains(direction) ? (500, Data()) : answerByDirection(url) }
+            do {
+                _ = try await fresh.fetchTeamLeaders(for: .ncaam)
+                XCTFail("a list with teams cut out still looks whole, with the ranks after them wrong")
+            } catch is APIError {
+                XCTAssertFalse(TeamStatsESPN.byteamRequests.contains { $0.contains("season=\(Sport.ncaam.currentSeasonYear - 1)") },
+                               "not last season instead")
+            }
+        }
+    }
+
+    func testAListThatFitsIsAskedForOnce() async throws {
+        TeamStatsESPN.reset { byteam("byteam_NBA.json", askedBy: $0) }
+        _ = try await service.fetchTeamLeaders(for: .nba)
+        XCTAssertFalse(TeamStatsESPN.byteamRequests.contains { $0.contains("sort=") })
+    }
+
+    func testFootballHasNoColumnToSortBySoNeverAsks() async throws {
+        TeamStatsESPN.reset { url in
+            guard let data = try? Fixtures.data("byteam_NFL.json"),
+                  var object = (try? JSONSerialization.jsonObject(with: data)) as? [String: Any] else { return (500, Data()) }
+            object["pagination"] = ["count": 400]
+            return (200, (try? JSONSerialization.data(withJSONObject: object)) ?? Data())
+        }
+        _ = try await service.fetchTeamLeaders(for: .nfl)
+        XCTAssertFalse(TeamStatsESPN.byteamRequests.contains { $0.contains("sort=") })
+    }
+
+    // MARK: Direction
+
+    private func values(_ category: LeagueLeaderCategory) -> [Double] {
+        category.leaders.compactMap { Double($0.displayValue.replacingOccurrences(of: ",", with: "")) }
+    }
+
+    func testLowestFirstWhereLowIsGood() async throws {
+        TeamStatsESPN.reset { byteam("byteam_NBA.json", askedBy: $0) }
+        let categories = try await service.fetchTeamLeaders(for: .nba, limit: .max)
+        for key in ["offensive.avgTurnovers", "general.avgFouls", "opponent.offensive.avgPoints"] {
+            let numbers = values(try category(categories, key))
+            XCTAssertEqual(numbers, numbers.sorted(), key)
+            XCTAssertLessThan(numbers.first ?? 0, numbers.last ?? 0, key)
+        }
+    }
+
+    func testHighestFirstWhereHighIsGood() async throws {
+        TeamStatsESPN.reset { byteam("byteam_NBA.json", askedBy: $0) }
+        let categories = try await service.fetchTeamLeaders(for: .nba, limit: .max)
+        let numbers = values(try category(categories, "offensive.avgPoints"))
+        XCTAssertEqual(numbers, numbers.sorted(by: >))
+    }
+
+    func testTeamsLevelShareARankAndTheNextRankCountsThem() async throws {
+        TeamStatsESPN.reset { byteam("byteam_NFL.json", askedBy: $0) }
+        let categories = try await service.fetchTeamLeaders(for: .nfl, limit: .max)
+        let leaders = try category(categories, "miscellaneous.totalGiveaways").leaders
+        let numbers = values(try category(categories, "miscellaneous.totalGiveaways"))
+        XCTAssertEqual(numbers, numbers.sorted())
+        XCTAssertLessThan(Set(numbers).count, numbers.count, "the fixture should have a tie")
+        for (entry, number) in zip(leaders, numbers) {
+            XCTAssertEqual(entry.rank, 1 + numbers.filter { $0 < number }.count, entry.athleteName)
+        }
+    }
+
+    func testTheLimitCutsTheList() async throws {
+        TeamStatsESPN.reset { byteam("byteam_NBA.json", askedBy: $0) }
+        let categories = try await service.fetchTeamLeaders(for: .nba, limit: 3)
+        XCTAssertEqual(try category(categories, "offensive.avgPoints").leaders.count, 3)
+    }
+
+    // MARK: Team Hub agrees with the league list
+
+    private func hub(sport: Sport, teamId: String, core coreFile: String, byteam byteamFile: String) async throws -> [TeamStatRanking] {
+        TeamStatsESPN.reset { url in
+            url.contains("/seasons/") ? core(coreFile) : byteam(byteamFile, askedBy: url)
+        }
+        return try await service.fetchTeamStatRankings(teamId: teamId, sport: sport)
+    }
+
+    /// Every own-split stat the list shows that the Team Hub also has, read off the list for this team.
+    private func assertAgree(sport: Sport, teamId: String, teamName: String, rankings: [TeamStatRanking],
+                             core coreFile: String, atLeast: Int, file: StaticString = #filePath, line: UInt = #line) async throws {
+        let list = try await service.fetchTeamLeaders(for: sport, limit: .max)
+        let response = try JSONDecoder().decode(CoreTeamStatisticsResponse.self, from: Fixtures.data(coreFile))
+        var checked = 0
+        for spec in TeamStatCatalog.specs(for: sport) where spec.split == .own {
+            let stat = response.splits?.categories?
+                .first { $0.name?.lowercased() == spec.section.lowercased() }?
+                .stats?.first { $0.name == spec.stat }
+            guard let shown = stat?.displayName, let category = list.first(where: { $0.name == spec.key }),
+                  let row = rankings.first(where: { $0.categoryDisplayName == shown && $0.teamValue == stat?.displayValue }),
+                  let entry = category.leaders.first(where: { $0.teamNames?.displayName == teamName }) else { continue }
+            checked += 1
+            XCTAssertEqual(row.leagueRank, entry.rank, "\(spec.key)", file: file, line: line)
+        }
+        XCTAssertGreaterThanOrEqual(checked, atLeast, "enough stats to show they agree", file: file, line: line)
+    }
+
+    func testTheHubAgreesWithTheListForAnNBATeam() async throws {
+        let rankings = try await hub(sport: .nba, teamId: "29", core: "core_team_stats_NBA_29.json", byteam: "byteam_NBA.json")
+        try await assertAgree(sport: .nba, teamId: "29", teamName: "Memphis Grizzlies", rankings: rankings,
+                              core: "core_team_stats_NBA_29.json", atLeast: 10)
+    }
+
+    func testTheHubAgreesWithTheListForACollegeTeam() async throws {
+        let rankings = try await hub(sport: .ncaam, teamId: "150", core: "core_team_stats_NCAAM_150.json", byteam: "byteam_NCAAM.json")
+        try await assertAgree(sport: .ncaam, teamId: "150", teamName: "Duke Blue Devils", rankings: rankings,
+                              core: "core_team_stats_NCAAM_150.json", atLeast: 10)
+    }
+
+    func testTheHubAgreesWithTheListForAnNFLTeam() async throws {
+        let rankings = try await hub(sport: .nfl, teamId: "22", core: "core_team_stats_NFL_22.json", byteam: "byteam_NFL.json")
+        try await assertAgree(sport: .nfl, teamId: "22", teamName: "Arizona Cardinals", rankings: rankings,
+                              core: "core_team_stats_NFL_22.json", atLeast: 5)
+    }
+
+    func testAPerGameStatESPNHasNoRankForNowHasOne() async throws {
+        let rankings = try await hub(sport: .nba, teamId: "29", core: "core_team_stats_NBA_29.json", byteam: "byteam_NBA.json")
+        XCTAssertNotNil(rankings.first { $0.categoryDisplayName == "Points Per Game" })
+    }
+
+    func testATotalReadsItsOwnRankNotESPNsPerGameOne() async throws {
+        // The core API has the Grizzlies' 192 assists Tied-5th. They're 11th in that list.
+        let rankings = try await hub(sport: .nba, teamId: "29", core: "core_team_stats_NBA_29.json", byteam: "byteam_NBA.json")
+        let league = try JSONDecoder().decode(TeamStatsByTeamResponse.self, from: Fixtures.data("byteam_NBA.json"))
+        let standing = try XCTUnwrap(LeagueTeamStats(league, sport: .nba).standing(ofTeam: "29", section: "offensive", stat: "assists"))
+        let assists = try XCTUnwrap(rankings.first { $0.categoryDisplayName == "Assists" })
+        XCTAssertEqual(assists.leagueRank, standing.rank)
+    }
+
+    func testAProRankHasNoOutOf() async throws {
+        let rankings = try await hub(sport: .nba, teamId: "29", core: "core_team_stats_NBA_29.json", byteam: "byteam_NBA.json")
+        XCTAssertFalse(rankings.isEmpty)
+        XCTAssertFalse(rankings.contains { $0.rankDisplay.contains(" of ") })
+        XCTAssertTrue(rankings.allSatisfy { $0.leagueSize == 30 })
+    }
+
+    func testACollegeRankSaysWhatItsOutOf() async throws {
+        let rankings = try await hub(sport: .ncaam, teamId: "150", core: "core_team_stats_NCAAM_150.json", byteam: "byteam_NCAAM.json")
+        XCTAssertFalse(rankings.isEmpty)
+        let size = try XCTUnwrap(rankings.first?.leagueSize)
+        XCTAssertTrue(rankings.allSatisfy { $0.rankDisplay.hasSuffix(" of \(size)") }, "\(rankings.map(\.rankDisplay))")
+    }
+
+    func testCollegeRanksPastThirtyFourAreKept() async throws {
+        // With no list to rank against, ESPN's own: Duke's points are Tied-118th.
+        TeamStatsESPN.reset { url in
+            url.contains("/seasons/") ? core("core_team_stats_NCAAM_150.json") : (500, Data())
+        }
+        let rankings = try await service.fetchTeamStatRankings(teamId: "150", sport: .ncaam)
+        let points = try XCTUnwrap(rankings.first { $0.categoryDisplayName == "Points" })
+        XCTAssertEqual(points.rankDisplay, "Tied-118th")
+        XCTAssertNil(points.leagueSize)
+    }
+
+    func testAProRankPastTheEndOfTheLeagueIsStillHidden() async throws {
+        // Kick return fair catch percentage reads 200th in the NFL's core payload.
+        TeamStatsESPN.reset { url in
+            url.contains("/seasons/") ? core("core_team_stats_NFL_22.json") : (500, Data())
+        }
+        let rankings = try await service.fetchTeamStatRankings(teamId: "22", sport: .nfl)
+        XCTAssertFalse(rankings.isEmpty)
+        XCTAssertTrue(rankings.allSatisfy { $0.leagueRank <= 34 }, "\(rankings.map(\.leagueRank).max() ?? 0)")
+    }
+
+    func testARankPastTheLeaguesSizeIsHiddenWithTheListToo() async throws {
+        let rankings = try await hub(sport: .nfl, teamId: "22", core: "core_team_stats_NFL_22.json", byteam: "byteam_NFL.json")
+        let size = try XCTUnwrap(rankings.first?.leagueSize)
+        XCTAssertTrue(rankings.allSatisfy { $0.leagueRank <= size })
+    }
+
+    func testAListFromAnotherSeasonIsNotRankedAgainst() async throws {
+        let thisYear = Sport.nba.currentSeasonYear
+        TeamStatsESPN.reset { url in
+            if url.contains("/seasons/") { return core("core_team_stats_NBA_29.json") }
+            // This season's list has nothing, so the store settles on last season's.
+            return url.contains("season=\(thisYear)&") ? (200, Data("{}".utf8)) : byteam("byteam_NBA.json", askedBy: url)
+        }
+        let rankings = try await service.fetchTeamStatRankings(teamId: "29", sport: .nba)
+        XCTAssertTrue(rankings.allSatisfy { $0.leagueSize == nil })
+        XCTAssertNil(rankings.first { $0.categoryDisplayName == "Points Per Game" }, "ESPN has no rank for it")
+    }
+
+    // MARK: Team Hub's season
+
+    func testTheHubAsksOnlyForTheRegularSeasonInThisSeasonThenLast() async throws {
+        let thisYear = Sport.nfl.currentSeasonYear
+        TeamStatsESPN.reset { url in
+            if url.contains("/statistics/byteam") { return byteam("byteam_NFL.json", askedBy: url) }
+            return url.contains("/seasons/\(thisYear - 1)/types/2/") ? core("core_team_stats_NFL_22.json") : (404, Data())
+        }
+        let rankings = try await service.fetchTeamStatRankings(teamId: "22", sport: .nfl)
+        XCTAssertFalse(rankings.isEmpty)
+        let asked = TeamStatsESPN.coreRequests
+        XCTAssertEqual(asked.count, 2, "\(asked)")
+        XCTAssertTrue(asked[0].contains("/seasons/\(thisYear)/types/2/"), asked[0])
+        XCTAssertTrue(asked[1].contains("/seasons/\(thisYear - 1)/types/2/"), asked[1])
+    }
+
+    func testTheHubNeverFallsThroughToAPreseason() async throws {
+        TeamStatsESPN.reset { url in
+            if url.contains("/statistics/byteam") { return (200, Data("{}".utf8)) }
+            return url.contains("/types/1/") ? core("core_team_stats_NFL_22.json") : (404, Data())
+        }
+        let rankings = try await service.fetchTeamStatRankings(teamId: "22", sport: .mlb)
+        XCTAssertTrue(rankings.isEmpty)
+        XCTAssertFalse(TeamStatsESPN.coreRequests.contains { $0.contains("/types/1/") || $0.contains("/types/3/") })
+    }
+
+    func testSoccerIsFiledUnderTypeOne() async throws {
+        let sport = try XCTUnwrap(Sport.soccerLeagues.first)
+        TeamStatsESPN.reset { _ in (404, Data()) }
+        _ = try await service.fetchTeamStatRankings(teamId: "359", sport: sport)
+        XCTAssertTrue(TeamStatsESPN.coreRequests.first?.contains("/types/1/") ?? false)
+        XCTAssertTrue(TeamStatsESPN.byteamRequests.isEmpty, "ESPN has none, and answers with a 500")
+    }
+
+    func testAStalledNetworkOnTheHubIsAnError() async throws {
+        TeamStatsESPN.reset { _ in (200, Data()) }
+        TeamStatsESPN.lock.withLock { TeamStatsESPN.networkError = .timedOut }
+        do {
+            _ = try await service.fetchTeamStatRankings(teamId: "22", sport: .nfl)
+            XCTFail("it should have thrown")
+        } catch is URLError {
+            XCTAssertEqual(TeamStatsESPN.coreRequests.count, 1, "not another season")
+        }
+    }
+
+    func testAFailedCoreRequestIsNoRankingsNotAnError() async throws {
+        TeamStatsESPN.reset { url in
+            url.contains("/statistics/byteam") ? byteam("byteam_NFL.json", askedBy: url) : (500, Data())
+        }
+        let rankings = try await service.fetchTeamStatRankings(teamId: "22", sport: .nfl)
+        XCTAssertTrue(rankings.isEmpty)
+    }
+}
