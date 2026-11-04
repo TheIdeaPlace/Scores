@@ -10,6 +10,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 - **Utah is in the Central Division in the NHL standings on Windows.** 1.0.1 said it was, but ESPN
   spells it differently in standings than on its team page, so it stayed in a group of its own.
+- **No more blank rows in Live Scores, Venue Details and the bowl list.** They were only spacing,
+  and a screen reader stopped on each one to say "blank".
 - **Player statistics on Windows get past ESPN's frequent failures.** ESPN's feed often answers
   with an error for a league it served a moment ago, mostly college basketball, and the dialog came
   up with no leaders. It now asks again, and if ESPN still won't answer, it says so and suggests
