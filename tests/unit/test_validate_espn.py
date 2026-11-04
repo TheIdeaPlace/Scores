@@ -1045,29 +1045,93 @@ class TestOtherSources:
         v.check_mlb_extras(FakeHttp(default=(200, {"leagueLeaders": []})), report, {"MLB": in_season})
         assert statuses(report, "App: wild card") == [expected]
 
-    @pytest.mark.parametrize("in_season,expected", [(True, v.FAIL), (False, v.WARN)])
-    def test_no_venues(self, monkeypatch, in_season, expected):
+    def venues_of(self, monkeypatch, venues, info=None, seasons=None):
+        """check_venues with these venues for every league, and a team page with this venue."""
+        import espn_api
         from services import venue_service
-        monkeypatch.setattr(venue_service.VenueService, "get_venues_for_league", lambda self, key: {})
-        report = v.Report()
-        v.check_venues(FakeHttp(), report, {"NFL": in_season, "NHL": in_season})
-        assert statuses(report, "App: venues") == [expected, expected]
 
-    def test_venues_are_asked_for_by_the_key_the_service_knows(self, monkeypatch):
+        def get_venues(self, key):
+            if isinstance(venues, Exception):
+                raise venues
+            return venues
+
+        def get_info(league, team):
+            if isinstance(info, Exception):
+                raise info
+            return {"venue_name": "A Stadium"} if info is None else info
+
+        monkeypatch.setattr(venue_service.VenueService, "get_venues_for_league", get_venues)
+        monkeypatch.setattr(espn_api, "get_team_info", get_info)
+        report = v.Report()
+        v.check_venues(FakeHttp(), report, seasons or {})
+        return report
+
+    @staticmethod
+    def venues(count):
+        return {str(i): {"name": f"Venue {i}", "home_teams": [{"id": str(i)}]} for i in range(count)}
+
+    def test_every_league_is_asked_for_by_the_key_the_service_knows(self, monkeypatch):
         """The service's keys are lower case. "NFL" gets nothing, whatever ESPN says."""
+        import espn_api
         from services import venue_service
         asked = []
 
         def fake(self, key):
             asked.append(key)
             assert key in self.leagues
-            return {"1": {"name": "A Stadium"}}
+            return TestOtherSources.venues(400)
 
         monkeypatch.setattr(venue_service.VenueService, "get_venues_for_league", fake)
+        monkeypatch.setattr(espn_api, "get_team_info", lambda league, team: {"venue_name": "A Stadium"})
         report = v.Report()
         v.check_venues(FakeHttp(), report, {})
-        assert asked == ["nfl", "nhl"]
+        assert asked == ["mlb", "nfl", "nba", "nhl", "wnba", "ncaaf", "ncaam", "ncaawb", "ncaah", "ncaawh"]
         assert not report.failed
+        assert statuses(report, "App: venues") == [v.PASS] * 10
+        assert "400 venues, 400 home teams" in detail(report, "App: venues")
+
+    def test_no_venues_fails_even_out_of_season(self, monkeypatch):
+        """It reaches back to last season, so an off-season is no excuse."""
+        report = self.venues_of(monkeypatch, {}, seasons={"NFL": False})
+        assert statuses(report, "App: venues") == [v.FAIL] * 10
+
+    def test_it_raising_is_a_failure(self, monkeypatch):
+        report = self.venues_of(monkeypatch, RuntimeError("ESPN did not answer"))
+        assert statuses(report, "App: venues") == [v.FAIL] * 10
+        assert "ESPN did not answer" in detail(report, "App: venues")
+
+    def test_a_venue_with_no_name_fails(self, monkeypatch):
+        report = self.venues_of(monkeypatch, {"1": {"name": "", "home_teams": [{"id": "1"}]}})
+        assert statuses(report, "App: venues") == [v.FAIL] * 10
+        assert "no name" in detail(report, "App: venues")
+
+    def test_a_venue_with_no_home_team_fails(self, monkeypatch):
+        report = self.venues_of(monkeypatch, {"1": {"name": "A Stadium", "home_teams": []}})
+        assert statuses(report, "App: venues") == [v.FAIL] * 10
+        assert "no home team" in detail(report, "App: venues")
+
+    def test_too_few_home_teams_warns(self, monkeypatch):
+        report = self.venues_of(monkeypatch, self.venues(13))
+        by_league = {c.source: c.status for c in report.checks if c.name == "App: venues"}
+        assert by_league["WNBA"] == v.PASS
+        assert by_league["NFL"] == v.WARN
+        assert "only 13 home teams" in detail(report, "App: venues")
+
+    def test_a_shared_venue_counts_each_team(self, monkeypatch):
+        shared = {"1": {"name": "A", "home_teams": [{"id": str(i)} for i in range(400)]}}
+        assert statuses(self.venues_of(monkeypatch, shared), "App: venues") == [v.PASS] * 10
+
+    def test_team_info_venue(self, monkeypatch):
+        report = self.venues_of(monkeypatch, {})
+        assert statuses(report, "App: team info venue") == [v.PASS, v.PASS]
+
+    def test_team_info_with_no_venue_only_breaks_in_season(self, monkeypatch):
+        report = self.venues_of(monkeypatch, {}, info={"venue_name": ""}, seasons={"WNBA": False, "NCAAM": True})
+        assert statuses(report, "App: team info venue") == [v.WARN, v.FAIL]
+
+    def test_team_info_raising_is_a_failure(self, monkeypatch):
+        report = self.venues_of(monkeypatch, {}, info=RuntimeError("boom"))
+        assert statuses(report, "App: team info venue") == [v.FAIL, v.FAIL]
 
 
 class TestRetries:
