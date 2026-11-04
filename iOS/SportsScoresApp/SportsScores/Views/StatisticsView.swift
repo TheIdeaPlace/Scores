@@ -170,9 +170,11 @@ struct LeaderCategorySection: View {
 
     /// What VoiceOver reads for the leading column. Team rows show an
     /// abbreviation on screen but speak the name the user asked for in
-    /// Settings; player rows speak the name as written.
+    /// Settings; player rows speak the name as written. A name that didn't load shows a dash,
+    /// which isn't something to say out loud.
     private func spokenName(_ entry: LeagueLeaderCategory.LeagueLeaderEntry) -> String {
-        entry.teamNames?.voiceOverName(for: appSettings.teamNamePreference) ?? entry.athleteName
+        let name = entry.teamNames?.voiceOverName(for: appSettings.teamNamePreference) ?? entry.athleteName
+        return name == "—" ? "name unavailable" : name
     }
 
     var body: some View {

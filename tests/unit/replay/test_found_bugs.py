@@ -57,14 +57,12 @@ def test_white_sox_are_in_a_division_when_mlb_falls_back_to_team_records(espn):
     assert espn_api._parse_standings_from_teams_api(teams, "MLB")[0]["division"] == "AL Central"
 
 
-def test_nba_reads_the_list_shape_like_nfl_and_nhl(espn):
-    """statistics_NBA.json has no stats today. When ESPN adds them, in the list shape it
-    sends every other league, the NBA parser's .items() raised and lost them all."""
-    espn.on("/nba/statistics", load("statistics_NCAAM.json"))
-    result = espn_api.get_player_statistics("NBA")
-    expected = load("statistics_NCAAM.json")["stats"]["categories"][0]
-    assert result["player_stats"][0]["category"] == expected["displayName"]
-    assert result["player_stats"][0]["stats"][0]["player_name"] == expected["leaders"][0]["athlete"]["displayName"]
+def test_the_nba_has_player_leaders(espn):
+    """ESPN's /statistics has no leaders block for the NBA, so Windows never showed any."""
+    espn.on("/season$", load("season_NBA.json")).on("/leaders", load("leaders_v3_NBA.json"))
+    first = espn_api.get_player_statistics("NBA")["player_stats"][0]
+    assert first["category"] == "Points Per Game"
+    assert (first["stats"][0]["player_name"], first["stats"][0]["value"]) == ("Luka Doncic", "38.3")
 
 
 @pytest.mark.parametrize("key,value,expected", [

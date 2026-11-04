@@ -4,7 +4,7 @@ import time
 from datetime import datetime
 from exceptions import ApiError
 from game_labels import (best_odds, broadcast_names, format_height, format_weight,
-                         injured_player_count, local_schedule_datetime)
+                         injured_player_count, leader_display_value, local_schedule_datetime)
 from timezone_utils import convert_espn_time_to_local
 
 # Every ESPN request gets a timeout. requests has none by default, so one
@@ -2594,9 +2594,11 @@ def _get_team_statistics(league_key):
                                 category_stats = category.get('stats', [])
                                 
                                 # Create team's stats for this category
+                                season = _as_dict(team_data.get('season'))
                                 team_category_stats = {
                                     'team_name': team_name,
                                     'team_id': str(team_id),
+                                    'season': _season_label(season.get('displayName'), season.get('name')),
                                     'stats': {}
                                 }
                                 
@@ -2803,200 +2805,169 @@ def _get_mlb_statistics():
         "team_stats": []
     }
 
-# ESPN's /statistics answers this 404 on a good share of requests, mostly for college
-# basketball, for a league it served a moment ago. It can stay cached for up to 30 seconds,
-# so asking again for the same URL gets the same failure.
-STATISTICS_BLIP = "Failed to retrieve league stats"
-STATISTICS_TRIES = 3
+# Player leaders. ESPN has them here, with names and teams inside the response, for these
+# leagues. /leaders is a 404 for college hockey and soccer, so asking would only look like a
+# failure: those leagues have no leaders to show.
+LEADERS_BASE_URL = "https://site.web.api.espn.com/apis/site/v3/sports"
+CORE_BASE_URL = "https://sports.core.api.espn.com/v2/sports"
+LEADER_LEAGUES = {"NFL", "NCAAF", "NBA", "WNBA", "NCAAM", "NCAAWB", "NHL", "MLB"}
+LEADERS_LIMIT = 20
+# /leaders answers 500 far more often the more it's asked for. It can be a retry away, or last
+# for minutes at one limit while a smaller one works: on Nov 4, 2026, four leagues' 2025 season
+# failed nine times in 90 seconds at 20, and every league answered at 5. A shorter list beats
+# none. Leaving out region and lang makes the 500s much likelier, even at 20.
+LEADERS_SMALLER_LIMITS = (10, 5)
 STATISTICS_UNAVAILABLE = "ESPN isn't providing these right now. Try again in a minute."
+PRESEASON = 1
+POSTSEASON = 3
+# /leaders lists these lowest first, and everything else highest first.
+LOW_IS_GOOD_LEADERS = {"avgGoalsAgainst", "ERA", "WHIP", "opponentAvg"}
 
 
-def _is_statistics_blip(resp):
-    if resp.status_code != 404:
-        return False
+def _no_leaders():
+    return {"player_stats": [], "team_stats": []}
+
+
+def _leaders_season(league_path):
+    """The year whose regular season to show, from ESPN rather than the calendar: the NBA's
+    2026-27 season is 2027. A season's playoffs and off-season come after its regular season
+    and are filed under its year, so only a preseason means that the last one is the latest."""
+    sport, league = league_path.split("/", 1)
     try:
-        return resp.json().get("message") == STATISTICS_BLIP
-    except (ValueError, AttributeError):
-        return False
+        resp = _http_get(f"{CORE_BASE_URL}/{sport}/leagues/{league}/season", timeout=10)
+        season = resp.json() if resp.status_code == 200 else None
+    except (requests.RequestException, ValueError) as e:
+        raise ApiError(STATISTICS_UNAVAILABLE) from e
+    season = _as_dict(season)
+    year = season.get("year")
+    if not isinstance(year, int):
+        raise ApiError(STATISTICS_UNAVAILABLE)
+    return year - 1 if _as_dict(season.get("type")).get("type") == PRESEASON else year
 
 
-def _fetch_statistics(league_path):
-    """The response from /statistics, the only ESPN endpoint with leaders, getting past ESPN's
-    blip with a throwaway parameter, which earns a fresh answer rather than the cached failure.
-    Raises ApiError if ESPN blips and no later try gets an answer: empty would read as no
-    leaders existing, and the player statistics dialog has a row for this."""
-    url = f"{BASE_URL}/{league_path}/statistics"
-    resp = _http_get(url, timeout=10)
-    if not _is_statistics_blip(resp):
-        return resp
-    for _ in range(STATISTICS_TRIES - 1):
-        time.sleep(1)
+def _fetch_leaders(league_path, year):
+    """A season's regular season leaders from /leaders, or None if ESPN has no such season.
+    Without `seasontype`, a finished season's answer is its postseason. A second try at the
+    full list gets a throwaway parameter, since ESPN can cache a 500 for up to 30 seconds."""
+    attempts = [{"limit": LEADERS_LIMIT}, {"limit": LEADERS_LIMIT, "_": int(time.time() * 1000)}]
+    attempts += [{"limit": limit} for limit in LEADERS_SMALLER_LIMITS]
+    for attempt in attempts:
+        if "_" in attempt:
+            time.sleep(1)
+        params = {"region": "us", "lang": "en", "season": year, "seasontype": 2, **attempt}
         try:
-            resp = _http_get(url, params={"_": int(time.time() * 1000)}, timeout=10)
-        except requests.RequestException:
-            continue
-        if resp.status_code == 200:
-            return resp
+            resp = _http_get(f"{LEADERS_BASE_URL}/{league_path}/leaders", params=params, timeout=15)
+            if resp.status_code == 200:
+                return resp.json()
+        except (requests.RequestException, ValueError) as e:
+            raise ApiError(STATISTICS_UNAVAILABLE) from e
+        if resp.status_code == 404:
+            return None
+        if resp.status_code < 500:
+            break
     raise ApiError(STATISTICS_UNAVAILABLE)
 
 
-def get_statistics(league_key):
-    """Get statistics/leaders data for a league"""
-    # Handle case-insensitive league keys
-    league_path = LEAGUES.get(league_key) or LEAGUES.get(league_key.upper())
-    if not league_path:
-        print(f"No league path found for {league_key}, providing sample data")
-        return _get_sample_statistics_data(league_key)
+def _leaders_in_order(key, leaders):
+    """The leaders up to the first who breaks the category's direction. ESPN can follow its
+    qualified players with everyone else: on Nov 4, 2026, NCAAM field goal percentage read
+    71.4, 64.3, 55.6, 50.0, 46.2, 42.9, then 100.0 fourteen times. Those aren't the next best."""
+    kept, last = [], None
+    for leader in leaders:
+        value = leader.get("value")
+        if isinstance(value, (int, float)):
+            if last is not None and (value > last if key not in LOW_IS_GOOD_LEADERS else value < last):
+                break
+            last = value
+        kept.append(leader)
+    return kept
 
-    try:
-        # For MLB, use the official MLB Stats API for full season player statistics
-        if league_key.upper() == "MLB":
-            print("Using MLB Stats API for full season player statistics")
-            mlb_result = _get_mlb_statistics()
-            if mlb_result['player_stats']:
-                # Also get team statistics from ESPN
-                team_stats = _get_team_statistics(league_key)
-                if team_stats:
-                    mlb_result['team_stats'] = team_stats
-                return mlb_result
-            else:
-                print("MLB Stats API failed, falling back to ESPN")
 
-        resp = _fetch_statistics(league_path)
-        if resp.status_code == 200:
-            result = _parse_statistics_data(resp.json())
-            if result['player_stats']:
-                team_stats = _get_team_statistics(league_key)
-                if team_stats:
-                    result['team_stats'] = team_stats
-                return result
-        else:
-            print(f"Statistics for {league_key} returned status {resp.status_code}")
+def _parse_leaders(data):
+    """/leaders to the rows the dialog shows, in ESPN's order, which is best first even for a
+    stat where low is good. A league's ratings can be there with nobody rated, such as the WNBA's
+    Player Efficiency Rating, where the leaders all read 0.0: that isn't a list of leaders.
+    Asked for a past college football season's regular season, ESPN answers with type 3, and
+    the numbers run through the bowl games, so "Season" says what they are and "Postseason"
+    doesn't: 4379 passing yards for 2025, where the core API's type 2 says 4129."""
+    data = _as_dict(data)
+    requested = _as_dict(data.get("requestedSeason"))
+    season_type = _as_dict(requested.get("type"))
+    if season_type.get("type") == PRESEASON:
+        return _no_leaders()
 
-    except Exception as e:
-        print(f"Error fetching statistics for {league_key}: {e}")
-    
-    
-    # No player statistics, so try to get team statistics
-    print(f"Attempting to fetch team statistics for {league_key}")
-    team_stats = _get_team_statistics(league_key)
-    
-    sample_data = _get_sample_statistics_data(league_key)
-    
-    if team_stats:
-        print(f"Successfully retrieved {len(team_stats)} team stat categories")
-        return {
-            "player_stats": sample_data.get("player_stats", []),
-            "team_stats": team_stats
-        }
-    else:
-        # Return sample data for both player and team stats
-        return sample_data
+    categories = []
+    for category in _dicts(_as_dict(data.get("leaders")).get("categories")):
+        key = category.get("name") or "unknown"
+        title = category.get("displayName") or key.title()
+        leaders = _leaders_in_order(key, _dicts(category.get("leaders")))
+        if all(not leader.get("value") for leader in leaders):
+            continue
+        stats = []
+        for leader in leaders:
+            athlete = _as_dict(leader.get("athlete"))
+            team = _as_dict(leader.get("team"))
+            name = athlete.get("displayName") or athlete.get("fullName") or athlete.get("shortName")
+            if name:
+                stats.append({
+                    "player_name": name,
+                    "team": team.get("abbreviation") or team.get("displayName") or "",
+                    "value": leader_display_value(key, leader.get("value"), leader.get("displayValue")),
+                    "stat_name": title,
+                })
+        if stats:
+            categories.append({"category": title, "stats": stats})
+    if not categories:
+        return _no_leaders()
+    name = "Season" if season_type.get("type") == POSTSEASON else season_type.get("name")
+    return {"player_stats": categories, "team_stats": [], "season": _season_label(requested.get("displayName"), name)}
+
+
+def _season_label(year_name, type_name):
+    return " ".join(str(part) for part in (year_name, type_name) if part)
+
 
 def get_player_statistics(league_key):
-    """Get only player statistics for a league (optimized for speed)"""
-    # Handle case-insensitive league keys
-    league_path = LEAGUES.get(league_key) or LEAGUES.get(league_key.upper())
-    if not league_path:
-        print(f"No league path found for {league_key}")
-        return {"player_stats": [], "team_stats": []}
+    """A league's player leaders, as {player_stats, team_stats, season}. `season` names what
+    they're from, such as "2026-27 Regular Season". Empty means ESPN has no leaders for this
+    league. A failed request raises ApiError instead, so the dialog can say so."""
+    key = league_key if league_key in LEAGUES else league_key.upper()
+    if key not in LEADER_LEAGUES:
+        return _no_leaders()
+    if key == "MLB":
+        mlb_result = _get_mlb_statistics()
+        if mlb_result["player_stats"]:
+            return mlb_result
+        print("MLB Stats API had no leaders, trying ESPN")
 
-    try:
-        # For MLB, use the official MLB Stats API for full season player statistics
-        if league_key.upper() == "MLB":
-            print("Using MLB Stats API for player statistics only")
-            mlb_result = _get_mlb_statistics()
-            if mlb_result['player_stats']:
-                return mlb_result
-            else:
-                print("MLB Stats API failed, falling back to ESPN")
+    league_path = LEAGUES[key]
+    year = _leaders_season(league_path)
+    # A new regular season can start with nobody on the list yet, or be a 404 for now.
+    answers = [_fetch_leaders(league_path, year)]
+    result = _parse_leaders(answers[0])
+    if not result["player_stats"]:
+        answers.append(_fetch_leaders(league_path, year - 1))
+        result = _parse_leaders(answers[1])
+    if not any(answer is not None for answer in answers):
+        raise ApiError(STATISTICS_UNAVAILABLE)
+    return result
 
-        resp = _fetch_statistics(league_path)
-        if resp.status_code == 200:
-            # Only return player stats, not team stats
-            return {"player_stats": _parse_statistics_data(resp.json())["player_stats"], "team_stats": []}
-        return {"player_stats": [], "team_stats": []}
-
-    except ApiError:
-        raise
-    except Exception as e:
-        print(f"Error fetching player statistics for {league_key}: {str(e)}")
-        return {"player_stats": [], "team_stats": []}
 
 def get_team_statistics(league_key):
-    """Get only team statistics for a league (optimized for speed)"""
+    """A league's team statistics. `season` says what they're from, if it's the same for every
+    team. It isn't always: during the playoffs, ESPN answers with the postseason for the teams
+    in them and the regular season for the others."""
     try:
         print(f"Loading team statistics for {league_key}")
         team_stats = _get_team_statistics(league_key)
-        return {"team_stats": team_stats, "player_stats": []}
+        result = {"team_stats": team_stats, "player_stats": []}
+        seasons = {team.get("season") for category in team_stats for team in category.get("stats", [])}
+        if len(seasons) == 1 and next(iter(seasons)):
+            result["season"] = seasons.pop()
+        return result
     except Exception as e:
         print(f"Error fetching team statistics for {league_key}: {str(e)}")
         return {"team_stats": [], "player_stats": []}
-
-def _parse_statistics_data(data):
-    """Player leaders from ESPN's statistics endpoint: stats.categories, a list. A
-    league with nothing to show has no stats key at all. Soccer leagues send stats as a
-    list of leaders instead (goalsLeaders, assistsLeaders), which isn't read here and
-    comes out as no players."""
-    categories = _dicts(_as_dict(_as_dict(data).get("stats")).get("categories"))
-    return {
-        "player_stats": _parse_generic_player_stats(categories),
-        "team_stats": [],
-    }
-
-def _parse_generic_player_stats(leaders):
-    """[{name, displayName, leaders: [{athlete, value}]}] to the rows the dialog shows."""
-    categories = []
-
-    for category_data in leaders:
-        category_key = category_data.get('name') or 'unknown'
-        category_display_name = category_data.get('displayName') or category_key.title()
-        leaders_list = _dicts(category_data.get('leaders'))
-
-        if not leaders_list:
-            continue
-
-        stats = []
-        for leader in leaders_list:
-            athlete = _as_dict(leader.get("athlete"))
-            team = _as_dict(leader.get("team") or athlete.get("team"))
-
-            if athlete.get("displayName") or athlete.get("name"):
-                # Use the raw value for the specific statistic, not the display value
-                # displayValue contains full stat lines, value contains just the target stat
-                raw_value = leader.get("value", "")
-
-                # For most statistics, use the raw numeric value
-                # For special cases like batting average, format appropriately
-                if category_key.lower() in ['avg', 'era', 'whip', 'onbasepct', 'slugavg', 'ops']:
-                    # For percentage/ratio stats, format to 3 decimal places
-                    try:
-                        stat_value = f"{float(raw_value):.3f}"
-                    except (ValueError, TypeError):
-                        stat_value = "" if raw_value is None else str(raw_value)
-                else:
-                    # For counting stats, use the numeric value as-is
-                    stat_value = "" if raw_value is None else str(raw_value)
-
-                stats.append({
-                    "player_name": athlete.get("displayName") or athlete["name"],
-                    "team": team.get("abbreviation") or team.get("name") or "",
-                    "value": stat_value,
-                    "stat_name": category_display_name
-                })
-
-        if stats:
-            categories.append({
-                "category": category_display_name,
-                "stats": stats
-            })
-
-    return categories
-
-def _get_sample_statistics_data(league_key):
-    """No statistics. This used to return invented players (including "Sample Player 1"
-    and years-old stars with made-up numbers) that the app showed as real leaders."""
-    return {"player_stats": [], "team_stats": []}
 
 
 def most_used_home_venue(events, team_id):

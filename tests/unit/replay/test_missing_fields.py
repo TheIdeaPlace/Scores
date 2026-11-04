@@ -117,8 +117,8 @@ CASES = [
     case("get_standings NCAAH", lambda: espn_api.get_standings("NCAAH"), "standings_NCAAH.json", "/standings"),
     case("get_standings soccer", lambda: espn_api.get_standings("EPL"), "team_EPL_359.json", r"/teams/\d+$",
          {"/teams$": "teams_EPL.json"}),
-    case("get_player_statistics", lambda: espn_api.get_player_statistics("NCAAM"), "statistics_NCAAM.json", "/statistics"),
-    case("get_statistics", lambda: espn_api.get_statistics("NFL"), "statistics_NFL.json", "/statistics"),
+    case("get_player_statistics", lambda: espn_api.get_player_statistics("NBA")["player_stats"], "leaders_v3_NBA.json", "/leaders",
+         {"/season$": "season_NBA.json"}),
     case("get_team_statistics", lambda: espn_api.get_team_statistics("NBA"), "team_stats_NBA_15.json", r"/statistics",
          {"/teams$": "teams_NBA.json"}),
 ]

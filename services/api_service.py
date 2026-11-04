@@ -67,12 +67,8 @@ class ApiService:
         return ApiService._call(espn_api.format_complex_data, key, value)
 
     @staticmethod
-    def get_statistics(league: str) -> Dict:
-        return ApiService._call(espn_api.get_statistics, league)
-    
-    @staticmethod
     def get_player_statistics(league: str) -> Dict:
-        """Get only player statistics for a league (faster)"""
+        """A league's player leaders. A failed request raises ApiError."""
         return ApiService._call(espn_api.get_player_statistics, league)
     
     @staticmethod
