@@ -124,6 +124,7 @@ CASES = [
     case("get_standings NFL", lambda: espn_api.get_standings("NFL"), "standings_NFL.json", "/standings"),
     case("get_standings NHL", lambda: espn_api.get_standings("NHL"), "standings_NHL.json", "/standings"),
     case("get_standings NCAAH", lambda: espn_api.get_standings("NCAAH"), "standings_NCAAH.json", "/standings"),
+    case("get_standings WNBA", lambda: espn_api.get_standings("WNBA"), "standings_WNBA.json", "/standings"),
     case("get_standings soccer", lambda: espn_api.get_standings("EPL"), "team_EPL_359.json", r"/teams/\d+$",
          {"/teams$": "teams_EPL.json"}),
     case("get_player_statistics", lambda: espn_api.get_player_statistics("NBA")["player_stats"], "leaders_v3_NBA.json", "/leaders",
@@ -155,6 +156,7 @@ def test_no_single_bad_field_raises_or_reads_none(espn, call, fixture, route, ot
     failures = []
     for description, changed in mutations(served["payload"]):
         served["payload"] = changed
+        espn_api._CORE_SEASON_CACHE.clear()
         try:
             result = call()
         except Exception as e:

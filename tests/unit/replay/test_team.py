@@ -1,7 +1,10 @@
 """The team dialog's data: info, roster, news and transactions on real payloads."""
+from concurrent.futures import ThreadPoolExecutor
+
 import pytest
 
 import espn_api
+from exceptions import ApiError
 
 from .support import HTTP_404, HTTP_500, NOT_JSON, TIMEOUT, load
 
@@ -247,13 +250,13 @@ class TestTheRegularSeasonRecord:
 
     def test_a_team_in_the_playoffs(self, espn):
         self.lynx(espn)
-        assert splits(espn_api.get_team_info("WNBA", "8")) == ("33-11", "15-7", "18-4", "1st in Western Conference Division")
+        assert splits(espn_api.get_team_info("WNBA", "8")) == ("33-11", "15-7", "18-4", "1st in Western Conference")
 
     def test_a_team_that_missed_them(self, espn):
         """Seattle is 8-36 and last, and read 0-0 and 4th."""
         assert load("team_WNBA_14.json")["team"]["record"]["items"][0]["summary"] == "0-0"
         asks(espn, "14", "season_WNBA.json", "team_WNBA_14.json", "team_WNBA_14_regular.json")
-        assert splits(espn_api.get_team_info("WNBA", "14")) == ("8-36", "6-16", "2-20", "8th in Western Conference Division")
+        assert splits(espn_api.get_team_info("WNBA", "14")) == ("8-36", "6-16", "2-20", "8th in Western Conference")
 
     def test_it_asks_for_the_season_as_well_as_the_type(self, espn):
         """seasontype=2 alone doesn't work: Atlanta stays 8-4."""
@@ -299,7 +302,7 @@ class TestTheRegularSeasonRecord:
         assert "record" not in load("team_NCAAH_130.json")["team"]
         asks(espn, "130", "season_NBA.json", "team_NCAAH_130.json", "team_NCAAH_130_regular.json")
         info = espn_api.get_team_info("NCAAH", "130")
-        assert info["record_overall"].startswith("8-1")
+        assert info["record_overall"] == "8-1"
         assert info["next_game_opponent"] == "Penn State Nittany Lions"
 
     @pytest.mark.parametrize("league", ["NCAAH", "NCAAWH"])
@@ -316,6 +319,36 @@ class TestTheRegularSeasonRecord:
         espn.on(SEASON, season)
         espn_api.get_team_info("NBA", "17")
         assert f"{SITE}/basketball/nba/teams/17?season=2026&seasontype=2" in espn.calls
+
+    def test_college_hockey_ties_read_as_ties(self, espn):
+        """Niagara, 5-4-1. Without any, Army is 5-1 on both apps: no third part from a stat."""
+        regular = load("team_NCAAH_130_regular.json")
+        regular["team"]["record"]["items"][0]["summary"] = "5-4-1"
+        asks(espn, "130", "season_NBA.json", "team_NCAAH_130.json", regular)
+        assert espn_api.get_team_info("NCAAH", "130")["record_overall"] == "5-4-1"
+
+    def test_a_conference_is_not_called_a_division(self, espn):
+        regular = load("team_NBA_17_regular.json")
+        regular["team"]["standingSummary"] = "10th in Eastern Conference Division"
+        asks(espn, "17", "season_NBA.json", "team_NBA_17.json", regular)
+        assert espn_api.get_team_info("NBA", "17")["standing"] == "10th in Eastern Conference"
+
+    @pytest.mark.parametrize("league,season_type,expected", [
+        ("NCAAH", 3, True), ("NCAAH", 4, True), ("NCAAH", 1, True), ("NCAAH", 2, False),
+        ("NCAAF", 3, True), ("NCAAM", 3, True), ("NBA", 3, False), ("WNBA", 4, False), ("MLB", 1, False),
+    ])
+    def test_a_college_record_says_when_it_leaves_out_the_postseason(self, espn, league, season_type, expected):
+        """Michigan basketball's 2026 reads 31-3 here and 37-3 in Standings."""
+        season = load("season_NBA.json")
+        season["type"]["type"] = season_type
+        asks(espn, "130", "season_NBA.json", "team_NCAAH_130.json", "team_NCAAH_130_regular.json")
+        espn.on(SEASON, season)
+        assert espn_api.get_team_info(league, "130")["record_regular_season_only"] is expected
+
+    def test_soccer_never_says_regular_season(self, espn):
+        espn.on("/teams/359$", load("team_EPL_359.json"))
+        info = espn_api.get_team_info("EPL", "359", home_venue=False)
+        assert (info["record_regular_season_only"], info["record_unavailable"]) == (False, False)
 
     @pytest.mark.parametrize("league,path", [("EPL", "soccer/eng.1"), ("MLS", "soccer/usa.1")])
     def test_soccer_asks_for_no_season(self, espn, league, path):
@@ -342,6 +375,7 @@ class TestTheRegularSeasonRecord:
             info = espn_api.get_team_info("WNBA", "8")
             self.page_is_there(info)
             assert splits(info) == (None, None, None, "")
+            assert info["record_unavailable"] is True
 
         @pytest.mark.parametrize("reply", **FAILURES)
         def test_no_regular_season_in_the_playoffs_has_no_playoff_record(self, espn, reply):
@@ -349,6 +383,19 @@ class TestTheRegularSeasonRecord:
             info = espn_api.get_team_info("WNBA", "8")
             self.page_is_there(info)
             assert splits(info) == (None, None, None, "")
+
+        @pytest.mark.parametrize("reply,expected", [
+            (TIMEOUT, True), (HTTP_500, True), (NOT_JSON, True),
+            (HTTP_404, False), ({}, False), ({"team": {"record": {"items": []}}}, False),
+        ], ids=["timeout", "500", "not_json", "404", "nothing", "no_records"])
+        def test_a_failure_is_told_from_a_team_with_no_record(self, espn, reply, expected):
+            asks(espn, "8", "season_WNBA.json", "team_WNBA_8.json", reply)
+            assert espn_api.get_team_info("WNBA", "8")["record_unavailable"] is expected
+
+        def test_a_record_there_is_not_unavailable(self, espn):
+            asks(espn, "17", "season_NBA.json", "team_NBA_17.json", HTTP_500)
+            info = espn_api.get_team_info("NBA", "17")
+            assert (info["record_overall"], info["record_unavailable"]) == ("1-6", False)
 
         @pytest.mark.parametrize("reply", **FAILURES)
         def test_no_regular_season_in_it_keeps_the_same_numbers(self, espn, reply):
@@ -360,13 +407,67 @@ class TestTheRegularSeasonRecord:
             regular = load("team_WNBA_8_regular.json")
             del regular["team"]["record"]
             asks(espn, "8", "season_WNBA.json", "team_WNBA_8.json", regular)
-            assert splits(espn_api.get_team_info("WNBA", "8")) == (None, None, None, "1st in Western Conference Division")
+            assert splits(espn_api.get_team_info("WNBA", "8")) == (None, None, None, "1st in Western Conference")
 
         def test_it_does_not_wait_long(self, espn):
             asks(espn, "8", "season_WNBA.json", "team_WNBA_8.json", "team_WNBA_8_regular.json")
             espn_api.get_team_info("WNBA", "8")
             asked = next(i for i, url in enumerate(espn.calls) if "?season=" in url)
             assert espn.kwargs[asked]["timeout"] == 8
+
+
+class TestCoreSeasonIsKept:
+    """Favorites asks once per team, each time it rebuilds."""
+
+    PATH = "basketball/wnba"
+
+    def asked(self, espn):
+        return len(espn.urls("/season$"))
+
+    def test_a_good_answer_is_asked_for_once(self, espn):
+        espn.on(SEASON, load("season_WNBA.json"))
+        first = espn_api.core_season(self.PATH)
+        assert espn_api.core_season(self.PATH) == first
+        assert self.asked(espn) == 1
+
+    def test_each_league_has_its_own(self, espn):
+        espn.on(SEASON, load("season_WNBA.json"))
+        espn_api.core_season(self.PATH)
+        espn_api.core_season("basketball/nba")
+        assert self.asked(espn) == 2
+
+    def test_it_asks_again_after_a_few_minutes(self, espn, monkeypatch):
+        now = [1000.0]
+        monkeypatch.setattr(espn_api.time, "monotonic", lambda: now[0])
+        espn.on(SEASON, load("season_WNBA.json"))
+        espn_api.core_season(self.PATH)
+        now[0] += espn_api.CORE_SEASON_CACHE_SECONDS - 1
+        espn_api.core_season(self.PATH)
+        assert self.asked(espn) == 1
+        now[0] += 1
+        espn_api.core_season(self.PATH)
+        assert self.asked(espn) == 2
+
+    @pytest.mark.parametrize("reply", [TIMEOUT, HTTP_500, NOT_JSON, {}], ids=["timeout", "500", "not_json", "nothing"])
+    def test_a_failure_is_not_kept(self, espn, reply):
+        espn.on(SEASON, reply)
+        with pytest.raises(ApiError):
+            espn_api.core_season(self.PATH)
+        espn.on(SEASON, load("season_WNBA.json"))
+        assert espn_api.core_season(self.PATH)["year"] == 2026
+
+    def test_threads_asking_at_once(self, espn):
+        espn.on(SEASON, load("season_WNBA.json"))
+        with ThreadPoolExecutor(8) as pool:
+            years = list(pool.map(lambda _: espn_api.core_season(self.PATH)["year"], range(32)))
+        assert years == [2026] * 32
+
+    def test_favorites_ask_once_per_league(self, espn):
+        espn.on(SEASON, load("season_WNBA.json"))
+        espn.on(r"/teams/\w+", load("team_WNBA_8.json"))
+        for team in ("8", "14", "3"):
+            espn_api.get_team_info("WNBA", team, home_venue=False)
+        assert self.asked(espn) == 1
 
 
 class TestRoster:

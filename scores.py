@@ -2009,6 +2009,8 @@ class LeagueView(BaseView):
     def _on_standings_data_error(self, error_message):
         """Handle standings data loading error"""
         QMessageBox.warning(self, "Standings", error_message)
+        if self.parent_app:
+            self.parent_app.update_window_title(self._title_items())
     
     def _show_teams_dialog(self):
         """Show teams dialog with simple tabbed interface"""
@@ -8242,9 +8244,12 @@ class TeamHubDialog(QDialog):
         add("Division", info.get('division'))
         add("Standing", info.get('standing'))
         add("Conference", info.get('conference'))
-        add("Record (Overall)", info.get('record_overall'))
+        add("Record (Regular Season)" if info.get('record_regular_season_only') else "Record (Overall)",
+            info.get('record_overall'))
         add("Record (Home)", info.get('record_home'))
         add("Record (Road)", info.get('record_road'))
+        if info.get('record_unavailable'):
+            self.info_list.addItem("Record not available right now")
         add("Head Coach", info.get('head_coach'))
         add("Venue", info.get('venue_name'))
         add("Location", info.get('venue_location'))
@@ -11363,7 +11368,7 @@ class StatDefinitionsDialog(QDialog):
                 "SLG (Slugging %)": "Total bases divided by at bats. Measures power hitting.",
                 "OPS": "On-base percentage plus slugging percentage. Overall offensive measure."
             }
-        elif self.league.upper() == "NFL":
+        elif self.league.upper() in ("NFL", "NCAAF"):
             return {
                 "Passing Yards": "Total yards gained through forward passes.",
                 "Passing TDs": "Number of touchdown passes thrown by a quarterback.",

@@ -872,6 +872,16 @@ class TestTeamRecordAgreesWithStandings:
         report = self.run(monkeypatch, season=(2026, season_type), standings=standings)
         assert statuses(report, "App: team record") == [v.PASS]
 
+    def test_no_false_alarm_as_a_regular_season_begins(self, monkeypatch):
+        """ESPN's type turns over before the first game, and standings can be last season's."""
+        import espn_api
+        began = (datetime.now(timezone.utc) - timedelta(days=1)).isoformat()
+        monkeypatch.setattr(espn_api, "core_season", lambda path: {"year": 2027, "type": {"type": 2, "startDate": began}})
+        monkeypatch.setattr(espn_api, "get_standings", lambda league: [{"team_id": "8", "wins": 40, "losses": 42}])
+        report = v.Report()
+        v.check_team_record(report, league("NBA"), "8", "Lynx", "0-0")
+        assert statuses(report, "App: team record") == [v.PASS]
+
     def test_no_false_alarm_in_a_college_postseason(self, monkeypatch):
         """College standings count the postseason: Michigan 37-3, and 31-3 on its team page."""
         standings = [{"team_id": "8", "wins": 37, "losses": 3}]

@@ -2,11 +2,13 @@
 from datetime import datetime
 
 import pytest
+import requests
 
 import espn_api
 import settings
+from exceptions import ApiError
 
-from .support import HTTP_500, NOT_JSON, TIMEOUT, load
+from .support import HTTP_404, HTTP_500, NOT_JSON, TIMEOUT, load
 
 V2 = "https://site.api.espn.com/apis/v2/sports"
 SITE = espn_api.BASE_URL
@@ -142,6 +144,16 @@ class TestNhl:
         assert keys == sorted(keys)
 
 
+NO_FALLBACK = [
+    ("WNBA", "basketball/wnba"),
+    ("NCAAF", "football/college-football"),
+    ("NCAAM", "basketball/mens-college-basketball"),
+    ("NCAAWB", "basketball/womens-college-basketball"),
+    ("NCAAH", "hockey/mens-college-hockey"),
+    ("NCAAWH", "hockey/womens-college-hockey"),
+]
+
+
 class TestCollege:
     @pytest.mark.parametrize("league,path,fixture", [
         ("NCAAF", "football/college-football/standings?group=90", "standings_NCAAF.json"),
@@ -156,22 +168,25 @@ class TestCollege:
         assert espn.calls == [f"{V2}/{path}"]
         assert rows and all(r["team_name"] != "Unknown" and r["team_id"] for r in rows)
 
-    @pytest.mark.parametrize("league,path", [
-        ("WNBA", "basketball/wnba"),
-        ("NCAAF", "football/college-football"),
-        ("NCAAM", "basketball/mens-college-basketball"),
-        ("NCAAWB", "basketball/womens-college-basketball"),
-        ("NCAAH", "hockey/mens-college-hockey"),
-        ("NCAAWH", "hockey/womens-college-hockey"),
-    ])
-    @pytest.mark.parametrize("reply", [TIMEOUT, HTTP_500, NOT_JSON, {"children": []}, {}],
-                             ids=["timeout", "500", "not_json", "no_conferences", "nothing"])
+    @pytest.mark.parametrize("league,path", NO_FALLBACK)
+    @pytest.mark.parametrize("reply", [{"children": []}, {}, []], ids=["no_conferences", "nothing", "a_list"])
     def test_no_standings_says_so_instead_of_asking_for_every_team(self, espn, league, path, reply):
         """The team list has no divisions, so Teams opened with no tabs and said nothing, and
         Standings was one table of playoff records, or the first 50 of a college league's teams.
         An empty answer gets the screens' "No teams data" and "No standings data" messages."""
         espn.on(f"/{path}/standings", reply)
         assert espn_api.get_standings(league) == []
+        assert espn.urls("/teams") == []
+
+    @pytest.mark.parametrize("league,path", NO_FALLBACK)
+    @pytest.mark.parametrize("reply", [TIMEOUT, requests.ConnectionError("refused"), HTTP_404, HTTP_500, NOT_JSON],
+                             ids=["timeout", "connection", "404", "500", "not_json"])
+    def test_a_failed_request_is_not_no_data(self, espn, league, path, reply):
+        """It says so in a sentence, not with the text of a requests exception."""
+        espn.on(f"/{path}/standings", reply)
+        with pytest.raises(ApiError) as caught:
+            espn_api.get_standings(league)
+        assert str(caught.value) == espn_api.STANDINGS_UNAVAILABLE
         assert espn.urls("/teams") == []
 
     def test_the_wnba_has_its_conferences(self, espn):
@@ -256,9 +271,8 @@ class TestCollegeFootballCoverage:
         assert row(rows, "App State Mountaineers")["division"] == "Sun Belt - East"
         assert "Sun Belt Conference" not in {r["division"] for r in rows}
 
-    @pytest.mark.parametrize("answer", [
-        TIMEOUT, HTTP_500, {"children": []}, {"children": "not a list of conferences"},
-    ], ids=["timeout", "500", "no conferences", "bad payload"])
+    @pytest.mark.parametrize("answer", [{"children": []}, {"children": "not a list of conferences"}],
+                             ids=["no conferences", "bad payload"])
     def test_no_standings_means_no_rows_not_the_team_list(self, espn, answer):
         """/teams would be the first 50 of 762 teams, Division III included. It isn't stubbed,
         so asking for it fails the test, and the screens get to say there's no data."""

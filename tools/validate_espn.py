@@ -985,7 +985,8 @@ def check_team_record(report, league, team_id, name, record):
     """Team Info's record is the one Standings has, in the regular season and the playoffs.
 
     Not in a preseason or off-season, when Team Info has the last season and Standings can be on
-    the new one. Not in college's postseason, when its Standings count those games, and Team Info
+    the new one, nor just as a regular season begins: ESPN's type turns over before the first game,
+    and standings can still be last season's. Not in college's postseason, when its Standings count those games, and Team Info
     and past seasons don't: Michigan's 2026 basketball season reads 37-3 and 31-3. Not in soccer,
     which Windows has no standings for.
     """
@@ -996,7 +997,11 @@ def check_team_record(report, league, team_id, name, record):
         report.ok(league.key, label, "not checked: Windows has no soccer standings")
         return
     try:
-        season_type = (espn_api.core_season(league.path).get("type") or {}).get("type")
+        core = espn_api.core_season(league.path)
+        if espn_api.regular_season_just_began(core):
+            report.ok(league.key, label, "not checked: its regular season has only just begun")
+            return
+        season_type = (core.get("type") or {}).get("type")
         if season_type != espn_api.REGULAR_SEASON and (
                 league.is_college or season_type != espn_api.POSTSEASON):
             report.ok(league.key, label, f"not checked: season type {season_type}")

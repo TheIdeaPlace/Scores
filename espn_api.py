@@ -1,5 +1,6 @@
 import json
 import requests
+import threading
 import time
 from datetime import datetime
 from exceptions import ApiError
@@ -2291,8 +2292,8 @@ def _games_back(stat):
 
 
 def _college_standing_row(entry, conference):
-    team_info = entry.get("team", {})
-    stats = entry.get("stats", [])
+    team_info = _as_dict(entry.get("team"))
+    stats = _dicts(entry.get("stats"))
     overall = _standing_stat(stats, "total")
     wins, losses, ties = _record_parts(overall.get("summary") or overall.get("displayValue"))
     games = wins + losses + ties
@@ -2309,7 +2310,7 @@ def _college_standing_row(entry, conference):
         "conference_record": conf.get("summary") or conf.get("displayValue") or "",
         "division": conference,
         "streak": _standing_stat(stats, "streak").get("displayValue") or "",
-        "logo": team_info.get("logos", [{}])[0].get("href", "") if team_info.get("logos") else "",
+        "logo": next(iter(_dicts(team_info.get("logos"))), {}).get("href", ""),
     }
 
 
@@ -2321,28 +2322,33 @@ def parse_college_standings(data):
 
     def walk(node, conference):
         name = node.get("name") or conference
-        for entry in (node.get("standings") or {}).get("entries", []):
+        for entry in _dicts(_as_dict(node.get("standings")).get("entries")):
             rows.append(_college_standing_row(entry, name))
-        for child in node.get("children") or []:
+        for child in _dicts(node.get("children")):
             walk(child, name)
 
-    walk(data, "League")
+    walk(_as_dict(data), "League")
     rows.sort(key=lambda r: (r["division"], -float(r["win_percentage"]), -r["wins"], r["losses"]))
     return rows
 
 
+STANDINGS_UNAVAILABLE = "ESPN isn't providing standings right now. Try again in a minute."
+
+
 def _standings_or_nothing(league, path, query=""):
-    """A league's rows from /standings, or [] if that failed or had none, so that the screens
-    say there's no data. The WNBA and college leagues have no fallback to the team list: its
-    rows have no division, which Teams leaves out, so it opened with no tabs and said nothing,
-    and college's are the first 50 teams of all of them, with one request each."""
+    """A league's rows from /standings, [] if ESPN answered and has none, so that the screens say
+    there's no data. A request that failed raises ApiError instead: it says nothing about what ESPN
+    has. The WNBA and college leagues have no fallback to the team list: its rows have no division,
+    which Teams leaves out, so it opened with no tabs and said nothing, and college's are the first
+    50 teams of all of them, with one request each."""
     try:
         resp = _http_get(f"https://site.api.espn.com/apis/v2/sports/{path}/standings{query}")
-        if resp.status_code == 200:
-            return parse_college_standings(resp.json())
-    except Exception as e:
+        if resp.status_code != 200:
+            raise ApiError(STANDINGS_UNAVAILABLE)
+        return parse_college_standings(resp.json())
+    except (requests.RequestException, ValueError) as e:
         print(f"Error in {league} standings: {e}")
-    return []
+        raise ApiError(STANDINGS_UNAVAILABLE) from e
 
 
 def _get_ncaaf_standings_fast():
@@ -2702,6 +2708,9 @@ PRESEASON = 1
 REGULAR_SEASON = 2
 POSTSEASON = 3
 NEW_SEASON_DAYS = 3
+CORE_SEASON_CACHE_SECONDS = 300
+_CORE_SEASON_CACHE = {}  # league path: (when it was asked, ESPN's answer)
+_CORE_SEASON_CACHE_LOCK = threading.Lock()
 # /leaders lists these lowest first, and everything else highest first.
 LOW_IS_GOOD_LEADERS = {"avgGoalsAgainst", "ERA", "WHIP", "opponentAvg"}
 
@@ -2711,7 +2720,13 @@ def _no_leaders():
 
 
 def core_season(league_path):
-    """ESPN's own idea of a league's season now, with a whole number for its year."""
+    """ESPN's own idea of a league's season now, with a whole number for its year. A good answer
+    is kept for a few minutes, since Favorites asks once per team each time it rebuilds. Treat it
+    as read-only: callers share it. Threads asking at once can each ask ESPN, which does no harm."""
+    with _CORE_SEASON_CACHE_LOCK:
+        cached = _CORE_SEASON_CACHE.get(league_path)
+    if cached and time.monotonic() - cached[0] < CORE_SEASON_CACHE_SECONDS:
+        return cached[1]
     sport, league = league_path.split("/", 1)
     try:
         resp = _http_get(f"{CORE_BASE_URL}/{sport}/leagues/{league}/season", timeout=10)
@@ -2721,6 +2736,8 @@ def core_season(league_path):
     season = _as_dict(season)
     if not isinstance(season.get("year"), int):
         raise ApiError(STATISTICS_UNAVAILABLE)
+    with _CORE_SEASON_CACHE_LOCK:
+        _CORE_SEASON_CACHE[league_path] = (time.monotonic(), season)
     return season
 
 
@@ -3033,7 +3050,8 @@ def _team_home_venue(league_path, team_id):
 
 
 def _team_record_and_standing(league_path, team_id, team):
-    """(record, standingSummary) for a team page, from its regular season, as Standings has it.
+    """(record, standingSummary, whether a failure cost the record, season type) for a team page,
+    from its regular season, as Standings has it. A league with no record to show isn't a failure.
 
     `team` is /teams/{id} with no season, which answers with whatever the league is doing now.
     In the WNBA playoffs that read the Lynx, 33-11 and first, as 0-2 and 8th, and the teams left
@@ -3050,31 +3068,46 @@ def _team_record_and_standing(league_path, team_id, team):
     even in the NWSL's playoffs, and asking can name another competition's standing.
     """
     if league_path.startswith("soccer/"):
-        return team.get("record"), team.get("standingSummary")
+        return team.get("record"), team.get("standingSummary"), False, None
     try:
         season = core_season(league_path)
     except ApiError as e:
         print(f"[get_team_info] current season of {league_path}: {e}")
-        return None, None
-    regular = {}
+        return None, None, True, None
+    regular, failed = {}, False
     try:
         year = latest_regular_season(season)
         resp = _http_get(f"{BASE_URL}/{league_path}/teams/{team_id}?season={year}&seasontype={REGULAR_SEASON}",
                          timeout=8)
         if resp.status_code == 200:
             regular = _as_dict(_as_dict(resp.json()).get("team"))
+        else:
+            failed = resp.status_code not in (400, 404)  # those say ESPN has nothing there
     except (requests.RequestException, ValueError) as e:
         print(f"[get_team_info] regular season of team {team_id}: {e}")
-    fallback = team if _as_dict(season.get("type")).get("type") == REGULAR_SEASON else {}
+        failed = True
+    season_type = _as_dict(season.get("type")).get("type")
+    fallback = team if season_type == REGULAR_SEASON else {}
     record = regular.get("record") if _dicts(_as_dict(regular.get("record")).get("items")) else fallback.get("record")
-    return record, regular.get("standingSummary") or fallback.get("standingSummary")
+    return (record, regular.get("standingSummary") or fallback.get("standingSummary"),
+            failed and not _dicts(_as_dict(record).get("items")), season_type)
+
+
+def _shown_standing(standing):
+    """A standing as a team page says it. College hockey says "1st" of every team, whatever its
+    record, and of nothing. The NBA's and WNBA's conferences aren't divisions."""
+    if not standing or " in " not in standing:
+        return ""
+    return standing.replace(" Conference Division", " Conference")
 
 
 def get_team_info(league_key, team_id, home_venue=True):
     """Get full team details: record splits, venue, head coach, next game.
 
     The record and standing are the regular season's, see _team_record_and_standing, at the
-    cost of up to two more requests.
+    cost of up to two more requests. `record_unavailable` says a failure cost the page its record,
+    and `record_regular_season_only` that it leaves out games: a college team's postseason counts
+    in Standings, but not here, from when it starts until the next regular season.
 
     franchise.venue is years out of date for some teams (Nets at Prudential Center,
     Warriors at Oracle) and missing for college, WNBA and soccer, so the venue comes from
@@ -3104,16 +3137,20 @@ def get_team_info(league_key, team_id, home_venue=True):
         addr = _as_dict(venue.get("address"))
         city, state = addr.get("city") or "", addr.get("state") or ""
         result["venue_location"] = f"{city}, {state}" if city and state else city or state
-        record, standing = _team_record_and_standing(league_path, team_id, team)
+        record, standing, result["record_unavailable"], season_type = _team_record_and_standing(
+            league_path, team_id, team)
+        result["record_regular_season_only"] = (
+            league_key.startswith("NCAA") and season_type not in (None, REGULAR_SEASON))
         # Record splits
         for item in _dicts(_as_dict(record).get("items")):
             rtype = item.get("type", "")
             summary = item.get("summary") or ""
             if rtype == "total":
-                # NHL totals have "10-4" here and the overtime losses in the stats.
+                # NHL totals have "10-4" here and the overtime losses in the stats. College
+                # hockey's has its ties in the summary if there are any: 5-4-1, and Army's 5-1.
                 ot_losses = next((st.get("value") for st in item.get("stats", [])
                                   if st.get("name") == "otLosses"), None)
-                if ot_losses is not None and summary.count("-") == 1:
+                if league_key == "NHL" and ot_losses is not None and summary.count("-") == 1:
                     summary = f"{summary}-{int(ot_losses)}"
                 result["record_overall"] = summary
             elif rtype == "home":
@@ -3123,8 +3160,7 @@ def get_team_info(league_key, team_id, home_venue=True):
         # Division / Conference
         groups = _as_dict(team.get("groups"))
         result["division"] = groups.get("name") or ""
-        # College hockey says "1st" of every team, whatever its record, and of nothing.
-        result["standing"] = standing if standing and " in " in standing else ""
+        result["standing"] = _shown_standing(standing)
         result["conference"] = _as_dict(groups.get("parent")).get("name") or ""
         # Head coach
         coaches = _dicts(team.get("coaches"))
