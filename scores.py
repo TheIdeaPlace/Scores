@@ -10970,6 +10970,8 @@ class StatisticsViewDialog(QDialog):
         self.setWindowTitle(f"{league} {stat_type.title()} Statistics")
         self.resize(1000, 700)
         self.statistics_data = None
+        self.stat_pages = None
+        self._stat_infos = []
         print(f"DEBUG: About to call setup_ui")
         self.setup_ui()
         print(f"DEBUG: setup_ui completed")
@@ -11063,19 +11065,9 @@ class StatisticsViewDialog(QDialog):
     def keyPressEvent(self, event):
         """Handle key press events for navigation"""
         if event.key() == Qt.Key.Key_F6:
-            # Cycle between stats list and results list
-            current_focus = self.focusWidget()
-            if hasattr(self, 'stats_list') and hasattr(self, 'results_table'):
-                if current_focus == self.stats_list:
-                    # Move to the results if visible
-                    if self.results_table.isVisible():
-                        self.results_table.setFocus()
-                    else:
-                        # If no results visible, stay on stats list
-                        self.stats_list.setFocus()
-                else:
-                    # Move back to stats list
-                    self.stats_list.setFocus()
+            # From Close. Inside the stat list and its results, the list's own keys have it.
+            if self.stat_pages is not None:
+                self.stat_pages.setFocus()
             event.accept()
         elif event.key() == Qt.Key.Key_D and event.modifiers() == Qt.KeyboardModifier.AltModifier:
             # Alt+D: Show stat definitions
@@ -11085,107 +11077,55 @@ class StatisticsViewDialog(QDialog):
             super().keyPressEvent(event)
     
     def _create_working_statistics_interface(self, layout, available_stats):
-        """Create working statistics interface with immediate data display"""
-        
-        # Split layout: Left side for stat selection, right side for results
-        h_layout = QHBoxLayout()
-        
-        # Left side: Statistics list
-        left_widget = QWidget()
-        left_widget.setMaximumWidth(300)
-        left_layout = QVBoxLayout()
-        
-        stats_label = QLabel("Select a Statistic:")
-        left_layout.addWidget(stats_label)
-        
-        # Add note about data timeframe  
+        """A list of the statistics, and Enter opens one's rankings in its place."""
         season = (self.statistics_data or {}).get("season")
         if season or self.stat_type == "player":  # MLB's players come from the MLB Stats API, with no season named
             note_label = QLabel(season or "Full Season Statistics")
             note_label.setStyleSheet("color: #666; font-style: italic; font-size: 9pt;")
             note_label.setWordWrap(True)
-            left_layout.addWidget(note_label)
-        
-        self.stats_list = QListWidget()
-        self.stats_list.setAccessibleName(f"{self.stat_type.title()} Statistics List")
-        self.stats_list.setAccessibleDescription(f"List of available {self.stat_type} statistics. Select one to view rankings.")
-        
-        # Populate statistics list with ACTUAL available stats (not categories)
+            layout.addWidget(note_label)
+
+        self._stat_infos = available_stats
+        self.stat_pages = ListPages()
+        self.stat_pages.set_list_name(
+            f"{self.stat_type.title()} Statistics",
+            "Press Enter on one to open its rankings. Escape comes back to this list.")
         for stat_info in available_stats:
-            stat_name = stat_info.get('name', 'Unknown')
-            item = QListWidgetItem(stat_name)
-            item.setData(Qt.ItemDataRole.UserRole, stat_info)  # Store the actual stat data
-            self.stats_list.addItem(item)
-        
-        # Connect selection events
-        self.stats_list.itemActivated.connect(self._on_working_stat_selected)
-        self.stats_list.itemClicked.connect(self._on_working_stat_selected)
-        
-        left_layout.addWidget(self.stats_list)
-        left_widget.setLayout(left_layout)
-        
-        # Right side: Results display
-        right_widget = QWidget()
-        right_layout = QVBoxLayout()
-        
-        self.results_label = QLabel("Select a statistic to view rankings")
-        right_layout.addWidget(self.results_label)
-        
-        self.results_table = RankingsTable(RANKING_HEADERS[self.stat_type])
-        self.results_table.hide()  # Hide until stat is selected
-        right_layout.addWidget(self.results_table)
+            page = QWidget()
+            QVBoxLayout(page)
+            self.stat_pages.addTab(page, stat_info.get('name', 'Unknown'))
+        self.stat_pages.pageOpening.connect(self._fill_stat_page)
+        self.stats_list = self.stat_pages.tabBar()
+        layout.addWidget(self.stat_pages)
 
-        right_widget.setLayout(right_layout)
-        
-        # Add to horizontal layout
-        h_layout.addWidget(left_widget)
-        h_layout.addWidget(right_widget)
-        
-        layout.addLayout(h_layout)
-        
-        # Set the main layout
-        self.setLayout(layout)
-    
-    def _on_working_stat_selected(self, item):
-        """Handle stat selection with working approach - data is already loaded"""
-        print(f"DEBUG: _on_working_stat_selected called")
-        if item:
-            stat_info = item.data(Qt.ItemDataRole.UserRole)
-            if stat_info:
-                print(f"DEBUG: Displaying results for: {stat_info.get('name')}")
-                self._display_stat_results(stat_info)
-            else:
-                print(f"DEBUG: No stat_info in item data")
-        else:
-            print(f"DEBUG: _on_working_stat_selected called with None item")
-    
-    def _display_stat_results(self, stat_info):
-        """Show the selected statistic's ranked list and move to its first row."""
+    def _fill_stat_page(self, index):
+        """A college league has 300 rows on each of dozens of statistics, so each is built only
+        when it's opened."""
+        page = self.stat_pages.widget(index)
+        page_layout = page.layout()
+        if page_layout.count():
+            return
+        stat_info = self._stat_infos[index]
+        name = stat_info.get('name', 'Unknown')
+        stat_type = stat_info.get('type', 'unknown')
         try:
-            stat_name = stat_info.get('stat_name', 'Unknown')
-            stat_type = stat_info.get('type', 'unknown')
-            data = stat_info.get('data', [])
-            
-            # Update results label with data context
-            season = (self.statistics_data or {}).get("season") or "Season"
-            if stat_type == "player":
-                header_text = f"{season} Leaders: {stat_info.get('name', stat_name)}"
-            else:
-                header_text = f"{season} Rankings: {stat_info.get('name', stat_name)}"
-            
-            self.results_label.setText(header_text)
-            # The label can't take focus, so this is how a screen reader hears what the table is.
-            self.results_table.update_accessible_name(header_text)
+            rows = ranking_rows(stat_type, stat_info.get('data', []))
+        except Exception:
+            error_log.log_handled()
+            page_layout.addWidget(_message_row(f"Unable to show {name}.", name))
+            return
+        if not rows:
+            page_layout.addWidget(_message_row(f"No rankings are available for {name}.", name))
+            return
+        season = (self.statistics_data or {}).get("season") or "Season"
+        heading = f"{season} {'Leaders' if stat_type == 'player' else 'Rankings'}: {name}"
+        page_layout.addWidget(QLabel(heading))
+        table = RankingsTable(RANKING_HEADERS[self.stat_type])
+        # The label can't take focus, so this is how a screen reader hears what the table is.
+        table.update_accessible_name(heading)
+        table.populate_data(rows, set_focus=False)
+        page_layout.addWidget(table)
 
-            self.results_table.show()
-            # Fills all three views and, if there are rows, focuses the first in the current view.
-            self.results_table.populate_data(ranking_rows(stat_type, data))
-
-        except Exception as e:
-            print(f"ERROR in _display_stat_results: {str(e)}")
-            import traceback
-            traceback.print_exc()
-    
     def _get_available_statistics(self):
         """Extract available statistics from the data"""
         print(f"DEBUG: _get_available_statistics called for {self.stat_type}")

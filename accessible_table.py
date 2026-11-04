@@ -1279,6 +1279,8 @@ class ListPages(QWidget):
     """
 
     currentChanged = pyqtSignal(int)
+    # About to come on show, for a page that's filled only when it's wanted.
+    pageOpening = pyqtSignal(int)
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -1310,6 +1312,8 @@ class ListPages(QWidget):
 
     def _show_page(self, row: int) -> None:
         if row >= 0:
+            if self.is_open():
+                self.pageOpening.emit(row)
             self._stack.setCurrentIndex(row)
             if self.is_open():
                 self._settle_open_page()
@@ -1338,6 +1342,7 @@ class ListPages(QWidget):
         if self.is_open() or self.currentWidget() is None:
             return
         self._dialog_title = self.window().windowTitle()
+        self.pageOpening.emit(self.currentIndex())
         self._page_area.show()
         self._settle_open_page()
         self._keys.focus_page(self.currentWidget())

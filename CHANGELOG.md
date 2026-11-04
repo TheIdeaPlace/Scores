@@ -8,6 +8,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Fixed
+- **Player and Team Statistics are a list, and Enter opens the rankings.** The list no longer sits
+  beside the results. Press Enter on a statistic to open its rankings in the list's place, and Escape
+  or the Back button to come back to the same statistic. Ctrl+Tab goes on to the next one, the window
+  title names what's open, and a statistic with nothing to rank says so.
 - **Player and Team Statistics results are a real table.** Alt+V, Alt+T, Alt+Q and Alt+F now work on
   them, as they do on every other table, and they open in your saved view. Player statistics have
   Rank, Player, Team and Value, and team statistics Rank, Team and Value. A row used to be one line
