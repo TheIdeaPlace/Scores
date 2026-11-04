@@ -193,7 +193,8 @@ enum TeamStatCatalog {
     /// The team's own stats where less is better, by the first part of the sport's ESPN path.
     /// The opponent's version of a stat goes the other way: a team wants its opponents to score
     /// less, and to turn it over more. On Windows this is team_stats.LOW_IS_GOOD, and
-    /// tests/fixtures/team_stat_directions.json holds both. The specs above are a subset.
+    /// tests/fixtures/team_stat_directions.json holds both. The specs above are a subset. A stat
+    /// nobody has listed reads highest first, and the validator warns about a stat it doesn't know.
     static let lowIsGood: [String: Set<String>] = [
         "baseball": [
             "batting.strikeouts",
@@ -224,14 +225,40 @@ enum TeamStatCatalog {
         ],
     ]
 
+    /// Counts of tries, which aren't good or bad in themselves, so they read highest first for the
+    /// team and its opponents alike: a defense wants to force punts, and an attempt isn't a miss.
+    static let countsOfTries: [String: Set<String>] = [
+        "baseball": ["batting.atBats", "pitching.innings", "fielding.totalChances"],
+        "football": [
+            "passing.passingAttempts", "rushing.rushingAttempts",
+            "miscellaneous.thirdDownAttempts", "miscellaneous.fourthDownAttempts",
+            "kicking.fieldGoalAttempts", "kicking.fieldGoalAttempts1_19", "kicking.fieldGoalAttempts20_29",
+            "kicking.fieldGoalAttempts30_39", "kicking.fieldGoalAttempts40_49", "kicking.fieldGoalAttempts50",
+            "kicking.extraPointAttempts",
+            "punting.punts", "returning.kickReturns", "returning.puntReturns",
+        ],
+        "basketball": [
+            "offensive.fieldGoalsAttempted", "offensive.avgFieldGoalsAttempted",
+            "offensive.threePointFieldGoalsAttempted", "offensive.avgThreePointFieldGoalsAttempted",
+            "offensive.freeThrowsAttempted", "offensive.avgFreeThrowsAttempted",
+        ],
+        "hockey": ["offensive.powerPlayOpportunities", "offensive.shootoutAttempts"],
+    ]
+
     static func sportKey(for sport: Sport) -> String {
         sport.apiPath.components(separatedBy: "/").first ?? ""
     }
 
     static func higherIsBetter(sportKey: String, section: String, stat: String, opponent: Bool = false) -> Bool {
-        if stat == "gamesPlayed" || stat == "games" { return true }
-        let low = lowIsGood[sportKey]?.contains("\(section).\(stat)") ?? false
+        let key = "\(section).\(stat)"
+        if stat == "gamesPlayed" || stat == "games" || countsOfTries[sportKey]?.contains(key) == true { return true }
+        let low = lowIsGood[sportKey]?.contains(key) ?? false
         return opponent ? low : !low
+    }
+
+    /// Whether a sport's list has schools outside Division I in it. College football's is only FBS.
+    static func listHasOtherDivisions(_ sport: Sport) -> Bool {
+        sport.isCollegeSport && sportKey(for: sport) == "basketball"
     }
 
     /// A column every team has, to ask for the list sorted each way when ESPN can't send it all
@@ -259,6 +286,18 @@ enum TeamStatRanks {
         case 3: return "\(number)rd"
         default: return "\(number)th"
         }
+    }
+
+    enum Band {
+        case top, middle, bottom, unknown
+    }
+
+    /// Top quarter, a bit over a third, the rest, which in a league of 32 is 8, 12 and 12.
+    static func band(rank: Int, of leagueSize: Int?) -> Band {
+        guard let leagueSize, leagueSize > 0 else { return .unknown }
+        let place = Double(rank) / Double(leagueSize)
+        if place <= 0.25 { return .top }
+        return place <= 0.625 ? .middle : .bottom
     }
 
     /// "9th", "Tied-9th", as ESPN writes them. A college list gets what it's out of: "118th" is
@@ -292,12 +331,11 @@ struct LeagueTeamStats {
     private let columns: [String: [String: Int]]
 
     private static let opponentSplit = "900"
-    /// Games. Before this, games played says nothing about who's Division I.
-    private static let seasonUnderWay = 10.0
 
     init(_ response: TeamStatsByTeamResponse, sport: Sport) {
         self.sport = sport
-        self.teams = sport.isCollegeSport ? Self.divisionOneTeams(in: response) : (response.teams ?? [])
+        self.teams = response.divisionOneTeamIDs.map { Self.divisionOneTeams(in: response, teamList: $0) }
+            ?? (response.teams ?? [])
         var columns: [String: [String: Int]] = [:]
         // Each section comes once per split, and only the first copy has the names.
         for meta in response.categories ?? [] {
@@ -314,42 +352,21 @@ struct LeagueTeamStats {
         self.columns = columns
     }
 
-    /// A college list has every school that played a Division I team, so a Division II school with
-    /// one game can top a per-game stat: 722 teams in 2025-26's men's basketball, 362 of them
-    /// Division I. ESPN only has opponents' numbers for Division I teams, which on Nov 4, 2026 told
-    /// apart all 365 teams then listed, when everyone had played once. A few schools moving up
-    /// have none, so once a season is under way, so does a team with at least half the games of
-    /// whoever has played most. On Windows this is team_stats.qualified_teams.
-    static func divisionOneTeams(in response: TeamStatsByTeamResponse) -> [Team] {
-        let teams = response.teams ?? []
-
-        // Its category and key vary by sport (baseball "batting"/"gamesPlayed", hockey "general"/"games").
-        var gamesColumn: (section: String, index: Int)?
-        for meta in response.categories ?? [] {
-            guard let section = meta.name, let names = meta.names else { continue }
-            if let index = names.firstIndex(where: { $0 == "gamesPlayed" || $0 == "games" }) {
-                gamesColumn = (section, index)
-                break
-            }
+    /// A college basketball list has every school that played a Division I team, so a Division II
+    /// school with one game can top a per-game stat: 722 teams in 2025-26's men's basketball, 362 of
+    /// them Division I. ESPN only has opponents' numbers for Division I teams, which tells them
+    /// apart when everyone has played once. A few schools moving up to Division I have none (East
+    /// Texas A&M, Southern Indiana, Queens and Lindenwood in the women's game in 2026-27), and those
+    /// are on ESPN's team list, which has no other schools. On Windows this is
+    /// team_stats.qualified_teams.
+    static func divisionOneTeams(in response: TeamStatsByTeamResponse, teamList: Set<String>) -> [Team] {
+        (response.teams ?? []).filter { team in
+            hasOpponents(team) || team.team.id.map { teamList.contains($0) } == true
         }
+    }
 
-        func gamesPlayed(_ team: Team) -> Double? {
-            guard let gamesColumn,
-                  let category = (team.categories ?? []).first(where: {
-                      $0.name == gamesColumn.section && $0.splitId != opponentSplit
-                  }) else { return nil }
-            return category.values?[safe: gamesColumn.index] ?? nil
-        }
-
-        func hasOpponents(_ team: Team) -> Bool {
-            (team.categories ?? []).contains { $0.splitId == opponentSplit }
-        }
-
-        let most = teams.compactMap(gamesPlayed).max() ?? 0
-        let underWay = most >= seasonUnderWay || !teams.contains(where: hasOpponents)
-        return teams.filter { team in
-            hasOpponents(team) || (underWay && (gamesPlayed(team) ?? most) >= most / 2)
-        }
+    static func hasOpponents(_ team: Team) -> Bool {
+        (team.categories ?? []).contains { $0.splitId == opponentSplit }
     }
 
     func rows(section: String, stat: String, opponent: Bool = false) -> [Row] {
@@ -359,9 +376,10 @@ struct LeagueTeamStats {
                 $0.name?.lowercased() == section.lowercased()
                     && (opponent ? $0.splitId == Self.opponentSplit : $0.splitId != Self.opponentSplit)
             }),
-            let value = category.values?[safe: index] ?? nil,
             let display = category.totals?[safe: index] ?? nil,
-            !display.isEmpty, display != "-"
+            !display.isEmpty, display != "-",
+            // An NHL team yet to go to a shootout has "0" with a null.
+            let value = (category.values?[safe: index] ?? nil) ?? (display == "0" ? 0 : nil)
             else { return nil }
             return Row(value: value, display: display, team: team.team)
         }

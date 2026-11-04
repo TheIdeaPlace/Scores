@@ -39,7 +39,8 @@ class ESPNAPIService {
     /// The app uses `shared`. Tests pass a session that answers from fixtures.
     init(session: URLSession) {
         self.session = session
-        self.teamStatsStore = TeamStatsStore(session: session, baseURL: webAPIBaseURL)
+        self.teamStatsStore = TeamStatsStore(session: session, webBaseURL: webAPIBaseURL,
+                                             siteBaseURL: baseURL, coreBaseURL: coreAPIBaseURL)
     }
 
     // MARK: - Core API league name helper
@@ -937,11 +938,19 @@ class ESPNAPIService {
         let seasonYear = sport.currentSeasonYear
         let seasonType = sport.isSoccer ? 1 : 2
 
-        // Not having the list only costs the ranks that come from it, and it can be megabytes:
-        // the same one the league list has, so the second of them to ask for gets it from the store.
+        // The same list the league list has, so the second of them to ask for gets it from the
+        // store. Not having it only costs the ranks that come from it, unless the network has
+        // stalled: the core API wouldn't get through either, and that's one timeout before Retry
+        // appears rather than two.
         var leagueStats: TeamStatsByTeamResponse?
         if sport.hasTeamStats {
-            leagueStats = try? await teamStatsStore.payload(for: sport)
+            do {
+                leagueStats = try await teamStatsStore.payload(for: sport)
+            } catch let error as URLError {
+                throw error
+            } catch {
+                leagueStats = nil
+            }
         }
 
         for season in [seasonYear, seasonYear - 1] {
@@ -951,8 +960,10 @@ class ESPNAPIService {
                 let (data, response) = try await session.data(from: url)
                 guard let http = response as? HTTPURLResponse, http.statusCode == 200 else { continue }
                 let apiResponse = try JSONDecoder().decode(CoreTeamStatisticsResponse.self, from: data)
-                // Only if it's the same season, or the ranks would be for other numbers.
-                let sameSeason = leagueStats.flatMap { $0.requestedSeason?.year == season ? $0 : nil }
+                // Only if it's the same numbers, or the rank would be for others. A past college
+                // football list is type 3 through the bowls, where these are type 2: Alabama's
+                // 3,551 passing yards in 2025 are 11th, and that list has 3,953, 6th.
+                let sameSeason = leagueStats.flatMap { $0.requestedSeason?.year == season && $0.isRegularSeason ? $0 : nil }
                 let rankings = buildTeamStatRankings(
                     from: apiResponse,
                     teamId: teamId,
@@ -994,9 +1005,11 @@ class ESPNAPIService {
 
         // A rank past the end of the league is against cross-split or individual-player pools in
         // ESPN's data, not team against team: NFL kick return fair catch percentage reads 200th.
-        // Without the list to say how many teams there are, 34 is more than any pro league has,
-        // and 400 more than Division I.
-        let leagueSize = league?.teams.count
+        // Without a list the team is on to say how many teams there are, 34 is more than any pro
+        // league has, and 400 more than Division I. Montana is in FCS, and college football's list
+        // is FBS, so its ranks aren't out of that list's size: ESPN has its tackles Tied-363rd.
+        let listed = league.flatMap { list in list.teams.contains { $0.team.id == teamId } ? list : nil }
+        let leagueSize = listed?.teams.count
         let highestRank = leagueSize ?? (sport.isCollegeSport ? 400 : 34)
         let outOf = sport.isCollegeSport ? leagueSize : nil
 
@@ -1014,7 +1027,7 @@ class ESPNAPIService {
                 let rank: Int
                 let rankDisplay: String
                 if let section = category.name,
-                   let standing = league?.standing(ofTeam: teamId, section: section, stat: name) {
+                   let standing = listed?.standing(ofTeam: teamId, section: section, stat: name) {
                     rank = standing.rank
                     rankDisplay = TeamStatRanks.display(rank: rank, tied: standing.tied, outOf: outOf)
                 } else {
@@ -1057,7 +1070,12 @@ class ESPNAPIService {
         guard !specs.isEmpty else { return [] }
 
         let response = try await teamStatsStore.payload(for: sport)
-        return buildTeamLeaderCategories(from: LeagueTeamStats(response, sport: sport), specs: specs, limit: limit)
+        return buildTeamLeaderCategories(
+            from: LeagueTeamStats(response, sport: sport),
+            specs: specs,
+            limit: limit,
+            seasonLabel: response.seasonLabel
+        )
     }
 
     // MARK: - Stat Definitions
@@ -1099,7 +1117,8 @@ class ESPNAPIService {
     private func buildTeamLeaderCategories(
         from league: LeagueTeamStats,
         specs: [TeamStatSpec],
-        limit: Int
+        limit: Int,
+        seasonLabel: String?
     ) -> [LeagueLeaderCategory] {
         guard !league.teams.isEmpty else { return [] }
 
@@ -1129,7 +1148,8 @@ class ESPNAPIService {
                 name: spec.key,
                 displayName: spec.title,
                 leaders: Array(leaders),
-                isTeamCategory: true
+                isTeamCategory: true,
+                seasonLabel: seasonLabel
             )
         }
     }

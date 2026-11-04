@@ -232,14 +232,14 @@ struct TeamStatsTabView: View {
 
     // MARK: - Helpers
 
-    /// Top quarter, middle, bottom. These are the places in a league of 32, so a college list
-    /// scales up to its own size: 118th of 302 isn't red.
+    /// Top quarter, middle, bottom, of the league's own size: 118th of 302 isn't red, and 8th of 15
+    /// isn't green. With no list to say how many teams there are, the rank says nothing either way.
     private func rankColor(_ ranking: TeamStatRanking) -> Color {
-        let scale = Double(max(ranking.leagueSize ?? 32, 32)) / 32
-        let place = Double(ranking.leagueRank) / scale
-        if place <= 8  { return .green }
-        if place <= 20 { return .primary }
-        return Color(.systemRed)
+        switch TeamStatRanks.band(rank: ranking.leagueRank, of: ranking.leagueSize) {
+        case .top:              return .green
+        case .middle, .unknown: return .primary
+        case .bottom:           return Color(.systemRed)
+        }
     }
 
     private func emptyState(icon: String, text: String) -> some View {

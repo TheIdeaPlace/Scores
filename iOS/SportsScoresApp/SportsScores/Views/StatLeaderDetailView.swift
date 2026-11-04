@@ -32,6 +32,10 @@ struct StatLeaderDetailView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 8) {
+                if let season = displayCategory.seasonLabel {
+                    SeasonLabel(text: season)
+                        .padding([.horizontal, .top])
+                }
                 LeaderCategorySection(category: displayCategory, viewMode: viewMode, sport: sport)
                     .padding()
 
