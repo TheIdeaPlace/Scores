@@ -1095,9 +1095,12 @@ class _TabBarViewKeys(QObject):
     act on the table on show. Home, End, arrows that go round, and type-ahead find on the bar
     or list itself. `tabs` is a QTabWidget or a ListPages, which share the calls used here."""
 
-    def __init__(self, tabs):
+    def __init__(self, tabs, bar):
         super().__init__(tabs)
         self._tabs = tabs
+        # Held rather than asked for each time: a bar gets FocusOut while its tab area is being
+        # destroyed, when calling the area raises, and PyQt turns that into a fatal error.
+        self._bar = bar
         self.search = tab_keys.TabTypeAhead()
 
     def _arrow_keys(self, bar):
@@ -1147,19 +1150,21 @@ class _TabBarViewKeys(QObject):
         return True
 
     def focus_page(self, page):
-        tables = page.findChildren(AccessibleTable) if page else []
+        if page is None:  # Not "if not page": PyQt gives a list a length, so an empty one is false.
+            return
+        tables = page.findChildren(AccessibleTable)
         if tables:
             tables[0].setFocus()
             return
         # The page itself can be the thing to land on, such as a list that is the whole page.
-        for widget in [page] + page.findChildren(QWidget) if page else []:
+        for widget in [page] + page.findChildren(QWidget):
             if widget.isVisible() and widget.focusPolicy() & Qt.FocusPolicy.TabFocus:
                 widget.setFocus()
                 return
 
     def eventFilter(self, obj, event):
         if event.type() == QEvent.Type.KeyPress:
-            bar = self._tabs.tabBar()
+            bar = self._bar
             page = self._tabs.currentWidget()
             if event.key() == Qt.Key.Key_F6 and event.modifiers() == Qt.KeyboardModifier.NoModifier:
                 # F6 moves between the tabs or list and what's on show.
@@ -1177,14 +1182,14 @@ class _TabBarViewKeys(QObject):
                 # widget too, and mustn't change the tab under someone who's in the table.
                 if self._handle_bar_key(bar, event):
                     return True
-        elif event.type() == QEvent.Type.FocusOut and obj is self._tabs.tabBar():
+        elif event.type() == QEvent.Type.FocusOut and obj is self._bar:
             self.search.reset()
         return super().eventFilter(obj, event)
 
 
 def _install_tab_keys(tabs, bar) -> _TabBarViewKeys:
     """The keys every tab area shares, on a QTabWidget and its bar or a ListPages and its list."""
-    keys = _TabBarViewKeys(tabs)
+    keys = _TabBarViewKeys(tabs, bar)
     bar.installEventFilter(keys)
     # A key not used inside the page comes up through the tab widget.
     tabs.installEventFilter(keys)

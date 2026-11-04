@@ -10,6 +10,7 @@ import pytest
 
 pytest.importorskip("PyQt6")
 
+from PyQt6 import sip  # noqa: E402
 from PyQt6.QtCore import QEvent, Qt  # noqa: E402
 from PyQt6.QtGui import QFocusEvent, QKeyEvent  # noqa: E402
 from PyQt6.QtWidgets import QApplication, QLabel, QListWidget, QTabWidget, QVBoxLayout, QWidget  # noqa: E402
@@ -551,12 +552,14 @@ class TestListPages:
     def test_left_and_right_are_not_list_moves(self, pages):
         pages.resize(400, 300)
         pages.show()
-        QApplication.processEvents()
-        pages.setCurrentIndex(3)
-        press(pages.tabBar(), Qt.Key.Key_Left)
-        press(pages.tabBar(), Qt.Key.Key_Right)
-        assert pages.currentIndex() == 3
-        pages.close()
+        try:
+            QApplication.processEvents()
+            pages.setCurrentIndex(3)
+            press(pages.tabBar(), Qt.Key.Key_Left)
+            press(pages.tabBar(), Qt.Key.Key_Right)
+            assert pages.currentIndex() == 3
+        finally:
+            pages.close()
 
     def test_home_and_end(self, pages):
         press(pages.tabBar(), Qt.Key.Key_End)
@@ -640,18 +643,34 @@ class TestListPages:
 
     def test_f6_lands_on_a_page_that_is_itself_a_list(self, app):
         pages = ListPages()
-        page = QListWidget()
+        page = QListWidget()  # Empty, which PyQt makes false, and it's still the page.
         pages.addTab(page, "Fruit")
         pages.resize(400, 300)
         pages.show()
+        try:
+            QApplication.processEvents()
+            calls = []
+            page.setFocus = lambda: calls.append("page")
+            bar = pages.tabBar()
+            bar.hasFocus = lambda: True
+            press(bar, Qt.Key.Key_F6)
+            assert calls == ["page"]
+        finally:
+            pages.close()
+
+    @pytest.mark.parametrize("make", [lambda: make_tab_area(9), lambda: make_tab_area(2)], ids=["list", "tabs"])
+    def test_destroying_an_area_with_focus_on_its_bar_is_safe(self, app, make):
+        """The bar gets FocusOut during the destructor. An exception there would end the process."""
+        area = make()
+        area.addTab(QLabel("One"), "One")
+        area.addTab(QLabel("Two"), "Two")
+        area.show()
+        area.activateWindow()
+        area.tabBar().setFocus()
         QApplication.processEvents()
-        calls = []
-        page.setFocus = lambda: calls.append("page")
-        bar = pages.tabBar()
-        bar.hasFocus = lambda: True
-        press(bar, Qt.Key.Key_F6)
-        assert calls == ["page"]
-        pages.close()
+        sip.delete(area)
+        QApplication.processEvents()
+        assert sip.isdeleted(area)
 
     def test_view_keys_on_the_list_act_on_the_table(self, pages_with_tables):
         pages = pages_with_tables
