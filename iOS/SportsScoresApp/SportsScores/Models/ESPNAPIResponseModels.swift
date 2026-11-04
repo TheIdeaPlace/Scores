@@ -17,7 +17,8 @@ struct TeamStatRanking: Identifiable {
     let categoryDisplayName: String  // "ERA", "Home Runs"
     let teamValue: String            // "3.58"
     let leagueRank: Int             // numeric rank, used for color coding
-    let rankDisplay: String          // ESPN display string: "2nd", "Tied-9th"
+    let rankDisplay: String          // "2nd", "Tied-9th", or in college "118th of 302"
+    let leagueSize: Int?             // how many teams the rank is out of, when it's from a list the team is on
 }
 
 // MARK: - Core API Team Statistics Response
@@ -56,6 +57,8 @@ struct LeagueLeaderCategory: Identifiable {
     let leaders: [LeagueLeaderEntry]
     /// True when every entry represents a team rather than an individual player.
     let isTeamCategory: Bool
+    /// Which season the numbers are from, such as "2026-27 Regular Season", if it's known.
+    let seasonLabel: String?
 
     struct LeagueLeaderEntry: Identifiable {
         let id = UUID()
@@ -111,11 +114,13 @@ struct LeagueLeaderCategory: Identifiable {
         }
     }
 
-    init(name: String, displayName: String, leaders: [LeagueLeaderEntry], isTeamCategory: Bool = false) {
+    init(name: String, displayName: String, leaders: [LeagueLeaderEntry], isTeamCategory: Bool = false,
+         seasonLabel: String? = nil) {
         self.name = name
         self.displayName = displayName
         self.leaders = leaders
         self.isTeamCategory = isTeamCategory
+        self.seasonLabel = seasonLabel
     }
 
     /// The bare ESPN stat key, used to look up this category's definition.
@@ -175,6 +180,49 @@ struct TeamStatsByTeamResponse: Codable {
     /// Column metadata. ESPN repeats a category name once per split, and only
     /// the first copy is guaranteed to carry the `names` array.
     let categories: [CategoryMetadata]?
+    /// Only basketball has this. `count` can exceed the teams sent: ESPN sends 400 at most.
+    let pagination: Pagination?
+    /// Which season this really is, whatever was asked for. A past college football season is
+    /// type 3 even when asked for type 2.
+    let requestedSeason: RequestedSeason?
+    /// Not ESPN's: the ids on its team list, for a college basketball list with schools outside
+    /// Division I in it. See `LeagueTeamStats.divisionOneTeams`.
+    var divisionOneTeamIDs: Set<String>? = nil
+
+    /// "2026-27 Regular Season", the same words Windows uses. Asked for a past college football
+    /// season's regular season, ESPN answers with type 3, the numbers running through the bowl
+    /// games, so "Season" says what they are. Fewer teams than ESPN says it has, past the 800 that
+    /// two sorted requests can reach, says so rather than the list looking whole.
+    var seasonLabel: String? {
+        guard let season = requestedSeason else { return nil }
+        let type = season.type?.type == 3 ? "Season" : season.type?.name
+        let label = [season.displayName, type].compactMap { $0 }.joined(separator: " ")
+        guard !label.isEmpty else { return nil }
+        if let count = pagination?.count, count > (teams ?? []).count {
+            return "\(label), some teams missing"
+        }
+        return label
+    }
+
+    /// Whether the numbers are the regular season's, not the bowls as well.
+    var isRegularSeason: Bool {
+        requestedSeason?.type?.type == 2
+    }
+
+    struct Pagination: Codable {
+        let count: Int?
+    }
+
+    struct RequestedSeason: Codable {
+        let year: Int?
+        let displayName: String?
+        let type: SeasonType?
+
+        struct SeasonType: Codable {
+            let type: Int?
+            let name: String?
+        }
+    }
 
     struct CategoryMetadata: Codable {
         let name: String?
@@ -210,6 +258,44 @@ struct TeamStatsByTeamResponse: Codable {
             let values: [Double?]?
         }
     }
+}
+
+/// ESPN's own idea of a league's season now, from the core API's `/season`. On Windows this is
+/// espn_api.core_season, and the two follow the same rule.
+struct CoreSeasonResponse: Decodable {
+    let year: Int?
+    let type: SeasonType?
+
+    struct SeasonType: Decodable {
+        let type: Int?
+        /// "2026-10-20T07:00Z"
+        let startDate: String?
+    }
+
+    /// The year whose regular season to show. A season's playoffs and off-season come after its
+    /// regular season and are filed under its year, so only a preseason means the last one is the
+    /// latest. Nil if ESPN didn't say.
+    var latestRegularSeasonYear: Int? {
+        guard let year else { return nil }
+        return type?.type == 1 ? year - 1 : year
+    }
+
+    /// Whether a regular season began in the last few days. ESPN's type turns over before the
+    /// first game (college basketball at 07:00 UTC on Nov 1, its first game at 14:30), and until
+    /// there are games, some of its feeds answer 500 for the new season.
+    func regularSeasonJustBegan(now: Date = Date()) -> Bool {
+        guard type?.type == 2, let text = type?.startDate, let began = Self.startFormat.date(from: text) else { return false }
+        let seconds = now.timeIntervalSince(began)
+        return seconds >= 0 && seconds <= 3 * 24 * 60 * 60
+    }
+
+    private static let startFormat: DateFormatter = {
+        let format = DateFormatter()
+        format.locale = Locale(identifier: "en_US_POSIX")
+        format.timeZone = TimeZone(secondsFromGMT: 0)
+        format.dateFormat = "yyyy-MM-dd'T'HH:mmX"
+        return format
+    }()
 }
 
 struct CoreAthleteResponse: Codable {

@@ -87,6 +87,9 @@ struct StatisticsView: View {
     private func categoryScrollList(_ categories: [LeagueLeaderCategory]) -> some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 24) {
+                if let season = categories.first?.seasonLabel {
+                    SeasonLabel(text: season)
+                }
                 ForEach(categories) { category in
                     VStack(alignment: .leading, spacing: 0) {
                         LeaderCategorySection(category: category, viewMode: viewMode, sport: sport)
@@ -137,6 +140,20 @@ struct StatisticsView: View {
                 .foregroundColor(.secondary)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+}
+
+// MARK: - Which season
+
+/// Says which season a list's numbers are from: the only way to know it's last season's.
+struct SeasonLabel: View {
+    let text: String
+
+    var body: some View {
+        Text(text)
+            .font(.subheadline)
+            .foregroundColor(.secondary)
+            .frame(maxWidth: .infinity, alignment: .leading)
     }
 }
 
@@ -340,7 +357,7 @@ struct LeaderCategorySection: View {
                 HStack {
                     Text("#\(entry.rank)")
                         .font(.caption.bold()).foregroundColor(.secondary)
-                        .monospacedDigit().frame(width: 36, alignment: .trailing)
+                        .monospacedDigit().frame(width: 44, alignment: .trailing)
                     Text(entry.athleteName)
                         .font(.subheadline)
                     if hasTeams {
@@ -374,7 +391,7 @@ struct LeaderCategorySection: View {
                 HStack {
                     Text("#\(entry.rank)")
                         .font(.caption.bold()).foregroundColor(.secondary)
-                        .monospacedDigit().frame(width: 36, alignment: .trailing)
+                        .monospacedDigit().frame(width: 44, alignment: .trailing)
                     Text(entry.athleteName)
                         .font(.subheadline)
                     if hasTeams {
