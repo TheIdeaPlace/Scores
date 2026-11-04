@@ -23,6 +23,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Venue Details has its league lines.** A case mismatch kept them from ever appearing.
 - **A football week on iPhone no longer fails to load because of one blank game.** ESPN's list for
   week 8 of college football in 2025 has an empty entry in it, which lost the whole week.
+- **Team schedules on Windows have the whole football season.** The NFL and college football lists
+  stopped at the regular season, so the Seahawks' 2025 had no Super Bowl. Preseason and postseason
+  games are there now, and the row says what the game was: "Super Bowl LX", "SEC Championship",
+  "Preseason Week 1". A bowl or Super Bowl at a neutral site reads "vs", not "@".
+- **WNBA team schedules on Windows show the whole season, in any year.** They only looked a month
+  either side of today, so out of season a team had no games at all, and past seasons showed nothing.
+- **Soccer team schedules on Windows show the season you picked.** Picking 2020 showed this season's
+  games with old dates on them. A past season now shows its results, and the current one its results
+  and the games to come. Finished matches read as a win, loss or tie with the score, not "FT".
+- **Soccer team schedules work on iPhone.** They read "No schedule available" in every league.
+- **The iPhone's team schedules match Windows.** The NBA, NHL, WNBA and college sports have their
+  preseason games, every sport's preseason and postseason games say what they were, and a game at
+  halftime or in a delay reads as under way rather than giving its start time.
+- **A tied game on iPhone no longer reads as a loss** in a team's Recent list and on its Info tab.
+- **A college football season that comes back empty on Windows stays empty.** It used to show last
+  year's games as if they were the season you asked for.
+- **A failed schedule on iPhone says so.** It used to read as no schedule, or show last season's games.
 
 ### In Progress
 - **Game Wrap Up Feature**: ESPN text processing and game story extraction (under construction)
