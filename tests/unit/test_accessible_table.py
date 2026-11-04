@@ -10,7 +10,7 @@ from PyQt6.QtGui import QKeyEvent
 from PyQt6.QtWidgets import QApplication, QPushButton, QTabWidget, QVBoxLayout, QWidget
 
 import accessible_table
-from accessible_table import AccessibleTable, StandingsTable, prepare_table_tabs
+from accessible_table import AccessibleTable, RankingsTable, StandingsTable, prepare_table_tabs
 
 HEADERS = ["Player", "Pos", "PTS"]
 ROWS = [["A", "G", "10"], ["B", "F", "4"], ["C", "C"]]
@@ -152,6 +152,28 @@ def test_standings_rows_line_up_with_headers(app, league, expanded, headers):
         assert cells["OTL"] == "2" and cells["Pts"] == "20" and cells["PCT"] == "0.714"
     else:
         assert cells["Conf"] == "3-1"
+
+
+def cell_speech(table, row):
+    return [table.table_widget.item(row, col).data(Qt.ItemDataRole.AccessibleTextRole)
+            for col in range(table.columnCount())]
+
+
+def test_a_cell_says_whose_row_it_is_from_the_first_column(app):
+    assert cell_speech(make_table(app), 0) == ["Player, A", "A, Pos, G", "A, PTS, 10"]
+
+
+def test_a_standings_cell_says_the_team_rather_than_its_position(app):
+    table = StandingsTable(division_name="X", league="MLB")
+    table.populate_data([["1", "Yankees", "90", "60", "0.600", "-", "W2"]], set_focus=False)
+    speech = cell_speech(table, 0)
+    assert speech[:3] == ["Yankees, Pos, 1", "Team, Yankees", "Yankees, W, 90"]
+
+
+def test_a_ranking_cell_says_the_name_rather_than_the_rank(app):
+    table = RankingsTable(["Rank", "Team", "Value"])
+    table.populate_data([[1, "Celtics", "120"]], set_focus=False)
+    assert cell_speech(table, 0) == ["Celtics, Rank, 1", "Team, Celtics", "Celtics, Value, 120"]
 
 
 class TestButtonKeys:

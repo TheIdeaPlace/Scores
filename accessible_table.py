@@ -30,7 +30,10 @@ class AccessibleTable(QWidget):
     VIEW_QUICK_LIST = 1
     VIEW_FULL_LIST = 2
 
-    def __init__(self, parent=None, accessible_name: str = "Data Table", 
+    # The column that says whose row this is, repeated when a screen reader is on another cell.
+    ROW_CONTEXT_COLUMN = 0
+
+    def __init__(self, parent=None, accessible_name: str = "Data Table",
                  accessible_description: str = "Data table with arrow key navigation"):
         super().__init__(parent)
         self.accessible_name = accessible_name
@@ -454,13 +457,12 @@ class AccessibleTable(QWidget):
 
         # Get row context (typically from first column - player name or stat name)
         row_context = ""
-        if self.table_widget.columnCount() > 0:
-            first_col_item = self.table_widget.item(row, 0)
-            if first_col_item:
-                row_context = first_col_item.text()
+        context_item = self.table_widget.item(row, self.ROW_CONTEXT_COLUMN)
+        if context_item:
+            row_context = context_item.text()
 
         # Build enhanced accessibility description
-        if row_context and col > 0:  # Don't include row context for the first column itself
+        if row_context and col != self.ROW_CONTEXT_COLUMN:  # The context column already says it
             accessibility_text = f"{row_context}, {column_name}, {cell_value}"
         else:
             accessibility_text = f"{column_name}, {cell_value}"
@@ -622,6 +624,9 @@ class StandingsTable(AccessibleTable):
     """Specialized table for displaying team standings with basic/expanded views"""
 
     BASIC_HEADERS = ["Pos", "Team", "W", "L", "PCT", "GB", "Streak"]
+
+    # A team's name says whose row this is, not its position.
+    ROW_CONTEXT_COLUMN = 1
 
     # Sport-specific basic headers (for sports with ties)
     BASIC_HEADERS_WITH_TIES = ["Pos", "Team", "W", "L", "T", "PCT", "GB", "Streak"]
@@ -845,43 +850,6 @@ class StandingsTable(AccessibleTable):
             return str(value)
         return "—"
 
-    def _update_cell_accessibility(self, row: int, col: int):
-        """
-        Override accessibility for standings to use team name as context instead of position.
-        """
-        if row < 0 or row >= self.table_widget.rowCount() or col < 0 or col >= self.table_widget.columnCount():
-            return
-
-        current_item = self.table_widget.item(row, col)
-        if not current_item:
-            return
-
-        # Get the current cell value
-        cell_value = current_item.text()
-
-        # Get column header
-        header_item = self.table_widget.horizontalHeaderItem(col)
-        column_name = header_item.text() if header_item else f"Column {col + 1}"
-
-        # Get team name from column 1 (index 1) instead of position from column 0
-        team_context = ""
-        if self.table_widget.columnCount() > 1:
-            team_col_item = self.table_widget.item(row, 1)  # Team name is in column 1
-            if team_col_item:
-                team_context = team_col_item.text()
-
-        # Build enhanced accessibility description
-        if team_context and col != 1:  # Don't include team context for the team column itself
-            accessibility_text = f"{team_context}, {column_name}, {cell_value}"
-        else:
-            accessibility_text = f"{column_name}, {cell_value}"
-
-        # Update the accessibility using the most compatible method
-        current_item.setToolTip(accessibility_text)
-        current_item.setData(Qt.ItemDataRole.AccessibleDescriptionRole, accessibility_text)
-        current_item.setData(Qt.ItemDataRole.AccessibleTextRole, accessibility_text)
-        current_item.setWhatsThis(accessibility_text)
-
 
 class WildCardTable(StandingsTable):
     """MLB wild card race: division leaders first, then the ranked race.
@@ -967,6 +935,21 @@ class LeadersTable(AccessibleTable):
                 ])
 
         self.populate_data(rows, set_focus)
+
+
+class RankingsTable(AccessibleTable):
+    """One statistic's ranked list: rank, who, and the number. The name after the rank says whose
+    row it is: "Luka Doncic, Rank, 1", then "Luka Doncic, Value, 38.3"."""
+
+    ROW_CONTEXT_COLUMN = 1
+
+    def __init__(self, headers: List[str], parent=None):
+        super().__init__(
+            parent=parent,
+            accessible_name="Statistics Results",
+            accessible_description="Rankings for the selected statistic"
+        )
+        self.setup_columns(headers, stretch_column=self.ROW_CONTEXT_COLUMN)
 
 
 class BoxscoreTable(AccessibleTable):

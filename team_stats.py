@@ -231,3 +231,25 @@ def team_stat_lists(team_stats):
             lists.append({"name": f"{title} ({name})", "category": name, "stat_name": title,
                           "data": rank_teams(rows, title in category.get("low_is_good", ())), "type": "team"})
     return lists
+
+
+RANKING_HEADERS = {
+    "player": ["Rank", "Player", "Team", "Value"],
+    "team": ["Rank", "Team", "Value"],
+}
+
+
+def _shown(value):
+    return "" if value is None else value
+
+
+def ranking_rows(stat_type, data):
+    """A ranked list as rows for RANKING_HEADERS, in the order it came, which is best first.
+    A team's rows carry their rank, since teams level share one. A player's rank is their place in
+    the list: /leaders and the MLB Stats API, whose rows the dialog gives the same shape, both list
+    the best first. A player with no team reads N/A, so no cell of the table is silent."""
+    if stat_type == "team":
+        return [[item.get("rank"), item.get("name") or "Unknown", _shown(item.get("displayValue"))]
+                for item in data]
+    return [[rank, item.get("player_name") or "Unknown", item.get("team") or "N/A", _shown(item.get("value"))]
+            for rank, item in enumerate(data, 1)]
