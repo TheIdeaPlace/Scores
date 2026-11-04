@@ -15,6 +15,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   N reaches Sun Belt. How quick is twice your Windows double-click time, about a second unless you've
   changed it. Disabled and hidden tabs are skipped, and letters typed in a table on a tab still go
   to the table.
+- **More than eight tabs is now a list.** College football, men's and women's college basketball
+  conferences in Standings and Teams, and football box scores, have a list beside the table instead
+  of a long row of tabs. Up and Down go round it, Home, End and typing work as they do on tabs, and
+  the table changes as you move. Tab or Enter goes to the table, and Ctrl+Tab, F6 and the view keys
+  work as before. Eight or fewer stay as tabs.
 - **The WNBA has Standings, Statistics, Teams, Transactions and Venues on Windows,** and `--wnba`,
   `--wnba-teams` and `--wnba-standings` go straight to them. The league view only had games and news.
   Its games back reads like the NBA's.
