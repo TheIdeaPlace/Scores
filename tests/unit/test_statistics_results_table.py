@@ -133,6 +133,16 @@ def test_mlb_has_no_season_and_full_team_names(open_dialog):
     assert row_cells(table, 1) == ["2", "No Team", "N/A", "40"]
 
 
+def test_mlb_players_level_on_the_number_share_the_rank_its_feed_gives(open_dialog):
+    feed = json.loads((FIXTURES / "mlb_leaders_homeRuns.json").read_text(encoding="utf-8"))["leagueLeaders"][0]["leaders"]
+    leaders = [{"name": leader["person"]["fullName"], "value": leader["value"],
+                "team": leader["team"]["name"], "position": None} for leader in feed]
+    view = open_dialog("MLB", "player", {"player_stats": [{"name": "Home Runs", "leaders": leaders}], "team_stats": []})
+    select_stat(view, "Home Runs")
+    ranks = [row_cells(view.results_table, row)[0] for row in range(view.results_table.rowCount())]
+    assert ranks == [str(leader["rank"]) for leader in feed] == ["1", "1", "3"]
+
+
 def test_a_row_says_whose_it_is(open_dialog):
     view = open_dialog("NBA", "player", NBA_LEADERS)
     select_stat(view, "Points Per Game")
@@ -150,6 +160,7 @@ def test_choosing_a_stat_focuses_the_first_row_of_the_saved_view(open_dialog, sa
     table = view.results_table
     shown = [table.table_widget, table.quick_list, table.full_list][mode]
     assert table.stacked_widget.currentWidget() is shown
+    assert shown.isVisible()
     assert view.focusWidget() is shown
     assert table.currentRow() == 0
 

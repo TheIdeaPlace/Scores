@@ -12,7 +12,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   them, as they do on every other table, and they open in your saved view. Player statistics have
   Rank, Player, Team and Value, and team statistics Rank, Team and Value. A row used to be one line
   of text, such as "1 Luka Doncic (LAL) 38.3". On any cell a screen reader now hears whose row it
-  is: "Luka Doncic, Value, 38.3".
+  is: "Luka Doncic, Value, 38.3". Players level on a number now share a rank, as teams do: two
+  players on 7.5 sacks are both 1st, where one used to read 1st and the other 2nd.
 - **The WNBA has Standings, Statistics, Teams, Transactions and Venues on Windows,** and `--wnba`,
   `--wnba-teams` and `--wnba-standings` go straight to them. The league view only had games and news.
   Its games back reads like the NBA's.

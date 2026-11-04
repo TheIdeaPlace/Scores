@@ -341,6 +341,25 @@ class TestRankingRows:
                                        {"player_name": "Shai", "team": "OKC", "value": "31.0"}])
         assert rows == [[1, "Luka Doncic", "LAL", "38.3"], [2, "Shai", "OKC", "31.0"]]
 
+    def test_players_level_on_the_number_share_a_rank(self):
+        categories = espn_api._parse_leaders(load("leaders_v3_NFL.json"))["player_stats"]
+        sacks = next(c for c in categories if c["category"] == "Sacks")
+        rows = ranking_rows("player", sacks["stats"])
+        assert [row[3] for row in rows] == ["7.5", "7.5"]
+        assert [row[0] for row in rows] == [1, 1]
+        assert [row[1] for row in rows] == ["T.J. Watt", "Will Anderson Jr."]
+
+    def test_the_next_rank_counts_the_players_level(self):
+        rows = ranking_rows("player", [{"player_name": name, "value": value}
+                                       for name, value in (("A", "9"), ("B", "9"), ("C", "9"), ("D", "4"), ("E", "4"))])
+        assert [row[0] for row in rows] == [1, 1, 1, 4, 4]
+
+    def test_mlb_comes_out_with_the_ranks_its_feed_gives(self):
+        leaders = load("mlb_leaders_homeRuns.json")["leagueLeaders"][0]["leaders"]
+        rows = ranking_rows("player", [{"player_name": leader["person"]["fullName"], "value": leader["value"]}
+                                       for leader in leaders])
+        assert [row[0] for row in rows] == [leader["rank"] for leader in leaders] == [1, 1, 3]
+
     def test_real_leaders_become_rows(self):
         categories = espn_api._parse_leaders(load("leaders_v3_NBA.json"))["player_stats"]
         points = next(c for c in categories if c["category"] == "Points Per Game")
