@@ -29,6 +29,9 @@ class ESPNAPIService {
     /// stat headings request definitions concurrently — see `TeamStatsStore`.
     private let teamStatsStore: TeamStatsStore
 
+    /// A league's venues. See `VenueCacheStore`.
+    private let venueCache = VenueCacheStore()
+
     private convenience init() {
         let config = URLSessionConfiguration.default
         config.timeoutIntervalForRequest = 30
@@ -1575,6 +1578,91 @@ class ESPNAPIService {
         guard let http = response as? HTTPURLResponse, http.statusCode == 200 else { throw APIError.invalidResponse }
         let apiResponse = try JSONDecoder().decode(RankingsAPIResponse.self, from: data)
         return apiResponse.rankings.map { RankingsPoll(from: $0) }
+    }
+
+    // MARK: - Venues
+
+    /// A month of college basketball is up to 19 MB. A year would be no better: ESPN stops
+    /// at the first 1000 games of any query, so a year of the NBA ends in April.
+    private static let venueScoreboardLimit = 1000
+
+    /// What gets a league's whole month of games. College football follows the coverage setting.
+    func venueQuery(for sport: Sport, coverage: NCAAFCoverage? = nil) -> String {
+        switch sport {
+        case .ncaaf:
+            return collegeScoreboardParams(for: .ncaaf, coverage: coverage).joined(separator: "&")
+        case .ncaam, .ncaawb:
+            return "groups=\(Self.collegeBasketballGroupID)&limit=\(Self.venueScoreboardLimit)"
+        default:
+            return "limit=\(Self.venueScoreboardLimit)"
+        }
+    }
+
+    func venueScoreboardURLString(for sport: Sport, month: String, coverage: NCAAFCoverage? = nil) -> String {
+        "\(baseURL)/\(sport.apiPath)/scoreboard?dates=\(month)&\(venueQuery(for: sport, coverage: coverage))"
+    }
+
+    /// A league's venues and home teams. Takes a request or two, the same as Windows' in
+    /// services/venue_service.py.
+    ///
+    /// An empty list means ESPN answered and had nothing. If it never answered this throws,
+    /// because "no venues" would be untrue. A month with a server error doesn't lose the
+    /// list, as the month before stands in for it, but only for now: that isn't cached, so
+    /// opening it again gives the month it missed another chance.
+    func fetchVenues(for sport: Sport, now: Date = Date(), ignoringCache: Bool = false) async throws -> [LeagueVenue] {
+        guard sport.hasVenues else { return [] }
+        let cacheKey = "\(sport.rawValue)|\(venueQuery(for: sport))"
+        if !ignoringCache, let cached = await venueCache.venues(forKey: cacheKey) {
+            return cached
+        }
+        let months = VenueRules.months(for: sport, on: now)
+        var failed = false
+        for month in months {
+            let events: [VenueScoreboard.Event]
+            do {
+                events = try await venueEvents(for: sport, month: month)
+            } catch let error as URLError {
+                if error.code == .cancelled { throw CancellationError() }
+                // With no network an older month won't answer either, and asking would only
+                // make the message later.
+                if Self.meansNoNetwork(error.code) { throw VenuesError.espnDidNotAnswer }
+                failed = true
+                continue
+            } catch is CancellationError {
+                throw CancellationError()
+            } catch {
+                failed = true
+                continue
+            }
+            let venues = LeagueVenue.venues(from: events, in: sport)
+            if !venues.isEmpty {
+                if !failed { await venueCache.store(venues, forKey: cacheKey) }
+                return venues
+            }
+        }
+        if failed { throw VenuesError.espnDidNotAnswer }
+        return []
+    }
+
+    /// The same failures Windows stops at: a timeout, or no connection to be had. Something
+    /// else going wrong with one month, such as a connection lost partway through its
+    /// download, is that month's failure, and the month before can stand in.
+    private static func meansNoNetwork(_ code: URLError.Code) -> Bool {
+        switch code {
+        case .timedOut, .notConnectedToInternet, .cannotConnectToHost, .cannotFindHost, .dnsLookupFailed,
+             .secureConnectionFailed, .dataNotAllowed, .internationalRoamingOff:
+            return true
+        default:
+            return false
+        }
+    }
+
+    private func venueEvents(for sport: Sport, month: String) async throws -> [VenueScoreboard.Event] {
+        guard let url = URL(string: venueScoreboardURLString(for: sport, month: month)) else { throw APIError.invalidURL }
+        let (data, response) = try await session.data(from: url)
+        guard let http = response as? HTTPURLResponse else { throw APIError.invalidResponse }
+        guard http.statusCode == 200 else { throw APIError.unexpectedStatus(http.statusCode) }
+        return try JSONDecoder().decode(VenueScoreboard.self, from: data).events
     }
 
     // MARK: - Fetch Golf Tournament / Schedule

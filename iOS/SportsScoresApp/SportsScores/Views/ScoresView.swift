@@ -9,7 +9,7 @@ import SwiftUI
 import UIKit
 
 private enum ScoresTab: Int {
-    case scores = 0, standings, news, stats, polls
+    case scores = 0, standings, news, stats, polls, venues
 }
 
 struct ScoresView: View {
@@ -45,7 +45,7 @@ struct ScoresView: View {
             tabContent
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
 
-            // ── Tab selector (Scores / Standings / News / Stats [/ Polls]) ─
+            // ── Tab selector (Scores / Standings / News / Stats [/ Polls] [/ Venues]) ─
             Divider()
             Picker("View", selection: $selectedTab) {
                 Text("Scores").tag(ScoresTab.scores)
@@ -57,6 +57,9 @@ struct ScoresView: View {
                 }
                 if sport.hasPolls {
                     Text("Polls").tag(ScoresTab.polls)
+                }
+                if sport.hasVenues {
+                    Text("Venues").tag(ScoresTab.venues)
                 }
             }
             .pickerStyle(.segmented)
@@ -404,6 +407,8 @@ struct ScoresView: View {
             StatisticsView(sport: sport)
         case .polls where sport.hasPolls:
             PollsView(sport: sport)
+        case .venues where sport.hasVenues:
+            VenuesView(sport: sport)
         default:
             scoresTab
         }
