@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import UIKit
 
 // MARK: - Golf live state (lightweight, separate from team-sport viewmodel)
 
@@ -113,6 +114,10 @@ struct LiveScoresView: View {
         }
         .refreshable {
             await viewModel.refresh()
+            // Someone asked for this one. The timer's stay quiet.
+            if let note = viewModel.failureNote {
+                UIAccessibility.post(notification: .announcement, argument: note)
+            }
             if appSettings.golfHubEnabled { await golfVM.fetch() }
         }
     }

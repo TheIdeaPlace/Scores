@@ -65,7 +65,7 @@ final class WorldCupTeamViewModel: ObservableObject {
             }
             phaseGames = result
         } catch {
-            self.error = "Could not load \(entry.teamDisplayName)'s matches."
+            self.error = APIError.unavailable("\(entry.teamDisplayName)'s matches")
         }
 
         isLoading = false

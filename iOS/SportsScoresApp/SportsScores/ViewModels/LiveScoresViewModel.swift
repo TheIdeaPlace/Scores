@@ -74,7 +74,7 @@ class LiveScoresViewModel: ObservableObject {
         var failed: [String] = []
 
         for (sport, fetched) in results {
-            if fetched == nil { failed.append(sport.rawValue) }
+            if fetched == nil { failed.append(sport.displayName) }
             // A league that failed keeps what it last showed.
             let games = fetched ?? (liveGames + completedGames + upcomingGames)
                 .filter { $0.sport == sport }

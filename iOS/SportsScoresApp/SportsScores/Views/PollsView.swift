@@ -7,6 +7,7 @@
 //
 
 import SwiftUI
+import UIKit
 
 struct PollsView: View {
     let sport: Sport
@@ -28,7 +29,13 @@ struct PollsView: View {
             }
         }
         .task { await viewModel.fetchRankings(for: sport) }
-        .refreshable { await viewModel.refresh(for: sport) }
+        .refreshable {
+            await viewModel.refresh(for: sport)
+            // With a list showing, nothing else would say so.
+            if let error = viewModel.errorMessage, !viewModel.polls.isEmpty {
+                UIAccessibility.post(notification: .announcement, argument: error)
+            }
+        }
         .toolbar {
             ToolbarItem(placement: .navigationBarTrailing) {
                 ViewModeMenuButton(currentMode: $viewMode)

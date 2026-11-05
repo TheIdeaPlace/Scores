@@ -34,7 +34,7 @@ class TeamStatsViewModel: ObservableObject {
         do {
             playerCategories = try await playerTask
         } catch {
-            playerError = "Failed to load player stats."
+            playerError = APIError.unavailable("these")
             hasLoaded = false   // so Retry can ask again
         }
         isLoadingPlayers = false
@@ -42,7 +42,7 @@ class TeamStatsViewModel: ObservableObject {
         do {
             teamRankings = try await rankingsTask
         } catch {
-            teamError = "Failed to load team stats."
+            teamError = APIError.unavailable("these")
             hasLoaded = false
         }
         isLoadingTeamRankings = false

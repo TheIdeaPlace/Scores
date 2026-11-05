@@ -78,6 +78,7 @@ class StandingsViewModel: ObservableObject {
             wildCardGroups = try await apiService.fetchMLBWildCardStandings()
         } catch {
             errorMessage = APIError.unavailable("wild card standings")
+            hasAttemptedWildCard = false  // so Retry can ask again
         }
         isLoading = false
     }

@@ -170,6 +170,15 @@ class TestFantasyFailures:
             espn_api.get_fantasy_cheatsheet(2026)
         assert str(caught.value) == espn_api.FANTASY_UNAVAILABLE
 
+    @pytest.mark.parametrize("reply", [HTTP_500, TIMEOUT])
+    def test_this_season_failing_does_not_show_last_seasons_board(self, espn, reply):
+        """Last season's board with no sign anything went wrong. Only a 404 falls back."""
+        espn.on("/seasons/2026/players", reply).on("/seasons/2025/players", [self.player()])
+        with pytest.raises(ApiError) as caught:
+            espn_api.get_fantasy_cheatsheet(2026)
+        assert str(caught.value) == espn_api.FANTASY_UNAVAILABLE
+        assert not espn.urls("/seasons/2025/")
+
     def test_both_seasons_timing_out_says_so_in_the_same_words(self, espn):
         espn.on("/players", TIMEOUT)
         with pytest.raises(ApiError) as caught:

@@ -119,8 +119,17 @@ def test_espn_having_nothing_reads_as_nothing(espn, call, nothing, sentence, rep
     ("/scoreboard", {"events": None}, lambda: espn_api.get_golf_leaderboard("PGA"), espn_api.LEADERBOARD_UNAVAILABLE),
     ("/scoreboard", {"events": None}, lambda: espn_api.get_golf_schedule("PGA"), espn_api.SCHEDULE_UNAVAILABLE),
     ("/standings", {"children": None}, lambda: espn_api.get_world_cup_standings("WC2026"), espn_api.STANDINGS_UNAVAILABLE),
+    ("/standings", {"children": None}, lambda: espn_api.get_standings("MLB"), espn_api.STANDINGS_UNAVAILABLE),
+    ("/standings", {"children": None}, lambda: espn_api.get_standings("NFL"), espn_api.STANDINGS_UNAVAILABLE),
+    ("/standings", {"children": None}, lambda: espn_api.get_standings("NBA"), espn_api.STANDINGS_UNAVAILABLE),
+    ("/standings", {"children": None}, lambda: espn_api.get_standings("NHL"), espn_api.STANDINGS_UNAVAILABLE),
+    ("/standings", {"children": None}, lambda: espn_api.get_standings("WNBA"), espn_api.STANDINGS_UNAVAILABLE),
+    ("/standings", {"children": None}, lambda: espn_api.get_standings("NCAAM"), espn_api.STANDINGS_UNAVAILABLE),
+    ("/teams", {"sports": None}, lambda: espn_api.get_standings("EPL"), espn_api.STANDINGS_UNAVAILABLE),
 ], ids=["scores", "scores_ncaaf", "news", "team_news", "schedule_nfl", "schedule_nba", "schedule_soccer", "rankings",
-        "roster", "transactions", "team_transactions", "golf_leaderboard", "golf_schedule", "world_cup_standings"])
+        "roster", "transactions", "team_transactions", "golf_leaderboard", "golf_schedule", "world_cup_standings",
+        "standings_mlb", "standings_nfl", "standings_nba", "standings_nhl", "standings_wnba", "standings_ncaam",
+        "standings_soccer"])
 def test_a_null_list_is_told_apart_from_an_empty_one(espn, route, payload, call, sentence):
     """A null where the whole answer's list should be isn't an answer."""
     espn.on(route, payload)

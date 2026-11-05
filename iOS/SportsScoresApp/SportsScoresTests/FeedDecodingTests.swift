@@ -2093,18 +2093,44 @@ final class FailedRequestWordingTests: XCTestCase {
     }
 
     func testEachSentenceMatchesTheSharedFile() throws {
-        let wording = try wording()
-        XCTAssertFalse(wording.unavailable.isEmpty)
-        for (what, sentence) in wording.unavailable {
+        let shared = try wording()
+        XCTAssertFalse(shared.unavailable.isEmpty)
+        for (what, sentence) in shared.unavailable {
             XCTAssertEqual(APIError.unavailable(what), sentence)
         }
     }
 
     func testTheLiveScoresRowMatchesTheSharedFile() throws {
-        let wording = try wording()
-        XCTAssertFalse(wording.live.isEmpty)
-        for item in wording.live {
+        let shared = try wording()
+        XCTAssertFalse(shared.live.isEmpty)
+        for item in shared.live {
             XCTAssertEqual(APIError.liveScoresFailure(item.failed, showing: item.showing), item.text)
+        }
+    }
+}
+
+/// Live Scores counts a throw as a league that failed, so ESPN having nothing mustn't throw.
+final class ScoreboardFailureTests: XCTestCase {
+    private func games(status: Int, body: String) async throws -> [Game] {
+        let service = StubbedESPN.service([("/scoreboard", status, Data(body.utf8))])
+        return try await service.fetchGames(for: .nba)
+    }
+
+    func testESPNHavingNothingIsNoGames() async throws {
+        let answers = [(404, "{}"), (400, "{}"), (200, #"{"events":[]}"#)]
+        for (status, body) in answers {
+            let found = try await games(status: status, body: body)
+            XCTAssertTrue(found.isEmpty, "\(status) \(body)")
+        }
+    }
+
+    func testAFailedRequestThrows() async {
+        let answers = [(500, "{}"), (503, "{}"), (403, "{}"), (200, "{}"), (200, #"{"events":null}"#), (200, "<html>")]
+        for (status, body) in answers {
+            do {
+                _ = try await games(status: status, body: body)
+                XCTFail("\(status) \(body) should have thrown")
+            } catch {}
         }
     }
 }

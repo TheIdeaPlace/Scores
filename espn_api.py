@@ -1704,6 +1704,7 @@ def _get_mlb_standings_fast():
         data = _espn_answer(STANDINGS_UNAVAILABLE, url)
         if data is None:
             return []
+        _listed(data, "children", STANDINGS_UNAVAILABLE)
 
         standings = []
         
@@ -1840,6 +1841,7 @@ def _get_nfl_standings_fast():
         data = _espn_answer(STANDINGS_UNAVAILABLE, url)
         if data is None:
             return []
+        _listed(data, "children", STANDINGS_UNAVAILABLE)
 
         standings = []
         
@@ -1964,6 +1966,7 @@ def _get_nba_standings_fast():
         data = _espn_answer(STANDINGS_UNAVAILABLE, url)
         if data is None:
             return []
+        _listed(data, "children", STANDINGS_UNAVAILABLE)
 
         standings = []
         
@@ -2089,6 +2092,7 @@ def _get_nba_fresh_standings():
         data = _espn_answer(STANDINGS_UNAVAILABLE, url)
         if data is None:
             return []
+        _listed(data, "sports", STANDINGS_UNAVAILABLE)
 
         standings = []
         
@@ -2172,6 +2176,7 @@ def _get_nhl_standings_fast():
         data = _espn_answer(STANDINGS_UNAVAILABLE, url)
         if data is None:
             return []
+        _listed(data, "children", STANDINGS_UNAVAILABLE)
 
         standings = []
         
@@ -2340,7 +2345,9 @@ def _standings_or_nothing(league, path, query=""):
         resp = _http_get(f"https://site.api.espn.com/apis/v2/sports/{path}/standings{query}")
         if resp.status_code != 200:
             raise ApiError(STANDINGS_UNAVAILABLE)
-        return parse_college_standings(resp.json())
+        data = resp.json()
+        _listed(data, "children", STANDINGS_UNAVAILABLE)
+        return parse_college_standings(data)
     except (requests.RequestException, ValueError) as e:
         print(f"Error in {league} standings: {e}")
         raise ApiError(STANDINGS_UNAVAILABLE) from e
@@ -2392,6 +2399,7 @@ def _get_standings_original(league_key):
     data = _espn_answer(STANDINGS_UNAVAILABLE, teams_url)
     if data is None:
         return []
+    _listed(data, "sports", STANDINGS_UNAVAILABLE)
 
     return _parse_standings_from_teams_api(data, league_key)
 
@@ -3726,6 +3734,10 @@ def _assign_board_ranks(players):
             player.setdefault(target, None)
 
 
+class _FantasySeasonNotThere(ApiError):
+    """A 400 or 404: ESPN hasn't made this season's feed. Any other failure says nothing about that."""
+
+
 def _load_fantasy_season(season, max_rank):
     """Fetch and map one season's draft board. Returns [] when unavailable."""
     url = f"{FANTASY_BASE}/{season}/players?view=kona_player_info&scoringPeriodId=0"
@@ -3736,13 +3748,15 @@ def _load_fantasy_season(season, max_rank):
     }
     # Raised, not swallowed: an empty list here would be indistinguishable from
     # "ESPN has not published this season yet", and the caller reports those two
-    # very differently. A 404 is raised too: the fallback below is what reads it.
+    # very differently. A 404 has its own exception, which the fallback below reads.
     try:
         resp = _http_get(url, headers=headers, timeout=90)
         raw_players = resp.json() if resp.status_code == 200 else None
     except (requests.RequestException, ValueError) as e:
         print(f"[get_fantasy_cheatsheet] {season}: {e}")
         raise ApiError(FANTASY_UNAVAILABLE) from e
+    if resp.status_code in (400, 404):
+        raise _FantasySeasonNotThere(FANTASY_UNAVAILABLE)
     if resp.status_code != 200:
         raise ApiError(FANTASY_UNAVAILABLE)
     if not isinstance(raw_players, list):
@@ -3775,7 +3789,7 @@ def get_fantasy_cheatsheet(season=None, max_rank=None):
     season = int(season or datetime.now().year)
     try:
         players = _load_fantasy_season(season, max_rank)
-    except Exception as e:
+    except _FantasySeasonNotThere as e:
         # The upcoming season's feed can 404 before ESPN creates it.
         print(f"[get_fantasy_cheatsheet] {season}: {e}")
         return {"season": season - 1, "players": _load_fantasy_season(season - 1, max_rank)}

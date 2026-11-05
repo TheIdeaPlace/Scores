@@ -7,6 +7,7 @@
 //
 
 import SwiftUI
+import UIKit
 import SafariServices
 
 struct NewsView: View {
@@ -28,7 +29,13 @@ struct NewsView: View {
             }
         }
         .task { await viewModel.fetchNews(for: sport) }
-        .refreshable { await viewModel.refresh(for: sport) }
+        .refreshable {
+            await viewModel.refresh(for: sport)
+            // With a list showing, nothing else would say so.
+            if let error = viewModel.errorMessage, !viewModel.articles.isEmpty {
+                UIAccessibility.post(notification: .announcement, argument: error)
+            }
+        }
     }
 
     // MARK: - List

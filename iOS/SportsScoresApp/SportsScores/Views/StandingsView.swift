@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import UIKit
 
 struct StandingsView: View {
     let sport: Sport
@@ -28,6 +29,10 @@ struct StandingsView: View {
         }
         .refreshable {
             await viewModel.refresh(for: sport)
+            // With a list showing, nothing else would say so.
+            if let error = viewModel.errorMessage, !viewModel.visibleGroups.isEmpty {
+                UIAccessibility.post(notification: .announcement, argument: error)
+            }
         }
     }
 

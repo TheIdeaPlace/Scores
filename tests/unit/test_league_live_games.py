@@ -498,6 +498,47 @@ class TestAFailureInLiveScores(FailureViews):
         view._on_live_scores_loaded([], [], [], ["NBA"])
         assert self.said.call_count == 2
 
+    def test_a_monitored_league_is_still_heard_after_another_failed_quietly(self, view):
+        live = {"id": "1", "league": "NBA", "name": "A at B", "status": "Q1", "teams": []}
+        view.monitored_games.add("1")
+        view._on_live_scores_loaded([live], [], [], [])
+        view._on_live_scores_loaded([live], [], [], ["NHL"])
+        self.said.assert_not_called()
+        view._on_live_scores_loaded([], [], [], ["NHL", "NBA"])
+        self.said.assert_called_once()
+
+    def test_a_retry_that_works_lands_on_a_row(self, view):
+        self.load(view, [self.today_game("1", "NHL")], ["NBA"])
+        lst = view.live_scores_list
+        lst.setCurrentRow(lst.count() - 1)
+        self.load(view, [self.today_game("1", "NHL")])
+        assert lst.currentRow() == lst.count() - 1 and lst.count() > 0
+
+    def test_someone_on_the_row_hears_a_changed_row_once(self, view):
+        self.load(view, failed=["NBA"])
+        view.live_scores_list.setCurrentRow(0)
+        with patch.object(view, "load_live_scores"):
+            view.refresh()
+        self.load(view, failed=["NBA", "NHL"])
+        assert view.live_scores_list.currentRow() == 0
+        self.said.assert_not_called()
+
+    def test_someone_on_the_row_hears_an_unchanged_row_said(self, view):
+        self.load(view, failed=["NBA"])
+        view.live_scores_list.setCurrentRow(0)
+        with patch.object(view, "load_live_scores"):
+            view.refresh()
+        self.load(view, failed=["NBA"])
+        self.said.assert_called_once()
+
+    def test_a_refresh_someone_asked_for_failing_whole_says_so(self, view):
+        self.load(view, [self.today_game("1", "NHL")])
+        with patch.object(view, "load_live_scores"):
+            view.refresh()
+        view._on_live_scores_error(FAILED)
+        self.said.assert_called_once_with(FAILED)
+        assert view._refresh_asked_for is False
+
     def test_a_league_nobody_is_monitoring_stays_quiet(self, view):
         live = {"id": "1", "league": "NBA", "name": "A at B", "status": "Q1", "teams": []}
         view.monitored_games.add("1")
@@ -604,6 +645,71 @@ class TestAFailureInADialog(FailureViews):
         assert dialog.load_more_btn.isEnabled()
         self.said.assert_called_once_with(FAILED)
 
+    def press_f5(self, dialog):
+        from PyQt6.QtCore import QEvent, Qt
+        from PyQt6.QtGui import QKeyEvent
+        dialog.keyPressEvent(QKeyEvent(QEvent.Type.KeyPress, Qt.Key.Key_F5, Qt.KeyboardModifier.NoModifier))
+
+    def test_f5_in_transactions_only_tries_again_what_failed(self):
+        dialog = self.transactions()
+        with patch.object(dialog, "_load_transactions") as load:
+            self.press_f5(dialog)
+            load.assert_not_called()
+            loading = self.scores.QListWidgetItem("Loading transactions...")
+            dialog.trans_list.addItem(loading)
+            dialog._on_error(FAILED, loading)
+            self.press_f5(dialog)
+            load.assert_called_once_with(reset=True)
+
+    def golf(self):
+        with patch.object(self.scores.GolfTournamentDialog, "_load_leaderboard"), \
+                patch.object(self.scores.GolfTournamentDialog, "_load_schedule"):
+            return self.scores.GolfTournamentDialog("PGA")
+
+    def test_f5_in_golf_only_tries_again_what_failed(self):
+        dialog = self.golf()
+        dialog._list_error(dialog.leaderboard_list, FAILED)
+        assert self.rows(dialog.leaderboard_list) == [FAILED]
+        assert dialog.tournament_label.text() == ""
+        with patch.object(dialog, "_load_leaderboard") as board, patch.object(dialog, "_load_schedule") as schedule:
+            self.press_f5(dialog)
+            self.press_f5(dialog)
+        board.assert_called_once()
+        schedule.assert_not_called()
+
+    def world_cup(self):
+        with patch.object(self.scores.WorldCupDialog, "_load_all"):
+            return self.scores.WorldCupDialog("WC2026")
+
+    def test_a_world_cup_refresh_that_fails_keeps_the_games_and_says_so_once(self):
+        dialog = self.world_cup()
+        dialog._on_scores_loaded([])
+        dialog._shown_games = (dialog.current_date, [])
+        before = self.rows(dialog.scores_list)
+        dialog._on_scores_failed(FAILED)
+        assert self.rows(dialog.scores_list) == before
+        dialog._say_refresh_failed(FAILED)
+        self.said.assert_called_once_with(FAILED)
+
+    def test_world_cup_scores_failing_on_another_day_is_a_row(self):
+        dialog = self.world_cup()
+        dialog._on_scores_failed(FAILED)
+        assert self.rows(dialog.scores_list) == [FAILED]
+
+    def test_world_cup_groups_failing_with_some_showing_keeps_them(self):
+        dialog = self.world_cup()
+        dialog.current_groups = [{"name": "Group A", "teams": []}]
+        before = dialog.groups_layout.count()
+        dialog._set_group_error(FAILED)
+        assert dialog.groups_layout.count() == before
+        self.said.assert_called_once_with(FAILED)
+
+    def test_world_cup_groups_failing_with_none_is_a_row(self):
+        dialog = self.world_cup()
+        dialog._set_group_error(FAILED)
+        row = dialog.groups_layout.itemAt(dialog.groups_layout.count() - 2).widget()
+        assert self.rows(row) == [FAILED]
+
     def draft(self):
         with patch.object(self.scores.NFLDraftDialog, "_load_year"):
             dialog = self.scores.NFLDraftDialog()
@@ -616,6 +722,14 @@ class TestAFailureInADialog(FailureViews):
         assert dialog.tab_widget.count() == 1
         assert self.rows(dialog.tab_widget.widget(0)) == [FAILED]
         assert dialog.status_label.text() == ""
+
+    def test_f5_in_the_draft_only_tries_again_what_failed(self):
+        dialog = self.draft()
+        with patch.object(dialog, "_load_year") as load_year, patch.object(dialog, "_load_round") as load_round:
+            dialog._on_meta_error(FAILED, 2026)
+            self.press_f5(dialog)
+            load_year.assert_called_once_with(2026)
+            load_round.assert_not_called()
 
     def test_a_year_left_behind_failing_changes_nothing(self):
         dialog = self.draft()

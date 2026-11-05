@@ -914,8 +914,9 @@ class LiveScoresView(BaseView):
         self._last_games = None  # (day, live, today's games, golf) as last shown
         self._failed_leagues = []  # from the last load, for the row that says so
         self._failure_text = None  # that row's text
+        self._last_failure_text = None  # and what it was before this load
         self._refresh_asked_for = False  # someone asked for the load in flight
-        self._said_refresh_failed = False  # since the last load that had no failures
+        self._said_failed_leagues = set()  # monitored ones, until they answer again
 
         self.setup_ui()
         
@@ -1082,7 +1083,6 @@ class LiveScoresView(BaseView):
         _start_detached_thread(loader)
 
     def _on_live_scores_error(self, message: str):
-        self._refresh_asked_for = False
         self._show_live_failure(message)
         self._pending_old_scores = {}
 
@@ -1101,6 +1101,7 @@ class LiveScoresView(BaseView):
         answering shouldn't blank its games, and a refresh that gets nothing keeps the list."""
         day = scoreboard_today()
         self._failed_leagues = sorted(failed)
+        self._last_failure_text = self._failure_text
         last = self._last_games
         if failed and last and last[0] == day:
             live_games = with_failed_leagues_kept(live_games, last[1], failed)
@@ -1116,21 +1117,28 @@ class LiveScoresView(BaseView):
         asked for says it out loud, or the first to fail for a league with a game someone is
         monitoring, who would otherwise take the silence to mean the score hasn't changed."""
         asked, self._refresh_asked_for = self._refresh_asked_for, False
-        if not failed:
-            self._said_refresh_failed = False
+        monitored = set(failed) & {self.game_data.get(game_id, {}).get("league") for game_id in self.monitored_games}
+        newly_failed = monitored - self._said_failed_leagues
+        self._said_failed_leagues = (self._said_failed_leagues | monitored) & set(failed)
+        if not failed or not (asked or newly_failed):
             return
-        monitored = any(self.game_data.get(game_id, {}).get("league") in failed for game_id in self.monitored_games)
-        if asked or (monitored and not self._said_refresh_failed):
-            announce(self._failure_text)
-        self._said_refresh_failed = True
+        # Someone on the row, with its text changed, has just heard it read.
+        current = self.live_scores_list.currentItem()
+        if (current is not None and current.data(Qt.ItemDataRole.UserRole) == RETRY_ROW
+                and self._failure_text != self._last_failure_text):
+            return
+        announce(self._failure_text)
 
     def _add_failure_row(self, text):
         self.live_scores_list.addItem(_failure_row(text))
 
     def _show_live_failure(self, message):
         """Nothing came back at all. Games on the list stay, and with none, a row says so."""
+        asked, self._refresh_asked_for = self._refresh_asked_for, False
         lst = self.live_scores_list
         if any(isinstance(lst.item(row).data(Qt.ItemDataRole.UserRole), dict) for row in range(lst.count())):
+            if asked:
+                announce(message)
             return
         lst.clear()
         self._add_failure_row(message)
@@ -1193,8 +1201,9 @@ class LiveScoresView(BaseView):
                     self.live_scores_list.setCurrentRow(row)
                     restored = True
                     break
-        if not restored and 0 <= selected_row < self.live_scores_list.count():
-            self.live_scores_list.setCurrentRow(selected_row)
+        # The row can be past the end now: the failure row someone retried from is last, and gone.
+        if not restored and selected_row >= 0 and self.live_scores_list.count():
+            self.live_scores_list.setCurrentRow(min(selected_row, self.live_scores_list.count() - 1))
 
         self._check_monitored_scores(self._pending_old_scores)
 
@@ -1242,7 +1251,8 @@ class LiveScoresView(BaseView):
                     self.live_scores_list.addItem(item)
 
             total_games = len(live_games) + len(upcoming_games) + len(completed_games) + len(golf)
-            failure = (live_scores_failure_text(self._failed_leagues, total_games > 0)
+            failure = (live_scores_failure_text([_WC_DISPLAY_NAMES.get(league, league) for league in self._failed_leagues],
+                                                total_games > 0)
                        if self._failed_leagues else None)
             self._failure_text = failure
             if total_games == 0:
@@ -7905,7 +7915,7 @@ class NewsDialog(QDialog):
     def setup_ui(self):
         layout = QVBoxLayout()
         if not self.news_headlines:
-            layout.addWidget(QLabel("No news headlines available for this league."))
+            layout.addWidget(_message_row("No news headlines available for this league.", "News Headlines"))
             close_btn = QPushButton("Close")
             close_btn.clicked.connect(self.accept)
             layout.addWidget(close_btn)
@@ -9272,6 +9282,7 @@ class TransactionsDialog(QDialog):
         self.current_page = 1
         self.current_team_id = None
         self._loaders = []
+        self._load_failed = False
 
         self.setWindowTitle(f"Transactions — {league} — Sports Scores")
         self.setMinimumSize(700, 500)
@@ -9339,6 +9350,7 @@ class TransactionsDialog(QDialog):
 
     def _load_transactions(self, reset=False):
         if reset:
+            self._load_failed = False
             self.current_page = 1
             self.trans_list.clear()
             self.load_more_btn.setEnabled(False)
@@ -9384,6 +9396,7 @@ class TransactionsDialog(QDialog):
             self.load_more_btn.setEnabled(True)
             announce(error)
             return
+        self._load_failed = True
         self.trans_list.clear()
         self.trans_list.addItem(error)
         self.trans_list.setCurrentRow(0)
@@ -9394,7 +9407,9 @@ class TransactionsDialog(QDialog):
             self.accept()
             return
         if event.key() == Qt.Key.Key_F5:
-            self._load_transactions(reset=True)
+            # Only after a failure: what's showing stays, and it's the only thing here to try again.
+            if self._load_failed:
+                self._load_transactions(reset=True)
             return
         super().keyPressEvent(event)
 
@@ -9410,6 +9425,7 @@ class NFLDraftDialog(QDialog):
         self._loaders = []
         self._tabs_loaded: set = set()
         self._opening = True
+        self._meta_failed = False
         self._current_year: int = datetime.now().year
         self._setup_ui()
         self._load_year(self._current_year)
@@ -9453,6 +9469,7 @@ class NFLDraftDialog(QDialog):
 
     def _load_year(self, year: int):
         self._current_year = year
+        self._meta_failed = False
         self._tabs_loaded.clear()
         self.tab_widget.blockSignals(True)
         self.tab_widget.clear()
@@ -9468,7 +9485,12 @@ class NFLDraftDialog(QDialog):
     def _on_meta_error(self, message: str, year: int):
         if year != self._current_year:
             return
+        self._meta_failed = True
         self.status_label.setText("")
+        # Arrowing through the years, focus stays on the list, so it has to be said.
+        focused = QApplication.focusWidget()
+        if not self._opening and (is_tab_bar(focused) or isinstance(focused, QComboBox)):
+            announce(message)
         # The rounds aren't known, so a row stands in for them. F5 tries again.
         row = _message_row(message, "NFL Draft")
         self.tab_widget.blockSignals(True)
@@ -9586,7 +9608,11 @@ class NFLDraftDialog(QDialog):
         if event.key() == Qt.Key.Key_Escape:
             self.accept()
         elif event.key() == Qt.Key.Key_F5:
-            self._load_year(self._current_year)
+            # Only what failed: rounds that loaded stay as they are.
+            if self._meta_failed:
+                self._load_year(self._current_year)
+            elif self.tab_widget.currentIndex() not in self._tabs_loaded:
+                self._load_round(self.tab_widget.currentIndex())
         else:
             super().keyPressEvent(event)
 
@@ -10378,6 +10404,7 @@ class GolfTournamentDialog(QDialog):
         self.setMinimumSize(700, 500)
         self.resize(950, 680)
         self._loaders = []
+        self._failed_lists = set()
         self._setup_ui()
         self._load_leaderboard()
         self._load_schedule()
@@ -10523,6 +10550,9 @@ class GolfTournamentDialog(QDialog):
             self.schedule_list.addItem(line)
 
     def _list_error(self, lw: QListWidget, error: str):
+        self._failed_lists.add(lw)
+        if lw is self.leaderboard_list:
+            self.tournament_label.clear()  # It says it's loading the tournament.
         lw.clear()
         lw.addItem(error)
         lw.setCurrentRow(0)
@@ -10533,8 +10563,12 @@ class GolfTournamentDialog(QDialog):
         if event.key() == Qt.Key.Key_Escape:
             self.accept()
         elif event.key() == Qt.Key.Key_F5:
-            self._load_leaderboard()
-            self._load_schedule()
+            # Only what failed: what loaded stays as it is.
+            failed, self._failed_lists = self._failed_lists, set()
+            if self.leaderboard_list in failed:
+                self._load_leaderboard()
+            if self.schedule_list in failed:
+                self._load_schedule()
         else:
             super().keyPressEvent(event)
 
@@ -10656,6 +10690,8 @@ class WorldCupDialog(QDialog):
         self.current_date = datetime.now().date()
         self.current_groups: list = []
         self._loaders: list = []
+        self._shown_games = None  # (date, games) as last shown, for a refresh that fails
+        self._said_refresh_failed = False
         self._group_tables: list = []  # AccessibleTable widgets (one per group)
 
         self.setWindowTitle(f"{self.display_name} — Sports Scores")
@@ -10829,6 +10865,7 @@ class WorldCupDialog(QDialog):
     # ─────────────── Data loading ───────────────
 
     def _load_all(self):
+        self._said_refresh_failed = False
         self._load_scores()
         self._load_standings()
         self._load_news()
@@ -10847,14 +10884,14 @@ class WorldCupDialog(QDialog):
         self.scores_list.addItem("Loading matches…")
         loader = WorldCupScoresLoader(self.league_key, self.current_date)
         loader.data_loaded.connect(self._on_scores_loaded)
-        loader.error_occurred.connect(lambda e: self._list_error(self.scores_list, e))
+        loader.error_occurred.connect(self._on_scores_failed)
         self._loaders.append(loader)
         loader.start()
 
     def _load_news(self):
         loader = WorldCupNewsLoader(self.league_key)
         loader.data_loaded.connect(self._on_news_loaded)
-        loader.error_occurred.connect(lambda e: self._list_error(self.news_list, e))
+        loader.error_occurred.connect(self._on_news_failed)
         self._loaders.append(loader)
         loader.start()
 
@@ -10868,7 +10905,29 @@ class WorldCupDialog(QDialog):
             self._rebuild_groups_widget(self.bracket_groups_layout, self.bracket_groups_content)
 
     def _on_scores_loaded(self, games: list):
+        self._shown_games = (self.current_date, games)
         self._populate_game_list(self.scores_list, games)
+
+    def _on_scores_failed(self, message: str):
+        # A refresh that fails keeps what it had, on the same day.
+        if self._shown_games and self._shown_games[0] == self.current_date:
+            self._populate_game_list(self.scores_list, self._shown_games[1])
+            self._say_refresh_failed(message)
+        else:
+            self._list_error(self.scores_list, message)
+
+    def _on_news_failed(self, message: str):
+        lst = self.news_list
+        if any(isinstance(lst.item(row).data(Qt.ItemDataRole.UserRole), dict) for row in range(lst.count())):
+            self._say_refresh_failed(message)
+        else:
+            self._list_error(lst, message)
+
+    def _say_refresh_failed(self, message: str):
+        """Once for a Refresh, which asks for three things at once."""
+        if not self._said_refresh_failed:
+            self._said_refresh_failed = True
+            announce(message)
 
     def _on_news_loaded(self, news: list):
         self.news_list.clear()
@@ -10939,7 +10998,9 @@ class WorldCupDialog(QDialog):
         layout.addStretch()
 
     def _set_group_error(self, msg: str):
-        self.current_groups = []
+        if self.current_groups:
+            self._say_refresh_failed(msg)  # A refresh that fails keeps what it had.
+            return
         for layout in (self.groups_layout, self.bracket_groups_layout):
             while layout.count():
                 item = layout.takeAt(0)
@@ -11076,8 +11137,6 @@ class WorldCupDialog(QDialog):
     def keyPressEvent(self, event):
         if event.key() == Qt.Key.Key_Escape:
             self.accept()
-        elif event.key() == Qt.Key.Key_F5:
-            self._load_all()
         else:
             super().keyPressEvent(event)
 
