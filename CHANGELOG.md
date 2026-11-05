@@ -40,6 +40,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   whole story with a heading or paragraph to a swipe. Before the game, ESPN's preview leads the news list.
 - **iPhone: a Scoring Summary in a football game's Info tab,** by quarter, with the team, clock and play.
 - **iPhone: an injury's type, details and return date,** where ESPN gives them.
+- **A dialog with tabs or a list can't end the app as it's cleaned up.** Tests caught this, once in many
+  runs, and it hasn't been seen in the app.
 - **College basketball fouls read and sound where they happened, on Windows and iPhone.** A foul under
   the basket read "deep, 78 feet out", with a far away note on the wrong side, because ESPN's college
   feed mirrors most fouls to the far end. It now reads "at the rim", and pans the same way as the shot.
