@@ -100,6 +100,8 @@ class TeamHubViewModel: ObservableObject {
         regularSeason = (try? await fetchRegularSeason(teamId, sport)) ?? []
     }
 
+    private var newsAnswered = false
+
     func loadRoster() async {
         // No roster feed for CFL — leave empty so the tab shows "No roster available".
         guard !sport.usesCFLSource else { return }
@@ -120,11 +122,15 @@ class TeamHubViewModel: ObservableObject {
     func loadNews() async {
         // No team news feed for CFL — leave empty so the tab shows "No news available".
         guard !sport.usesCFLSource else { return }
-        guard news.isEmpty, !isLoadingNews else { return }
+        // A team with no news has answered: asking on every visit only shows "Loading news".
+        guard news.isEmpty, !newsAnswered, !isLoadingNews else { return }
         isLoadingNews = true
         errorNews = nil
         do {
             news = try await apiService.fetchTeamNews(teamId: teamId, sport: sport, limit: 25)
+            newsAnswered = true
+        } catch let error where error.isCancellation {
+            // Switching tabs mid-load. Nothing is known, and coming back asks again.
         } catch {
             errorNews = APIError.unavailable("news")
         }

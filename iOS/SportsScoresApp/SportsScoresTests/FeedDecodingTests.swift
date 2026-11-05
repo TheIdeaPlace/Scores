@@ -2064,6 +2064,16 @@ final class DraftDecodingTests: XCTestCase {
     }
 }
 
+final class TeamNewsRequestTests: XCTestCase {
+    func testATeamWithNoNewsHasNoneRatherThanTheLeagues() async throws {
+        let service = StubbedESPN.service([("/news", 200, Data(#"{"articles":[]}"#.utf8))])
+        let news = try await service.fetchTeamNews(teamId: "2507", sport: .ncaaf)
+        XCTAssertTrue(news.isEmpty)
+        XCTAssertEqual(StubbedESPN.requested.count, 1, "\(StubbedESPN.requested)")
+        XCTAssertTrue(StubbedESPN.requested[0].contains("team=2507"))
+    }
+}
+
 /// tests/fixtures/failed_request_wording.json holds both apps to the same words for a failed
 /// request. tests/unit/replay/test_failure_paths.py holds the Python side.
 final class FailedRequestWordingTests: XCTestCase {

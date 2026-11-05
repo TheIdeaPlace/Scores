@@ -45,15 +45,15 @@ struct SettingsView: View {
 
     private var collegeFootballSection: some View {
         Section {
-            Picker("Games shown", selection: $appSettings.ncaafCoverage) {
+            Picker("Coverage", selection: $appSettings.ncaafCoverage) {
                 ForEach(NCAAFCoverage.allCases) { coverage in
                     Text(coverage.settingsLabel).tag(coverage)
                 }
             }
-            .accessibilityLabel("College football games shown")
-            .accessibilityHint("All Division I shows FBS and FCS together, around 200 games a week, "
-                               + "and is the only setting that shows opening weekend in full. "
-                               + "FBS only shows about 100 games a week.")
+            .accessibilityLabel("College football coverage")
+            .accessibilityHint("Sets the games, standings and teams you see. All Division I shows FBS "
+                               + "and FCS together, around 200 games a week, and is the only setting "
+                               + "that shows opening weekend in full. FBS only shows about 100 games a week.")
         } header: {
             Text("College Football")
         } footer: {

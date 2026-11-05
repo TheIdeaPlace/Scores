@@ -86,11 +86,11 @@ class TestNfl:
 
 
 class TestNba:
-    def test_the_url_names_the_season(self, espn, freeze_now):
+    def test_the_url_leaves_the_season_to_espn(self, espn, freeze_now):
         freeze_now(datetime(2026, 11, 3))
         espn.on("/nba/standings", load("standings_NBA.json"))
         espn_api.get_standings("NBA")
-        assert espn.calls == [f"{V2}/basketball/nba/standings?season=2027"]
+        assert espn.calls == [f"{V2}/basketball/nba/standings"]
 
     def test_a_team(self, espn):
         espn.on("/nba/standings", load("standings_NBA.json"))

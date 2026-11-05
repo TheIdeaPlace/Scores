@@ -1958,10 +1958,9 @@ def _get_nfl_standings_fast():
 def _get_nba_standings_fast():
     """Fast NBA standings using dedicated endpoint"""
     try:
-        # Pin the request to the current season so the standings roll over with
-        # it instead of staying on whatever season was current when this shipped
-        season = get_current_season_year("NBA")
-        url = f"https://site.api.espn.com/apis/v2/sports/basketball/nba/standings?season={season}"
+        # The season ESPN calls current, as on the iPhone. A season from the calendar could be one
+        # with no games yet, which read 0-0 for everyone from July.
+        url = "https://site.api.espn.com/apis/v2/sports/basketball/nba/standings"
         data = _espn_answer(STANDINGS_UNAVAILABLE, url)
         if data is None:
             return []
