@@ -44,7 +44,7 @@ class RacingViewModel: ObservableObject {
         do {
             raceEvent = try await apiService.fetchRaceEvent(for: series)
         } catch {
-            errorMessage = "Could not load race data."
+            errorMessage = APIError.unavailable("this race")
         }
     }
 

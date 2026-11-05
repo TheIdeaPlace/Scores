@@ -83,7 +83,7 @@ class TeamScheduleViewModel: ObservableObject {
             } else {
                 // Not the fallback below: a failed request isn't an off-season, and last
                 // season's games would read as this season's with no sign anything went wrong.
-                errorMessage = "Could not load the schedule. Check your connection and try again."
+                errorMessage = APIError.unavailable("the schedule")
                 loadFailed = true
             }
             return

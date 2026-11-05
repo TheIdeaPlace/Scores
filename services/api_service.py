@@ -1,6 +1,7 @@
 from typing import Any, Dict, List
 import espn_api
-from exceptions import ApiError
+import error_log
+from exceptions import ApiError, SOMETHING_WENT_WRONG
 
 __all__ = ["ApiService"]
 
@@ -9,10 +10,15 @@ class ApiService:
 
     @staticmethod
     def _call(func, *args, **kwargs):
+        """Every failure comes out as an ApiError in words a screen can read out. One that
+        isn't already is a bug, and its own text goes to the log, not to a screen reader."""
         try:
             return func(*args, **kwargs)
+        except ApiError:
+            raise
         except Exception as e:
-            raise ApiError(str(e)) from e
+            error_log.log_handled()
+            raise ApiError(SOMETHING_WENT_WRONG) from e
 
     @staticmethod
     def get_leagues() -> List[str]:

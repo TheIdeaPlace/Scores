@@ -100,7 +100,7 @@ struct TeamHubTeamPickerView: View {
                 : try await apiService.fetchTeamsForSport(sport: sport)
             teams = fetched.sorted { $0.displayName < $1.displayName }
         } catch {
-            errorMessage = "Could not load teams for \(sport.displayName)."
+            errorMessage = APIError.unavailable("the teams")
         }
         isLoading = false
     }

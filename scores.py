@@ -54,8 +54,9 @@ except ImportError:
     WINDOWS_UIA_AVAILABLE = False
 
 # New separated modules
-from exceptions import ApiError, DataModelError
-from espn_api import NCAAF_CONFERENCE_ORDER, standings_cache_key, stop_core_lookups
+from exceptions import ApiError, DataModelError, plain_message
+from espn_api import (NCAAF_CONFERENCE_ORDER, live_scores_failure_text, standings_cache_key,
+                      stop_core_lookups, with_failed_leagues_kept)
 from services.api_service import ApiService
 from services.venue_service import venue_service, venue_summary
 from models.game import GameData
@@ -244,6 +245,24 @@ def _message_row(text, name):
     row.addItem(text)
     row.setCurrentRow(0)
     return row
+
+
+# The data of a row saying a request failed. Enter on it tries again.
+RETRY_ROW = "__retry__"
+
+
+def _failure_row(text):
+    row = QListWidgetItem(text)
+    row.setData(Qt.ItemDataRole.UserRole, RETRY_ROW)
+    return row
+
+
+def _said(error):
+    """An exception as a screen reader should hear it. An ApiError is a plain sentence, and
+    anything else is a bug, which goes to the log. Call it while handling the exception."""
+    if not isinstance(error, ApiError):
+        error_log.log_handled()
+    return plain_message(error)
 
 
 class AudioOnFocusAction(QAction):
@@ -687,10 +706,8 @@ class HomeView(BaseView):
     
     def _show_api_error(self, message: str):
         """Show API error message to user"""
-        error_label = QLabel(f"Error: {message}")
-        error_label.setStyleSheet("color: red; font-weight: bold;")
-        self.layout.addWidget(error_label)
-    
+        self.layout.addWidget(_message_row(message, "Leagues"))
+
     def capture_state(self):
         return {"row": self.league_list.currentRow()}
 
@@ -835,7 +852,7 @@ class HomeView(BaseView):
             dialog.exec()
             self._rebuild_favorites()
         except Exception as e:
-            QMessageBox.critical(self, "Error", f"Failed to open team: {e}")
+            QMessageBox.critical(self, "Error", f"Failed to open team: {_said(e)}")
 
     def _move_fav_up(self):
         row = self.favorites_list.currentRow()
@@ -895,6 +912,12 @@ class LiveScoresView(BaseView):
 
         self._loader = None          # LiveScoresLoader while a load is running
         self._pending_old_scores = {}  # monitored scores captured when a refresh began
+        self._last_games = None  # (day, live, today's games, golf) as last shown
+        self._failed_leagues = []  # from the last load, for the row that says so
+        self._failure_text = None  # that row's text
+        self._last_failure_text = None  # and what it was before this load
+        self._refresh_asked_for = False  # someone asked for the load in flight
+        self._said_failed_leagues = set()  # monitored ones, until they answer again
 
         self.setup_ui()
         
@@ -948,7 +971,7 @@ class LiveScoresView(BaseView):
             # Provide feedback for manual refresh
             if hasattr(self, 'refresh_combo') and self.refresh_combo.currentText() == "Manual (F5 only)":
                 self.notification_helper.announce("Refreshing live scores manually")
-            self.refresh_live_scores()
+            self._refresh_on_request()
         else:
             super().keyPressEvent(event)
     
@@ -995,8 +1018,7 @@ class LiveScoresView(BaseView):
         QTimer.singleShot(3000, self._update_time_label)  # Reset after 3 seconds
     
     def _update_time_label(self):
-        """Update the time label with current time"""
-        self.current_time = datetime.now()
+        """Update the time label with the time of the last load that got anything"""
         time_str = self.current_time.strftime("%I:%M %p")
         refresh_mode = self.refresh_combo.currentText() if hasattr(self, 'refresh_combo') else "30 seconds"
         self.time_label.setText(f"Live Scores - Last updated: {time_str} (Refresh: {refresh_mode})")
@@ -1024,6 +1046,9 @@ class LiveScoresView(BaseView):
     def _on_game_selected(self, item):
         """Handle game selection - open game details"""
         game_data = item.data(Qt.ItemDataRole.UserRole)
+        if game_data == RETRY_ROW:
+            self._refresh_on_request()
+            return
         if isinstance(game_data, dict) and game_data.get("golf_tour"):
             tour = game_data["golf_tour"]
             if self.parent_app:
@@ -1059,17 +1084,66 @@ class LiveScoresView(BaseView):
         _start_detached_thread(loader)
 
     def _on_live_scores_error(self, message: str):
-        self._show_api_error(f"Failed to load live scores: {message}")
+        self._show_live_failure(message)
         self._pending_old_scores = {}
 
-    def _on_live_scores_loaded(self, live_games: list, current_date_games: list, golf: list):
+    def _on_live_scores_loaded(self, live_games: list, current_date_games: list, golf: list, failed: list = ()):
         """Show freshly loaded games, keeping the user's place in the list."""
         # An exception escaping a slot would reach only error_log.
         try:
-            self._show_loaded_live_scores(live_games, current_date_games, golf)
+            self._show_loaded_live_scores(*self._with_last_games_kept(live_games, current_date_games, golf, failed))
+            self._say_refresh_failed(failed)
         except Exception as e:
-            self._show_api_error(f"Failed to load live scores: {e}")
+            self._show_live_failure(_said(e))
         self._pending_old_scores = {}
+
+    def _with_last_games_kept(self, live_games, current_date_games, golf, failed):
+        """This load's games, and for a league that failed, the ones last shown: one not
+        answering shouldn't blank its games, and a refresh that gets nothing keeps the list."""
+        day = scoreboard_today()
+        self._failed_leagues = sorted(failed)
+        self._last_failure_text = self._failure_text
+        last = self._last_games
+        if failed and last and last[0] == day:
+            live_games = with_failed_leagues_kept(live_games, last[1], failed)
+            current_date_games = with_failed_leagues_kept(current_date_games, last[2], failed)
+            golf = with_failed_leagues_kept(golf, last[3], failed, field="tour")
+        self._last_games = (day, live_games, current_date_games, golf)
+        if not set(failed) >= set(ApiService.get_leagues()):
+            self.current_time = datetime.now()  # "Last updated" stays true if nothing came back
+        return live_games, current_date_games, golf
+
+    def _say_refresh_failed(self, failed):
+        """The row says so, and a refresh on the timer mustn't chatter. Only a refresh someone
+        asked for says it out loud, or the first to fail for a league with a game someone is
+        monitoring, who would otherwise take the silence to mean the score hasn't changed."""
+        asked, self._refresh_asked_for = self._refresh_asked_for, False
+        monitored = set(failed) & {self.game_data.get(game_id, {}).get("league") for game_id in self.monitored_games}
+        newly_failed = monitored - self._said_failed_leagues
+        self._said_failed_leagues = (self._said_failed_leagues | monitored) & set(failed)
+        if not failed or not (asked or newly_failed):
+            return
+        # Someone on the row, with its text changed, has just heard it read.
+        current = self.live_scores_list.currentItem()
+        if (current is not None and current.data(Qt.ItemDataRole.UserRole) == RETRY_ROW
+                and self._failure_text != self._last_failure_text):
+            return
+        announce(self._failure_text)
+
+    def _add_failure_row(self, text):
+        self.live_scores_list.addItem(_failure_row(text))
+
+    def _show_live_failure(self, message):
+        """Nothing came back at all. Games on the list stay, and with none, a row says so."""
+        asked, self._refresh_asked_for = self._refresh_asked_for, False
+        lst = self.live_scores_list
+        if any(isinstance(lst.item(row).data(Qt.ItemDataRole.UserRole), dict) for row in range(lst.count())):
+            if asked:
+                announce(message)
+            return
+        lst.clear()
+        self._add_failure_row(message)
+        lst.setCurrentRow(0)
 
     def _refresh_rows_in_place(self, live_games, current_date_games, golf):
         """Render, and when the same rows came back, change only the text that changed.
@@ -1128,8 +1202,9 @@ class LiveScoresView(BaseView):
                     self.live_scores_list.setCurrentRow(row)
                     restored = True
                     break
-        if not restored and 0 <= selected_row < self.live_scores_list.count():
-            self.live_scores_list.setCurrentRow(selected_row)
+        # The row can be past the end now: the failure row someone retried from is last, and gone.
+        if not restored and selected_row >= 0 and self.live_scores_list.count():
+            self.live_scores_list.setCurrentRow(min(selected_row, self.live_scores_list.count() - 1))
 
         self._check_monitored_scores(self._pending_old_scores)
 
@@ -1177,8 +1252,15 @@ class LiveScoresView(BaseView):
                     self.live_scores_list.addItem(item)
 
             total_games = len(live_games) + len(upcoming_games) + len(completed_games) + len(golf)
+            failure = (live_scores_failure_text([_WC_DISPLAY_NAMES.get(league, league) for league in self._failed_leagues],
+                                                total_games > 0)
+                       if self._failed_leagues else None)
+            self._failure_text = failure
             if total_games == 0:
-                self.live_scores_list.addItem(f"No games on {today.strftime('%B %d, %Y')}.")
+                if failure:
+                    self._add_failure_row(failure)
+                else:
+                    self.live_scores_list.addItem(f"No games on {today.strftime('%B %d, %Y')}.")
                 return
 
             # Section 1: Live Games
@@ -1303,8 +1385,12 @@ class LiveScoresView(BaseView):
                         item.setData(Qt.ItemDataRole.UserRole, game_data)
                         self.live_scores_list.addItem(item)
 
+            # Last, so it doesn't move the rows someone is following when it comes and goes.
+            if failure:
+                self._add_failure_row(failure)
+
         except Exception as e:
-            self._show_api_error(f"Failed to load live scores: {str(e)}")
+            self._add_failure_row(_said(e))
     
     def refresh_live_scores(self):
         """Refresh live scores and check for changes in monitored games"""
@@ -1325,6 +1411,11 @@ class LiveScoresView(BaseView):
             return  # the load in flight will bring the latest scores
         self._pending_old_scores = old_scores
         self.load_live_scores()
+
+    def _refresh_on_request(self):
+        """A refresh someone asked for, which says so if it fails. The timer's don't."""
+        self._refresh_asked_for = True
+        self.refresh_live_scores()
 
     def _check_monitored_scores(self, old_scores):
         """Announce score changes in monitored games since old_scores was taken."""
@@ -1364,7 +1455,7 @@ class LiveScoresView(BaseView):
         btn_layout = QHBoxLayout()
         
         refresh_btn = QPushButton("Refresh (F5)")
-        refresh_btn.clicked.connect(self.refresh_live_scores)
+        refresh_btn.clicked.connect(self._refresh_on_request)
         btn_layout.addWidget(refresh_btn)
         
         back_btn = QPushButton("Back to Home")
@@ -1388,16 +1479,10 @@ class LiveScoresView(BaseView):
         # Update window title for live scores view
         if self.parent_app:
             self.parent_app.update_window_title(["Live Scores"])
-    
-    def _show_api_error(self, message: str):
-        """Show API error message to user"""
-        error_label = QLabel(f"Error: {message}")
-        error_label.setStyleSheet("color: red; font-weight: bold;")
-        self.layout.addWidget(error_label)
-    
+
     @staticmethod
     def _fetch_live_scores():
-        """Everything Live Scores shows: (live games, today's games, golf).
+        """Everything Live Scores shows: (live games, today's games, golf, leagues that failed).
 
         Works the way the iOS app does: one scoreboard request per league for
         today, all in parallel, with live games and their latest plays read
@@ -1411,16 +1496,19 @@ class LiveScoresView(BaseView):
         import espn_api
         from concurrent.futures import ThreadPoolExecutor
 
+        failed = []
+
         def golf(tour):
             try:
                 return espn_api.get_live_golf_tournament(tour)
             except Exception as e:
                 print(f"Error fetching {tour} tournament: {e}")
+                failed.append(tour)
                 return None
 
         with ThreadPoolExecutor(max_workers=2) as pool:
             golf_future = list(pool.map(golf, espn_api.GOLF_TOURS))
-            today_games = LiveScoresView._get_today_games_all_sports()
+            today_games = LiveScoresView._get_today_games_all_sports(failed)
 
         live_games = []
         for game in today_games:
@@ -1439,11 +1527,12 @@ class LiveScoresView(BaseView):
                           for t in raw.get('teams', [])],
                 "recent_play": espn_api.scoreboard_live_detail(game['league'], comp) or status,
             })
-        return live_games, today_games, [g for g in golf_future if g]
+        return live_games, today_games, [g for g in golf_future if g], failed
 
     @staticmethod
-    def _get_today_games_all_sports():
-        """Get all games for the current date from every team sport.
+    def _get_today_games_all_sports(failed):
+        """Get all games for the current date from every team sport, adding any league
+        that doesn't answer to `failed`, so that one failing doesn't cost the others.
 
         Golf is left out: its scoreboards list golfers, which read here as
         "Unknown at Unknown". _fetch_live_scores fetches it separately.
@@ -1463,6 +1552,7 @@ class LiveScoresView(BaseView):
                 return ApiService.get_scores(league, today) or []
             except Exception as e:
                 print(f"Error fetching {league} games: {e}")
+                failed.append(league)
                 return []
 
         # One scoreboard per league, all in parallel.
@@ -1568,7 +1658,7 @@ class LiveScoresView(BaseView):
     
     def refresh(self):
         """Refresh the live scores"""
-        self.refresh_live_scores()
+        self._refresh_on_request()
 
 class LeagueView(BaseView):
     """View showing scores for a specific league"""
@@ -1590,6 +1680,8 @@ class LeagueView(BaseView):
         self._reselect = None
         # Dialogs whose data is being fetched by _fetch_then, by title.
         self._background_fetches = {}
+        # (the day or week, its games, its news) as last shown, for a refresh that fails.
+        self._last_loaded = None
 
         # For football leagues, the season (and, unless one was asked for, the
         # week) comes from ESPN's calendar. That is a network request, so the
@@ -1665,6 +1757,8 @@ class LeagueView(BaseView):
     
     def _on_score_item_selected(self, item):
         data = item.data(Qt.ItemDataRole.UserRole)
+        if data == RETRY_ROW:
+            self.refresh(); return
         if data == "__news__":
             self._show_news_dialog(); return
         if data == "__standings__":
@@ -1731,8 +1825,45 @@ class LeagueView(BaseView):
         _start_detached_thread(loader)
 
     def _on_scores_error(self, generation: int, message: str):
-        if generation == self._scores_generation:
-            self._show_api_error(f"Failed to load scores: {message}")
+        if generation != self._scores_generation:
+            return
+        last = self._last_loaded
+        if last and last[0] == self._shown_request():
+            # A refresh that failed keeps the games it had. Someone asked for it, so say why
+            # nothing changed. It lands where a refresh does, on the game they were following.
+            self._show_loaded_scores(None, last[1], last[2])
+            announce(message)
+            return
+        self._show_scores_failure(message)
+
+    def _shown_request(self):
+        if self.is_football_league():
+            return self.current_season, self.current_season_type, self.current_week
+        return self.current_date
+
+    def _show_scores_failure(self, message):
+        """A row saying so, which Enter tries again from, and the rest of the league's list,
+        which has its own requests and may well work."""
+        had_focus = self.scores_list.hasFocus()
+        self._reselect = None
+        self._restore_state = None
+        self.news_headlines = []
+        self.scores_list.clear()
+        self.scores_list.addItem(_failure_row(message))
+        self._add_news_row()
+        self._add_common_sections()
+        self.scores_list.setCurrentRow(0)
+        if had_focus:
+            self.scores_list.setFocus()
+        if self._calendar_pending:
+            self.date_label.clear()  # "Finding the current week..." isn't going on any more.
+        else:
+            self._say_date_shown()
+
+    def _add_news_row(self):
+        self.scores_list.addItem("--- News Headlines ---")
+        news_item = self.scores_list.item(self.scores_list.count()-1)
+        news_item.setData(Qt.ItemDataRole.UserRole, "__news__")
 
     def _on_scores_loaded(self, generation: int, calendar, scores_data: list, news: list):
         if generation != self._scores_generation:
@@ -1742,7 +1873,7 @@ class LeagueView(BaseView):
         try:
             self._show_loaded_scores(calendar, scores_data, news)
         except Exception as e:
-            self._show_api_error(f"Failed to load scores: {e}")
+            self._show_scores_failure(_said(e))
 
     def _show_loaded_scores(self, calendar, scores_data, news):
         if calendar is not None:
@@ -1752,7 +1883,7 @@ class LeagueView(BaseView):
             self.date_label.setText(self._week_label())
 
         had_focus = self.scores_list.hasFocus()
-        self.news_headlines = news
+        self.news_headlines = news or []
         self.scores_list.clear()
         if not scores_data:
             self.scores_list.addItem(
@@ -1760,10 +1891,9 @@ class LeagueView(BaseView):
                 else "No games found for this date.")
         else:
             self._add_game_sections(scores_data)
-        if self.news_headlines:
-            self.scores_list.addItem("--- News Headlines ---")
-            news_item = self.scores_list.item(self.scores_list.count()-1)
-            news_item.setData(Qt.ItemDataRole.UserRole, "__news__")
+        # None is news that failed to load, and its row asks again. No news has no row.
+        if news or news is None:
+            self._add_news_row()
         self._add_common_sections()
         # The list was showing "Loading scores..."; land on the first row so a
         # screen reader announces what replaced it. A refresh (F5) lands on the
@@ -1785,6 +1915,7 @@ class LeagueView(BaseView):
         if had_focus:
             self.scores_list.setFocus()
         self._say_date_shown()
+        self._last_loaded = (self._shown_request(), scores_data, news)
 
     def _add_game_sections(self, scores_data):
         """Add games under In Progress / Upcoming / Completed / Postponed headers.
@@ -1883,18 +2014,26 @@ class LeagueView(BaseView):
             # Update window title to show we're viewing news
             if self.parent_app:
                 self.parent_app.update_window_title(["News", self.league])
-            
-            dialog = NewsDialog(self.news_headlines, self.league, self)
-            dialog.exec()
-            
-            # Restore original title when dialog closes
-            if self.parent_app:
-                self.parent_app.update_window_title(self._title_items())
+
+            if self.news_headlines:
+                self._open_news_dialog(self.news_headlines)
+            else:
+                # They failed to load with the scoreboard, so this asks again.
+                self._fetch_then("News", lambda: ApiService.get_news(self.league), self._open_news_dialog)
         except Exception as e:
-            QMessageBox.critical(self, "Error", f"Failed to show news: {str(e)}")
+            QMessageBox.critical(self, "Error", f"Failed to show news: {_said(e)}")
             # Restore original title on error
             if self.parent_app:
                 self.parent_app.update_window_title(self._title_items())
+
+    def _open_news_dialog(self, news):
+        self.news_headlines = news
+        dialog = NewsDialog(news, self.league, self)
+        dialog.exec()
+
+        # Restore original title when dialog closes
+        if self.parent_app:
+            self.parent_app.update_window_title(self._title_items())
     
     def _show_standings_dialog(self):
         """Show standings dialog with caching and fast background loading"""
@@ -1925,7 +2064,7 @@ class LeagueView(BaseView):
                 # A second press, or leaving the view, replaces this reference mid-load.
                 _start_detached_thread(self.standings_loader)
         except Exception as e:
-            QMessageBox.critical(self, "Error", f"Failed to show standings: {str(e)}")
+            QMessageBox.critical(self, "Error", f"Failed to show standings: {_said(e)}")
     
     def _on_standings_progress(self, message: str):
         """Update standings loading progress (no longer used)"""
@@ -1945,7 +2084,7 @@ class LeagueView(BaseView):
             if self.parent_app:
                 self.parent_app.update_window_title(self._title_items())
         except Exception as e:
-            QMessageBox.critical(self, "Error", f"Failed to display standings: {str(e)}")
+            QMessageBox.critical(self, "Error", f"Failed to display standings: {_said(e)}")
     
     def _show_polls_dialog(self):
         """Show polls/rankings dialog"""
@@ -1957,7 +2096,7 @@ class LeagueView(BaseView):
             self._fetch_then("Polls", lambda: ApiService.get_rankings(self.league),
                              self._open_polls_dialog)
         except Exception as e:
-            QMessageBox.critical(self, "Error", f"Failed to show polls: {str(e)}")
+            QMessageBox.critical(self, "Error", f"Failed to show polls: {_said(e)}")
             if self.parent_app:
                 self.parent_app.update_window_title(self._title_items())
 
@@ -1978,7 +2117,7 @@ class LeagueView(BaseView):
             if self.parent_app:
                 self.parent_app.update_window_title(self._title_items())
         except Exception as e:
-            QMessageBox.critical(self, "Error", f"Failed to show polls: {str(e)}")
+            QMessageBox.critical(self, "Error", f"Failed to show polls: {_said(e)}")
             # Restore original title on error
             if self.parent_app:
                 self.parent_app.update_window_title(self._title_items())
@@ -2043,7 +2182,7 @@ class LeagueView(BaseView):
             print(f"DEBUG: Exception in _show_statistics_dialog: {str(e)}")
             import traceback
             traceback.print_exc()
-            QMessageBox.critical(self, "Error", f"Failed to display statistics: {str(e)}")
+            QMessageBox.critical(self, "Error", f"Failed to display statistics: {_said(e)}")
             # Restore original title on error
             if self.parent_app:
                 self.parent_app.update_window_title(self._title_items())
@@ -2064,7 +2203,7 @@ class LeagueView(BaseView):
             fetch = ApiService.get_soccer_teams if self.league in SOCCER_LEAGUES else ApiService.get_standings
             self._fetch_then("Teams", lambda: fetch(self.league), self._open_teams_dialog)
         except Exception as e:
-            QMessageBox.critical(self, "Error", f"Failed to show teams: {str(e)}")
+            QMessageBox.critical(self, "Error", f"Failed to show teams: {_said(e)}")
             if self.parent_app:
                 self.parent_app.update_window_title(self._title_items())
 
@@ -2089,7 +2228,7 @@ class LeagueView(BaseView):
             if self.parent_app:
                 self.parent_app.update_window_title(self._title_items())
         except Exception as e:
-            QMessageBox.critical(self, "Error", f"Failed to show teams: {str(e)}")
+            QMessageBox.critical(self, "Error", f"Failed to show teams: {_said(e)}")
             # Restore original title on error
             if self.parent_app:
                 self.parent_app.update_window_title(self._title_items())
@@ -2103,7 +2242,7 @@ class LeagueView(BaseView):
             if self.parent_app:
                 self.parent_app.update_window_title(self._title_items())
         except Exception as e:
-            QMessageBox.critical(self, "Error", f"Failed to show transactions: {e}")
+            QMessageBox.critical(self, "Error", f"Failed to show transactions: {_said(e)}")
             if self.parent_app:
                 self.parent_app.update_window_title(self._title_items())
 
@@ -2144,7 +2283,7 @@ class LeagueView(BaseView):
             self._fetch_then("Venues", lambda: venue_service.get_venues_for_league(league_key),
                              self._open_venues_dialog)
         except Exception as e:
-            QMessageBox.critical(self, "Error", f"Failed to show venues: {str(e)}")
+            QMessageBox.critical(self, "Error", f"Failed to show venues: {_said(e)}")
             if self.parent_app:
                 self.parent_app.update_window_title(self._title_items())
 
@@ -2165,7 +2304,7 @@ class LeagueView(BaseView):
             if self.parent_app:
                 self.parent_app.update_window_title(self._title_items())
         except Exception as e:
-            QMessageBox.critical(self, "Error", f"Failed to show venues: {str(e)}")
+            QMessageBox.critical(self, "Error", f"Failed to show venues: {_said(e)}")
             # Restore original title on error
             if self.parent_app:
                 self.parent_app.update_window_title(self._title_items())
@@ -2195,7 +2334,8 @@ class LeagueView(BaseView):
 
         def failed(message):
             finish()
-            QMessageBox.critical(self, "Error", f"Failed to show {title.lower()}: {message}")
+            # Their row is still there, and Enter on it asks again.
+            QMessageBox.warning(self, title, message)
             if self.parent_app:
                 self.parent_app.update_window_title(self._title_items())
 
@@ -2205,7 +2345,7 @@ class LeagueView(BaseView):
             try:
                 show(result)
             except Exception as e:
-                failed(str(e))
+                failed(_said(e))
 
         loader = CallLoader(fetch)
         loader.data_loaded.connect(loaded)
@@ -2227,7 +2367,7 @@ class LeagueView(BaseView):
             if self.parent_app:
                 self.parent_app.update_window_title(self._title_items())
         except Exception as e:
-            QMessageBox.critical(self, "Error", f"Failed to show bowls & playoffs: {str(e)}")
+            QMessageBox.critical(self, "Error", f"Failed to show bowls & playoffs: {_said(e)}")
 
     def _is_team_for_league(self, team_data: Dict, league: str) -> bool:
         """Check if team belongs to the specified league"""
@@ -2265,7 +2405,7 @@ class LeagueView(BaseView):
                     self.load_scores()
                     self.set_focus_and_select_first(self.scores_list)
         except Exception as e:
-            QMessageBox.critical(self, "Error", f"Failed to change date: {str(e)}")
+            QMessageBox.critical(self, "Error", f"Failed to change date: {_said(e)}")
     
     def refresh(self):
         """Refresh the current view, staying on the selected game."""
@@ -2373,12 +2513,6 @@ class LeagueView(BaseView):
         if self.current_week and not self._calendar_pending:
             self._step_week(+1)
     
-    def _show_api_error(self, message: str):
-        """Show API error message"""
-        self.scores_list.clear()
-        error_item = self.scores_list.addItem(f"Error: {message}")
-        QMessageBox.warning(self, "API Error", message)
-    
     def keyPressEvent(self, event):
         """Handle key press events for league view"""
         if event.key() == Qt.Key.Key_G and event.modifiers() == Qt.KeyboardModifier.ControlModifier:
@@ -2409,6 +2543,7 @@ class GameDetailsView(BaseView):
         self.config = parent.config if parent else {}
         self.raw_game_data = None  # Store raw data for drill-down access
         self.current_raw_details = None  # the game summary, once loaded
+        self._shown_details = None  # (raw summary, details) as last shown, for a refresh that fails
         self._details_generation = 0  # newest load_game_details; older results are dropped
         
         # Initialize audio pitch mapper
@@ -2484,7 +2619,10 @@ class GameDetailsView(BaseView):
         data = item.data(Qt.ItemDataRole.UserRole)
         if not data:
             return
-        
+        if data == RETRY_ROW:
+            self.refresh()
+            return
+
         field_name = data.get("field")
         field_data = data.get("data")
         
@@ -2494,7 +2632,7 @@ class GameDetailsView(BaseView):
         try:
             self._show_detail_dialog(field_name, field_data)
         except Exception as e:
-            QMessageBox.critical(self, "Error", f"Failed to show {field_name} details: {str(e)}")
+            QMessageBox.critical(self, "Error", f"Failed to show {field_name} details: {_said(e)}")
     
     def _show_detail_dialog(self, field_name: str, field_data: Any):
         """Show detailed data in a dialog"""
@@ -2634,8 +2772,14 @@ class GameDetailsView(BaseView):
         _start_detached_thread(loader)
 
     def _on_game_details_error(self, generation: int, message: str):
-        if generation == self._details_generation:
-            self._show_api_error(f"Failed to load game details: {message}")
+        if generation != self._details_generation:
+            return
+        if self._shown_details:
+            # A refresh that failed keeps the game it had. Someone asked for it, so say why.
+            self._on_game_details_loaded(generation, *self._shown_details)
+            announce(message)
+            return
+        self._show_api_error(message)
 
     def _on_game_details_loaded(self, generation: int, raw_details: dict, details: dict):
         if generation != self._details_generation:
@@ -2647,6 +2791,7 @@ class GameDetailsView(BaseView):
         try:
             # Store raw details for export functionality
             self.current_raw_details = raw_details
+            self._shown_details = (raw_details, details)
 
             # Display basic game information
             self._add_basic_game_info(details, raw_details)
@@ -2658,7 +2803,8 @@ class GameDetailsView(BaseView):
             self._add_game_wrap_up_option()
 
         except Exception as e:
-            self._show_api_error(f"Failed to load game details: {str(e)}")
+            self._shown_details = None
+            self._show_api_error(_said(e))
             return
         # The list was showing "Loading game details..."; land on the first
         # row so a screen reader announces what replaced it.
@@ -2726,7 +2872,7 @@ class GameDetailsView(BaseView):
             dlg.exec()
         except Exception as e:
             QMessageBox.critical(self, "Error", 
-                f"Failed to load {team_name} schedule: {str(e)}\n\n"
+                f"Failed to load {team_name} schedule: {_said(e)}\n\n"
                 "You can try accessing the team schedule from the main league standings.")
 
     def _find_team_id_alternative(self, team_name: str) -> str:
@@ -3086,7 +3232,7 @@ class GameDetailsView(BaseView):
             if updated_field_data:
                 self._show_detail_dialog(field_name, updated_field_data)
         except Exception as e:
-            QMessageBox.critical(self, "Refresh Error", f"Failed to refresh {field_name}: {e}")
+            QMessageBox.critical(self, "Refresh Error", f"Failed to refresh {field_name}: {_said(e)}")
 
     def refresh(self):
         """Refresh the game details"""
@@ -3108,10 +3254,10 @@ class GameDetailsView(BaseView):
         self.layout.addLayout(btn_layout)
     
     def _show_api_error(self, message: str):
-        """Show API error message"""
+        """A row saying so, which Enter tries again from."""
         self.details_list.clear()
-        error_item = self.details_list.addItem(f"Error: {message}")
-        QMessageBox.warning(self, "API Error", message)
+        self.details_list.addItem(_failure_row(message))
+        self.details_list.setCurrentRow(0)
     
     def on_show(self):
         self.set_focus_and_select_first(self.details_list)
@@ -5378,7 +5524,7 @@ class GameDetailsView(BaseView):
                 
         except Exception as e:
             QMessageBox.critical(self, "Wrap Up Error", 
-                f"Failed to generate game wrap-up:\n{str(e)}")
+                f"Failed to generate game wrap-up:\n{_said(e)}")
     
     def _generate_game_wrap_up_html(self, raw_game_data):
         """Generate comprehensive HTML content for game wrap-up"""
@@ -7108,7 +7254,7 @@ class MLBWildCardLoader(QThread):
         try:
             self.data_loaded.emit(ApiService.get_mlb_wildcard_standings() or {})
         except Exception as e:
-            self.error_occurred.emit(str(e))
+            self.error_occurred.emit(_said(e))
 
 
 class WildCardTabsMixin:
@@ -7786,7 +7932,7 @@ class NewsDialog(QDialog):
     def setup_ui(self):
         layout = QVBoxLayout()
         if not self.news_headlines:
-            layout.addWidget(QLabel("No news headlines available for this league."))
+            layout.addWidget(_message_row("No news headlines available for this league.", "News Headlines"))
             close_btn = QPushButton("Close")
             close_btn.clicked.connect(self.accept)
             layout.addWidget(close_btn)
@@ -7868,7 +8014,7 @@ def _start_detached_thread(thread: QThread):
 
 class LiveScoresLoader(QThread):
     """Fetches everything Live Scores - All Sports shows, off the UI thread."""
-    data_loaded = pyqtSignal(list, list, list)  # live games, today's games, golf
+    data_loaded = pyqtSignal(list, list, list, list)  # live games, today's games, golf, leagues that failed
     error_occurred = pyqtSignal(str)
 
     def __init__(self, fetch):
@@ -7879,14 +8025,14 @@ class LiveScoresLoader(QThread):
         try:
             self.data_loaded.emit(*self.fetch())
         except Exception as e:
-            self.error_occurred.emit(str(e))
+            self.error_occurred.emit(_said(e))
 
 
 class LeagueScoresLoader(QThread):
     """Fetches a league view's scoreboard and news, and the football calendar
     the first time a football league opens."""
-    # generation, (season, season_type, week) or None, scores, news
-    data_loaded = pyqtSignal(int, object, list, list)
+    # generation, (season, season_type, week) or None, scores, news, or None if that failed
+    data_loaded = pyqtSignal(int, object, list, object)
     error_occurred = pyqtSignal(int, str)
 
     def __init__(self, generation, league, request, resolve_calendar=False,
@@ -7932,10 +8078,10 @@ class LeagueScoresLoader(QThread):
             try:
                 news = ApiService.get_news(self.league) or []
             except Exception:
-                news = []
+                news = None
             self.data_loaded.emit(self.generation, calendar, scores, news)
         except Exception as e:
-            self.error_occurred.emit(self.generation, str(e))
+            self.error_occurred.emit(self.generation, _said(e))
 
 
 class GameDetailsLoader(QThread):
@@ -7955,7 +8101,7 @@ class GameDetailsLoader(QThread):
             details = ApiService.extract_meaningful_game_info(raw) or {}
             self.data_loaded.emit(self.generation, raw, details)
         except Exception as e:
-            self.error_occurred.emit(self.generation, str(e))
+            self.error_occurred.emit(self.generation, _said(e))
 
 
 class CallLoader(QThread):
@@ -7971,7 +8117,7 @@ class CallLoader(QThread):
         try:
             self.data_loaded.emit(self.fn())
         except Exception as e:
-            self.error_occurred.emit(str(e))
+            self.error_occurred.emit(_said(e))
 
 
 class StatisticsLoader(QThread):
@@ -7992,7 +8138,7 @@ class StatisticsLoader(QThread):
                 data = ApiService.get_team_statistics(self.league)
             self.data_loaded.emit(data or {})
         except Exception as e:
-            self.error_occurred.emit(str(e))
+            self.error_occurred.emit(_said(e))
 
 
 class StandingsLoader(QThread):
@@ -8014,7 +8160,7 @@ class StandingsLoader(QThread):
             else:
                 self.error_occurred.emit(f"No standings data available for {self.league}")
         except Exception as e:
-            self.error_occurred.emit(f"Failed to load standings: {str(e)}")
+            self.error_occurred.emit(_said(e))
 
 
 class UpdateCheckLoader(QThread):
@@ -8028,7 +8174,8 @@ class UpdateCheckLoader(QThread):
         try:
             self.data_loaded.emit(updater.check_for_update())
         except Exception as e:
-            self.error_occurred.emit(str(e))
+            print(f"Update check failed: {e}")
+            self.error_occurred.emit("GitHub didn't answer. Try again in a minute.")
 
 
 class UpdateDownloadLoader(QThread):
@@ -8054,7 +8201,8 @@ class UpdateDownloadLoader(QThread):
             )
             self.data_loaded.emit(path)
         except Exception as e:
-            self.error_occurred.emit(str(e))
+            print(f"Update download failed: {e}")
+            self.error_occurred.emit("It stopped before it finished. Try again in a minute.")
 
 
 class GameDetailsDialog(QDialog):
@@ -8272,7 +8420,7 @@ class TeamHubDialog(QDialog):
         self.info_list.addItem("Loading team info...")
         loader = TeamInfoLoader(self.team_id, self.league)
         loader.data_loaded.connect(self._on_info_loaded)
-        loader.error_occurred.connect(lambda e: self._show_list_error(self.info_list, e))
+        loader.error_occurred.connect(lambda e: self._show_list_error(self.info_list, e, 0))
         self._loaders.append(loader)
         loader.start()
 
@@ -8311,10 +8459,13 @@ class TeamHubDialog(QDialog):
         self.roster_table.populate_data([["Loading roster...", "", "", "", "", ""]], set_focus=False)
         loader = TeamRosterLoader(self.team_id, self.league)
         loader.data_loaded.connect(self._on_roster_loaded)
-        loader.error_occurred.connect(
-            lambda e: self.roster_table.populate_data([[f"Error: {e}", "", "", "", "", ""]], set_focus=False))
+        loader.error_occurred.connect(self._on_roster_failed)
         self._loaders.append(loader)
         loader.start()
+
+    def _on_roster_failed(self, message):
+        self.roster_table.populate_data([[message, "", "", "", "", ""]], set_focus=False)
+        self._tabs_loaded.discard(1)  # So coming back to the tab asks again.
 
     def _on_roster_loaded(self, players):
         if not players:
@@ -8390,7 +8541,7 @@ class TeamHubDialog(QDialog):
             try:
                 GameDetailsDialog(game_id, self.league, self, game_data).exec()
             except Exception as e:
-                QMessageBox.critical(self, "Error", f"Failed to open game details: {e}")
+                QMessageBox.critical(self, "Error", f"Failed to open game details: {_said(e)}")
 
     # --------------------------------------------------------------- news tab
 
@@ -8399,7 +8550,7 @@ class TeamHubDialog(QDialog):
         self.news_list.addItem("Loading news...")
         loader = TeamNewsLoader(self.team_id, self.league)
         loader.data_loaded.connect(self._on_news_loaded)
-        loader.error_occurred.connect(lambda e: self._show_list_error(self.news_list, e))
+        loader.error_occurred.connect(lambda e: self._show_list_error(self.news_list, e, 3))
         self._loaders.append(loader)
         loader.start()
 
@@ -8437,7 +8588,7 @@ class TeamHubDialog(QDialog):
         self.trans_list.addItem("Loading transactions...")
         loader = TeamTransactionsLoader(self.team_id, self.league)
         loader.data_loaded.connect(self._on_transactions_loaded)
-        loader.error_occurred.connect(lambda e: self._show_list_error(self.trans_list, e))
+        loader.error_occurred.connect(lambda e: self._show_list_error(self.trans_list, e, 4))
         self._loaders.append(loader)
         loader.start()
 
@@ -8454,10 +8605,11 @@ class TeamHubDialog(QDialog):
 
     # ---------------------------------------------------------------- helpers
 
-    def _show_list_error(self, list_widget, error_msg):
+    def _show_list_error(self, list_widget, error_msg, tab):
         list_widget.clear()
-        list_widget.addItem(f"Error loading data: {error_msg}")
+        list_widget.addItem(error_msg)
         list_widget.setCurrentRow(0)
+        self._tabs_loaded.discard(tab)  # So coming back to the tab asks again.
 
     def _refresh_fav_button(self):
         if settings.is_favorite(self.team_id, self.league):
@@ -8497,10 +8649,6 @@ class TeamScheduleLoader(QThread):
     error_occurred = pyqtSignal(str)
     loading_progress = pyqtSignal(str)  # progress message
 
-    # A raw requests exception runs to hundreds of characters of host, port and URL, and a
-    # screen reader reads every one of them.
-    FAILED = "ESPN didn't answer. Try again in a minute."
-
     def __init__(self, team_id: str, team_name: str, league: str, season=None):
         super().__init__()
         self.team_id = team_id
@@ -8517,7 +8665,7 @@ class TeamScheduleLoader(QThread):
             self.data_loaded.emit(schedule_data, self.team_name, self.league, season_used)
         except Exception as e:
             print(f"Team schedule failed for {self.league} {self.team_id}: {e}")
-            self.error_occurred.emit(self.FAILED)
+            self.error_occurred.emit(_said(e))
 
 
 class FavoriteCardLoader(QThread):
@@ -8596,7 +8744,7 @@ class LeagueTransactionsLoader(QThread):
                 self.league, self.team_id, page=self.page)
             self.data_loaded.emit(transactions, has_more)
         except Exception as e:
-            self.error_occurred.emit(str(e))
+            self.error_occurred.emit(_said(e))
 
 
 class NFLDraftMetaLoader(QThread):
@@ -8612,7 +8760,7 @@ class NFLDraftMetaLoader(QThread):
             meta = ApiService.get_draft(self.year)
             self.data_loaded.emit(meta or {})
         except Exception as e:
-            self.error_occurred.emit(str(e))
+            self.error_occurred.emit(_said(e))
 
 
 class NFLDraftRoundLoader(QThread):
@@ -8629,7 +8777,7 @@ class NFLDraftRoundLoader(QThread):
             picks = ApiService.get_draft_round(self.year, self.round_num)
             self.data_loaded.emit(picks)
         except Exception as e:
-            self.error_occurred.emit(str(e))
+            self.error_occurred.emit(_said(e))
 
 
 class FantasyCheatsheetLoader(QThread):
@@ -8644,7 +8792,7 @@ class FantasyCheatsheetLoader(QThread):
         try:
             self.data_loaded.emit(ApiService.get_fantasy_cheatsheet(self.season) or {})
         except Exception as e:
-            self.error_occurred.emit(str(e))
+            self.error_occurred.emit(_said(e))
 
 
 class GolfLeaderboardLoader(QThread):
@@ -8659,7 +8807,7 @@ class GolfLeaderboardLoader(QThread):
         try:
             self.data_loaded.emit(ApiService.get_golf_leaderboard(self.tour) or {})
         except Exception as e:
-            self.error_occurred.emit(str(e))
+            self.error_occurred.emit(_said(e))
 
 
 class GolfScheduleLoader(QThread):
@@ -8674,7 +8822,7 @@ class GolfScheduleLoader(QThread):
         try:
             self.data_loaded.emit(ApiService.get_golf_schedule(self.tour))
         except Exception as e:
-            self.error_occurred.emit(str(e))
+            self.error_occurred.emit(_said(e))
 
 
 class TeamInfoLoader(QThread):
@@ -8690,7 +8838,7 @@ class TeamInfoLoader(QThread):
         try:
             self.data_loaded.emit(ApiService.get_team_info(self.league, self.team_id))
         except Exception as e:
-            self.error_occurred.emit(str(e))
+            self.error_occurred.emit(_said(e))
 
 
 class TeamRosterLoader(QThread):
@@ -8706,7 +8854,7 @@ class TeamRosterLoader(QThread):
         try:
             self.data_loaded.emit(ApiService.get_team_roster(self.league, self.team_id))
         except Exception as e:
-            self.error_occurred.emit(str(e))
+            self.error_occurred.emit(_said(e))
 
 
 class TeamNewsLoader(QThread):
@@ -8722,7 +8870,7 @@ class TeamNewsLoader(QThread):
         try:
             self.data_loaded.emit(ApiService.get_team_news(self.league, self.team_id))
         except Exception as e:
-            self.error_occurred.emit(str(e))
+            self.error_occurred.emit(_said(e))
 
 
 class TeamTransactionsLoader(QThread):
@@ -8738,7 +8886,7 @@ class TeamTransactionsLoader(QThread):
         try:
             self.data_loaded.emit(ApiService.get_team_transactions(self.league, self.team_id))
         except Exception as e:
-            self.error_occurred.emit(str(e))
+            self.error_occurred.emit(_said(e))
 
 
 # Caching system for improved performance
@@ -9191,6 +9339,7 @@ class TransactionsDialog(QDialog):
         self.current_page = 1
         self.current_team_id = None
         self._loaders = []
+        self._load_failed = False
 
         self.setWindowTitle(f"Transactions — {league} — Sports Scores")
         self.setMinimumSize(700, 500)
@@ -9258,6 +9407,7 @@ class TransactionsDialog(QDialog):
 
     def _load_transactions(self, reset=False):
         if reset:
+            self._load_failed = False
             self.current_page = 1
             self.trans_list.clear()
             self.load_more_btn.setEnabled(False)
@@ -9293,16 +9443,30 @@ class TransactionsDialog(QDialog):
             self.trans_list.setCurrentRow(0)
             _take_focus_after_load(self.trans_list)
 
-    def _on_error(self, _error, loading_item):
+    def _on_error(self, error, loading_item):
         row = self.trans_list.row(loading_item)
         if row >= 0:
             self.trans_list.takeItem(row)
-        if self.trans_list.count() == 0:
-            self.trans_list.addItem(f"No transactions available for {self.league}.")
+        if self.current_page > 1:
+            # Load More failed. What's there stays, and pressing it again asks for the same page.
+            self.current_page -= 1
+            self.load_more_btn.setEnabled(True)
+            announce(error)
+            return
+        self._load_failed = True
+        self.trans_list.clear()
+        self.trans_list.addItem(error)
+        self.trans_list.setCurrentRow(0)
+        _take_focus_after_load(self.trans_list)
 
     def keyPressEvent(self, event):
         if event.key() == Qt.Key.Key_Escape:
             self.accept()
+            return
+        if event.key() == Qt.Key.Key_F5:
+            # Only after a failure: what's showing stays, and it's the only thing here to try again.
+            if self._load_failed:
+                self._load_transactions(reset=True)
             return
         super().keyPressEvent(event)
 
@@ -9318,6 +9482,7 @@ class NFLDraftDialog(QDialog):
         self._loaders = []
         self._tabs_loaded: set = set()
         self._opening = True
+        self._meta_failed = False
         self._current_year: int = datetime.now().year
         self._setup_ui()
         self._load_year(self._current_year)
@@ -9361,6 +9526,7 @@ class NFLDraftDialog(QDialog):
 
     def _load_year(self, year: int):
         self._current_year = year
+        self._meta_failed = False
         self._tabs_loaded.clear()
         self.tab_widget.blockSignals(True)
         self.tab_widget.clear()
@@ -9369,10 +9535,35 @@ class NFLDraftDialog(QDialog):
 
         loader = NFLDraftMetaLoader(year)
         loader.data_loaded.connect(lambda meta, y=year: self._on_meta_loaded(meta, y))
-        loader.error_occurred.connect(
-            lambda e, y=year: y == self._current_year and self.status_label.setText(f"Error: {e}"))
+        loader.error_occurred.connect(lambda e, y=year: self._on_meta_error(e, y))
         self._loaders.append(loader)
         loader.start()
+
+    def _on_meta_error(self, message: str, year: int):
+        if year != self._current_year:
+            return
+        self._meta_failed = True
+        self.status_label.setText("")
+        # Arrowing through the years, focus stays on the list, so it has to be said.
+        focused = QApplication.focusWidget()
+        if not self._opening and (is_tab_bar(focused) or isinstance(focused, QComboBox)):
+            announce(message)
+        # The rounds aren't known, so a row stands in for them. F5 tries again.
+        row = _message_row(message, "NFL Draft")
+        self.tab_widget.blockSignals(True)
+        self.tab_widget.addTab(row, "Draft")
+        keep_in_tab_order(self.tab_widget, row)
+        self.tab_widget.blockSignals(False)
+        self._focus_after_load(row)
+
+    def _focus_after_load(self, widget):
+        # What the dialog opens on. After that someone arrowing through the rounds or
+        # the years stays where they are: a round loads in moments now.
+        if self._opening:
+            self._opening = False
+            widget.setFocus()
+        else:
+            _take_focus_after_load(widget)
 
     def _on_meta_loaded(self, meta: dict, year: Optional[int] = None):
         # Arrowing through years, a slower year's answer can land after a quicker one's.
@@ -9456,26 +9647,29 @@ class NFLDraftDialog(QDialog):
 
         if tab_index == self.tab_widget.currentIndex() and widget.count() > 0:
             widget.setCurrentRow(0)
-            # The picks are what the dialog opens on. After that someone arrowing through the
-            # rounds or the years stays where they are: a round loads in moments now.
-            if self._opening:
-                self._opening = False
-                widget.setFocus()
-            else:
-                _take_focus_after_load(widget)
+            self._focus_after_load(widget)
 
     def _on_round_error(self, error: str, tab_index: int, year: Optional[int] = None):
         if year is not None and year != self._current_year:
             return
-        self._tabs_loaded.add(tab_index)
+        # Not marked as loaded, so coming back to the round asks again.
         widget = self.tab_widget.widget(tab_index)
         if widget:
             widget.clear()
-            widget.addItem(f"Failed to load picks: {error}")
+            widget.addItem(error)
+            widget.setCurrentRow(0)
+            if tab_index == self.tab_widget.currentIndex():
+                self._focus_after_load(widget)
 
     def keyPressEvent(self, event):
         if event.key() == Qt.Key.Key_Escape:
             self.accept()
+        elif event.key() == Qt.Key.Key_F5:
+            # Only what failed: rounds that loaded stay as they are.
+            if self._meta_failed:
+                self._load_year(self._current_year)
+            elif self.tab_widget.currentIndex() not in self._tabs_loaded:
+                self._load_round(self.tab_widget.currentIndex())
         else:
             super().keyPressEvent(event)
 
@@ -9853,9 +10047,10 @@ class FantasyCheatsheetDialog(QDialog):
 
     def _on_board_error(self, error: str):
         self.refresh_btn.setEnabled(True)
-        self.status_label.setText(
-            f"Could not load the draft board: {error}. "
-            "Choose Reload from ESPN to try again.")
+        text = f"{error} Choose Reload from ESPN to try again."
+        self.status_label.setText(text)
+        # A label can't take focus, so nothing would say this.
+        announce(text)
 
     # ------------------------------------------------------- Value helpers
 
@@ -10266,6 +10461,7 @@ class GolfTournamentDialog(QDialog):
         self.setMinimumSize(700, 500)
         self.resize(950, 680)
         self._loaders = []
+        self._failed_lists = set()
         self._setup_ui()
         self._load_leaderboard()
         self._load_schedule()
@@ -10411,12 +10607,25 @@ class GolfTournamentDialog(QDialog):
             self.schedule_list.addItem(line)
 
     def _list_error(self, lw: QListWidget, error: str):
+        self._failed_lists.add(lw)
+        if lw is self.leaderboard_list:
+            self.tournament_label.clear()  # It says it's loading the tournament.
         lw.clear()
-        lw.addItem(f"Error loading data: {error}")
+        lw.addItem(error)
+        lw.setCurrentRow(0)
+        if lw is self.tab_widget.currentWidget():
+            _take_focus_after_load(lw)
 
     def keyPressEvent(self, event):
         if event.key() == Qt.Key.Key_Escape:
             self.accept()
+        elif event.key() == Qt.Key.Key_F5:
+            # Only what failed: what loaded stays as it is.
+            failed, self._failed_lists = self._failed_lists, set()
+            if self.leaderboard_list in failed:
+                self._load_leaderboard()
+            if self.schedule_list in failed:
+                self._load_schedule()
         else:
             super().keyPressEvent(event)
 
@@ -10463,7 +10672,7 @@ class WorldCupStandingsLoader(QThread):
             groups = ApiService.get_world_cup_standings(self.league_key)
             self.data_loaded.emit(groups or [])
         except Exception as e:
-            self.error_occurred.emit(str(e))
+            self.error_occurred.emit(_said(e))
 
 
 class WorldCupScoresLoader(QThread):
@@ -10481,7 +10690,7 @@ class WorldCupScoresLoader(QThread):
             games = ApiService.get_scores(self.league_key, self.date)
             self.data_loaded.emit(games or [])
         except Exception as e:
-            self.error_occurred.emit(str(e))
+            self.error_occurred.emit(_said(e))
 
 
 class WorldCupBracketLoader(QThread):
@@ -10501,7 +10710,7 @@ class WorldCupBracketLoader(QThread):
                 self.league_key, self.start_date, self.end_date)
             self.data_loaded.emit(games or [])
         except Exception as e:
-            self.error_occurred.emit(str(e))
+            self.error_occurred.emit(_said(e))
 
 
 class WorldCupNewsLoader(QThread):
@@ -10518,7 +10727,7 @@ class WorldCupNewsLoader(QThread):
             news = ApiService.get_news(self.league_key, limit=25)
             self.data_loaded.emit(news or [])
         except Exception as e:
-            self.error_occurred.emit(str(e))
+            self.error_occurred.emit(_said(e))
 
 
 class WorldCupDialog(QDialog):
@@ -10538,6 +10747,8 @@ class WorldCupDialog(QDialog):
         self.current_date = datetime.now().date()
         self.current_groups: list = []
         self._loaders: list = []
+        self._shown_games = None  # (date, games) as last shown, for a refresh that fails
+        self._said_refresh_failed = False
         self._group_tables: list = []  # AccessibleTable widgets (one per group)
 
         self.setWindowTitle(f"{self.display_name} — Sports Scores")
@@ -10663,8 +10874,12 @@ class WorldCupDialog(QDialog):
         phase_bar.addWidget(self.phase_combo, 1)
         layout.addLayout(phase_bar)
 
-        # Pre-select the currently active (or most recent) phase
+        # Pre-select the currently active (or most recent) phase. Quietly: the page it would
+        # fill isn't built yet, which raised and said "Something went wrong" on opening this
+        # once the first phase was over, and _load_all loads it anyway.
+        was_blocked = self.phase_combo.blockSignals(True)
         self._presort_phase_combo()
+        self.phase_combo.blockSignals(was_blocked)
 
         self.bracket_stack = QStackedWidget()
 
@@ -10711,6 +10926,7 @@ class WorldCupDialog(QDialog):
     # ─────────────── Data loading ───────────────
 
     def _load_all(self):
+        self._said_refresh_failed = False
         self._load_scores()
         self._load_standings()
         self._load_news()
@@ -10729,14 +10945,14 @@ class WorldCupDialog(QDialog):
         self.scores_list.addItem("Loading matches…")
         loader = WorldCupScoresLoader(self.league_key, self.current_date)
         loader.data_loaded.connect(self._on_scores_loaded)
-        loader.error_occurred.connect(lambda e: self._list_error(self.scores_list, e))
+        loader.error_occurred.connect(self._on_scores_failed)
         self._loaders.append(loader)
         loader.start()
 
     def _load_news(self):
         loader = WorldCupNewsLoader(self.league_key)
         loader.data_loaded.connect(self._on_news_loaded)
-        loader.error_occurred.connect(lambda e: self._list_error(self.news_list, e))
+        loader.error_occurred.connect(self._on_news_failed)
         self._loaders.append(loader)
         loader.start()
 
@@ -10750,7 +10966,29 @@ class WorldCupDialog(QDialog):
             self._rebuild_groups_widget(self.bracket_groups_layout, self.bracket_groups_content)
 
     def _on_scores_loaded(self, games: list):
+        self._shown_games = (self.current_date, games)
         self._populate_game_list(self.scores_list, games)
+
+    def _on_scores_failed(self, message: str):
+        # A refresh that fails keeps what it had, on the same day.
+        if self._shown_games and self._shown_games[0] == self.current_date:
+            self._populate_game_list(self.scores_list, self._shown_games[1])
+            self._say_refresh_failed(message)
+        else:
+            self._list_error(self.scores_list, message)
+
+    def _on_news_failed(self, message: str):
+        lst = self.news_list
+        if any(isinstance(lst.item(row).data(Qt.ItemDataRole.UserRole), dict) for row in range(lst.count())):
+            self._say_refresh_failed(message)
+        else:
+            self._list_error(lst, message)
+
+    def _say_refresh_failed(self, message: str):
+        """Once for a Refresh, which asks for three things at once."""
+        if not self._said_refresh_failed:
+            self._said_refresh_failed = True
+            announce(message)
 
     def _on_news_loaded(self, news: list):
         self.news_list.clear()
@@ -10821,12 +11059,16 @@ class WorldCupDialog(QDialog):
         layout.addStretch()
 
     def _set_group_error(self, msg: str):
-        while self.groups_layout.count():
-            item = self.groups_layout.takeAt(0)
-            if item.widget():
-                item.widget().deleteLater()
-        self.groups_layout.addWidget(QLabel(f"Could not load standings: {msg}"))
-        self.groups_layout.addStretch()
+        if self.current_groups:
+            self._say_refresh_failed(msg)  # A refresh that fails keeps what it had.
+            return
+        for layout in (self.groups_layout, self.bracket_groups_layout):
+            while layout.count():
+                item = layout.takeAt(0)
+                if item.widget():
+                    item.widget().deleteLater()
+            layout.addWidget(_message_row(msg, "Group standings"))
+            layout.addStretch()
 
     # ─────────────── Game list helpers ───────────────
 
@@ -10846,7 +11088,8 @@ class WorldCupDialog(QDialog):
     @staticmethod
     def _list_error(lw: QListWidget, msg: str):
         lw.clear()
-        lw.addItem(f"Error loading data: {msg}")
+        lw.addItem(msg)
+        lw.setCurrentRow(0)
 
     # ─────────────── Date navigation ───────────────
 
@@ -11135,7 +11378,7 @@ class StatisticsViewDialog(QDialog):
                 self._show_statistics_message(layout, f"Unable to load statistics for {self.league}.")
                 
         except Exception as e:
-            self._show_statistics_message(layout, f"Unable to show statistics: {e}")
+            self._show_statistics_message(layout, f"Unable to show statistics: {_said(e)}")
 
     def _debug_accept(self, reason):
         """Debug wrapper for accept() to track why dialog is closing"""
@@ -12009,7 +12252,7 @@ class BowlsAndPlayoffsDialog(QDialog):
 
     def _on_bowl_games_error(self, message):
         self.bowl_list.clear()
-        self.bowl_list.addItem(f"Error loading bowl games: {message}")
+        self.bowl_list.addItem(_failure_row(message))
         self.bowl_list.setCurrentRow(0)
 
     def _on_bowl_games_loaded(self, games_data):
@@ -12076,7 +12319,7 @@ class BowlsAndPlayoffsDialog(QDialog):
         
         except Exception as e:
             from PyQt6.QtWidgets import QMessageBox
-            QMessageBox.critical(self, "Error", f"Failed to load bowl games: {str(e)}")
+            QMessageBox.critical(self, "Error", f"Failed to load bowl games: {_said(e)}")
     
     def _add_game_item(self, game):
         """Add a game item to the list"""
@@ -12115,6 +12358,9 @@ class BowlsAndPlayoffsDialog(QDialog):
     def on_bowl_game_selected(self, item):
         """Handle selection of a bowl game"""
         game_id = item.data(Qt.ItemDataRole.UserRole)
+        if game_id == RETRY_ROW:
+            self.load_bowl_games()
+            return
         if game_id and self.parent_app and hasattr(self.parent_app, 'parent_app'):
             # Close this dialog and open game details
             self.accept()
@@ -12201,7 +12447,7 @@ class SportsScoresApp(QWidget):
             home_view.restore_state = state
             self._switch_to_view(home_view, "home", None)
         except Exception as e:
-            QMessageBox.critical(self, "Error", f"Failed to show home view: {str(e)}")
+            QMessageBox.critical(self, "Error", f"Failed to show home view: {_said(e)}")
     
     def show_live_scores(self, state=None):
         """Show the live scores view"""
@@ -12210,7 +12456,7 @@ class SportsScoresApp(QWidget):
             live_scores_view._restore_state = state
             self._switch_to_view(live_scores_view, "live_scores", None)
         except Exception as e:
-            QMessageBox.critical(self, "Error", f"Failed to show live scores view: {str(e)}")
+            QMessageBox.critical(self, "Error", f"Failed to show live scores view: {_said(e)}")
     
     def open_league(self, league: str, week: int = None, season_type: int = None):
         """Open a league view, optionally for a specific week (football).
@@ -12224,7 +12470,7 @@ class SportsScoresApp(QWidget):
             league_view = LeagueView(self, league, week=week, season_type=season_type)
             self._switch_to_view(league_view, "league", league)
         except Exception as e:
-            QMessageBox.critical(self, "Error", f"Failed to open league: {e}")
+            QMessageBox.critical(self, "Error", f"Failed to open league: {_said(e)}")
 
     def open_live_scores(self):
         """Open live scores view"""
@@ -12233,7 +12479,7 @@ class SportsScoresApp(QWidget):
             live_scores_view = LiveScoresView(self)
             self._switch_to_view(live_scores_view, "live_scores", None)
         except Exception as e:
-            QMessageBox.critical(self, "Error", f"Failed to open live scores: {e}")
+            QMessageBox.critical(self, "Error", f"Failed to open live scores: {_said(e)}")
 
     def open_game_details(self, game_id: str, from_live_scores=False):
         """Open game details view"""
@@ -12246,7 +12492,7 @@ class SportsScoresApp(QWidget):
             gdv = GameDetailsView(self, getattr(self, 'current_league', None), game_id, None)
             self._switch_to_view(gdv, "game", game_id)
         except Exception as e:
-            QMessageBox.critical(self, "Error", f"Failed to open game details: {e}")
+            QMessageBox.critical(self, "Error", f"Failed to open game details: {_said(e)}")
     
     def open_team_schedule(self, team_id: str, team_name: str, league: str):
         """Open team schedule view"""
@@ -12255,7 +12501,7 @@ class SportsScoresApp(QWidget):
                                   f"Schedule for {team_name} in {league} would be displayed here.\n"
                                   f"Team ID: {team_id}")
         except Exception as e:
-            QMessageBox.critical(self, "Error", f"Failed to open team schedule: {e}")
+            QMessageBox.critical(self, "Error", f"Failed to open team schedule: {_said(e)}")
 
     def open_teams_directly(self, league: str):
         """Open teams view directly for a specific league"""
@@ -12264,7 +12510,7 @@ class SportsScoresApp(QWidget):
             self.current_league = league
             self._show_teams_dialog_directly(league)
         except Exception as e:
-            QMessageBox.critical(self, "Error", f"Failed to open teams for {league}: {e}")
+            QMessageBox.critical(self, "Error", f"Failed to open teams for {league}: {_said(e)}")
 
     def open_standings_directly(self, league: str):
         """Open standings view directly for a specific league"""
@@ -12273,7 +12519,7 @@ class SportsScoresApp(QWidget):
             self.current_league = league
             self._show_standings_dialog_directly(league)
         except Exception as e:
-            QMessageBox.critical(self, "Error", f"Failed to open standings for {league}: {e}")
+            QMessageBox.critical(self, "Error", f"Failed to open standings for {league}: {_said(e)}")
 
     def _fetch_standings_then(self, league: str, title: str, show):
         """Fetch standings on a thread, then show(data) here.
@@ -12285,11 +12531,10 @@ class SportsScoresApp(QWidget):
             try:
                 show(data)
             except Exception as e:
-                QMessageBox.critical(self, "Error", f"Failed to show {title}: {e}")
+                QMessageBox.critical(self, "Error", f"Failed to show {title}: {_said(e)}")
         loader = CallLoader(lambda: ApiService.get_standings(league))
         loader.data_loaded.connect(loaded)
-        loader.error_occurred.connect(
-            lambda e: QMessageBox.critical(self, "Error", f"Failed to show {title}: {e}"))
+        loader.error_occurred.connect(lambda e: QMessageBox.warning(self, title.title(), e))
         _start_detached_thread(loader)
 
     def _show_teams_dialog_directly(self, league: str):
@@ -12311,7 +12556,7 @@ class SportsScoresApp(QWidget):
             dialog = SimpleTeamsDialog(filtered_data, league, self)
             dialog.exec()
         except Exception as e:
-            QMessageBox.critical(self, "Error", f"Failed to show teams: {str(e)}")
+            QMessageBox.critical(self, "Error", f"Failed to show teams: {_said(e)}")
 
     def _show_standings_dialog_directly(self, league: str):
         """Show standings dialog directly without being in a league view"""
@@ -12328,7 +12573,7 @@ class SportsScoresApp(QWidget):
             dialog = StandingsDialog(standings_data, league, self)
             dialog.exec()
         except Exception as e:
-            QMessageBox.critical(self, "Error", f"Failed to show standings: {str(e)}")
+            QMessageBox.critical(self, "Error", f"Failed to show standings: {_said(e)}")
 
     def _is_team_for_league(self, team_data: Dict, league: str) -> bool:
         """Check if team belongs to the specified league"""
@@ -12413,7 +12658,7 @@ class SportsScoresApp(QWidget):
                 self.show_home()
         except Exception as e:
             QMessageBox.critical(self, "Startup Error", 
-                               f"Failed to navigate to {action} for {league}: {str(e)}")
+                               f"Failed to navigate to {action} for {league}: {_said(e)}")
             self.show_home()
 
     def go_back(self):
@@ -12438,7 +12683,7 @@ class SportsScoresApp(QWidget):
                 else:
                     self.show_home()
         except Exception as e:
-            QMessageBox.critical(self, "Error", f"Failed to go back: {e}")
+            QMessageBox.critical(self, "Error", f"Failed to go back: {_said(e)}")
 
     def _show_league_view(self, data, state=None):
         """Helper method to show league view"""

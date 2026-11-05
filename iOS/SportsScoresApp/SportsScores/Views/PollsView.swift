@@ -7,6 +7,7 @@
 //
 
 import SwiftUI
+import UIKit
 
 struct PollsView: View {
     let sport: Sport
@@ -18,7 +19,8 @@ struct PollsView: View {
             if viewModel.isLoading {
                 ProgressView("Loading rankings…")
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
-            } else if let error = viewModel.errorMessage {
+            } else if let error = viewModel.errorMessage, viewModel.polls.isEmpty {
+                // A refresh that fails keeps what's showing, as the scores list does.
                 errorState(message: error)
             } else if viewModel.polls.isEmpty {
                 emptyState
@@ -27,7 +29,13 @@ struct PollsView: View {
             }
         }
         .task { await viewModel.fetchRankings(for: sport) }
-        .refreshable { await viewModel.refresh(for: sport) }
+        .refreshable {
+            await viewModel.refresh(for: sport)
+            // With a list showing, nothing else would say so.
+            if let error = viewModel.errorMessage, !viewModel.polls.isEmpty {
+                UIAccessibility.post(notification: .announcement, argument: error)
+            }
+        }
         .toolbar {
             ToolbarItem(placement: .navigationBarTrailing) {
                 ViewModeMenuButton(currentMode: $viewMode)

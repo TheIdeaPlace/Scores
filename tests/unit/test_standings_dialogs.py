@@ -202,7 +202,7 @@ class TestSoccerStandings:
         loader.error_occurred.connect(errors.append)
         with patch.object(scores.ApiService, "get_standings", side_effect=espn_api.ApiError(espn_api.STANDINGS_UNAVAILABLE)):
             loader.run()
-        assert errors == [f"Failed to load standings: {espn_api.STANDINGS_UNAVAILABLE}"]
+        assert errors == [espn_api.STANDINGS_UNAVAILABLE]
 
 
 class TestSoccerTeams:

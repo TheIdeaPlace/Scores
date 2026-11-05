@@ -6,6 +6,7 @@ import pytz
 
 import espn_api
 import settings
+from exceptions import ApiError
 
 from .support import FakeResponse, HTTP_500, TIMEOUT, load
 
@@ -50,9 +51,11 @@ class TestScoreboardUrls:
         assert espn_api.get_scores("NCAAF") == []
         assert len(espn.calls) == 1
 
-    def test_a_failed_retry_leaves_it_empty(self, espn):
+    def test_a_failed_retry_says_so(self, espn):
+        """The empty answer before it is no sign of no games: it's what ESPN sends for bowls."""
         espn.on("groups=90", {"events": []}).on("groups=80", HTTP_500)
-        assert espn_api.get_scores("NCAAF") == []
+        with pytest.raises(ApiError, match="scores"):
+            espn_api.get_scores("NCAAF")
 
 
 class TestScoreboardGames:

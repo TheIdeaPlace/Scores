@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import UIKit
 
 // MARK: - Golf live state (lightweight, separate from team-sport viewmodel)
 
@@ -113,6 +114,10 @@ struct LiveScoresView: View {
         }
         .refreshable {
             await viewModel.refresh()
+            // Someone asked for this one. The timer's stay quiet.
+            if let note = viewModel.failureNote {
+                UIAccessibility.post(notification: .announcement, argument: note)
+            }
             if appSettings.golfHubEnabled { await golfVM.fetch() }
         }
     }
@@ -170,7 +175,14 @@ struct LiveScoresView: View {
                     }
                     .padding(.horizontal)
                 }
-                
+
+                if let note = viewModel.failureNote {
+                    Text(note)
+                        .font(.subheadline)
+                        .foregroundColor(.secondary)
+                        .padding(.horizontal)
+                }
+
                 if viewModel.liveGames.isEmpty && viewModel.completedGames.isEmpty && viewModel.upcomingGames.isEmpty && (!appSettings.golfHubEnabled || golfVM.activeTournaments.isEmpty) {
                     VStack(spacing: 16) {
                         Image(systemName: "calendar.badge.exclamationmark")

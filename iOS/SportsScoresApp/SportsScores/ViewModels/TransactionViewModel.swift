@@ -45,7 +45,7 @@ class TransactionViewModel: ObservableObject {
             let fetched = try await apiService.fetchTeamsForSport(sport: sport)
             teams = fetched.sorted { $0.displayName < $1.displayName }
         } catch {
-            errorMessage = "Could not load teams."
+            errorMessage = APIError.unavailable("the teams")
         }
     }
 
@@ -85,7 +85,7 @@ class TransactionViewModel: ObservableObject {
                 noDataForSport = response.count == 0
             }
         } catch {
-            errorMessage = "Could not load transactions."
+            errorMessage = APIError.unavailable("transactions")
             transactions = []
         }
     }

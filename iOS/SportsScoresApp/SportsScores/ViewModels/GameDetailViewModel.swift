@@ -42,7 +42,7 @@ final class GameDetailViewModel: ObservableObject {
             // Left the screen. It asks again if it comes back.
         } catch {
             if gameDetails == nil {
-                errorMessage = "Failed to load details: \(error.localizedDescription)"
+                errorMessage = APIError.unavailable("this game")
             }
         }
         isLoading = false

@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import UIKit
 
 struct StandingsView: View {
     let sport: Sport
@@ -28,6 +29,10 @@ struct StandingsView: View {
         }
         .refreshable {
             await viewModel.refresh(for: sport)
+            // With a list showing, nothing else would say so.
+            if let error = viewModel.errorMessage, !viewModel.visibleGroups.isEmpty {
+                UIAccessibility.post(notification: .announcement, argument: error)
+            }
         }
     }
 
@@ -59,7 +64,8 @@ struct StandingsView: View {
                          ? "Loading wild card standings..."
                          : "Loading standings...")
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
-        } else if let error = viewModel.errorMessage {
+        } else if let error = viewModel.errorMessage, viewModel.visibleGroups.isEmpty {
+            // A refresh that fails keeps what's showing, as the scores list does.
             ErrorStateView(message: error) {
                 Task {
                     if viewModel.mode == .wildCard {

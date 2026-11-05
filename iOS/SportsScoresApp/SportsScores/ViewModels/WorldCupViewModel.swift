@@ -87,7 +87,7 @@ final class WorldCupViewModel: ObservableObject {
         do {
             groups = try await api.fetchWorldCupStandings(for: sport)
         } catch {
-            groupsError = "Could not load group standings."
+            groupsError = APIError.unavailable("standings")
         }
         isLoadingGroups = false
     }
@@ -100,7 +100,7 @@ final class WorldCupViewModel: ObservableObject {
         do {
             games = try await api.fetchGames(for: sport, date: selectedDate)
         } catch {
-            gamesError = "Could not load games."
+            gamesError = APIError.unavailable("scores")
         }
         isLoadingGames = false
     }
@@ -169,7 +169,7 @@ final class WorldCupViewModel: ObservableObject {
                                                          startDate: phase.startDate,
                                                          endDate: phase.endDate)
         } catch {
-            bracketError = "Could not load bracket matches."
+            bracketError = APIError.unavailable("scores")
         }
         isLoadingBracket = false
     }

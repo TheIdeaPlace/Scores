@@ -12,6 +12,8 @@ class SoccerLiveViewModel: ObservableObject {
     @Published var upcomingGames: [LeagueGames] = []
     @Published var isLoading = false
     @Published var errorMessage: String?
+    /// Says which leagues didn't answer, under what the others did.
+    @Published var failureNote: String?
 
     private let apiService = ESPNAPIService.shared
 
@@ -29,7 +31,8 @@ class SoccerLiveViewModel: ObservableObject {
 
         // Fetch all soccer leagues in parallel.
         // DateFormatter is NOT thread-safe — each task creates its own inside Game.init.
-        let results: [(Sport, [Game])] = await withTaskGroup(of: (Sport, [Game]).self) { group in
+        // nil is a league that failed, which isn't the same as one with no games.
+        let results: [(Sport, [Game]?)] = await withTaskGroup(of: (Sport, [Game]?).self) { group in
             for league in Sport.soccerLeagues {
                 group.addTask {
                     do {
@@ -37,11 +40,11 @@ class SoccerLiveViewModel: ObservableObject {
                         return (league, games)
                     } catch {
                         print("Failed to fetch \(league.displayName): \(error)")
-                        return (league, [])
+                        return (league, nil)
                     }
                 }
             }
-            var collected: [(Sport, [Game])] = []
+            var collected: [(Sport, [Game]?)] = []
             for await pair in group { collected.append(pair) }
             return collected.sorted {
                 (Sport.soccerLeagues.firstIndex(of: $0.0) ?? Int.max) <
@@ -49,11 +52,23 @@ class SoccerLiveViewModel: ObservableObject {
             }
         }
 
+        // Leaving the screen cancels this, and says nothing about ESPN.
+        guard !Task.isCancelled else {
+            isLoading = false
+            return
+        }
+
         var live: [LeagueGames] = []
         var completed: [LeagueGames] = []
         var upcoming: [LeagueGames] = []
+        var failed: [String] = []
 
-        for (league, games) in results {
+        for (league, fetched) in results {
+            if fetched == nil { failed.append(league.displayName) }
+            // A league that failed keeps what it last showed.
+            let games = fetched ?? (liveGames + completedGames + upcomingGames)
+                .filter { $0.sport == league }
+                .flatMap { $0.games }
             let todaysGames = games.filter { ScoreboardDay.belongsOnToday($0, now: now) }
             // Suspended matches are halted, not over — they belong with the live ones.
             let liveG      = todaysGames.filter { $0.status.isLive || $0.status.isSuspended }
@@ -70,8 +85,10 @@ class SoccerLiveViewModel: ObservableObject {
         completedGames = completed
         upcomingGames = upcoming
 
-        if live.isEmpty && completed.isEmpty && upcoming.isEmpty {
-            errorMessage = "No soccer games scheduled today"
+        let showing = !(live.isEmpty && completed.isEmpty && upcoming.isEmpty)
+        failureNote = showing && !failed.isEmpty ? APIError.liveScoresFailure(failed, showing: true) : nil
+        if !showing {
+            errorMessage = failed.isEmpty ? "No soccer games scheduled today" : APIError.liveScoresFailure(failed, showing: false)
         }
 
         isLoading = false

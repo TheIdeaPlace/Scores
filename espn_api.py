@@ -34,6 +34,49 @@ def _dicts(value):
     return [item for item in value if isinstance(item, dict)] if isinstance(value, list) else []
 
 
+# A failed request says so, in a sentence a screen can read out: a timeout, a 5xx or a body that
+# isn't JSON raises ApiError with one of these, so it can't read as there being nothing to show.
+def _unavailable(what):
+    return f"ESPN isn't providing {what} right now. Try again in a minute."
+
+
+SCORES_UNAVAILABLE = _unavailable("scores")
+NEWS_UNAVAILABLE = _unavailable("news")
+GAME_UNAVAILABLE = _unavailable("this game")
+POLLS_UNAVAILABLE = _unavailable("polls")
+SCHEDULE_UNAVAILABLE = _unavailable("the schedule")
+TEAM_UNAVAILABLE = _unavailable("this team")
+ROSTER_UNAVAILABLE = _unavailable("the roster")
+TRANSACTIONS_UNAVAILABLE = _unavailable("transactions")
+DRAFT_UNAVAILABLE = _unavailable("the draft")
+LEADERBOARD_UNAVAILABLE = _unavailable("the leaderboard")
+FANTASY_UNAVAILABLE = _unavailable("the draft board")
+
+
+def _espn_answer(unavailable, url, **kwargs):
+    """ESPN's JSON, or None for a 400 or 404, which say it has nothing there. Anything else that
+    isn't an answer raises ApiError(unavailable). The iPhone tells them apart the same way."""
+    try:
+        resp = _http_get(url, **kwargs)
+        answer = resp.json() if resp.status_code == 200 else None
+    except (requests.RequestException, ValueError) as e:
+        print(f"{url}: {e}")
+        raise ApiError(unavailable) from e
+    if resp.status_code not in (200, 400, 404):
+        print(f"{url}: {resp.status_code}")
+        raise ApiError(unavailable)
+    return answer
+
+
+def _listed(body, key, unavailable):
+    """The dicts in a body's list. Not there, or empty, is ESPN having none. A null where the
+    list belongs isn't an answer, so it says the same as a request that failed."""
+    body = _as_dict(body)
+    if key in body and body[key] is None:
+        raise ApiError(unavailable)
+    return _dicts(body.get(key))
+
+
 BASE_URL = "https://site.api.espn.com/apis/site/v2/sports"
 
 LEAGUES = {
@@ -387,12 +430,12 @@ def _schedule_answer(url):
     and the dialog reports it: a schedule missing its playoffs or its games to come would
     look complete, and one missing everything would look like an off-season. The iPhone
     has the same rule, in ESPNAPIService.fetchTeamSchedulePage."""
-    resp = _http_get(url)
-    if resp.status_code in (400, 404):
+    answer = _espn_answer(SCHEDULE_UNAVAILABLE, url)
+    if answer is None:
         return None
-    if resp.status_code != 200:
-        raise ApiError(f"ESPN answered with an error ({resp.status_code})")
-    return _as_dict(resp.json())
+    answer = _as_dict(answer)
+    _listed(answer, "events", SCHEDULE_UNAVAILABLE)
+    return answer
 
 
 def _season_type_schedule_events(base_url, season_year):
@@ -741,6 +784,29 @@ def parse_schedule_from_api(url, team_id, today, season=None):
 # take a second or more per request; one after another, 25 leagues plus a
 # summary per live game was over a minute.
 LIVE_FETCH_WORKERS = 8
+# More leagues than this failing at once isn't worth a screen reader listing them.
+LIVE_FAILURES_NAMED = 4
+
+
+def with_failed_leagues_kept(fresh, last, failed, field="league"):
+    """A refresh's rows, plus the rows last shown for the leagues that just failed, so one
+    league not answering doesn't take its games off the list."""
+    failed = set(failed)
+    return list(fresh) + [row for row in last if row.get(field) in failed]
+
+
+def live_scores_failure_text(failed, showing):
+    """The Live Scores row for leagues that didn't answer. `showing` is whether any games are
+    on the list: with none, and too many failures to name, there's only the one thing to say."""
+    failed = sorted(failed)
+    if len(failed) > LIVE_FAILURES_NAMED:
+        if not showing:
+            return SCORES_UNAVAILABLE
+        who = "Some leagues' scores"
+    else:
+        who = "Scores for " + (" and ".join(failed) if len(failed) < 3
+                               else f"{', '.join(failed[:-1])} and {failed[-1]}")
+    return f"{who} may be missing or out of date. ESPN isn't providing them right now. Try again in a minute."
 
 
 def scoreboard_live_detail(league_key, comp):
@@ -913,10 +979,10 @@ def get_live_golf_tournament(tour_key, leaders=3):
     league_path = LEAGUES.get(tour_key)
     if not league_path:
         return None
-    resp = _http_get(f"{BASE_URL}/{league_path}/scoreboard")
-    if resp.status_code != 200:
+    answer = _espn_answer(LEADERBOARD_UNAVAILABLE, f"{BASE_URL}/{league_path}/scoreboard")
+    if answer is None:
         return None
-    for event in _dicts(resp.json().get("events")):
+    for event in _listed(answer, "events", LEADERBOARD_UNAVAILABLE):
         comp = (_dicts(event.get("competitions")) or [{}])[0]
         status = _as_dict(_as_dict(comp.get("status")).get("type"))
         if status.get("state") != "in":
@@ -1126,17 +1192,16 @@ def get_scores(league_key, date=None, week=None, seasontype=None, season=None):
     if params:
         url += "?" + "&".join(params)
 
-    resp = _http_get(url)
-    if resp.status_code != 200:
+    answer = _espn_answer(SCORES_UNAVAILABLE, url)
+    if answer is None:
         return []
-    data = resp.json()
-    events = _dicts(data.get("events"))
+    events = _listed(answer, "events", SCORES_UNAVAILABLE)
 
     if ncaaf_needs_fbs_retry(league_key, events):
-        retry = _http_get(_swap_to_fbs(url))
-        if retry.status_code == 200:
-            data = retry.json()
-            events = _dicts(data.get("events"))
+        # The empty answer before this one is no sign of no games, so a failure here says so.
+        retry = _espn_answer(SCORES_UNAVAILABLE, _swap_to_fbs(url))
+        if retry is not None:
+            events = _listed(retry, "events", SCORES_UNAVAILABLE)
 
     scores = []
 
@@ -1242,11 +1307,10 @@ def get_news(league_key, limit=10):
         return []
     url = f"{BASE_URL}/{league_path}/news"
     params = {'limit': limit} if limit > 6 else {}
-    resp = _http_get(url, params=params)
-    if resp.status_code != 200:
+    answer = _espn_answer(NEWS_UNAVAILABLE, url, params=params)
+    if answer is None:
         return []
-    data = resp.json()
-    articles = _dicts(data.get("articles"))
+    articles = _listed(answer, "articles", NEWS_UNAVAILABLE)
     news_items = []
     
     # Import text processor for cleaning descriptions
@@ -1280,10 +1344,8 @@ def get_game_details(league_key, game_id):
     if not league_path:
         return {}
     url = f"{BASE_URL}/{league_path}/summary?event={game_id}"
-    resp = _http_get(url)
-    if resp.status_code != 200:
-        return {}
-    return resp.json()
+    answer = _espn_answer(GAME_UNAVAILABLE, url)
+    return {} if answer is None else answer
 
 
 def extract_meaningful_game_info(details):
@@ -1594,20 +1656,14 @@ def get_rankings(league_key):
     if not league_path:
         return {'polls': []}
     
-    try:
-        url = f"{BASE_URL}/{league_path}/rankings"
-        resp = _http_get(url)
-        
-        if resp.status_code != 200:
-            return {'polls': []}
-        
-        data = resp.json()
-        polls = data.get('rankings', [])
-        
-        return {'polls': polls}
-    except Exception as e:
-        print(f"Failed to fetch rankings for {league_key}: {e}")
+    url = f"{BASE_URL}/{league_path}/rankings"
+    data = _espn_answer(POLLS_UNAVAILABLE, url)
+    if data is None:
         return {'polls': []}
+
+    polls = _listed(data, 'rankings', POLLS_UNAVAILABLE)
+
+    return {'polls': polls}
 
 def get_standings(league_key):
     """Get current standings for a specific league using optimized API endpoint"""
@@ -1643,12 +1699,11 @@ def _get_mlb_standings_fast():
     try:
         # Use the fast dedicated standings endpoint
         url = "https://site.api.espn.com/apis/v2/sports/baseball/mlb/standings"
-        resp = _http_get(url)
-        
-        if resp.status_code != 200:
+        data = _espn_answer(STANDINGS_UNAVAILABLE, url)
+        if data is None:
             return []
-        
-        data = resp.json()
+        _listed(data, "children", STANDINGS_UNAVAILABLE)
+
         standings = []
         
         # Division mapping for games back calculation
@@ -1745,7 +1800,9 @@ def _get_mlb_standings_fast():
         standings.sort(key=lambda x: (x["division"], -x["wins"], -float(x["win_percentage"])))
         
         return standings
-        
+
+    except ApiError:
+        raise
     except Exception as e:
         print(f"Error in fast MLB standings: {e}")
         # Fallback to original method
@@ -1779,12 +1836,11 @@ def _get_nfl_standings_fast():
     """Fast NFL standings using dedicated endpoint"""
     try:
         url = "https://site.api.espn.com/apis/v2/sports/football/nfl/standings"
-        resp = _http_get(url)
-        
-        if resp.status_code != 200:
+        data = _espn_answer(STANDINGS_UNAVAILABLE, url)
+        if data is None:
             return []
-        
-        data = resp.json()
+        _listed(data, "children", STANDINGS_UNAVAILABLE)
+
         standings = []
         
         # NFL divisions mapping
@@ -1892,7 +1948,9 @@ def _get_nfl_standings_fast():
         standings.sort(key=lambda x: (x["division"], -x["wins"], x["losses"]))
         
         return standings
-        
+
+    except ApiError:
+        raise
     except Exception as e:
         print(f"Error in fast NFL standings: {e}")
         return _get_standings_original("NFL")
@@ -1903,12 +1961,11 @@ def _get_nba_standings_fast():
         # The season ESPN calls current, as on the iPhone. A season from the calendar could be one
         # with no games yet, which read 0-0 for everyone from July.
         url = "https://site.api.espn.com/apis/v2/sports/basketball/nba/standings"
-        resp = _http_get(url)
-        
-        if resp.status_code != 200:
+        data = _espn_answer(STANDINGS_UNAVAILABLE, url)
+        if data is None:
             return []
-        
-        data = resp.json()
+        _listed(data, "children", STANDINGS_UNAVAILABLE)
+
         standings = []
         
         # NBA divisions mapping
@@ -2019,7 +2076,9 @@ def _get_nba_standings_fast():
         standings.sort(key=lambda x: (x["division"], -x["wins"], x["losses"]))
         
         return standings
-        
+
+    except ApiError:
+        raise
     except Exception as e:
         print(f"Error in fast NBA standings: {e}")
         return _get_standings_original("NBA")
@@ -2028,12 +2087,11 @@ def _get_nba_fresh_standings():
     """Create fresh NBA standings with all teams at 0-0 for new season"""
     try:
         url = "https://site.api.espn.com/apis/site/v2/sports/basketball/nba/teams"
-        resp = _http_get(url)
-        
-        if resp.status_code != 200:
+        data = _espn_answer(STANDINGS_UNAVAILABLE, url)
+        if data is None:
             return []
-        
-        data = resp.json()
+        _listed(data, "sports", STANDINGS_UNAVAILABLE)
+
         standings = []
         
         # NBA divisions mapping (same as main function)
@@ -2102,7 +2160,9 @@ def _get_nba_fresh_standings():
         standings.sort(key=lambda x: (x["division"], x["team_name"]))
         
         return standings
-        
+
+    except ApiError:
+        raise
     except Exception as e:
         print(f"Error in fresh NBA standings: {e}")
         return []
@@ -2111,12 +2171,11 @@ def _get_nhl_standings_fast():
     """Fast NHL standings using dedicated endpoint"""
     try:
         url = "https://site.api.espn.com/apis/v2/sports/hockey/nhl/standings"
-        resp = _http_get(url)
-        
-        if resp.status_code != 200:
+        data = _espn_answer(STANDINGS_UNAVAILABLE, url)
+        if data is None:
             return []
-        
-        data = resp.json()
+        _listed(data, "children", STANDINGS_UNAVAILABLE)
+
         standings = []
         
         # NHL divisions mapping
@@ -2196,7 +2255,9 @@ def _get_nhl_standings_fast():
         standings.sort(key=lambda x: (x["division"], -x["points"], -x["wins"]))
         
         return standings
-        
+
+    except ApiError:
+        raise
     except Exception as e:
         print(f"Error in NHL standings: {e}")
         return _get_standings_original("NHL")
@@ -2283,7 +2344,9 @@ def _standings_or_nothing(league, path, query="", parse=parse_college_standings)
         resp = _http_get(f"https://site.api.espn.com/apis/v2/sports/{path}/standings{query}")
         if resp.status_code != 200:
             raise ApiError(STANDINGS_UNAVAILABLE)
-        return parse(resp.json())
+        data = resp.json()
+        _listed(data, "children", STANDINGS_UNAVAILABLE)
+        return parse(data)
     except (requests.RequestException, ValueError) as e:
         print(f"Error in {league} standings: {e}")
         raise ApiError(STANDINGS_UNAVAILABLE) from e
@@ -2351,12 +2414,11 @@ def _get_standings_original(league_key):
     
     # Use teams API to get all teams and their records
     teams_url = f"{BASE_URL}/{league_path}/teams"
-    resp = _http_get(teams_url)
-    
-    if resp.status_code != 200:
+    data = _espn_answer(STANDINGS_UNAVAILABLE, teams_url)
+    if data is None:
         return []
-    
-    data = resp.json()
+    _listed(data, "sports", STANDINGS_UNAVAILABLE)
+
     return _parse_standings_from_teams_api(data, league_key)
 
 def _parse_standings_from_teams_api(data, league_key):
@@ -3117,10 +3179,10 @@ def get_team_info(league_key, team_id, home_venue=True):
     if not league_path or not team_id:
         return {}
     try:
-        resp = _http_get(f"{BASE_URL}/{league_path}/teams/{team_id}")
-        if resp.status_code != 200:
+        answer = _espn_answer(TEAM_UNAVAILABLE, f"{BASE_URL}/{league_path}/teams/{team_id}")
+        if answer is None:
             return {}
-        team = resp.json().get("team", {})
+        team = answer.get("team", {})
         if not team:
             return {}
         result = {
@@ -3191,6 +3253,8 @@ def get_team_info(league_key, team_id, home_venue=True):
                 except Exception:
                     result["next_game_date"] = date_str[:10]
         return result
+    except ApiError:
+        raise
     except Exception as e:
         print(f"[get_team_info] team {team_id}: {e}")
         return {}
@@ -3202,13 +3266,12 @@ def get_team_roster(league_key, team_id):
     if not league_path or not team_id:
         return []
     try:
-        resp = _http_get(f"{BASE_URL}/{league_path}/teams/{team_id}/roster")
-        if resp.status_code != 200:
+        data = _espn_answer(ROSTER_UNAVAILABLE, f"{BASE_URL}/{league_path}/teams/{team_id}/roster")
+        if data is None:
             return []
-        data = resp.json()
         players = []
         # ESPN returns athletes grouped by position group
-        for group in data.get("athletes", []):
+        for group in _listed(data, "athletes", ROSTER_UNAVAILABLE):
             items = group.get("items", [group] if "displayName" in group else [])
             for p in items:
                 jersey = str(p.get("jersey") or "")
@@ -3223,6 +3286,8 @@ def get_team_roster(league_key, team_id):
                     "age": age, "height": height_str, "weight": weight_str,
                 })
         return players
+    except ApiError:
+        raise
     except Exception as e:
         print(f"[get_team_roster] team {team_id}: {e}")
         return []
@@ -3233,30 +3298,27 @@ def get_team_news(league_key, team_id, limit=25):
     league_path = LEAGUES.get(league_key)
     if not league_path or not team_id:
         return []
-    try:
-        # /teams/{id}/news returns no articles; /news?team={id} does.
-        resp = _http_get(f"{BASE_URL}/{league_path}/news", params={"team": team_id, "limit": limit})
-        if resp.status_code != 200:
-            return []
-        try:
-            from text_utils import text_processor
-        except ImportError:
-            text_processor = None
-        articles = []
-        for a in _dicts(resp.json().get("articles")):
-            raw_desc = a.get("description") or ""
-            desc = text_processor.clean_description(raw_desc, a) if text_processor else raw_desc
-            articles.append({
-                "headline":  a.get("headline") or "",
-                "description": desc,
-                "web_url":   _article_href(a, "web"),
-                "published": a.get("published") or "",
-                "byline":    a.get("byline") or "",
-            })
-        return articles
-    except Exception as e:
-        print(f"[get_team_news] team {team_id}: {e}")
+    # /teams/{id}/news returns no articles; /news?team={id} does.
+    answer = _espn_answer(NEWS_UNAVAILABLE, f"{BASE_URL}/{league_path}/news",
+                          params={"team": team_id, "limit": limit})
+    if answer is None:
         return []
+    try:
+        from text_utils import text_processor
+    except ImportError:
+        text_processor = None
+    articles = []
+    for a in _listed(answer, "articles", NEWS_UNAVAILABLE):
+        raw_desc = a.get("description") or ""
+        desc = text_processor.clean_description(raw_desc, a) if text_processor else raw_desc
+        articles.append({
+            "headline":  a.get("headline") or "",
+            "description": desc,
+            "web_url":   _article_href(a, "web"),
+            "published": a.get("published") or "",
+            "byline":    a.get("byline") or "",
+        })
+    return articles
 
 
 def get_transactions(league_key, team_id=None, limit=50, page=1):
@@ -3272,11 +3334,10 @@ def get_transactions(league_key, team_id=None, limit=50, page=1):
         params = {"limit": limit, "page": page}
         if team_id:
             params["team"] = team_id
-        resp = _http_get(f"{BASE_URL}/{league_path}/transactions", params=params)
-        if resp.status_code != 200:
+        data = _espn_answer(TRANSACTIONS_UNAVAILABLE, f"{BASE_URL}/{league_path}/transactions", params=params)
+        if data is None:
             return [], False
-        data = resp.json()
-        raw_items = data.get("transactions", data.get("items", []))
+        raw_items = _listed(data, "transactions" if "transactions" in data else "items", TRANSACTIONS_UNAVAILABLE)
         # ESPN returns pageIndex / pageCount as top-level integers.
         page_count = int(data.get("pageCount", 1))
         has_more = int(page) < page_count
@@ -3302,6 +3363,8 @@ def get_transactions(league_key, team_id=None, limit=50, page=1):
                 "position":    "",
             })
         return result, has_more
+    except ApiError:
+        raise
     except Exception as e:
         print(f"[get_transactions] {league_key}: {e}")
         return [], False
@@ -3322,10 +3385,7 @@ def _fetch_draft(year):
     cached = _DRAFT_CACHE.get(year)
     if cached and time.monotonic() - cached[0] < DRAFT_CACHE_SECONDS:
         return cached[1]
-    resp = _http_get(f"{BASE_URL}/football/nfl/draft", params={"season": year})
-    if resp.status_code != 200:
-        return None
-    data = _as_dict(resp.json())
+    data = _as_dict(_espn_answer(DRAFT_UNAVAILABLE, f"{BASE_URL}/football/nfl/draft", params={"season": year}))
     if not any(data.get(field) for field in ("year", "rounds", "picks", "status")):
         return None
     _DRAFT_CACHE[year] = (time.monotonic(), data)
@@ -3343,19 +3403,15 @@ def get_draft(year):
     Returns dict: {year, num_rounds, status ('pre'/'in'/'post'), rounds: [{number, display_name, short_name}]}
     or None if unavailable.
     """
-    try:
-        data = _fetch_draft(year)
-        if data is None:
-            return None
-        num_rounds = data.get("rounds")
-        num_rounds = num_rounds if isinstance(num_rounds, int) and num_rounds > 0 else 7
-        rounds = [{"number": number, "display_name": f"{_ordinal(number)} Round", "short_name": _ordinal(number)}
-                  for number in range(1, num_rounds + 1)]
-        status = str(_as_dict(data.get("status")).get("state") or "post").lower()
-        return {"year": int(year), "num_rounds": num_rounds, "status": status, "rounds": rounds}
-    except Exception as e:
-        print(f"[get_draft] {year}: {e}")
+    data = _fetch_draft(year)
+    if data is None:
         return None
+    num_rounds = data.get("rounds")
+    num_rounds = num_rounds if isinstance(num_rounds, int) and num_rounds > 0 else 7
+    rounds = [{"number": number, "display_name": f"{_ordinal(number)} Round", "short_name": _ordinal(number)}
+              for number in range(1, num_rounds + 1)]
+    status = str(_as_dict(data.get("status")).get("state") or "post").lower()
+    return {"year": int(year), "num_rounds": num_rounds, "status": status, "rounds": rounds}
 
 
 def get_draft_round(year, round_num):
@@ -3364,11 +3420,7 @@ def get_draft_round(year, round_num):
     Each dict: {overall, pick, round, traded, trade_note, team_abbrev, team_name,
                 player_name, position, college, status_name}
     """
-    try:
-        data = _fetch_draft(year)
-    except Exception as e:
-        print(f"[get_draft_round] {year}/r{round_num}: {e}")
-        return []
+    data = _fetch_draft(year)
     if data is None:
         return []
     teams = {str(team.get("id")): team for team in _dicts(data.get("teams"))}
@@ -3408,14 +3460,14 @@ def get_team_transactions(league_key, team_id, limit=25):
     if not league_path or not team_id:
         return []
     try:
-        resp = _http_get(
+        data = _espn_answer(
+            TRANSACTIONS_UNAVAILABLE,
             f"{BASE_URL}/{league_path}/transactions",
             params={"team": team_id, "limit": limit},
         )
-        if resp.status_code != 200:
+        if data is None:
             return []
-        data = resp.json()
-        items = data.get("transactions", data.get("items", []))
+        items = _listed(data, "transactions" if "transactions" in data else "items", TRANSACTIONS_UNAVAILABLE)
         result = []
         for item in items:
             date_str = item.get("date", item.get("timestamp", ""))
@@ -3435,6 +3487,8 @@ def get_team_transactions(league_key, team_id, limit=25):
                 "position":    "",
             })
         return result
+    except ApiError:
+        raise
     except Exception as e:
         print(f"[get_team_transactions] team {team_id}: {e}")
         return []
@@ -3452,11 +3506,10 @@ def get_golf_leaderboard(tour_key):
     if not league_path:
         return None
     try:
-        resp = _http_get(f"{BASE_URL}/{league_path}/scoreboard")
-        if resp.status_code != 200:
+        data = _espn_answer(LEADERBOARD_UNAVAILABLE, f"{BASE_URL}/{league_path}/scoreboard")
+        if data is None:
             return None
-        data = resp.json()
-        events = _dicts(data.get("events"))
+        events = _listed(data, "events", LEADERBOARD_UNAVAILABLE)
         if not events:
             return None
         event = events[0]
@@ -3492,6 +3545,8 @@ def get_golf_leaderboard(tour_key):
             "status_detail": _as_dict(comp_status.get("type")).get("detail") or "",
             "players": players,
         }
+    except ApiError:
+        raise
     except Exception as e:
         print(f"[get_golf_leaderboard] {tour_key}: {e}")
         return None
@@ -3510,14 +3565,15 @@ def get_golf_schedule(tour_key):
         year = datetime.now().year
         # A bare year, not a START-END range: ESPN rejects ranges on team sports
         # and only still tolerates them here. The year returns the same 49 events.
-        resp = _http_get(
+        answer = _espn_answer(
+            SCHEDULE_UNAVAILABLE,
             f"{BASE_URL}/{league_path}/scoreboard",
             params={"dates": str(year)},
         )
-        if resp.status_code != 200:
+        if answer is None:
             return []
         result = []
-        for event in _dicts(resp.json().get("events")):
+        for event in _listed(answer, "events", SCHEDULE_UNAVAILABLE):
             status_type = _as_dict(_as_dict(event.get("status")).get("type"))
             state = status_type.get("state") or "pre"
 
@@ -3541,6 +3597,8 @@ def get_golf_schedule(tour_key):
                 "winner": winner,
             })
         return result
+    except ApiError:
+        raise
     except Exception as e:
         print(f"[get_golf_schedule] {tour_key}: {e}")
         return []
@@ -3559,12 +3617,11 @@ def get_world_cup_standings(league_key):
         return []
     try:
         url = f"https://site.api.espn.com/apis/v2/sports/{league_path}/standings"
-        resp = _http_get(url, timeout=15)
-        if resp.status_code != 200:
+        data = _espn_answer(STANDINGS_UNAVAILABLE, url, timeout=15)
+        if data is None:
             return []
-        data = resp.json()
         groups = []
-        for child in data.get("children", []):
+        for child in _listed(data, "children", STANDINGS_UNAVAILABLE):
             group_id   = str(child.get("id") or "")
             group_name = child.get("name") or "Group"
             entries    = child.get("standings", {}).get("entries", [])
@@ -3593,6 +3650,8 @@ def get_world_cup_standings(league_key):
             teams.sort(key=lambda t: t["rank"])
             groups.append({"id": group_id, "name": group_name, "teams": teams})
         return groups
+    except ApiError:
+        raise
     except Exception as e:
         print(f"[get_world_cup_standings] {league_key}: {e}")
         return []
@@ -3601,11 +3660,13 @@ def get_world_cup_standings(league_key):
 def get_world_cup_scores_range(league_key, start_date, end_date):
     """Fetch all World Cup games between start_date and end_date (inclusive).
 
-    Returns the same list-of-dicts format as get_scores().
+    Returns the same list-of-dicts format as get_scores(). A day that fails doesn't cost the
+    others, but with no games from any, the failure may be why, so it says so.
     """
     from datetime import timedelta
     all_games = []
     seen_ids: set = set()
+    failed = False
     current = start_date
     while current <= end_date:
         try:
@@ -3615,9 +3676,12 @@ def get_world_cup_scores_range(league_key, start_date, end_date):
                 if gid not in seen_ids:
                     seen_ids.add(gid)
                     all_games.append(g)
-        except Exception:
-            pass
+        except Exception as e:
+            print(f"[get_world_cup_scores_range] {current}: {e}")
+            failed = True
         current += timedelta(days=1)
+    if failed and not all_games:
+        raise ApiError(SCORES_UNAVAILABLE)
     return all_games
 
 
@@ -3845,6 +3909,10 @@ def _assign_board_ranks(players):
             player.setdefault(target, None)
 
 
+class _FantasySeasonNotThere(ApiError):
+    """A 400 or 404: ESPN hasn't made this season's feed. Any other failure says nothing about that."""
+
+
 def _load_fantasy_season(season, max_rank):
     """Fetch and map one season's draft board. Returns [] when unavailable."""
     url = f"{FANTASY_BASE}/{season}/players?view=kona_player_info&scoringPeriodId=0"
@@ -3853,13 +3921,19 @@ def _load_fantasy_season(season, max_rank):
         "X-Fantasy-Filter": '{"players":{"limit":12000}}',
         "Accept": "application/json",
     }
-    resp = _http_get(url, headers=headers, timeout=90)
+    # Raised, not swallowed: an empty list here would be indistinguishable from
+    # "ESPN has not published this season yet", and the caller reports those two
+    # very differently. A 404 has its own exception, which the fallback below reads.
+    try:
+        resp = _http_get(url, headers=headers, timeout=90)
+        raw_players = resp.json() if resp.status_code == 200 else None
+    except (requests.RequestException, ValueError) as e:
+        print(f"[get_fantasy_cheatsheet] {season}: {e}")
+        raise ApiError(FANTASY_UNAVAILABLE) from e
+    if resp.status_code in (400, 404):
+        raise _FantasySeasonNotThere(FANTASY_UNAVAILABLE)
     if resp.status_code != 200:
-        # Raised, not swallowed: an empty list here would be indistinguishable
-        # from "ESPN has not published this season yet", and the caller reports
-        # those two very differently.
-        raise RuntimeError(f"ESPN fantasy feed returned HTTP {resp.status_code}")
-    raw_players = resp.json()
+        raise ApiError(FANTASY_UNAVAILABLE)
     if not isinstance(raw_players, list):
         return []
     players = [p for p in (_map_fantasy_player(r, season, max_rank) for r in raw_players) if p]
@@ -3890,7 +3964,7 @@ def get_fantasy_cheatsheet(season=None, max_rank=None):
     season = int(season or datetime.now().year)
     try:
         players = _load_fantasy_season(season, max_rank)
-    except Exception as e:
+    except _FantasySeasonNotThere as e:
         # The upcoming season's feed can 404 before ESPN creates it.
         print(f"[get_fantasy_cheatsheet] {season}: {e}")
         return {"season": season - 1, "players": _load_fantasy_season(season - 1, max_rank)}

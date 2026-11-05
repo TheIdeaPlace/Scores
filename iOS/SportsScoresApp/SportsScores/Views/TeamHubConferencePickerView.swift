@@ -76,7 +76,7 @@ struct TeamHubConferencePickerView: View {
                 conferences = fetched
             }
         } catch {
-            errorMessage = "Could not load conferences for \(sport.displayName)."
+            errorMessage = APIError.unavailable("conferences")
         }
         isLoading = false
     }

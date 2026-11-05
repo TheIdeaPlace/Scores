@@ -69,7 +69,7 @@ class NFLDraftViewModel: ObservableObject {
             positionDict = Dictionary(uniqueKeysWithValues: draft.positions.map { ($0.id, $0.abbreviation) })
             selectedRound = detectActiveRound(picks: draft.picks)
         } catch {
-            errorMessage = "Could not load draft data."
+            errorMessage = APIError.unavailable("the draft")
             response = nil
         }
     }

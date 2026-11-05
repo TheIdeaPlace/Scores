@@ -1,0 +1,30 @@
+{
+  "unavailable": {
+    "scores": "ESPN isn't providing scores right now. Try again in a minute.",
+    "news": "ESPN isn't providing news right now. Try again in a minute.",
+    "this game": "ESPN isn't providing this game right now. Try again in a minute.",
+    "standings": "ESPN isn't providing standings right now. Try again in a minute.",
+    "polls": "ESPN isn't providing polls right now. Try again in a minute.",
+    "the schedule": "ESPN isn't providing the schedule right now. Try again in a minute.",
+    "this team": "ESPN isn't providing this team right now. Try again in a minute.",
+    "teams": "ESPN isn't providing teams right now. Try again in a minute.",
+    "the roster": "ESPN isn't providing the roster right now. Try again in a minute.",
+    "transactions": "ESPN isn't providing transactions right now. Try again in a minute.",
+    "the draft": "ESPN isn't providing the draft right now. Try again in a minute.",
+    "the leaderboard": "ESPN isn't providing the leaderboard right now. Try again in a minute.",
+    "the draft board": "ESPN isn't providing the draft board right now. Try again in a minute.",
+    "these": "ESPN isn't providing these right now. Try again in a minute."
+  },
+  "live": [
+    {"failed": ["NBA"], "showing": true,
+     "text": "Scores for NBA may be missing or out of date. ESPN isn't providing them right now. Try again in a minute."},
+    {"failed": ["NHL", "NBA"], "showing": false,
+     "text": "Scores for NBA and NHL may be missing or out of date. ESPN isn't providing them right now. Try again in a minute."},
+    {"failed": ["NHL", "MLB", "NBA"], "showing": true,
+     "text": "Scores for MLB, NBA and NHL may be missing or out of date. ESPN isn't providing them right now. Try again in a minute."},
+    {"failed": ["NHL", "MLB", "NBA", "NFL", "WNBA"], "showing": true,
+     "text": "Some leagues' scores may be missing or out of date. ESPN isn't providing them right now. Try again in a minute."},
+    {"failed": ["NHL", "MLB", "NBA", "NFL", "WNBA"], "showing": false,
+     "text": "ESPN isn't providing scores right now. Try again in a minute."}
+  ]
+}

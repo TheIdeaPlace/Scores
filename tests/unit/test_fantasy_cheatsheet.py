@@ -344,7 +344,7 @@ class TestCheatsheetLoad:
         # down, not "ESPN has not published this season yet".
         with patch.object(espn_api, "requests") as fake_requests:
             fake_requests.get.return_value.status_code = 503
-            with pytest.raises(RuntimeError):
+            with pytest.raises(espn_api.ApiError, match="Try again"):
                 espn_api.get_fantasy_cheatsheet(season=2026)
 
     def test_missing_upcoming_season_falls_back(self):

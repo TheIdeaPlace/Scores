@@ -7,6 +7,7 @@
 //
 
 import SwiftUI
+import UIKit
 import SafariServices
 
 struct NewsView: View {
@@ -18,7 +19,8 @@ struct NewsView: View {
             if viewModel.isLoading {
                 ProgressView("Loading news…")
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
-            } else if let error = viewModel.errorMessage {
+            } else if let error = viewModel.errorMessage, viewModel.articles.isEmpty {
+                // A refresh that fails keeps what's showing, as the scores list does.
                 errorState(message: error)
             } else if viewModel.articles.isEmpty {
                 emptyState
@@ -27,7 +29,13 @@ struct NewsView: View {
             }
         }
         .task { await viewModel.fetchNews(for: sport) }
-        .refreshable { await viewModel.refresh(for: sport) }
+        .refreshable {
+            await viewModel.refresh(for: sport)
+            // With a list showing, nothing else would say so.
+            if let error = viewModel.errorMessage, !viewModel.articles.isEmpty {
+                UIAccessibility.post(notification: .announcement, argument: error)
+            }
+        }
     }
 
     // MARK: - List

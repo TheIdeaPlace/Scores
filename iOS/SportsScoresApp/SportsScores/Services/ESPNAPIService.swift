@@ -147,8 +147,10 @@ class ESPNAPIService {
         guard let url = URL(string: urlString) else { throw APIError.invalidURL }
 
         let (data, response) = try await session.data(from: url)
-        guard let httpResponse = response as? HTTPURLResponse,
-              httpResponse.statusCode == 200 else { throw APIError.invalidResponse }
+        guard let httpResponse = response as? HTTPURLResponse else { throw APIError.invalidResponse }
+        // ESPN saying it has nothing there, as on Windows. Any other failure says so.
+        if httpResponse.statusCode == 400 || httpResponse.statusCode == 404 { return [] }
+        guard httpResponse.statusCode == 200 else { throw APIError.unexpectedStatus(httpResponse.statusCode) }
 
         let decoder = JSONDecoder()
         decoder.dateDecodingStrategy = .iso8601

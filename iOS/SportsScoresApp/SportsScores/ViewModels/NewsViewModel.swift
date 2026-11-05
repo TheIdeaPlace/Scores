@@ -19,7 +19,7 @@ class NewsViewModel: ObservableObject {
         do {
             articles = try await apiService.fetchNews(for: sport)
         } catch {
-            errorMessage = "Failed to load news: \(error.localizedDescription)"
+            errorMessage = APIError.unavailable("news")
         }
         isLoading = false
     }

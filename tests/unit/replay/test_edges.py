@@ -42,14 +42,14 @@ def test_a_live_game_that_cannot_be_laid_out_falls_back_to_one_line(monkeypatch)
 class TestScheduleFailures:
     def test_a_timeout_on_college_basketball_stops_at_the_first_request(self, espn):
         espn.on("/schedule", TIMEOUT)
-        with pytest.raises(type(TIMEOUT)):
+        with pytest.raises(ApiError):
             espn_api.get_team_schedule("NCAAM", "275", season=2027)
         assert len(espn.calls) == 1
 
     def test_a_timeout_on_one_college_basketball_season_type_reaches_the_caller(self, espn):
         real = load("schedule_NCAAM_275.json")
         espn.on("/schedule", lambda url: TIMEOUT if "seasontype=1" in url else real)
-        with pytest.raises(type(TIMEOUT)):
+        with pytest.raises(ApiError):
             espn_api.get_team_schedule("NCAAM", "275", season=2027)
 
     def test_an_empty_college_football_season_asks_for_no_other(self, espn):

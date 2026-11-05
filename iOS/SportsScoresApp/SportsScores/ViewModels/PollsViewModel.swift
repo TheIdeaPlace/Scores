@@ -30,7 +30,7 @@ class PollsViewModel: ObservableObject {
             // Reset to first poll if out of bounds
             if selectedPollIndex >= polls.count { selectedPollIndex = 0 }
         } catch {
-            errorMessage = "Failed to load rankings: \(error.localizedDescription)"
+            errorMessage = APIError.unavailable("polls")
         }
 
         isLoading = false

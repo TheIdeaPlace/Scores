@@ -14,62 +14,11 @@ import timezone_utils
 from services.venue_service import VenueService
 from text_utils import text_processor
 
-from .support import HTTP_500, TIMEOUT, load
-from .test_failure_paths import QUIET
+from .support import HTTP_500, load
 
 
 def gap(reason):
     return pytest.mark.xfail(strict=True, reason=reason, raises=(AssertionError, pytest.fail.Exception))
-
-
-FAILED_REQUEST_READS_AS_NOTHING = gap(
-    'A failed request, or a body with a null where its list should be, returns the same '
-    'empty result as "ESPN has nothing", so the screen says "No games found" or the like '
-    "when it should say the request failed. The fix is to raise, and every caller's empty "
-    "state needs checking.")
-
-
-@FAILED_REQUEST_READS_AS_NOTHING
-@pytest.mark.parametrize("call", [
-    lambda: espn_api.get_scores("NBA"),
-    lambda: espn_api.get_news("NFL"),
-    lambda: espn_api.get_game_details("NFL", "1"),
-    lambda: espn_api.get_standings("NFL"),
-], ids=["scores", "news", "details", "standings"])
-def test_a_server_error_is_told_apart_from_no_data(espn, call):
-    espn.on(".*", HTTP_500)
-    with pytest.raises(Exception):
-        call()
-
-
-@FAILED_REQUEST_READS_AS_NOTHING
-@pytest.mark.parametrize("route,payload,call", [
-    ("/scoreboard", {"events": None}, lambda: espn_api.get_scores("NBA")),
-    ("/scoreboard", {"events": None}, lambda: espn_api.get_scores("NCAAF")),
-    ("/news", {"articles": None}, lambda: espn_api.get_news("NFL")),
-    ("/news", {"articles": None}, lambda: espn_api.get_team_news("NFL", "9")),
-    ("/schedule", {"events": None}, lambda: espn_api.get_team_schedule("NFL", "9", season=2026)),
-    ("/schedule", {"events": None}, lambda: espn_api.get_team_schedule("NBA", "15", season=2027)),
-], ids=["scores", "scores_ncaaf_retry", "news", "team_news", "schedule_nfl", "schedule_nba"])
-def test_a_null_list_is_told_apart_from_an_empty_one(espn, route, payload, call):
-    espn.on(route, payload)
-    with pytest.raises(Exception):
-        call()
-
-
-# get_mlb_wildcard_standings is left out: its {} reads as "unavailable", which is honest.
-READ_AS_NOTHING = [pytest.param(call, id=name) for name, call, _ in QUIET if name != "get_mlb_wildcard_standings"]
-
-
-@FAILED_REQUEST_READS_AS_NOTHING
-@pytest.mark.parametrize("reply", [TIMEOUT, HTTP_500], ids=["timeout", "500"])
-@pytest.mark.parametrize("call", READ_AS_NOTHING)
-def test_a_failure_elsewhere_is_told_apart_from_no_data(espn, call, reply):
-    """These catch everything, so even a timeout reads as nothing to show. test_failure_paths
-    pins what they do today, and changes with them."""
-    espn.on(".*", reply)
-    with pytest.raises(Exception):
-        call()
 
 
 @gap("The slow standings path, which the NFL, NBA, NHL and MLB fall back to, gives a team whose "

@@ -2073,3 +2073,64 @@ final class TeamNewsRequestTests: XCTestCase {
         XCTAssertTrue(StubbedESPN.requested[0].contains("team=2507"))
     }
 }
+
+/// tests/fixtures/failed_request_wording.json holds both apps to the same words for a failed
+/// request. tests/unit/replay/test_failure_paths.py holds the Python side.
+final class FailedRequestWordingTests: XCTestCase {
+    private struct Wording: Decodable {
+        struct Live: Decodable {
+            let failed: [String]
+            let showing: Bool
+            let text: String
+        }
+        let unavailable: [String: String]
+        let live: [Live]
+    }
+
+    private func wording() throws -> Wording {
+        let url = Fixtures.repoRoot.appendingPathComponent("tests/fixtures/failed_request_wording.json")
+        return try JSONDecoder().decode(Wording.self, from: Data(contentsOf: url))
+    }
+
+    func testEachSentenceMatchesTheSharedFile() throws {
+        let shared = try wording()
+        XCTAssertFalse(shared.unavailable.isEmpty)
+        for (what, sentence) in shared.unavailable {
+            XCTAssertEqual(APIError.unavailable(what), sentence)
+        }
+    }
+
+    func testTheLiveScoresRowMatchesTheSharedFile() throws {
+        let shared = try wording()
+        XCTAssertFalse(shared.live.isEmpty)
+        for item in shared.live {
+            XCTAssertEqual(APIError.liveScoresFailure(item.failed, showing: item.showing), item.text)
+        }
+    }
+}
+
+/// Live Scores counts a throw as a league that failed, so ESPN having nothing mustn't throw.
+final class ScoreboardFailureTests: XCTestCase {
+    private func games(status: Int, body: String) async throws -> [Game] {
+        let service = StubbedESPN.service([("/scoreboard", status, Data(body.utf8))])
+        return try await service.fetchGames(for: .nba)
+    }
+
+    func testESPNHavingNothingIsNoGames() async throws {
+        let answers = [(404, "{}"), (400, "{}"), (200, #"{"events":[]}"#)]
+        for (status, body) in answers {
+            let found = try await games(status: status, body: body)
+            XCTAssertTrue(found.isEmpty, "\(status) \(body)")
+        }
+    }
+
+    func testAFailedRequestThrows() async {
+        let answers = [(500, "{}"), (503, "{}"), (403, "{}"), (200, "{}"), (200, #"{"events":null}"#), (200, "<html>")]
+        for (status, body) in answers {
+            do {
+                _ = try await games(status: status, body: body)
+                XCTFail("\(status) \(body) should have thrown")
+            } catch {}
+        }
+    }
+}

@@ -7,6 +7,7 @@
 //
 
 import SwiftUI
+import UIKit
 
 struct SoccerLiveView: View {
     @StateObject private var viewModel = SoccerLiveViewModel()
@@ -79,6 +80,10 @@ struct SoccerLiveView: View {
         }
         .refreshable {
             await viewModel.refresh()
+            // Someone asked for this one. The timer's stay quiet.
+            if let note = viewModel.failureNote {
+                UIAccessibility.post(notification: .announcement, argument: note)
+            }
         }
     }
 
@@ -114,6 +119,13 @@ struct SoccerLiveView: View {
                         }
                     }
                     .padding(.horizontal)
+                }
+
+                if let note = viewModel.failureNote {
+                    Text(note)
+                        .font(.subheadline)
+                        .foregroundColor(.secondary)
+                        .padding(.horizontal)
                 }
 
                 if viewModel.liveGames.isEmpty && viewModel.upcomingGames.isEmpty && viewModel.completedGames.isEmpty {

@@ -126,7 +126,7 @@ class TestFootballSeason:
         """Not a schedule that looks complete with its playoffs missing."""
         regular = load("schedule_NFL_26_reg.json")
         espn.on("/schedule", lambda url: TIMEOUT if failing in url else regular)
-        with pytest.raises(type(TIMEOUT)):
+        with pytest.raises(ApiError):
             espn_api.get_team_schedule("NFL", "26", season=2025)
 
     @pytest.mark.parametrize("failing", ["seasontype=1", "seasontype=2", "seasontype=3"])
@@ -134,7 +134,7 @@ class TestFootballSeason:
         """A list ending at Week 18 with no sign the playoffs failed to load looks complete."""
         regular = load("schedule_NFL_26_reg.json")
         espn.on("/schedule", lambda url: HTTP_500 if failing in url else regular)
-        with pytest.raises(ApiError, match="500"):
+        with pytest.raises(ApiError, match="the schedule"):
             espn_api.get_team_schedule("NFL", "26", season=2025)
 
     def test_espn_having_no_regular_season_shows_nothing_rather_than_only_the_rest(self, espn):
@@ -294,7 +294,7 @@ class TestSoccer:
         def test_a_timeout_on_the_seasons_results_reaches_the_caller(self, espn, freeze_now):
             freeze_now(datetime(2027, 2, 1, 12))
             espn.on("/schedule", lambda url: TIMEOUT if "season=2026" in url else self.replies(url))
-            with pytest.raises(type(TIMEOUT)):
+            with pytest.raises(ApiError):
                 espn_api.get_team_schedule("EPL", "359", season=2027)
 
         def test_a_server_error_on_the_seasons_results_reaches_the_caller(self, espn, freeze_now):
@@ -345,7 +345,7 @@ class TestSoccer:
         freeze_now(datetime(2026, 11, 3, 12))
         results = load("schedule_EPL_359_results.json")
         espn.on("/schedule", lambda url: TIMEOUT if failing in url else results)
-        with pytest.raises(type(TIMEOUT)):
+        with pytest.raises(ApiError):
             espn_api.get_team_schedule("EPL", "359")
 
     @pytest.mark.parametrize("failing", ["season=2026", "fixture=true"])
@@ -624,7 +624,7 @@ class TestSeasonFallback:
         freeze_now(datetime(2026, 11, 3))
         real = load("schedule_NBA_15.json")
         espn.on("/schedule", lambda url: real if "season=2026" in url else reply)
-        with pytest.raises(type(reply) if reply is TIMEOUT else ApiError):
+        with pytest.raises(ApiError):
             espn_api.get_team_schedule("NBA", "15", season=season)
         assert not espn.urls("season=2026")
 
@@ -649,7 +649,7 @@ class TestFailures:
 
     def test_a_football_timeout_reaches_the_caller_to_report(self, espn):
         espn.on("/schedule", TIMEOUT)
-        with pytest.raises(type(TIMEOUT)):
+        with pytest.raises(ApiError):
             espn_api.get_team_schedule("NFL", "9")
 
     @pytest.mark.parametrize("failing", ["seasontype=1", "seasontype=2", "seasontype=3"])
@@ -657,7 +657,7 @@ class TestFailures:
     def test_a_timeout_on_any_season_type_reaches_the_caller_in_every_league(self, espn, league, team, failing):
         real = load("schedule_NBA_15.json")
         espn.on("/schedule", lambda url: TIMEOUT if failing in url else real)
-        with pytest.raises(type(TIMEOUT)):
+        with pytest.raises(ApiError):
             espn_api.get_team_schedule(league, team, season=2026)
 
     def test_scoreboard_path_failure_is_empty(self, espn, no_schedule_league):

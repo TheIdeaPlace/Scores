@@ -51,7 +51,7 @@ class GolfViewModel: ObservableObject {
             tournament = result.tournament
             syncCalendarIndex()
         } catch {
-            errorMessage = "Failed to load tournament: \(error.localizedDescription)"
+            errorMessage = APIError.unavailable("the leaderboard")
         }
         isLoading = false
     }
@@ -69,7 +69,7 @@ class GolfViewModel: ObservableObject {
             // Refresh calendar too in case season rolled over
             if !result.calendar.isEmpty { calendar = result.calendar }
         } catch {
-            errorMessage = "Failed to refresh: \(error.localizedDescription)"
+            errorMessage = APIError.unavailable("the leaderboard")
         }
     }
 
@@ -95,7 +95,7 @@ class GolfViewModel: ObservableObject {
             let result = try await apiService.fetchGolfTournament(for: sport, startDate: entry.startDate)
             tournament = result.tournament
         } catch {
-            errorMessage = "Failed to load tournament: \(error.localizedDescription)"
+            errorMessage = APIError.unavailable("the leaderboard")
         }
         isLoading = false
     }
