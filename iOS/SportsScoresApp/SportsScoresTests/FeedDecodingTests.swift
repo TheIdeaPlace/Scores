@@ -2045,3 +2045,21 @@ final class RequestShapeTests: XCTestCase {
         XCTAssertEqual(ranges, 1, "the pattern should still find the one in fetchTransactions, or it finds nothing")
     }
 }
+
+final class DraftDecodingTests: XCTestCase {
+    private func picks() throws -> [DraftPick] {
+        struct Draft: Decodable { let picks: [DraftPick] }
+        return try JSONDecoder().decode(Draft.self, from: Fixtures.data("draft_site_NFL_2026.json")).picks
+    }
+
+    func testASchoolReadsAsItsNameNotItsShortName() throws {
+        let pick = try XCTUnwrap(try picks().first { $0.overall == 84 })
+        XCTAssertEqual(pick.athlete?.team?.collegeName, "Georgia State")
+        XCTAssertNotEqual(pick.athlete?.team?.shortDisplayName, "Georgia State", "the fixture should show the difference")
+    }
+
+    func testAPositionAnOldDraftLeavesOutOfItsList() {
+        XCTAssertEqual(NFLDraftViewModel.positionsLeftOut["91"], "C")
+        XCTAssertEqual(NFLDraftViewModel.positionsLeftOut["22"], "PK")
+    }
+}

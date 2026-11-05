@@ -104,10 +104,8 @@ CASES = [
     case("get_live_golf_tournament", lambda: espn_api.get_live_golf_tournament("PGA"), live_golf, "/scoreboard"),
     case("get_golf_leaderboard", lambda: espn_api.get_golf_leaderboard("PGA"), "golf_scoreboard_PGA.json", "/scoreboard"),
     case("get_golf_schedule", lambda: espn_api.get_golf_schedule("PGA"), "golf_schedule_PGA.json", "/scoreboard"),
-    case("get_draft_round", lambda: espn_api.get_draft_round(2026, 1), "draft_NFL_2026.json:rounds", "/draft/rounds",
-         {"/teams": "teams_NFL.json"}),
-    case("get_draft", lambda: espn_api.get_draft(2026), "draft_NFL_2026.json:draft", "/draft$",
-         {"/draft/rounds": "draft_NFL_2026.json:rounds", "/draft/status": "draft_NFL_2026.json:status"}),
+    case("get_draft_round", lambda: espn_api.get_draft_round(2026, 1), "draft_site_NFL_2026.json", "/draft"),
+    case("get_draft", lambda: espn_api.get_draft(2026), "draft_site_NFL_2026.json", "/draft"),
     case("get_team_info NFL", lambda: espn_api.get_team_info("NFL", "9"), "team_NFL_9.json", "/teams/9",
          {"/season$": "season_NFL.json"}),
     case("get_team_info NHL", lambda: espn_api.get_team_info("NHL", "129764"), "team_NHL_utah.json", "/teams/129764",
@@ -157,6 +155,7 @@ def test_no_single_bad_field_raises_or_reads_none(espn, call, fixture, route, ot
     for description, changed in mutations(served["payload"]):
         served["payload"] = changed
         espn_api._CORE_SEASON_CACHE.clear()
+        espn_api._DRAFT_CACHE.clear()
         try:
             result = call()
         except Exception as e:

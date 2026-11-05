@@ -44,7 +44,7 @@ team_news_NFL_9.json	1 KB	/news?team=9, 2 articles. /teams/9/news answers 200 wi
 transactions_NFL.json	1 KB	league-wide: team on each item; pageCount 407
 transactions_NFL_9.json	1 KB	team-filtered: no team on the items
 rankings_NCAAF.json	2 KB	AP and Coaches polls, 3 teams each
-draft_NFL_2026.json	4 KB	pieces: draft, status, rounds (2, 2 picks each), athletes and colleges by their $ref URLs
+draft_site_NFL_2026.json	11 KB	/draft season=2026, cut to 6 picks and their teams: position only as an id, college on the athlete; 2nd-round pick 33 was traded; round 3's Georgia State is Georgia St as a short name
 golf_schedule_PGA.json	5 KB	dates=2026: a cancelled event with no competitors, a final, a scheduled one
 golf_scoreboard_PGA.json	2 KB	current scoreboard, tournament not started, 3 golfers
 worldcup_standings_WC2026.json	10 KB	2 groups of 4; note.description is the advancement text; a stat with value null

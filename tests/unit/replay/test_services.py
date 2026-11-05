@@ -23,6 +23,14 @@ from text_utils import ESPNTextProcessor, text_processor
 from .support import FakeResponse, HTTP_404, HTTP_500, NOT_JSON, TIMEOUT, load
 
 
+def test_team_news_is_as_long_as_the_iphones():
+    import inspect
+
+    from services.api_service import ApiService
+    assert inspect.signature(ApiService.get_team_news).parameters["limit"].default == 25
+    assert inspect.signature(ApiService.get_news).parameters["limit"].default == 25
+
+
 class TestApiService:
     @pytest.mark.parametrize("method,target,args", [
         ("get_leagues", "get_leagues", ()),
@@ -77,7 +85,7 @@ class TestApiService:
         monkeypatch.setattr(espn_api, "get_mlb_wildcard_standings", lambda: None)
         ApiService.get_news("NFL")
         ApiService.get_team_schedule("NFL", "9")
-        assert seen == [("NFL", 20), ("NFL", "9", 30, 30, None)]
+        assert seen == [("NFL", 25), ("NFL", "9", 30, 30, None)]
         assert ApiService.get_mlb_wildcard_standings() == {}
 
 
@@ -732,7 +740,7 @@ class TestGameData:
 class TestNewsData:
     def test_from_get_news(self, espn):
         espn.on("/news", load("news_NFL.json"))
-        article = NewsData(espn_api.get_news("NFL", 20)[0])
+        article = NewsData(espn_api.get_news("NFL", 25)[0])
         text = article.get_display_text()
         assert text.startswith("Knockout league pickups")
         assert "| Tristan H. Cockcroft | 2026-11-03\n" in text

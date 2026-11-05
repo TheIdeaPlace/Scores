@@ -179,11 +179,6 @@ def test_an_empty_body_on_the_others_is_empty(espn, call, expected):
     assert call() == expected
 
 
-def test_hockey_details_with_an_empty_summary_say_where_the_plays_came_from(espn):
-    espn.on("/summary", EMPTY_JSON).on("www.espn.com", HTTP_404)
-    assert espn_api.get_game_details("NHL", "1") == {"playsSource": "site_summary"}
-
-
 def test_a_live_golf_timeout_reaches_the_live_scores_view_which_handles_it(espn):
     espn.on(".*", TIMEOUT)
     with pytest.raises(requests.Timeout):

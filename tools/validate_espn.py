@@ -1773,10 +1773,10 @@ def check_draft(http, report):
         # A draft yet to happen answers 200 with its rounds, and no picks.
         if status == 200 and isinstance(data, dict) and data.get("picks"):
             drafted = season
-            report.ok("NFL", "Draft (iPhone)", f"{season} has picks", url)
+            report.ok("NFL", "Draft", f"{season} has picks", url)
             break
     if drafted is None:
-        report.fail("NFL", "Draft (iPhone)", f"no picks for {year} or {year - 1}; last answer {status}", url)
+        report.fail("NFL", "Draft", f"no picks for {year} or {year - 1}; last answer {status}", url)
         return
 
     try:
@@ -1787,6 +1787,9 @@ def check_draft(http, report):
         return
     if not draft:
         report.fail("NFL", "App: draft", f"nothing for {drafted}, and ESPN has it")
+    elif any(p.get("team_abbrev") == "?" or not p.get("position") for p in picks):
+        missing = [p.get("player_name") for p in picks if p.get("team_abbrev") == "?" or not p.get("position")]
+        report.fail("NFL", "App: draft", f"round 1 of {drafted}: no team or position for {first_problems(missing)}")
     elif not picks or not all(p.get("player_name") for p in picks):
         report.fail("NFL", "App: draft", f"round 1 of {drafted}: {len(picks)} picks, or some with no player")
     else:
@@ -1833,22 +1836,6 @@ def check_cfl(http, report):
             report.warn("CFL (iPhone)", name, "empty, possibly the off-season", url)
         else:
             report.ok("CFL (iPhone)", name, "as expected", url)
-
-
-def check_hockey_web_page(http, report):
-    """Fuller hockey plays come from the espn.com page. It's a bonus, and it blocks automated
-    requests some of the time, so an empty answer is no news. Raising is."""
-    import espn_api
-
-    finals = find_recent_finals(http, LEAGUE_KEYS["NHL"])
-    if not finals.events:
-        return
-    try:
-        plays = espn_api._fetch_web_gamepackage_plays("hockey/nhl", finals.events[0]["id"])
-    except Exception as e:
-        report.warn("NHL", "espn.com game page", f"raised {type(e).__name__}: {e}")
-        return
-    report.ok("NHL", "espn.com game page", f"{len(plays)} plays" if plays else "none, as usual from a server")
 
 
 # How many home teams the Venues list should find: a little under what one month of each
@@ -1926,7 +1913,7 @@ def check_others_twice(http, seasons):
 def check_others(http, seasons):
     report = Report()
     for check in (check_every_league_path, check_football_calendar, check_past_postseasons, check_soccer_schedules,
-                  check_golf, check_draft, check_world_cup, check_cfl, check_hockey_web_page, check_fantasy):
+                  check_golf, check_draft, check_world_cup, check_cfl, check_fantasy):
         try:
             check(http, report)
         except Exception as e:

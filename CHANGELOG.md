@@ -21,6 +21,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   a fixed order. There are 19 categories rather than 39. New ones include WAR and quality starts. Gone
   are doubles, triples, walks, innings pitched, complete games, shutouts, blown saves, fielding and
   some others.
+- **The NFL Draft on Windows opens much faster.** It made a request or more for every pick, and now
+  makes one for the whole draft, the same one as the iPhone. A team now reads as it was named that
+  year, such as the Oakland Raiders in 2012. Focus stays where you are as you arrow through the rounds
+  or the years, rather than jumping to the picks as each loads.
+- **Colleges in the draft read in full on both apps,** such as Georgia State, not Georgia St.
+- **Older drafts name their centers and kickers on both apps.** ESPN's list for those years left them
+  out, so the iPhone showed no position for them.
+- **Hockey games on Windows open with one less download.** Each one also fetched espn.com's web page for
+  more plays, which has stopped giving any. The plays come from where the iPhone's do.
+- **News lists are the same length on both apps,** up to 25 stories.
 
 ### Fixed
 - **Player and Team Statistics are a list, and Enter opens the rankings.** The list no longer sits

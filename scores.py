@@ -14,7 +14,7 @@ import webbrowser
 import time
 from datetime import datetime, timedelta
 from functools import partial
-from typing import Dict, List, Any, Union
+from typing import Dict, List, Any, Optional, Union
 # Add project root to sys.path if running as script
 import os
 ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -2604,9 +2604,8 @@ class GameDetailsView(BaseView):
     def load_game_details(self):
         """Start loading detailed game information.
 
-        The summary is fetched on a GameDetailsLoader thread; hockey also
-        scrapes the espn.com game page. Fetched here it froze the window on
-        every game opened and every refresh.
+        The summary is fetched on a GameDetailsLoader thread. Fetched here it
+        froze the window on every game opened and every refresh.
         """
         self._details_generation += 1
         self.details_list.clear()
@@ -9255,6 +9254,7 @@ class NFLDraftDialog(QDialog):
         self.resize(950, 680)
         self._loaders = []
         self._tabs_loaded: set = set()
+        self._opening = True
         self._current_year: int = datetime.now().year
         self._setup_ui()
         self._load_year(self._current_year)
@@ -9305,12 +9305,16 @@ class NFLDraftDialog(QDialog):
         self.status_label.setText("Loading…")
 
         loader = NFLDraftMetaLoader(year)
-        loader.data_loaded.connect(self._on_meta_loaded)
-        loader.error_occurred.connect(lambda e: self.status_label.setText(f"Error: {e}"))
+        loader.data_loaded.connect(lambda meta, y=year: self._on_meta_loaded(meta, y))
+        loader.error_occurred.connect(
+            lambda e, y=year: y == self._current_year and self.status_label.setText(f"Error: {e}"))
         self._loaders.append(loader)
         loader.start()
 
-    def _on_meta_loaded(self, meta: dict):
+    def _on_meta_loaded(self, meta: dict, year: Optional[int] = None):
+        # Arrowing through years, a slower year's answer can land after a quicker one's.
+        if year is not None and year != self._current_year:
+            return
         if not meta:
             self.status_label.setText("Draft data not available for this year.")
             return
@@ -9348,13 +9352,16 @@ class NFLDraftDialog(QDialog):
         if not round_num:
             return
 
-        loader = NFLDraftRoundLoader(self._current_year, round_num)
-        loader.data_loaded.connect(lambda picks, idx=tab_index: self._on_round_loaded(picks, idx))
-        loader.error_occurred.connect(lambda e, idx=tab_index: self._on_round_error(e, idx))
+        year = self._current_year
+        loader = NFLDraftRoundLoader(year, round_num)
+        loader.data_loaded.connect(lambda picks, idx=tab_index, y=year: self._on_round_loaded(picks, idx, y))
+        loader.error_occurred.connect(lambda e, idx=tab_index, y=year: self._on_round_error(e, idx, y))
         self._loaders.append(loader)
         loader.start()
 
-    def _on_round_loaded(self, picks: list, tab_index: int):
+    def _on_round_loaded(self, picks: list, tab_index: int, year: Optional[int] = None):
+        if year is not None and year != self._current_year:
+            return
         self._tabs_loaded.add(tab_index)
         widget = self.tab_widget.widget(tab_index)
         if not widget:
@@ -9386,9 +9393,17 @@ class NFLDraftDialog(QDialog):
 
         if tab_index == self.tab_widget.currentIndex() and widget.count() > 0:
             widget.setCurrentRow(0)
-            widget.setFocus()
+            # The picks are what the dialog opens on. After that someone arrowing through the
+            # rounds or the years stays where they are: a round loads in moments now.
+            if self._opening:
+                self._opening = False
+                widget.setFocus()
+            else:
+                _take_focus_after_load(widget)
 
-    def _on_round_error(self, error: str, tab_index: int):
+    def _on_round_error(self, error: str, tab_index: int, year: Optional[int] = None):
+        if year is not None and year != self._current_year:
+            return
         self._tabs_loaded.add(tab_index)
         widget = self.tab_widget.widget(tab_index)
         if widget:

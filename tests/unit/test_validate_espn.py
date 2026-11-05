@@ -1789,7 +1789,7 @@ class TestOtherSources:
         monkeypatch.setattr(espn_api, "get_draft", lambda y: {"year": y})
         monkeypatch.setattr(espn_api, "get_draft_round", lambda y, r: [{"player_name": "A"}])
         asked = []
-        monkeypatch.setattr(espn_api, "get_draft_round", lambda y, r: asked.append(y) or [{"player_name": "A"}])
+        monkeypatch.setattr(espn_api, "get_draft_round", lambda y, r: asked.append(y) or [{"player_name": "A", "team_abbrev": "LV", "position": "QB"}])
         # The real shape of a draft yet to happen: its rounds and no picks.
         http = FakeHttp([(f"season={year - 1}", (200, {"picks": [1]})), ("draft", (200, {"picks": [], "rounds": [1]}))])
         report = v.Report()
@@ -1797,10 +1797,21 @@ class TestOtherSources:
         assert not report.failed
         assert asked == [year - 1]
 
+    @pytest.mark.parametrize("pick", [{"player_name": "A", "team_abbrev": "?", "position": "QB"},
+                                      {"player_name": "A", "team_abbrev": "LV", "position": ""}],
+                             ids=["no team", "no position"])
+    def test_a_draft_losing_its_teams_or_positions_fails(self, monkeypatch, pick):
+        import espn_api
+        monkeypatch.setattr(espn_api, "get_draft", lambda y: {"year": y})
+        monkeypatch.setattr(espn_api, "get_draft_round", lambda y, r: [pick])
+        report = v.Report()
+        v.check_draft(FakeHttp(default=(200, {"picks": [1]})), report)
+        assert FAIL_IN(report, "App: draft")
+
     def test_a_draft_with_no_picks_in_two_years_fails(self):
         report = v.Report()
         v.check_draft(FakeHttp(default=(200, {"picks": [], "rounds": [1]})), report)
-        assert FAIL_IN(report, "Draft (iPhone)")
+        assert FAIL_IN(report, "Draft")
 
     def test_app_draft_empty_fails(self, monkeypatch):
         import espn_api
@@ -2174,27 +2185,6 @@ class TestRemainingChecks:
         report = v.Report()
         v.check_fantasy(FakeHttp(), report)
         assert FAIL_IN(report, "App: cheatsheet")
-
-    def test_the_espn_page_blocking_a_server_is_no_news(self, monkeypatch):
-        import espn_api
-        finished = event()
-        monkeypatch.setattr(v, "find_recent_finals", lambda *a, **k: v.Finals([finished], "u", {}))
-        monkeypatch.setattr(espn_api, "_fetch_web_gamepackage_plays", lambda *a: [])
-        report = v.Report()
-        v.check_hockey_web_page(FakeHttp(), report)
-        assert statuses(report, "espn.com game page") == [v.PASS]
-
-    def test_the_espn_page_code_raising_is_worth_a_look(self, monkeypatch):
-        import espn_api
-
-        def boom(*a):
-            raise ValueError("bad")
-
-        monkeypatch.setattr(v, "find_recent_finals", lambda *a, **k: v.Finals([event()], "u", {}))
-        monkeypatch.setattr(espn_api, "_fetch_web_gamepackage_plays", boom)
-        report = v.Report()
-        v.check_hockey_web_page(FakeHttp(), report)
-        assert statuses(report, "espn.com game page") == [v.WARN]
 
     @pytest.mark.parametrize("answer", [(500, None), (200, {"sports": []}), (200, {"sports": [{"leagues": [{"teams": []}]}]})])
     def test_a_team_list_that_is_gone(self, answer):
