@@ -4,8 +4,8 @@
 //
 //  Full leader list for a single stat category, opened via "View All".
 //  Immediately shows the 10 summary entries already in memory, then fetches
-//  the full list in the background: 50 players, or every team, so a college
-//  team's rank on its Team Hub can be found here too.
+//  the full list in the background: up to 20 players, or every team, so a
+//  college team's rank on its Team Hub can be found here too.
 //
 
 import SwiftUI
@@ -20,7 +20,11 @@ struct StatLeaderDetailView: View {
     @State private var isLoadingMore = false
     @State private var loadError: String?
 
-    private var displayCategory: LeagueLeaderCategory { fullCategory ?? summary }
+    /// ESPN can give a shorter list when it's struggling, and that's no reason to lose rows.
+    private var displayCategory: LeagueLeaderCategory {
+        guard let fullCategory, fullCategory.leaders.count >= summary.leaders.count else { return summary }
+        return fullCategory
+    }
 
     init(category: LeagueLeaderCategory, sport: Sport, initialViewMode: ViewMode) {
         self.summary = category

@@ -64,6 +64,9 @@ struct TeamStatsTabView: View {
         } else {
             ScrollView {
                 VStack(alignment: .leading, spacing: 24) {
+                    if let season = viewModel.playerCategories.first?.seasonLabel {
+                        SeasonLabel(text: season)
+                    }
                     ForEach(viewModel.playerCategories) { category in
                         LeaderCategorySection(category: category, viewMode: viewMode, sport: sport)
                     }

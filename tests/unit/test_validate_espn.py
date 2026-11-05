@@ -1636,10 +1636,29 @@ class TestStatistics:
         assert statuses(report, "App: player statistics") == [v.PASS]
         assert "2026 Regular Season" in detail(report, "App: player statistics")
 
-    def test_mlbs_rows_say_where_they_came_from(self, monkeypatch):
-        self.app_says(monkeypatch, {"player_stats": [{"name": "Home Runs", "leaders": [{"value": "45"}]}]})
-        report = self.run(key="MLB")
-        assert "MLB Stats API" in detail(report, "App: player statistics")
+    def team_filter(self, teams_in_answer):
+        data = {"leaders": {"categories": [{"leaders": [{"team": {"id": "13"}}]}]}}
+        answer = {"leaders": {"categories": [{"leaders": [{"team": {"id": t}} for t in teams_in_answer]}]}}
+        http = FakeHttp([("team=13", (200, answer))])
+        report = v.Report()
+        v.check_leaders_for_a_team(http, report, league("NBA"), data, 2027)
+        assert any("season=2027" in u and "team=13" in u for u in http.urls)
+        return report
+
+    def test_one_teams_leaders_are_only_that_team(self):
+        assert statuses(self.team_filter(["13", "13"]), "Leaders for one team (iPhone)") == [v.PASS]
+
+    def test_espn_ignoring_the_team_fails(self):
+        report = self.team_filter(["13", "14"])
+        assert FAIL_IN(report, "Leaders for one team (iPhone)")
+        assert "14" in detail(report, "Leaders for one team (iPhone)")
+
+    def test_one_teams_leaders_not_answering_only_warns(self):
+        http = FakeHttp([("team=13", (500, None))])
+        report = v.Report()
+        data = {"leaders": {"categories": [{"leaders": [{"team": {"id": "13"}}]}]}}
+        v.check_leaders_for_a_team(http, report, league("NBA"), data, 2027)
+        assert statuses(report, "Leaders for one team (iPhone)") == [v.WARN]
 
     def test_invented_players_fail(self, monkeypatch):
         self.app_says(monkeypatch, {"player_stats": [{"player_name": "Sample Player 1"}]})
@@ -1684,8 +1703,8 @@ class TestStatistics:
         http = FakeHttp(default=(200, {"categories": [1], "splits": {"categories": [1]}, "teams": [1]}))
         report = v.Report()
         v.check_statistics(http, report, league("NHL"), played, True)
-        assert any("/seasons/2027/types/2/leaders" in u for u in http.urls)
         assert any("/seasons/2027/types/2/teams/T0/statistics" in u for u in http.urls)
+        assert not any("/seasons/2027/types/2/leaders" in u for u in http.urls), "NHL has /leaders"
         assert not report.failed
 
     def test_preseason_having_no_core_statistics_is_not_a_break(self):
@@ -1703,9 +1722,34 @@ class TestStatistics:
     def test_core_gone_for_every_season_type_fails_in_season(self):
         report = v.Report()
         v.check_core_statistics(FakeHttp(default=(404, None)), report, league("NBA"), event(), True)
-        assert FAIL_IN(report, "Core API: leaders (iPhone)")
         assert FAIL_IN(report, "Core API: team statistics (iPhone)")
-        assert "404" in detail(report, "Core API: leaders (iPhone)")
+        assert "404" in detail(report, "Core API: team statistics (iPhone)")
+
+    def test_a_league_with_leaders_isnt_checked_on_the_core_api_for_them(self):
+        http = FakeHttp(default=(200, {"splits": {"categories": [1]}}))
+        report = v.Report()
+        v.check_core_statistics(http, report, league("NBA"), event(), True)
+        assert not any("/leaders" in u for u in http.urls)
+        assert statuses(report, "Core API: leaders (iPhone)") == []
+
+    def soccer_season(self, http):
+        played = event()
+        played["season"] = {"year": 2026, "type": 1}
+        report = v.Report()
+        v.check_statistics(http, report, league("EPL"), played, True)
+        return report
+
+    def test_soccer_leaders_are_checked_where_the_iphone_reads_them(self):
+        http = FakeHttp([("/seasons/2026/types/1/leaders", (200, {"categories": [1]}))], default=(404, None))
+        report = self.soccer_season(http)
+        assert statuses(report, "Core API: leaders (iPhone)") == [v.PASS]
+
+    def test_soccer_leaders_gone_fails_in_season(self):
+        report = self.soccer_season(FakeHttp(default=(404, None)))
+        assert FAIL_IN(report, "Core API: leaders (iPhone)")
+
+    def test_only_soccer_has_its_leaders_on_the_core_api(self):
+        assert league("EPL").soccer_core_leaders and not league("NBA").soccer_core_leaders
 
     def test_core_team_statistics_gone(self):
         http = FakeHttp([("/leaders", (200, {"categories": [1]}))], default=(200, {"splits": {}}))

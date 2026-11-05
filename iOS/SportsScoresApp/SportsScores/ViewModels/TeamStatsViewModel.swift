@@ -28,7 +28,7 @@ class TeamStatsViewModel: ObservableObject {
         playerError = nil
         teamError = nil
 
-        async let playerTask = apiService.fetchLeagueLeadersForTeam(teamAbbreviation: teamAbbreviation, sport: sport)
+        async let playerTask = apiService.fetchLeagueLeadersForTeam(teamId: teamId, teamAbbreviation: teamAbbreviation, sport: sport)
         async let rankingsTask = apiService.fetchTeamStatRankings(teamId: teamId, sport: sport)
 
         do {

@@ -8,6 +8,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Changed
+- **Both apps read league leaders from the same place, with the same rules.** They could name
+  different players for the same stat, because the iPhone read a feed with no qualifying minimums. It
+  now reads the one Windows does, with the same ranks, so two players level both read 1st, and it says
+  which season the numbers are from. Lists have up to 20 players on both apps. Soccer stays as it was,
+  since ESPN has no such feed for it.
+- **A team's Stats on iPhone lists that team's own players, ranked within the team.** It used to be
+  whichever of them made the league's top 100, with their rank in the league. A team with nobody that
+  high had nothing to show. Qualified players come first and then the rest, and the screen says so.
+- **MLB leaders on Windows open in about 2 seconds, not 30.** They came from MLB's own feed, in a
+  different order each time. They now come from the same place as every other league, on both apps, in
+  a fixed order. There are 19 categories rather than 39. New ones include WAR and quality starts. Gone
+  are doubles, triples, walks, innings pitched, complete games, shutouts, blown saves, fielding and
+  some others.
 - **The NFL Draft on Windows opens much faster.** It made a request or more for every pick, and now
   makes one for the whole draft, the same one as the iPhone. A team now reads as it was named that
   year, such as the Oakland Raiders in 2012. Focus stays where you are as you arrow through the rounds

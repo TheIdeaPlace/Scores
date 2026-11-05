@@ -354,21 +354,10 @@ class TestRankingRows:
                                        for name, value in (("A", "9"), ("B", "9"), ("C", "9"), ("D", "4"), ("E", "4"))])
         assert [row[0] for row in rows] == [1, 1, 1, 4, 4]
 
-    def test_mlb_comes_out_with_the_ranks_its_feed_gives(self):
-        leaders = load("mlb_leaders_homeRuns.json")["leagueLeaders"][0]["leaders"]
-        rows = ranking_rows("player", [{"player_name": leader["person"]["fullName"], "value": leader["value"]}
-                                       for leader in leaders])
-        assert [row[0] for row in rows] == [leader["rank"] for leader in leaders] == [1, 1, 3]
-
     def test_real_leaders_become_rows(self):
         categories = espn_api._parse_leaders(load("leaders_v3_NBA.json"))["player_stats"]
         points = next(c for c in categories if c["category"] == "Points Per Game")
         assert ranking_rows("player", points["stats"])[0] == [1, "Luka Doncic", "LAL", "38.3"]
-
-    def test_the_shape_the_dialog_makes_of_mlb_leaders(self):
-        rows = ranking_rows("player", [{"player_name": "Pete Crow-Armstrong", "stat_value": "45", "value": "45",
-                                        "team": "Chicago Cubs", "position": None}])
-        assert rows == [[1, "Pete Crow-Armstrong", "Chicago Cubs", "45"]]
 
     def test_teams_keep_the_rank_they_share(self):
         lists = team_stat_lists(parse_team_stats(load("byteam_NBA.json"), "basketball"))
