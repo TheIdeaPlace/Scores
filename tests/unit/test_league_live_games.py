@@ -514,14 +514,76 @@ class TestAFailureInLiveScores(FailureViews):
         self.load(view, [self.today_game("1", "NHL")])
         assert lst.currentRow() == lst.count() - 1 and lst.count() > 0
 
-    def test_someone_on_the_row_hears_a_changed_row_once(self, view):
+    def test_someone_on_the_row_hears_a_changed_row_said_since_it_is_not_rebuilt(self, view):
         self.load(view, failed=["NBA"])
         view.live_scores_list.setCurrentRow(0)
         with patch.object(view, "load_live_scores"):
             view.refresh()
         self.load(view, failed=["NBA", "NHL"])
         assert view.live_scores_list.currentRow() == 0
+        self.said.assert_called_once()
+
+    def test_someone_landing_on_the_row_in_a_rebuilt_list_hears_it_once(self, view):
+        """The list was showing "Loading live scores...", and arriving on the row reads it."""
+        view.live_scores_list.setCurrentRow(0)
+        with patch.object(view, "load_live_scores"):
+            view.refresh()
+        self.load(view, failed=["NBA"])
+        assert view.live_scores_list.currentRow() == 0
         self.said.assert_not_called()
+
+    def test_the_failure_row_coming_and_going_leaves_the_games_alone(self, view):
+        self.load(view, [self.today_game("1", "NHL"), self.today_game("2", "NHL")])
+        lst = view.live_scores_list
+        lst.setCurrentRow(2)
+        kept = lst.item(2)
+        games = lst.count()
+        with patch.object(lst, "clear") as cleared:
+            self.load(view, [self.today_game("1", "NHL"), self.today_game("2", "NHL")], ["NBA"])
+            assert lst.count() == games + 1
+            assert lst.item(games).text().startswith("Scores for NBA")
+            self.load(view, [self.today_game("1", "NHL"), self.today_game("2", "NHL")], ["NBA", "MLB"])
+            assert lst.count() == games + 1
+            assert lst.item(games).text().startswith("Scores for MLB and NBA")
+            self.load(view, [self.today_game("1", "NHL"), self.today_game("2", "NHL")])
+            assert lst.count() == games
+        cleared.assert_not_called()
+        assert lst.item(2) is kept
+        assert lst.currentRow() == 2
+
+    def test_refresh_rows_in_place_goes_by_the_games_only(self, view):
+        one, two = self.today_game("1", "NHL"), self.today_game("2", "NHL")
+        self.load(view, [one])
+        view._failed_leagues = ["NBA"]
+        assert view._refresh_rows_in_place([], [one], []) is True
+        view._failed_leagues = []
+        assert view._refresh_rows_in_place([], [one], []) is True
+        assert view._refresh_rows_in_place([], [one, two], []) is False
+
+    def test_a_game_that_changes_with_the_row_there_still_rebuilds(self, view):
+        one, two = self.today_game("1", "NHL"), self.today_game("2", "NHL")
+        self.load(view, [one], ["NBA"])
+        self.load(view, [one, two], ["NBA"])
+        rows = self.rows(view.live_scores_list)
+        assert "NHL game 2" in rows and rows[-1].startswith("Scores for NBA")
+
+    def test_it_says_not_updated_yet_until_something_loads(self, view):
+        assert view.current_time is None
+        self.load(view, failed=self.everything())
+        assert "Not updated yet" in view.time_label.text()
+        self.load(view, [self.today_game("1", "NHL")])
+        assert "Last updated:" in view.time_label.text()
+
+    def test_the_row_already_saying_so_is_left_alone(self, view):
+        view._on_live_scores_error(FAILED)
+        row = view.live_scores_list.item(0)
+        view._on_live_scores_error(FAILED)
+        assert view.live_scores_list.item(0) is row
+        self.said.assert_not_called()
+        with patch.object(view, "load_live_scores"):
+            view.refresh()
+        view._on_live_scores_error(FAILED)
+        self.said.assert_called_once_with(FAILED)
 
     def test_someone_on_the_row_hears_an_unchanged_row_said(self, view):
         self.load(view, failed=["NBA"])
@@ -645,6 +707,22 @@ class TestAFailureInADialog(FailureViews):
         assert dialog.load_more_btn.isEnabled()
         self.said.assert_called_once_with(FAILED)
 
+    def test_the_team_filter_failing_says_so_and_f5_asks_again(self):
+        dialog = self.transactions()
+        dialog._on_teams_failed("no")
+        self.said.assert_called_once_with(self.scores.TEAMS_UNAVAILABLE)
+        with patch.object(dialog, "_load_teams") as load:
+            self.press_f5(dialog)
+            self.press_f5(dialog)
+        load.assert_called_once()
+
+    def test_a_league_with_no_standings_is_not_a_failed_team_filter(self):
+        dialog = self.transactions()
+        dialog._on_teams_loaded([])
+        dialog._on_teams_loaded(None)
+        assert dialog.team_combo.count() == 1
+        self.said.assert_not_called()
+
     def press_f5(self, dialog):
         from PyQt6.QtCore import QEvent, Qt
         from PyQt6.QtGui import QKeyEvent
@@ -681,20 +759,68 @@ class TestAFailureInADialog(FailureViews):
         with patch.object(self.scores.WorldCupDialog, "_load_all"):
             return self.scores.WorldCupDialog("WC2026")
 
+    def world_cup_on(self, day):
+        class Frozen(datetime):
+            @classmethod
+            def now(cls, tz=None):
+                return cls(day.year, day.month, day.day, 12)
+
+        dialog_class = self.scores.WorldCupDialog
+        with patch.object(self.scores, "datetime", Frozen), patch.object(dialog_class, "_load_scores"), \
+                patch.object(dialog_class, "_load_standings"), patch.object(dialog_class, "_load_news"):
+            return dialog_class("WC2026")
+
+    @pytest.mark.parametrize("day,phase,page", [
+        (date(2026, 6, 15), "Group Stage", 0),
+        (date(2026, 7, 5), "Round of 16", 1),
+        (date(2026, 7, 8), "Round of 16", 1),
+        (date(2026, 11, 4), "Final", 1),
+    ], ids=["group_stage", "round_of_16", "between_rounds", "over"])
+    def test_a_world_cup_opens_with_its_phase_page_and_list_agreeing(self, day, phase, page):
+        dialog = self.world_cup_on(day)
+        assert dialog.phase_combo.currentText() == phase
+        assert dialog.bracket_stack.currentIndex() == page
+        if page:
+            assert self.rows(dialog.bracket_list) == [f"Loading {phase} matches\u2026"]
+
     def test_a_world_cup_refresh_that_fails_keeps_the_games_and_says_so_once(self):
         dialog = self.world_cup()
-        dialog._on_scores_loaded([])
-        dialog._shown_games = (dialog.current_date, [])
+        dialog._on_scores_loaded(dialog.current_date, [])
         before = self.rows(dialog.scores_list)
-        dialog._on_scores_failed(FAILED)
+        dialog._on_scores_failed(dialog.current_date, FAILED)
         assert self.rows(dialog.scores_list) == before
-        dialog._say_refresh_failed(FAILED)
         self.said.assert_called_once_with(FAILED)
 
-    def test_world_cup_scores_failing_on_another_day_is_a_row(self):
+    def test_world_cup_scores_failing_on_a_new_day_is_a_row(self):
         dialog = self.world_cup()
-        dialog._on_scores_failed(FAILED)
+        dialog._on_scores_loaded(dialog.current_date, [])
+        dialog.current_date += timedelta(days=1)
+        dialog._on_scores_failed(dialog.current_date, FAILED)
         assert self.rows(dialog.scores_list) == [FAILED]
+
+    def test_a_world_cup_answer_for_a_day_left_behind_is_dropped(self):
+        dialog = self.world_cup()
+        left = dialog.current_date
+        dialog.current_date += timedelta(days=1)
+        dialog.scores_list.clear()
+        dialog.scores_list.addItem("Loading matches\u2026")
+        dialog._on_scores_loaded(left, [])
+        dialog._on_scores_failed(left, FAILED)
+        assert self.rows(dialog.scores_list) == ["Loading matches\u2026"]
+        assert dialog._shown_games is None
+        self.said.assert_not_called()
+
+    def test_the_world_cup_loader_says_which_day_it_is_about(self):
+        day = date(2026, 6, 20)
+        loader = self.scores.WorldCupScoresLoader("WC2026", day)
+        got = []
+        loader.data_loaded.connect(lambda *a: got.append(a))
+        loader.error_occurred.connect(lambda *a: got.append(a))
+        with patch.object(self.scores.ApiService, "get_scores", return_value=[]):
+            loader.run()
+        with patch.object(self.scores.ApiService, "get_scores", side_effect=self.scores.ApiError(FAILED)):
+            loader.run()
+        assert got == [(day, []), (day, FAILED)]
 
     def test_world_cup_groups_failing_with_some_showing_keeps_them(self):
         dialog = self.world_cup()

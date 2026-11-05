@@ -54,7 +54,7 @@ struct LiveScoresView: View {
                         .foregroundColor(.secondary)
                     Button("Retry") {
                         Task {
-                            await viewModel.fetchAllGames()
+                            await viewModel.fetchAllGames(retrying: true)
                         }
                     }
                     .buttonStyle(.bordered)

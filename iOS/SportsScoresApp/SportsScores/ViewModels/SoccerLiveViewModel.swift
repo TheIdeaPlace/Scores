@@ -23,9 +23,11 @@ class SoccerLiveViewModel: ObservableObject {
         let games: [Game]
     }
 
-    func fetchAllGames() async {
-        isLoading = liveGames.isEmpty && completedGames.isEmpty && upcomingGames.isEmpty
-        errorMessage = nil
+    /// A refresh on the timer leaves an error showing until it has something else to show, since
+    /// swapping in the spinner takes VoiceOver off Retry. Retry itself shows progress.
+    func fetchAllGames(retrying: Bool = false) async {
+        if retrying { errorMessage = nil }
+        isLoading = errorMessage == nil && liveGames.isEmpty && completedGames.isEmpty && upcomingGames.isEmpty
 
         let now = Date()
 
@@ -87,9 +89,8 @@ class SoccerLiveViewModel: ObservableObject {
 
         let showing = !(live.isEmpty && completed.isEmpty && upcoming.isEmpty)
         failureNote = showing && !failed.isEmpty ? APIError.liveScoresFailure(failed, showing: true) : nil
-        if !showing {
-            errorMessage = failed.isEmpty ? "No soccer games scheduled today" : APIError.liveScoresFailure(failed, showing: false)
-        }
+        errorMessage = showing ? nil
+            : (failed.isEmpty ? "No soccer games scheduled today" : APIError.liveScoresFailure(failed, showing: false))
 
         isLoading = false
     }

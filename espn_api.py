@@ -7,7 +7,8 @@ from exceptions import ApiError
 from game_labels import (best_odds, broadcast_names, format_height, format_weight,
                          injured_player_count, leader_display_value, local_schedule_datetime,
                          schedule_game_label)
-from soccer import NAME_UNAVAILABLE, SOCCER_LEAGUES, core_leader_lists, parse_soccer_standings, parse_team_list
+from soccer import (NAME_UNAVAILABLE, SOCCER_LEAGUES, _stat_number, core_leader_lists, parse_soccer_standings,
+                    parse_team_list)
 from team_stats import needs_team_list, parse_team_stats
 from timezone_utils import convert_espn_time_to_local
 
@@ -54,25 +55,28 @@ FANTASY_UNAVAILABLE = _unavailable("the draft board")
 
 
 def _espn_answer(unavailable, url, **kwargs):
-    """ESPN's JSON, or None for a 400 or 404, which say it has nothing there. Anything else that
-    isn't an answer raises ApiError(unavailable). The iPhone tells them apart the same way."""
+    """ESPN's JSON object, or None for a 400 or 404, which say it has nothing there. Anything else
+    that isn't an answer raises ApiError(unavailable), and that includes a 200 whose body is null or
+    not an object: None here means ESPN said it has nothing. The iPhone tells them apart the same way."""
     try:
         resp = _http_get(url, **kwargs)
         answer = resp.json() if resp.status_code == 200 else None
     except (requests.RequestException, ValueError) as e:
         print(f"{url}: {e}")
         raise ApiError(unavailable) from e
-    if resp.status_code not in (200, 400, 404):
-        print(f"{url}: {resp.status_code}")
+    if resp.status_code in (400, 404):
+        return None
+    if resp.status_code != 200 or not isinstance(answer, dict):
+        print(f"{url}: {resp.status_code}, not an answer")
         raise ApiError(unavailable)
     return answer
 
 
 def _listed(body, key, unavailable):
     """The dicts in a body's list. Not there, or empty, is ESPN having none. A null where the
-    list belongs isn't an answer, so it says the same as a request that failed."""
-    body = _as_dict(body)
-    if key in body and body[key] is None:
+    list belongs, or a body that isn't an object at all, isn't an answer, so it says the same as a
+    request that failed."""
+    if not isinstance(body, dict) or (key in body and body[key] is None):
         raise ApiError(unavailable)
     return _dicts(body.get(key))
 
@@ -433,7 +437,6 @@ def _schedule_answer(url):
     answer = _espn_answer(SCHEDULE_UNAVAILABLE, url)
     if answer is None:
         return None
-    answer = _as_dict(answer)
     _listed(answer, "events", SCHEDULE_UNAVAILABLE)
     return answer
 
@@ -2365,7 +2368,9 @@ def get_soccer_teams(league_key):
         resp = _http_get(f"{BASE_URL}/{LEAGUES[league_key]}/teams", params={"limit": 1000}, timeout=20)
         if resp.status_code != 200:
             raise ApiError(TEAMS_UNAVAILABLE)
-        return parse_team_list(resp.json())
+        data = resp.json()
+        _listed(data, "sports", TEAMS_UNAVAILABLE)
+        return parse_team_list(data)
     except (requests.RequestException, ValueError) as e:
         print(f"Error in {league_key} teams: {e}")
         raise ApiError(TEAMS_UNAVAILABLE) from e
@@ -2863,7 +2868,10 @@ def _fetch_core_leaders(league_path, year):
         try:
             resp = _http_get(url, params={"limit": LEADERS_LIMIT}, timeout=15)
             if resp.status_code == 200:
-                return _as_dict(resp.json())
+                data = resp.json()
+                # Not "no leaders this season", which would step back to the last one.
+                _listed(data, "categories", STATISTICS_UNAVAILABLE)
+                return data
         except (requests.RequestException, ValueError) as e:
             raise ApiError(STATISTICS_UNAVAILABLE) from e
         if resp.status_code == 404:
@@ -3178,86 +3186,80 @@ def get_team_info(league_key, team_id, home_venue=True):
     league_path = LEAGUES.get(league_key)
     if not league_path or not team_id:
         return {}
-    try:
-        answer = _espn_answer(TEAM_UNAVAILABLE, f"{BASE_URL}/{league_path}/teams/{team_id}")
-        if answer is None:
-            return {}
-        team = answer.get("team", {})
-        if not team:
-            return {}
-        result = {
-            "name":         team.get("displayName") or "",
-            "abbreviation": team.get("abbreviation") or "",
-            "nickname":     team.get("name") or "",
-            "location":     team.get("location") or "",
-        }
-        # Venue
-        venue = (home_venue and _team_home_venue(league_path, team_id)) \
-            or team.get("venue") or (team.get("franchise") or {}).get("venue") or {}
-        result["venue_name"] = venue.get("fullName") or venue.get("displayName") or ""
-        addr = _as_dict(venue.get("address"))
-        city, state = addr.get("city") or "", addr.get("state") or ""
-        result["venue_location"] = f"{city}, {state}" if city and state else city or state
-        record, standing, result["record_unavailable"], season_type = _team_record_and_standing(
-            league_path, team_id, team)
-        result["record_regular_season_only"] = (
-            league_key.startswith("NCAA") and season_type not in (None, REGULAR_SEASON))
-        # Record splits
-        for item in _dicts(_as_dict(record).get("items")):
-            rtype = item.get("type", "")
-            summary = item.get("summary") or ""
-            if rtype == "total":
-                # NHL totals have "10-4" here and the overtime losses in the stats. College
-                # hockey's has its ties in the summary if there are any: 5-4-1, and Army's 5-1.
-                ot_losses = next((st.get("value") for st in item.get("stats", [])
-                                  if st.get("name") == "otLosses"), None)
-                if league_key == "NHL" and ot_losses is not None and summary.count("-") == 1:
-                    summary = f"{summary}-{int(ot_losses)}"
-                result["record_overall"] = summary
-            elif rtype == "home":
-                result["record_home"] = summary
-            elif rtype == "road":
-                result["record_road"] = summary
-        # Division / Conference
-        groups = _as_dict(team.get("groups"))
-        result["division"] = groups.get("name") or ""
-        result["standing"] = _shown_standing(standing)
-        result["conference"] = _as_dict(groups.get("parent")).get("name") or ""
-        # Head coach
-        coaches = _dicts(team.get("coaches"))
-        if coaches:
-            c = coaches[0]
-            result["head_coach"] = f"{c.get('firstName') or ''} {c.get('lastName') or ''}".strip()
-        # Next event
-        # For a while after a game ESPN's nextEvent is still that game.
-        events = [e for e in _dicts(team.get("nextEvent"))
-                  if (((_dicts(e.get("competitions")) or [{}])[0].get("status") or {}).get("type") or {}).get("state") != "post"]
-        if events:
-            comps = _dicts(events[0].get("competitions"))
-            if comps:
-                competitors = _dicts(comps[0].get("competitors"))
-                home = next((c for c in competitors if c.get("homeAway") == "home"), None)
-                away = next((c for c in competitors if c.get("homeAway") == "away"), None)
-                if home and away:
-                    is_home = str(_as_dict(home.get("team")).get("id") or "") == str(team_id)
-                    opp = away if is_home else home
-                    result["next_game_opponent"] = _as_dict(opp.get("team")).get("displayName") or ""
-                    result["next_game_home_away"] = "vs" if is_home else "@"
-            date_str = events[0].get("date") or ""
-            if date_str:
-                try:
-                    from datetime import datetime, timezone
-                    dt = datetime.fromisoformat(date_str.replace("Z", "+00:00"))
-                    dt_local = dt.astimezone()
-                    result["next_game_date"] = dt_local.strftime("%a, %b %d").replace(" 0", " ")
-                except Exception:
-                    result["next_game_date"] = date_str[:10]
-        return result
-    except ApiError:
-        raise
-    except Exception as e:
-        print(f"[get_team_info] team {team_id}: {e}")
+    answer = _espn_answer(TEAM_UNAVAILABLE, f"{BASE_URL}/{league_path}/teams/{team_id}")
+    if answer is None:
         return {}
+    team = _as_dict(answer.get("team"))
+    if not team:
+        return {}
+    result = {
+        "name":         team.get("displayName") or "",
+        "abbreviation": team.get("abbreviation") or "",
+        "nickname":     team.get("name") or "",
+        "location":     team.get("location") or "",
+    }
+    # Venue
+    venue = (home_venue and _team_home_venue(league_path, team_id)) \
+        or _as_dict(team.get("venue")) or _as_dict(_as_dict(team.get("franchise")).get("venue"))
+    result["venue_name"] = venue.get("fullName") or venue.get("displayName") or ""
+    addr = _as_dict(venue.get("address"))
+    city, state = addr.get("city") or "", addr.get("state") or ""
+    result["venue_location"] = f"{city}, {state}" if city and state else city or state
+    record, standing, result["record_unavailable"], season_type = _team_record_and_standing(
+        league_path, team_id, team)
+    result["record_regular_season_only"] = (
+        league_key.startswith("NCAA") and season_type not in (None, REGULAR_SEASON))
+    # Record splits
+    for item in _dicts(_as_dict(record).get("items")):
+        rtype = item.get("type", "")
+        summary = item.get("summary") or ""
+        if rtype == "total":
+            # NHL totals have "10-4" here and the overtime losses in the stats. College
+            # hockey's has its ties in the summary if there are any: 5-4-1, and Army's 5-1.
+            ot_losses = next((st.get("value") for st in _dicts(item.get("stats"))
+                              if st.get("name") == "otLosses"), None)
+            if league_key == "NHL" and isinstance(ot_losses, (int, float)) and summary.count("-") == 1:
+                summary = f"{summary}-{int(ot_losses)}"
+            result["record_overall"] = summary
+        elif rtype == "home":
+            result["record_home"] = summary
+        elif rtype == "road":
+            result["record_road"] = summary
+    # Division / Conference
+    groups = _as_dict(team.get("groups"))
+    result["division"] = groups.get("name") or ""
+    result["standing"] = _shown_standing(standing)
+    result["conference"] = _as_dict(groups.get("parent")).get("name") or ""
+    # Head coach
+    coaches = _dicts(team.get("coaches"))
+    if coaches:
+        c = coaches[0]
+        result["head_coach"] = f"{c.get('firstName') or ''} {c.get('lastName') or ''}".strip()
+    # Next event
+    # For a while after a game ESPN's nextEvent is still that game.
+    events = [e for e in _dicts(team.get("nextEvent"))
+              if (((_dicts(e.get("competitions")) or [{}])[0].get("status") or {}).get("type") or {}).get("state") != "post"]
+    if events:
+        comps = _dicts(events[0].get("competitions"))
+        if comps:
+            competitors = _dicts(comps[0].get("competitors"))
+            home = next((c for c in competitors if c.get("homeAway") == "home"), None)
+            away = next((c for c in competitors if c.get("homeAway") == "away"), None)
+            if home and away:
+                is_home = str(_as_dict(home.get("team")).get("id") or "") == str(team_id)
+                opp = away if is_home else home
+                result["next_game_opponent"] = _as_dict(opp.get("team")).get("displayName") or ""
+                result["next_game_home_away"] = "vs" if is_home else "@"
+        date_str = events[0].get("date") or ""
+        if date_str:
+            try:
+                from datetime import datetime, timezone
+                dt = datetime.fromisoformat(date_str.replace("Z", "+00:00"))
+                dt_local = dt.astimezone()
+                result["next_game_date"] = dt_local.strftime("%a, %b %d").replace(" 0", " ")
+            except Exception:
+                result["next_game_date"] = date_str[:10]
+    return result
 
 
 def get_team_roster(league_key, team_id):
@@ -3265,32 +3267,26 @@ def get_team_roster(league_key, team_id):
     league_path = LEAGUES.get(league_key)
     if not league_path or not team_id:
         return []
-    try:
-        data = _espn_answer(ROSTER_UNAVAILABLE, f"{BASE_URL}/{league_path}/teams/{team_id}/roster")
-        if data is None:
-            return []
-        players = []
-        # ESPN returns athletes grouped by position group
-        for group in _listed(data, "athletes", ROSTER_UNAVAILABLE):
-            items = group.get("items", [group] if "displayName" in group else [])
-            for p in items:
-                jersey = str(p.get("jersey") or "")
-                name = p.get("displayName") or p.get("fullName") or ""
-                pos = p.get("position", {})
-                pos_abbr = (pos.get("abbreviation") or pos.get("name") or "") if isinstance(pos, dict) else str(pos or "")
-                age = str(p.get("age") or "")
-                height_str = format_height(p.get("height"))
-                weight_str = format_weight(p.get("weight"))
-                players.append({
-                    "jersey": jersey, "name": name, "position": pos_abbr,
-                    "age": age, "height": height_str, "weight": weight_str,
-                })
-        return players
-    except ApiError:
-        raise
-    except Exception as e:
-        print(f"[get_team_roster] team {team_id}: {e}")
+    data = _espn_answer(ROSTER_UNAVAILABLE, f"{BASE_URL}/{league_path}/teams/{team_id}/roster")
+    if data is None:
         return []
+    players = []
+    # ESPN returns athletes grouped by position group
+    for group in _listed(data, "athletes", ROSTER_UNAVAILABLE):
+        items = group.get("items", [group] if "displayName" in group else [])
+        for p in _dicts(items):
+            jersey = str(p.get("jersey") or "")
+            name = p.get("displayName") or p.get("fullName") or ""
+            pos = p.get("position", {})
+            pos_abbr = (pos.get("abbreviation") or pos.get("name") or "") if isinstance(pos, dict) else str(pos or "")
+            age = str(p.get("age") or "")
+            height_str = format_height(p.get("height"))
+            weight_str = format_weight(p.get("weight"))
+            players.append({
+                "jersey": jersey, "name": name, "position": pos_abbr,
+                "age": age, "height": height_str, "weight": weight_str,
+            })
+    return players
 
 
 def get_team_news(league_key, team_id, limit=25):
@@ -3321,6 +3317,17 @@ def get_team_news(league_key, team_id, limit=25):
     return articles
 
 
+def _transaction_date(item):
+    """A transaction's date as text, or "" if it has none that can be read as one."""
+    date_str = item.get("date", item.get("timestamp", ""))
+    if not isinstance(date_str, str) or not date_str:
+        return ""
+    try:
+        return datetime.fromisoformat(date_str.replace("Z", "+00:00")).strftime("%Y-%m-%d")
+    except ValueError:
+        return date_str[:10]
+
+
 def get_transactions(league_key, team_id=None, limit=50, page=1):
     """Get league-wide (or team-filtered) transactions with pagination.
 
@@ -3330,44 +3337,32 @@ def get_transactions(league_key, team_id=None, limit=50, page=1):
     league_path = LEAGUES.get(league_key)
     if not league_path:
         return [], False
-    try:
-        params = {"limit": limit, "page": page}
-        if team_id:
-            params["team"] = team_id
-        data = _espn_answer(TRANSACTIONS_UNAVAILABLE, f"{BASE_URL}/{league_path}/transactions", params=params)
-        if data is None:
-            return [], False
-        raw_items = _listed(data, "transactions" if "transactions" in data else "items", TRANSACTIONS_UNAVAILABLE)
-        # ESPN returns pageIndex / pageCount as top-level integers.
-        page_count = int(data.get("pageCount", 1))
-        has_more = int(page) < page_count
-        result = []
-        for item in raw_items:
-            date_str = item.get("date", item.get("timestamp", ""))
-            date_display = ""
-            if date_str:
-                try:
-                    dt = datetime.fromisoformat(date_str.replace("Z", "+00:00"))
-                    date_display = dt.strftime("%Y-%m-%d")
-                except Exception:
-                    date_display = date_str[:10]
-            team = item.get("team") or {}
-            team_abbr = (team.get("abbreviation") or "") if isinstance(team, dict) else ""
-            result.append({
-                "date":        date_display,
-                "team":        team_abbr,
-                "description": item.get("description") or "",
-                # Keep legacy keys so callers using player/type/position still work.
-                "type":        "",
-                "player":      "",
-                "position":    "",
-            })
-        return result, has_more
-    except ApiError:
-        raise
-    except Exception as e:
-        print(f"[get_transactions] {league_key}: {e}")
+    params = {"limit": limit, "page": page}
+    if team_id:
+        params["team"] = team_id
+    data = _espn_answer(TRANSACTIONS_UNAVAILABLE, f"{BASE_URL}/{league_path}/transactions", params=params)
+    if data is None:
         return [], False
+    raw_items = _listed(data, "transactions" if "transactions" in data else "items", TRANSACTIONS_UNAVAILABLE)
+    # ESPN returns pageIndex / pageCount as top-level integers. A null is no more pages, not
+    # a reason to lose the page it came with.
+    page_count = data.get("pageCount")
+    has_more = int(page) < _stat_number({"value": page_count, "displayValue": page_count})
+    result = []
+    for item in raw_items:
+        date_display = _transaction_date(item)
+        team = item.get("team") or {}
+        team_abbr = (team.get("abbreviation") or "") if isinstance(team, dict) else ""
+        result.append({
+            "date":        date_display,
+            "team":        team_abbr,
+            "description": item.get("description") or "",
+            # Keep legacy keys so callers using player/type/position still work.
+            "type":        "",
+            "player":      "",
+            "position":    "",
+        })
+    return result, has_more
 
 
 # One request has a whole draft, as on the iPhone. It's kept briefly, since each round's tab asks for
@@ -3386,6 +3381,8 @@ def _fetch_draft(year):
     if cached and time.monotonic() - cached[0] < DRAFT_CACHE_SECONDS:
         return cached[1]
     data = _as_dict(_espn_answer(DRAFT_UNAVAILABLE, f"{BASE_URL}/football/nfl/draft", params={"season": year}))
+    # Before it's kept: a null here would read as a round with no picks for as long as it was.
+    _listed(data, "picks", DRAFT_UNAVAILABLE)
     if not any(data.get(field) for field in ("year", "rounds", "picks", "status")):
         return None
     _DRAFT_CACHE[year] = (time.monotonic(), data)
@@ -3427,7 +3424,7 @@ def get_draft_round(year, round_num):
     positions = {str(position.get("id")): position for position in _dicts(data.get("positions"))}
 
     picks = []
-    for pick in _dicts(data.get("picks")):
+    for pick in _listed(data, "picks", DRAFT_UNAVAILABLE):
         if pick.get("round") != round_num:
             continue
         team = teams.get(str(pick.get("teamId")), {})
@@ -3459,39 +3456,26 @@ def get_team_transactions(league_key, team_id, limit=25):
     league_path = LEAGUES.get(league_key)
     if not league_path or not team_id:
         return []
-    try:
-        data = _espn_answer(
-            TRANSACTIONS_UNAVAILABLE,
-            f"{BASE_URL}/{league_path}/transactions",
-            params={"team": team_id, "limit": limit},
-        )
-        if data is None:
-            return []
-        items = _listed(data, "transactions" if "transactions" in data else "items", TRANSACTIONS_UNAVAILABLE)
-        result = []
-        for item in items:
-            date_str = item.get("date", item.get("timestamp", ""))
-            date_display = ""
-            if date_str:
-                try:
-                    dt = datetime.fromisoformat(date_str.replace("Z", "+00:00"))
-                    date_display = dt.strftime("%Y-%m-%d")
-                except Exception:
-                    date_display = date_str[:10]
-            result.append({
-                "date":        date_display,
-                "description": item.get("description") or "",
-                # Keep legacy keys so callers using player/type/position still work.
-                "type":        "",
-                "player":      "",
-                "position":    "",
-            })
-        return result
-    except ApiError:
-        raise
-    except Exception as e:
-        print(f"[get_team_transactions] team {team_id}: {e}")
+    data = _espn_answer(
+        TRANSACTIONS_UNAVAILABLE,
+        f"{BASE_URL}/{league_path}/transactions",
+        params={"team": team_id, "limit": limit},
+    )
+    if data is None:
         return []
+    items = _listed(data, "transactions" if "transactions" in data else "items", TRANSACTIONS_UNAVAILABLE)
+    result = []
+    for item in items:
+        date_display = _transaction_date(item)
+        result.append({
+            "date":        date_display,
+            "description": item.get("description") or "",
+            # Keep legacy keys so callers using player/type/position still work.
+            "type":        "",
+            "player":      "",
+            "position":    "",
+        })
+    return result
 
 
 def get_golf_leaderboard(tour_key):
@@ -3505,51 +3489,45 @@ def get_golf_leaderboard(tour_key):
     league_path = LEAGUES.get(tour_key)
     if not league_path:
         return None
-    try:
-        data = _espn_answer(LEADERBOARD_UNAVAILABLE, f"{BASE_URL}/{league_path}/scoreboard")
-        if data is None:
-            return None
-        events = _listed(data, "events", LEADERBOARD_UNAVAILABLE)
-        if not events:
-            return None
-        event = events[0]
-        comps = _dicts(event.get("competitions"))
-        if not comps:
-            return None
-        comp = comps[0]
-        comp_status = _as_dict(comp.get("status"))
-
-        players = []
-        for competitor in _dicts(comp.get("competitors")):
-            athlete = _as_dict(competitor.get("athlete"))
-            rounds = [
-                ls["displayValue"]
-                for ls in sorted(_dicts(competitor.get("linescores")), key=lambda x: x.get("period") or 0)
-                if "value" in ls and "displayValue" in ls
-            ]
-            players.append({
-                "position": competitor.get("order") or 0,
-                "name": athlete.get("displayName") or athlete.get("fullName") or "",
-                "country": _as_dict(athlete.get("flag")).get("alt") or "",
-                "total_score": golf_total_to_par(competitor),
-                "rounds": rounds,
-            })
-        players.sort(key=lambda p: p["position"])
-
-        return {
-            "name": event.get("name") or "",
-            "short_name": event.get("shortName") or "",
-            "date": (event.get("date") or "")[:10],
-            "end_date": (event.get("endDate") or "")[:10],
-            "round_num": comp_status.get("period") or 0,
-            "status_detail": _as_dict(comp_status.get("type")).get("detail") or "",
-            "players": players,
-        }
-    except ApiError:
-        raise
-    except Exception as e:
-        print(f"[get_golf_leaderboard] {tour_key}: {e}")
+    data = _espn_answer(LEADERBOARD_UNAVAILABLE, f"{BASE_URL}/{league_path}/scoreboard")
+    if data is None:
         return None
+    events = _listed(data, "events", LEADERBOARD_UNAVAILABLE)
+    if not events:
+        return None
+    event = events[0]
+    comps = _dicts(event.get("competitions"))
+    if not comps:
+        return None
+    comp = comps[0]
+    comp_status = _as_dict(comp.get("status"))
+
+    players = []
+    for competitor in _dicts(comp.get("competitors")):
+        athlete = _as_dict(competitor.get("athlete"))
+        rounds = [
+            ls["displayValue"]
+            for ls in sorted(_dicts(competitor.get("linescores")), key=lambda x: x.get("period") or 0)
+            if "value" in ls and "displayValue" in ls
+        ]
+        players.append({
+            "position": competitor.get("order") or 0,
+            "name": athlete.get("displayName") or athlete.get("fullName") or "",
+            "country": _as_dict(athlete.get("flag")).get("alt") or "",
+            "total_score": golf_total_to_par(competitor),
+            "rounds": rounds,
+        })
+    players.sort(key=lambda p: p["position"])
+
+    return {
+        "name": event.get("name") or "",
+        "short_name": event.get("shortName") or "",
+        "date": (event.get("date") or "")[:10],
+        "end_date": (event.get("endDate") or "")[:10],
+        "round_num": comp_status.get("period") or 0,
+        "status_detail": _as_dict(comp_status.get("type")).get("detail") or "",
+        "players": players,
+    }
 
 
 def get_golf_schedule(tour_key):
@@ -3561,47 +3539,41 @@ def get_golf_schedule(tour_key):
     league_path = LEAGUES.get(tour_key)
     if not league_path:
         return []
-    try:
-        year = datetime.now().year
-        # A bare year, not a START-END range: ESPN rejects ranges on team sports
-        # and only still tolerates them here. The year returns the same 49 events.
-        answer = _espn_answer(
-            SCHEDULE_UNAVAILABLE,
-            f"{BASE_URL}/{league_path}/scoreboard",
-            params={"dates": str(year)},
-        )
-        if answer is None:
-            return []
-        result = []
-        for event in _listed(answer, "events", SCHEDULE_UNAVAILABLE):
-            status_type = _as_dict(_as_dict(event.get("status")).get("type"))
-            state = status_type.get("state") or "pre"
-
-            winner = ""
-            if state == "post":
-                comps = _dicts(event.get("competitions"))
-                if comps:
-                    top = sorted(_dicts(comps[0].get("competitors")), key=lambda x: x.get("order") or 999)
-                    if top:
-                        w = top[0]
-                        wname = _as_dict(w.get("athlete")).get("displayName") or ""
-                        wscore = w.get("score") or ""
-                        winner = f"{wname} ({wscore})" if wname and wscore else wname
-
-            result.append({
-                "name": event.get("name") or "",
-                "start_date": (event.get("date") or "")[:10],
-                "end_date": (event.get("endDate") or "")[:10],
-                "status": status_type.get("description") or "Scheduled",
-                "state": state,
-                "winner": winner,
-            })
-        return result
-    except ApiError:
-        raise
-    except Exception as e:
-        print(f"[get_golf_schedule] {tour_key}: {e}")
+    year = datetime.now().year
+    # A bare year, not a START-END range: ESPN rejects ranges on team sports
+    # and only still tolerates them here. The year returns the same 49 events.
+    answer = _espn_answer(
+        SCHEDULE_UNAVAILABLE,
+        f"{BASE_URL}/{league_path}/scoreboard",
+        params={"dates": str(year)},
+    )
+    if answer is None:
         return []
+    result = []
+    for event in _listed(answer, "events", SCHEDULE_UNAVAILABLE):
+        status_type = _as_dict(_as_dict(event.get("status")).get("type"))
+        state = status_type.get("state") or "pre"
+
+        winner = ""
+        if state == "post":
+            comps = _dicts(event.get("competitions"))
+            if comps:
+                top = sorted(_dicts(comps[0].get("competitors")), key=lambda x: x.get("order") or 999)
+                if top:
+                    w = top[0]
+                    wname = _as_dict(w.get("athlete")).get("displayName") or ""
+                    wscore = w.get("score") or ""
+                    winner = f"{wname} ({wscore})" if wname and wscore else wname
+
+        result.append({
+            "name": event.get("name") or "",
+            "start_date": (event.get("date") or "")[:10],
+            "end_date": (event.get("endDate") or "")[:10],
+            "status": status_type.get("description") or "Scheduled",
+            "state": state,
+            "winner": winner,
+        })
+    return result
 
 
 # ─────────────────────────── World Cup ───────────────────────────────────────
@@ -3615,46 +3587,44 @@ def get_world_cup_standings(league_key):
     league_path = LEAGUES.get(league_key)
     if not league_path:
         return []
-    try:
-        url = f"https://site.api.espn.com/apis/v2/sports/{league_path}/standings"
-        data = _espn_answer(STANDINGS_UNAVAILABLE, url, timeout=15)
-        if data is None:
-            return []
-        groups = []
-        for child in _listed(data, "children", STANDINGS_UNAVAILABLE):
-            group_id   = str(child.get("id") or "")
-            group_name = child.get("name") or "Group"
-            entries    = child.get("standings", {}).get("entries", [])
-            teams = []
-            for idx, entry in enumerate(entries):
-                team  = entry.get("team", {})
-                stats = {s["name"]: s.get("value", 0) for s in entry.get("stats", [])}
-                note  = entry.get("note") or {}
-                rank  = int(stats.get("rank", idx + 1))
-                gd    = int(stats.get("pointDifferential", 0))
-                teams.append({
-                    "team_id":          str(team.get("id") or ""),
-                    "team_name":        team.get("displayName") or "",
-                    "abbreviation":     team.get("abbreviation") or "",
-                    "rank":             rank,
-                    "games_played":     int(stats.get("gamesPlayed", 0)),
-                    "wins":             int(stats.get("wins", 0)),
-                    "draws":            int(stats.get("ties", 0)),
-                    "losses":           int(stats.get("losses", 0)),
-                    "goals_for":        int(stats.get("pointsFor", 0)),
-                    "goals_against":    int(stats.get("pointsAgainst", 0)),
-                    "goal_difference":  gd,
-                    "points":           int(stats.get("points", 0)),
-                    "advancement_note": note.get("description") or "",
-                })
-            teams.sort(key=lambda t: t["rank"])
-            groups.append({"id": group_id, "name": group_name, "teams": teams})
-        return groups
-    except ApiError:
-        raise
-    except Exception as e:
-        print(f"[get_world_cup_standings] {league_key}: {e}")
+    url = f"https://site.api.espn.com/apis/v2/sports/{league_path}/standings"
+    data = _espn_answer(STANDINGS_UNAVAILABLE, url, timeout=15)
+    if data is None:
         return []
+    groups = []
+    for child in _listed(data, "children", STANDINGS_UNAVAILABLE):
+        group_id   = str(child.get("id") or "")
+        group_name = child.get("name") or "Group"
+        entries    = _dicts(_as_dict(child.get("standings")).get("entries"))
+        teams = []
+        for idx, entry in enumerate(entries):
+            team  = _as_dict(entry.get("team"))
+            stats = {s["name"]: s for s in _dicts(entry.get("stats")) if isinstance(s.get("name"), str)}
+
+            def number(name):
+                return _stat_number(_as_dict(stats.get(name)))
+
+            note  = _as_dict(entry.get("note"))
+            rank  = number("rank") or idx + 1
+            gd    = number("pointDifferential")
+            teams.append({
+                "team_id":          str(team.get("id") or ""),
+                "team_name":        team.get("displayName") or "",
+                "abbreviation":     team.get("abbreviation") or "",
+                "rank":             rank,
+                "games_played":     number("gamesPlayed"),
+                "wins":             number("wins"),
+                "draws":            number("ties"),
+                "losses":           number("losses"),
+                "goals_for":        number("pointsFor"),
+                "goals_against":    number("pointsAgainst"),
+                "goal_difference":  gd,
+                "points":           number("points"),
+                "advancement_note": note.get("description") or "",
+            })
+        teams.sort(key=lambda t: t["rank"])
+        groups.append({"id": group_id, "name": group_name, "teams": teams})
+    return groups
 
 
 def get_world_cup_scores_range(league_key, start_date, end_date):

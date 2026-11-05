@@ -27,7 +27,7 @@ struct SoccerLiveView: View {
                         .multilineTextAlignment(.center)
                         .foregroundColor(.secondary)
                     Button("Retry") {
-                        Task { await viewModel.fetchAllGames() }
+                        Task { await viewModel.fetchAllGames(retrying: true) }
                     }
                     .buttonStyle(.bordered)
                 }

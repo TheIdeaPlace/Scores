@@ -74,6 +74,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Opening a World Cup no longer says "Something went wrong" once its first phase is over.
 - iPhone: Live Scores and Live Soccer say a failed request failed, with Retry, instead of "No games scheduled today". A league that fails keeps its games, and a note under the list names it.
 - iPhone: failed requests use the same words as Windows. A pull to refresh that fails keeps News, Polls and Standings on the screen, and VoiceOver says so.
+- In Live Scores, the row saying a league failed comes and goes without rereading the row you're on.
+- A body from ESPN that's null or not what it should be says the request failed, rather than reading as no data. EPL standings with a null body no longer say there's no league table.
+- One unreadable field no longer costs a screen its data: a transaction page with no page count keeps its rows, and a World Cup stat with no value keeps every group.
+- One article that can't be cleaned keeps its own description, rather than costing a team's whole news tab.
+- A draft with no list of picks isn't kept as an empty one, and a soccer league's leaders with no list don't step back to last season.
+- In Transactions, a team list that fails says so once, and F5 asks for it again.
+- In a World Cup, an answer for a day you've moved on from no longer lands on the day you're on.
+- Live Scores says "Not updated yet" until something has loaded, rather than a time.
+- iPhone: a timer refresh on Live Scores or Live Soccer leaves an error or "No games scheduled today" on screen until it has something else to show, so VoiceOver stays on Retry. Retry itself shows progress.
 
 ### In Progress
 - **Game Wrap Up Feature**: ESPN text processing and game story extraction (under construction)
