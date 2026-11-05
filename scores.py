@@ -345,7 +345,7 @@ class HomeSettingsDialog(QDialog):
         # College football coverage. ESPN serves the two divisions separately, and
         # asking only for FBS hides most of opening weekend, which is largely FCS.
         cfb_layout = QHBoxLayout()
-        cfb_layout.addWidget(QLabel("College football games shown:"))
+        cfb_layout.addWidget(QLabel("College football coverage:"))
         self.ncaaf_coverage_combo = QComboBox()
         self._ncaaf_coverage_options = [
             ("All Division I (FBS and FCS)", 'all_d1'),
@@ -357,7 +357,7 @@ class HomeSettingsDialog(QDialog):
             if value == saved_coverage:
                 self.ncaaf_coverage_combo.setCurrentIndex(i)
                 break
-        self.ncaaf_coverage_combo.setAccessibleName("College football games shown")
+        self.ncaaf_coverage_combo.setAccessibleName("College football coverage")
         self.ncaaf_coverage_combo.setAccessibleDescription(
             "All Division I shows FBS and FCS together, around 200 games a week, and is the only "
             "setting that shows opening weekend in full. FBS only shows about 100 games a week. "
@@ -2943,7 +2943,9 @@ class GameDetailsView(BaseView):
 
         attendance = ((raw_details or {}).get('gameInfo') or {}).get('attendance')
         if attendance:
-            self.details_list.addItem(f"Attendance: {attendance:,}")
+            # A number when ESPN has one, but text mustn't lose the whole game's details.
+            shown = f"{attendance:,}" if isinstance(attendance, (int, float)) else attendance
+            self.details_list.addItem(f"Attendance: {shown}")
         
         # Injuries
         if 'injuries' in details:
@@ -5794,7 +5796,11 @@ class GameDetailsView(BaseView):
         for play in scoring_plays:
             period = play.get('period', {})
             period_number = period.get('number', 1)
-            period_name = period.get('displayName', f'Period {period_number}')
+            # ESPN sends only a number here. Football's read the way its plays do, as on iPhone.
+            if self.league in ('NFL', 'NCAAF'):
+                period_name = football_period_label(period_number)
+            else:
+                period_name = period.get('displayName', f'Period {period_number}')
             
             if current_period != period_number:
                 html += f'<div class="quarter">{period_name}</div>'

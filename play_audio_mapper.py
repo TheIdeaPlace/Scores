@@ -24,7 +24,7 @@ import wave
 from PyQt6.QtCore import QObject, pyqtSignal
 
 from audio_queue import play_in_background
-from play_geometry import audio_params, has_coordinate, league_family, locate
+from play_geometry import audio_params, league_family, locate, play_position
 
 if platform.system() == "Windows":
     try:
@@ -71,10 +71,10 @@ class PlayAudioMapper(QObject):
 
     def describe_play(self, league, play):
         """Spoken location for a play, or None if it has no usable location."""
-        if not has_coordinate(play, league):
+        position = play_position(play, league)
+        if position is None:
             return None
-        coord = play["coordinate"]
-        location = locate(league, coord["x"], coord["y"])
+        location = locate(league, *position)
         return location.description if location else None
 
     def generate_play_audio(self, league, play):
@@ -85,11 +85,11 @@ class PlayAudioMapper(QObject):
         percent of hockey plays have none. The caller gets None so it can say so
         rather than play a misleading tone.
         """
-        if not has_coordinate(play, league):
+        position = play_position(play, league)
+        if position is None:
             return None
 
-        coord = play["coordinate"]
-        params = audio_params(league, coord["x"], coord["y"])
+        params = audio_params(league, *position)
         if params is None:
             return None
 
@@ -116,10 +116,10 @@ class PlayAudioMapper(QObject):
         """
         located = []
         for play in plays:
-            if not has_coordinate(play, league):
+            position = play_position(play, league)
+            if position is None:
                 continue
-            coord = play["coordinate"]
-            params = audio_params(league, coord["x"], coord["y"])
+            params = audio_params(league, *position)
             if params is not None:
                 located.append(params)
 

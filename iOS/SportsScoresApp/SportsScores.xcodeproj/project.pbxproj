@@ -142,6 +142,7 @@
 		7E57A000000000000000000A /* PlayAudioGeometryGridTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E57A0000000000000000008 /* PlayAudioGeometryGridTests.swift */; };
 		7E57A0000000000000000031 /* LeagueLeadersTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E57A0000000000000000030 /* LeagueLeadersTests.swift */; };
 		7E57A0000000000000000041 /* TeamStatsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E57A0000000000000000040 /* TeamStatsTests.swift */; };
+		7E57A0000000000000000051 /* GameSummaryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E57A0000000000000000050 /* GameSummaryTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -291,6 +292,7 @@
 		7E57A0000000000000000008 /* PlayAudioGeometryGridTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlayAudioGeometryGridTests.swift; sourceTree = "<group>"; };
 		7E57A0000000000000000030 /* LeagueLeadersTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LeagueLeadersTests.swift; sourceTree = "<group>"; };
 		7E57A0000000000000000040 /* TeamStatsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TeamStatsTests.swift; sourceTree = "<group>"; };
+		7E57A0000000000000000050 /* GameSummaryTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GameSummaryTests.swift; sourceTree = "<group>"; };
 		7E57A0000000000000000002 /* SportsScoresTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = SportsScoresTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
@@ -514,6 +516,7 @@
 				7E57A0000000000000000030 /* LeagueLeadersTests.swift */,
 				7E57A0000000000000000040 /* TeamStatsTests.swift */,
 				7E57A0000000000000000060 /* VenuesTests.swift */,
+				7E57A0000000000000000050 /* GameSummaryTests.swift */,
 			);
 			path = SportsScoresTests;
 			sourceTree = "<group>";
@@ -771,6 +774,7 @@
 				7E57A0000000000000000031 /* LeagueLeadersTests.swift in Sources */,
 				7E57A0000000000000000041 /* TeamStatsTests.swift in Sources */,
 				7E57A0000000000000000061 /* VenuesTests.swift in Sources */,
+				7E57A0000000000000000051 /* GameSummaryTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

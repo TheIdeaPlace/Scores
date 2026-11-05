@@ -147,7 +147,7 @@ struct ScoresView: View {
     /// with a saved one — the `.onChange` below refetches either way.
     private var coverageMenu: some View {
         Menu {
-            Picker("College football games shown", selection: $appSettings.ncaafCoverage) {
+            Picker("College football coverage", selection: $appSettings.ncaafCoverage) {
                 ForEach(NCAAFCoverage.allCases) { coverage in
                     Text(coverage.settingsLabel).tag(coverage)
                 }
@@ -157,7 +157,7 @@ struct ScoresView: View {
             Label(appSettings.ncaafCoverage.shortLabel, systemImage: "line.3.horizontal.decrease.circle")
                 .labelStyle(.iconOnly)
         }
-        .accessibilityLabel("College football games shown, currently \(appSettings.ncaafCoverage.settingsLabel)")
+        .accessibilityLabel("College football coverage, currently \(appSettings.ncaafCoverage.settingsLabel)")
         .accessibilityHint("All Division I shows FBS and FCS together, around 200 games a week. "
                            + "FBS only shows about 100. Changing this also updates the Settings screen.")
     }
