@@ -54,29 +54,29 @@ the same data almost everywhere, so they agree with each other.
 
 ### iPhone
 
-- **League leaders** now come from the same place as on Windows, so both apps agree. The list says which season
-  it is, and players level on a number share a rank.
-- **A team's Stats** lists its own players, ranked within the team, with qualified players first. A team with
-  nobody high in the league used to have nothing to show.
-- **Team statistics** are the whole regular season, out of season too, and say which season. Team ranks match the
-  league list, and college teams have ranks at all: "118th of 302".
+- **League leaders** now come from the same place as on Windows, so both apps agree. The list says which season it is, and players level on a number share a rank.
+- **A team's Stats** lists its own players, ranked within the team, with qualified players first. A team with nobody high in the league used to have nothing to show.
+- **Team statistics** are the whole regular season, out of season too, and say which season. Team ranks match the league list, and college teams have ranks at all: "118th of 302".
 - **FCS teams** are in college football standings and Team Hub, following the "College football games shown" setting.
 - **Team schedules** work for soccer, and every league has its preseason and postseason, labelled.
 - **Team Hub** shows the real record and standing during the playoffs, and where a team plays now.
 - **NFL Draft:** colleges read in full, such as Georgia State, and older drafts name their centers and kickers.
-- **Numbers read properly:** 38.3 points rather than 38.29, half sacks keep their half, and on-base percentage
-  reads .360.
-- **Fixed:** a tied game read as a loss, one blank game could lose a whole football week, and a failed schedule
-  now says so, with a Retry button.
+- **Numbers read properly:** 38.3 points rather than 38.29, half sacks keep their half, and on-base percentage reads .360.
+- **Fixed:** a tied game read as a loss, one blank game could lose a whole football week, and a failed schedule now says so, with a Retry button.
 
-### Known issues
+### iPhone known issues
 
-- College basketball fouls still read and sound as if they happened at the far end of the court, on Windows and
-  iPhone. The 1.0.1 notes said this would be fixed in this release, and it wasn't.
-- On long lists, JAWS can give the wrong item count, because the list only reports the rows on screen. Table view
-  gives the true row and total.
+- College basketball fouls still read and sound as if they happened at the far end of the court. The 1.0.1 notes said this would be fixed in this release, and it wasn't.
+- VoiceOver reads the View All link on Stats twice.
+
+### Windows known issues
+
+- College basketball fouls still read and sound as if they happened at the far end of the court. The 1.0.1 notes
+  said this would be fixed in this release, and it wasn't.
+- On long lists, screen readers can give the wrong item count, because the list only reports the rows on screen.
+  Table view gives the true row and total. We believe this is a bug in Qt 6, the toolkit the Windows app is built
+  on: [QTBUG-149577](https://qt-project.atlassian.net/browse/QTBUG-149577).
 - JAWS reads each tab twice as you arrow along tabs.
-- On iPhone, VoiceOver reads the View All link on Stats twice.
 
 ---
 
