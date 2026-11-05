@@ -136,7 +136,7 @@ struct GameDetailView: View {
             }
             HStack(spacing: 40) {
                 teamColumn(game.awayTeam, isHome: false)
-                Text("@").font(.title3).foregroundColor(.secondary)
+                Text(game.matchupSymbol).font(.title3).foregroundColor(.secondary)
                 teamColumn(game.homeTeam, isHome: true)
             }
 
@@ -151,7 +151,8 @@ struct GameDetailView: View {
                         .foregroundColor(.secondary)
                         .lineLimit(1)
                     // MLB-only: Field Tour button next to venue name
-                    if sport == .mlb {
+                    // Only when we have this park: the tour would otherwise open on another.
+                    if sport == .mlb, StadiumGeometry.stadium(venueContaining: venue.name) != nil {
                         Button {
                             showFieldTour = true
                         } label: {
@@ -168,8 +169,12 @@ struct GameDetailView: View {
             }
 
             // Broadcast networks
-            let activeBroadcasts = game.broadcasts.filter { !$0.isEmpty }
-            if game.shouldShowBroadcastInfo && !activeBroadcasts.isEmpty {
+            // Games opened from a schedule have none of their own, so use the summary's.
+            let ownBroadcasts = game.broadcasts.filter { !$0.isEmpty }
+            let summaryBroadcasts = game.status.isCompleted ? []
+                : (viewModel.gameDetails?.header?.competitions.first?.broadcastNames ?? [])
+            let activeBroadcasts = ownBroadcasts.isEmpty ? summaryBroadcasts : ownBroadcasts
+            if !activeBroadcasts.isEmpty && (ownBroadcasts.isEmpty || game.shouldShowBroadcastInfo) {
                 HStack(spacing: 4) {
                     Image(systemName: "tv")
                         .font(.caption)
@@ -183,7 +188,7 @@ struct GameDetailView: View {
             }
 
             // Odds (when available from summary API)
-            if let odds = viewModel.gameDetails?.odds?.first {
+            if let odds = viewModel.gameDetails?.bettingLine {
                 HStack(spacing: 12) {
                     if let spread = odds.details, !spread.isEmpty {
                         Text("Line: \(spread)")
@@ -211,6 +216,10 @@ struct GameDetailView: View {
         // Prefer the live score from the summary header; fall back to the game object.
         // The game object may have nil/stale scores when navigated from schedule data.
         let displayScore: Int? = {
+            if let comp = viewModel.gameDetails?.header?.competitions.first,
+               comp.hasNotBeenPlayed {
+                return nil
+            }
             if let comp = viewModel.gameDetails?.header?.competitions.first,
                let competitor = comp.competitors.first(where: { ($0.homeAway == "home") == isHome }) {
                 return competitor.score
@@ -259,7 +268,8 @@ struct GameDetailView: View {
     private func boxScoreTab(details: GameDetails) -> some View {
         Group {
             if let bs = details.boxscore {
-                BoxScoreView(boxscore: bs, sport: sport)
+                BoxScoreView(boxscore: bs, sport: sport,
+                             isPreGame: details.header?.competitions.first?.hasNotBeenPlayed == true)
             } else {
                 Text("Box score not available")
                     .foregroundColor(.secondary).padding()
@@ -637,7 +647,7 @@ struct GameDetailView: View {
         if let venue = game.venue {
             lines.append(venue.fullName)
         }
-        if let odds = viewModel.gameDetails?.odds?.first {
+        if let odds = viewModel.gameDetails?.bettingLine {
             var parts: [String] = []
             if let s = odds.details { parts.append("Line: \(s)") }
             if let o = odds.overUnder { parts.append("O/U: \(String(format: "%.1f", o))") }

@@ -247,8 +247,8 @@ struct LiveScoresView: View {
     }
     
     private func liveGameRow(_ game: Game) -> [String] {
-        let away = game.awayTeam.abbreviation + (game.awayTeam.score.map { " \($0)" } ?? "")
-        let home = game.homeTeam.abbreviation + (game.homeTeam.score.map { " \($0)" } ?? "")
+        let away = game.awayTeam.rankedAbbreviation + (game.awayTeam.score.map { " \($0)" } ?? "")
+        let home = game.homeTeam.rankedAbbreviation + (game.homeTeam.score.map { " \($0)" } ?? "")
         let status = game.status.isLive ? game.status.displayText
             : (game.status.isSuspended ? "Susp" : (game.status.isCompleted ? "Final" : game.displayTime))
         return [away, home, status]
@@ -329,11 +329,11 @@ struct LiveScoresView: View {
     }
 
     private func liveQuickText(_ game: Game) -> String {
-        let away = game.awayTeam.abbreviation + (game.awayTeam.score.map { " \($0)" } ?? "")
-        let home = game.homeTeam.abbreviation + (game.homeTeam.score.map { " \($0)" } ?? "")
+        let away = game.awayTeam.rankedAbbreviation + (game.awayTeam.score.map { " \($0)" } ?? "")
+        let home = game.homeTeam.rankedAbbreviation + (game.homeTeam.score.map { " \($0)" } ?? "")
         let status = game.status.isLive ? game.status.displayText
             : (game.status.isSuspended ? "Suspended" : (game.status.isCompleted ? "Final" : game.displayTime))
-        return "\(away) @ \(home) \u{2014} \(status)"
+        return "\(away) \(game.matchupSymbol) \(home) \u{2014} \(status)"
     }
 
     private func liveQuickAccessibilityText(_ game: Game) -> String {
@@ -349,7 +349,7 @@ struct LiveScoresView: View {
         } else if game.status.isSuspended { statusParts.append("Suspended") }
         else if game.status.isCompleted { statusParts.append("Final") }
         else { statusParts.append(game.displayTime) }
-        var label = "\(away) at \(home), \(statusParts.joined(separator: ", "))"
+        var label = "\(away) \(game.matchupWord) \(home), \(statusParts.joined(separator: ", "))"
         if game.shouldShowBroadcastInfo, let broadcast = game.broadcasts.first, !broadcast.isEmpty {
             label += ", on \(broadcast)"
         }
@@ -538,9 +538,9 @@ struct CompactGameRow: View {
 
         // Away / Home with scores
         let awayScore = game.awayTeam.score.map { " \($0)" } ?? ""
-        let awayPart = "Away: \(game.awayTeam.voiceOverName(for: pref))\(awayScore)"
+        let awayPart = "\(game.awayPrefix)\(game.awayTeam.voiceOverName(for: pref))\(awayScore)"
         let homeScore = game.homeTeam.score.map { " \($0)" } ?? ""
-        let homePart = "Home: \(game.homeTeam.voiceOverName(for: pref))\(homeScore)"
+        let homePart = "\(game.homePrefix)\(game.homeTeam.voiceOverName(for: pref))\(homeScore)"
 
         // Status field — section headings communicate live/final, omit to avoid redundancy
         var statusParts: [String] = []

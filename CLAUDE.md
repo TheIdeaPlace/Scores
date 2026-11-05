@@ -44,6 +44,13 @@ pip install -r requirements.txt
 pytest tests/
 ```
 
+**Check the live data feeds** (ESPN, MLB, CFL, fantasy; opens no windows):
+```powershell
+python tools/validate_espn.py                 # or --league NCAAM
+gh workflow run validate-espn.yml             # the same, in GitHub Actions; also runs nightly
+```
+Add a check here when the app starts relying on a new endpoint or field.
+
 ## Architecture
 
 ### Entry Points
@@ -54,7 +61,11 @@ pytest tests/
 
 ### Data Layer
 
-- `espn_api.py` (4,100+ lines) — All network calls. Fetches from ESPN's undocumented API (`site.api.espn.com/apis/site/v2/sports`), the official MLB Stats API (`statsapi.mlb.com`), and ESPN's fantasy feed (`lm-api-reads.fantasy.espn.com`, the only source for draft ranks/ADP/auction values). Contains per-sport logic for scores, standings, play-by-play, box scores, injuries, news, advanced stats, and the fantasy football cheatsheet.
+- `espn_api.py` (4,100+ lines) — All network calls. Fetches from ESPN's undocumented API (`site.api.espn.com/apis/site/v2/sports`) and ESPN's fantasy feed (`lm-api-reads.fantasy.espn.com`, the only source for draft ranks/ADP/auction values). Contains per-sport logic for scores, standings, play-by-play, box scores, injuries, news, advanced stats, and the fantasy football cheatsheet. League leaders come from `site.web.api.espn.com/apis/site/v3/sports/{path}/leaders` on both apps, which the iPhone also asks for one team's players with `team=`, team rankings from `statistics/byteam`, and "what season is it" from core `/season` through `core_season`, never the calendar.
+- `team_stats.py` — Pure: `byteam` rows to rankings. The direction table for low-is-good stats, the Division I filter, and ranks with ties.
+- `box_score.py` — Pure: ESPN's `boxscore` block to the tables the dialog shows. Its docstring lists how the shape differs by sport. `active` does not mean played.
+- `game_labels.py` — Pure: period names, broadcasts, odds, injured counts, local schedule dates, `scoreboard_today` (last night's date until 5 AM).
+- `tests/fixtures/espn/` — Real ESPN payloads per sport (`INDEX.txt` says what each shows). Test parsing against these, not hand-made dicts.
 - `services/api_service.py` — Thin wrapper around `espn_api.py` with unified error handling
 - `services/venue_service.py` — Stadium/venue info
 - `services/football_calendar.py` — NFL week/season calendar utilities
@@ -64,12 +75,13 @@ pytest tests/
 ### UI Components
 
 - `accessible_table.py` (1,000+ lines) — Custom `QTableWidget` subclass powering every data table. Implements three view modes: **Table** (grid), **Quick List** (comma-separated), **Full List** (key: value pairs). Concrete subclasses: `StandingsTable`, `BoxscoreTable`, `InjuryTable`, `LeadersTable`.
+- `tab_keys.py` — Pure: which tab a key goes to, type-ahead find, and `MAX_TABS`.
 - `pitch_exploration_dialog.py` — Interactive dialog for exploring MLB pitch coordinates with audio feedback
-- `windows_notifications.py` — Windows UIA screen reader notifications
+- `windows_notifications.py` — `announce()`, the app's spoken messages. `uia_notifier.py` raises them from a hidden child window with its own UIA provider; a notification from `UiaHostProviderFromHwnd` never reaches a screen reader.
 
 ### Audio System
 
-- `play_geometry.py` — Pure mapping from ESPN play coordinates to a note, a stereo balance and a spoken location, for basketball (NBA/WNBA/NCAAM/NCAAWB) and hockey (NHL/NCAAH/NCAAWH). No PyQt or winsound import, so it is unit-tested on any platform. **Its iOS twin is `Services/PlayAudioGeometry.swift`; the two must give identical output. `tests/fixtures/play_geometry_grid.json` is the shared reference grid; `tests/unit/test_play_geometry_parity.py` checks the Python side, and the Swift side has to be checked against the same file by hand until the iOS project has a test target. Change both in the same commit.** Football and soccer plays carry no coordinates, so they have no audio.
+- `play_geometry.py` — Pure mapping from ESPN play coordinates to a note, a stereo balance and a spoken location, for basketball (NBA/WNBA/NCAAM/NCAAWB) and hockey (NHL/NCAAH/NCAAWH). No PyQt or winsound import, so it is unit-tested on any platform. **Its iOS twin is `Services/PlayAudioGeometry.swift`; the two must give identical output. `tests/fixtures/play_geometry_grid.json` is the shared reference grid; `tests/unit/test_play_geometry_parity.py` checks the Python side and `PlayAudioGeometryGridTests.swift` the Swift side. Change both in the same commit.** Football and soccer plays carry no coordinates, so they have no audio.
 - `play_audio_mapper.py` — `PlayAudioMapper`, the playback layer for the above. Alt+P plays one play, Alt+S the whole period. **Nothing is spoken while a tone plays, on either platform.** The location is part of the play's own accessible text (`AccessibleTextRole` on Windows, the row's accessibility label on iOS) and the located count is part of the period header's, so it is heard on arrival; an announcement at playback time would repeat it and talk over the audio. The only thing said at playback time is that there is nothing to play.
 - `simple_audio_mapper.py` — Maps pitch (x, y) coordinates to audio frequencies via `winsound` (MLB)
 - `stereo_audio_mapper.py` — Stereo variant with left/right channel positioning for pitch location
@@ -89,10 +101,12 @@ pytest tests/
 
 ### iOS App
 
-Lives entirely in `iOS/SportsScoresApp/` (Xcode project, SwiftUI). Nothing in the Python app reads from it and nothing in it reads from the Python app — `pytest` and `build.py` ignore the directory completely.
+Lives entirely in `iOS/SportsScoresApp/` (Xcode project, SwiftUI). Nothing in the Python app reads from it, and the app itself reads nothing from the Python app — `pytest` and `build.py` ignore the directory completely. Its tests do read the shared `tests/fixtures/`, so a fixture change can fail them.
 
 - `SportsScores/Services/ESPNAPIService.swift` — the iOS equivalent of `espn_api.py`. When you fix an ESPN data quirk on one platform, check whether the other needs the same fix; this has been the main source of drift.
-- `.github/workflows/ios-build-check.yml` — simulator-only compile, runs on `main` for changes under `iOS/**`. No signing, no secrets.
+- **Both apps use the same data sources wherever they can.** If that loses some data, file an issue for what's lost rather than keeping two sources. Rules that must match are held to shared files in `tests/fixtures/`, with a test on each side: `play_geometry_grid.json`, `leader_display_grid.json`, `leader_lists_grid.json` and `team_stat_directions.json`.
+- `SportsScoresTests/` — XCTest target: the real models on the real ESPN fixtures, the shared play audio grid, and a check that no scoreboard request uses a date range. Runs on a Mac only, in the workflow below.
+- `.github/workflows/ios-build-check.yml` — simulator build and tests, runs on `main` for changes under `iOS/**` and `tests/fixtures/**`. No signing, no secrets.
 - `.github/workflows/ios-release.yml` — runs on the same `v*` tags as the Windows release (and by manual dispatch); archives on a macOS runner and uploads to TestFlight. Needs the five App Store Connect secrets listed in `.github/workflows/README-ios-release.md`.
 
 Both apps share one version: `VERSION` drives the Windows build and the iOS marketing version, and one `v*` tag releases both. The iOS build number is the commit count. Keep `MARKETING_VERSION` in `iOS/SportsScoresApp/project.yml` and `project.pbxproj` equal to `VERSION`; `tests/unit/test_version_sync.py` enforces it.
@@ -109,7 +123,13 @@ The iOS app previously lived on a separate `iOS` branch that also carried a stal
 
 **Window titles** are set dynamically throughout `scores.py` to give screen readers hierarchical context (e.g., `"Yankees vs Red Sox - MLB - Sports Scores"`). Maintain this pattern when adding new views or dialogs.
 
+**A failed request says so.** A timeout, a 5xx or anything else unexpected raises `ApiError` with a plain sentence, so the screen can say to try again; only an honest empty answer reads as no data. Empty and failed mustn't look the same, and raw `requests` text mustn't reach a screen reader. `tests/unit/replay/test_known_gaps.py` lists where this isn't true yet, as strict xfails.
+
 **Play-by-play parsing** is sport-specific and lives entirely in `espn_api.py`. MLB play-by-play uses ESPN's `summaryType` field (`S`=scoring, `I`=inning marker, `N`=substitution) and has several workarounds for ESPN data quirks documented in recent commits.
+
+**Accessible table focus:** the `AccessibleTable` wrapper takes no focus; the view inside does. Make tab areas with `make_tab_area`, never `QTabWidget()`, and call `_focus_once_active` to focus a dialog's table, since Windows gives the first widget focus as a dialog activates.
+
+**Tab areas:** 8 tabs or fewer stay tabs, and more become a list, through `make_tab_area` (Kelly's rule). A list stands alone: Enter opens a row's table in its place, and Escape comes back. A list and a table never share a screen. Both have Home, End, wrapping arrows and type-ahead find. JAWS reading a tab twice is known and accepted.
 
 **No test framework for UI** — UI correctness is verified manually. `tests/` covers data parsing and utility functions.
 

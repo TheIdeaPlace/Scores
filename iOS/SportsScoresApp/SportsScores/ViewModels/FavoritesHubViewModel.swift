@@ -11,7 +11,6 @@ import Foundation
 @MainActor
 final class FavoritesHubViewModel: ObservableObject {
 
-    @Published var teamInfoMap: [String: TeamHubTeamInfo] = [:]  // keyed by teamId
     @Published var newsMap: [String: [NewsItem]] = [:]           // keyed by teamId, up to 2 items
     @Published var scheduleMap: [String: [ScheduleGame]] = [:]   // keyed by teamId
     /// Live game details for any in-progress game — scores come from the ESPN summary
@@ -23,7 +22,6 @@ final class FavoritesHubViewModel: ObservableObject {
 
     func loadFavorites(_ favorites: [FavoriteTeam]) async {
         guard !favorites.isEmpty else {
-            teamInfoMap = [:]
             newsMap = [:]
             scheduleMap = [:]
             liveDetailsMap = [:]
@@ -39,11 +37,9 @@ final class FavoritesHubViewModel: ObservableObject {
     }
 
     private func loadSingleFavorite(_ fav: FavoriteTeam) async {
-        async let infoFetch = fetchInfo(fav)
         async let newsFetch = fetchNews(fav)
         async let scheduleFetch = fetchSchedule(fav)
-        let (info, news, sched) = await (infoFetch, newsFetch, scheduleFetch)
-        if let info { teamInfoMap[fav.id] = info }
+        let (news, sched) = await (newsFetch, scheduleFetch)
         if let news { newsMap[fav.id] = news }
         if let sched {
             scheduleMap[fav.id] = sched
@@ -56,15 +52,11 @@ final class FavoritesHubViewModel: ObservableObject {
         }
     }
 
-    private func fetchInfo(_ fav: FavoriteTeam) async -> TeamHubTeamInfo? {
-        try? await apiService.fetchTeamHubInfo(teamId: fav.id, sport: fav.sport)
-    }
-
     private func fetchNews(_ fav: FavoriteTeam) async -> [NewsItem]? {
         try? await apiService.fetchTeamNews(teamId: fav.id, sport: fav.sport, limit: 2)
     }
 
     private func fetchSchedule(_ fav: FavoriteTeam) async -> [ScheduleGame]? {
-        try? await apiService.fetchTeamHubSchedule(teamId: fav.id, sport: fav.sport)
+        try? await apiService.fetchFavoriteCardSchedule(teamId: fav.id, sport: fav.sport)
     }
 }

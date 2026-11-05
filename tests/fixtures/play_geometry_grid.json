@@ -1,5 +1,5 @@
 {
- "_comment": "Expected output of play_geometry.audio_params over a grid of ESPN coordinates. PlayAudioGeometry.swift must produce the same values; regenerate it from audio_params only when the mapping is meant to change, on both platforms.",
+ "_comment": "Expected output of play_geometry.audio_params over a grid of ESPN coordinates, and in 'located' of play_geometry.has_coordinate. PlayAudioGeometry.swift must produce the same values; regenerate it from audio_params and has_coordinate only when the mapping is meant to change, on both platforms.",
  "cases": [
   {
    "league": "NBA",
@@ -3645,6 +3645,176 @@
    "duration_ms": 302,
    "balance": 0.994118,
    "description": "far end, in the right corner"
+  }
+ ],
+ "located": [
+  {
+   "league": "NBA",
+   "x": 25,
+   "y": 0,
+   "located": true
+  },
+  {
+   "league": "NBA",
+   "x": 25,
+   "y": 2,
+   "located": true
+  },
+  {
+   "league": "NBA",
+   "x": 24,
+   "y": 0,
+   "located": true
+  },
+  {
+   "league": "NBA",
+   "x": -214748340,
+   "y": -214748365,
+   "located": false
+  },
+  {
+   "league": "WNBA",
+   "x": 25,
+   "y": 0,
+   "located": true
+  },
+  {
+   "league": "WNBA",
+   "x": 25,
+   "y": 2,
+   "located": true
+  },
+  {
+   "league": "WNBA",
+   "x": 24,
+   "y": 0,
+   "located": true
+  },
+  {
+   "league": "WNBA",
+   "x": -214748340,
+   "y": -214748365,
+   "located": false
+  },
+  {
+   "league": "NCAAM",
+   "x": 25,
+   "y": 0,
+   "located": false
+  },
+  {
+   "league": "NCAAM",
+   "x": 25,
+   "y": 2,
+   "located": true
+  },
+  {
+   "league": "NCAAM",
+   "x": 24,
+   "y": 0,
+   "located": true
+  },
+  {
+   "league": "NCAAM",
+   "x": -214748340,
+   "y": -214748365,
+   "located": false
+  },
+  {
+   "league": "NCAAWB",
+   "x": 25,
+   "y": 0,
+   "located": false
+  },
+  {
+   "league": "NCAAWB",
+   "x": 25,
+   "y": 2,
+   "located": true
+  },
+  {
+   "league": "NCAAWB",
+   "x": 24,
+   "y": 0,
+   "located": true
+  },
+  {
+   "league": "NCAAWB",
+   "x": -214748340,
+   "y": -214748365,
+   "located": false
+  },
+  {
+   "league": "NHL",
+   "x": 25,
+   "y": 0,
+   "located": true
+  },
+  {
+   "league": "NHL",
+   "x": 25,
+   "y": 2,
+   "located": true
+  },
+  {
+   "league": "NHL",
+   "x": 24,
+   "y": 0,
+   "located": true
+  },
+  {
+   "league": "NHL",
+   "x": -214748340,
+   "y": -214748365,
+   "located": false
+  },
+  {
+   "league": "NCAAH",
+   "x": 25,
+   "y": 0,
+   "located": true
+  },
+  {
+   "league": "NCAAH",
+   "x": 25,
+   "y": 2,
+   "located": true
+  },
+  {
+   "league": "NCAAH",
+   "x": 24,
+   "y": 0,
+   "located": true
+  },
+  {
+   "league": "NCAAH",
+   "x": -214748340,
+   "y": -214748365,
+   "located": false
+  },
+  {
+   "league": "NCAAWH",
+   "x": 25,
+   "y": 0,
+   "located": true
+  },
+  {
+   "league": "NCAAWH",
+   "x": 25,
+   "y": 2,
+   "located": true
+  },
+  {
+   "league": "NCAAWH",
+   "x": 24,
+   "y": 0,
+   "located": true
+  },
+  {
+   "league": "NCAAWH",
+   "x": -214748340,
+   "y": -214748365,
+   "located": false
   }
  ]
 }

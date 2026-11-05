@@ -164,7 +164,8 @@ struct StandingsTableView: View {
     private var basicHeaders: [String] {
         isWildCard
             ? ["Pos", "Team", "W", "L", "PCT", "WCGB", "Streak", "Status"]
-            : ["Team", "W", "L", "PCT", "GB", "Streak"]
+            : (sport == .nhl ? ["Team", "W", "L", "OTL", "PTS", "Streak"]
+                             : ["Team", "W", "L", "PCT", "GB", "Streak"])
     }
 
     private var expandedHeaders: [String] {
@@ -195,6 +196,11 @@ struct StandingsTableView: View {
                     wc.spokenStatus]
         }
         if !showExpanded {
+            if sport == .nhl {
+                return [entry.team.abbreviation,
+                        "\(s.wins)", "\(s.losses)", "\(s.otLosses ?? 0)",
+                        "\(s.nhlPoints ?? 0)", s.streak]
+            }
             return [entry.team.abbreviation,
                     "\(s.wins)", "\(s.losses)",
                     s.displayWinPercent, s.gamesBack, s.streak]
@@ -257,6 +263,9 @@ struct StandingsTableView: View {
                 + "\(s.displayWinPercent), wild card games back: \(wc.gamesBack), "
                 + "\(s.streak), \(wc.spokenStatus)"
         }
+        if sport == .nhl {
+            return "\(teamName), \(s.wins)-\(s.losses)-\(s.otLosses ?? 0), \(s.nhlPoints ?? 0) points, streak \(s.streak)"
+        }
         var label = "\(teamName), \(s.wins)-\(s.losses), \(s.displayWinPercent), GB: \(s.gamesBack)"
         if let l10 = s.lastTenRecord { label += ", last 10: \(l10)" }
         return label
@@ -272,7 +281,12 @@ struct StandingsTableView: View {
                 + "Wild card games back: \(wc.gamesBack); Streak: \(s.streak); "
                 + "Status: \(wc.spokenStatus)"
         }
-        var label = "Rank: \(entry.rank); Team: \(teamName); Wins: \(s.wins); Losses: \(s.losses); Win%: \(s.displayWinPercent); Games Back: \(s.gamesBack); Streak: \(s.streak); Record: \(s.record)"
+        // ESPN sends no rank stat in most leagues, so don't read "Rank: 0".
+        let rank = entry.rank > 0 ? "Rank: \(entry.rank); " : ""
+        if sport == .nhl {
+            return "\(rank)Team: \(teamName); Wins: \(s.wins); Losses: \(s.losses); Overtime losses: \(s.otLosses ?? 0); Points: \(s.nhlPoints ?? 0); Streak: \(s.streak)"
+        }
+        var label = "\(rank)Team: \(teamName); Wins: \(s.wins); Losses: \(s.losses); Win%: \(s.displayWinPercent); Games Back: \(s.gamesBack); Streak: \(s.streak); Record: \(s.record)"
         if let l10 = s.lastTenRecord { label += "; Last 10: \(l10)" }
         return label
     }
@@ -408,7 +422,7 @@ struct StandingsTableView: View {
         VStack(alignment: .leading, spacing: 4) {
             ForEach(group.entries) { entry in
                 NavigationLink(destination: TeamScheduleView(team: scheduleTeam(from: entry.team), sport: sport)) {
-                    Text(entry.quickListText)
+                    Text(sport == .nhl ? entry.nhlQuickListText : entry.quickListText)
                         .font(.subheadline)
                         .padding(.horizontal, 16)
                         .padding(.vertical, 6)
@@ -431,7 +445,7 @@ struct StandingsTableView: View {
                     VStack(alignment: .leading, spacing: 4) {
                         Text(entry.team.displayName)
                             .font(.headline)
-                        Text(entry.fullListText)
+                        Text(sport == .nhl ? entry.nhlFullListText : entry.fullListText)
                             .font(.caption)
                             .foregroundColor(.secondary)
                     }

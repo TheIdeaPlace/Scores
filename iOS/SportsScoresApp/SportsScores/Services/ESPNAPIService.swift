@@ -29,13 +29,18 @@ class ESPNAPIService {
     /// stat headings request definitions concurrently — see `TeamStatsStore`.
     private let teamStatsStore: TeamStatsStore
 
-    private init() {
+    private convenience init() {
         let config = URLSessionConfiguration.default
         config.timeoutIntervalForRequest = 30
         config.timeoutIntervalForResource = 60
-        let session = URLSession(configuration: config)
+        self.init(session: URLSession(configuration: config))
+    }
+
+    /// The app uses `shared`. Tests pass a session that answers from fixtures.
+    init(session: URLSession) {
         self.session = session
-        self.teamStatsStore = TeamStatsStore(session: session, baseURL: webAPIBaseURL)
+        self.teamStatsStore = TeamStatsStore(session: session, webBaseURL: webAPIBaseURL,
+                                             siteBaseURL: baseURL, coreBaseURL: coreAPIBaseURL)
     }
 
     // MARK: - Core API league name helper
@@ -48,11 +53,11 @@ class ESPNAPIService {
     // MARK: - College football scoreboard parameters
 
     /// ESPN's college football scoreboard *doubles* `limit` internally on any
-    /// query that is not a `dates=A-B` range: limit=5 returns 10 events, limit=50
+    /// query it accepts: limit=5 returns 10 events, limit=50
     /// returns 100. The effective (post-doubling) value must stay at or below
     /// 1000 — past that the page size collapses to 25, so limit=501 is worse than
-    /// limit=250. 400 clears a 209-game Division I week on range queries while
-    /// leaving the doubled shapes at 800, comfortably inside the ceiling.
+    /// limit=250. 400 clears a 209-game Division I week and leaves the doubled
+    /// value at 800, comfortably inside the ceiling.
     private static let ncaafScoreboardLimit = 400
 
     /// ESPN's "NCAA Division I" group for college basketball. Unlike football
@@ -297,17 +302,20 @@ class ESPNAPIService {
         return (try? JSONDecoder().decode(WeeksResponse.self, from: data))?.count ?? 0
     }
 
-    // MARK: - Historical Football Week Games (Core API + date-range scoreboard)
+    // MARK: - Football Week Games (week-addressed scoreboard)
 
-    /// Fetches games for a specific week of a **historical** football season.
+    /// Fetches games for one explicit week of a football season, live or historical.
     ///
-    /// Because the site scoreboard endpoint rejects `season=YEAR` params for past
-    /// seasons, this method:
-    /// 1. Gets the week's `startDate`/`endDate` from the Core API.
-    /// 2. Fetches the site scoreboard with `?dates=YYYYMMDD-YYYYMMDD`.
+    /// `dates=YEAR` is what picks the season: the scoreboard's `season=` is ignored
+    /// when `week=` is also passed, while `dates=2025&week=5` serves the 2025
+    /// season's week 5 and `dates=2026&week=1&seasontype=3` the January 2027 games.
+    /// This replaced a `dates=START-END` range, which ESPN began rejecting with a
+    /// 400 in September 2026. `seasontype` matters because week numbers restart
+    /// within each season type.
     ///
-    /// Both the week date range and the scoreboard result are cached so that
-    /// navigating back and forth between weeks is cheap.
+    /// The Core API is only asked for the week's label, so losing it costs the
+    /// label rather than the games. The label is cached, so navigating back and
+    /// forth between weeks is cheap.
     func fetchFootballWeek(
         sport: Sport,
         season: Int,
@@ -315,47 +323,17 @@ class ESPNAPIService {
         week: Int,
         ncaafCoverage: NCAAFCoverage? = nil
     ) async throws -> FootballScoreboardResult {
-        // Step 1 — get the date range for this week (cached after first fetch).
         let weekCacheKey = "\(sport.rawValue)-\(season)-\(seasonType)-\(week)"
-        let weekRange: ScheduleCacheStore.WeekRange
+        var weekLabel = await scheduleCache.weekRange(forKey: weekCacheKey)?.text
 
-        if let cached = await scheduleCache.weekRange(forKey: weekCacheKey) {
-            weekRange = cached
-        } else {
-            let league = coreLeagueName(for: sport)
-            let weekURLString = "\(coreAPIBaseURL)/football/leagues/\(league)/seasons/\(season)/types/\(seasonType)/weeks/\(week)"
-            guard let weekURL = URL(string: weekURLString) else { throw APIError.invalidURL }
-
-            let (weekData, weekResponse) = try await session.data(from: weekURL)
-            guard let weekHttp = weekResponse as? HTTPURLResponse,
-                  weekHttp.statusCode == 200 else { throw APIError.invalidResponse }
-
-            struct CoreWeek: Decodable {
-                let number: Int
-                let startDate: String
-                let endDate: String
-                let text: String?
-            }
-            let coreWeek = try JSONDecoder().decode(CoreWeek.self, from: weekData)
-            let start = parseESPNDateString(coreWeek.startDate) ?? Date()
-            let end   = parseESPNDateString(coreWeek.endDate)   ?? Date()
-            let text  = coreWeek.text ?? "Week \(week)"
-            weekRange = ScheduleCacheStore.WeekRange(start: start, end: end, text: text)
+        if weekLabel == nil,
+           let weekRange = await fetchWeekRange(sport: sport, season: season,
+                                                seasonType: seasonType, week: week) {
             await scheduleCache.store(weekRange, forKey: weekCacheKey)
+            weekLabel = weekRange.text
         }
 
-        // Step 2 — fetch the scoreboard using the date range.
-        // ESPN's week boundaries are Pacific midnights (07:00Z / 06:59Z), and the
-        // `dates=` param is read the same way — so format in Pacific rather than
-        // the device's zone, which would otherwise pull in the neighbouring
-        // week's Thursday game for anyone east of Los Angeles.
-        let fmt = DateFormatter()
-        fmt.locale = Locale(identifier: "en_US_POSIX")
-        fmt.timeZone = TimeZone(identifier: "America/Los_Angeles") ?? .current
-        fmt.dateFormat = "yyyyMMdd"
-        let startStr = fmt.string(from: weekRange.start)
-        let endStr   = fmt.string(from: weekRange.end)
-        var scoreboardParams = ["dates=\(startStr)-\(endStr)"]
+        var scoreboardParams = ["dates=\(season)", "week=\(week)", "seasontype=\(seasonType)"]
         scoreboardParams += collegeScoreboardParams(for: sport, coverage: ncaafCoverage)
         let scoreboardURLString =
             "\(baseURL)/\(sport.apiPath)/scoreboard?" + scoreboardParams.joined(separator: "&")
@@ -379,10 +357,31 @@ class ESPNAPIService {
         return FootballScoreboardResult(
             games: games,
             week: week,
-            weekLabel: weekRange.text,
+            weekLabel: weekLabel ?? "Week \(week)",
             seasonType: seasonType,
             season: season
         )
+    }
+
+    /// One week's dates and label from the Core API, or nil if it can't be had.
+    private func fetchWeekRange(sport: Sport, season: Int, seasonType: Int,
+                                week: Int) async -> ScheduleCacheStore.WeekRange? {
+        let league = coreLeagueName(for: sport)
+        let urlString = "\(coreAPIBaseURL)/football/leagues/\(league)/seasons/\(season)/types/\(seasonType)/weeks/\(week)"
+        guard let url = URL(string: urlString),
+              let (data, response) = try? await session.data(from: url),
+              let http = response as? HTTPURLResponse, http.statusCode == 200 else { return nil }
+
+        struct CoreWeek: Decodable {
+            let startDate: String
+            let endDate: String
+            let text: String?
+        }
+        guard let coreWeek = try? JSONDecoder().decode(CoreWeek.self, from: data) else { return nil }
+        let start = parseESPNDateString(coreWeek.startDate) ?? Date()
+        let end = parseESPNDateString(coreWeek.endDate) ?? Date()
+        return ScheduleCacheStore.WeekRange(start: start, end: end,
+                                            text: coreWeek.text ?? "Week \(week)")
     }
 
     /// Parse an ESPN date string that may be formatted with or without seconds.
@@ -541,23 +540,56 @@ class ESPNAPIService {
 
     /// Fetches all games within a date range — used by the bracket tab to load
     /// all matches for a tournament phase in one call.
+    ///
+    /// ESPN's scoreboard answers `dates=START-END` with a 400 (since September
+    /// 2026) but still takes a month, so this fetches each month the range touches
+    /// and trims to the range. A month holds far more than a phase, so the page
+    /// size goes to ESPN's ceiling of 1000; past that it collapses to 25.
+    ///
+    /// The trim uses Eastern time, as ESPN's date boards do. Tournament phases are
+    /// calendar days on that board; a kickoff's day on the device can differ, which
+    /// would put a match in the wrong round or lose it.
     func fetchGamesRange(for sport: Sport, startDate: Date, endDate: Date) async throws -> [Game] {
-        let fmt = DateFormatter()
-        fmt.dateFormat = "yyyyMMdd"
-        let startStr = fmt.string(from: startDate)
-        let endStr   = fmt.string(from: endDate)
-        let urlString = "\(baseURL)/\(sport.apiPath)/scoreboard?dates=\(startStr)-\(endStr)&limit=100"
-        guard let url = URL(string: urlString) else { throw APIError.invalidURL }
+        let dayFormat = DateFormatter()
+        dayFormat.locale = Locale(identifier: "en_US_POSIX")
+        dayFormat.dateFormat = "yyyyMMdd"
+        let monthFormat = DateFormatter()
+        monthFormat.locale = Locale(identifier: "en_US_POSIX")
+        monthFormat.dateFormat = "yyyyMM"
+        let firstDay = dayFormat.string(from: startDate)
+        let lastDay = dayFormat.string(from: endDate)
 
-        let (data, response) = try await session.data(from: url)
-        guard let httpResponse = response as? HTTPURLResponse,
-              httpResponse.statusCode == 200 else { throw APIError.invalidResponse }
+        var months: [String] = []
+        var cursor = startDate
+        while monthFormat.string(from: cursor) <= monthFormat.string(from: endDate) {
+            months.append(monthFormat.string(from: cursor))
+            guard let next = Calendar.current.date(byAdding: .month, value: 1, to: cursor) else { break }
+            cursor = next
+        }
 
         let decoder = JSONDecoder()
         decoder.dateDecodingStrategy = .iso8601
-        let apiResponse = try decoder.decode(ScoreboardResponse.self, from: data)
-        let seasonType = apiResponse.season?.type ?? 1
-        return try apiResponse.events.map { try Game(from: $0, seasonType: seasonType) }
+        var games: [Game] = []
+        for month in months {
+            let urlString = "\(baseURL)/\(sport.apiPath)/scoreboard?dates=\(month)&limit=1000"
+            guard let url = URL(string: urlString) else { throw APIError.invalidURL }
+
+            let (data, response) = try await session.data(from: url)
+            guard let httpResponse = response as? HTTPURLResponse,
+                  httpResponse.statusCode == 200 else { throw APIError.invalidResponse }
+
+            let apiResponse = try decoder.decode(ScoreboardResponse.self, from: data)
+            let seasonType = apiResponse.season?.type ?? 1
+            games += try apiResponse.events.map { try Game(from: $0, seasonType: seasonType) }
+        }
+        let boardDayFormat = DateFormatter()
+        boardDayFormat.locale = Locale(identifier: "en_US_POSIX")
+        boardDayFormat.timeZone = TimeZone(identifier: "America/New_York")
+        boardDayFormat.dateFormat = "yyyyMMdd"
+        return games.filter {
+            let day = boardDayFormat.string(from: $0.date)
+            return firstDay <= day && day <= lastDay
+        }
     }
 
     /// Fetches each event's official tournament match number (e.g. FIFA World Cup
@@ -616,8 +648,18 @@ class ESPNAPIService {
     }
     
     // MARK: - Fetch Standings
-    func fetchStandings(for sport: Sport) async throws -> [StandingsGroup] {
+
+    /// The standings request for a sport. Without a group, college football is FBS alone,
+    /// while the scoreboard shows FCS games too. The parameter is singular here:
+    /// `/standings` ignores the scoreboard's `groups=`.
+    func standingsURLString(for sport: Sport, coverage: NCAAFCoverage? = nil) -> String {
         let urlString = "\(standingsBaseURL)/\(sport.apiPath)/standings"
+        guard sport == .ncaaf else { return urlString }
+        return "\(urlString)?group=\((coverage ?? NCAAFCoverage.stored).espnGroupsID)"
+    }
+
+    func fetchStandings(for sport: Sport) async throws -> [StandingsGroup] {
+        let urlString = standingsURLString(for: sport)
         guard let url = URL(string: urlString) else {
             throw APIError.invalidURL
         }
@@ -637,9 +679,9 @@ class ESPNAPIService {
         // into proper divisions (e.g. "AL East", "AFC North").  Otherwise fall back
         // to the conference-level groupings from the API.
         if DivisionMapper.hasDivisions(sport) {
-            return groupByDivision(apiResponse.children, sport: sport)
+            return groupByDivision(apiResponse.groupsWithEntries, sport: sport)
         } else {
-            return try apiResponse.children.map { try StandingsGroup(from: $0) }
+            return try apiResponse.groupsWithEntries.map { try StandingsGroup(from: $0) }
         }
     }
 
@@ -659,9 +701,13 @@ class ESPNAPIService {
             }
         }
 
-        // Sort entries within each division by win% descending, then wins descending
+        // Sort entries within each division by win% descending, then wins descending.
+        // The NHL ranks by points, which an overtime loss earns one of.
         for key in buckets.keys {
             buckets[key]?.sort {
+                if sport == .nhl, $0.stats.nhlPoints != $1.stats.nhlPoints {
+                    return ($0.stats.nhlPoints ?? 0) > ($1.stats.nhlPoints ?? 0)
+                }
                 if $0.stats.winPercent != $1.stats.winPercent {
                     return $0.stats.winPercent > $1.stats.winPercent
                 }
@@ -710,24 +756,277 @@ class ESPNAPIService {
 
     // MARK: - Fetch Team Schedule
 
-    /// Fetch the schedule for a single team and season type.
-    func fetchTeamSchedule(teamId: String, sport: Sport, season: Int, seasonType: Int) async throws -> [ScheduleGame] {
-        let urlString = "\(baseURL)/\(sport.apiPath)/teams/\(teamId)/schedule?season=\(season)&seasontype=\(seasonType)"
+    /// Everything ESPN has for one team's season, in date order, for the schedule screen and
+    /// Team Hub. A season that fails to load throws, so it can't read as an empty one, and
+    /// the same for a part of it: a list with no playoffs, and no sign why, looks complete.
+    ///
+    /// Only a 400 or 404 means ESPN has nothing there, as on Windows in
+    /// espn_api.get_team_schedule. For a preseason or postseason, that leaves out only that
+    /// part. For a regular season or soccer results it throws `APIError.invalidResponse`, for
+    /// which the view models read as no schedule, and not as an off-season or a failure.
+    ///
+    /// `lenient` is for a caller that can use whatever part loaded, and throws only when
+    /// nothing did.
+    func fetchTeamSeasonSchedule(teamId: String, sport: Sport, season: Int,
+                                 lenient: Bool = false) async throws -> [ScheduleGame] {
+        if sport.usesSoccerSchedule {
+            return try await fetchSoccerTeamSchedule(teamId: teamId, sport: sport, season: season, lenient: lenient)
+        }
+
+        var lists: [[ScheduleGame]] = []
+        var failure: Error?
+        var anyFailure: Error?
+        await withTaskGroup(of: (Int, Result<[ScheduleGame], Error>).self) { group in
+            for seasonType in TeamScheduleQueries.seasonTypes {
+                group.addTask { [self] in
+                    do {
+                        let query = TeamScheduleQueries.seasonType(seasonType, season: season)
+                        let page = try await fetchTeamSchedulePage(teamId: teamId, sport: sport, query: query)
+                        return (seasonType, .success(page.events.compactMap { $0.toScheduleGame() }))
+                    } catch {
+                        return (seasonType, .failure(error))
+                    }
+                }
+            }
+            for await (seasonType, result) in group {
+                switch result {
+                case .success(let games):
+                    lists.append(games)
+                case .failure(let error):
+                    anyFailure = anyFailure ?? error
+                    let mayLeaveOut = seasonType != 2 && error.isNothingThere
+                    if !mayLeaveOut && failure == nil { failure = error }
+                }
+            }
+        }
+        if lenient {
+            if lists.isEmpty, let anyFailure { throw anyFailure }
+        } else if let failure {
+            throw failure
+        }
+        return TeamScheduleQueries.merged(lists)
+    }
+
+    /// Results, plus the games to come if this is the current season. See `TeamScheduleQueries`.
+    /// Past the results, ESPN saying it has nothing there leaves that part out. Anything else
+    /// throws, because a schedule with its games to come missing would look complete.
+    private func fetchSoccerTeamSchedule(teamId: String, sport: Sport, season: Int,
+                                         lenient: Bool) async throws -> [ScheduleGame] {
+        func games(_ query: String) async throws -> [ScheduleGame] {
+            do {
+                let page = try await fetchTeamSchedulePage(teamId: teamId, sport: sport, query: query)
+                return page.events.compactMap { $0.toScheduleGame() }
+            } catch let error where error.isNothingThere || (lenient && !error.isCancellation) {
+                return []
+            }
+        }
+
+        var lists: [[ScheduleGame]] = []
+        var espnSeason: Int?
+        var resultsFailure: Error?
+        do {
+            let results = try await fetchTeamSchedulePage(teamId: teamId, sport: sport,
+                                                          query: TeamScheduleQueries.soccerResults(season: season))
+            lists.append(results.events.compactMap { $0.toScheduleGame() })
+            espnSeason = results.season?.year
+        } catch let error where lenient && !error.isCancellation {
+            resultsFailure = error
+        }
+        let next = TeamScheduleQueries.afterSoccerResults(season: season,
+                                                          currentSeason: sport.currentSeasonYear,
+                                                          espnSeason: espnSeason)
+        if let earlier = next.earlierResults {
+            lists.append(try await games(TeamScheduleQueries.soccerResults(season: earlier)))
+        }
+        if next.fixtures {
+            lists.append(try await games(TeamScheduleQueries.soccerFixtures))
+        }
+        if let resultsFailure, lists.allSatisfy(\.isEmpty) { throw resultsFailure }
+        return TeamScheduleQueries.merged(lists)
+    }
+
+    private func fetchTeamSchedulePage(teamId: String, sport: Sport, query: String) async throws -> TeamScheduleAPIResponse {
+        let urlString = "\(baseURL)/\(sport.apiPath)/teams/\(teamId)/schedule?\(query)"
         guard let url = URL(string: urlString) else { throw APIError.invalidURL }
 
         let (data, response) = try await session.data(from: url)
-        guard let httpResponse = response as? HTTPURLResponse,
-              httpResponse.statusCode == 200 else {
-            throw APIError.invalidResponse
-        }
+        // Only these two mean ESPN has nothing there. A 403, a 429 or a 5xx says nothing about
+        // the schedule. Windows reads them the same way, in espn_api._schedule_answer.
+        let status = (response as? HTTPURLResponse)?.statusCode ?? 0
+        if status == 400 || status == 404 { throw APIError.invalidResponse }
+        guard status == 200 else { throw APIError.unexpectedStatus(status) }
 
-        let apiResponse = try JSONDecoder().decode(TeamScheduleAPIResponse.self, from: data)
-        return apiResponse.events.compactMap { $0.toScheduleGame() }
+        return try JSONDecoder().decode(TeamScheduleAPIResponse.self, from: data)
     }
 
     // MARK: - Fetch League Leaders (Phase 5)
 
+    /// A league's player leaders, the first `limit` of each list. They come from the same place
+    /// as on Windows wherever ESPN has it (`Sport.hasSiteLeaders`), with its qualifying minimums.
     func fetchLeagueLeaders(for sport: Sport, limit: Int = 10) async throws -> [LeagueLeaderCategory] {
+        guard sport.hasSiteLeaders else {
+            return try await fetchCoreLeaders(for: sport, limit: limit, onlyTeam: nil)
+        }
+        return try await fetchSiteLeaders(for: sport, teamId: nil).map { $0.keepingFirst(limit) }
+    }
+
+    /// The regular season ESPN says is the latest, as on Windows: `get_player_statistics`. A new
+    /// regular season can start with nobody on the list yet, or be a 404 for now, so that means
+    /// the one before. Neither existing is a failure rather than nothing to show.
+    private func fetchSiteLeaders(for sport: Sport, teamId: String?) async throws -> [LeagueLeaderCategory] {
+        let season = try await fetchCurrentSeason(sport: sport).regularSeasonYear
+        let latest = try await requestSiteLeaders(for: sport, season: season, teamId: teamId)
+        let categories = Self.leaderCategories(from: latest, oneTeam: teamId != nil)
+        guard categories.isEmpty else { return categories }
+        let previous = try await requestSiteLeaders(for: sport, season: season - 1, teamId: teamId)
+        guard latest != nil || previous != nil else { throw APIError.invalidResponse }
+        return Self.leaderCategories(from: previous, oneTeam: teamId != nil)
+    }
+
+    /// The most rows a list has on both apps, and what to ask for when ESPN won't give that many.
+    /// `/leaders` answers 500 far more often the more it's asked for. It can be a retry away, or
+    /// last for minutes at one limit while a smaller one works, and a shorter list beats none.
+    /// Leaving out region and lang makes the 500s much likelier. On Windows: `_fetch_leaders`.
+    static let siteLeadersLimit = 20
+    static let siteLeadersSmallerLimits = [10, 5]
+
+    /// A season's regular season leaders, or nil if ESPN has no such season. Without `seasontype`,
+    /// a finished season's answer is its postseason. The second try at the full list gets a
+    /// throwaway parameter, since ESPN can cache a 500 for up to 30 seconds.
+    private func requestSiteLeaders(for sport: Sport, season: Int, teamId: String?) async throws -> SiteLeadersResponse? {
+        let attempts: [(Int, Bool)] = [(Self.siteLeadersLimit, false), (Self.siteLeadersLimit, true)]
+            + Self.siteLeadersSmallerLimits.map { ($0, false) }
+        var lastStatus = 0
+        for (limit, freshAnswer) in attempts {
+            var items = [
+                URLQueryItem(name: "region", value: "us"),
+                URLQueryItem(name: "lang", value: "en"),
+                URLQueryItem(name: "season", value: String(season)),
+                URLQueryItem(name: "seasontype", value: "2"),
+                URLQueryItem(name: "limit", value: String(limit)),
+            ]
+            if let teamId { items.append(URLQueryItem(name: "team", value: teamId)) }
+            if freshAnswer {
+                try await Task.sleep(nanoseconds: 1_000_000_000)
+                items.append(URLQueryItem(name: "_", value: String(Int(Date().timeIntervalSince1970 * 1000))))
+            }
+            var components = URLComponents(string: "https://site.web.api.espn.com/apis/site/v3/sports/\(sport.apiPath)/leaders")
+            components?.queryItems = items
+            guard let url = components?.url else { throw APIError.invalidURL }
+
+            let (data, response) = try await session.data(for: URLRequest(url: url, timeoutInterval: 15))
+            let status = (response as? HTTPURLResponse)?.statusCode ?? 0
+            if status == 200 { return try JSONDecoder().decode(SiteLeadersResponse.self, from: data) }
+            if status == 404 { return nil }
+            lastStatus = status
+            if status < 500 { break }
+        }
+        throw APIError.unexpectedStatus(lastStatus)
+    }
+
+    /// `/leaders` lists these lowest first, and everything else highest first.
+    private static let lowIsGoodLeaders: Set<String> = ["avgGoalsAgainst", "ERA", "WHIP", "opponentAvg"]
+
+    /// No qualifying minimum in practice: 2026's list opens with 13 players on .000, catchers and
+    /// outfielders among them. Windows leaves it out too.
+    private static let leadersNotShown: Set<String> = ["opponentAvg"]
+
+    /// A team's answer has these as well, repeating its yards lists with the same players.
+    private static let repeatedForOneTeam: Set<String> = ["passingLeader", "rushingLeader", "receivingLeader"]
+
+    /// The leaders up to the first who breaks the category's direction. ESPN can follow its
+    /// qualified players with everyone else: on Nov 4, 2026, NCAAM field goal percentage read
+    /// 71.4, 64.3, 55.6, 50.0, 46.2, 42.9, then 100.0 fourteen times. Those aren't the next best.
+    private static func leadersInOrder(key: String, _ leaders: [SiteLeadersResponse.Leader]) -> [SiteLeadersResponse.Leader] {
+        var kept = [SiteLeadersResponse.Leader]()
+        var last: Double?
+        for leader in leaders {
+            if let value = leader.value {
+                if let last, lowIsGoodLeaders.contains(key) ? value < last : value > last { break }
+                last = value
+            }
+            kept.append(leader)
+        }
+        return kept
+    }
+
+    /// The first text that says something.
+    private static func firstText(_ candidates: String?...) -> String? {
+        candidates.compactMap { $0 }.first { !$0.isEmpty }
+    }
+
+    /// `/leaders` to the lists the app shows, in ESPN's order, which is best first even for a stat
+    /// where low is good. A preseason is nothing to show: an NFL user in August would read it as
+    /// the real thing. A league's ratings can be there with nobody rated, such as the WNBA's
+    /// Player Efficiency Rating, where the leaders all read 0.0: that isn't a list of leaders.
+    /// On Windows this is `_parse_leaders`, and tests/fixtures/leader_lists_grid.json holds both.
+    ///
+    /// `oneTeam` is an answer for one team, which Windows has no screen for. It has qualified
+    /// players first and then everyone else, and a team's tab shows them all, so its list isn't
+    /// cut where the numbers turn back up: that would lose a real player, such as Tyler Herro on
+    /// 20.5 points, listed after a teammate on 5.6.
+    static func leaderCategories(from response: SiteLeadersResponse?, oneTeam: Bool = false) -> [LeagueLeaderCategory] {
+        guard let response, response.requestedSeason?.type?.type != 1 else { return [] }
+        return (response.leaders?.categories ?? []).compactMap { category -> LeagueLeaderCategory? in
+            let key = firstText(category.name) ?? "unknown"
+            guard !leadersNotShown.contains(key), !(oneTeam && repeatedForOneTeam.contains(key)) else { return nil }
+            let leaders = oneTeam ? (category.leaders ?? []) : leadersInOrder(key: key, category.leaders ?? [])
+            guard leaders.contains(where: { ($0.value ?? 0) != 0 }) else { return nil }
+
+            let rows = leaders.compactMap { leader -> (name: String, team: String, value: String)? in
+                guard let name = firstText(leader.athlete?.displayName, leader.athlete?.fullName, leader.athlete?.shortName) else {
+                    return nil
+                }
+                let value = leaderDisplayValue(category: key, value: leader.value, displayValue: leader.displayValue)
+                return (name, firstText(leader.team?.abbreviation, leader.team?.displayName) ?? "", value.isEmpty ? "-" : value)
+            }
+            guard !rows.isEmpty else { return nil }
+
+            let ranks = sharedRanks(rows.map(\.value))
+            return LeagueLeaderCategory(
+                name: key,
+                displayName: firstText(category.displayName) ?? key.capitalized,
+                leaders: zip(ranks, rows).map { rank, row in
+                    LeagueLeaderCategory.LeagueLeaderEntry(
+                        rank: rank, displayValue: row.value, athleteName: row.name, teamAbbreviation: row.team
+                    )
+                },
+                seasonLabel: leadersSeasonLabel(response.requestedSeason, oneTeam: oneTeam)
+            )
+        }
+    }
+
+    /// Each value's rank, best first: one level with the one before shares its rank, and the next
+    /// rank counts them, so 1, 1, 3. `/leaders` has no rank of its own.
+    static func sharedRanks(_ values: [String]) -> [Int] {
+        var rank = 0
+        var previous: String?
+        return values.enumerated().map { position, value in
+            if value != previous {
+                rank = position + 1
+                previous = value
+            }
+            return rank
+        }
+    }
+
+    /// "2026-27 Regular Season", the same words Windows uses. Asked for a past college football
+    /// season's regular season, ESPN answers with type 3, the numbers running through the bowl
+    /// games, so "Season" says what they are. One team's list says what its ranks are, since
+    /// the same words on the league's list mean the league.
+    private static func leadersSeasonLabel(_ season: SiteLeadersResponse.Season?, oneTeam: Bool) -> String? {
+        let type = season?.type?.type == 3 ? "Season" : season?.type?.name
+        let label = [season?.displayName, type].compactMap { $0 }.joined(separator: " ")
+        guard oneTeam else { return label.isEmpty ? nil : label }
+        return label.isEmpty
+            ? "Ranked within this team, qualified players first"
+            : "\(label), ranked within this team, qualified players first"
+    }
+
+    /// The core API, for the leagues with no `/leaders`. Its leaders have no qualifying minimum,
+    /// and need each name looked up. `onlyTeam` is for a caller that will keep just that team's
+    /// rows: the other rows' names aren't looked up.
+    private func fetchCoreLeaders(for sport: Sport, limit: Int, onlyTeam: String?) async throws -> [LeagueLeaderCategory] {
         // Extract league from apiPath (e.g., "basketball/nba" → "nba")
         let league = sport.apiPath.components(separatedBy: "/").last ?? sport.rawValue.lowercased()
         let sportType = sport.apiPath.components(separatedBy: "/").first ?? "unknown"
@@ -735,29 +1034,29 @@ class ESPNAPIService {
         // Get current season year (the winter sports use the year+1 format)
         let seasonYear = sport.currentSeasonYear
 
-        // Get season types to try (MLB spring training in Feb-March uses type 1)
-        let seasonTypes = getSeasonTypes(for: sport)
-
-        // Try current season with all season types, then fallback to previous seasons
+        // The regular season, this year's or the most recent. Never a preseason: the app has
+        // nowhere to say so. Soccer files its whole league season under type 1.
+        let seasonType = sport.isSoccer ? 1 : 2
         let seasonsToTry = [seasonYear, seasonYear - 1, seasonYear - 2]
 
         for season in seasonsToTry {
-            for seasonType in seasonTypes {
-                do {
-                    let categories = try await fetchLeadersForSeason(
-                        sportType: sportType,
-                        league: league,
-                        season: season,
-                        seasonType: seasonType,
-                        limit: limit
-                    )
-                    if !categories.isEmpty {
-                        return categories
-                    }
-                } catch {
-                    // Continue to next season/type combination
-                    continue
+            do {
+                let categories = try await fetchLeadersForSeason(
+                    sportType: sportType,
+                    league: league,
+                    season: season,
+                    seasonType: seasonType,
+                    limit: limit,
+                    onlyTeam: onlyTeam
+                )
+                if !categories.isEmpty {
+                    return categories
                 }
+            } catch let error as URLError {
+                // Another season won't get through a stalled network either, 30 seconds a try.
+                throw error
+            } catch {
+                continue
             }
         }
         
@@ -765,30 +1064,29 @@ class ESPNAPIService {
         return []
     }
     
-    private func getSeasonTypes(for sport: Sport) -> [Int] {
-        let now = Date()
-        let calendar = Calendar.current
-        let month = calendar.component(.month, from: now)
-        
-        // MLB: Spring training (type 1) in Feb-March, regular season (type 2) otherwise
-        if sport == .mlb {
-            if month >= 2 && month <= 3 {
-                return [1, 2, 3] // Try spring training, then regular, then postseason
+    /// A team's own players in each stat category, ranked among themselves. `/leaders` takes a
+    /// team, which answers with up to 20 of its players, and every category it has anyone in.
+    /// The league's list wouldn't do: 20 rows of it had no Blackhawks in any category. The leagues
+    /// without it get the core API's top 100 across the league, filtered to this team.
+    func fetchLeagueLeadersForTeam(teamId: String, teamAbbreviation: String, sport: Sport) async throws -> [LeagueLeaderCategory] {
+        if sport.hasSiteLeaders {
+            return try await fetchSiteLeaders(for: sport, teamId: teamId).map { category in
+                LeagueLeaderCategory(
+                    name: category.name,
+                    displayName: category.displayName,
+                    leaders: category.leaders.map { entry in
+                        LeagueLeaderCategory.LeagueLeaderEntry(
+                            rank: entry.rank,
+                            displayValue: entry.displayValue,
+                            athleteName: entry.athleteName,
+                            teamAbbreviation: ""   // all of them are on this team
+                        )
+                    },
+                    seasonLabel: category.seasonLabel
+                )
             }
-            return [2, 3, 1] // Try regular, then postseason, then spring training
         }
-        
-        // Other sports: Regular season (2) first, then postseason (3)
-        return [2, 3, 1]
-    }
-    
-    /// Fetch league leaders filtered to players on a specific team.
-    /// Fetches the top 100 across the league, then filters to players on this team.
-    /// limit=100 covers virtually all qualified hitters/pitchers (MLB has ~60-80
-    /// qualifiers per batting stat), so every team player with qualifying stats appears.
-    /// Categories where this team has no players in the top 100 are dropped.
-    func fetchLeagueLeadersForTeam(teamAbbreviation: String, sport: Sport) async throws -> [LeagueLeaderCategory] {
-        let all = try await fetchLeagueLeaders(for: sport, limit: 100)
+        let all = try await fetchCoreLeaders(for: sport, limit: 100, onlyTeam: teamAbbreviation)
         return all.compactMap { category in
             let teamEntries = category.leaders
                 .filter { $0.teamAbbreviation == teamAbbreviation }
@@ -807,32 +1105,66 @@ class ESPNAPIService {
         }
     }
 
-    /// Returns this team's rank in each stat category using the Core API
-    /// per-team statistics endpoint, which provides real team-aggregate values
-    /// (e.g. team ERA, team batting average) along with ESPN's rank display string.
+    /// Returns this team's rank in each stat category. The Core API's per-team statistics say which
+    /// stats a team has and their values, for the regular season, this year's or the most recent:
+    /// never a preseason, which the app has nowhere to say. Soccer files its whole league season
+    /// under type 1. The ranks come from the league's `byteam` list where it has the stat, so
+    /// they're what the league list says.
     func fetchTeamStatRankings(teamId: String, sport: Sport) async throws -> [TeamStatRanking] {
         let league = sport.apiPath.components(separatedBy: "/").last ?? sport.rawValue.lowercased()
         let sportType = sport.apiPath.components(separatedBy: "/").first ?? "unknown"
         let seasonYear = sport.currentSeasonYear
-        let seasonTypes = getSeasonTypes(for: sport)
+        let seasonType = sport.isSoccer ? 1 : 2
+
+        // The same list the league list has, so the second of them to ask for gets it from the
+        // store. Not having it only costs the ranks that come from it, unless the network has
+        // stalled: the core API wouldn't get through either, and that's one timeout before Retry
+        // appears rather than two.
+        var leagueStats: TeamStatsByTeamResponse?
+        if sport.hasTeamStats {
+            do {
+                leagueStats = try await teamStatsStore.payload(for: sport)
+            } catch let error as URLError {
+                throw error
+            } catch {
+                leagueStats = nil
+            }
+        }
 
         for season in [seasonYear, seasonYear - 1] {
-            for seasonType in seasonTypes {
-                let urlString = "\(coreAPIBaseURL)/\(sportType)/leagues/\(league)/seasons/\(season)/types/\(seasonType)/teams/\(teamId)/statistics"
-                guard let url = URL(string: urlString) else { continue }
-                do {
-                    let (data, response) = try await session.data(from: url)
-                    guard let http = response as? HTTPURLResponse, http.statusCode == 200 else { continue }
-                    let apiResponse = try JSONDecoder().decode(CoreTeamStatisticsResponse.self, from: data)
-                    let rankings = buildTeamStatRankings(from: apiResponse)
-                    if !rankings.isEmpty { return rankings }
-                } catch { continue }
+            let urlString = "\(coreAPIBaseURL)/\(sportType)/leagues/\(league)/seasons/\(season)/types/\(seasonType)/teams/\(teamId)/statistics"
+            guard let url = URL(string: urlString) else { continue }
+            do {
+                let (data, response) = try await session.data(from: url)
+                guard let http = response as? HTTPURLResponse, http.statusCode == 200 else { continue }
+                let apiResponse = try JSONDecoder().decode(CoreTeamStatisticsResponse.self, from: data)
+                // Only if it's the same numbers, or the rank would be for others. A past college
+                // football list is type 3 through the bowls, where these are type 2: Alabama's
+                // 3,551 passing yards in 2025 are 11th, and that list has 3,953, 6th.
+                let sameSeason = leagueStats.flatMap { $0.requestedSeason?.year == season && $0.isRegularSeason ? $0 : nil }
+                let rankings = buildTeamStatRankings(
+                    from: apiResponse,
+                    teamId: teamId,
+                    sport: sport,
+                    league: sameSeason.map { LeagueTeamStats($0, sport: sport) }
+                )
+                if !rankings.isEmpty { return rankings }
+            } catch let error as URLError {
+                // Another season won't get through a stalled network either, 30 seconds a try.
+                throw error
+            } catch {
+                continue
             }
         }
         return []
     }
 
-    private func buildTeamStatRankings(from response: CoreTeamStatisticsResponse) -> [TeamStatRanking] {
+    private func buildTeamStatRankings(
+        from response: CoreTeamStatisticsResponse,
+        teamId: String,
+        sport: Sport,
+        league: LeagueTeamStats?
+    ) -> [TeamStatRanking] {
         // Stat names that are technical, trivial, or duplicate — hide from the user.
         let excluded: Set<String> = [
             "gamesPlayed", "teamGamesPlayed", "isQualified", "isQualifiedSteals",
@@ -849,6 +1181,16 @@ class ESPNAPIService {
             "runSupportAvg", "groundToFlyRatio", "pitchesPerInning",
         ]
 
+        // A rank past the end of the league is against cross-split or individual-player pools in
+        // ESPN's data, not team against team: NFL kick return fair catch percentage reads 200th.
+        // Without a list the team is on to say how many teams there are, 34 is more than any pro
+        // league has, and 400 more than Division I. Montana is in FCS, and college football's list
+        // is FBS, so its ranks aren't out of that list's size: ESPN has its tackles Tied-363rd.
+        let listed = league.flatMap { list in list.teams.contains { $0.team.id == teamId } ? list : nil }
+        let leagueSize = listed?.teams.count
+        let highestRank = leagueSize ?? (sport.isCollegeSport ? 400 : 34)
+        let outOf = sport.isCollegeSport ? leagueSize : nil
+
         var rankings: [TeamStatRanking] = []
         for category in response.splits?.categories ?? [] {
             guard let sectionName = category.displayName, sectionName != "Fielding" else { continue }
@@ -857,23 +1199,34 @@ class ESPNAPIService {
                     let name = stat.name, !excluded.contains(name),
                     let displayName = stat.displayName,
                     let displayValue = stat.displayValue,
-                    let rank = stat.rank,
-                    // Rank > 34 is impossible in any pro league (max 32 teams: NFL/NHL).
-                    // Stats with higher ranks are ranked against cross-split or
-                    // individual-player pools in ESPN's data — not team-vs-team.
-                    rank <= 34,
-                    let rankDisplay = stat.rankDisplayValue,
-                    !rankDisplay.isEmpty, rankDisplay != "?",
-                    displayValue != "0", displayValue != "0.0",
-                    rankDisplay != "Tied-1st"
+                    displayValue != "0", displayValue != "0.0"
                 else { continue }
+
+                let rank: Int
+                let rankDisplay: String
+                if let section = category.name,
+                   let standing = listed?.standing(ofTeam: teamId, section: section, stat: name) {
+                    rank = standing.rank
+                    rankDisplay = TeamStatRanks.display(rank: rank, tied: standing.tied, outOf: outOf)
+                } else {
+                    // A stat only this feed has, with ESPN's rank for it. Its Tied-1st is usually
+                    // everyone level on nothing.
+                    guard
+                        let espnRank = stat.rank, espnRank <= highestRank,
+                        let espnDisplay = stat.rankDisplayValue,
+                        !espnDisplay.isEmpty, espnDisplay != "?", espnDisplay != "Tied-1st"
+                    else { continue }
+                    rank = espnRank
+                    rankDisplay = outOf.map { "\(espnDisplay) of \($0)" } ?? espnDisplay
+                }
 
                 rankings.append(TeamStatRanking(
                     sectionName: sectionName,
                     categoryDisplayName: displayName,
                     teamValue: displayValue,
                     leagueRank: rank,
-                    rankDisplay: rankDisplay
+                    rankDisplay: rankDisplay,
+                    leagueSize: leagueSize
                 ))
             }
         }
@@ -895,7 +1248,12 @@ class ESPNAPIService {
         guard !specs.isEmpty else { return [] }
 
         let response = try await teamStatsStore.payload(for: sport)
-        return buildTeamLeaderCategories(from: response, specs: specs, limit: limit)
+        return buildTeamLeaderCategories(
+            from: LeagueTeamStats(response, sport: sport),
+            specs: specs,
+            limit: limit,
+            seasonLabel: response.seasonLabel
+        )
     }
 
     // MARK: - Stat Definitions
@@ -931,61 +1289,39 @@ class ESPNAPIService {
         "FreeThrowPct":         "freeThrowPct",
         "3PointPct":            "threePointFieldGoalPct",
         "3PointsMadePerGame":   "avgThreePointFieldGoalsMade",
+        "3PointMadePerGame":    "avgThreePointFieldGoalsMade",
+        "defensiveReboundsPerGame": "avgDefensiveRebounds",
+        "offensiveReboundsPerGame": "avgOffensiveRebounds",
         "quarterbackRating":    "QBRating",
     ]
 
     private func buildTeamLeaderCategories(
-        from response: TeamStatsByTeamResponse,
+        from league: LeagueTeamStats,
         specs: [TeamStatSpec],
-        limit: Int
+        limit: Int,
+        seasonLabel: String?
     ) -> [LeagueLeaderCategory] {
-        let teams = qualifiedTeams(in: response)
-        guard !teams.isEmpty else { return [] }
-
-        // Stat name → column index, taken from the first metadata copy of each
-        // category that actually carries the names array.
-        var columns: [String: [String: Int]] = [:]
-        for meta in response.categories ?? [] {
-            guard let section = meta.name, let names = meta.names, !names.isEmpty,
-                  columns[section] == nil else { continue }
-            var index: [String: Int] = [:]
-            // ESPN repeats a few stat keys within a category (NFL rushing lists
-            // rushingYards twice); the first occurrence is the one to use.
-            for (i, name) in names.enumerated() where index[name] == nil {
-                index[name] = i
-            }
-            columns[section] = index
-        }
+        guard !league.teams.isEmpty else { return [] }
 
         return specs.compactMap { spec -> LeagueLeaderCategory? in
-            guard let index = columns[spec.section]?[spec.stat] else { return nil }
-            let wantedSplit = spec.split == .opponent ? "900" : "0"
+            let ranked = league.ranked(
+                section: spec.section,
+                stat: spec.stat,
+                opponent: spec.split == .opponent,
+                higherIsBetter: spec.higherIsBetter
+            )
+            guard !ranked.isEmpty else { return nil }
 
-            var rows: [(value: Double, display: String, team: TeamStatsByTeamResponse.TeamStats.TeamInfo)] = []
-            for team in teams {
-                guard let category = (team.categories ?? []).first(where: {
-                    $0.name == spec.section && ($0.splitId ?? "0") == wantedSplit
-                }) else { continue }
-                guard let value = category.values?[safe: index] ?? nil,
-                      let display = category.totals?[safe: index] ?? nil,
-                      !display.isEmpty, display != "-"
-                else { continue }
-                rows.append((value, display, team.team))
-            }
-            guard !rows.isEmpty else { return nil }
-
-            rows.sort { spec.higherIsBetter ? $0.value > $1.value : $0.value < $1.value }
-
-            let leaders = rows.prefix(limit).enumerated().map { index, row in
+            let leaders = ranked.prefix(limit).map { entry in
                 LeagueLeaderCategory.LeagueLeaderEntry(
-                    rank: index + 1,
-                    displayValue: row.display,
-                    athleteName: row.team.abbreviation ?? row.team.displayName ?? "—",
+                    rank: entry.rank,
+                    displayValue: entry.row.display,
+                    athleteName: entry.row.team.abbreviation ?? entry.row.team.displayName ?? "—",
                     teamAbbreviation: "",
                     teamNames: LeagueLeaderCategory.TeamNameSet(
-                        displayName: row.team.displayName ?? row.team.abbreviation ?? "—",
-                        name: row.team.name ?? row.team.displayName ?? "",
-                        abbreviation: row.team.abbreviation ?? ""
+                        displayName: entry.row.team.displayName ?? entry.row.team.abbreviation ?? "—",
+                        name: entry.row.team.name ?? entry.row.team.displayName ?? "",
+                        abbreviation: entry.row.team.abbreviation ?? ""
                     )
                 )
             }
@@ -993,42 +1329,10 @@ class ESPNAPIService {
                 name: spec.key,
                 displayName: spec.title,
                 leaders: Array(leaders),
-                isTeamCategory: true
+                isTeamCategory: true,
+                seasonLabel: seasonLabel
             )
         }
-    }
-
-    /// Drops teams that have played far fewer games than the rest of the league.
-    ///
-    /// ESPN's college feeds include every team that faced a Division I opponent,
-    /// so a Division II school with a single game can top a per-game category.
-    /// Teams below half the league-leading games-played count are excluded.
-    private func qualifiedTeams(in response: TeamStatsByTeamResponse) -> [TeamStatsByTeamResponse.TeamStats] {
-        let teams = response.teams ?? []
-
-        // Locate the games-played column. Its category and key vary by sport
-        // (baseball "batting"/"gamesPlayed", hockey "general"/"games").
-        var gamesColumn: (section: String, index: Int)?
-        for meta in response.categories ?? [] {
-            guard let section = meta.name, let names = meta.names else { continue }
-            if let index = names.firstIndex(where: { $0 == "gamesPlayed" || $0 == "games" }) {
-                gamesColumn = (section, index)
-                break
-            }
-        }
-        guard let gamesColumn else { return teams }
-
-        func gamesPlayed(_ team: TeamStatsByTeamResponse.TeamStats) -> Double? {
-            guard let category = (team.categories ?? []).first(where: {
-                $0.name == gamesColumn.section && ($0.splitId ?? "0") == "0"
-            }) else { return nil }
-            return category.values?[safe: gamesColumn.index] ?? nil
-        }
-
-        let played = teams.compactMap(gamesPlayed)
-        guard let mostGames = played.max(), mostGames > 0 else { return teams }
-        let threshold = mostGames / 2
-        return teams.filter { (gamesPlayed($0) ?? mostGames) >= threshold }
     }
 
     private func fetchLeadersForSeason(
@@ -1036,7 +1340,8 @@ class ESPNAPIService {
         league: String,
         season: Int,
         seasonType: Int,
-        limit: Int = 50
+        limit: Int = 50,
+        onlyTeam: String? = nil
     ) async throws -> [LeagueLeaderCategory] {
         let urlString = "\(coreAPIBaseURL)/\(sportType)/leagues/\(league)/seasons/\(season)/types/\(seasonType)/leaders?limit=\(limit)"
         guard let url = URL(string: urlString) else { throw APIError.invalidURL }
@@ -1052,55 +1357,58 @@ class ESPNAPIService {
         guard http.statusCode == 200 else { throw APIError.invalidResponse }
         
         let apiResponse = try JSONDecoder().decode(CoreLeadersAPIResponse.self, from: data)
-        let categories = apiResponse.categories ?? []
-        
-        // Collect all unique $ref URLs across all categories so we can resolve
-        // them all in parallel (one TaskGroup), not sequentially per leader.
-        // Sequential resolution for MLB (20 cats × 10 leaders × 2 refs = 400 calls)
-        // would exceed the 30-second URLSession timeout. Parallel cuts this to ~1-2s.
-        // NOTE: ESPN Core API $refs use http://, which iOS ATS blocks. Upgrade to https://.
-        var athleteRefs = Set<String>()
-        var teamRefs    = Set<String>()
-        for category in categories {
-            for leader in category.leaders ?? [] {
-                if let ref = leader.athlete?.ref { athleteRefs.insert(secureURL(ref)) }
-                if let ref = leader.team?.ref    { teamRefs.insert(secureURL(ref)) }
-            }
+        // A rating with nobody rated isn't a list of leaders, such as the WNBA's Player
+        // Efficiency Rating, where they all read 0.0. Windows leaves these out too.
+        let categories = (apiResponse.categories ?? []).filter { category in
+            (category.leaders ?? []).contains { ($0.value ?? 0) != 0 }
         }
         
-        // Copy to immutable constants before concurrent use (Swift 6: var capture in async let is an error)
-        let frozenAthleteRefs = athleteRefs
-        let frozenTeamRefs    = teamRefs
-        
-        // Resolve all unique refs in parallel
-        async let athleteTask = resolveRefs(frozenAthleteRefs, as: CoreAthleteResponse.self)
-        async let teamTask    = resolveRefs(frozenTeamRefs,    as: CoreTeamResponse.self)
-        let (athletes, teams) = await (athleteTask, teamTask)
-        
+        // Collect all unique $ref URLs across all categories, so each is only asked for once.
+        // The teams come first, since `onlyTeam` needs them to tell which athletes matter.
+        // NOTE: ESPN Core API $refs use http://, which iOS ATS blocks. Upgrade to https://.
+        var teamRefs = Set<String>()
+        for category in categories {
+            for leader in category.leaders ?? [] {
+                if let ref = leader.team?.ref { teamRefs.insert(secureURL(ref)) }
+            }
+        }
+        let stallWatch = StallWatch()
+        let teams = await resolveRefs(teamRefs, as: CoreTeamResponse.self, stallWatch: stallWatch)
+
+        var athleteRefs = Set<String>()
+        for category in categories {
+            for leader in category.leaders ?? [] {
+                guard let ref = leader.athlete?.ref else { continue }
+                if let onlyTeam, leader.team?.ref.flatMap({ teams[secureURL($0)]?.abbreviation }) != onlyTeam {
+                    continue
+                }
+                athleteRefs.insert(secureURL(ref))
+            }
+        }
+        let athletes = await resolveRefs(athleteRefs, as: CoreAthleteResponse.self, stallWatch: stallWatch)
+
         // Build results using the resolved caches
         return categories.map { category in
             let leaders = (category.leaders ?? []).enumerated().map { index, leader -> LeagueLeaderCategory.LeagueLeaderEntry in
                 let entityTeam = leader.team?.ref.flatMap { teams[secureURL($0)]?.abbreviation } ?? ""
                 let entityName: String
-                if let ref = leader.athlete?.ref, let ath = athletes[secureURL(ref)] {
-                    entityName = ath.displayName ?? "—"
+                if let ref = leader.athlete?.ref {
+                    // Not the team's name if this lookup failed: that reads as if a team led.
+                    entityName = athletes[secureURL(ref)]?.displayName ?? "—"
                 } else if let ref = leader.team?.ref, let team = teams[secureURL(ref)] {
                     entityName = team.displayName ?? "—"
                 } else {
                     entityName = "—"
                 }
 
-                // MLB displayValue is a full stats-line (e.g. "9-17, 4 HR, 2B, 6 RBI...").
-                // Use the numeric value field with smart formatting instead.
-                let statDisplay: String
-                if let v = leader.value {
-                    statDisplay = formatLeaderStatValue(v)
-                } else {
-                    statDisplay = leader.displayValue ?? "-"
-                }
+                let statDisplay = Self.leaderDisplayValue(
+                    category: category.name,
+                    value: leader.value,
+                    displayValue: leader.displayValue
+                )
                 return LeagueLeaderCategory.LeagueLeaderEntry(
                     rank: index + 1,
-                    displayValue: statDisplay,
+                    displayValue: statDisplay.isEmpty ? "-" : statDisplay,
                     athleteName: entityName,
                     teamAbbreviation: entityTeam
                 )
@@ -1118,50 +1426,144 @@ class ESPNAPIService {
         ref.hasPrefix("http://") ? "https://" + ref.dropFirst(7) : ref
     }
 
-    /// Format a raw numeric stat value for display in the leaders table.
-    ///  - Values < 1.0  → 3-decimal batting-average style  (e.g. 0.331 → ".331")
-    ///  - Whole numbers  → integer counting stat            (e.g. 4.0  → "4")
-    ///  - Decimal ≥ 1   → 2-decimal rate stat              (e.g. 2.75 → "2.75")
-    private func formatLeaderStatValue(_ value: Double) -> String {
-        if value < 1.0 {
-            // batting average / OBP / SLG / OPS-under-1 style
-            let s = String(format: "%.3f", value)
-            return s.hasPrefix("0.") ? String(s.dropFirst()) : s  // ".333" not "0.333"
-        } else if value == floor(value) {
-            // counting stat: HR, RBI, K, SB, W, etc.
-            return "\(Int(value))"
-        } else {
-            // rate stat ≥ 1: ERA, WHIP, etc.
-            return String(format: "%.2f", value)
+    /// How a league leader's number reads. ESPN's displayValue is the right text for most
+    /// stats, 38.3 for 38.2857, and these are where it isn't. On Windows this is
+    /// game_labels.leader_display_value, and tests/fixtures/leader_display_grid.json holds both.
+    ///  - Baseball's is a stat line ("179-567, 42 HR, 3B, ..."), for every category.
+    ///  - A fraction gets rounded away: 7.5 sacks reads 8, a 137.3 quarterback rating reads 137.
+    ///  - Three-point and college free throw percentages are fractions: 0.6154 reads 0.6. A save
+    ///    percentage is one too, but reads as one: .945.
+    ///  - Season totals read as if they were averages: 268 points reads 268.0.
+    static func leaderDisplayValue(category: String?, value: Double?, displayValue: String?) -> String {
+        let display = (displayValue ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+        guard let number = value else { return display }
+        let name = (category ?? "").lowercased()
+        let isWhole = number == number.rounded()
+
+        let threePlaces = ["avg", "ops", "onbasepct", "slugavg", "opponentavg", "savepct"].contains(name)
+
+        guard display.range(of: #"^[+-]?[\d,]*\.?\d+$"#, options: .regularExpression) != nil else {
+            if threePlaces {
+                let text = String(format: "%.3f", number)
+                return text.hasPrefix("0.") ? String(text.dropFirst()) : text
+            }
+            if isWhole && !["era", "whip"].contains(name) {
+                return String(Int(number))
+            }
+            return String(format: "%.2f", number)
+        }
+
+        if ["points", "doubledouble"].contains(name) && isWhole {
+            return String(Int(number))
+        }
+        if name.contains("pct"), !threePlaces, (0...1).contains(number),
+           let shown = Double(display.replacingOccurrences(of: ",", with: "")), shown <= 1 {
+            return String(format: "%.1f", number * 100)
+        }
+        if !display.contains(".") && !isWhole {
+            return String(format: "%.1f", number)
+        }
+        return display
+    }
+
+    /// Runs `operation` on every item, at most `limit` at a time, in no particular order.
+    /// One team's stats tab can have a thousand references. Sent all at once, the wait for a
+    /// free connection counts against the request's timeout.
+    static func concurrentMap<Item: Sendable, Output: Sendable>(
+        _ items: [Item],
+        limit: Int,
+        _ operation: @escaping @Sendable (Item) async -> Output
+    ) async -> [Output] {
+        await withTaskGroup(of: Output.self) { group in
+            var remaining = items[...]
+            for _ in 0..<min(max(limit, 1), items.count) {
+                let item = remaining.removeFirst()
+                group.addTask { await operation(item) }
+            }
+            var outputs = [Output]()
+            outputs.reserveCapacity(items.count)
+            for await output in group {
+                outputs.append(output)
+                if let next = remaining.popFirst() {
+                    group.addTask { await operation(next) }
+                }
+            }
+            return outputs
         }
     }
 
-    /// Resolve a set of Core API $ref URLs in parallel. Returns a dictionary
-    /// mapping each original ref URL string to the decoded response object.
-    /// Failed resolutions are silently dropped rather than failing the whole batch.
+    /// The most Core API references asked for at once. 125 took about 4 seconds at 8.
+    static let maxConcurrentRefRequests = 8
+
+    /// How many connection failures in a row, with no answer between them, mean the network
+    /// has stalled. Two rounds of `maxConcurrentRefRequests`, so about a minute at 30 seconds
+    /// each, rather than 18 minutes of asking for every name in the league.
+    static let refFailuresBeforeGivingUp = maxConcurrentRefRequests * 2
+
+    /// Counts connection failures in a row across one list's references. Past the limit, the
+    /// rest aren't asked for, and those rows read "—".
+    private actor StallWatch {
+        private var failuresInARow = 0
+
+        var hasStalled: Bool {
+            failuresInARow >= ESPNAPIService.refFailuresBeforeGivingUp
+        }
+
+        func answered() {
+            failuresInARow = 0
+        }
+
+        func failed() {
+            failuresInARow += 1
+        }
+    }
+
+    /// Resolve a set of Core API $ref URLs, some at a time. Returns a dictionary mapping each
+    /// original ref URL string to the decoded response object. One that still fails after
+    /// `fetchRef`'s retry is left out rather than failing the whole batch, and its row reads "—".
     private func resolveRefs<T: Decodable & Sendable>(
         _ refs: Set<String>,
-        as type: T.Type
+        as type: T.Type,
+        stallWatch: StallWatch
     ) async -> [String: T] {
+        let results = await Self.concurrentMap(Array(refs), limit: Self.maxConcurrentRefRequests) { ref in
+            (ref, await self.fetchRef(ref, as: type, stallWatch: stallWatch))
+        }
         var cache = [String: T]()
-        await withTaskGroup(of: (String, T?).self) { group in
-            for ref in refs {
-                group.addTask {
-                    guard let url = URL(string: ref) else { return (ref, nil) }
-                    let result = try? await {
-                        let (data, response) = try await self.session.data(from: url)
-                        guard let http = response as? HTTPURLResponse,
-                              http.statusCode == 200 else { return nil as T? }
-                        return try? JSONDecoder().decode(T.self, from: data)
-                    }()
-                    return (ref, result)
-                }
-            }
-            for await (ref, result) in group {
-                if let result { cache[ref] = result }
-            }
+        for (ref, result) in results {
+            if let result { cache[ref] = result }
         }
         return cache
+    }
+
+    /// One Core API reference, with a second try if ESPN or the connection fails: a name
+    /// missing from a row of leaders is worth one more request. A 404 won't change, so it's
+    /// final. So is a timeout, which has already taken 30 seconds of someone's wait.
+    private func fetchRef<T: Decodable>(_ ref: String, as type: T.Type, stallWatch: StallWatch) async -> T? {
+        guard let url = URL(string: ref) else { return nil }
+        for attempt in 0..<2 {
+            guard await !stallWatch.hasStalled else { return nil }
+            if attempt > 0 {
+                try? await Task.sleep(nanoseconds: 300_000_000)
+            }
+            do {
+                let (data, response) = try await session.data(from: url)
+                await stallWatch.answered()
+                guard let status = (response as? HTTPURLResponse)?.statusCode else { continue }
+                if status == 200 {
+                    return try? JSONDecoder().decode(T.self, from: data)
+                }
+                if status < 500 && status != 429 {
+                    return nil
+                }
+            } catch {
+                await stallWatch.failed()
+                if (error as? URLError)?.code == .timedOut {
+                    return nil
+                }
+            }
+        }
+        return nil
     }
 
     // MARK: - Fetch Rankings / Polls (Phase 6)
@@ -1355,9 +1757,24 @@ class ESPNAPIService {
         return try JSONDecoder().decode(TransactionResponse.self, from: data)
     }
 
-    /// Fetches all teams for a sport, sorted by display name.
+    /// ESPN's team list stops at 50 unless told otherwise, and college leagues run past that.
+    func teamsURLString(for sport: Sport) -> String {
+        "\(baseURL)/\(sport.apiPath)/teams?limit=1000"
+    }
+
+    /// Fetches all teams for a sport, in ESPN's order.
+    ///
+    /// College football's `/teams` is every team ESPN knows, 762 across all divisions, with
+    /// nothing on a team to say which and no parameter to narrow it. Its standings are the one
+    /// request that lists just the teams in the coverage setting, so if they fail this throws
+    /// rather than listing Division III to someone who chose FBS only.
     func fetchTeamsForSport(sport: Sport) async throws -> [TransactionTeam] {
-        let urlString = "\(baseURL)/\(sport.apiPath)/teams"
+        if sport == .ncaaf {
+            let teams = try await fetchConferencesWithTeams(for: sport).flatMap(\.teams)
+            guard !teams.isEmpty else { throw APIError.invalidResponse }
+            return teams
+        }
+        let urlString = teamsURLString(for: sport)
         guard let url = URL(string: urlString) else { throw APIError.invalidURL }
         let (data, response) = try await session.data(from: url)
         guard let http = response as? HTTPURLResponse, http.statusCode == 200 else {
@@ -1372,58 +1789,112 @@ class ESPNAPIService {
     /// Returns an empty array if the sport has no usable conference structure
     /// (caller should fall back to fetchTeamsForSport).
     func fetchConferencesWithTeams(for sport: Sport) async throws -> [ConferenceGroup] {
-        let urlString = "\(standingsBaseURL)/\(sport.apiPath)/standings"
+        let urlString = standingsURLString(for: sport)
         guard let url = URL(string: urlString) else { throw APIError.invalidURL }
         let (data, response) = try await session.data(from: url)
         guard let http = response as? HTTPURLResponse, http.statusCode == 200 else {
             throw APIError.invalidResponse
         }
-        let decoded = try JSONDecoder().decode(ConferencesAPIResponse.self, from: data)
+        let groups = try JSONDecoder().decode(ConferencesAPIResponse.self, from: data).conferenceGroups
 
-        // Build a helper to convert a raw entry's team into TransactionTeam
-        func toTeam(_ t: ConferencesAPIResponse.APIConference.APIStandings.APIEntry.APITeam) -> TransactionTeam {
-            let logos = t.logos?.map { logo in
-                TransactionTeamLogo(href: logo.href, width: nil, height: nil, rel: logo.rel)
-            }
-            return TransactionTeam(
-                id: t.id,
-                location: t.location,
-                name: t.name,
-                abbreviation: t.abbreviation,
-                displayName: t.displayName,
-                color: t.color,
-                logos: logos
-            )
-        }
-
-        // Extract teams from a conference node, flattening sub-divisions (e.g. Sun Belt)
-        func teamsFrom(_ conf: ConferencesAPIResponse.APIConference) -> [TransactionTeam] {
-            var teams = conf.standings?.entries.map { toTeam($0.team) } ?? []
-            for sub in conf.children ?? [] {
-                teams += sub.standings?.entries.map { toTeam($0.team) } ?? []
-            }
-            return teams.sorted { $0.displayName < $1.displayName }
-        }
-
-        // Top-level conference children → one ConferenceGroup each
-        if let conferences = decoded.children, !conferences.isEmpty {
-            let groups = conferences.compactMap { conf -> ConferenceGroup? in
-                let teams = teamsFrom(conf)
-                guard !teams.isEmpty else { return nil }
-                return ConferenceGroup(id: conf.id ?? conf.name, name: conf.name, teams: teams)
-            }
-            // Only return conference groups if we have a meaningful number of teams.
-            // Sports like NCAAH have conference structure but near-empty standings data —
-            // in that case return [] so the caller falls back to fetchTeamsForSport.
-            let totalTeams = groups.reduce(0) { $0 + $1.teams.count }
-            if totalTeams >= 20 { return groups }
-        }
-
-        // No usable conference data — caller will fall back to a flat team list.
-        return []
+        // Only return conference groups if we have a meaningful number of teams.
+        // Sports like NCAAH have conference structure but near-empty standings data —
+        // in that case return [] so the caller falls back to fetchTeamsForSport.
+        let totalTeams = groups.reduce(0) { $0 + $1.teams.count }
+        return totalTeams >= 20 ? groups : []
     }
 
     // MARK: - Team Hub: Team Info
+
+    /// A team page's record and standing, from its regular season, as Standings has them.
+    ///
+    /// `/teams/{id}` with no season answers with whatever the league is doing now. In the WNBA
+    /// playoffs that read the Lynx, 33-11 and first, as 0-2 and 8th, and the teams left out as
+    /// 0-0. In the MLB playoffs the record holds and the standing doesn't. College hockey's has
+    /// no record at all, any time of year.
+    ///
+    /// Only these two come from the season asked for. Its `nextEvent` is wrong: the Nets' game
+    /// tomorrow reads as one in January, and in MLB's off-season there isn't one.
+    ///
+    /// If the regular season can't be had, the answer with no season stands only when the league
+    /// is in its regular season, when it's the same thing. Otherwise no record beats a wrong one.
+    /// A cancelled request throws, so the next call asks again instead of keeping a page with
+    /// no record. Soccer's team page is already the league season, and has no season type 2,
+    /// and that goes for the World Cups, which `isSoccer` leaves out.
+    /// `get_team_info` on Windows has the same rules.
+    ///
+    /// `unavailable` says a failure cost the page its record, which a league with no record
+    /// to show doesn't. `season` is nil if there was no asking, or no answer.
+    private func teamHubRecordAndStanding(
+        teamId: String,
+        sport: Sport,
+        team: TeamInfoAPIResponse.TeamInfoTeamData
+    ) async throws -> (record: TeamInfoAPIResponse.TeamInfoRecord?, standing: String?,
+                       unavailable: Bool, season: CurrentSeasonResponse?) {
+        if sport.usesSoccerSchedule { return (team.record, team.standingSummary, false, nil) }
+        let season: CurrentSeasonResponse
+        do {
+            season = try await fetchCurrentSeason(sport: sport)
+        } catch let error where error.isCancellation {
+            throw error
+        } catch {
+            return (nil, nil, true, nil)
+        }
+        var regular: TeamInfoAPIResponse.TeamInfoTeamData?
+        var failed = false
+        do {
+            regular = try await fetchRegularSeasonTeam(teamId: teamId, sport: sport, year: season.regularSeasonYear)
+        } catch let error where error.isCancellation {
+            throw error
+        } catch {
+            failed = !error.isNothingThere
+        }
+        let fallback = season.isRegularSeason ? team : nil
+        let record = regular?.record?.items?.isEmpty == false ? regular?.record : fallback?.record
+        return (record, regular?.standingSummary ?? fallback?.standingSummary,
+                failed && record?.items?.isEmpty != false, season)
+    }
+
+    /// A standing as a team page says it. College hockey says "1st" of every team, whatever its
+    /// record, and of nothing. The NBA's and WNBA's conferences aren't divisions.
+    private func shownStanding(_ standing: String?) -> String? {
+        guard let standing, standing.contains(" in ") else { return nil }
+        return standing.replacingOccurrences(of: " Conference Division", with: " Conference")
+    }
+
+    /// The team page itself has the usual 30 seconds, and the page waits for these two as well,
+    /// so a stalled ESPN doesn't get to hold it up for much longer. Windows does the same.
+    private static let teamRecordRequestTimeout: TimeInterval = 8
+
+    private func fetchCurrentSeason(sport: Sport) async throws -> CurrentSeasonResponse {
+        let path = sport.apiPath.components(separatedBy: "/")
+        guard path.count == 2,
+              let url = URL(string: "\(coreAPIBaseURL)/\(path[0])/leagues/\(path[1])/season") else {
+            throw APIError.invalidURL
+        }
+        let request = URLRequest(url: url, timeoutInterval: Self.teamRecordRequestTimeout)
+        let (data, response) = try await session.data(for: request)
+        guard let http = response as? HTTPURLResponse, http.statusCode == 200 else {
+            throw APIError.invalidResponse
+        }
+        return try JSONDecoder().decode(CurrentSeasonResponse.self, from: data)
+    }
+
+    private func fetchRegularSeasonTeam(
+        teamId: String,
+        sport: Sport,
+        year: Int
+    ) async throws -> TeamInfoAPIResponse.TeamInfoTeamData {
+        let urlString = "\(baseURL)/\(sport.apiPath)/teams/\(teamId)?season=\(year)&seasontype=2"
+        guard let url = URL(string: urlString) else { throw APIError.invalidURL }
+        let request = URLRequest(url: url, timeoutInterval: Self.teamRecordRequestTimeout)
+        let (data, response) = try await session.data(for: request)
+        guard let http = response as? HTTPURLResponse else { throw APIError.invalidResponse }
+        // 400 and 404 say ESPN has nothing there, and anything else is a failure.
+        if http.statusCode == 400 || http.statusCode == 404 { throw APIError.invalidResponse }
+        guard http.statusCode == 200 else { throw APIError.unexpectedStatus(http.statusCode) }
+        return try JSONDecoder().decode(TeamInfoAPIResponse.self, from: data).team
+    }
 
     /// Fetches team detail (colors, record, venue, next game, standing summary).
     func fetchTeamHubInfo(teamId: String, sport: Sport) async throws -> TeamHubTeamInfo {
@@ -1435,6 +1906,7 @@ class ESPNAPIService {
         }
         let api = try JSONDecoder().decode(TeamInfoAPIResponse.self, from: data)
         let t = api.team
+        let source = try await teamHubRecordAndStanding(teamId: teamId, sport: sport, team: t)
 
         // Primary logo: prefer rel "default", fall back to first
         let logoURL: URL? = t.logos?
@@ -1443,15 +1915,36 @@ class ESPNAPIService {
             ?? t.logos?.first.flatMap { URL(string: $0.href) }
 
         // Record items
-        let items = t.record?.items ?? []
+        let items = source.record?.items ?? []
         func recordSummary(matching description: String) -> String? {
             items.first(where: { $0.description?.lowercased().contains(description) == true })?.summary
         }
-        let overallRecord = recordSummary(matching: "overall")
-        let homeRecord = recordSummary(matching: "home")
-        let awayRecord = recordSummary(matching: "away") ?? recordSummary(matching: "road")
+        // NFL record items have no description; `type` is the reliable marker.
+        let totalItem = items.first(where: { $0.type == "total" })
+            ?? items.first(where: { $0.description?.lowercased().contains("overall") == true })
+        var overallRecord = totalItem?.summary
+        var homeRecord = recordSummary(matching: "home")
+        var awayRecord = recordSummary(matching: "away") ?? recordSummary(matching: "road")
+        if sport == .nhl, let totalItem {
+            // ESPN's NHL summary leaves out overtime losses, and it sends no home or
+            // road items, only the numbers for them inside the total.
+            func value(_ name: String) -> Int? {
+                (totalItem.stats?.first(where: { $0.name == name })?.value).map { Int($0) }
+            }
+            func record(_ prefix: String) -> String? {
+                guard let w = value("\(prefix)Wins"), let l = value("\(prefix)Losses") else { return nil }
+                return "\(w)-\(l)-\(value("\(prefix)OtLosses") ?? 0)"
+            }
+            if let summary = totalItem.summary, let ot = value("otLosses"),
+               summary.split(separator: "-").count == 2 {
+                overallRecord = "\(summary)-\(ot)"
+            }
+            homeRecord = homeRecord ?? record("home")
+            awayRecord = awayRecord ?? record("away")
+        }
 
-        // Venue from franchise
+        // Only the fallback: franchise.venue is years out of date for some teams and
+        // missing for others, so TeamHubViewModel.teamVenue prefers the team's home games.
         let venue = t.franchise?.venue
         let venueName = venue?.fullName
         let venueCity = venue?.address?.city
@@ -1459,19 +1952,28 @@ class ESPNAPIService {
         // Next game from nextEvent[0]
         var nextGame: TeamHubNextGame?
         if let ev = t.nextEvent?.first,
-           let comp = ev.competitions?.first {
+           let comp = ev.competitions?.first,
+           !comp.isCalledOff {
             // Identify which competitor is the opponent (not our team)
             let opponent = comp.competitors?.first(where: { $0.team?.id != teamId })
             let isHome = comp.competitors?.first(where: { $0.team?.id == teamId })?.homeAway == "home"
             if let opp = opponent?.team {
-                let parsedDate = parseESPNDate(ev.date)
-                if let parsedDate = parsedDate {
+                let timeIsKnown = (ev.timeValid ?? comp.timeValid) != false
+                let parsedDate = parseESPNDate(ev.date).map {
+                    timeIsKnown ? $0 : ScoreboardDay.localNoon(onUTCDayOf: $0)
+                }
+                // `nextEvent` can still be the game just played.
+                if let parsedDate = parsedDate,
+                   timeIsKnown ? parsedDate > Date()
+                               : parsedDate >= Calendar.current.startOfDay(for: Date()) {
                     nextGame = TeamHubNextGame(
                         gameId: ev.id,
                         date: parsedDate,
                         opponentDisplayName: opp.displayName ?? opp.abbreviation ?? "Opponent",
                         opponentAbbreviation: opp.abbreviation ?? "?",
-                        isHome: isHome
+                        isHome: isHome,
+                        timeIsKnown: timeIsKnown,
+                        isNeutralSite: comp.neutralSite ?? false
                     )
                 }
             }
@@ -1488,11 +1990,13 @@ class ESPNAPIService {
             overallRecord: overallRecord,
             homeRecord: homeRecord,
             awayRecord: awayRecord,
-            standingSummary: t.standingSummary,
+            standingSummary: shownStanding(source.standing),
             venueName: venueName,
             venueCity: venueCity,
             coachName: nil,  // populated by fetchTeamRoster
-            nextGame: nextGame
+            nextGame: nextGame,
+            recordUnavailable: source.unavailable,
+            recordIsRegularSeasonOnly: sport.isCollegeSport && source.season?.isRegularSeason == false
         )
     }
 
@@ -1574,33 +2078,45 @@ class ESPNAPIService {
 
     /// Fetches the current season schedule for a team. Returns games sorted by date.
     func fetchTeamHubSchedule(teamId: String, sport: Sport) async throws -> [ScheduleGame] {
-        // Season currently in progress — see Sport.seasonYear(containing:)
+        try await fetchCurrentOrLastSeason(teamId: teamId, sport: sport, lenient: false)
+    }
+
+    /// The same for a favorite's card, which only needs the last and next games: a request
+    /// failing for the preseason shouldn't cost it the regular season it does have.
+    func fetchFavoriteCardSchedule(teamId: String, sport: Sport) async throws -> [ScheduleGame] {
+        try await fetchCurrentOrLastSeason(teamId: teamId, sport: sport, lenient: true)
+    }
+
+    /// The season in progress, see Sport.seasonYear(containing:). ESPN publishes a new
+    /// season's schedule some weeks after the last one ends, so in that gap, the NFL in March
+    /// or the WNBA in January, it's empty and the season that just finished stands in.
+    /// A failure throws before it gets that far. TeamScheduleViewModel does the same.
+    private func fetchCurrentOrLastSeason(teamId: String, sport: Sport, lenient: Bool) async throws -> [ScheduleGame] {
         let season = sport.currentSeasonYear
-        let seasonTypes: [Int]
-        if sport == .mlb {
-            seasonTypes = [1, 2, 3]
-        } else if sport.isFootball {
-            seasonTypes = [1, 2, 3]
-        } else {
-            seasonTypes = [2, 3]
+        let games = try await fetchTeamSeasonSchedule(teamId: teamId, sport: sport, season: season, lenient: lenient)
+        if !games.isEmpty { return games }
+        return try await fetchTeamSeasonSchedule(teamId: teamId, sport: sport, season: season - 1, lenient: lenient)
+    }
+
+    /// The regular season of whichever season ESPN has for this team, by asking for none.
+    /// `currentSeasonYear` rolls forward before ESPN has that schedule. A soccer league's
+    /// season type is its own number, so 2 finds nothing there and the default is the
+    /// league season.
+    func regularSeasonScheduleURL(teamId: String, sport: Sport) -> String {
+        let query = sport.isSoccer ? "" : "?seasontype=2"
+        return "\(baseURL)/\(sport.apiPath)/teams/\(teamId)/schedule\(query)"
+    }
+
+    func fetchRegularSeasonSchedule(teamId: String, sport: Sport) async throws -> [ScheduleGame] {
+        guard let url = URL(string: regularSeasonScheduleURL(teamId: teamId, sport: sport)) else {
+            throw APIError.invalidURL
         }
-        var allGames: [ScheduleGame] = []
-        await withTaskGroup(of: [ScheduleGame].self) { group in
-            for st in seasonTypes {
-                group.addTask { [self] in
-                    (try? await self.fetchTeamSchedule(
-                        teamId: teamId,
-                        sport: sport,
-                        season: season,
-                        seasonType: st
-                    )) ?? []
-                }
-            }
-            for await result in group {
-                allGames.append(contentsOf: result)
-            }
+        let (data, response) = try await session.data(from: url)
+        guard let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode == 200 else {
+            throw APIError.invalidResponse
         }
-        return allGames.sorted { $0.date < $1.date }
+        return try JSONDecoder().decode(TeamScheduleAPIResponse.self, from: data)
+            .events.compactMap { $0.toScheduleGame() }
     }
 
     // MARK: - Multi-format date parser

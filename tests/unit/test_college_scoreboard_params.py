@@ -17,9 +17,9 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspa
 import espn_api  # noqa: E402
 
 
-def params(league_key, coverage=None):
-    with patch("settings.get", return_value="all_d1"):
-        return espn_api.college_scoreboard_params(league_key, coverage)
+def params(league_key, coverage="all_d1"):
+    with patch("settings.get", return_value=coverage):
+        return espn_api.college_scoreboard_params(league_key)
 
 
 @pytest.mark.parametrize("league_key", ["NFL", "NBA", "NHL", "MLB", "WNBA", "EPL", "PGA"])

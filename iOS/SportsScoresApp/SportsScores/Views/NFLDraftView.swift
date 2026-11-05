@@ -99,7 +99,7 @@ struct NFLDraftView: View {
                             .font(.caption)
                             .foregroundColor(.secondary)
                     }
-                    if let college = athlete.team?.shortDisplayName {
+                    if let college = athlete.team?.collegeName {
                         Text(college)
                             .font(.caption)
                             .foregroundColor(.secondary)
@@ -128,7 +128,7 @@ struct NFLDraftView: View {
         if pick.isCompleted, let athlete = pick.athlete {
             parts.append(athlete.displayName)
             if let pos = posAbbr { parts.append(pos) }
-            if let college = athlete.team?.shortDisplayName { parts.append(college) }
+            if let college = athlete.team?.collegeName { parts.append(college) }
         } else {
             parts.append("TBD")
         }

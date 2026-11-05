@@ -1,0 +1,31 @@
+{
+ "header": "NFL News",
+ "articles": [
+  {
+   "headline": "Stephen A.: Right now, the Bears look like the NFL's best team",
+   "description": "Stephen A.: Right now, the Bears look like the NFL's best team",
+   "published": "2026-11-03T15:50:13Z",
+   "type": "Media",
+   "links": {
+    "web": {
+     "href": "https://www.espn.com/video/clip/_/id/50369297/right-now-bears-look-nfl-best-team"
+    }
+   }
+  },
+  {
+   "headline": "NFL Power Rankings: Stacking all 32 teams for Week 9, plus best in-season trades",
+   "description": "How does every NFL team stack up heading into Week 9? We made our 1-32 list and picked the best trade deadline acquisitions of all time.",
+   "published": "2026-11-03T14:59:06Z",
+   "byline": "NFL Nation",
+   "type": "Story",
+   "links": {
+    "web": {
+     "href": "https://www.espn.com/nfl/story/_/id/50359434/nfl-power-rankings-week-9-teams-best-season-trades-deadline"
+    },
+    "mobile": {
+     "href": "http://m.espn.go.com/nfl/story?storyId=50359434"
+    }
+   }
+  }
+ ]
+}

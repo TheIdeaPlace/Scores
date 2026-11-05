@@ -53,7 +53,13 @@ jobs:
         run: pip install -r requirements.txt
 
       - name: Run tests
-        run: python -m pytest tests/unit/ -v
+        run: python -m coverage run -m pytest tests/unit/ tests/integration/test_play_audio_wiring.py -v
+
+      # A separate step because pwsh takes a step's exit code from its last command:
+      # on one line, a passing report would hide failing tests. The floor and the
+      # files it covers are in pyproject.toml.
+      - name: Data layer coverage floor
+        run: python -m coverage report
 
       # The tag is the single source of truth for the release version. version.py
       # is what the app reports and what the in-app updater compares against the

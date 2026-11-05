@@ -64,6 +64,9 @@ struct TeamStatsTabView: View {
         } else {
             ScrollView {
                 VStack(alignment: .leading, spacing: 24) {
+                    if let season = viewModel.playerCategories.first?.seasonLabel {
+                        SeasonLabel(text: season)
+                    }
                     ForEach(viewModel.playerCategories) { category in
                         LeaderCategorySection(category: category, viewMode: viewMode, sport: sport)
                     }
@@ -131,7 +134,7 @@ struct TeamStatsTabView: View {
                             .font(.subheadline.bold()).monospacedDigit()
                         Text(r.rankDisplay)
                             .font(.caption)
-                            .foregroundColor(rankColor(r.leagueRank))
+                            .foregroundColor(rankColor(r))
                     }
                     .padding(.horizontal, 12).padding(.vertical, 5)
                     .background(idx % 2 == 0 ? Color.clear : Color.secondary.opacity(0.05))
@@ -163,7 +166,7 @@ struct TeamStatsTabView: View {
                         .frame(width: 70, alignment: .trailing)
                     Text("Rank")
                         .font(.caption.bold()).foregroundColor(.secondary)
-                        .frame(width: 80, alignment: .trailing)
+                        .frame(width: 100, alignment: .trailing)
                 }
                 .padding(.horizontal, 12).padding(.vertical, 6)
                 .background(Color.secondary.opacity(0.15))
@@ -179,8 +182,8 @@ struct TeamStatsTabView: View {
                             .frame(width: 70, alignment: .trailing)
                         Text(r.rankDisplay)
                             .font(.subheadline)
-                            .foregroundColor(rankColor(r.leagueRank))
-                            .frame(width: 80, alignment: .trailing)
+                            .foregroundColor(rankColor(r))
+                            .frame(width: 100, alignment: .trailing)
                     }
                     .padding(.horizontal, 12).padding(.vertical, 7)
                     .background(idx % 2 == 0 ? Color.clear : Color.secondary.opacity(0.05))
@@ -217,7 +220,7 @@ struct TeamStatsTabView: View {
                             .font(.subheadline.bold()).monospacedDigit()
                         Text(r.rankDisplay)
                             .font(.caption)
-                            .foregroundColor(rankColor(r.leagueRank))
+                            .foregroundColor(rankColor(r))
                     }
                     .padding(.horizontal, 12).padding(.vertical, 5)
                     .background(idx % 2 == 0 ? Color.clear : Color.secondary.opacity(0.05))
@@ -232,10 +235,14 @@ struct TeamStatsTabView: View {
 
     // MARK: - Helpers
 
-    private func rankColor(_ rank: Int) -> Color {
-        if rank <= 8  { return .green }
-        if rank <= 20 { return .primary }
-        return Color(.systemRed)
+    /// Top quarter, middle, bottom, of the league's own size: 118th of 302 isn't red, and 8th of 15
+    /// isn't green. With no list to say how many teams there are, the rank says nothing either way.
+    private func rankColor(_ ranking: TeamStatRanking) -> Color {
+        switch TeamStatRanks.band(rank: ranking.leagueRank, of: ranking.leagueSize) {
+        case .top:              return .green
+        case .middle, .unknown: return .primary
+        case .bottom:           return Color(.systemRed)
+        }
     }
 
     private func emptyState(icon: String, text: String) -> some View {

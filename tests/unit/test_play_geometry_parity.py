@@ -2,9 +2,9 @@
 
 `tests/fixtures/play_geometry_grid.json` is the shared reference for the
 Windows and iOS mappings: PlayAudioGeometry.swift is meant to give the same
-note, length, balance and words for every case in it. The iOS project has no
-test target yet, so only the Python side is checked automatically; check the
-Swift side by hand against the same file when it changes.
+note, length, balance and words for every case in it. This holds the Python
+side to it, and PlayAudioGeometryGridTests.swift holds the Swift side, in the
+iOS Build Check workflow.
 
 A deliberate change to the mapping means regenerating the fixture from
 `audio_params` and making the same change in Swift.
@@ -15,11 +15,13 @@ from pathlib import Path
 
 import pytest
 
-from play_geometry import audio_params
+from play_geometry import audio_params, has_coordinate
 
-GRID = json.loads(
+_FIXTURE = json.loads(
     (Path(__file__).parent.parent / "fixtures" / "play_geometry_grid.json").read_text()
-)["cases"]
+)
+GRID = _FIXTURE["cases"]
+LOCATED = _FIXTURE["located"]
 
 
 @pytest.mark.parametrize(
@@ -33,3 +35,11 @@ def test_matches_the_shared_grid(case):
     assert duration_ms == case["duration_ms"]
     assert balance == pytest.approx(case["balance"], abs=1e-6)
     assert description == case["description"]
+
+
+@pytest.mark.parametrize(
+    "case", LOCATED, ids=[f"{c['league']}({c['x']},{c['y']})" for c in LOCATED]
+)
+def test_agrees_on_which_plays_have_a_location(case):
+    play = {"coordinate": {"x": case["x"], "y": case["y"]}}
+    assert has_coordinate(play, case["league"]) is case["located"]

@@ -7,7 +7,7 @@ import sys
 import os
 sys.path.append(os.path.dirname(os.path.dirname(__file__)))
 
-from espn_api import get_live_scores_all_sports, get_game_details
+from espn_api import get_scores, get_game_details
 
 def test_scoring_drive_enhancement():
     """Test scoring drive detection with live NFL data"""
@@ -33,8 +33,7 @@ def test_scoring_drive_enhancement():
     
     try:
         # Get live NFL games
-        scores = get_live_scores_all_sports()
-        nfl_games = [game for game in scores if game.get('league') == 'NFL']
+        nfl_games = [game for game in get_scores('NFL') if game.get('state') == 'in']
         
         if not nfl_games:
             print("No live NFL games found to test with")

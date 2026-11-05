@@ -63,7 +63,8 @@ enum DivisionMapper {
 
     static let nba: [String: String] = [
         // Atlantic
-        "BOS": "Atlantic", "BKN": "Atlantic", "NYK": "Atlantic", "PHI": "Atlantic", "TOR": "Atlantic",
+        "BOS": "Atlantic", "BKN": "Atlantic", "NY": "Atlantic", "NYK": "Atlantic",
+        "PHI": "Atlantic", "TOR": "Atlantic",
         // Central
         "CHI": "Central", "CLE": "Central", "DET": "Central", "IND": "Central", "MIL": "Central",
         // Southeast
@@ -92,7 +93,7 @@ enum DivisionMapper {
         "NJ": "Metropolitan", "NYI": "Metropolitan",
         "NYR": "Metropolitan", "PHI": "Metropolitan", "PIT": "Metropolitan", "WSH": "Metropolitan",
         // Central
-        "ARI": "Central", "CHI": "Central", "COL": "Central", "DAL": "Central",
+        "CHI": "Central", "COL": "Central", "DAL": "Central", "UTA": "Central", "UTAH": "Central",
         "MIN": "Central", "NSH": "Central", "STL": "Central", "WPG": "Central",
         // Pacific
         "ANA": "Pacific", "CGY": "Pacific", "EDM": "Pacific", "LA": "Pacific",

@@ -125,9 +125,9 @@ struct SoccerHubView: View {
     }
 
     private func accessibilityDate(_ date: Date) -> String {
-        if Calendar.current.isDateInToday(date)     { return "Today" }
-        if Calendar.current.isDateInYesterday(date) { return "Yesterday" }
-        if Calendar.current.isDateInTomorrow(date)  { return "Tomorrow" }
+        if ScoreboardDay.isToday(date)     { return "Today" }
+        if ScoreboardDay.isYesterday(date) { return "Yesterday" }
+        if ScoreboardDay.isTomorrow(date)  { return "Tomorrow" }
         let fmt = DateFormatter()
         fmt.dateFormat = "EEEE, MMMM d"
         return fmt.string(from: date)

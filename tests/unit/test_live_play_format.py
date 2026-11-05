@@ -67,7 +67,7 @@ class TestOtherLeagues:
         assert text == "Ducks 2 at Jets 0 [End of 2nd] | Goal by Someone"
 
     def test_long_play_is_cut_at_a_word_and_marked(self):
-        play = "Golden State Valkyries Full timeout called with the shot clock running down"
+        play = "Golden State Valkyries Full timeout called with the shot clock running down " * 3
         text = lpf.format_live_game("WNBA", TEAMS, "", play, "Valkyries 8 at Aces 14")
         tail = text.split(" | ", 1)[1]
         assert tail.endswith("...")
@@ -146,3 +146,9 @@ class TestAwayThenHome:
     def test_unknown_sides_keep_their_order(self):
         teams = [{"name": "A"}, {"name": "B"}, {"name": "C"}]
         assert [t["name"] for t in lpf.away_then_home(teams)] == ["A", "B"]
+
+
+def test_list_name_containing_the_full_name_is_not_doubled():
+    names = {"Arizona Wildcats": "#5 Arizona Wildcats"}
+    for text in ("Arizona Wildcats 56 vs UCLA 62 | play", "#5 Arizona Wildcats 56 vs UCLA 62 | play"):
+        assert lpf.use_list_team_names(text, names) == "#5 Arizona Wildcats 56 vs UCLA 62 | play"

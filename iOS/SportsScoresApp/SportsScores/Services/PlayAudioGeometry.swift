@@ -13,8 +13,9 @@
 //  This is the Swift half of a mapping the Windows app also ships, as
 //  play_geometry.py. Keep the two in step: the bands, the landmarks and the
 //  spoken wording are all meant to match, so a listener who uses both apps
-//  hears the same thing. play_geometry.py has the test suite that pins the
-//  numbers; TheBench/ESPN_UNUSED_DATA.md has the survey behind them.
+//  hears the same thing. tests/fixtures/play_geometry_grid.json pins the numbers
+//  for both, through PlayAudioGeometryGridTests here and test_play_geometry_parity
+//  on Windows; TheBench/ESPN_UNUSED_DATA.md has the survey behind them.
 //
 //  Coordinate systems, measured against real games rather than taken from
 //  ESPN docs, of which there are none.
@@ -111,6 +112,23 @@ enum PlayAudioGeometry {
 
     // MARK: - Locating a play
 
+    /// True when this coordinate says where a play happened in `sport`.
+    ///
+    /// College basketball feeds use (25, 0) as "no location": across 24 full games
+    /// 7,818 of 12,399 plays sat there, nearly all substitutions, rebounds, free
+    /// throws and timeouts, and only 4 were field goals. In the NBA and WNBA that
+    /// spot is a real one, mostly tips and dunks, and in hockey it is on the ice.
+    /// Same rule as `has_coordinate` in play_geometry.py.
+    static func hasLocation(_ coordinate: GameDetails.Play.PlayCoordinate, for sport: Sport) -> Bool {
+        guard coordinate.isUsable else { return false }
+        switch sport {
+        case .ncaam, .ncaawb:
+            return !(coordinate.x == 25 && coordinate.y == 0)
+        default:
+            return true
+        }
+    }
+
     /// Locate a basketball play from its ESPN court coordinates.
     static func basketballLocation(x: Double, y: Double) -> PlayLocation {
         let fieldX = clamp(x - courtHalfWidth, -courtHalfWidth, courtHalfWidth)
@@ -170,7 +188,7 @@ enum PlayAudioGeometry {
     /// Locate a play straight from the feed, skipping the ones ESPN sends with
     /// no real location.
     static func location(for sport: Sport, play: GameDetails.Play) -> PlayLocation? {
-        guard let coordinate = play.coordinate, coordinate.isUsable else { return nil }
+        guard let coordinate = play.coordinate, hasLocation(coordinate, for: sport) else { return nil }
         return location(for: sport, x: coordinate.x, y: coordinate.y)
     }
 
@@ -201,7 +219,7 @@ enum PlayAudioGeometry {
     static func audioParameters(for sport: Sport, play: GameDetails.Play)
         -> (frequency: Double, pan: Float, duration: Double, description: String)?
     {
-        guard let coordinate = play.coordinate, coordinate.isUsable else { return nil }
+        guard let coordinate = play.coordinate, hasLocation(coordinate, for: sport) else { return nil }
         return audioParameters(for: sport, x: coordinate.x, y: coordinate.y)
     }
 

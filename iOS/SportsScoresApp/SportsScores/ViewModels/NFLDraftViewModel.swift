@@ -48,8 +48,13 @@ class NFLDraftViewModel: ObservableObject {
     }
 
     func positionAbbr(for position: DraftAthletePosition) -> String? {
-        positionDict[position.id]
+        positionDict[position.id] ?? Self.positionsLeftOut[position.id]
     }
+
+    /// Ids athletes carry that an older draft's own list of positions doesn't have: 2001 to 2014
+    /// list a center as 4 while they're 91, and 2018 its kickers as 80 while they're 22. Windows
+    /// has these too: DRAFT_POSITIONS_LEFT_OUT in espn_api.py.
+    nonisolated static let positionsLeftOut = ["91": "C", "22": "PK"]
 
     // MARK: - Data loading
 

@@ -54,7 +54,7 @@ final class WorldCupViewModel: ObservableObject {
     init(sport: Sport) {
         self.sport = sport
         self.phases = sport == .worldCup ? WorldCupPhase.wc2026 : WorldCupPhase.wwc2027
-        self.selectedDate = Calendar.current.startOfDay(for: Date())
+        self.selectedDate = ScoreboardDay.today()
 
         // Pre-select the currently active phase, or the first phase.
         let now = Date()
@@ -109,28 +109,28 @@ final class WorldCupViewModel: ObservableObject {
 
     private var navStart: Date {
         Calendar.current.date(byAdding: .day, value: -navRange,
-                              to: Calendar.current.startOfDay(for: Date())) ?? Date()
+                              to: ScoreboardDay.today()) ?? Date()
     }
     private var navEnd: Date {
         Calendar.current.date(byAdding: .day, value: navRange,
-                              to: Calendar.current.startOfDay(for: Date())) ?? Date()
+                              to: ScoreboardDay.today()) ?? Date()
     }
 
     var canNavigateBackward: Bool { selectedDate > navStart }
     var canNavigateForward:  Bool { selectedDate < navEnd }
-    var isOnToday: Bool { Calendar.current.isDateInToday(selectedDate) }
+    var isOnToday: Bool { ScoreboardDay.isToday(selectedDate) }
 
     var dateHeaderText: String {
-        if Calendar.current.isDateInToday(selectedDate) { return "Today's Matches" }
+        if ScoreboardDay.isToday(selectedDate) { return "Today's Matches" }
         let fmt = DateFormatter()
         fmt.dateFormat = "EEEE"
         return "\(fmt.string(from: selectedDate))'s Matches"
     }
 
     var dateAccessibilityText: String {
-        if Calendar.current.isDateInToday(selectedDate) { return "Today" }
-        if Calendar.current.isDateInYesterday(selectedDate) { return "Yesterday" }
-        if Calendar.current.isDateInTomorrow(selectedDate) { return "Tomorrow" }
+        if ScoreboardDay.isToday(selectedDate) { return "Today" }
+        if ScoreboardDay.isYesterday(selectedDate) { return "Yesterday" }
+        if ScoreboardDay.isTomorrow(selectedDate) { return "Tomorrow" }
         let fmt = DateFormatter()
         fmt.dateFormat = "EEEE, MMMM d"
         return fmt.string(from: selectedDate)
@@ -149,7 +149,7 @@ final class WorldCupViewModel: ObservableObject {
     }
 
     func goToToday() async {
-        selectedDate = Calendar.current.startOfDay(for: Date())
+        selectedDate = ScoreboardDay.today()
         await loadGamesForDate()
     }
 

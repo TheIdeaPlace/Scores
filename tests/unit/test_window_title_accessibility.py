@@ -195,8 +195,9 @@ class TestWindowTitleAccessibility(unittest.TestCase):
             league_view = LeagueView(mock_parent, "MLB")
             league_view.on_show()
             
-            # Verify the title was updated with league context
-            mock_parent.update_window_title.assert_called_with(["MLB"])
+            # The title names the league, and the date shown, which isn't in the list
+            label = league_view.date_label.text().removeprefix("Date: ")
+            mock_parent.update_window_title.assert_called_with([label, "MLB"])
 
     def test_live_scores_view_title_update(self):
         """Test that LiveScoresView correctly updates window title"""

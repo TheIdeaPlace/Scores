@@ -8,6 +8,24 @@ for screen readers and other assistive technologies.
 import sys
 import platform
 
+_notifier = None
+
+
+def set_notifier_window(hwnd):
+    """Serve notifications from this hidden window. The app calls this once at startup."""
+    global _notifier
+    from uia_notifier import UiaNotifier
+    _notifier = UiaNotifier(hwnd, "Sports Scores announcements")
+
+
+def _raise_uia_notification(message):
+    """Say `message` through the screen reader, without moving focus. True if it was
+    sent. Nothing listening, or no window yet, is not an error."""
+    if not message or _notifier is None:
+        return False
+    return _notifier.notify(str(message), interrupt=False)
+
+
 class WindowsNotificationHelper:
     """Helper class for Windows UIA notifications."""
     
@@ -53,26 +71,8 @@ class WindowsNotificationHelper:
         Args:
             message (str): The message to announce
         """
-        if not self.enabled:
-            # Fallback: just print the message
-            print(f"[ACCESSIBILITY] {message}")
-            return
-            
-        try:
-            # Simple fallback using Windows console beep and print
-            # This is a basic implementation that works reliably
-            print(f"[LIVE SCORES] {message}")
-            
-            # Optional: Add a subtle system beep for audio feedback
-            try:
-                import winsound
-                winsound.Beep(800, 100)  # 800Hz for 100ms
-            except ImportError:
-                pass  # winsound not available, skip beep
-                
-        except Exception as e:
-            print(f"Notification error: {e}")
-    
+        _raise_uia_notification(message)
+
     def announce_score_change(self, game_name, old_score, new_score):
         """
         Announce a score change.

@@ -1,0 +1,275 @@
+{
+ "events": [
+  {
+   "id": "401811927",
+   "date": "2026-01-08T05:00Z",
+   "endDate": "2026-01-11T05:00Z",
+   "name": "The Sentry",
+   "shortName": "The Sentry",
+   "status": {
+    "type": {
+     "id": "5",
+     "name": "STATUS_CANCELED",
+     "state": "post",
+     "completed": false,
+     "description": "Canceled"
+    }
+   },
+   "competitions": [
+    {
+     "id": "401811927",
+     "date": "2026-01-08T05:00Z",
+     "endDate": "2026-01-11T05:00Z",
+     "status": {
+      "period": 0,
+      "type": {
+       "id": "5",
+       "name": "STATUS_CANCELED",
+       "state": "post",
+       "completed": false,
+       "description": "Canceled",
+       "detail": "Canceled",
+       "shortDetail": "Canceled"
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "401811928",
+   "date": "2026-01-15T05:00Z",
+   "endDate": "2026-01-18T05:00Z",
+   "name": "Sony Open in Hawaii",
+   "shortName": "Sony Open in Hawaii",
+   "status": {
+    "type": {
+     "id": "3",
+     "name": "STATUS_FINAL",
+     "state": "post",
+     "completed": true,
+     "description": "Final"
+    }
+   },
+   "competitions": [
+    {
+     "id": "401811928",
+     "date": "2026-01-15T05:00Z",
+     "endDate": "2026-01-18T05:00Z",
+     "status": {
+      "period": 4,
+      "type": {
+       "id": "3",
+       "name": "STATUS_FINAL",
+       "state": "post",
+       "completed": true,
+       "description": "Final",
+       "detail": "Final",
+       "shortDetail": "Complete"
+      }
+     },
+     "competitors": [
+      {
+       "id": "4690755",
+       "order": 1,
+       "score": "-16",
+       "athlete": {
+        "displayName": "Chris Gotterup",
+        "fullName": "Chris Gotterup",
+        "flag": {
+         "alt": "USA"
+        }
+       },
+       "linescores": [
+        {
+         "value": 63.0,
+         "displayValue": "-7",
+         "period": 1
+        },
+        {
+         "value": 69.0,
+         "displayValue": "-1",
+         "period": 2
+        },
+        {
+         "value": 68.0,
+         "displayValue": "-2",
+         "period": 3
+        },
+        {
+         "value": 64.0,
+         "displayValue": "-6",
+         "period": 4
+        }
+       ]
+      },
+      {
+       "id": "5076021",
+       "order": 2,
+       "score": "-14",
+       "athlete": {
+        "displayName": "Ryan Gerard",
+        "fullName": "Ryan Gerard",
+        "flag": {
+         "alt": "USA"
+        }
+       },
+       "linescores": [
+        {
+         "value": 69.0,
+         "displayValue": "-1",
+         "period": 1
+        },
+        {
+         "value": 64.0,
+         "displayValue": "-6",
+         "period": 2
+        },
+        {
+         "value": 68.0,
+         "displayValue": "-2",
+         "period": 3
+        },
+        {
+         "value": 65.0,
+         "displayValue": "-5",
+         "period": 4
+        }
+       ]
+      },
+      {
+       "id": "6825",
+       "order": 3,
+       "score": "-13",
+       "athlete": {
+        "displayName": "Patrick Rodgers",
+        "fullName": "Patrick Rodgers",
+        "flag": {
+         "alt": "USA"
+        }
+       },
+       "linescores": [
+        {
+         "value": 66.0,
+         "displayValue": "-4",
+         "period": 1
+        },
+        {
+         "value": 67.0,
+         "displayValue": "-3",
+         "period": 2
+        },
+        {
+         "value": 69.0,
+         "displayValue": "-1",
+         "period": 3
+        },
+        {
+         "value": 65.0,
+         "displayValue": "-5",
+         "period": 4
+        }
+       ]
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "401850979",
+   "date": "2026-11-05T05:00Z",
+   "endDate": "2026-11-08T05:00Z",
+   "name": "World Wide Technology Championship",
+   "shortName": "World Wide Technology Championship",
+   "status": {
+    "type": {
+     "id": "1",
+     "name": "STATUS_SCHEDULED",
+     "state": "pre",
+     "completed": false,
+     "description": "Scheduled"
+    }
+   },
+   "competitions": [
+    {
+     "id": "401850979",
+     "date": "2026-11-05T05:00Z",
+     "endDate": "2026-11-08T05:00Z",
+     "status": {
+      "period": 0,
+      "type": {
+       "id": "1",
+       "name": "STATUS_SCHEDULED",
+       "state": "pre",
+       "completed": false,
+       "description": "Scheduled",
+       "detail": "Thu, November 4th at 12:00 AM EST",
+       "shortDetail": "11/5 - 12:00 AM EST"
+      }
+     },
+     "competitors": [
+      {
+       "id": "2283",
+       "order": 1,
+       "score": "E",
+       "athlete": {
+        "displayName": "Brice Garnett",
+        "fullName": "Brice Garnett",
+        "flag": {
+         "alt": "USA"
+        }
+       },
+       "linescores": [
+        {
+         "period": 1
+        },
+        {
+         "period": 2
+        }
+       ]
+      },
+      {
+       "id": "4638",
+       "order": 2,
+       "score": "E",
+       "athlete": {
+        "displayName": "Ben Martin",
+        "fullName": "Ben Martin",
+        "flag": {
+         "alt": "USA"
+        }
+       },
+       "linescores": [
+        {
+         "period": 1
+        },
+        {
+         "period": 2
+        }
+       ]
+      },
+      {
+       "id": "5692",
+       "order": 3,
+       "score": "E",
+       "athlete": {
+        "displayName": "Peter Malnati",
+        "fullName": "Peter Malnati",
+        "flag": {
+         "alt": "USA"
+        }
+       },
+       "linescores": [
+        {
+         "period": 1
+        },
+        {
+         "period": 2
+        }
+       ]
+      }
+     ]
+    }
+   ]
+  }
+ ]
+}

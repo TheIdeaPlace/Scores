@@ -1,0 +1,20 @@
+# Coverage of the Windows app's data layer. CI fails below fail_under, so it can't
+# slip back: raise it as the tests improve. The UI (scores.py and friends) isn't
+# measured, because it's checked by hand and in the VM.
+[tool.coverage.run]
+source = ["models", "services"]
+source_pkgs = [
+    "espn_api",
+    "box_score",
+    "game_labels",
+    "team_stats",
+    "text_utils",
+    "timezone_utils",
+    "live_play_format",
+    "settings",
+]
+
+[tool.coverage.report]
+fail_under = 98
+precision = 2
+show_missing = true
