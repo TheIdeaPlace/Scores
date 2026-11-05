@@ -144,6 +144,10 @@ core_team_EPL_382.json	5 KB	core team reference from leaders_core_EPL: Mancheste
 season_EPL.json	2 KB	core /season: year 2026, displayName 2026-27 English Premier League, type.type a long id
 season_EPL_2025.json	2 KB	core seasons/2025: displayName 2025-26 English Premier League, for last season's label
 season_NWSL.json	4 KB	core /season in its playoffs: year 2026, type.id 2, and its leaders stay under type 1
+rankings_NCAAH.json	16 KB	USCHO Men's Poll, 5 of 20 teams, others and droppedOut emptied: points 0.0 for everyone, no lastUpdated; a three-part record, two teams level at 6, one with previous 0
+rankings_NCAAWH.json	9 KB	USCHO Women's Poll, 2 of 15 teams, others and droppedOut emptied: points 0.0 for everyone; a three-part record
+scoreboard_NCAAF_202611.json	86 KB	6 games from dates=202611 groups=90 limit=400: Eastern Michigan listed as home at a neutral Ford Field, Harvard at home and at a neutral Fenway Park, Akron twice, Syracuse's dome indoors
+scoreboard_NCAAWH_202601.json	25 KB	7 games from dates=202601: Penn State at Pegula Ice Arena 3 times and a one-off at Beaver Stadium, not marked neutral; Boston University and Northeastern sharing Walter Brown Arena; Harvard at a neutral site in Belfast, which has no state
 summary_final_NFL_401873036.json	84 KB	Bears at Seahawks, final; root keys header, gameInfo, pickcenter, odds, injuries, scoringPlays, article, standings, news (2 articles): attendance, no weather, a Recap with AP markup, periods as numbers only, injury details with Not Specified
 summary_pre_NFL_401873037.json	45 KB	Jaguars at Ravens, not started; root keys header, gameInfo, pickcenter, odds, article, news (2 articles): weather with a temperature and no displayValue, no attendance, a Preview article
 summary_final_EPL_401879251.json	89 KB	Leeds at Bournemouth, full time; root keys header, gameInfo, pickcenter, odds, article, standings: a line in both odds and pickcenter, story in <p> and <photo> markup, 20-team table, 8 columns

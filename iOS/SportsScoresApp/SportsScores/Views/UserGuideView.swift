@@ -57,7 +57,8 @@ struct UserGuideView: View {
                     BulletPoint("**Standings** — division or conference table. For MLB, a Divisions / Wild Card control at the top switches to the playoff picture: each league's three division leaders, then the wild card race in MLB's official order, with the teams currently holding a spot marked \"Wild card 1, 2, 3\".")
                     BulletPoint("**News** — recent headlines")
                     BulletPoint("**Stats** — league statistical leaders")
-                    BulletPoint("**Polls** — AP and Coaches rankings; college sports only, when available")
+                    BulletPoint("**Polls** — AP, Coaches and USCHO rankings; college sports only, when available")
+                    BulletPoint("**Venues** — each stadium and arena with its home teams; select one for its details. Not for soccer or CFL")
                     Text("For NFL and NCAA Football, the date bar shows a week number and moves by week.")
 
                     Text("**Auto-Refresh**")

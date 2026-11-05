@@ -22,6 +22,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   whole story with a heading or paragraph to a swipe. Before the game, ESPN's preview leads the news list.
 - **iPhone: a Scoring Summary in a football game's Info tab,** by quarter, with the team, clock and play.
 - **iPhone: an injury's type, details and return date,** where ESPN gives them.
+- **The iPhone has Venues, with the same list as Windows.** Each of the ten leagues Windows offers it
+  for has a Venues tab, listing the stadiums and arenas with their city and state, indoor or outdoor
+  where ESPN says, and their home teams. Selecting one shows its details. Both apps work out the list
+  the same way, from the same months of games, so neutral sites, one-offs, preseason games and visits
+  to non-Division I hosts aren't anyone's home on either. It has the three view modes, and if ESPN
+  doesn't answer it says so, with a Retry button.
+- **College hockey polls on iPhone.** Men's and women's college hockey now have the Polls tab, as they
+  do on Windows.
 
 ### Changed
 - **Soccer on iPhone shows what Windows shows.** Standings read position, games played, wins, draws,
@@ -45,6 +53,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Attendance sent as text can't lose a game's details on Windows.**
 
 ### Fixed
+- **A poll with no points no longer reads as 0 points on iPhone.** Windows already left them blank.
+- **iPhone: weather on a game's details,** for the games ESPN has it: "Weather: 67°F".
+- **iPhone: attendance on a game's details,** once there's a count: "Attendance: 68,739".
+- **iPhone: standings in a game's Info tab,** the tables of the division or conference each team is in.
+- **iPhone: a Game Story in a finished game's Info tab.** The row names the headline, and opens the
+  whole story with a heading or paragraph to a swipe. Before the game, ESPN's preview leads the news list.
+- **iPhone: a Scoring Summary in a football game's Info tab,** by quarter, with the team, clock and play.
+- **iPhone: an injury's type, details and return date,** where ESPN gives them.
 - **A dialog with tabs or a list can't end the app as it's cleaned up.** Tests caught this, once in many
   runs, and it hasn't been seen in the app.
 - **College basketball fouls read and sound where they happened, on Windows and iPhone.** A foul under

@@ -219,9 +219,15 @@ enum Sport: String, CaseIterable, Identifiable, Codable {
         !TeamStatCatalog.specs(for: self).isEmpty
     }
 
-    /// True for sports that publish weekly polls/rankings.
+    /// True for sports that publish weekly polls/rankings, which are the college sports, as
+    /// on Windows. ESPN has college hockey's USCHO polls on the same /rankings.
     var hasPolls: Bool {
-        self == .ncaaf || self == .ncaam || self == .ncaawb
+        isCollegeSport
+    }
+
+    /// True for the leagues with a Venues screen, the same ones as on Windows.
+    var hasVenues: Bool {
+        VenueRules.inSeasonMonths(for: self) != nil
     }
 
     // MARK: - Season navigation helpers
