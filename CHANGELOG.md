@@ -12,6 +12,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Core infrastructure implemented, text processing being refined
   - Game story text placeholders currently under investigation
 
+### Added
+- **iPhone: weather on a game's details,** for the games ESPN has it: "Weather: 67°F".
+- **iPhone: attendance on a game's details,** once there's a count: "Attendance: 68,739".
+- **iPhone: standings in a game's Info tab,** the tables of the division or conference each team is in.
+- **iPhone: a Game Story in a finished game's Info tab.** The row names the headline, and opens the
+  whole story with a heading or paragraph to a swipe. Before the game, ESPN's preview leads the news list.
+- **iPhone: a Scoring Summary in a football game's Info tab,** by quarter, with the team, clock and play.
+- **iPhone: an injury's type, details and return date,** where ESPN gives them.
+
+### Changed
+- **iPhone: betting lines look in the same place first as Windows,** `odds` and then `pickcenter`, and
+  pass over an empty line. An over/under of 0 isn't read.
+- **iPhone: coming back to a game no longer reloads the screen.** It used to show the spinner, and lose
+  VoiceOver's place, each time. It now refreshes quietly, and a failed refresh leaves what's showing.
+
 ## [1.1.0] - 2026-11-04
 
 ### Changed
