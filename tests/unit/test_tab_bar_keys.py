@@ -477,6 +477,43 @@ class TestRealDialogs:
         stop =self.first_tab_stop_after(tabs.tabBar(), dialog)
         assert tabs.currentWidget().isAncestorOf(stop)
 
+    def draft_dialog(self):
+        with patch.object(scores.NFLDraftDialog, "_load_year"), patch.object(scores.NFLDraftDialog, "_load_round"):
+            dialog = scores.NFLDraftDialog()
+        dialog._current_year = 2026
+        with patch.object(scores.NFLDraftDialog, "_load_round"):
+            dialog._on_meta_loaded({"status": "post", "rounds": [
+                {"number": 1, "short_name": "1st"}, {"number": 2, "short_name": "2nd"}]})
+        return dialog
+
+    PICK = [{"overall": 1, "team_abbrev": "LV", "player_name": "A", "position": "QB", "status_name": "SELECTION_MADE"}]
+
+    def test_the_draft_opens_on_its_picks_and_then_leaves_focus_alone(self, app, monkeypatch):
+        dialog = self.draft_dialog()
+        first, second = dialog.tab_widget.widget(0), dialog.tab_widget.widget(1)
+        calls = []
+        first.setFocus = lambda: calls.append("first")
+        second.setFocus = lambda: calls.append("second")
+        monkeypatch.setattr(QApplication, "focusWidget", staticmethod(lambda: dialog.tab_widget.tabBar()))
+        dialog._on_round_loaded(self.PICK, 0, 2026)
+        assert calls == ["first"], "the picks are what it opens on"
+        dialog.tab_widget.blockSignals(True)
+        dialog.tab_widget.setCurrentIndex(1)
+        dialog.tab_widget.blockSignals(False)
+        dialog._on_round_loaded(self.PICK, 1, 2026)
+        assert calls == ["first"], "someone arrowing along the tabs stays on them"
+
+    def test_a_year_left_behind_cant_fill_this_years_tabs(self, app):
+        dialog = self.draft_dialog()
+        tabs_before = dialog.tab_widget.count()
+        dialog._on_meta_loaded({"status": "post", "rounds": [{"number": 1, "short_name": "1st"}]}, 2012)
+        assert dialog.tab_widget.count() == tabs_before
+        loading = dialog.tab_widget.widget(0).item(0).text()
+        dialog._on_round_loaded(self.PICK, 0, 2012)
+        dialog._on_round_error("no", 0, 2012)
+        assert dialog.tab_widget.widget(0).item(0).text() == loading
+        assert 0 not in dialog._tabs_loaded
+
     def test_tab_from_a_draft_round_goes_to_its_picks_and_not_to_close(self, app):
         with patch.object(scores.NFLDraftDialog, "_load_year"), patch.object(scores.NFLDraftDialog, "_load_round"):
             dialog = scores.NFLDraftDialog()

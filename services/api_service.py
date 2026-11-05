@@ -38,7 +38,7 @@ class ApiService:
         
         Args:
             league: League identifier (e.g., 'MLB', 'NFL') 
-            limit: Number of articles to retrieve (default: 20, max: 50)
+            limit: Number of articles to retrieve (default: 25, max: 50)
         """
         return ApiService._call(espn_api.get_news, league, limit)
 
@@ -100,7 +100,7 @@ class ApiService:
         return ApiService._call(espn_api.get_team_roster, league, team_id)
 
     @staticmethod
-    def get_team_news(league: str, team_id: str, limit: int = 15) -> List[Dict]:
+    def get_team_news(league: str, team_id: str, limit: int = 25) -> List[Dict]:
         return ApiService._call(espn_api.get_team_news, league, team_id, limit)
 
     @staticmethod

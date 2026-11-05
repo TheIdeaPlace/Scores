@@ -155,6 +155,7 @@ def test_no_single_bad_field_raises_or_reads_none(espn, call, fixture, route, ot
     for description, changed in mutations(served["payload"]):
         served["payload"] = changed
         espn_api._CORE_SEASON_CACHE.clear()
+        espn_api._DRAFT_CACHE.clear()
         try:
             result = call()
         except Exception as e:

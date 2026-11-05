@@ -1,4 +1,3 @@
-import json
 import requests
 import threading
 import time
@@ -3247,6 +3246,9 @@ def get_transactions(league_key, team_id=None, limit=50, page=1):
 # it, and a draft in progress has to move on.
 DRAFT_CACHE_SECONDS = 30
 _DRAFT_CACHE = {}  # year: (when it was asked, ESPN's answer)
+# Ids athletes carry that an older draft's own list of positions doesn't have: 2001 to 2014 list
+# a center as 4 while they're 91, and 2018 its kickers as 80 while they're 22. The iPhone has these too.
+DRAFT_POSITIONS_LEFT_OUT = {"91": "C", "22": "PK"}
 
 
 def _fetch_draft(year):
@@ -3314,7 +3316,8 @@ def get_draft_round(year, round_num):
         team = teams.get(str(pick.get("teamId")), {})
         athlete = _as_dict(pick.get("athlete"))
         school = _as_dict(athlete.get("team"))
-        position = positions.get(str(_as_dict(athlete.get("position")).get("id")), {})
+        position_id = str(_as_dict(athlete.get("position")).get("id"))
+        position = positions.get(position_id, {})
         picks.append({
             "overall": pick.get("overall") or 0,
             "pick": pick.get("pick") or 0,
@@ -3324,8 +3327,10 @@ def get_draft_round(year, round_num):
             "team_abbrev": team.get("abbreviation") or "?",
             "team_name": team.get("displayName") or team.get("shortDisplayName") or "Unknown",
             "player_name": athlete.get("displayName") or "",
-            "position": position.get("abbreviation") or position.get("displayName") or "",
-            "college": school.get("shortDisplayName") or school.get("location") or school.get("abbreviation") or "",
+            "position": position.get("abbreviation") or position.get("displayName")
+                        or DRAFT_POSITIONS_LEFT_OUT.get(position_id, ""),
+            # Not the short name first: that reads OSU, FSU and Miss St.
+            "college": school.get("location") or school.get("shortDisplayName") or school.get("abbreviation") or "",
             "status_name": pick.get("status") or "",
         })
     picks.sort(key=lambda pick: pick["overall"])

@@ -1743,10 +1743,10 @@ def check_draft(http, report):
         # A draft yet to happen answers 200 with its rounds, and no picks.
         if status == 200 and isinstance(data, dict) and data.get("picks"):
             drafted = season
-            report.ok("NFL", "Draft (iPhone)", f"{season} has picks", url)
+            report.ok("NFL", "Draft", f"{season} has picks", url)
             break
     if drafted is None:
-        report.fail("NFL", "Draft (iPhone)", f"no picks for {year} or {year - 1}; last answer {status}", url)
+        report.fail("NFL", "Draft", f"no picks for {year} or {year - 1}; last answer {status}", url)
         return
 
     try:
@@ -1757,6 +1757,9 @@ def check_draft(http, report):
         return
     if not draft:
         report.fail("NFL", "App: draft", f"nothing for {drafted}, and ESPN has it")
+    elif any(p.get("team_abbrev") == "?" or not p.get("position") for p in picks):
+        missing = [p.get("player_name") for p in picks if p.get("team_abbrev") == "?" or not p.get("position")]
+        report.fail("NFL", "App: draft", f"round 1 of {drafted}: no team or position for {first_problems(missing)}")
     elif not picks or not all(p.get("player_name") for p in picks):
         report.fail("NFL", "App: draft", f"round 1 of {drafted}: {len(picks)} picks, or some with no player")
     else:

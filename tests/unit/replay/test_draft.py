@@ -71,8 +71,39 @@ class TestDraftRound:
             "team_name": "Las Vegas Raiders", "player_name": "Fernando Mendoza", "position": "QB",
             "status_name": "SELECTION_MADE", "college": "Indiana",
         }
-        assert (second["player_name"], second["college"]) == ("David Bailey", "Texas Tech")
+        assert (second["player_name"], second["position"], second["college"]) == ("David Bailey", "EDGE", "Texas Tech")
         assert (sixth["overall"], sixth["traded"], sixth["trade_note"]) == (6, True, "From CLE")
+
+    def test_a_school_reads_as_its_name_not_its_short_name(self, draft):
+        pick = [pick for pick in espn_api.get_draft_round(2026, 3) if pick["overall"] == 84]
+        assert pick[0]["college"] == "Georgia State"
+
+    def test_a_position_an_old_drafts_list_leaves_out(self, espn):
+        data = load("draft_site_NFL_2026.json")
+        data["picks"][0]["athlete"]["position"]["id"] = "91"
+        data["picks"][1]["athlete"]["position"]["id"] = "22"
+        data["picks"][4]["athlete"]["position"]["id"] = "99999"
+        espn.on("/draft", data)
+        by_overall = {pick["overall"]: pick for pick in espn_api.get_draft_round(2026, 1)}
+        assert by_overall[1]["position"] == "C"
+        assert by_overall[2]["position"] == "PK"
+        assert by_overall[6]["position"] == ""
+
+    def test_a_draft_yet_to_happen(self, espn):
+        """The real shape: its rounds and status, with no picks and no teams."""
+        espn.on("/draft", {"displayName": "2027 NFL Draft", "picks": [], "positions": [], "rounds": 7,
+                           "status": {"description": "Scheduled", "name": "SCHEDULED", "round": 1, "state": "pre"},
+                           "year": 2027})
+        draft = espn_api.get_draft(2026)
+        assert (draft["status"], draft["num_rounds"]) == ("pre", 7)
+        assert espn_api.get_draft_round(2026, 1) == []
+
+    def test_a_pick_on_the_clock_says_so(self, espn):
+        data = load("draft_site_NFL_2026.json")
+        del data["picks"][0]["athlete"]
+        data["picks"][0]["status"] = "ON_THE_CLOCK"
+        espn.on("/draft", data)
+        assert espn_api.get_draft_round(2026, 1)[0]["status_name"] == "ON_THE_CLOCK"
 
     def test_a_round_that_does_not_exist(self, draft):
         assert espn_api.get_draft_round(2026, 99) == []

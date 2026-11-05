@@ -4,7 +4,7 @@ import pytest
 
 import espn_api
 
-from .support import FakeResponse, HTTP_404, load
+from .support import HTTP_404, load
 
 SUMMARY = f"{espn_api.BASE_URL}/football/nfl/summary?event=401873035"
 
@@ -57,7 +57,6 @@ class TestNflSummary:
 class TestCollegeHockeySummary:
     @pytest.fixture
     def info(self, espn):
-        espn.on("espn.com/mens-college-hockey/playbyplay", FakeResponse(status=202, text=""))
         return details_for(espn, "NCAAH", "401923148", "details_NCAAH_pieces.json")
 
     def test_tv_and_three_part_records(self, info):

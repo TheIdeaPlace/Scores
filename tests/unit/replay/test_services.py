@@ -23,6 +23,14 @@ from text_utils import ESPNTextProcessor, text_processor
 from .support import FakeResponse, HTTP_404, HTTP_500, NOT_JSON, TIMEOUT, load
 
 
+def test_team_news_is_as_long_as_the_iphones():
+    import inspect
+
+    from services.api_service import ApiService
+    assert inspect.signature(ApiService.get_team_news).parameters["limit"].default == 25
+    assert inspect.signature(ApiService.get_news).parameters["limit"].default == 25
+
+
 class TestApiService:
     @pytest.mark.parametrize("method,target,args", [
         ("get_leagues", "get_leagues", ()),
