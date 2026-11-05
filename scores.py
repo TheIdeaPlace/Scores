@@ -10817,8 +10817,12 @@ class WorldCupDialog(QDialog):
         phase_bar.addWidget(self.phase_combo, 1)
         layout.addLayout(phase_bar)
 
-        # Pre-select the currently active (or most recent) phase
+        # Pre-select the currently active (or most recent) phase. Quietly: the page it would
+        # fill isn't built yet, which raised and said "Something went wrong" on opening this
+        # once the first phase was over, and _load_all loads it anyway.
+        was_blocked = self.phase_combo.blockSignals(True)
         self._presort_phase_combo()
+        self.phase_combo.blockSignals(was_blocked)
 
         self.bracket_stack = QStackedWidget()
 
