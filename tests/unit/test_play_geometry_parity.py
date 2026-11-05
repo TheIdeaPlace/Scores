@@ -15,13 +15,14 @@ from pathlib import Path
 
 import pytest
 
-from play_geometry import audio_params, has_coordinate
+from play_geometry import audio_params, has_coordinate, play_position
 
 _FIXTURE = json.loads(
     (Path(__file__).parent.parent / "fixtures" / "play_geometry_grid.json").read_text()
 )
 GRID = _FIXTURE["cases"]
 LOCATED = _FIXTURE["located"]
+FOULS = _FIXTURE["fouls"]
 
 
 @pytest.mark.parametrize(
@@ -43,3 +44,28 @@ def test_matches_the_shared_grid(case):
 def test_agrees_on_which_plays_have_a_location(case):
     play = {"coordinate": {"x": case["x"], "y": case["y"]}}
     assert has_coordinate(play, case["league"]) is case["located"]
+
+
+@pytest.mark.parametrize(
+    "case", FOULS, ids=[f"{c['league']} {c['type']}({c['x']},{c['y']})" for c in FOULS]
+)
+def test_college_fouls_past_half_court_are_mirrored(case):
+    play = {"type": {"text": case["type"]}, "coordinate": {"x": case["x"], "y": case["y"]}}
+    assert play_position(play, case["league"]) == (case["to_x"], case["to_y"])
+
+
+def test_a_foul_with_the_placeholder_still_has_no_location():
+    play = {"type": {"text": "PersonalFoul"}, "coordinate": {"x": 25, "y": 0}}
+    assert play_position(play, "NCAAM") is None
+
+
+def test_a_play_with_no_type_keeps_its_place():
+    assert play_position({"coordinate": {"x": 20, "y": 60}}, "NCAAM") == (20, 60)
+    assert play_position({"type": None, "coordinate": {"x": 20, "y": 60}}, "NCAAM") == (20, 60)
+
+
+def test_a_foul_under_the_basket_reads_and_sounds_that_way():
+    """It read "deep, 66 feet out", and played a far away note on the wrong side."""
+    play = {"type": {"text": "PersonalFoul"}, "coordinate": {"x": 24, "y": 81}}
+    x, y = play_position(play, "NCAAWB")
+    assert audio_params("NCAAWB", x, y)[3] == "at the rim"

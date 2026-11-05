@@ -53,6 +53,13 @@ BASKETBALL_LEAGUES = frozenset({"NBA", "WNBA", "NCAAM", "NCAAWB", "NCAAW"})
 # tips and dunks, and in hockey it is on the ice.
 _COLLEGE_BASKETBALL_LEAGUES = frozenset({"NCAAM", "NCAAWB", "NCAAW"})
 _COLLEGE_NO_LOCATION = (25, 0)
+# College feeds put about 80% of fouls past half court, at a median of 79 ft, where the
+# NBA and WNBA put none, at a median of 5. They're mirrored: an and-one's shot and foul
+# share a clock, and 76% to 82% of them land exactly on (50 - x, 84 - y). Fouls already in
+# the near half have a median of 9 to 11 and are left alone, since flipping them would put
+# them at the far end.
+_HALF_COURT = 47
+_COLLEGE_FOUL_MIRROR = (50, 84)
 HOCKEY_LEAGUES = frozenset({"NHL", "NCAAH", "NCAAWH"})
 
 # Basketball, in feet.
@@ -108,6 +115,18 @@ def has_coordinate(play: dict, league: str | None) -> bool:
     if (league or "").upper() in _COLLEGE_BASKETBALL_LEAGUES and (x, y) == _COLLEGE_NO_LOCATION:
         return False
     return abs(x) < _SENTINEL and abs(y) < _SENTINEL
+
+
+def play_position(play: dict, league: str | None) -> tuple[float, float] | None:
+    """Where a play happened on ESPN's axes, or None if it has no usable location."""
+    if not has_coordinate(play, league):
+        return None
+    x, y = play["coordinate"]["x"], play["coordinate"]["y"]
+    kind = (play.get("type") or {}).get("text") or ""
+    if ((league or "").upper() in _COLLEGE_BASKETBALL_LEAGUES
+            and "foul" in str(kind).lower() and y > _HALF_COURT):
+        return _COLLEGE_FOUL_MIRROR[0] - x, max(_COLLEGE_FOUL_MIRROR[1] - y, 0)
+    return x, y
 
 
 def league_family(league: str | None) -> str | None:

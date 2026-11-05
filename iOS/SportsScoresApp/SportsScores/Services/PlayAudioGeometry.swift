@@ -188,8 +188,24 @@ enum PlayAudioGeometry {
     /// Locate a play straight from the feed, skipping the ones ESPN sends with
     /// no real location.
     static func location(for sport: Sport, play: GameDetails.Play) -> PlayLocation? {
+        guard let position = position(for: sport, play: play) else { return nil }
+        return location(for: sport, x: position.x, y: position.y)
+    }
+
+    /// Where a play happened on ESPN's axes, or nil if it has no usable location.
+    ///
+    /// College feeds put about 80% of fouls past half court, at a median of 79 ft, where the
+    /// NBA and WNBA put none, at a median of 5. They're mirrored: an and-one's shot and foul
+    /// share a clock, and 76% to 82% of them land exactly on (50 - x, 84 - y). Fouls already
+    /// in the near half have a median of 9 to 11 and are left alone, since flipping them would
+    /// put them at the far end. Same rule as `play_position` in play_geometry.py.
+    static func position(for sport: Sport, play: GameDetails.Play) -> (x: Double, y: Double)? {
         guard let coordinate = play.coordinate, hasLocation(coordinate, for: sport) else { return nil }
-        return location(for: sport, x: coordinate.x, y: coordinate.y)
+        let isCollege = sport == .ncaam || sport == .ncaawb
+        if isCollege, play.type.text.lowercased().contains("foul"), coordinate.y > 47 {
+            return (50 - coordinate.x, max(84 - coordinate.y, 0))
+        }
+        return (coordinate.x, coordinate.y)
     }
 
     // MARK: - Audio parameters
@@ -219,8 +235,8 @@ enum PlayAudioGeometry {
     static func audioParameters(for sport: Sport, play: GameDetails.Play)
         -> (frequency: Double, pan: Float, duration: Double, description: String)?
     {
-        guard let coordinate = play.coordinate, hasLocation(coordinate, for: sport) else { return nil }
-        return audioParameters(for: sport, x: coordinate.x, y: coordinate.y)
+        guard let position = position(for: sport, play: play) else { return nil }
+        return audioParameters(for: sport, x: position.x, y: position.y)
     }
 
     // MARK: - Spoken labels

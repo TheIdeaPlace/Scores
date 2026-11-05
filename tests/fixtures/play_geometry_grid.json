@@ -3647,6 +3647,24 @@
    "description": "far end, in the right corner"
   }
  ],
+ "fouls": [
+  {"league": "NCAAM", "type": "PersonalFoul", "x": 34, "y": 84, "to_x": 16, "to_y": 0},
+  {"league": "NCAAM", "type": "PersonalFoul", "x": 7, "y": 55, "to_x": 43, "to_y": 29},
+  {"league": "NCAAWB", "type": "PersonalFoul", "x": 24, "y": 81, "to_x": 26, "to_y": 3},
+  {"league": "NCAAWB", "type": "PersonalFoul", "x": 22, "y": 78, "to_x": 28, "to_y": 6},
+  {"league": "NCAAM", "type": "PersonalFoul", "x": 25, "y": 82, "to_x": 25, "to_y": 2},
+  {"league": "NCAAM", "type": "PersonalFoul", "x": 23, "y": 84, "to_x": 27, "to_y": 0},
+  {"league": "NCAAWB", "type": "PersonalFoul", "x": 22, "y": 81, "to_x": 28, "to_y": 3},
+  {"league": "NCAAM", "type": "PersonalFoul", "x": 20, "y": 9, "to_x": 20, "to_y": 9},
+  {"league": "NCAAM", "type": "PersonalFoul", "x": 20, "y": 47, "to_x": 20, "to_y": 47},
+  {"league": "NCAAM", "type": "PersonalFoul", "x": 20, "y": 48, "to_x": 30, "to_y": 36},
+  {"league": "NCAAM", "type": "PersonalFoul", "x": 20, "y": 90, "to_x": 30, "to_y": 0},
+  {"league": "NCAAWB", "type": "Technical Foul", "x": 10, "y": 70, "to_x": 40, "to_y": 14},
+  {"league": "NCAAM", "type": "JumpShot", "x": 20, "y": 60, "to_x": 20, "to_y": 60},
+  {"league": "NCAAM", "type": "Lost Ball Turnover", "x": 20, "y": 60, "to_x": 20, "to_y": 60},
+  {"league": "NBA", "type": "Personal Foul", "x": 20, "y": 60, "to_x": 20, "to_y": 60},
+  {"league": "WNBA", "type": "Personal Foul", "x": 20, "y": 60, "to_x": 20, "to_y": 60}
+ ],
  "located": [
   {
    "league": "NBA",
