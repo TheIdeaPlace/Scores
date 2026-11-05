@@ -961,6 +961,17 @@ class TestListPages:
         finally:
             window.close()
 
+    def test_a_pages_tab_order_is_set_once(self, pages_with_tables, monkeypatch):
+        pages = pages_with_tables
+        calls = []
+        monkeypatch.setattr(accessible_table, "keep_in_tab_order", lambda tabs, widget: calls.append(widget))
+        pages.open_page()
+        pages.close_page()
+        pages.open_page()
+        assert calls == [pages.widget(0)]
+        pages.setCurrentIndex(1)
+        assert calls == [pages.widget(0), pages.widget(1)]
+
     def test_setfocus_goes_to_whichever_is_on_show(self, pages_with_tables):
         pages = pages_with_tables
         calls = []

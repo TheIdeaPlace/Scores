@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- **The college football setting is called Coverage.** It's "College football coverage" on Windows and in
+  the iPhone's Scores filter, and "Coverage" under College Football in iPhone Settings, since it also
+  decides the standings and teams you see. Your choice is kept.
+- **A team with no news on iPhone says so,** as on Windows, rather than showing the league's stories under
+  the team's name. NBA standings on Windows read the season ESPN calls current, as on iPhone.
+- **VoiceOver reads the View All link on Stats once.**
+
 ### In Progress
 - **Game Wrap Up Feature**: ESPN text processing and game story extraction (under construction)
   - Core infrastructure implemented, text processing being refined

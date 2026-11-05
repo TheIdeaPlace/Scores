@@ -1310,6 +1310,7 @@ class ListPages(QWidget):
         layout.addWidget(self._list)
         layout.addWidget(self._page_area)
         self._dialog_title = ""
+        self._pages_in_tab_order = set()
         # No focus proxy to the list: Tab would follow it to the list while it's hidden.
         self.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self._list.currentRowChanged.connect(self._show_page)
@@ -1334,7 +1335,12 @@ class ListPages(QWidget):
         """The window title names the page, and Tab goes through it before the Back button."""
         name = self.tabText(self.currentIndex())
         self.window().setWindowTitle(f"{name} - {self._dialog_title}" if self._dialog_title else name)
-        keep_in_tab_order(self, self.currentWidget())
+        # Once a page: what's on it is built by now, and there's no need to shuffle the focus
+        # chain again each time it opens.
+        index = self.currentIndex()
+        if index not in self._pages_in_tab_order:
+            self._pages_in_tab_order.add(index)
+            keep_in_tab_order(self, self.currentWidget())
 
     def is_open(self) -> bool:
         """A page is on show, rather than the list."""

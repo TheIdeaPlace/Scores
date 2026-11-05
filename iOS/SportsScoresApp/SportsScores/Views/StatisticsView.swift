@@ -114,8 +114,9 @@ struct StatisticsView: View {
                                     Spacer()
                                 }
                                 .padding(.vertical, 8)
-                                .accessibilityLabel("View all \(category.displayName) leaders")
                             }
+                            // On the link, not what's inside it, or VoiceOver reads both.
+                            .accessibilityLabel("View all \(category.displayName) leaders")
                         }
                     }
                 }
