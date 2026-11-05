@@ -68,6 +68,17 @@ final class DataTableCellElement: UIAccessibilityElement,
     @objc func accessibilityColumnRange() -> NSRange {
         NSRange(location: _col, length: 1)
     }
+
+    /// Opens the row, for a table that does that. Otherwise VoiceOver's double-tap lands
+    /// wherever this cell's frame is on the grid below, and rows that wrap can put that on
+    /// another row.
+    override func accessibilityActivate() -> Bool {
+        guard _row > 0,
+              let table = accessibilityContainer as? AccessibleDataTableView,
+              let open = table.onActivateRow else { return false }
+        open(_row - 1)
+        return true
+    }
 }
 
 // MARK: - Container view
@@ -90,6 +101,15 @@ final class AccessibleDataTableView: UIView,
     /// so the team name — the thing that gives a cell its context — sits at 1.
     var rowHeaderColumn: Int = 0 {
         didSet { if oldValue != rowHeaderColumn { setNeedsLayout() } }
+    }
+
+    /// Called with the data row, from 0, when VoiceOver activates one of its cells. Nil for
+    /// a table whose rows don't open anything.
+    var onActivateRow: ((Int) -> Void)?
+
+    /// What the row's first cell says activating it does.
+    var activationHint: String? {
+        didSet { if oldValue != activationHint { rebuild() } }
     }
 
     // MARK: Private state
@@ -185,6 +205,7 @@ final class AccessibleDataTableView: UIView,
                     col: col
                 )
                 el.accessibilityFrame = screenFrame(row: row + 1, col: col)
+                if col == 0 { el.accessibilityHint = activationHint }
                 return el
             }
         }
@@ -275,6 +296,9 @@ struct AccessibleDataTable: UIViewRepresentable {
     let rows: [[String]]
     /// Column holding each row's identity; see `AccessibleDataTableView.rowHeaderColumn`.
     var rowHeaderColumn: Int = 0
+    /// See `AccessibleDataTableView.onActivateRow`.
+    var onActivateRow: ((Int) -> Void)? = nil
+    var activationHint: String? = nil
 
     func makeUIView(context: Context) -> AccessibleDataTableView {
         AccessibleDataTableView()
@@ -283,6 +307,8 @@ struct AccessibleDataTable: UIViewRepresentable {
     func updateUIView(_ uiView: AccessibleDataTableView, context: Context) {
         // Guard against redundant rebuilds
         uiView.rowHeaderColumn = rowHeaderColumn
+        uiView.onActivateRow = onActivateRow
+        uiView.activationHint = activationHint
         guard uiView.columnHeaders != headers || uiView.dataRows != rows else {
             return
         }

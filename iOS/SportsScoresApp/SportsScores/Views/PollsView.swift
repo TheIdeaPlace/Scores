@@ -3,7 +3,7 @@
 //  SportsScores
 //
 //  Phase 6 — College rankings: AP Top 25, Coaches Poll, etc.
-//  Shows for: NCAAF, NCAAM, NCAAWB
+//  Shows for: the college sports, as Windows does.
 //
 
 import SwiftUI

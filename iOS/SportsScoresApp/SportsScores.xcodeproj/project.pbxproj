@@ -7,6 +7,11 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		7E57A0000000000000000061 /* VenuesTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E57A0000000000000000060 /* VenuesTests.swift */; };
+		7E57A0000000000000000057 /* VenuesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E57A0000000000000000056 /* VenuesView.swift */; };
+		7E57A0000000000000000055 /* VenuesViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E57A0000000000000000054 /* VenuesViewModel.swift */; };
+		7E57A0000000000000000053 /* VenueCacheStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E57A0000000000000000052 /* VenueCacheStore.swift */; };
+		7E57A0000000000000000051 /* LeagueVenues.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E57A0000000000000000050 /* LeagueVenues.swift */; };
 		001A36C29D93596852E890C3 /* PlayAudioGeometry.swift in Sources */ = {isa = PBXBuildFile; fileRef = E30E82D0413A6836A6E34312 /* PlayAudioGeometry.swift */; };
 		02204E507D7434022AB59839 /* RacingHubView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5527896BC8638A1E72DE5823 /* RacingHubView.swift */; };
 		0628508F6916E0005D37835D /* CheatsheetPlayerDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 17E2EBBAD69446226C28DA4A /* CheatsheetPlayerDetailView.swift */; };
@@ -150,6 +155,11 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		7E57A0000000000000000060 /* VenuesTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VenuesTests.swift; sourceTree = "<group>"; };
+		7E57A0000000000000000056 /* VenuesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VenuesView.swift; sourceTree = "<group>"; };
+		7E57A0000000000000000054 /* VenuesViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VenuesViewModel.swift; sourceTree = "<group>"; };
+		7E57A0000000000000000052 /* VenueCacheStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VenueCacheStore.swift; sourceTree = "<group>"; };
+		7E57A0000000000000000050 /* LeagueVenues.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LeagueVenues.swift; sourceTree = "<group>"; };
 		069ACD1D5C73DAD2A7D76927 /* Sport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sport.swift; sourceTree = "<group>"; };
 		08AB11969A6D49301493C976 /* Game.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Game.swift; sourceTree = "<group>"; };
 		0BDABE6B0F7E1B4B9FFD1A3C /* FantasyCheatsheetService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FantasyCheatsheetService.swift; sourceTree = "<group>"; };
@@ -327,6 +337,7 @@
 				EE89454CB0F7EC17F5781490 /* ScheduleCacheStore.swift */,
 				943651E22D239C3E7FEF0132 /* TeamStatsStore.swift */,
 				4307499007DD0DE92B94347D /* TouchTourAnnouncementService.swift */,
+				7E57A0000000000000000052 /* VenueCacheStore.swift */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -374,6 +385,7 @@
 				D376006BDCBD19E67A67198F /* SoccerLiveViewModel.swift */,
 				D3E43F7CCDE27769D46915D8 /* StandingsViewModel.swift */,
 				170934144144BFF79BD8E765 /* StatisticsViewModel.swift */,
+				7E57A0000000000000000054 /* VenuesViewModel.swift */,
 				EA427D15FEA344F45E304B6A /* TeamHubViewModel.swift */,
 				915340F68BA4D0A9C2068191 /* TeamScheduleViewModel.swift */,
 				D4CA034FD639D5E5AD03DC4A /* TeamStatsViewModel.swift */,
@@ -409,6 +421,7 @@
 				3C463E72CBDDDA80C63C8952 /* PitchZoneExplorerView.swift */,
 				730BF6E5A4FF66C7DF52BCC2 /* PlaysView.swift */,
 				BDDD36E16EA39ADB21259034 /* PollsView.swift */,
+				7E57A0000000000000000056 /* VenuesView.swift */,
 				FF3BF3CB32FE02D73716FE82 /* RaceTrackHubView.swift */,
 				302423DD50CC2EE1ACEB231F /* RaceTrackTourView.swift */,
 				5527896BC8638A1E72DE5823 /* RacingHubView.swift */,
@@ -485,6 +498,7 @@
 				2F730ED25EF184C36C9EEC13 /* Standings.swift */,
 				B24C7FC69C8CFAB2F651990B /* TeamHubModels.swift */,
 				7F7442D4B0FEAEC59978A844 /* TeamStatCatalog.swift */,
+				7E57A0000000000000000050 /* LeagueVenues.swift */,
 				5F7BC9D746343F8C08C38ADE /* Transaction.swift */,
 				E20197AC616142E4CCBB6D0A /* WorldCup.swift */,
 				43A5EDEFADDCBD6C53E9D458 /* WorldCupBracket.swift */,
@@ -499,6 +513,7 @@
 				7E57A0000000000000000008 /* PlayAudioGeometryGridTests.swift */,
 				7E57A0000000000000000030 /* LeagueLeadersTests.swift */,
 				7E57A0000000000000000040 /* TeamStatsTests.swift */,
+				7E57A0000000000000000060 /* VenuesTests.swift */,
 			);
 			path = SportsScoresTests;
 			sourceTree = "<group>";
@@ -667,6 +682,10 @@
 				001A36C29D93596852E890C3 /* PlayAudioGeometry.swift in Sources */,
 				12D1B45EAF2BBCDCEBEB1005 /* PlaysView.swift in Sources */,
 				F8BF3E6E1722253CFF729BD8 /* PollsView.swift in Sources */,
+				7E57A0000000000000000057 /* VenuesView.swift in Sources */,
+				7E57A0000000000000000055 /* VenuesViewModel.swift in Sources */,
+				7E57A0000000000000000053 /* VenueCacheStore.swift in Sources */,
+				7E57A0000000000000000051 /* LeagueVenues.swift in Sources */,
 				1A468450657E6A4E5C798D40 /* PollsViewModel.swift in Sources */,
 				32A0B49EBA1251670E58EB74 /* RaceTrackGeometry.swift in Sources */,
 				90809E26F5DBB74D69E76BE5 /* RaceTrackHubView.swift in Sources */,
@@ -751,6 +770,7 @@
 				7E57A000000000000000000A /* PlayAudioGeometryGridTests.swift in Sources */,
 				7E57A0000000000000000031 /* LeagueLeadersTests.swift in Sources */,
 				7E57A0000000000000000041 /* TeamStatsTests.swift in Sources */,
+				7E57A0000000000000000061 /* VenuesTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

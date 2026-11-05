@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **The iPhone has Venues, with the same list as Windows.** Each of the ten leagues Windows offers it
+  for has a Venues tab, listing the stadiums and arenas with their city and state, indoor or outdoor
+  where ESPN says, and their home teams. Selecting one shows its details. Both apps work out the list
+  the same way, from the same months of games, so neutral sites, one-offs, preseason games and visits
+  to non-Division I hosts aren't anyone's home on either. It has the three view modes, and if ESPN
+  doesn't answer it says so, with a Retry button.
+- **College hockey polls on iPhone.** Men's and women's college hockey now have the Polls tab, as they
+  do on Windows.
+
+### Fixed
+- **A poll with no points no longer reads as 0 points on iPhone.** Windows already left them blank.
+
 ### In Progress
 - **Game Wrap Up Feature**: ESPN text processing and game story extraction (under construction)
   - Core infrastructure implemented, text processing being refined

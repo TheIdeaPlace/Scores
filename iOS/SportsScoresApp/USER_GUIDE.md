@@ -59,7 +59,8 @@ Each sport screen has five tabs along the bottom:
 | **Standings** | Division or conference standings |
 | **News** | Recent news and headlines |
 | **Stats** | League statistical leaders |
-| **Polls** | AP and Coaches polls — college sports only, when available |
+| **Polls** | AP, Coaches and USCHO polls — college sports only, when available |
+| **Venues** | Each stadium and arena with its home teams; select one for its details. Not for soccer or CFL |
 
 Select any game row to open its detail view.
 

@@ -1,0 +1,1844 @@
+{
+ "about": "What a league's scoreboard reads as on the Venues screen, and which months each league asks for. services/venue_service.py is held to it by tests/unit/replay/test_venue_grid.py, and the iPhone by VenuesTests.swift. A case's games, when it has any, are the first game at each venue, that many times.",
+ "leagues": [
+  {
+   "league": "MLB",
+   "path": "baseball/mlb",
+   "query": "limit=1000"
+  },
+  {
+   "league": "NFL",
+   "path": "football/nfl",
+   "query": "limit=1000"
+  },
+  {
+   "league": "NBA",
+   "path": "basketball/nba",
+   "query": "limit=1000"
+  },
+  {
+   "league": "NHL",
+   "path": "hockey/nhl",
+   "query": "limit=1000"
+  },
+  {
+   "league": "WNBA",
+   "path": "basketball/wnba",
+   "query": "limit=1000"
+  },
+  {
+   "league": "NCAAF",
+   "path": "football/college-football",
+   "query": "groups=90&limit=400"
+  },
+  {
+   "league": "NCAAM",
+   "path": "basketball/mens-college-basketball",
+   "query": "groups=50&limit=1000"
+  },
+  {
+   "league": "NCAAWB",
+   "path": "basketball/womens-college-basketball",
+   "query": "groups=50&limit=1000"
+  },
+  {
+   "league": "NCAAH",
+   "path": "hockey/mens-college-hockey",
+   "query": "limit=1000"
+  },
+  {
+   "league": "NCAAWH",
+   "path": "hockey/womens-college-hockey",
+   "query": "limit=1000"
+  }
+ ],
+ "months": [
+  {
+   "year": 2026,
+   "month": 11,
+   "league": "MLB",
+   "months": [
+    "202609",
+    "202608",
+    "202607"
+   ]
+  },
+  {
+   "year": 2026,
+   "month": 11,
+   "league": "NFL",
+   "months": [
+    "202611",
+    "202609",
+    "202512"
+   ]
+  },
+  {
+   "year": 2026,
+   "month": 11,
+   "league": "NBA",
+   "months": [
+    "202611",
+    "202603",
+    "202601"
+   ]
+  },
+  {
+   "year": 2026,
+   "month": 11,
+   "league": "NHL",
+   "months": [
+    "202611",
+    "202603",
+    "202601"
+   ]
+  },
+  {
+   "year": 2026,
+   "month": 11,
+   "league": "WNBA",
+   "months": [
+    "202606",
+    "202506",
+    "202406"
+   ]
+  },
+  {
+   "year": 2026,
+   "month": 11,
+   "league": "NCAAF",
+   "months": [
+    "202611",
+    "202610",
+    "202511"
+   ]
+  },
+  {
+   "year": 2026,
+   "month": 11,
+   "league": "NCAAM",
+   "months": [
+    "202702",
+    "202602",
+    "202502"
+   ]
+  },
+  {
+   "year": 2026,
+   "month": 11,
+   "league": "NCAAWB",
+   "months": [
+    "202702",
+    "202602",
+    "202502"
+   ]
+  },
+  {
+   "year": 2026,
+   "month": 11,
+   "league": "NCAAH",
+   "months": [
+    "202702",
+    "202602",
+    "202502"
+   ]
+  },
+  {
+   "year": 2026,
+   "month": 11,
+   "league": "NCAAWH",
+   "months": [
+    "202701",
+    "202601",
+    "202501"
+   ]
+  },
+  {
+   "year": 2026,
+   "month": 7,
+   "league": "MLB",
+   "months": [
+    "202607",
+    "202606",
+    "202605"
+   ]
+  },
+  {
+   "year": 2026,
+   "month": 7,
+   "league": "NFL",
+   "months": [
+    "202512",
+    "202511",
+    "202509"
+   ]
+  },
+  {
+   "year": 2026,
+   "month": 7,
+   "league": "NBA",
+   "months": [
+    "202603",
+    "202601",
+    "202511"
+   ]
+  },
+  {
+   "year": 2026,
+   "month": 7,
+   "league": "NHL",
+   "months": [
+    "202603",
+    "202601",
+    "202512"
+   ]
+  },
+  {
+   "year": 2026,
+   "month": 7,
+   "league": "WNBA",
+   "months": [
+    "202606",
+    "202506",
+    "202406"
+   ]
+  },
+  {
+   "year": 2026,
+   "month": 7,
+   "league": "NCAAF",
+   "months": [
+    "202511",
+    "202510",
+    "202411"
+   ]
+  },
+  {
+   "year": 2026,
+   "month": 7,
+   "league": "NCAAM",
+   "months": [
+    "202602",
+    "202502",
+    "202402"
+   ]
+  },
+  {
+   "year": 2026,
+   "month": 7,
+   "league": "NCAAWB",
+   "months": [
+    "202602",
+    "202502",
+    "202402"
+   ]
+  },
+  {
+   "year": 2026,
+   "month": 7,
+   "league": "NCAAH",
+   "months": [
+    "202602",
+    "202502",
+    "202402"
+   ]
+  },
+  {
+   "year": 2026,
+   "month": 7,
+   "league": "NCAAWH",
+   "months": [
+    "202601",
+    "202501",
+    "202401"
+   ]
+  },
+  {
+   "year": 2026,
+   "month": 10,
+   "league": "MLB",
+   "months": [
+    "202609",
+    "202608",
+    "202607"
+   ]
+  },
+  {
+   "year": 2026,
+   "month": 10,
+   "league": "NFL",
+   "months": [
+    "202609",
+    "202512",
+    "202511"
+   ]
+  },
+  {
+   "year": 2026,
+   "month": 10,
+   "league": "NBA",
+   "months": [
+    "202603",
+    "202601",
+    "202511"
+   ]
+  },
+  {
+   "year": 2026,
+   "month": 10,
+   "league": "NHL",
+   "months": [
+    "202603",
+    "202601",
+    "202512"
+   ]
+  },
+  {
+   "year": 2026,
+   "month": 10,
+   "league": "WNBA",
+   "months": [
+    "202606",
+    "202506",
+    "202406"
+   ]
+  },
+  {
+   "year": 2026,
+   "month": 10,
+   "league": "NCAAF",
+   "months": [
+    "202610",
+    "202511",
+    "202510"
+   ]
+  },
+  {
+   "year": 2026,
+   "month": 10,
+   "league": "NCAAM",
+   "months": [
+    "202602",
+    "202502",
+    "202402"
+   ]
+  },
+  {
+   "year": 2026,
+   "month": 10,
+   "league": "NCAAWB",
+   "months": [
+    "202602",
+    "202502",
+    "202402"
+   ]
+  },
+  {
+   "year": 2026,
+   "month": 10,
+   "league": "NCAAH",
+   "months": [
+    "202602",
+    "202502",
+    "202402"
+   ]
+  },
+  {
+   "year": 2026,
+   "month": 10,
+   "league": "NCAAWH",
+   "months": [
+    "202701",
+    "202601",
+    "202501"
+   ]
+  },
+  {
+   "year": 2026,
+   "month": 2,
+   "league": "MLB",
+   "months": [
+    "202509",
+    "202508",
+    "202507"
+   ]
+  },
+  {
+   "year": 2026,
+   "month": 2,
+   "league": "NFL",
+   "months": [
+    "202512",
+    "202511",
+    "202509"
+   ]
+  },
+  {
+   "year": 2026,
+   "month": 2,
+   "league": "NBA",
+   "months": [
+    "202601",
+    "202511",
+    "202503"
+   ]
+  },
+  {
+   "year": 2026,
+   "month": 2,
+   "league": "NHL",
+   "months": [
+    "202601",
+    "202512",
+    "202511"
+   ]
+  },
+  {
+   "year": 2026,
+   "month": 2,
+   "league": "WNBA",
+   "months": [
+    "202506",
+    "202406",
+    "202306"
+   ]
+  },
+  {
+   "year": 2026,
+   "month": 2,
+   "league": "NCAAF",
+   "months": [
+    "202511",
+    "202510",
+    "202411"
+   ]
+  },
+  {
+   "year": 2026,
+   "month": 2,
+   "league": "NCAAM",
+   "months": [
+    "202602",
+    "202502",
+    "202402"
+   ]
+  },
+  {
+   "year": 2026,
+   "month": 2,
+   "league": "NCAAWB",
+   "months": [
+    "202602",
+    "202502",
+    "202402"
+   ]
+  },
+  {
+   "year": 2026,
+   "month": 2,
+   "league": "NCAAH",
+   "months": [
+    "202602",
+    "202502",
+    "202402"
+   ]
+  },
+  {
+   "year": 2026,
+   "month": 2,
+   "league": "NCAAWH",
+   "months": [
+    "202601",
+    "202501",
+    "202401"
+   ]
+  },
+  {
+   "year": 2026,
+   "month": 12,
+   "league": "MLB",
+   "months": [
+    "202609",
+    "202608",
+    "202607"
+   ]
+  },
+  {
+   "year": 2026,
+   "month": 12,
+   "league": "NFL",
+   "months": [
+    "202612",
+    "202611",
+    "202609"
+   ]
+  },
+  {
+   "year": 2026,
+   "month": 12,
+   "league": "NBA",
+   "months": [
+    "202611",
+    "202603",
+    "202601"
+   ]
+  },
+  {
+   "year": 2026,
+   "month": 12,
+   "league": "NHL",
+   "months": [
+    "202612",
+    "202611",
+    "202603"
+   ]
+  },
+  {
+   "year": 2026,
+   "month": 12,
+   "league": "WNBA",
+   "months": [
+    "202606",
+    "202506",
+    "202406"
+   ]
+  },
+  {
+   "year": 2026,
+   "month": 12,
+   "league": "NCAAF",
+   "months": [
+    "202611",
+    "202610",
+    "202511"
+   ]
+  },
+  {
+   "year": 2026,
+   "month": 12,
+   "league": "NCAAM",
+   "months": [
+    "202702",
+    "202602",
+    "202502"
+   ]
+  },
+  {
+   "year": 2026,
+   "month": 12,
+   "league": "NCAAWB",
+   "months": [
+    "202702",
+    "202602",
+    "202502"
+   ]
+  },
+  {
+   "year": 2026,
+   "month": 12,
+   "league": "NCAAH",
+   "months": [
+    "202702",
+    "202602",
+    "202502"
+   ]
+  },
+  {
+   "year": 2026,
+   "month": 12,
+   "league": "NCAAWH",
+   "months": [
+    "202701",
+    "202601",
+    "202501"
+   ]
+  },
+  {
+   "year": 2027,
+   "month": 1,
+   "league": "MLB",
+   "months": [
+    "202609",
+    "202608",
+    "202607"
+   ]
+  },
+  {
+   "year": 2027,
+   "month": 1,
+   "league": "NFL",
+   "months": [
+    "202612",
+    "202611",
+    "202609"
+   ]
+  },
+  {
+   "year": 2027,
+   "month": 1,
+   "league": "NBA",
+   "months": [
+    "202701",
+    "202611",
+    "202603"
+   ]
+  },
+  {
+   "year": 2027,
+   "month": 1,
+   "league": "NHL",
+   "months": [
+    "202701",
+    "202612",
+    "202611"
+   ]
+  },
+  {
+   "year": 2027,
+   "month": 1,
+   "league": "WNBA",
+   "months": [
+    "202606",
+    "202506",
+    "202406"
+   ]
+  },
+  {
+   "year": 2027,
+   "month": 1,
+   "league": "NCAAF",
+   "months": [
+    "202611",
+    "202610",
+    "202511"
+   ]
+  },
+  {
+   "year": 2027,
+   "month": 1,
+   "league": "NCAAM",
+   "months": [
+    "202702",
+    "202602",
+    "202502"
+   ]
+  },
+  {
+   "year": 2027,
+   "month": 1,
+   "league": "NCAAWB",
+   "months": [
+    "202702",
+    "202602",
+    "202502"
+   ]
+  },
+  {
+   "year": 2027,
+   "month": 1,
+   "league": "NCAAH",
+   "months": [
+    "202702",
+    "202602",
+    "202502"
+   ]
+  },
+  {
+   "year": 2027,
+   "month": 1,
+   "league": "NCAAWH",
+   "months": [
+    "202701",
+    "202601",
+    "202501"
+   ]
+  },
+  {
+   "year": 2027,
+   "month": 2,
+   "league": "MLB",
+   "months": [
+    "202609",
+    "202608",
+    "202607"
+   ]
+  },
+  {
+   "year": 2027,
+   "month": 2,
+   "league": "NFL",
+   "months": [
+    "202612",
+    "202611",
+    "202609"
+   ]
+  },
+  {
+   "year": 2027,
+   "month": 2,
+   "league": "NBA",
+   "months": [
+    "202701",
+    "202611",
+    "202603"
+   ]
+  },
+  {
+   "year": 2027,
+   "month": 2,
+   "league": "NHL",
+   "months": [
+    "202701",
+    "202612",
+    "202611"
+   ]
+  },
+  {
+   "year": 2027,
+   "month": 2,
+   "league": "WNBA",
+   "months": [
+    "202606",
+    "202506",
+    "202406"
+   ]
+  },
+  {
+   "year": 2027,
+   "month": 2,
+   "league": "NCAAF",
+   "months": [
+    "202611",
+    "202610",
+    "202511"
+   ]
+  },
+  {
+   "year": 2027,
+   "month": 2,
+   "league": "NCAAM",
+   "months": [
+    "202702",
+    "202602",
+    "202502"
+   ]
+  },
+  {
+   "year": 2027,
+   "month": 2,
+   "league": "NCAAWB",
+   "months": [
+    "202702",
+    "202602",
+    "202502"
+   ]
+  },
+  {
+   "year": 2027,
+   "month": 2,
+   "league": "NCAAH",
+   "months": [
+    "202702",
+    "202602",
+    "202502"
+   ]
+  },
+  {
+   "year": 2027,
+   "month": 2,
+   "league": "NCAAWH",
+   "months": [
+    "202701",
+    "202601",
+    "202501"
+   ]
+  },
+  {
+   "year": 2027,
+   "month": 3,
+   "league": "MLB",
+   "months": [
+    "202609",
+    "202608",
+    "202607"
+   ]
+  },
+  {
+   "year": 2027,
+   "month": 3,
+   "league": "NFL",
+   "months": [
+    "202612",
+    "202611",
+    "202609"
+   ]
+  },
+  {
+   "year": 2027,
+   "month": 3,
+   "league": "NBA",
+   "months": [
+    "202703",
+    "202701",
+    "202611"
+   ]
+  },
+  {
+   "year": 2027,
+   "month": 3,
+   "league": "NHL",
+   "months": [
+    "202703",
+    "202701",
+    "202612"
+   ]
+  },
+  {
+   "year": 2027,
+   "month": 3,
+   "league": "WNBA",
+   "months": [
+    "202606",
+    "202506",
+    "202406"
+   ]
+  },
+  {
+   "year": 2027,
+   "month": 3,
+   "league": "NCAAF",
+   "months": [
+    "202611",
+    "202610",
+    "202511"
+   ]
+  },
+  {
+   "year": 2027,
+   "month": 3,
+   "league": "NCAAM",
+   "months": [
+    "202702",
+    "202602",
+    "202502"
+   ]
+  },
+  {
+   "year": 2027,
+   "month": 3,
+   "league": "NCAAWB",
+   "months": [
+    "202702",
+    "202602",
+    "202502"
+   ]
+  },
+  {
+   "year": 2027,
+   "month": 3,
+   "league": "NCAAH",
+   "months": [
+    "202702",
+    "202602",
+    "202502"
+   ]
+  },
+  {
+   "year": 2027,
+   "month": 3,
+   "league": "NCAAWH",
+   "months": [
+    "202701",
+    "202601",
+    "202501"
+   ]
+  }
+ ],
+ "cases": [
+  {
+   "fixture": "scoreboard_MLB_202606.json",
+   "league": "MLB",
+   "why": "The Athletics at two parks in the month, 3 and 2, and both stay",
+   "venues": [
+    {
+     "id": "234",
+     "name": "Las Vegas Ballpark",
+     "city": "Las Vegas",
+     "state": "Nevada",
+     "location": "Las Vegas, Nevada",
+     "indoor": false,
+     "home_teams": [
+      {
+       "id": "11",
+       "name": "Athletics",
+       "abbreviation": "ATH"
+      }
+     ],
+     "summary": "Las Vegas Ballpark (Las Vegas, Nevada) [Outdoor] - Athletics",
+     "facts": [
+      "Open-air stadium exposed to weather",
+      "Major League Baseball venue",
+      "Located in Las Vegas, Nevada",
+      "Home of the Athletics"
+     ]
+    },
+    {
+     "id": "7109",
+     "name": "Sutter Health Park",
+     "city": "Sacramento",
+     "state": "California",
+     "location": "Sacramento, California",
+     "indoor": false,
+     "home_teams": [
+      {
+       "id": "11",
+       "name": "Athletics",
+       "abbreviation": "ATH"
+      }
+     ],
+     "summary": "Sutter Health Park (Sacramento, California) [Outdoor] - Athletics",
+     "facts": [
+      "Open-air stadium exposed to weather",
+      "Major League Baseball venue",
+      "Traditional baseball 'Park' naming",
+      "Located in Sacramento, California",
+      "Home of the Athletics"
+     ]
+    }
+   ]
+  },
+  {
+   "fixture": "scoreboard_MLB_202606.json",
+   "league": "MLB",
+   "why": "The Athletics' real June, 9 and 6: 6 is at least half of 9",
+   "games": [
+    {
+     "venue": "Sutter Health Park",
+     "times": 9
+    },
+    {
+     "venue": "Las Vegas Ballpark",
+     "times": 6
+    }
+   ],
+   "venues": [
+    {
+     "id": "234",
+     "name": "Las Vegas Ballpark",
+     "city": "Las Vegas",
+     "state": "Nevada",
+     "location": "Las Vegas, Nevada",
+     "indoor": false,
+     "home_teams": [
+      {
+       "id": "11",
+       "name": "Athletics",
+       "abbreviation": "ATH"
+      }
+     ],
+     "summary": "Las Vegas Ballpark (Las Vegas, Nevada) [Outdoor] - Athletics",
+     "facts": [
+      "Open-air stadium exposed to weather",
+      "Major League Baseball venue",
+      "Located in Las Vegas, Nevada",
+      "Home of the Athletics"
+     ]
+    },
+    {
+     "id": "7109",
+     "name": "Sutter Health Park",
+     "city": "Sacramento",
+     "state": "California",
+     "location": "Sacramento, California",
+     "indoor": false,
+     "home_teams": [
+      {
+       "id": "11",
+       "name": "Athletics",
+       "abbreviation": "ATH"
+      }
+     ],
+     "summary": "Sutter Health Park (Sacramento, California) [Outdoor] - Athletics",
+     "facts": [
+      "Open-air stadium exposed to weather",
+      "Major League Baseball venue",
+      "Traditional baseball 'Park' naming",
+      "Located in Sacramento, California",
+      "Home of the Athletics"
+     ]
+    }
+   ]
+  },
+  {
+   "fixture": "scoreboard_NFL_202611.json",
+   "league": "NFL",
+   "why": "Falcons listed as home at a neutral site in Madrid; Giants and Jets share MetLife; Lambeau is outdoors",
+   "venues": [
+    {
+     "id": "11938",
+     "name": "Highmark Stadium",
+     "city": "Orchard Park",
+     "state": "NY",
+     "location": "Orchard Park, NY",
+     "indoor": false,
+     "home_teams": [
+      {
+       "id": "2",
+       "name": "Buffalo Bills",
+       "abbreviation": "BUF"
+      }
+     ],
+     "summary": "Highmark Stadium (Orchard Park, NY) [Outdoor] - Buffalo Bills",
+     "facts": [
+      "Open-air stadium exposed to weather",
+      "National Football League venue",
+      "Located in Orchard Park, NY",
+      "Home of the Buffalo Bills"
+     ]
+    },
+    {
+     "id": "3798",
+     "name": "Lambeau Field",
+     "city": "Green Bay",
+     "state": "WI",
+     "location": "Green Bay, WI",
+     "indoor": false,
+     "home_teams": [
+      {
+       "id": "9",
+       "name": "Green Bay Packers",
+       "abbreviation": "GB"
+      }
+     ],
+     "summary": "Lambeau Field (Green Bay, WI) [Outdoor] - Green Bay Packers",
+     "facts": [
+      "Open-air stadium exposed to weather",
+      "National Football League venue",
+      "Located in Green Bay, WI",
+      "Home of the Green Bay Packers"
+     ]
+    },
+    {
+     "id": "3839",
+     "name": "MetLife Stadium",
+     "city": "East Rutherford",
+     "state": "NJ",
+     "location": "East Rutherford, NJ",
+     "indoor": false,
+     "home_teams": [
+      {
+       "id": "19",
+       "name": "New York Giants",
+       "abbreviation": "NYG"
+      },
+      {
+       "id": "20",
+       "name": "New York Jets",
+       "abbreviation": "NYJ"
+      }
+     ],
+     "summary": "MetLife Stadium (East Rutherford, NJ) [Outdoor] - New York Giants, New York Jets",
+     "facts": [
+      "Open-air stadium exposed to weather",
+      "National Football League venue",
+      "Located in East Rutherford, NJ",
+      "Shared by 2 teams"
+     ]
+    }
+   ]
+  },
+  {
+   "fixture": "scoreboard_NBA_202611.json",
+   "league": "NBA",
+   "why": "Pacers listed as home at a neutral site in Mexico City",
+   "venues": [
+    {
+     "id": "3559",
+     "name": "Barclays Center",
+     "city": "Brooklyn",
+     "state": "NY",
+     "location": "Brooklyn, NY",
+     "indoor": true,
+     "home_teams": [
+      {
+       "id": "17",
+       "name": "Brooklyn Nets",
+       "abbreviation": "BKN"
+      }
+     ],
+     "summary": "Barclays Center (Brooklyn, NY) [Indoor] - Brooklyn Nets",
+     "facts": [
+      "Indoor venue",
+      "National Basketball Association venue",
+      "Located in Brooklyn, NY",
+      "Home of the Brooklyn Nets"
+     ]
+    },
+    {
+     "id": "6270",
+     "name": "Chase Center",
+     "city": "San Francisco",
+     "state": "CA",
+     "location": "San Francisco, CA",
+     "indoor": true,
+     "home_teams": [
+      {
+       "id": "9",
+       "name": "Golden State Warriors",
+       "abbreviation": "GS"
+      }
+     ],
+     "summary": "Chase Center (San Francisco, CA) [Indoor] - Golden State Warriors",
+     "facts": [
+      "Indoor venue",
+      "National Basketball Association venue",
+      "Located in San Francisco, CA",
+      "Home of the Golden State Warriors"
+     ]
+    }
+   ]
+  },
+  {
+   "fixture": "scoreboard_NHL_202612.json",
+   "league": "NHL",
+   "why": "Mammoth's one game at a football stadium, not marked neutral, against 3 at home",
+   "venues": [
+    {
+     "id": "3093",
+     "name": "Delta Center",
+     "city": "Salt Lake City",
+     "state": "UT",
+     "location": "Salt Lake City, UT",
+     "indoor": true,
+     "home_teams": [
+      {
+       "id": "129764",
+       "name": "Utah Mammoth",
+       "abbreviation": "UTA"
+      }
+     ],
+     "summary": "Delta Center (Salt Lake City, UT) [Indoor] - Utah Mammoth",
+     "facts": [
+      "Indoor venue",
+      "National Hockey League venue",
+      "Located in Salt Lake City, UT",
+      "Home of the Utah Mammoth"
+     ]
+    }
+   ]
+  },
+  {
+   "fixture": "scoreboard_NHL_202612.json",
+   "league": "NHL",
+   "why": "1 and 1: both stay",
+   "games": [
+    {
+     "venue": "Delta Center",
+     "times": 1
+    },
+    {
+     "venue": "Rice-Eccles Stadium",
+     "times": 1
+    }
+   ],
+   "venues": [
+    {
+     "id": "3093",
+     "name": "Delta Center",
+     "city": "Salt Lake City",
+     "state": "UT",
+     "location": "Salt Lake City, UT",
+     "indoor": true,
+     "home_teams": [
+      {
+       "id": "129764",
+       "name": "Utah Mammoth",
+       "abbreviation": "UTA"
+      }
+     ],
+     "summary": "Delta Center (Salt Lake City, UT) [Indoor] - Utah Mammoth",
+     "facts": [
+      "Indoor venue",
+      "National Hockey League venue",
+      "Located in Salt Lake City, UT",
+      "Home of the Utah Mammoth"
+     ]
+    },
+    {
+     "id": "587",
+     "name": "Rice-Eccles Stadium",
+     "city": "Salt Lake City",
+     "state": "UT",
+     "location": "Salt Lake City, UT",
+     "indoor": false,
+     "home_teams": [
+      {
+       "id": "129764",
+       "name": "Utah Mammoth",
+       "abbreviation": "UTA"
+      }
+     ],
+     "summary": "Rice-Eccles Stadium (Salt Lake City, UT) [Outdoor] - Utah Mammoth",
+     "facts": [
+      "Open-air stadium exposed to weather",
+      "National Hockey League venue",
+      "Located in Salt Lake City, UT",
+      "Home of the Utah Mammoth"
+     ]
+    }
+   ]
+  },
+  {
+   "fixture": "scoreboard_NHL_202612.json",
+   "league": "NHL",
+   "why": "2 and 1: both stay, as a month is few games and one of two has to",
+   "games": [
+    {
+     "venue": "Delta Center",
+     "times": 2
+    },
+    {
+     "venue": "Rice-Eccles Stadium",
+     "times": 1
+    }
+   ],
+   "venues": [
+    {
+     "id": "3093",
+     "name": "Delta Center",
+     "city": "Salt Lake City",
+     "state": "UT",
+     "location": "Salt Lake City, UT",
+     "indoor": true,
+     "home_teams": [
+      {
+       "id": "129764",
+       "name": "Utah Mammoth",
+       "abbreviation": "UTA"
+      }
+     ],
+     "summary": "Delta Center (Salt Lake City, UT) [Indoor] - Utah Mammoth",
+     "facts": [
+      "Indoor venue",
+      "National Hockey League venue",
+      "Located in Salt Lake City, UT",
+      "Home of the Utah Mammoth"
+     ]
+    },
+    {
+     "id": "587",
+     "name": "Rice-Eccles Stadium",
+     "city": "Salt Lake City",
+     "state": "UT",
+     "location": "Salt Lake City, UT",
+     "indoor": false,
+     "home_teams": [
+      {
+       "id": "129764",
+       "name": "Utah Mammoth",
+       "abbreviation": "UTA"
+      }
+     ],
+     "summary": "Rice-Eccles Stadium (Salt Lake City, UT) [Outdoor] - Utah Mammoth",
+     "facts": [
+      "Open-air stadium exposed to weather",
+      "National Hockey League venue",
+      "Located in Salt Lake City, UT",
+      "Home of the Utah Mammoth"
+     ]
+    }
+   ]
+  },
+  {
+   "fixture": "scoreboard_NHL_202612.json",
+   "league": "NHL",
+   "why": "4 and 2: both stay",
+   "games": [
+    {
+     "venue": "Delta Center",
+     "times": 4
+    },
+    {
+     "venue": "Rice-Eccles Stadium",
+     "times": 2
+    }
+   ],
+   "venues": [
+    {
+     "id": "3093",
+     "name": "Delta Center",
+     "city": "Salt Lake City",
+     "state": "UT",
+     "location": "Salt Lake City, UT",
+     "indoor": true,
+     "home_teams": [
+      {
+       "id": "129764",
+       "name": "Utah Mammoth",
+       "abbreviation": "UTA"
+      }
+     ],
+     "summary": "Delta Center (Salt Lake City, UT) [Indoor] - Utah Mammoth",
+     "facts": [
+      "Indoor venue",
+      "National Hockey League venue",
+      "Located in Salt Lake City, UT",
+      "Home of the Utah Mammoth"
+     ]
+    },
+    {
+     "id": "587",
+     "name": "Rice-Eccles Stadium",
+     "city": "Salt Lake City",
+     "state": "UT",
+     "location": "Salt Lake City, UT",
+     "indoor": false,
+     "home_teams": [
+      {
+       "id": "129764",
+       "name": "Utah Mammoth",
+       "abbreviation": "UTA"
+      }
+     ],
+     "summary": "Rice-Eccles Stadium (Salt Lake City, UT) [Outdoor] - Utah Mammoth",
+     "facts": [
+      "Open-air stadium exposed to weather",
+      "National Hockey League venue",
+      "Located in Salt Lake City, UT",
+      "Home of the Utah Mammoth"
+     ]
+    }
+   ]
+  },
+  {
+   "fixture": "scoreboard_NHL_202612.json",
+   "league": "NHL",
+   "why": "5 and 2: under half, so a one-off",
+   "games": [
+    {
+     "venue": "Delta Center",
+     "times": 5
+    },
+    {
+     "venue": "Rice-Eccles Stadium",
+     "times": 2
+    }
+   ],
+   "venues": [
+    {
+     "id": "3093",
+     "name": "Delta Center",
+     "city": "Salt Lake City",
+     "state": "UT",
+     "location": "Salt Lake City, UT",
+     "indoor": true,
+     "home_teams": [
+      {
+       "id": "129764",
+       "name": "Utah Mammoth",
+       "abbreviation": "UTA"
+      }
+     ],
+     "summary": "Delta Center (Salt Lake City, UT) [Indoor] - Utah Mammoth",
+     "facts": [
+      "Indoor venue",
+      "National Hockey League venue",
+      "Located in Salt Lake City, UT",
+      "Home of the Utah Mammoth"
+     ]
+    }
+   ]
+  },
+  {
+   "fixture": "scoreboard_WNBA_202605.json",
+   "league": "WNBA",
+   "why": "A preseason game makes no home: Target Center goes, Barclays Center stays",
+   "venues": [
+    {
+     "id": "3559",
+     "name": "Barclays Center",
+     "city": "Brooklyn",
+     "state": "NY",
+     "location": "Brooklyn, NY",
+     "indoor": true,
+     "home_teams": [
+      {
+       "id": "9",
+       "name": "New York Liberty",
+       "abbreviation": "NY"
+      }
+     ],
+     "summary": "Barclays Center (Brooklyn, NY) [Indoor] - New York Liberty",
+     "facts": [
+      "Indoor venue",
+      "Women's National Basketball Association venue",
+      "Located in Brooklyn, NY",
+      "Home of the New York Liberty"
+     ]
+    }
+   ]
+  },
+  {
+   "fixture": "scoreboard_WNBA_202607.json",
+   "league": "WNBA",
+   "why": "American Airlines Center marked not indoors, and ignored for basketball; an All-Star team at home",
+   "venues": [
+    {
+     "id": "516",
+     "name": "American Airlines Center",
+     "city": "Dallas",
+     "state": "TX",
+     "location": "Dallas, TX",
+     "indoor": null,
+     "home_teams": [
+      {
+       "id": "3",
+       "name": "Dallas Wings",
+       "abbreviation": "DAL"
+      }
+     ],
+     "summary": "American Airlines Center (Dallas, TX) - Dallas Wings",
+     "facts": [
+      "Women's National Basketball Association venue",
+      "Located in Dallas, TX",
+      "Home of the Dallas Wings"
+     ]
+    },
+    {
+     "id": "2029",
+     "name": "Target Center",
+     "city": "Minneapolis",
+     "state": "MN",
+     "location": "Minneapolis, MN",
+     "indoor": true,
+     "home_teams": [
+      {
+       "id": "8",
+       "name": "Minnesota Lynx",
+       "abbreviation": "MIN"
+      }
+     ],
+     "summary": "Target Center (Minneapolis, MN) [Indoor] - Minnesota Lynx",
+     "facts": [
+      "Indoor venue",
+      "Women's National Basketball Association venue",
+      "Located in Minneapolis, MN",
+      "Home of the Minnesota Lynx"
+     ]
+    },
+    {
+     "id": "1847",
+     "name": "United Center",
+     "city": "Chicago",
+     "state": "IL",
+     "location": "Chicago, IL",
+     "indoor": null,
+     "home_teams": [
+      {
+       "id": "133384",
+       "name": "TEAM COOP",
+       "abbreviation": "COOP"
+      }
+     ],
+     "summary": "United Center (Chicago, IL) - TEAM COOP",
+     "facts": [
+      "Women's National Basketball Association venue",
+      "Located in Chicago, IL",
+      "Home of the TEAM COOP"
+     ]
+    }
+   ]
+  },
+  {
+   "fixture": "scoreboard_WNBA_202608.json",
+   "league": "WNBA",
+   "why": "Sun's one-off at TD Garden against 3 at Mohegan Sun Arena",
+   "venues": [
+    {
+     "id": "2160",
+     "name": "Mohegan Sun Arena",
+     "city": "Uncasville",
+     "state": "CT",
+     "location": "Uncasville, CT",
+     "indoor": true,
+     "home_teams": [
+      {
+       "id": "18",
+       "name": "Connecticut Sun",
+       "abbreviation": "CON"
+      }
+     ],
+     "summary": "Mohegan Sun Arena (Uncasville, CT) [Indoor] - Connecticut Sun",
+     "facts": [
+      "Indoor venue",
+      "Women's National Basketball Association venue",
+      "Located in Uncasville, CT",
+      "Home of the Connecticut Sun"
+     ]
+    }
+   ]
+  },
+  {
+   "fixture": "scoreboard_NCAAF_202611.json",
+   "league": "NCAAF",
+   "why": "Eastern Michigan at a neutral Ford Field; Harvard at home, and at a neutral Fenway Park; Syracuse's dome is indoors",
+   "venues": [
+    {
+     "id": "3750",
+     "name": "Harvard Stadium",
+     "city": "Cambridge",
+     "state": "MA",
+     "location": "Cambridge, MA",
+     "indoor": false,
+     "home_teams": [
+      {
+       "id": "108",
+       "name": "Harvard Crimson",
+       "abbreviation": "HARV"
+      }
+     ],
+     "summary": "Harvard Stadium (Cambridge, MA) [Outdoor] - Harvard Crimson",
+     "facts": [
+      "Open-air stadium exposed to weather",
+      "College football venue",
+      "Located in Cambridge, MA",
+      "Home of the Harvard Crimson"
+     ]
+    },
+    {
+     "id": "3768",
+     "name": "InfoCision Stadium",
+     "city": "Akron",
+     "state": "OH",
+     "location": "Akron, OH",
+     "indoor": false,
+     "home_teams": [
+      {
+       "id": "2006",
+       "name": "Akron Zips",
+       "abbreviation": "AKR"
+      }
+     ],
+     "summary": "InfoCision Stadium (Akron, OH) [Outdoor] - Akron Zips",
+     "facts": [
+      "Open-air stadium exposed to weather",
+      "College football venue",
+      "Located in Akron, OH",
+      "Home of the Akron Zips"
+     ]
+    },
+    {
+     "id": "1964",
+     "name": "JMA Wireless Dome",
+     "city": "Syracuse",
+     "state": "NY",
+     "location": "Syracuse, NY",
+     "indoor": true,
+     "home_teams": [
+      {
+       "id": "183",
+       "name": "Syracuse Orange",
+       "abbreviation": "SYR"
+      }
+     ],
+     "summary": "JMA Wireless Dome (Syracuse, NY) [Indoor] - Syracuse Orange",
+     "facts": [
+      "Indoor venue",
+      "College football venue",
+      "Located in Syracuse, NY",
+      "Home of the Syracuse Orange"
+     ]
+    }
+   ]
+  },
+  {
+   "fixture": "scoreboard_NCAAM_202611.json",
+   "league": "NCAAM",
+   "why": "Chicago and Misericordia host with no conferenceId, so they aren't Division I hosts",
+   "venues": [
+    {
+     "id": "348",
+     "name": "Kohl Center",
+     "city": "Madison",
+     "state": "WI",
+     "location": "Madison, WI",
+     "indoor": true,
+     "home_teams": [
+      {
+       "id": "275",
+       "name": "Wisconsin Badgers",
+       "abbreviation": "WIS"
+      }
+     ],
+     "summary": "Kohl Center (Madison, WI) [Indoor] - Wisconsin Badgers",
+     "facts": [
+      "Indoor venue",
+      "Men's college basketball venue",
+      "Located in Madison, WI",
+      "Home of the Wisconsin Badgers"
+     ]
+    }
+   ]
+  },
+  {
+   "fixture": "scoreboard_NCAAM_202611.json",
+   "league": "NCAAH",
+   "why": "The same games in a league where teams have no conferenceId: only college basketball asks",
+   "venues": [
+    {
+     "id": "12826",
+     "name": "Anderson Center",
+     "city": "Dallas",
+     "state": "PA",
+     "location": "Dallas, PA",
+     "indoor": true,
+     "home_teams": [
+      {
+       "id": "111902",
+       "name": "Misericordia Cougars",
+       "abbreviation": "MISE"
+      }
+     ],
+     "summary": "Anderson Center (Dallas, PA) [Indoor] - Misericordia Cougars",
+     "facts": [
+      "Indoor venue",
+      "Men's college hockey venue",
+      "Located in Dallas, PA",
+      "Home of the Misericordia Cougars"
+     ]
+    },
+    {
+     "id": "348",
+     "name": "Kohl Center",
+     "city": "Madison",
+     "state": "WI",
+     "location": "Madison, WI",
+     "indoor": true,
+     "home_teams": [
+      {
+       "id": "275",
+       "name": "Wisconsin Badgers",
+       "abbreviation": "WIS"
+      }
+     ],
+     "summary": "Kohl Center (Madison, WI) [Indoor] - Wisconsin Badgers",
+     "facts": [
+      "Indoor venue",
+      "Men's college hockey venue",
+      "Located in Madison, WI",
+      "Home of the Wisconsin Badgers"
+     ]
+    },
+    {
+     "id": "12825",
+     "name": "Ratner Athletics Center",
+     "city": "Chicago",
+     "state": "IL",
+     "location": "Chicago, IL",
+     "indoor": true,
+     "home_teams": [
+      {
+       "id": "80",
+       "name": "Chicago Maroons",
+       "abbreviation": "CHI"
+      }
+     ],
+     "summary": "Ratner Athletics Center (Chicago, IL) [Indoor] - Chicago Maroons",
+     "facts": [
+      "Indoor venue",
+      "Men's college hockey venue",
+      "Located in Chicago, IL",
+      "Home of the Chicago Maroons"
+     ]
+    }
+   ]
+  },
+  {
+   "fixture": "scoreboard_NCAAWB_202611.json",
+   "league": "NCAAWB",
+   "why": "Catawba hosts with no conferenceId",
+   "venues": [
+    {
+     "id": "348",
+     "name": "Kohl Center",
+     "city": "Madison",
+     "state": "WI",
+     "location": "Madison, WI",
+     "indoor": true,
+     "home_teams": [
+      {
+       "id": "275",
+       "name": "Wisconsin Badgers",
+       "abbreviation": "WIS"
+      }
+     ],
+     "summary": "Kohl Center (Madison, WI) [Indoor] - Wisconsin Badgers",
+     "facts": [
+      "Indoor venue",
+      "Women's college basketball venue",
+      "Located in Madison, WI",
+      "Home of the Wisconsin Badgers"
+     ]
+    }
+   ]
+  },
+  {
+   "fixture": "scoreboard_NCAAH_202611.json",
+   "league": "NCAAH",
+   "why": "Providence listed as home at a neutral site in Belfast",
+   "venues": [
+    {
+     "id": "317",
+     "name": "Schottenstein Center",
+     "city": "Columbus",
+     "state": "OH",
+     "location": "Columbus, OH",
+     "indoor": true,
+     "home_teams": [
+      {
+       "id": "194",
+       "name": "Ohio State Buckeyes",
+       "abbreviation": "OSU"
+      }
+     ],
+     "summary": "Schottenstein Center (Columbus, OH) [Indoor] - Ohio State Buckeyes",
+     "facts": [
+      "Indoor venue",
+      "Men's college hockey venue",
+      "Located in Columbus, OH",
+      "Home of the Ohio State Buckeyes"
+     ]
+    },
+    {
+     "id": "1208",
+     "name": "Thompson Arena",
+     "city": "Hanover",
+     "state": "NH",
+     "location": "Hanover, NH",
+     "indoor": true,
+     "home_teams": [
+      {
+       "id": "159",
+       "name": "Dartmouth Big Green",
+       "abbreviation": "DART"
+      }
+     ],
+     "summary": "Thompson Arena (Hanover, NH) [Indoor] - Dartmouth Big Green",
+     "facts": [
+      "Indoor venue",
+      "Men's college hockey venue",
+      "Located in Hanover, NH",
+      "Home of the Dartmouth Big Green"
+     ]
+    }
+   ]
+  },
+  {
+   "fixture": "scoreboard_NCAAH_202602.json",
+   "league": "NCAAH",
+   "why": "Providence's one-off at Harvard's arena leaves it to Harvard",
+   "venues": [
+    {
+     "id": "1209",
+     "name": "Bright-Landry Hockey Center",
+     "city": "Boston",
+     "state": "MA",
+     "location": "Boston, MA",
+     "indoor": true,
+     "home_teams": [
+      {
+       "id": "108",
+       "name": "Harvard Crimson",
+       "abbreviation": "HARV"
+      }
+     ],
+     "summary": "Bright-Landry Hockey Center (Boston, MA) [Indoor] - Harvard Crimson",
+     "facts": [
+      "Indoor venue",
+      "Men's college hockey venue",
+      "Located in Boston, MA",
+      "Home of the Harvard Crimson"
+     ]
+    },
+    {
+     "id": "1220",
+     "name": "Schneider Arena",
+     "city": "Providence",
+     "state": "RI",
+     "location": "Providence, RI",
+     "indoor": true,
+     "home_teams": [
+      {
+       "id": "2507",
+       "name": "Providence Friars",
+       "abbreviation": "PROV"
+      }
+     ],
+     "summary": "Schneider Arena (Providence, RI) [Indoor] - Providence Friars",
+     "facts": [
+      "Indoor venue",
+      "Men's college hockey venue",
+      "Located in Providence, RI",
+      "Home of the Providence Friars"
+     ]
+    }
+   ]
+  },
+  {
+   "fixture": "scoreboard_NCAAWH_202601.json",
+   "league": "NCAAWH",
+   "why": "Penn State's one-off at a football stadium; Boston University and Northeastern share an arena; a neutral site in Belfast",
+   "venues": [
+    {
+     "id": "5422",
+     "name": "Pegula Ice Arena",
+     "city": "University Park",
+     "state": "PA",
+     "location": "University Park, PA",
+     "indoor": true,
+     "home_teams": [
+      {
+       "id": "213",
+       "name": "Penn State Nittany Lions",
+       "abbreviation": "PSU"
+      }
+     ],
+     "summary": "Pegula Ice Arena (University Park, PA) [Indoor] - Penn State Nittany Lions",
+     "facts": [
+      "Indoor venue",
+      "Women's college hockey venue",
+      "Located in University Park, PA",
+      "Home of the Penn State Nittany Lions"
+     ]
+    },
+    {
+     "id": "6615",
+     "name": "Walter Brown Arena",
+     "city": "Boston",
+     "state": "MA",
+     "location": "Boston, MA",
+     "indoor": true,
+     "home_teams": [
+      {
+       "id": "104",
+       "name": "Boston University Terriers",
+       "abbreviation": "BU"
+      },
+      {
+       "id": "111",
+       "name": "Northeastern Huskies",
+       "abbreviation": "NE"
+      }
+     ],
+     "summary": "Walter Brown Arena (Boston, MA) [Indoor] - Boston University Terriers, Northeastern Huskies",
+     "facts": [
+      "Indoor venue",
+      "Women's college hockey venue",
+      "Located in Boston, MA",
+      "Shared by 2 teams"
+     ]
+    }
+   ]
+  }
+ ]
+}

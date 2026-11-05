@@ -434,7 +434,9 @@ struct RankingsPoll: Identifiable {
                 current: r.current ?? 0,
                 previous: r.previous,
                 trend: r.trend,
-                points: r.points,
+                // College hockey's polls have 0.0 here for every team, which isn't a score of
+                // nothing. They have no points, and Windows leaves it blank too.
+                points: (r.points ?? 0) > 0 ? r.points : nil,
                 firstPlaceVotes: r.firstPlaceVotes,
                 teamDisplayName: r.team?.resolvedDisplayName ?? "Unknown",
                 teamAbbreviation: r.team?.abbreviation ?? "—",
