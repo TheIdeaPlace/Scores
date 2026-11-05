@@ -612,7 +612,7 @@ final class SiteLeadersRequestTests: XCTestCase {
         XCTAssertFalse(categories.isEmpty)
         XCTAssertEqual(query(try XCTUnwrap(StandInSiteLeaders.leadersRequests.first), "team"), "13")
         XCTAssertTrue(categories.flatMap(\.leaders).allSatisfy { $0.teamAbbreviation.isEmpty })
-        XCTAssertEqual(categories.first?.seasonLabel, "2026-27 Regular Season")
+        XCTAssertEqual(categories.first?.seasonLabel, "2026-27 Regular Season, ranked within this team, qualified players first")
     }
 
     func testOneTeamsLabelSaysWhatItsRanksAre() async throws {
