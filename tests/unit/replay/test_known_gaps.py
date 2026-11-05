@@ -21,12 +21,13 @@ def gap(reason):
     return pytest.mark.xfail(strict=True, reason=reason, raises=(AssertionError, pytest.fail.Exception))
 
 
-@gap("The slow standings path gives a team whose record request failed 0-0, a record it "
-     "doesn't have. Blank would be honest. This is every team if the failure is general.")
+@gap("The slow standings path, which the NFL, NBA, NHL and MLB fall back to, gives a team whose "
+     "record request failed 0-0, a record it doesn't have. Blank would be honest. This is every "
+     "team if the failure is general. Soccer reads /standings, so it no longer comes this way.")
 def test_a_failed_team_record_is_not_shown_as_0_0(espn):
-    espn.on(r"/soccer/eng\.1/teams$", load("teams_EPL.json"))
-    espn.on(r"/soccer/eng\.1/teams/\d+$", HTTP_500)
-    assert all(row["wins"] != 0 or row["losses"] != 0 for row in espn_api.get_standings("EPL"))
+    espn.on(r"/nba/teams$", load("teams_NBA.json"))
+    espn.on(r"/nba/teams/\d+$", HTTP_500)
+    assert all(row["wins"] != 0 or row["losses"] != 0 for row in espn_api._get_standings_original("NBA"))
 
 
 @gap("An empty standings response for the NBA is taken to mean a new season and lists "

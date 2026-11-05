@@ -975,7 +975,7 @@ def check_standings(http, report, league, in_season):
     http.save("standings", league.key, data)
 
     if league.family == SOCCER:
-        report.ok(league.key, "App: standings", "not checked: Windows has no soccer standings")
+        check_app_soccer_table(report, league.key, entries)
         return
     try:
         rows = espn_api.get_standings(league.key)
@@ -1000,6 +1000,85 @@ def check_standings(http, report, league, in_season):
         report.ok(league.key, "App: standings", f"{len(rows)} teams, every record matches ESPN's")
 
 
+def soccer_table_problems(entries, rows):
+    """The app's table against ESPN's overall records, which read wins, draws, losses."""
+    by_name = {r.get("team_name"): r for r in rows}
+    problems = []
+    for entry in entries:
+        name = (entry.get("team") or {}).get("displayName")
+        row = by_name.get(name)
+        if row is None:
+            problems.append(f"{name} is missing")
+            continue
+        total = (_total_stat(entry) or {}).get("displayValue")
+        shown = f"{row.get('wins')}-{row.get('ties')}-{row.get('losses')}"
+        if total and shown != total:
+            problems.append(f"{name} shows {shown}, ESPN's record is {total}")
+        if row.get("games_played") != row.get("wins") + row.get("ties") + row.get("losses"):
+            problems.append(f"{name} shows {row.get('games_played')} played and {shown}")
+    return problems
+
+
+def check_app_soccer_table(report, key, entries):
+    import espn_api
+
+    try:
+        rows = espn_api.get_standings(key)
+    except Exception as e:
+        report.fail(key, "App: standings", f"get_standings raised {type(e).__name__}: {e}")
+        return
+    problems = soccer_table_problems(entries, rows)
+    if not rows:
+        report.fail(key, "App: standings", "get_standings returned nothing, and ESPN has a table")
+    elif problems:
+        report.fail(key, "App: standings", first_problems(problems))
+    else:
+        report.ok(key, "App: standings", f"{len(rows)} teams, every record matches ESPN's")
+
+
+def check_app_soccer_team_list(report, key):
+    """A competition with no table gets its Teams from /teams, so that's all there is to reach one."""
+    import espn_api
+
+    try:
+        teams = espn_api.get_soccer_teams(key)
+    except Exception as e:
+        report.fail(key, "App: teams", f"raised {type(e).__name__}: {e}")
+        return
+    if teams:
+        report.ok(key, "App: teams", f"{len(teams)} teams")
+    else:
+        report.fail(key, "App: teams", "no teams, so none of them can be reached")
+
+
+# Leagues outside the deep list, and whether each has a table. A knockout competition has none,
+# which the app says. Finding one there isn't a break, only news.
+SOCCER_TABLES = {"NWSL": True, "La Liga": True, "Bundesliga": True, "Serie A": True, "Ligue 1": True,
+                 "UCL": True, "UEL": True, "Liga MX": True, "CONCACAF": False}
+
+
+def check_soccer_tables(http, report):
+    """The rest of the soccer leagues in Standings. One request each from here and one from the app."""
+    import espn_api
+
+    for key, has_table in SOCCER_TABLES.items():
+        url = f"{STANDINGS}/{espn_api.LEAGUES[key]}/standings"
+        status, data = http.get(url)
+        if status != 200 or not isinstance(data, dict):
+            report.fail(key, "Standings", f"got {status}", url)
+            continue
+        entries = standings_entries(data)
+        if entries:
+            check_app_soccer_table(report, key, entries)
+            if not has_table:
+                report.warn(key, "Standings", "ESPN has a table here now, and the app shows it", url)
+        elif has_table:
+            report.warn(key, "Standings", "no table, which can be between seasons", url)
+        else:
+            report.ok(key, "Standings", "no table, as expected: the app says so", url)
+            check_app_soccer_team_list(report, key)
+
+
 # A game one feed has and the other doesn't yet isn't a break. A playoff record is much further off.
 TEAM_RECORD_GAMES_APART = 2
 
@@ -1011,13 +1090,13 @@ def check_team_record(report, league, team_id, name, record):
     the new one, nor just as a regular season begins: ESPN's type turns over before the first game,
     and standings can still be last season's. Not in college's postseason, when its Standings count those games, and Team Info
     and past seasons don't: Michigan's 2026 basketball season reads 37-3 and 31-3. Not in soccer,
-    which Windows has no standings for.
+    whose season types are its own numbers and whose records read wins, draws, losses.
     """
     import espn_api
 
     label = "App: team record"
     if league.family == SOCCER:
-        report.ok(league.key, label, "not checked: Windows has no soccer standings")
+        report.ok(league.key, label, "not checked: soccer's record and season types work differently")
         return
     try:
         core = espn_api.core_season(league.path)
@@ -1217,6 +1296,7 @@ def check_statistics(http, report, league, event, in_season):
         check_core_statistics(http, report, league, event, in_season)
     if league.soccer_core_leaders:
         check_soccer_core_leaders(http, report, league, event, in_season)
+        check_app_leaders(report, league, in_season)
 
 
 def known_team_stats():
@@ -1472,11 +1552,13 @@ def check_app_leaders(report, league, in_season):
 
 
 def check_no_leaders(http, report, league):
-    """Both apps have none here because ESPN has none, so it's news if that changes."""
+    """/leaders has nothing here, so it's news if that changes. College hockey has none anywhere,
+    and soccer reads the core API. Asked for a soccer season by its type 1, /leaders does answer,
+    with a much bigger payload. Asked as here, Liga MX can be alone in having it."""
     url = f"{V3}/{league.path}/leaders?region=us&lang=en&limit=5"
     status, data = http.get(url)
     if status == 200 and isinstance(data, dict) and (data.get("leaders") or {}).get("categories"):
-        report.warn(league.key, "Leaders", "ESPN has these now. Windows could show them", url)
+        report.warn(league.key, "Leaders", "ESPN has these now, with the names inside. Both apps could read them", url)
     else:
         report.ok(league.key, "Leaders", f"none, as expected (got {status})", url)
 
@@ -1498,19 +1580,19 @@ def check_core_stats(http, report, league, year, name, tail, read):
 
 
 def check_soccer_core_leaders(http, report, league, event, in_season):
-    """/leaders is a 404 for soccer, so the iPhone reads these from the core API, which files a
-    league's whole season under type 1. Windows has no soccer leaders."""
+    """Soccer's leaders on both apps come from the core API, which files a league's whole season
+    under type 1. Their names are looked up, and check_app_leaders asks the way the app does."""
     year = (event.get("season") or {}).get("year")
     if not year:
-        report.fail(league.key, "Core API: leaders (iPhone)", f"final {event['id']} has no season")
+        report.fail(league.key, "Core API: leaders", f"final {event['id']} has no season")
         return
     url = f"{CORE}/{league.core_path}/seasons/{year}/types/1/leaders?limit=1"
     status, data = http.get(url)
     categories = (data or {}).get("categories") if status == 200 and isinstance(data, dict) else None
     if categories:
-        report.ok(league.key, "Core API: leaders (iPhone)", f"{year}: {len(categories)} categories", url)
+        report.ok(league.key, "Core API: leaders", f"{year}: {len(categories)} categories", url)
     else:
-        report.seasonal(in_season, league.key, "Core API: leaders (iPhone)", f"none for {year}, got {status}", url)
+        report.seasonal(in_season, league.key, "Core API: leaders", f"none for {year}, got {status}", url)
 
 
 def check_core_statistics(http, report, league, event, in_season):
@@ -1935,7 +2017,7 @@ def check_others_twice(http, seasons):
 def check_others(http, seasons):
     report = Report()
     for check in (check_every_league_path, check_football_calendar, check_past_postseasons, check_soccer_schedules,
-                  check_golf, check_draft, check_world_cup, check_cfl, check_fantasy):
+                  check_soccer_tables, check_golf, check_draft, check_world_cup, check_cfl, check_fantasy):
         try:
             check(http, report)
         except Exception as e:

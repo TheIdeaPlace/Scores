@@ -1,11 +1,13 @@
 import requests
 import threading
 import time
+from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
 from exceptions import ApiError
 from game_labels import (best_odds, broadcast_names, format_height, format_weight,
                          injured_player_count, leader_display_value, local_schedule_datetime,
                          schedule_game_label)
+from soccer import NAME_UNAVAILABLE, SOCCER_LEAGUES, core_leader_lists, parse_soccer_standings, parse_team_list
 from team_stats import needs_team_list, parse_team_stats
 from timezone_utils import convert_espn_time_to_local
 
@@ -16,9 +18,9 @@ from timezone_utils import convert_espn_time_to_local
 DEFAULT_TIMEOUT = 15
 
 
-def _http_get(url, **kwargs):
+def _http_get(url, session=None, **kwargs):
     kwargs.setdefault("timeout", DEFAULT_TIMEOUT)
-    return requests.get(url, **kwargs)
+    return (session or requests).get(url, **kwargs)
 
 
 # ESPN sometimes sends null, or an empty list, where a dict or list belongs. A
@@ -1686,6 +1688,8 @@ def get_standings(league_key):
         return _get_ncaah_standings_fast()
     elif league_key == "NCAAWH":
         return _get_ncaawh_standings_fast()
+    elif (LEAGUES.get(league_key) or "").startswith("soccer/"):
+        return _standings_or_nothing(league_key, LEAGUES[league_key], parse=parse_soccer_standings)
     else:
         # Fallback to original method for other leagues
         return _get_standings_original(league_key)
@@ -2329,22 +2333,42 @@ def parse_college_standings(data):
 STANDINGS_UNAVAILABLE = "ESPN isn't providing standings right now. Try again in a minute."
 
 
-def _standings_or_nothing(league, path, query=""):
+def _standings_or_nothing(league, path, query="", parse=parse_college_standings):
     """A league's rows from /standings, [] if ESPN answered and has none, so that the screens say
     there's no data. A request that failed raises ApiError instead: it says nothing about what ESPN
-    has. The WNBA and college leagues have no fallback to the team list: its rows have no division,
-    which Teams leaves out, so it opened with no tabs and said nothing, and college's are the first
-    50 teams of all of them, with one request each."""
+    has. The WNBA, college and soccer leagues have no fallback to the team list: its rows have no
+    division, which Teams leaves out, so it opened with no tabs and said nothing, college's are the
+    first 50 teams of all of them, with one request each, and a soccer team whose record request
+    failed read 0-0."""
     try:
         resp = _http_get(f"https://site.api.espn.com/apis/v2/sports/{path}/standings{query}")
         if resp.status_code != 200:
             raise ApiError(STANDINGS_UNAVAILABLE)
         data = resp.json()
         _listed(data, "children", STANDINGS_UNAVAILABLE)
-        return parse_college_standings(data)
+        return parse(data)
     except (requests.RequestException, ValueError) as e:
         print(f"Error in {league} standings: {e}")
         raise ApiError(STANDINGS_UNAVAILABLE) from e
+
+
+TEAMS_UNAVAILABLE = "ESPN isn't providing teams right now. Try again in a minute."
+
+
+def get_soccer_teams(league_key):
+    """The rows for a soccer league's Teams section: its table's, with their records. A competition
+    with no table still has teams, from one request for the list of them."""
+    rows = get_standings(league_key)
+    if rows:
+        return rows
+    try:
+        resp = _http_get(f"{BASE_URL}/{LEAGUES[league_key]}/teams", params={"limit": 1000}, timeout=20)
+        if resp.status_code != 200:
+            raise ApiError(TEAMS_UNAVAILABLE)
+        return parse_team_list(resp.json())
+    except (requests.RequestException, ValueError) as e:
+        print(f"Error in {league_key} teams: {e}")
+        raise ApiError(TEAMS_UNAVAILABLE) from e
 
 
 def _get_ncaaf_standings_fast():
@@ -2520,17 +2544,13 @@ def _get_team_record(team_id, league_key):
                 summary = item.get("summary", "0-0")
                 stats = item.get("stats", [])
                 
-                # The stats name each number. The summary can't be split blindly:
-                # soccer's "8-0-1" is wins, draws, losses, and football's is wins,
-                # losses, ties. Unpacking three parts into two used to fail, and the
-                # team read 0-0.
+                # The stats name each number. Football's summary can have a third part, its
+                # ties: unpacking three parts into two used to fail, and the team read 0-0.
                 by_name = {stat.get("name"): stat.get("value") for stat in stats}
                 if all(isinstance(by_name.get(n), (int, float)) for n in ("wins", "losses")):
                     wins, losses = int(by_name["wins"]), int(by_name["losses"])
                 else:
-                    first, second, third = _record_parts(summary)
-                    is_soccer = (LEAGUES.get(league_key) or "").startswith("soccer/")
-                    wins, losses = (first, third) if is_soccer else (first, second)
+                    wins, losses, _ = _record_parts(summary)
                 total_games = wins + losses
                 win_pct = f"{wins/total_games:.3f}" if total_games > 0 else "0.000"
 
@@ -2555,11 +2575,12 @@ def _get_team_record(team_id, league_key):
         return 0, 0, "0.000", ""
 
 # Player leaders. ESPN has them here, with names and teams inside the response, for these
-# leagues. /leaders is a 404 for college hockey and soccer, so asking would only look like a
-# failure: those leagues have no leaders to show.
+# leagues. /leaders is a 404 for college hockey, so asking would only look like a failure: that
+# league has no leaders to show. Soccer reads the core API instead, as the iPhone does.
 LEADERS_BASE_URL = "https://site.web.api.espn.com/apis/site/v3/sports"
 CORE_BASE_URL = "https://sports.core.api.espn.com/v2/sports"
 LEADER_LEAGUES = {"NFL", "NCAAF", "NBA", "WNBA", "NCAAM", "NCAAWB", "NHL", "MLB"}
+CORE_LEADER_LEAGUES = SOCCER_LEAGUES
 LEADERS_LIMIT = 20
 # /leaders answers 500 far more often the more it's asked for. It can be a retry away, or last
 # for minutes at one limit while a smaller one works: on Nov 4, 2026, four leagues' 2025 season
@@ -2722,6 +2743,8 @@ def get_player_statistics(league_key):
     they're from, such as "2026-27 Regular Season". Empty means ESPN has no leaders for this
     league. A failed request raises ApiError instead, so the dialog can say so."""
     key = league_key if league_key in LEAGUES else league_key.upper()
+    if key in CORE_LEADER_LEAGUES:
+        return _core_player_statistics(LEAGUES[key])
     if key not in LEADER_LEAGUES:
         return _no_leaders()
     league_path = LEAGUES[key]
@@ -2735,6 +2758,182 @@ def get_player_statistics(league_key):
     if not any(answer is not None for answer in answers):
         raise ApiError(STATISTICS_UNAVAILABLE)
     return result
+
+
+# Soccer's leaders, from the core API as on the iPhone (fetchCoreLeaders). A league files its whole
+# season under type 1, and 2 and 3 are a 404. An entry's athlete and team are references, so 20 of
+# each of a dozen lists takes about 150 requests. They're asked for a few at a time over connections
+# kept open, at most once each while the app is open. A new connection for each took a minute.
+SOCCER_LEADERS_SEASON_TYPE = 1
+# The season ESPN says it is and the two before, as the iPhone tries three. A new season can have no
+# list yet, which is a 404 rather than a failure.
+CORE_LEADER_SEASONS = 3
+CORE_REF_WORKERS = 8
+CORE_REF_TIMEOUT = 10
+# Two rounds of connection failures with no answer between them mean the network has stalled.
+CORE_REF_FAILURES_BEFORE_GIVING_UP = CORE_REF_WORKERS * 2
+_CORE_REF_CACHE = {}  # reference: what was read from it. Names don't change while the app is open.
+_APP_CLOSING = threading.Event()
+
+
+def stop_core_lookups():
+    """For when the app quits. Python works through a pool's whole queue at exit, even with the main
+    thread done, so a list still loading would hold a closed app open for as long as that takes."""
+    _APP_CLOSING.set()
+
+
+class _CoreRefReader:
+    """Reads a set of the core API's references, some at a time, for one list of leaders. One that
+    still fails after a second try is left out rather than failing them all. A 404 won't change, so
+    it's final, and so is a timeout, which has already cost someone 10 seconds. After too many
+    connection failures in a row the rest aren't asked for, since they'd only fail too."""
+
+    def __init__(self):
+        self._lock = threading.Lock()
+        self._failures_in_a_row = 0
+        self._session = requests.Session()
+        self._session.mount("https://", requests.adapters.HTTPAdapter(pool_maxsize=CORE_REF_WORKERS))
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *exception):
+        self._session.close()
+
+    def _failed(self):
+        with self._lock:
+            self._failures_in_a_row += 1
+
+    def _answered(self):
+        with self._lock:
+            self._failures_in_a_row = 0
+
+    def has_stalled(self):
+        with self._lock:
+            return self._failures_in_a_row >= CORE_REF_FAILURES_BEFORE_GIVING_UP
+
+    def _read_one(self, reference):
+        for attempt in range(2):
+            if self.has_stalled() or _APP_CLOSING.is_set():
+                return None
+            if attempt:
+                time.sleep(0.3)
+            try:
+                resp = _http_get(reference, session=self._session, timeout=CORE_REF_TIMEOUT)
+            except requests.Timeout:
+                self._failed()
+                return None
+            except requests.RequestException:
+                self._failed()
+                continue
+            self._answered()
+            if resp.status_code == 200:
+                try:
+                    return _as_dict(resp.json())
+                except ValueError:
+                    return None
+            if resp.status_code < 500 and resp.status_code != 429:
+                return None
+        return None
+
+    def read(self, references, pick):
+        """{reference: pick(its answer)}, with only those that said something. The cache saves a
+        second opening of the same list from asking again."""
+        found = {ref: _CORE_REF_CACHE[ref] for ref in references if ref in _CORE_REF_CACHE}
+        wanted = [ref for ref in references if ref and ref not in found]
+
+        def read_one(reference):
+            return reference, pick(self._read_one(reference) or {})
+
+        with ThreadPoolExecutor(max_workers=CORE_REF_WORKERS) as pool:
+            for reference, value in pool.map(read_one, wanted):
+                if value:
+                    found[reference] = _CORE_REF_CACHE[reference] = value
+        return found
+
+
+def _fetch_core_leaders(league_path, year):
+    """A season's leaders from the core API, or None if ESPN has no such season."""
+    sport, league = league_path.split("/", 1)
+    url = f"{CORE_BASE_URL}/{sport}/leagues/{league}/seasons/{year}/types/{SOCCER_LEADERS_SEASON_TYPE}/leaders"
+    resp = None
+    for attempt in range(2):
+        if attempt:
+            time.sleep(1)
+        try:
+            resp = _http_get(url, params={"limit": LEADERS_LIMIT}, timeout=15)
+            if resp.status_code == 200:
+                return _as_dict(resp.json())
+        except (requests.RequestException, ValueError) as e:
+            raise ApiError(STATISTICS_UNAVAILABLE) from e
+        if resp.status_code == 404:
+            return None
+        if resp.status_code < 500:
+            break
+    raise ApiError(STATISTICS_UNAVAILABLE)
+
+
+def _core_season_name(league_path, year, season):
+    """What ESPN calls this season, such as "2025-26 English Premier League". `season` is the core
+    API's current one, so only an earlier season takes a request. If that fails, the year still
+    says it isn't this season's."""
+    if season.get("year") == year and season.get("displayName"):
+        return season["displayName"]
+    sport, league = league_path.split("/", 1)
+    try:
+        resp = _http_get(f"{CORE_BASE_URL}/{sport}/leagues/{league}/seasons/{year}", timeout=10)
+        name = _as_dict(resp.json()).get("displayName") if resp.status_code == 200 else None
+    except (requests.RequestException, ValueError):
+        name = None
+    return name or str(year)
+
+
+def _team_abbreviation(team):
+    return team.get("abbreviation") or team.get("displayName")
+
+
+def _athlete_name(athlete):
+    return athlete.get("displayName") or athlete.get("fullName") or athlete.get("shortName")
+
+
+def _core_player_statistics(league_path):
+    """A soccer league's leaders, in the shape get_player_statistics returns. A row whose name or
+    team couldn't be had says so and keeps its place. But a network that stalled partway, or most
+    names or teams not coming, means ESPN isn't answering, so it fails rather than showing a screen
+    of those. It goes by how many are had, cached or not, since one page that's always a 404 is
+    never cached, and mustn't fail every opening after the first. The iPhone: fetchLeadersForSeason."""
+    season = core_season(league_path)
+    for year in range(season["year"], season["year"] - CORE_LEADER_SEASONS, -1):
+        lists = core_leader_lists(_fetch_core_leaders(league_path, year))
+        if lists:
+            break
+    else:
+        return _no_leaders()
+
+    leaders =[leader for category in lists for leader in category["leaders"]]
+    athletes = {leader["athlete"] for leader in leaders} - {""}
+    team_references = {leader["team"] for leader in leaders} - {""}
+
+    def most_missing(references, found):
+        return len(found) * 2 < len(references)
+
+    with _CoreRefReader() as reader:
+        teams = reader.read(team_references, _team_abbreviation)
+        names = reader.read(athletes, _athlete_name)
+        stalled = reader.has_stalled()
+    if stalled or not names or most_missing(athletes, names) or most_missing(team_references, teams):
+        raise ApiError(STATISTICS_UNAVAILABLE)
+    categories = [{
+        "category": category["title"],
+        "stats": [{
+            "player_name": names.get(leader["athlete"], NAME_UNAVAILABLE),
+            "team": teams.get(leader["team"], ""),
+            "value": leader["value"],
+            "stat_name": category["title"],
+        } for leader in category["leaders"]],
+    } for category in lists]
+    return {"player_stats": categories, "team_stats": [],
+            "season": _core_season_name(league_path, year, season)}
 
 
 # Team statistics. One request has every team's whole stat line. ESPN has none for college hockey

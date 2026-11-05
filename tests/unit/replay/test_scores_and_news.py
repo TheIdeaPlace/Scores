@@ -296,6 +296,19 @@ class TestRankings:
         top = polls[0]["ranks"][0]
         assert (top["current"], top["team"]["nickname"], top["recordSummary"]) == (1, "Miami", "8-0")
 
+    @pytest.mark.parametrize("league,path,fixture,name,top", [
+        ("NCAAH", "hockey/mens-college-hockey", "rankings_NCAAH.json", "USCHO Men's Poll", "Wisconsin"),
+        ("NCAAWH", "hockey/womens-college-hockey", "rankings_NCAAWH.json", "USCHO Women's Poll", "Ohio State"),
+    ])
+    def test_college_hockey_polls(self, espn, league, path, fixture, name, top):
+        """The iPhone reads these too, in VenuesTests.swift. They have no points."""
+        espn.on("/rankings", load(fixture))
+        polls = espn_api.get_rankings(league)["polls"]
+        assert espn.calls == [f"{SITE}/{path}/rankings"]
+        assert [p["name"] for p in polls] == [name]
+        assert polls[0]["ranks"][0]["team"]["location"] == top
+        assert all(rank["points"] == 0 for rank in polls[0]["ranks"])
+
     def test_unknown_league(self, espn):
         assert espn_api.get_rankings("CRICKET") == {"polls": []}
         assert espn.calls == []

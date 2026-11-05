@@ -1019,6 +1019,132 @@ class TestStandingsAgainstTheApp:
         assert any("can't read" in p for p in v.standings_problems(data, league("NFL")))
 
 
+class TestSoccerTables:
+    """The app's table against ESPN's, on real answers, with the app's own parsing."""
+
+    def table(self, name="standings_EPL.json"):
+        import soccer
+        data = load(name)
+        return v.standings_entries(data), soccer.parse_soccer_standings(data)
+
+    def app_says(self, monkeypatch, answer):
+        import espn_api
+
+        def get_standings(key):
+            if isinstance(answer, Exception):
+                raise answer
+            return answer
+
+        monkeypatch.setattr(espn_api, "get_standings", get_standings)
+
+    @pytest.mark.parametrize("name", ["standings_EPL.json", "standings_MLS.json", "standings_UCL.json",
+                                      "standings_LigaMX.json", "standings_UCL_2023.json"])
+    def test_real_tables_have_no_problems(self, name):
+        entries, rows = self.table(name)
+        assert entries
+        assert v.soccer_table_problems(entries, rows) == []
+
+    def test_a_missing_team(self):
+        entries, rows = self.table()
+        assert "is missing" in v.soccer_table_problems(entries, rows[1:])[0]
+
+    def test_draws_read_as_losses_is_caught(self):
+        entries, rows = self.table()
+        rows[0]["losses"], rows[0]["ties"] = rows[0]["ties"], rows[0]["losses"]
+        assert "ESPN's record is 8-0-1" in v.soccer_table_problems(entries, rows)[0]
+
+    def test_games_that_dont_add_up_are_caught(self):
+        entries, rows = self.table()
+        rows[0]["games_played"] += 1
+        assert "played" in v.soccer_table_problems(entries, rows)[0]
+
+    def test_the_deep_list_checks_the_apps_table(self, monkeypatch):
+        entries, rows = self.table()
+        self.app_says(monkeypatch, rows)
+        report = v.Report()
+        v.check_standings(FakeHttp(default=(200, load("standings_EPL.json"))), report, league("EPL"), True)
+        assert statuses(report, "App: standings") == [v.PASS]
+
+    @pytest.mark.parametrize("answer,words", [([], "returned nothing"), (ValueError("bad"), "raised ValueError")])
+    def test_the_app_having_no_table_fails(self, monkeypatch, answer, words):
+        self.app_says(monkeypatch, answer)
+        report = v.Report()
+        v.check_standings(FakeHttp(default=(200, load("standings_EPL.json"))), report, league("EPL"), True)
+        assert FAIL_IN(report, "App: standings")
+        assert words in detail(report, "App: standings")
+
+    def test_a_wrong_record_fails(self, monkeypatch):
+        entries, rows = self.table()
+        rows[0]["wins"] += 1
+        self.app_says(monkeypatch, rows)
+        report = v.Report()
+        v.check_app_soccer_table(report, "EPL", entries)
+        assert FAIL_IN(report, "App: standings")
+
+    def only(self, monkeypatch, **tables):
+        monkeypatch.setattr(v, "SOCCER_TABLES", tables)
+
+    def test_a_league_with_its_table(self, monkeypatch):
+        self.only(monkeypatch, UCL=True)
+        _, rows = self.table("standings_UCL.json")
+        self.app_says(monkeypatch, rows)
+        report = v.Report()
+        v.check_soccer_tables(FakeHttp(default=(200, load("standings_UCL.json"))), report)
+        assert statuses(report, "App: standings") == [v.PASS]
+        assert statuses(report, "Standings") == []
+
+    def teams_say(self, monkeypatch, answer):
+        import espn_api
+
+        def get_soccer_teams(key):
+            if isinstance(answer, Exception):
+                raise answer
+            return answer
+
+        monkeypatch.setattr(espn_api, "get_soccer_teams", get_soccer_teams)
+
+    def test_a_knockout_competition_with_no_table_is_as_expected(self, monkeypatch):
+        self.only(monkeypatch, CONCACAF=False)
+        self.teams_say(monkeypatch, [{"team_name": "A"}])
+        report = v.Report()
+        v.check_soccer_tables(FakeHttp(default=(200, load("standings_CONCACAF.json"))), report)
+        assert statuses(report, "Standings") == [v.PASS]
+        assert statuses(report, "App: teams") == [v.PASS]
+
+    @pytest.mark.parametrize("answer,words", [([], "no teams"), (ValueError("bad"), "raised ValueError")])
+    def test_a_knockout_competition_losing_its_team_list_fails(self, monkeypatch, answer, words):
+        self.only(monkeypatch, CONCACAF=False)
+        self.teams_say(monkeypatch, answer)
+        report = v.Report()
+        v.check_soccer_tables(FakeHttp(default=(200, load("standings_CONCACAF.json"))), report)
+        assert FAIL_IN(report, "App: teams")
+        assert words in detail(report, "App: teams")
+
+    def test_a_league_with_no_table_only_warns(self, monkeypatch):
+        self.only(monkeypatch, UCL=True)
+        report = v.Report()
+        v.check_soccer_tables(FakeHttp(default=(200, load("standings_CONCACAF.json"))), report)
+        assert statuses(report, "Standings") == [v.WARN]
+
+    def test_a_knockout_competition_getting_a_table_is_news(self, monkeypatch):
+        self.only(monkeypatch, CONCACAF=False)
+        _, rows = self.table()
+        self.app_says(monkeypatch, rows)
+        report = v.Report()
+        v.check_soccer_tables(FakeHttp(default=(200, load("standings_EPL.json"))), report)
+        assert statuses(report, "Standings") == [v.WARN]
+
+    def test_the_request_failing_fails(self, monkeypatch):
+        self.only(monkeypatch, UCL=True)
+        report = v.Report()
+        v.check_soccer_tables(FakeHttp(default=(500, None)), report)
+        assert FAIL_IN(report, "Standings")
+
+    def test_every_soccer_league_is_checked_one_way_or_the_other(self):
+        import soccer
+        assert set(v.SOCCER_TABLES) | {key for key in v.LEAGUE_KEYS if v.LEAGUE_KEYS[key].family == v.SOCCER} == set(soccer.SOCCER_LEAGUES)
+
+
 class TestRankings:
     def poll(self, **team):
         return [{"name": "AP", "ranks": [{"current": 1, "team": team}]}]
@@ -1586,6 +1712,7 @@ class TestStatistics:
 
         monkeypatch.setattr(v, "check_team_statistics", never)
         monkeypatch.setattr(v, "check_app_team_statistics", never)
+        monkeypatch.setattr(v, "check_app_leaders", lambda *a: None)
         report = v.Report()
         v.check_statistics(FakeHttp(default=(500, None)), report, league("EPL"), event(), True)
         assert statuses(report, "Team statistics") == [v.PASS]
@@ -1730,7 +1857,7 @@ class TestStatistics:
         report = v.Report()
         v.check_core_statistics(http, report, league("NBA"), event(), True)
         assert not any("/leaders" in u for u in http.urls)
-        assert statuses(report, "Core API: leaders (iPhone)") == []
+        assert statuses(report, "Core API: leaders") == []
 
     def soccer_season(self, http):
         played = event()
@@ -1739,17 +1866,35 @@ class TestStatistics:
         v.check_statistics(http, report, league("EPL"), played, True)
         return report
 
-    def test_soccer_leaders_are_checked_where_the_iphone_reads_them(self):
+    def test_soccer_leaders_are_checked_where_both_apps_read_them(self, monkeypatch):
+        self.app_says(monkeypatch, self.rows("9"))
         http = FakeHttp([("/seasons/2026/types/1/leaders", (200, {"categories": [1]}))], default=(404, None))
         report = self.soccer_season(http)
-        assert statuses(report, "Core API: leaders (iPhone)") == [v.PASS]
+        assert statuses(report, "Core API: leaders") == [v.PASS]
+        assert statuses(report, "App: player statistics") == [v.PASS]
 
-    def test_soccer_leaders_gone_fails_in_season(self):
+    def test_soccer_leaders_gone_fails_in_season(self, monkeypatch):
+        self.app_says(monkeypatch, {"player_stats": []})
         report = self.soccer_season(FakeHttp(default=(404, None)))
-        assert FAIL_IN(report, "Core API: leaders (iPhone)")
+        assert FAIL_IN(report, "Core API: leaders")
+        assert FAIL_IN(report, "App: player statistics")
+
+    def test_the_app_failing_on_soccer_leaders_says_what_a_user_was_told(self, monkeypatch):
+        import espn_api
+        self.app_says(monkeypatch, v.ApiError(espn_api.STATISTICS_UNAVAILABLE))
+        http = FakeHttp([("/seasons/2026/types/1/leaders", (200, {"categories": [1]}))], default=(404, None))
+        report = self.soccer_season(http)
+        assert FAIL_IN(report, "App: player statistics")
+        assert "Try again" in detail(report, "App: player statistics")
 
     def test_only_soccer_has_its_leaders_on_the_core_api(self):
         assert league("EPL").soccer_core_leaders and not league("NBA").soccer_core_leaders
+
+    def test_the_core_api_leagues_are_the_apps(self):
+        import espn_api
+        checked = {key for key in v.LEAGUE_KEYS if v.LEAGUE_KEYS[key].soccer_core_leaders}
+        assert checked <= espn_api.CORE_LEADER_LEAGUES
+        assert checked, "the validator should check some of them"
 
     def test_core_team_statistics_gone(self):
         http = FakeHttp([("/leaders", (200, {"categories": [1]}))], default=(200, {"splits": {}}))

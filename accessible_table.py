@@ -11,6 +11,7 @@ from PyQt6.QtWidgets import (
 from PyQt6.QtCore import Qt, QEvent, QObject, QTimer, pyqtSignal
 from typing import List, Dict, Any, Optional
 import settings
+from soccer import SOCCER_LEAGUES, SOCCER_TABLE_HEADERS, soccer_table_cells
 import tab_keys
 
 
@@ -671,6 +672,8 @@ class StandingsTable(AccessibleTable):
     NHL_BASIC_HEADERS = ["Pos", "Team", "W", "L", "OTL", "Pts", "PCT", "Streak"]
 
     def _headers_for_view(self, league: str, expanded: bool) -> List[str]:
+        if league in SOCCER_LEAGUES:
+            return SOCCER_TABLE_HEADERS
         if league in ("NCAAF", "NCAAM", "NCAAWB"):
             return self.COLLEGE_HEADERS
         if league in ("NCAAH", "NCAAWH"):
@@ -748,6 +751,9 @@ class StandingsTable(AccessibleTable):
 
     def _build_basic_row(self, position: int, team: Dict[str, Any]) -> List[str]:
         """Build basic standings row"""
+        if self.league in SOCCER_LEAGUES:
+            return soccer_table_cells(position, team)
+
         # Handle different field name formats from API vs StandingsData model
         team_name = team.get("team_name") or team.get("name", "")
         wins = str(team.get("wins", ""))
@@ -1174,6 +1180,10 @@ class _TabBarViewKeys(QObject):
                 table.adopt_saved_view()
 
     def eventFilter(self, obj, event):
+        # An exception here ends the app, and an area being garbage collected can reach this
+        # with this object's attributes already gone.
+        if "_tabs" not in self.__dict__ or "_bar" not in self.__dict__:
+            return False
         if obj is not self._tabs and obj is not self._bar:
             # The window, which only a ListPages watches, for Escape from outside the list and
             # its pages, such as from Close. Every other key there is the window's own.
@@ -1228,7 +1238,7 @@ def _install_tab_keys(tabs, bar) -> _TabBarViewKeys:
     def focus_table_on_new_tab(_index):
         try:
             page = tabs.currentWidget()
-        except RuntimeError:  # The area is being destroyed, and its pages with it.
+        except (AttributeError, RuntimeError):  # The area is being destroyed, and its pages with it.
             return
         tables = page.findChildren(AccessibleTable) if page else []
         for table in tables:
@@ -1274,10 +1284,17 @@ def _focus_is_on_a_page_being_swapped(area) -> bool:
     """Hiding a page with focus in it makes Qt ask its ancestors to move focus on. That lands on
     the next control, such as Close, and a screen reader says so before the new page's table
     takes focus. The stacked layout moves focus to the new page itself, so nothing has to.
-    The page is hidden before the layout's index moves on, so only then is the current one hidden."""
-    focused = QApplication.focusWidget()
-    page = area.currentWidget()
-    return focused is not None and page is not None and page.isHidden() and page.isAncestorOf(focused)
+    The page is hidden before the layout's index moves on, so only then is the current one hidden.
+
+    Never raises: Qt calls this as an override, where PyQt turns an exception into a fatal error
+    and ends the app. An area being garbage collected can have lost its attributes, or its pages,
+    while Qt is still asking. Moving focus isn't this code's business by then."""
+    try:
+        focused = QApplication.focusWidget()
+        page = area.currentWidget()
+        return focused is not None and page is not None and page.isHidden() and page.isAncestorOf(focused)
+    except (AttributeError, RuntimeError):
+        return False
 
 
 class ListPages(QWidget):
@@ -1323,7 +1340,8 @@ class ListPages(QWidget):
         return super().focusNextPrevChild(next_child)
 
     def _show_page(self, row: int) -> None:
-        if row >= 0:
+        # Not while being garbage collected, with its attributes already gone.
+        if row >= 0 and "_stack" in self.__dict__:
             if self.is_open():
                 self.pageOpening.emit(row)
             self._stack.setCurrentIndex(row)

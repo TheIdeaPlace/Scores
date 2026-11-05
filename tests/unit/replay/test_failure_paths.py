@@ -27,7 +27,7 @@ FAILING = [
     ("get_standings NFL", lambda: espn_api.get_standings("NFL"), [], espn_api.STANDINGS_UNAVAILABLE),
     ("get_standings MLB", lambda: espn_api.get_standings("MLB"), [], espn_api.STANDINGS_UNAVAILABLE),
     ("get_standings NHL", lambda: espn_api.get_standings("NHL"), [], espn_api.STANDINGS_UNAVAILABLE),
-    ("get_standings soccer", lambda: espn_api.get_standings("EPL"), [], espn_api.STANDINGS_UNAVAILABLE),
+    ("the slow standings path", lambda: espn_api._get_standings_original("NBA"), [], espn_api.STANDINGS_UNAVAILABLE),
     ("get_rankings", lambda: espn_api.get_rankings("NCAAF"), {"polls": []}, espn_api.POLLS_UNAVAILABLE),
     ("get_team_info", lambda: espn_api.get_team_info("NFL", "9"), {}, espn_api.TEAM_UNAVAILABLE),
     ("get_team_roster", lambda: espn_api.get_team_roster("NFL", "9"), [], espn_api.ROSTER_UNAVAILABLE),
@@ -125,11 +125,12 @@ def test_espn_having_nothing_reads_as_nothing(espn, call, nothing, sentence, rep
     ("/standings", {"children": None}, lambda: espn_api.get_standings("NHL"), espn_api.STANDINGS_UNAVAILABLE),
     ("/standings", {"children": None}, lambda: espn_api.get_standings("WNBA"), espn_api.STANDINGS_UNAVAILABLE),
     ("/standings", {"children": None}, lambda: espn_api.get_standings("NCAAM"), espn_api.STANDINGS_UNAVAILABLE),
-    ("/teams", {"sports": None}, lambda: espn_api.get_standings("EPL"), espn_api.STANDINGS_UNAVAILABLE),
+    ("/standings", {"children": None}, lambda: espn_api.get_standings("EPL"), espn_api.STANDINGS_UNAVAILABLE),
+    ("/teams", {"sports": None}, lambda: espn_api._get_standings_original("NBA"), espn_api.STANDINGS_UNAVAILABLE),
 ], ids=["scores", "scores_ncaaf", "news", "team_news", "schedule_nfl", "schedule_nba", "schedule_soccer", "rankings",
         "roster", "transactions", "team_transactions", "golf_leaderboard", "golf_schedule", "world_cup_standings",
         "standings_mlb", "standings_nfl", "standings_nba", "standings_nhl", "standings_wnba", "standings_ncaam",
-        "standings_soccer"])
+        "standings_soccer", "standings_slow_path"])
 def test_a_null_list_is_told_apart_from_an_empty_one(espn, route, payload, call, sentence):
     """A null where the whole answer's list should be isn't an answer."""
     espn.on(route, payload)
@@ -156,7 +157,8 @@ class TestBothAppsSayTheSameThing:
             assert espn_api._unavailable(what) == sentence
 
     def test_every_sentence_this_app_says_is_in_the_file(self):
-        said = {value for name, value in vars(espn_api).items() if name.endswith("_UNAVAILABLE")}
+        said = {value for name, value in vars(espn_api).items()
+                if name.endswith("_UNAVAILABLE") and value.endswith("Try again in a minute.")}
         assert said == set(self.WORDING["unavailable"].values())
 
     @pytest.mark.parametrize("case", WORDING["live"])
@@ -285,6 +287,22 @@ def test_statistics_say_a_failed_request_failed(espn, reply, monkeypatch):
             getattr(espn_api, name)("NBA")
         with pytest.raises(ApiError, match="Try again"):
             getattr(ApiService, name)("NBA")
+
+
+@pytest.mark.parametrize("reply", [TIMEOUT, HTTP_500, NOT_JSON], ids=["timeout", "500", "not_json"])
+def test_soccer_standings_and_teams_say_so(espn, reply):
+    espn.on(".*", reply)
+    for call in (espn_api.get_standings, espn_api.get_soccer_teams):
+        with pytest.raises(ApiError) as caught:
+            call("EPL")
+        assert str(caught.value) == espn_api.STANDINGS_UNAVAILABLE
+
+
+def test_a_soccer_league_with_no_table_failing_its_team_list_says_so(espn):
+    espn.on("/standings", {"children": []}).on("/teams", HTTP_500)
+    with pytest.raises(ApiError) as caught:
+        espn_api.get_soccer_teams("EPL")
+    assert str(caught.value) == espn_api.TEAMS_UNAVAILABLE
 
 
 def test_an_empty_summary_has_no_details():

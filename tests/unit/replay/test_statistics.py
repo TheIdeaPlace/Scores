@@ -278,7 +278,7 @@ class TestEspnFailing:
 
 
 class TestLeaguesWithNoLeaders:
-    @pytest.mark.parametrize("league", ["NCAAH", "NCAAWH", "EPL", "MLS", "La Liga", "PGA", "CRICKET"])
+    @pytest.mark.parametrize("league", ["NCAAH", "NCAAWH", "PGA", "CRICKET"])
     def test_none_without_asking(self, espn, league):
         """/leaders is a 404 here, which would otherwise read as a failure. The dialog says
         no player statistics are available, and for these that's the truth."""

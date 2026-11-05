@@ -29,6 +29,9 @@ class ESPNAPIService {
     /// stat headings request definitions concurrently — see `TeamStatsStore`.
     private let teamStatsStore: TeamStatsStore
 
+    /// A league's venues. See `VenueCacheStore`.
+    private let venueCache = VenueCacheStore()
+
     private convenience init() {
         let config = URLSessionConfiguration.default
         config.timeoutIntervalForRequest = 30
@@ -680,7 +683,9 @@ class ESPNAPIService {
         // If the sport has a division mapper, sub-divide the flat conference entries
         // into proper divisions (e.g. "AL East", "AFC North").  Otherwise fall back
         // to the conference-level groupings from the API.
-        if DivisionMapper.hasDivisions(sport) {
+        if sport.isSoccer {
+            return apiResponse.groupsWithEntries.map { StandingsGroup(soccerTable: $0) }
+        } else if DivisionMapper.hasDivisions(sport) {
             return groupByDivision(apiResponse.groupsWithEntries, sport: sport)
         } else {
             return try apiResponse.groupsWithEntries.map { try StandingsGroup(from: $0) }
@@ -1033,8 +1038,10 @@ class ESPNAPIService {
         let league = sport.apiPath.components(separatedBy: "/").last ?? sport.rawValue.lowercased()
         let sportType = sport.apiPath.components(separatedBy: "/").first ?? "unknown"
 
-        // Get current season year (the winter sports use the year+1 format)
-        let seasonYear = sport.currentSeasonYear
+        // Soccer goes by ESPN's own idea of the season, as on Windows, which also names it for the
+        // list. The others go by the current season year (the winter sports use the year+1 format).
+        let current: CurrentSeasonResponse? = sport.isSoccer ? try await fetchCurrentSeason(sport: sport) : nil
+        let seasonYear = current?.year ?? sport.currentSeasonYear
 
         // The regular season, this year's or the most recent. Never a preseason: the app has
         // nowhere to say so. Soccer files its whole league season under type 1.
@@ -1052,20 +1059,41 @@ class ESPNAPIService {
                     onlyTeam: onlyTeam
                 )
                 if !categories.isEmpty {
-                    return categories
+                    guard sport.isSoccer else { return categories }
+                    let label = await seasonName(sportType: sportType, league: league, season: season, current: current)
+                    return categories.map {
+                        LeagueLeaderCategory(name: $0.name, displayName: $0.displayName, leaders: $0.leaders, seasonLabel: label)
+                    }
                 }
             } catch let error as URLError {
                 // Another season won't get through a stalled network either, 30 seconds a try.
                 throw error
             } catch {
+                // A failed list says so rather than showing last season's, as on Windows.
+                if sport.isSoccer { throw error }
                 continue
             }
         }
-        
+
         // No data found for any season
         return []
     }
     
+    /// What ESPN calls this season, such as "2025-26 English Premier League". `current` is the
+    /// core API's current one, so only an earlier season takes a request. If that fails, the year
+    /// still says it isn't this season's. On Windows: `_core_season_name`.
+    private func seasonName(sportType: String, league: String, season: Int, current: CurrentSeasonResponse?) async -> String {
+        if let current, current.year == season, let name = current.displayName { return name }
+        guard let url = URL(string: "\(coreAPIBaseURL)/\(sportType)/leagues/\(league)/seasons/\(season)"),
+              let (data, response) = try? await session.data(for: URLRequest(url: url, timeoutInterval: 10)),
+              (response as? HTTPURLResponse)?.statusCode == 200,
+              let answer = try? JSONDecoder().decode(CurrentSeasonResponse.self, from: data),
+              let name = answer.displayName else {
+            return String(season)
+        }
+        return name
+    }
+
     /// A team's own players in each stat category, ranked among themselves. `/leaders` takes a
     /// team, which answers with up to 20 of its players, and every category it has anyone in.
     /// The league's list wouldn't do: 20 rows of it had no Blackhawks in any category. The leagues
@@ -1359,12 +1387,8 @@ class ESPNAPIService {
         guard http.statusCode == 200 else { throw APIError.invalidResponse }
         
         let apiResponse = try JSONDecoder().decode(CoreLeadersAPIResponse.self, from: data)
-        // A rating with nobody rated isn't a list of leaders, such as the WNBA's Player
-        // Efficiency Rating, where they all read 0.0. Windows leaves these out too.
-        let categories = (apiResponse.categories ?? []).filter { category in
-            (category.leaders ?? []).contains { ($0.value ?? 0) != 0 }
-        }
-        
+        let categories = Self.coreLeaderLists(apiResponse)
+
         // Collect all unique $ref URLs across all categories, so each is only asked for once.
         // The teams come first, since `onlyTeam` needs them to tell which athletes matter.
         // NOTE: ESPN Core API $refs use http://, which iOS ATS blocks. Upgrade to https://.
@@ -1389,10 +1413,26 @@ class ESPNAPIService {
         }
         let athletes = await resolveRefs(athleteRefs, as: CoreAthleteResponse.self, stallWatch: stallWatch)
 
+        // A soccer row whose name or team couldn't be had says so and keeps its place. But a
+        // network that stalled partway, or most of them not coming, means ESPN isn't answering, so
+        // it fails rather than showing a screen of those. On Windows: `_core_player_statistics`.
+        let isSoccerLeagueList = sportType == "soccer" && onlyTeam == nil
+        if isSoccerLeagueList {
+            let stalled = await stallWatch.hasStalled
+            if stalled || athletes.isEmpty || athletes.count * 2 < athleteRefs.count || teams.count * 2 < teamRefs.count {
+                throw APIError.invalidResponse
+            }
+        }
+
         // Build results using the resolved caches
         return categories.map { category in
-            let leaders = (category.leaders ?? []).enumerated().map { index, leader -> LeagueLeaderCategory.LeagueLeaderEntry in
-                let entityTeam = leader.team?.ref.flatMap { teams[secureURL($0)]?.abbreviation } ?? ""
+            let rows = category.leaders ?? []
+            let displays = rows.map { Self.coreLeaderValue(category: category.name, leader: $0) }
+            let ranks = Self.sharedRanks(displays)
+            let leaders = rows.enumerated().map { index, leader -> LeagueLeaderCategory.LeagueLeaderEntry in
+                // A blank cell would be silent in VoiceOver. Windows says the same.
+                let entityTeam = leader.team?.ref.flatMap { teams[secureURL($0)]?.abbreviation }
+                    ?? (isSoccerLeagueList ? SoccerTableRow.noStatus : "")
                 let entityName: String
                 if let ref = leader.athlete?.ref {
                     // Not the team's name if this lookup failed: that reads as if a team led.
@@ -1403,24 +1443,46 @@ class ESPNAPIService {
                     entityName = "—"
                 }
 
-                let statDisplay = Self.leaderDisplayValue(
-                    category: category.name,
-                    value: leader.value,
-                    displayValue: leader.displayValue
-                )
                 return LeagueLeaderCategory.LeagueLeaderEntry(
-                    rank: index + 1,
-                    displayValue: statDisplay.isEmpty ? "-" : statDisplay,
+                    rank: ranks[index],
+                    displayValue: displays[index],
                     athleteName: entityName,
                     teamAbbreviation: entityTeam
                 )
             }
             return LeagueLeaderCategory(
                 name: category.name ?? "",
-                displayName: category.displayName ?? "",
+                displayName: category.displayName ?? category.name?.capitalized ?? "",
                 leaders: leaders
             )
         }
+    }
+
+    private static func coreLeaderValue(category: String?, leader: CoreLeadersAPIResponse.CoreCategory.CoreLeader) -> String {
+        let value = leaderDisplayValue(category: category, value: leader.value, displayValue: leader.displayValue)
+        // A bare dash isn't spoken at VoiceOver's default punctuation level.
+        return value.isEmpty ? SoccerTableRow.noStatus : value
+    }
+
+    /// The lists to show from a core API answer, in ESPN's order. A rating with nobody rated isn't
+    /// a list of leaders, such as the WNBA's Player Efficiency Rating, where they all read 0.0. A
+    /// list that repeats an earlier one is left out: soccer's goalsLeaders and goals are both
+    /// called Goals, with the same players in the same order, and read the same once their text
+    /// is a number. A list that differs in any row stays. On Windows: `core_leader_lists`, and
+    /// tests/fixtures/soccer_grid.json holds both.
+    static func coreLeaderLists(_ response: CoreLeadersAPIResponse) -> [CoreLeadersAPIResponse.CoreCategory] {
+        func rows(_ category: CoreLeadersAPIResponse.CoreCategory) -> [[String]] {
+            (category.leaders ?? []).map {
+                [$0.athlete?.ref ?? "", $0.team?.ref ?? "", coreLeaderValue(category: category.name, leader: $0)]
+            }
+        }
+        var kept = [CoreLeadersAPIResponse.CoreCategory]()
+        for category in response.categories ?? [] {
+            guard (category.leaders ?? []).contains(where: { ($0.value ?? 0) != 0 }) else { continue }
+            let repeated = kept.contains { $0.displayName == category.displayName && rows($0) == rows(category) }
+            if !repeated { kept.append(category) }
+        }
+        return kept
     }
 
     /// Upgrade a Core API $ref URL from http:// to https:// so iOS ATS allows the connection.
@@ -1577,6 +1639,91 @@ class ESPNAPIService {
         guard let http = response as? HTTPURLResponse, http.statusCode == 200 else { throw APIError.invalidResponse }
         let apiResponse = try JSONDecoder().decode(RankingsAPIResponse.self, from: data)
         return apiResponse.rankings.map { RankingsPoll(from: $0) }
+    }
+
+    // MARK: - Venues
+
+    /// A month of college basketball is up to 19 MB. A year would be no better: ESPN stops
+    /// at the first 1000 games of any query, so a year of the NBA ends in April.
+    private static let venueScoreboardLimit = 1000
+
+    /// What gets a league's whole month of games. College football follows the coverage setting.
+    func venueQuery(for sport: Sport, coverage: NCAAFCoverage? = nil) -> String {
+        switch sport {
+        case .ncaaf:
+            return collegeScoreboardParams(for: .ncaaf, coverage: coverage).joined(separator: "&")
+        case .ncaam, .ncaawb:
+            return "groups=\(Self.collegeBasketballGroupID)&limit=\(Self.venueScoreboardLimit)"
+        default:
+            return "limit=\(Self.venueScoreboardLimit)"
+        }
+    }
+
+    func venueScoreboardURLString(for sport: Sport, month: String, coverage: NCAAFCoverage? = nil) -> String {
+        "\(baseURL)/\(sport.apiPath)/scoreboard?dates=\(month)&\(venueQuery(for: sport, coverage: coverage))"
+    }
+
+    /// A league's venues and home teams. Takes a request or two, the same as Windows' in
+    /// services/venue_service.py.
+    ///
+    /// An empty list means ESPN answered and had nothing. If it never answered this throws,
+    /// because "no venues" would be untrue. A month with a server error doesn't lose the
+    /// list, as the month before stands in for it, but only for now: that isn't cached, so
+    /// opening it again gives the month it missed another chance.
+    func fetchVenues(for sport: Sport, now: Date = Date(), ignoringCache: Bool = false) async throws -> [LeagueVenue] {
+        guard sport.hasVenues else { return [] }
+        let cacheKey = "\(sport.rawValue)|\(venueQuery(for: sport))"
+        if !ignoringCache, let cached = await venueCache.venues(forKey: cacheKey) {
+            return cached
+        }
+        let months = VenueRules.months(for: sport, on: now)
+        var failed = false
+        for month in months {
+            let events: [VenueScoreboard.Event]
+            do {
+                events = try await venueEvents(for: sport, month: month)
+            } catch let error as URLError {
+                if error.code == .cancelled { throw CancellationError() }
+                // With no network an older month won't answer either, and asking would only
+                // make the message later.
+                if Self.meansNoNetwork(error.code) { throw VenuesError.espnDidNotAnswer }
+                failed = true
+                continue
+            } catch is CancellationError {
+                throw CancellationError()
+            } catch {
+                failed = true
+                continue
+            }
+            let venues = LeagueVenue.venues(from: events, in: sport)
+            if !venues.isEmpty {
+                if !failed { await venueCache.store(venues, forKey: cacheKey) }
+                return venues
+            }
+        }
+        if failed { throw VenuesError.espnDidNotAnswer }
+        return []
+    }
+
+    /// The same failures Windows stops at: a timeout, or no connection to be had. Something
+    /// else going wrong with one month, such as a connection lost partway through its
+    /// download, is that month's failure, and the month before can stand in.
+    private static func meansNoNetwork(_ code: URLError.Code) -> Bool {
+        switch code {
+        case .timedOut, .notConnectedToInternet, .cannotConnectToHost, .cannotFindHost, .dnsLookupFailed,
+             .secureConnectionFailed, .dataNotAllowed, .internationalRoamingOff:
+            return true
+        default:
+            return false
+        }
+    }
+
+    private func venueEvents(for sport: Sport, month: String) async throws -> [VenueScoreboard.Event] {
+        guard let url = URL(string: venueScoreboardURLString(for: sport, month: month)) else { throw APIError.invalidURL }
+        let (data, response) = try await session.data(from: url)
+        guard let http = response as? HTTPURLResponse else { throw APIError.invalidResponse }
+        guard http.statusCode == 200 else { throw APIError.unexpectedStatus(http.statusCode) }
+        return try JSONDecoder().decode(VenueScoreboard.self, from: data).events
     }
 
     // MARK: - Fetch Golf Tournament / Schedule

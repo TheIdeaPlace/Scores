@@ -30,7 +30,9 @@ Games group into: **In Progress**, **Upcoming**, **Completed**. Upcoming games s
 
 **Scores tab**: date/week navigation bar, game list.  
 **Standings / News / Stats** tabs: load independently.  
-**Polls tab**: visible for NCAAF, NCAAM, NCAAWB.
+**Polls tab**: visible for NCAAF, NCAAM, NCAAWB, NCAAH, NCAAWH.
+
+**Venues tab**: visible for the ten main leagues, not soccer or CFL. Select a venue for its details.
 
 Tap the clock icon (top-right) to set auto-refresh: 1 minute, 2 minutes, 5 minutes, or Manual.
 

@@ -1,0 +1,1509 @@
+{
+"uid": "s:600~l:770",
+"id": "8675309",
+"name": "MLS",
+"abbreviation": "MLS",
+"children": [
+{
+"uid": "s:600~l:770~g:1",
+"id": "1",
+"name": "Eastern Conference",
+"abbreviation": "East",
+"standings": {
+"id": "0",
+"name": "overall",
+"displayName": "Standings",
+"links": [
+{
+"language": "en-US",
+"rel": [
+"standings",
+"desktop"
+],
+"href": "https://www.espn.com/soccer/table/_/league/usa.1",
+"text": "Full Table",
+"shortText": "Standings",
+"isExternal": false,
+"isPremium": false
+}
+],
+"season": 2026,
+"seasonType": 1,
+"seasonDisplayName": "2026 MLS",
+"entries": [
+{
+"team": {
+"id": "182",
+"uid": "s:600~t:182",
+"location": "Chicago Fire FC",
+"name": "Chicago Fire FC",
+"abbreviation": "CHI",
+"displayName": "Chicago Fire FC",
+"shortDisplayName": "Chicago",
+"isActive": true,
+"logos": [
+{
+"href": "https://a.espncdn.com/i/teamlogos/soccer/500/182.png",
+"width": 500,
+"height": 500,
+"alt": "",
+"rel": [
+"full",
+"default"
+],
+"lastUpdated": "2021-09-14T17:01Z"
+}
+],
+"links": [
+{
+"language": "en-US",
+"rel": [
+"clubhouse",
+"desktop",
+"team"
+],
+"href": "https://www.espn.com/soccer/club/_/id/182/chicago-fire-fc",
+"text": "Clubhouse",
+"shortText": "Clubhouse",
+"isExternal": false,
+"isPremium": false
+}
+],
+"isNational": false
+},
+"note": {
+"color": "#B5E7CE",
+"description": "Qualifies for MLS Cup Playoffs - Round One Best-of-3 series",
+"rank": 4
+},
+"stats": [
+{
+"name": "gamesPlayed",
+"displayName": "Games Played",
+"shortDisplayName": "GP",
+"description": "Number of Games Played",
+"abbreviation": "GP",
+"type": "gamesplayed",
+"value": 33.0,
+"displayValue": "33"
+},
+{
+"name": "losses",
+"displayName": "Losses",
+"shortDisplayName": "L",
+"description": "Losses",
+"abbreviation": "L",
+"type": "losses",
+"value": 10.0,
+"displayValue": "10"
+},
+{
+"name": "pointDifferential",
+"displayName": "Goal Difference",
+"shortDisplayName": "GD",
+"description": "Goal Difference",
+"abbreviation": "GD",
+"type": "pointdifferential",
+"value": 11.0,
+"displayValue": "+11"
+},
+{
+"name": "points",
+"displayName": "Points",
+"shortDisplayName": "P",
+"description": "Points",
+"abbreviation": "P",
+"type": "points",
+"value": 55.0,
+"displayValue": "55"
+},
+{
+"name": "pointsAgainst",
+"displayName": "Goals Against",
+"shortDisplayName": "A",
+"description": "Goals Against",
+"abbreviation": "A",
+"type": "pointsagainst",
+"value": 50.0,
+"displayValue": "50"
+},
+{
+"name": "pointsFor",
+"displayName": "Goals For",
+"shortDisplayName": "F",
+"description": "Goals For",
+"abbreviation": "F",
+"type": "pointsfor",
+"value": 61.0,
+"displayValue": "61"
+},
+{
+"name": "ties",
+"displayName": "Draws",
+"shortDisplayName": "D",
+"description": "Draws",
+"abbreviation": "D",
+"type": "ties",
+"value": 7.0,
+"displayValue": "7"
+},
+{
+"name": "wins",
+"displayName": "Wins",
+"shortDisplayName": "W",
+"description": "Wins",
+"abbreviation": "W",
+"type": "wins",
+"value": 16.0,
+"displayValue": "16"
+},
+{
+"name": "advanced",
+"displayName": "Advanced",
+"shortDisplayName": "ADV",
+"description": "Advanced",
+"abbreviation": "ADV",
+"type": "advanced",
+"value": 0.0,
+"displayValue": "0"
+},
+{
+"name": "deductions",
+"displayName": "Point Deductions",
+"shortDisplayName": "Deductions",
+"description": "Point Deductions",
+"abbreviation": "PD",
+"type": "deductions",
+"value": 0.0,
+"displayValue": ""
+},
+{
+"name": "ppg",
+"displayName": "Points Per Game",
+"shortDisplayName": "PPG",
+"description": "Points Per Game",
+"abbreviation": "PPG",
+"type": "ppg",
+"value": 0.0,
+"displayValue": "0"
+},
+{
+"name": "rank",
+"displayName": "Rank",
+"shortDisplayName": "Rank",
+"description": "Rank",
+"abbreviation": "R",
+"type": "rank",
+"value": 4.0,
+"displayValue": "4"
+},
+{
+"name": "rankChange",
+"displayName": "Rank Change",
+"shortDisplayName": "Rank Change",
+"description": "Rank Change",
+"abbreviation": "RC",
+"type": "rankchange",
+"value": 0.0,
+"displayValue": "0"
+},
+{
+"id": "0",
+"name": "overall",
+"abbreviation": "Total",
+"displayName": "Overall",
+"shortDisplayName": "OVER",
+"description": "Overall Record",
+"type": "total",
+"summary": "16-7-10",
+"displayValue": "16-7-10"
+}
+]
+},
+{
+"team": {
+"id": "183",
+"uid": "s:600~t:183",
+"location": "Columbus Crew",
+"name": "Columbus Crew",
+"abbreviation": "CLB",
+"displayName": "Columbus Crew",
+"shortDisplayName": "Columbus",
+"isActive": true,
+"logos": [
+{
+"href": "https://a.espncdn.com/i/teamlogos/soccer/500/183.png",
+"width": 500,
+"height": 500,
+"alt": "",
+"rel": [
+"full",
+"default"
+],
+"lastUpdated": "2021-05-20T15:46Z"
+}
+],
+"links": [
+{
+"language": "en-US",
+"rel": [
+"clubhouse",
+"desktop",
+"team"
+],
+"href": "https://www.espn.com/soccer/club/_/id/183/columbus-crew",
+"text": "Clubhouse",
+"shortText": "Clubhouse",
+"isExternal": false,
+"isPremium": false
+}
+],
+"isNational": false
+},
+"note": {
+"color": "#B2BFD0",
+"description": "Qualifies for MLS Cup Playoffs - Wild Card Matches",
+"rank": 8
+},
+"stats": [
+{
+"name": "gamesPlayed",
+"displayName": "Games Played",
+"shortDisplayName": "GP",
+"description": "Number of Games Played",
+"abbreviation": "GP",
+"type": "gamesplayed",
+"value": 33.0,
+"displayValue": "33"
+},
+{
+"name": "losses",
+"displayName": "Losses",
+"shortDisplayName": "L",
+"description": "Losses",
+"abbreviation": "L",
+"type": "losses",
+"value": 15.0,
+"displayValue": "15"
+},
+{
+"name": "pointDifferential",
+"displayName": "Goal Difference",
+"shortDisplayName": "GD",
+"description": "Goal Difference",
+"abbreviation": "GD",
+"type": "pointdifferential",
+"value": 6.0,
+"displayValue": "+6"
+},
+{
+"name": "points",
+"displayName": "Points",
+"shortDisplayName": "P",
+"description": "Points",
+"abbreviation": "P",
+"type": "points",
+"value": 44.0,
+"displayValue": "44"
+},
+{
+"name": "pointsAgainst",
+"displayName": "Goals Against",
+"shortDisplayName": "A",
+"description": "Goals Against",
+"abbreviation": "A",
+"type": "pointsagainst",
+"value": 49.0,
+"displayValue": "49"
+},
+{
+"name": "pointsFor",
+"displayName": "Goals For",
+"shortDisplayName": "F",
+"description": "Goals For",
+"abbreviation": "F",
+"type": "pointsfor",
+"value": 55.0,
+"displayValue": "55"
+},
+{
+"name": "ties",
+"displayName": "Draws",
+"shortDisplayName": "D",
+"description": "Draws",
+"abbreviation": "D",
+"type": "ties",
+"value": 5.0,
+"displayValue": "5"
+},
+{
+"name": "wins",
+"displayName": "Wins",
+"shortDisplayName": "W",
+"description": "Wins",
+"abbreviation": "W",
+"type": "wins",
+"value": 13.0,
+"displayValue": "13"
+},
+{
+"name": "advanced",
+"displayName": "Advanced",
+"shortDisplayName": "ADV",
+"description": "Advanced",
+"abbreviation": "ADV",
+"type": "advanced",
+"value": 0.0,
+"displayValue": "0"
+},
+{
+"name": "deductions",
+"displayName": "Point Deductions",
+"shortDisplayName": "Deductions",
+"description": "Point Deductions",
+"abbreviation": "PD",
+"type": "deductions",
+"value": 0.0,
+"displayValue": ""
+},
+{
+"name": "ppg",
+"displayName": "Points Per Game",
+"shortDisplayName": "PPG",
+"description": "Points Per Game",
+"abbreviation": "PPG",
+"type": "ppg",
+"value": 0.0,
+"displayValue": "0"
+},
+{
+"name": "rank",
+"displayName": "Rank",
+"shortDisplayName": "Rank",
+"description": "Rank",
+"abbreviation": "R",
+"type": "rank",
+"value": 8.0,
+"displayValue": "8"
+},
+{
+"name": "rankChange",
+"displayName": "Rank Change",
+"shortDisplayName": "Rank Change",
+"description": "Rank Change",
+"abbreviation": "RC",
+"type": "rankchange",
+"value": 0.0,
+"displayValue": "0"
+},
+{
+"id": "0",
+"name": "overall",
+"abbreviation": "Total",
+"displayName": "Overall",
+"shortDisplayName": "OVER",
+"description": "Overall Record",
+"type": "total",
+"summary": "13-5-15",
+"displayValue": "13-5-15"
+}
+]
+},
+{
+"team": {
+"id": "21300",
+"uid": "s:600~t:21300",
+"location": "Charlotte FC",
+"name": "Charlotte FC",
+"abbreviation": "CLT",
+"displayName": "Charlotte FC",
+"shortDisplayName": "Charlotte",
+"isActive": true,
+"logos": [
+{
+"href": "https://a.espncdn.com/i/teamlogos/soccer/500/21300.png",
+"width": 500,
+"height": 500,
+"alt": "",
+"rel": [
+"full",
+"default"
+],
+"lastUpdated": "2021-11-29T18:59Z"
+}
+],
+"links": [
+{
+"language": "en-US",
+"rel": [
+"clubhouse",
+"desktop",
+"team"
+],
+"href": "https://www.espn.com/soccer/club/_/id/21300/charlotte-fc",
+"text": "Clubhouse",
+"shortText": "Clubhouse",
+"isExternal": false,
+"isPremium": false
+}
+],
+"isNational": false
+},
+"note": {
+"color": "#B5E7CE",
+"description": "Qualifies for MLS Cup Playoffs - Round One Best-of-3 series",
+"rank": 5
+},
+"stats": [
+{
+"name": "gamesPlayed",
+"displayName": "Games Played",
+"shortDisplayName": "GP",
+"description": "Number of Games Played",
+"abbreviation": "GP",
+"type": "gamesplayed",
+"value": 33.0,
+"displayValue": "33"
+},
+{
+"name": "losses",
+"displayName": "Losses",
+"shortDisplayName": "L",
+"description": "Losses",
+"abbreviation": "L",
+"type": "losses",
+"value": 10.0,
+"displayValue": "10"
+},
+{
+"name": "pointDifferential",
+"displayName": "Goal Difference",
+"shortDisplayName": "GD",
+"description": "Goal Difference",
+"abbreviation": "GD",
+"type": "pointdifferential",
+"value": 15.0,
+"displayValue": "+15"
+},
+{
+"name": "points",
+"displayName": "Points",
+"shortDisplayName": "P",
+"description": "Points",
+"abbreviation": "P",
+"type": "points",
+"value": 53.0,
+"displayValue": "53"
+},
+{
+"name": "pointsAgainst",
+"displayName": "Goals Against",
+"shortDisplayName": "A",
+"description": "Goals Against",
+"abbreviation": "A",
+"type": "pointsagainst",
+"value": 48.0,
+"displayValue": "48"
+},
+{
+"name": "pointsFor",
+"displayName": "Goals For",
+"shortDisplayName": "F",
+"description": "Goals For",
+"abbreviation": "F",
+"type": "pointsfor",
+"value": 63.0,
+"displayValue": "63"
+},
+{
+"name": "ties",
+"displayName": "Draws",
+"shortDisplayName": "D",
+"description": "Draws",
+"abbreviation": "D",
+"type": "ties",
+"value": 8.0,
+"displayValue": "8"
+},
+{
+"name": "wins",
+"displayName": "Wins",
+"shortDisplayName": "W",
+"description": "Wins",
+"abbreviation": "W",
+"type": "wins",
+"value": 15.0,
+"displayValue": "15"
+},
+{
+"name": "advanced",
+"displayName": "Advanced",
+"shortDisplayName": "ADV",
+"description": "Advanced",
+"abbreviation": "ADV",
+"type": "advanced",
+"value": 0.0,
+"displayValue": "0"
+},
+{
+"name": "deductions",
+"displayName": "Point Deductions",
+"shortDisplayName": "Deductions",
+"description": "Point Deductions",
+"abbreviation": "PD",
+"type": "deductions",
+"value": 0.0,
+"displayValue": ""
+},
+{
+"name": "ppg",
+"displayName": "Points Per Game",
+"shortDisplayName": "PPG",
+"description": "Points Per Game",
+"abbreviation": "PPG",
+"type": "ppg",
+"value": 0.0,
+"displayValue": "0"
+},
+{
+"name": "rank",
+"displayName": "Rank",
+"shortDisplayName": "Rank",
+"description": "Rank",
+"abbreviation": "R",
+"type": "rank",
+"value": 5.0,
+"displayValue": "5"
+},
+{
+"name": "rankChange",
+"displayName": "Rank Change",
+"shortDisplayName": "Rank Change",
+"description": "Rank Change",
+"abbreviation": "RC",
+"type": "rankchange",
+"value": 0.0,
+"displayValue": "0"
+},
+{
+"id": "0",
+"name": "overall",
+"abbreviation": "Total",
+"displayName": "Overall",
+"shortDisplayName": "OVER",
+"description": "Overall Record",
+"type": "total",
+"summary": "15-8-10",
+"displayValue": "15-8-10"
+}
+]
+}
+]
+}
+},
+{
+"uid": "s:600~l:770~g:2",
+"id": "2",
+"name": "Western Conference",
+"abbreviation": "West",
+"standings": {
+"id": "0",
+"name": "overall",
+"displayName": "Standings",
+"links": [
+{
+"language": "en-US",
+"rel": [
+"standings",
+"desktop"
+],
+"href": "https://www.espn.com/soccer/table/_/league/usa.1",
+"text": "Full Table",
+"shortText": "Standings",
+"isExternal": false,
+"isPremium": false
+}
+],
+"season": 2026,
+"seasonType": 1,
+"seasonDisplayName": "2026 MLS",
+"entries": [
+{
+"team": {
+"id": "184",
+"uid": "s:600~t:184",
+"location": "Colorado Rapids",
+"name": "Colorado Rapids",
+"abbreviation": "COL",
+"displayName": "Colorado Rapids",
+"shortDisplayName": "Colorado",
+"isActive": true,
+"logos": [
+{
+"href": "https://a.espncdn.com/i/teamlogos/soccer/500/184.png",
+"width": 500,
+"height": 500,
+"alt": "",
+"rel": [
+"full",
+"default"
+],
+"lastUpdated": "2019-05-08T16:07Z"
+}
+],
+"links": [
+{
+"language": "en-US",
+"rel": [
+"clubhouse",
+"desktop",
+"team"
+],
+"href": "https://www.espn.com/soccer/club/_/id/184/colorado-rapids",
+"text": "Clubhouse",
+"shortText": "Clubhouse",
+"isExternal": false,
+"isPremium": false
+}
+],
+"isNational": false
+},
+"note": {
+"color": "#B2BFD0",
+"description": "Qualifies for MLS Cup Playoffs - Wild Card Matches",
+"rank": 9
+},
+"stats": [
+{
+"name": "gamesPlayed",
+"displayName": "Games Played",
+"shortDisplayName": "GP",
+"description": "Number of Games Played",
+"abbreviation": "GP",
+"type": "gamesplayed",
+"value": 33.0,
+"displayValue": "33"
+},
+{
+"name": "losses",
+"displayName": "Losses",
+"shortDisplayName": "L",
+"description": "Losses",
+"abbreviation": "L",
+"type": "losses",
+"value": 14.0,
+"displayValue": "14"
+},
+{
+"name": "pointDifferential",
+"displayName": "Goal Difference",
+"shortDisplayName": "GD",
+"description": "Goal Difference",
+"abbreviation": "GD",
+"type": "pointdifferential",
+"value": -1.0,
+"displayValue": "-1"
+},
+{
+"name": "points",
+"displayName": "Points",
+"shortDisplayName": "P",
+"description": "Points",
+"abbreviation": "P",
+"type": "points",
+"value": 43.0,
+"displayValue": "43"
+},
+{
+"name": "pointsAgainst",
+"displayName": "Goals Against",
+"shortDisplayName": "A",
+"description": "Goals Against",
+"abbreviation": "A",
+"type": "pointsagainst",
+"value": 47.0,
+"displayValue": "47"
+},
+{
+"name": "pointsFor",
+"displayName": "Goals For",
+"shortDisplayName": "F",
+"description": "Goals For",
+"abbreviation": "F",
+"type": "pointsfor",
+"value": 46.0,
+"displayValue": "46"
+},
+{
+"name": "ties",
+"displayName": "Draws",
+"shortDisplayName": "D",
+"description": "Draws",
+"abbreviation": "D",
+"type": "ties",
+"value": 7.0,
+"displayValue": "7"
+},
+{
+"name": "wins",
+"displayName": "Wins",
+"shortDisplayName": "W",
+"description": "Wins",
+"abbreviation": "W",
+"type": "wins",
+"value": 12.0,
+"displayValue": "12"
+},
+{
+"name": "advanced",
+"displayName": "Advanced",
+"shortDisplayName": "ADV",
+"description": "Advanced",
+"abbreviation": "ADV",
+"type": "advanced",
+"value": 0.0,
+"displayValue": "0"
+},
+{
+"name": "deductions",
+"displayName": "Point Deductions",
+"shortDisplayName": "Deductions",
+"description": "Point Deductions",
+"abbreviation": "PD",
+"type": "deductions",
+"value": 0.0,
+"displayValue": ""
+},
+{
+"name": "ppg",
+"displayName": "Points Per Game",
+"shortDisplayName": "PPG",
+"description": "Points Per Game",
+"abbreviation": "PPG",
+"type": "ppg",
+"value": 0.0,
+"displayValue": "0"
+},
+{
+"name": "rank",
+"displayName": "Rank",
+"shortDisplayName": "Rank",
+"description": "Rank",
+"abbreviation": "R",
+"type": "rank",
+"value": 9.0,
+"displayValue": "9"
+},
+{
+"name": "rankChange",
+"displayName": "Rank Change",
+"shortDisplayName": "Rank Change",
+"description": "Rank Change",
+"abbreviation": "RC",
+"type": "rankchange",
+"value": 0.0,
+"displayValue": "0"
+},
+{
+"id": "0",
+"name": "overall",
+"abbreviation": "Total",
+"displayName": "Overall",
+"shortDisplayName": "OVER",
+"description": "Overall Record",
+"type": "total",
+"summary": "12-7-14",
+"displayValue": "12-7-14"
+}
+]
+},
+{
+"team": {
+"id": "185",
+"uid": "s:600~t:185",
+"location": "FC Dallas",
+"name": "FC Dallas",
+"abbreviation": "DAL",
+"displayName": "FC Dallas",
+"shortDisplayName": "Dallas",
+"isActive": true,
+"logos": [
+{
+"href": "https://a.espncdn.com/i/teamlogos/soccer/500/185.png",
+"width": 500,
+"height": 500,
+"alt": "",
+"rel": [
+"full",
+"default"
+],
+"lastUpdated": "2023-11-29T16:33Z"
+}
+],
+"links": [
+{
+"language": "en-US",
+"rel": [
+"clubhouse",
+"desktop",
+"team"
+],
+"href": "https://www.espn.com/soccer/club/_/id/185/fc-dallas",
+"text": "Clubhouse",
+"shortText": "Clubhouse",
+"isExternal": false,
+"isPremium": false
+}
+],
+"isNational": false
+},
+"note": {
+"color": "#B5E7CE",
+"description": "Qualifies for MLS Cup Playoffs - Round One Best-of-3 series",
+"rank": 2
+},
+"stats": [
+{
+"name": "gamesPlayed",
+"displayName": "Games Played",
+"shortDisplayName": "GP",
+"description": "Number of Games Played",
+"abbreviation": "GP",
+"type": "gamesplayed",
+"value": 33.0,
+"displayValue": "33"
+},
+{
+"name": "losses",
+"displayName": "Losses",
+"shortDisplayName": "L",
+"description": "Losses",
+"abbreviation": "L",
+"type": "losses",
+"value": 8.0,
+"displayValue": "8"
+},
+{
+"name": "pointDifferential",
+"displayName": "Goal Difference",
+"shortDisplayName": "GD",
+"description": "Goal Difference",
+"abbreviation": "GD",
+"type": "pointdifferential",
+"value": 9.0,
+"displayValue": "+9"
+},
+{
+"name": "points",
+"displayName": "Points",
+"shortDisplayName": "P",
+"description": "Points",
+"abbreviation": "P",
+"type": "points",
+"value": 55.0,
+"displayValue": "55"
+},
+{
+"name": "pointsAgainst",
+"displayName": "Goals Against",
+"shortDisplayName": "A",
+"description": "Goals Against",
+"abbreviation": "A",
+"type": "pointsagainst",
+"value": 50.0,
+"displayValue": "50"
+},
+{
+"name": "pointsFor",
+"displayName": "Goals For",
+"shortDisplayName": "F",
+"description": "Goals For",
+"abbreviation": "F",
+"type": "pointsfor",
+"value": 59.0,
+"displayValue": "59"
+},
+{
+"name": "ties",
+"displayName": "Draws",
+"shortDisplayName": "D",
+"description": "Draws",
+"abbreviation": "D",
+"type": "ties",
+"value": 10.0,
+"displayValue": "10"
+},
+{
+"name": "wins",
+"displayName": "Wins",
+"shortDisplayName": "W",
+"description": "Wins",
+"abbreviation": "W",
+"type": "wins",
+"value": 15.0,
+"displayValue": "15"
+},
+{
+"name": "advanced",
+"displayName": "Advanced",
+"shortDisplayName": "ADV",
+"description": "Advanced",
+"abbreviation": "ADV",
+"type": "advanced",
+"value": 0.0,
+"displayValue": "0"
+},
+{
+"name": "deductions",
+"displayName": "Point Deductions",
+"shortDisplayName": "Deductions",
+"description": "Point Deductions",
+"abbreviation": "PD",
+"type": "deductions",
+"value": 0.0,
+"displayValue": ""
+},
+{
+"name": "ppg",
+"displayName": "Points Per Game",
+"shortDisplayName": "PPG",
+"description": "Points Per Game",
+"abbreviation": "PPG",
+"type": "ppg",
+"value": 0.0,
+"displayValue": "0"
+},
+{
+"name": "rank",
+"displayName": "Rank",
+"shortDisplayName": "Rank",
+"description": "Rank",
+"abbreviation": "R",
+"type": "rank",
+"value": 2.0,
+"displayValue": "2"
+},
+{
+"name": "rankChange",
+"displayName": "Rank Change",
+"shortDisplayName": "Rank Change",
+"description": "Rank Change",
+"abbreviation": "RC",
+"type": "rankchange",
+"value": 0.0,
+"displayValue": "0"
+},
+{
+"id": "0",
+"name": "overall",
+"abbreviation": "Total",
+"displayName": "Overall",
+"shortDisplayName": "OVER",
+"description": "Overall Record",
+"type": "total",
+"summary": "15-10-8",
+"displayValue": "15-10-8"
+}
+]
+},
+{
+"team": {
+"id": "22529",
+"uid": "s:600~t:22529",
+"location": "San Diego FC",
+"name": "San Diego FC",
+"abbreviation": "SD",
+"displayName": "San Diego FC",
+"shortDisplayName": "San Diego",
+"isActive": true,
+"logos": [
+{
+"href": "https://a.espncdn.com/i/teamlogos/soccer/500/22529.png",
+"width": 500,
+"height": 500,
+"alt": "",
+"rel": [
+"full",
+"default"
+],
+"lastUpdated": "2024-12-20T20:57Z"
+}
+],
+"links": [
+{
+"language": "en-US",
+"rel": [
+"clubhouse",
+"desktop",
+"team"
+],
+"href": "https://www.espn.com/soccer/club/_/id/22529/san-diego-fc",
+"text": "Clubhouse",
+"shortText": "Clubhouse",
+"isExternal": false,
+"isPremium": false
+}
+],
+"isNational": false
+},
+"stats": [
+{
+"name": "gamesPlayed",
+"displayName": "Games Played",
+"shortDisplayName": "GP",
+"description": "Number of Games Played",
+"abbreviation": "GP",
+"type": "gamesplayed",
+"value": 33.0,
+"displayValue": "33"
+},
+{
+"name": "losses",
+"displayName": "Losses",
+"shortDisplayName": "L",
+"description": "Losses",
+"abbreviation": "L",
+"type": "losses",
+"value": 13.0,
+"displayValue": "13"
+},
+{
+"name": "pointDifferential",
+"displayName": "Goal Difference",
+"shortDisplayName": "GD",
+"description": "Goal Difference",
+"abbreviation": "GD",
+"type": "pointdifferential",
+"value": -5.0,
+"displayValue": "-5"
+},
+{
+"name": "points",
+"displayName": "Points",
+"shortDisplayName": "P",
+"description": "Points",
+"abbreviation": "P",
+"type": "points",
+"value": 38.0,
+"displayValue": "38"
+},
+{
+"name": "pointsAgainst",
+"displayName": "Goals Against",
+"shortDisplayName": "A",
+"description": "Goals Against",
+"abbreviation": "A",
+"type": "pointsagainst",
+"value": 62.0,
+"displayValue": "62"
+},
+{
+"name": "pointsFor",
+"displayName": "Goals For",
+"shortDisplayName": "F",
+"description": "Goals For",
+"abbreviation": "F",
+"type": "pointsfor",
+"value": 57.0,
+"displayValue": "57"
+},
+{
+"name": "ties",
+"displayName": "Draws",
+"shortDisplayName": "D",
+"description": "Draws",
+"abbreviation": "D",
+"type": "ties",
+"value": 11.0,
+"displayValue": "11"
+},
+{
+"name": "wins",
+"displayName": "Wins",
+"shortDisplayName": "W",
+"description": "Wins",
+"abbreviation": "W",
+"type": "wins",
+"value": 9.0,
+"displayValue": "9"
+},
+{
+"name": "advanced",
+"displayName": "Advanced",
+"shortDisplayName": "ADV",
+"description": "Advanced",
+"abbreviation": "ADV",
+"type": "advanced",
+"value": 0.0,
+"displayValue": "0"
+},
+{
+"name": "deductions",
+"displayName": "Point Deductions",
+"shortDisplayName": "Deductions",
+"description": "Point Deductions",
+"abbreviation": "PD",
+"type": "deductions",
+"value": 0.0,
+"displayValue": ""
+},
+{
+"name": "ppg",
+"displayName": "Points Per Game",
+"shortDisplayName": "PPG",
+"description": "Points Per Game",
+"abbreviation": "PPG",
+"type": "ppg",
+"value": 0.0,
+"displayValue": "0"
+},
+{
+"name": "rank",
+"displayName": "Rank",
+"shortDisplayName": "Rank",
+"description": "Rank",
+"abbreviation": "R",
+"type": "rank",
+"value": 13.0,
+"displayValue": "13"
+},
+{
+"name": "rankChange",
+"displayName": "Rank Change",
+"shortDisplayName": "Rank Change",
+"description": "Rank Change",
+"abbreviation": "RC",
+"type": "rankchange",
+"value": 0.0,
+"displayValue": "0"
+},
+{
+"id": "0",
+"name": "overall",
+"abbreviation": "Total",
+"displayName": "Overall",
+"shortDisplayName": "OVER",
+"description": "Overall Record",
+"type": "total",
+"summary": "9-11-13",
+"displayValue": "9-11-13"
+}
+]
+}
+]
+}
+}
+],
+"season": {
+"year": 2027,
+"startDate": "2027-01-01T10:00Z",
+"endDate": "2027-06-01T03:59Z",
+"displayName": "2027 MLS"
+},
+"seasons": [
+{
+"year": 2027,
+"startDate": "2027-01-01T10:00Z",
+"endDate": "2027-06-01T03:59Z",
+"displayName": "2027 MLS",
+"types": [
+{
+"id": "0",
+"name": "Combined",
+"abbreviation": "2027 MLS",
+"startDate": "2027-01-01T05:00Z",
+"endDate": "2027-01-02T04:59Z",
+"hasStandings": false
+},
+{
+"id": "1",
+"name": "Sprint Season",
+"abbreviation": "2027 MLS Sprint",
+"startDate": "2027-01-01T05:00Z",
+"endDate": "2027-05-10T03:59Z",
+"hasStandings": true
+},
+{
+"id": "2",
+"name": "All-Star Game",
+"abbreviation": "All-Star Game",
+"startDate": "2027-07-29T04:00Z",
+"endDate": "2027-07-30T03:59Z",
+"hasStandings": false
+},
+{
+"id": "3",
+"name": "Eastern Conference Playoffs - Wild Card",
+"abbreviation": "2027 MLS Playoffs",
+"startDate": "2027-11-09T05:00Z",
+"endDate": "2027-11-20T04:59Z",
+"hasStandings": false
+},
+{
+"id": "4",
+"name": "Western Conference Playoffs - Wild Card",
+"abbreviation": "Western Conference - Wild Card",
+"startDate": "2027-11-09T05:00Z",
+"endDate": "2027-11-20T04:59Z",
+"hasStandings": false
+},
+{
+"id": "5",
+"name": "Eastern Conference Playoffs - Round One",
+"abbreviation": "Eastern Conference - Round One",
+"startDate": "2027-11-20T05:00Z",
+"endDate": "2027-12-05T04:59Z",
+"hasStandings": false
+},
+{
+"id": "6",
+"name": "Eastern Conference Playoffs - Round One",
+"abbreviation": "Eastern Conference - Round One",
+"startDate": "2027-11-20T05:00Z",
+"endDate": "2027-12-05T04:59Z",
+"hasStandings": false
+},
+{
+"id": "7",
+"name": "Eastern Conference Playoffs - Round One",
+"abbreviation": "Eastern Conference - Round One",
+"startDate": "2027-11-20T05:00Z",
+"endDate": "2027-12-05T04:59Z",
+"hasStandings": false
+},
+{
+"id": "8",
+"name": "Eastern Conference Playoffs - Round One",
+"abbreviation": "Eastern Conference - Round One",
+"startDate": "2027-11-20T05:00Z",
+"endDate": "2027-12-05T04:59Z",
+"hasStandings": false
+},
+{
+"id": "9",
+"name": "Western Conference Playoffs - Round One",
+"abbreviation": "Western Conference - Round One",
+"startDate": "2027-11-20T05:00Z",
+"endDate": "2027-12-05T04:59Z",
+"hasStandings": false
+},
+{
+"id": "10",
+"name": "Western Conference Playoffs - Round One",
+"abbreviation": "Western Conference - Round One",
+"startDate": "2027-11-20T05:00Z",
+"endDate": "2027-12-05T04:59Z",
+"hasStandings": false
+},
+{
+"id": "11",
+"name": "Western Conference Playoffs - Round One",
+"abbreviation": "Western Conference - Round One",
+"startDate": "2027-11-20T05:00Z",
+"endDate": "2027-12-05T04:59Z",
+"hasStandings": false
+},
+{
+"id": "12",
+"name": "Western Conference Playoffs - Round One",
+"abbreviation": "Western Conference - Round One",
+"startDate": "2027-11-20T05:00Z",
+"endDate": "2027-12-05T04:59Z",
+"hasStandings": false
+},
+{
+"id": "13",
+"name": "Eastern Conference Playoffs - Semifinals",
+"abbreviation": "Eastern Conference - Semifinals",
+"startDate": "2027-12-05T05:00Z",
+"endDate": "2027-12-11T04:59Z",
+"hasStandings": false
+},
+{
+"id": "14",
+"name": "Western Conference Playoffs - Semifinals",
+"abbreviation": "Western Conference - Semifinals",
+"startDate": "2027-12-05T05:00Z",
+"endDate": "2027-12-11T04:59Z",
+"hasStandings": false
+},
+{
+"id": "15",
+"name": "Eastern Conference Playoffs - Final",
+"abbreviation": "Eastern Conference - Final",
+"startDate": "2027-12-11T05:00Z",
+"endDate": "2027-12-18T04:59Z",
+"hasStandings": false
+},
+{
+"id": "16",
+"name": "Western Conference Playoffs - Final",
+"abbreviation": "Western Conference - Final",
+"startDate": "2027-12-10T05:00Z",
+"endDate": "2027-12-18T04:59Z",
+"hasStandings": false
+},
+{
+"id": "17",
+"name": "MLS Cup",
+"abbreviation": "MLS Cup",
+"startDate": "2027-12-18T05:00Z",
+"endDate": "2028-01-01T04:59Z",
+"hasStandings": false
+}
+]
+},
+{
+"year": 2026,
+"startDate": "2026-01-01T10:00Z",
+"endDate": "2026-12-31T04:59Z",
+"displayName": "2026 MLS",
+"types": [
+{
+"id": "0",
+"name": "Combined",
+"abbreviation": "2026 MLS",
+"startDate": "2026-01-01T05:00Z",
+"endDate": "2026-01-02T04:59Z",
+"hasStandings": false
+},
+{
+"id": "1",
+"name": "Regular Season",
+"abbreviation": "2026 MLS",
+"startDate": "2026-01-01T05:00Z",
+"endDate": "2026-11-09T04:59Z",
+"hasStandings": true
+},
+{
+"id": "2",
+"name": "All-Star Game",
+"abbreviation": "All-Star Game",
+"startDate": "2026-07-29T04:00Z",
+"endDate": "2026-07-30T03:59Z",
+"hasStandings": false
+},
+{
+"id": "3",
+"name": "Eastern Conference Playoffs - Wild Card",
+"abbreviation": "2026 MLS Playoffs",
+"startDate": "2026-11-09T05:00Z",
+"endDate": "2026-11-20T04:59Z",
+"hasStandings": false
+},
+{
+"id": "4",
+"name": "Western Conference Playoffs - Wild Card",
+"abbreviation": "Western Conference - Wild Card",
+"startDate": "2026-11-09T05:00Z",
+"endDate": "2026-11-20T04:59Z",
+"hasStandings": false
+},
+{
+"id": "5",
+"name": "Eastern Conference Playoffs - Round One",
+"abbreviation": "Eastern Conference - Round One",
+"startDate": "2026-11-20T05:00Z",
+"endDate": "2026-12-05T04:59Z",
+"hasStandings": false
+},
+{
+"id": "6",
+"name": "Eastern Conference Playoffs - Round One",
+"abbreviation": "Eastern Conference - Round One",
+"startDate": "2026-11-20T05:00Z",
+"endDate": "2026-12-05T04:59Z",
+"hasStandings": false
+},
+{
+"id": "7",
+"name": "Eastern Conference Playoffs - Round One",
+"abbreviation": "Eastern Conference - Round One",
+"startDate": "2026-11-20T05:00Z",
+"endDate": "2026-12-05T04:59Z",
+"hasStandings": false
+},
+{
+"id": "8",
+"name": "Eastern Conference Playoffs - Round One",
+"abbreviation": "Eastern Conference - Round One",
+"startDate": "2026-11-20T05:00Z",
+"endDate": "2026-12-05T04:59Z",
+"hasStandings": false
+},
+{
+"id": "9",
+"name": "Western Conference Playoffs - Round One",
+"abbreviation": "Western Conference - Round One",
+"startDate": "2026-11-20T05:00Z",
+"endDate": "2026-12-05T04:59Z",
+"hasStandings": false
+},
+{
+"id": "10",
+"name": "Western Conference Playoffs - Round One",
+"abbreviation": "Western Conference - Round One",
+"startDate": "2026-11-20T05:00Z",
+"endDate": "2026-12-05T04:59Z",
+"hasStandings": false
+},
+{
+"id": "11",
+"name": "Western Conference Playoffs - Round One",
+"abbreviation": "Western Conference - Round One",
+"startDate": "2026-11-20T05:00Z",
+"endDate": "2026-12-05T04:59Z",
+"hasStandings": false
+},
+{
+"id": "12",
+"name": "Western Conference Playoffs - Round One",
+"abbreviation": "Western Conference - Round One",
+"startDate": "2026-11-20T05:00Z",
+"endDate": "2026-12-05T04:59Z",
+"hasStandings": false
+},
+{
+"id": "13",
+"name": "Eastern Conference Playoffs - Semifinals",
+"abbreviation": "Eastern Conference - Semifinals",
+"startDate": "2026-12-05T05:00Z",
+"endDate": "2026-12-11T04:59Z",
+"hasStandings": false
+},
+{
+"id": "14",
+"name": "Western Conference Playoffs - Semifinals",
+"abbreviation": "Western Conference - Semifinals",
+"startDate": "2026-12-05T05:00Z",
+"endDate": "2026-12-11T04:59Z",
+"hasStandings": false
+},
+{
+"id": "15",
+"name": "Eastern Conference Playoffs - Final",
+"abbreviation": "Eastern Conference - Final",
+"startDate": "2026-12-11T05:00Z",
+"endDate": "2026-12-18T04:59Z",
+"hasStandings": false
+},
+{
+"id": "16",
+"name": "Western Conference Playoffs - Final",
+"abbreviation": "Western Conference - Final",
+"startDate": "2026-12-10T05:00Z",
+"endDate": "2026-12-18T04:59Z",
+"hasStandings": false
+},
+{
+"id": "17",
+"name": "MLS Cup",
+"abbreviation": "MLS Cup",
+"startDate": "2026-12-18T05:00Z",
+"endDate": "2027-01-01T04:59Z",
+"hasStandings": false
+}
+]
+}
+]
+}

@@ -89,6 +89,8 @@ struct RosterPlayer: Identifiable {
 /// their own, and it doesn't ask.
 struct CurrentSeasonResponse: Decodable {
     let year: Int
+    /// "2026-27 English Premier League"
+    let displayName: String?
     let type: SeasonType?
 
     struct SeasonType: Decodable {

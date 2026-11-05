@@ -56,7 +56,7 @@ except ImportError:
 # New separated modules
 from exceptions import ApiError, DataModelError, plain_message
 from espn_api import (NCAAF_CONFERENCE_ORDER, live_scores_failure_text, standings_cache_key,
-                      with_failed_leagues_kept)
+                      stop_core_lookups, with_failed_leagues_kept)
 from services.api_service import ApiService
 from services.venue_service import venue_service, venue_summary
 from models.game import GameData
@@ -68,6 +68,7 @@ from windows_notifications import announce, set_notifier_window
 from accessible_table import AccessibleTable, StandingsTable, WildCardTable, LeadersTable, RankingsTable, BoxscoreTable, InjuryTable, ListPages, is_tab_bar, keep_in_tab_order, make_tab_area, ButtonKeys
 from tab_keys import group_noun
 from box_score import build_box_tables
+from soccer import SOCCER_LEAGUES, TEAM_NAME_ONLY_HEADERS, no_table_message, soccer_teams_table
 from team_stats import RANKING_HEADERS, ranking_rows, team_stat_lists
 from game_labels import scoreboard_today, basketball_period_label, football_period_label, football_period_sort_key, game_standings_tables, schedule_row_text, schedule_start_row
 
@@ -1962,6 +1963,12 @@ class LeagueView(BaseView):
             text, live_play_format.list_team_names(game_raw, game.teams))
 
     def _add_common_sections(self):
+        if self.league in SOCCER_LEAGUES:
+            # What the iPhone has for soccer, plus Teams, which is how a team's page is reached here.
+            for title, role in (("Standings", "__standings__"), ("Statistics", "__statistics__"), ("Teams", "__teams__")):
+                self.scores_list.addItem(f"--- {title} ---")
+                self.scores_list.item(self.scores_list.count() - 1).setData(Qt.ItemDataRole.UserRole, role)
+            return
         if self.league in ["MLB", "NFL", "NBA", "WNBA", "NHL", "NCAAF", "NCAAM", "NCAAWB", "NCAAH", "NCAAWH"]:
             self.scores_list.addItem("--- Standings ---")
             standings_item = self.scores_list.item(self.scores_list.count()-1)
@@ -2123,7 +2130,17 @@ class LeagueView(BaseView):
             # Update window title to show we're viewing statistics
             if self.parent_app:
                 self.parent_app.update_window_title(["Statistics", self.league])
-            
+
+            # ESPN has no team statistics for soccer, so there's nothing to choose between. The
+            # iPhone hides its Players and Teams switch here too.
+            if self.league in SOCCER_LEAGUES:
+                stats_dialog = StatisticsViewDialog(self.league, "player", self)
+                stats_dialog.exec()
+                stats_dialog.deleteLater()
+                if self.parent_app:
+                    self.parent_app.update_window_title(self._title_items())
+                return
+
             # Loop to allow returning to choice dialog
             while True:
                 # First dialog: Choose between Team or Player statistics
@@ -2183,8 +2200,8 @@ class LeagueView(BaseView):
             if self.parent_app:
                 self.parent_app.update_window_title(["Teams", self.league])
             
-            self._fetch_then("Teams", lambda: ApiService.get_standings(self.league),
-                             self._open_teams_dialog)
+            fetch = ApiService.get_soccer_teams if self.league in SOCCER_LEAGUES else ApiService.get_standings
+            self._fetch_then("Teams", lambda: fetch(self.league), self._open_teams_dialog)
         except Exception as e:
             QMessageBox.critical(self, "Error", f"Failed to show teams: {_said(e)}")
             if self.parent_app:
@@ -8137,7 +8154,8 @@ class StandingsLoader(QThread):
     def run(self):
         try:
             standings_data = ApiService.get_standings(self.league)
-            if standings_data:
+            # A competition with no table is an honest answer, which its dialog says.
+            if standings_data or self.league in SOCCER_LEAGUES:
                 self.data_loaded.emit(standings_data)
             else:
                 self.error_occurred.emit(f"No standings data available for {self.league}")
@@ -8277,11 +8295,18 @@ class TeamHubDialog(QDialog):
         wins = self.team_data.get('wins', '')
         losses = self.team_data.get('losses', '')
         ties = self.team_data.get('ties', 0)
-        if wins and losses:
+        rec_text = ""
+        if self.league in SOCCER_LEAGUES:
+            # Wins, draws, losses, as a soccer record reads everywhere else. A team with no
+            # losses yet still has one. A cup's team list has none, and a game can say N/A.
+            if self.team_data.get('record') not in (None, "", "N/A"):
+                rec_text = f"({self.team_data['record']})"
+        elif wins and losses:
             if self.league == "NFL" and ties and int(ties) > 0:
                 rec_text = f"({wins}-{losses}-{ties})"
             else:
                 rec_text = f"({wins}-{losses})"
+        if rec_text:
             rec_lbl = QLabel(rec_text)
             rec_lbl.setFont(font)
             header_layout.addWidget(rec_lbl)
@@ -8931,22 +8956,36 @@ class StandingsDialog(WildCardTabsMixin, QDialog):
         self.single_table: StandingsTable | None = None
         self.expanded_view = False
         self.division_tables: List[StandingsTable] = []
+        self.message_row: QListWidget | None = None
         self.setup_ui()
-        _focus_once_active(self, lambda: _focus_first_table(self))
-    
+        _focus_once_active(self, self._focus_content)
+
+    def _focus_content(self):
+        if self.message_row is not None:
+            self.message_row.setFocus()
+        else:
+            _focus_first_table(self)
+
     def setup_ui(self):
         layout = QVBoxLayout()
-        
+
         # Always use expanded view (no user toggle to prevent issues)
         self.expanded_view = True
-        
-        if not self.standings_data.teams:
+
+        if not self.standings_data.teams and self.league in SOCCER_LEAGUES:
+            # A row that takes focus and reads as what it is: an answer, not an alarm.
+            self.message_row = _message_row(no_table_message(self.league), f"{self.league} Standings")
+            layout.addWidget(self.message_row)
+            self.message_row.setFocus()
+        elif not self.standings_data.teams:
             layout.addWidget(QLabel(f"No standings data available for {self.league}."))
         else:
             has_divisions = len(self.standings_data.divisions) > 1 or any(
                 d != "League" for d in self.standings_data.divisions
             )
-            if has_divisions and self.league in ["MLB", "NFL", "NBA", "NHL", "NCAAF", "NCAAM", "NCAAWB", "NCAAH", "NCAAWH", "WNBA"]:
+            if self.league in SOCCER_LEAGUES:
+                self._build_soccer_tables(layout)
+            elif has_divisions and self.league in ["MLB", "NFL", "NBA", "NHL", "NCAAF", "NCAAM", "NCAAWB", "NCAAH", "NCAAWH", "WNBA"]:
                 self._build_division_tabs(layout)
             else:
                 self.single_table = self._create_single_standings_table(self.standings_data.teams)
@@ -9039,6 +9078,24 @@ class StandingsDialog(WildCardTabsMixin, QDialog):
             if hasattr(first, "table"):
                 first.table.setFocus()  # type: ignore[attr-defined]
 
+    def _build_soccer_tables(self, layout: QVBoxLayout):
+        """A league's one table, named for what it is ("League Phase", "2026 Torneo Apertura"), or a
+        tab or list row for each of its conferences or groups. The title says which season, as a
+        table can be last season's until the new one has teams."""
+        season = self.standings_data.teams[0].get("season")
+        if season:
+            self.setWindowTitle(f"{self.league} Standings - {season}")
+        divisions = self.standings_data.divisions
+        if len(divisions) > 1:
+            self._build_division_tabs(layout)
+            return
+        name, teams = next(iter(divisions.items()))
+        self.single_table = StandingsTable(parent=self, division_name=name, league=self.league, expanded=self.expanded_view)
+        self.single_table.populate_standings(teams, set_focus=True)
+        layout.addWidget(QLabel(f"{self.league} Standings: {name}"))
+        layout.addWidget(self.single_table)
+        self.single_table.setFocus()
+
     def _create_division_table(self, division_name: str, teams: List[Dict]) -> QWidget:
         widget = QWidget()
         layout = QVBoxLayout()
@@ -9048,12 +9105,12 @@ class StandingsDialog(WildCardTabsMixin, QDialog):
         widget.setLayout(layout)
         widget.table = table  # type: ignore[attr-defined]
         return widget
-    
+
     def _create_single_standings_table(self, teams: List[Dict]) -> StandingsTable:
         table = StandingsTable(parent=self, league=self.league, expanded=self.expanded_view)
         table.populate_standings(teams, set_focus=True)
         return table
-    
+
     def _configure_table(self, table: QTableWidget):
         """Configure table appearance and behavior"""
         table.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
@@ -9061,11 +9118,11 @@ class StandingsDialog(WildCardTabsMixin, QDialog):
         table.setAlternatingRowColors(True)
         table.verticalHeader().setVisible(False)
         table.setSelectionMode(QTableWidget.SelectionMode.SingleSelection)
-        
+
         # Enable keyboard navigation
         table.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
         table.setTabKeyNavigation(True)
-        
+
         # Enable accessibility features
         table.setAccessibleName("Standings Table")
         table.setAccessibleDescription("Team standings with arrow key navigation. Use arrow keys to navigate cells, Tab to enter/exit table.")
@@ -11780,7 +11837,9 @@ class SimpleTeamsDialog(QDialog):
         super().__init__(parent)
         self.teams_data = teams_data
         self.league = league
-        self.setWindowTitle(f"{league} Teams")
+        # A soccer table can be last season's until the new one has teams, and these are its records.
+        season = next((team.get("season") for team in teams_data if team.get("season")), None)
+        self.setWindowTitle(f"{league} Teams - {season}" if season else f"{league} Teams")
         self.resize(800, 500)  # Room for a table with several columns.
         self.setup_ui()
         _focus_once_active(self, lambda: _focus_first_table(self))
@@ -11834,14 +11893,17 @@ class SimpleTeamsDialog(QDialog):
             self.create_division_tab(div_name, divisions[div_name])
 
         layout.addWidget(self.tab_widget)
-        
-        # Close button
+
+        # Close button. Not the dialog's default: a table passes Enter on after activating a row,
+        # and the dialog would then press it, so opening a team would close this behind it.
         close_btn = QPushButton("Close")
+        close_btn.setAutoDefault(False)
         close_btn.clicked.connect(self.accept)
         layout.addWidget(close_btn)
-        
+        self.close_button = close_btn
+
         self.setLayout(layout)
-        
+
         # Set focus on first tab
         if self.tab_widget.count() > 0:
             first_widget = self.tab_widget.widget(0)
@@ -11860,7 +11922,15 @@ class SimpleTeamsDialog(QDialog):
             accessible_name=f"{division_name} Teams Table",
             accessible_description=f"Teams in {division_name} with wins, losses, and other statistics"
         )
-        
+
+        if self.league in SOCCER_LEAGUES:
+            self._fill_soccer_teams(teams_table, teams, division_name)
+            layout.addWidget(teams_table)
+            widget.setLayout(layout)
+            widget.teams_table = teams_table
+            self.tab_widget.addTab(widget, division_name)
+            return
+
         # Set up table headers - include Ties for NFL
         if self.league == "NFL":
             headers = ["Team", "Wins", "Losses", "Ties", "Win %"]
@@ -11941,6 +12011,24 @@ class SimpleTeamsDialog(QDialog):
         
         self.tab_widget.addTab(widget, division_name)
     
+    def _fill_soccer_teams(self, teams_table, teams, division_name):
+        """Draws and points rather than a win percentage, which leaves the draws out. Enter opens
+        the team from any cell of its row, and each cell says whose row it's on. A cup's team list
+        has only names, and its one group has no name worth saying."""
+        headers, ordered, rows = soccer_teams_table(teams)
+        if headers == TEAM_NAME_ONLY_HEADERS:
+            teams_table.update_accessible_name(f"{self.league} Teams")
+            teams_table.update_accessible_description(f"Teams in {self.league}. Press Enter on one to open it")
+        else:
+            teams_table.update_accessible_description(
+                f"Teams in {division_name} with games played, wins, draws, losses and points. Press Enter on one to open it")
+        teams_table.setup_columns(headers, stretch_column=0)
+        teams_table.populate_data(rows, set_focus=False)
+        for row, team in enumerate(ordered):
+            for column in range(len(headers)):
+                teams_table.item(row, column).setData(Qt.ItemDataRole.UserRole, team)
+        teams_table.itemActivated.connect(self.on_team_selected)
+
     def on_team_selected(self, item):
         """Handle team selection - open schedule view"""
         team_data = item.data(Qt.ItemDataRole.UserRole)
@@ -12284,6 +12372,7 @@ class SportsScoresApp(QWidget):
     
     def __init__(self, startup_params=None):
         super().__init__()
+        QApplication.instance().aboutToQuit.connect(stop_core_lookups)
         self.setWindowTitle("Sports Scores")
         
         # Initialize window title tracking

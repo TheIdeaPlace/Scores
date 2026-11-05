@@ -53,6 +53,11 @@ class ApiService:
         return ApiService._call(espn_api.get_standings, league)
 
     @staticmethod
+    def get_soccer_teams(league: str) -> List[Dict]:
+        """A soccer league's table, or its list of teams if it has no table."""
+        return ApiService._call(espn_api.get_soccer_teams, league)
+
+    @staticmethod
     def get_team_schedule(league: str, team_id: str, days_ahead: int = 30, days_behind: int = 30, season=None) -> List[Dict]:
         return ApiService._call(espn_api.get_team_schedule, league, team_id, days_ahead, days_behind, season)
 
