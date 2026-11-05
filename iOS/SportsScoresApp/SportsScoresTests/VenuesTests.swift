@@ -15,6 +15,10 @@ private struct VenueGrid: Decodable {
         let league: String
         let path: String
         let query: String
+        let in_season: [Int]
+        let months_ahead: Int
+        let always_indoors: Bool
+        let hosts_need_a_conference: Bool
     }
     struct Month: Decodable {
         let year: Int
@@ -117,6 +121,28 @@ final class VenueGridTests: XCTestCase {
             let url = service.venueScoreboardURLString(for: league, month: "202611", coverage: .allDivisionI)
             XCTAssertEqual(url, "https://site.api.espn.com/apis/site/v2/sports/\(item.path)/scoreboard?dates=202611&\(item.query)")
         }
+    }
+
+    func testTheSameRulesPerLeagueAsWindows() throws {
+        let grid = try VenueGrid.load()
+        for item in grid.leagues {
+            let league = try sport(item.league)
+            XCTAssertEqual(VenueRules.inSeasonMonths(for: league)?.sorted(), item.in_season, item.league)
+            XCTAssertEqual(VenueRules.monthsAhead(for: league), item.months_ahead, item.league)
+            XCTAssertEqual(VenueRules.isAlwaysIndoors(league), item.always_indoors, item.league)
+            XCTAssertEqual(VenueRules.hostsNeedAConference(league), item.hosts_need_a_conference, item.league)
+        }
+    }
+
+    /// A phone's calendar can be Buddhist, Japanese or Hijri. ESPN's dates aren't.
+    func testTheMonthsAreGregorianWhateverThePhoneUses() throws {
+        var gregorian = Calendar(identifier: .gregorian)
+        gregorian.timeZone = .current
+        let date = try XCTUnwrap(gregorian.date(from: DateComponents(year: 2026, month: 11, day: 15, hour: 12)))
+        var buddhist = Calendar(identifier: .buddhist)
+        buddhist.timeZone = .current
+        XCTAssertEqual(buddhist.component(.year, from: date), 2569, "the date is 2569 on that calendar")
+        XCTAssertEqual(VenueRules.months(for: .nfl, on: date), ["202611", "202609", "202512"])
     }
 
     func testCollegeFootballFollowsTheCoverageSetting() {
@@ -348,7 +374,9 @@ final class VenueRequestTests: XCTestCase {
     private let noGames = Data(#"{"events":[]}"#.utf8)
 
     private var november2026: Date {
-        Calendar.current.date(from: DateComponents(year: 2026, month: 11, day: 4, hour: 12))!
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = .current
+        return calendar.date(from: DateComponents(year: 2026, month: 11, day: 4, hour: 12))!
     }
 
     private func nfl() throws -> Data {
@@ -441,6 +469,22 @@ final class VenueRequestTests: XCTestCase {
         }
     }
 
+    /// Windows lets the month before stand in for these, and only stops when there's no network.
+    func testALostConnectionIsThatMonthsFailureOnly() async throws {
+        let board = try nfl()
+        VenueStandInESPN.reset { $0.contains("dates=202611") ? .failure(.networkConnectionLost) : .body(board) }
+        let venues = try await service.fetchVenues(for: .nfl, now: november2026)
+        XCTAssertFalse(venues.isEmpty)
+        XCTAssertEqual(VenueStandInESPN.months.first, "202611")
+        XCTAssertEqual(VenueStandInESPN.months.last, "202609")
+    }
+
+    func testEveryMonthLosingItsConnectionIsStillAnError() async {
+        VenueStandInESPN.reset { _ in .failure(.cannotDecodeContentData) }
+        await assertDidNotAnswer()
+        XCTAssertEqual(VenueStandInESPN.months.count, 3)
+    }
+
     func testAFailureIsNotCached() async throws {
         VenueStandInESPN.reset { _ in .status(500) }
         await assertDidNotAnswer()
@@ -479,8 +523,62 @@ final class VenueRequestTests: XCTestCase {
 
         let board = try nfl()
         VenueStandInESPN.reset { _ in .body(board) }
-        await model.fetchVenues(for: .nfl)
+        await model.retry(for: .nfl)
         XCTAssertNil(model.errorMessage)
+        XCTAssertFalse(model.venues.isEmpty)
+        XCTAssertFalse(model.isLoading)
+    }
+
+    /// The view's task can run again by itself, and that mustn't turn a failure into a loop
+    /// of asking, with the screen going from the error to the spinner and back.
+    @MainActor
+    func testAFailureIsNotAskedAgainUntilRetry() async {
+        let model = VenuesViewModel(apiService: service)
+        VenueStandInESPN.reset { _ in .status(500) }
+        await model.fetchVenues(for: .nfl)
+        let asked = VenueStandInESPN.months.count
+        XCTAssertGreaterThan(asked, 0)
+        await model.fetchVenues(for: .nfl)
+        XCTAssertEqual(VenueStandInESPN.months.count, asked)
+        XCTAssertNotNil(model.errorMessage)
+        XCTAssertFalse(model.isLoading)
+        await model.retry(for: .nfl)
+        XCTAssertGreaterThan(VenueStandInESPN.months.count, asked)
+    }
+
+    @MainActor
+    func testAFailedRefreshKeepsTheListAndSaysSo() async throws {
+        let board = try nfl()
+        let model = VenuesViewModel(apiService: service)
+        VenueStandInESPN.reset { _ in .body(board) }
+        await model.fetchVenues(for: .nfl)
+        let shown = model.venues
+        XCTAssertFalse(shown.isEmpty)
+
+        VenueStandInESPN.reset { _ in .status(500) }
+        await model.refresh(for: .nfl)
+        XCTAssertEqual(model.venues, shown)
+        XCTAssertTrue(model.refreshFailed)
+        XCTAssertNil(model.errorMessage)
+        XCTAssertFalse(model.isLoading)
+        XCTAssertFalse(VenueStandInESPN.months.isEmpty, "it should have asked ESPN, not the cache")
+
+        VenueStandInESPN.reset { _ in .body(board) }
+        await model.refresh(for: .nfl)
+        XCTAssertFalse(model.refreshFailed)
+    }
+
+    /// Leaving while it loads, as the tab bar or the coverage setting can, loads again on return.
+    @MainActor
+    func testACancelledLoadLoadsAgainAndDoesNotStickOnTheSpinner() async throws {
+        let model = VenuesViewModel(apiService: service)
+        VenueStandInESPN.reset { _ in .failure(.cancelled) }
+        await model.fetchVenues(for: .nfl)
+        XCTAssertNil(model.errorMessage, "leaving isn't a failure")
+
+        let board = try nfl()
+        VenueStandInESPN.reset { _ in .body(board) }
+        await model.fetchVenues(for: .nfl)
         XCTAssertFalse(model.venues.isEmpty)
         XCTAssertFalse(model.isLoading)
     }
@@ -525,8 +623,9 @@ final class VenueTableActivationTests: XCTestCase {
         XCTAssertEqual(first.accessibilityHint, "Opens venue details")
         XCTAssertNil(cell.accessibilityHint)
 
+        // Handled and nothing opened, so the tap doesn't fall through to a row on the grid.
         let header = try XCTUnwrap(table.accessibilityDataTableCellElement(forRow: 0, column: 0) as? DataTableCellElement)
-        XCTAssertFalse(header.accessibilityActivate())
+        XCTAssertTrue(header.accessibilityActivate())
         XCTAssertEqual(opened, [1])
     }
 

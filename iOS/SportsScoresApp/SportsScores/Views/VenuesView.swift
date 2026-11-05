@@ -8,6 +8,7 @@
 //
 
 import SwiftUI
+import UIKit
 
 struct VenuesView: View {
     let sport: Sport
@@ -20,7 +21,9 @@ struct VenuesView: View {
     @EnvironmentObject private var appSettings: AppSettings
 
     var body: some View {
-        content
+        // A view that stays put, so going from loading to an error isn't an appearance that
+        // starts the task again.
+        ZStack { content }
             // College football's list follows the coverage setting, which Settings can change
             // while this is on screen.
             .task(id: appSettings.ncaafCoverage) { await viewModel.fetchVenues(for: sport) }
@@ -34,6 +37,13 @@ struct VenuesView: View {
             }
             .navigationDestination(item: $openedFromTable) { venue in
                 VenueDetailsView(venue: venue, sport: sport)
+            }
+            // Focus is still on the tab below, so nothing else would say it failed.
+            .onChange(of: viewModel.errorMessage) { _, message in
+                if let message { UIAccessibility.post(notification: .announcement, argument: message) }
+            }
+            .onChange(of: viewModel.refreshFailed) { _, failed in
+                if failed { UIAccessibility.post(notification: .announcement, argument: Self.refreshFailedText) }
             }
             .onAppear {
                 guard !viewModeInitialized else { return }
@@ -49,21 +59,45 @@ struct VenuesView: View {
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
         } else if let error = viewModel.errorMessage {
             ErrorStateView(message: error) {
-                Task { await viewModel.fetchVenues(for: sport) }
+                Task { await viewModel.retry(for: sport) }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         } else if viewModel.venues.isEmpty {
             emptyState
         } else {
-            switch viewMode {
-            case .table:
-                tableView
-            case .quickList:
-                quickListView
-            case .fullList:
-                fullListView
+            VStack(spacing: 0) {
+                if viewModel.refreshFailed {
+                    refreshFailedNote
+                }
+                switch viewMode {
+                case .table:
+                    tableView
+                case .quickList:
+                    quickListView
+                case .fullList:
+                    fullListView
+                }
             }
         }
+    }
+
+    private static let refreshFailedText = "Couldn't refresh the venues. These are the ones last loaded."
+
+    /// Above the list rather than in place of it, so whoever is partway down keeps their place.
+    private var refreshFailedNote: some View {
+        HStack(spacing: 12) {
+            Text(Self.refreshFailedText)
+                .font(.caption)
+                .foregroundColor(.secondary)
+            Spacer()
+            Button("Retry") {
+                Task { await viewModel.refresh(for: sport) }
+            }
+            .font(.caption)
+            .buttonStyle(.bordered)
+        }
+        .padding(.horizontal)
+        .padding(.vertical, 8)
     }
 
     private var emptyState: some View {

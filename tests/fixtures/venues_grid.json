@@ -4,52 +4,125 @@
   {
    "league": "MLB",
    "path": "baseball/mlb",
-   "query": "limit=1000"
+   "query": "limit=1000",
+   "in_season": [
+    4,
+    5,
+    6,
+    7,
+    8,
+    9
+   ],
+   "months_ahead": 0,
+   "always_indoors": false,
+   "hosts_need_a_conference": false
   },
   {
    "league": "NFL",
    "path": "football/nfl",
-   "query": "limit=1000"
+   "query": "limit=1000",
+   "in_season": [
+    9,
+    11,
+    12
+   ],
+   "months_ahead": 0,
+   "always_indoors": false,
+   "hosts_need_a_conference": false
   },
   {
    "league": "NBA",
    "path": "basketball/nba",
-   "query": "limit=1000"
+   "query": "limit=1000",
+   "in_season": [
+    1,
+    3,
+    11
+   ],
+   "months_ahead": 0,
+   "always_indoors": true,
+   "hosts_need_a_conference": false
   },
   {
    "league": "NHL",
    "path": "hockey/nhl",
-   "query": "limit=1000"
+   "query": "limit=1000",
+   "in_season": [
+    1,
+    3,
+    11,
+    12
+   ],
+   "months_ahead": 0,
+   "always_indoors": false,
+   "hosts_need_a_conference": false
   },
   {
    "league": "WNBA",
    "path": "basketball/wnba",
-   "query": "limit=1000"
+   "query": "limit=1000",
+   "in_season": [
+    6
+   ],
+   "months_ahead": 0,
+   "always_indoors": true,
+   "hosts_need_a_conference": false
   },
   {
    "league": "NCAAF",
    "path": "football/college-football",
-   "query": "groups=90&limit=400"
+   "query": "groups=90&limit=400",
+   "in_season": [
+    10,
+    11
+   ],
+   "months_ahead": 0,
+   "always_indoors": false,
+   "hosts_need_a_conference": false
   },
   {
    "league": "NCAAM",
    "path": "basketball/mens-college-basketball",
-   "query": "groups=50&limit=1000"
+   "query": "groups=50&limit=1000",
+   "in_season": [
+    2
+   ],
+   "months_ahead": 3,
+   "always_indoors": true,
+   "hosts_need_a_conference": true
   },
   {
    "league": "NCAAWB",
    "path": "basketball/womens-college-basketball",
-   "query": "groups=50&limit=1000"
+   "query": "groups=50&limit=1000",
+   "in_season": [
+    2
+   ],
+   "months_ahead": 3,
+   "always_indoors": true,
+   "hosts_need_a_conference": true
   },
   {
    "league": "NCAAH",
    "path": "hockey/mens-college-hockey",
-   "query": "limit=1000"
+   "query": "limit=1000",
+   "in_season": [
+    2
+   ],
+   "months_ahead": 3,
+   "always_indoors": false,
+   "hosts_need_a_conference": false
   },
   {
    "league": "NCAAWH",
    "path": "hockey/womens-college-hockey",
-   "query": "limit=1000"
+   "query": "limit=1000",
+   "in_season": [
+    1
+   ],
+   "months_ahead": 3,
+   "always_indoors": false,
+   "hosts_need_a_conference": false
   }
  ],
  "months": [
@@ -246,6 +319,106 @@
   {
    "year": 2026,
    "month": 7,
+   "league": "NCAAWH",
+   "months": [
+    "202601",
+    "202501",
+    "202401"
+   ]
+  },
+  {
+   "year": 2026,
+   "month": 5,
+   "league": "MLB",
+   "months": [
+    "202605",
+    "202604",
+    "202509"
+   ]
+  },
+  {
+   "year": 2026,
+   "month": 5,
+   "league": "NFL",
+   "months": [
+    "202512",
+    "202511",
+    "202509"
+   ]
+  },
+  {
+   "year": 2026,
+   "month": 5,
+   "league": "NBA",
+   "months": [
+    "202603",
+    "202601",
+    "202511"
+   ]
+  },
+  {
+   "year": 2026,
+   "month": 5,
+   "league": "NHL",
+   "months": [
+    "202603",
+    "202601",
+    "202512"
+   ]
+  },
+  {
+   "year": 2026,
+   "month": 5,
+   "league": "WNBA",
+   "months": [
+    "202506",
+    "202406",
+    "202306"
+   ]
+  },
+  {
+   "year": 2026,
+   "month": 5,
+   "league": "NCAAF",
+   "months": [
+    "202511",
+    "202510",
+    "202411"
+   ]
+  },
+  {
+   "year": 2026,
+   "month": 5,
+   "league": "NCAAM",
+   "months": [
+    "202602",
+    "202502",
+    "202402"
+   ]
+  },
+  {
+   "year": 2026,
+   "month": 5,
+   "league": "NCAAWB",
+   "months": [
+    "202602",
+    "202502",
+    "202402"
+   ]
+  },
+  {
+   "year": 2026,
+   "month": 5,
+   "league": "NCAAH",
+   "months": [
+    "202602",
+    "202502",
+    "202402"
+   ]
+  },
+  {
+   "year": 2026,
+   "month": 5,
    "league": "NCAAWH",
    "months": [
     "202601",
@@ -1836,6 +2009,211 @@
       "Women's college hockey venue",
       "Located in Boston, MA",
       "Shared by 2 teams"
+     ]
+    }
+   ]
+  },
+  {
+   "fixture": "scoreboard_NBA_202611.json",
+   "league": "NFL",
+   "why": "An indoor venue in the NFL, for the line about weather",
+   "venues": [
+    {
+     "id": "3559",
+     "name": "Barclays Center",
+     "city": "Brooklyn",
+     "state": "NY",
+     "location": "Brooklyn, NY",
+     "indoor": true,
+     "home_teams": [
+      {
+       "id": "17",
+       "name": "Brooklyn Nets",
+       "abbreviation": "BKN"
+      }
+     ],
+     "summary": "Barclays Center (Brooklyn, NY) [Indoor] - Brooklyn Nets",
+     "facts": [
+      "Indoor venue",
+      "National Football League venue",
+      "Weather never affects games here",
+      "Located in Brooklyn, NY",
+      "Home of the Brooklyn Nets"
+     ]
+    },
+    {
+     "id": "6270",
+     "name": "Chase Center",
+     "city": "San Francisco",
+     "state": "CA",
+     "location": "San Francisco, CA",
+     "indoor": true,
+     "home_teams": [
+      {
+       "id": "9",
+       "name": "Golden State Warriors",
+       "abbreviation": "GS"
+      }
+     ],
+     "summary": "Chase Center (San Francisco, CA) [Indoor] - Golden State Warriors",
+     "facts": [
+      "Indoor venue",
+      "National Football League venue",
+      "Weather never affects games here",
+      "Located in San Francisco, CA",
+      "Home of the Golden State Warriors"
+     ]
+    }
+   ]
+  },
+  {
+   "fixture": "scoreboard_NFL_202611.json",
+   "league": "MLB",
+   "why": "A venue called a Field in MLB, for the line about its name",
+   "venues": [
+    {
+     "id": "11938",
+     "name": "Highmark Stadium",
+     "city": "Orchard Park",
+     "state": "NY",
+     "location": "Orchard Park, NY",
+     "indoor": false,
+     "home_teams": [
+      {
+       "id": "2",
+       "name": "Buffalo Bills",
+       "abbreviation": "BUF"
+      }
+     ],
+     "summary": "Highmark Stadium (Orchard Park, NY) [Outdoor] - Buffalo Bills",
+     "facts": [
+      "Open-air stadium exposed to weather",
+      "Major League Baseball venue",
+      "Located in Orchard Park, NY",
+      "Home of the Buffalo Bills"
+     ]
+    },
+    {
+     "id": "3798",
+     "name": "Lambeau Field",
+     "city": "Green Bay",
+     "state": "WI",
+     "location": "Green Bay, WI",
+     "indoor": false,
+     "home_teams": [
+      {
+       "id": "9",
+       "name": "Green Bay Packers",
+       "abbreviation": "GB"
+      }
+     ],
+     "summary": "Lambeau Field (Green Bay, WI) [Outdoor] - Green Bay Packers",
+     "facts": [
+      "Open-air stadium exposed to weather",
+      "Major League Baseball venue",
+      "Classic baseball 'Field' naming",
+      "Located in Green Bay, WI",
+      "Home of the Green Bay Packers"
+     ]
+    },
+    {
+     "id": "3839",
+     "name": "MetLife Stadium",
+     "city": "East Rutherford",
+     "state": "NJ",
+     "location": "East Rutherford, NJ",
+     "indoor": false,
+     "home_teams": [
+      {
+       "id": "19",
+       "name": "New York Giants",
+       "abbreviation": "NYG"
+      },
+      {
+       "id": "20",
+       "name": "New York Jets",
+       "abbreviation": "NYJ"
+      }
+     ],
+     "summary": "MetLife Stadium (East Rutherford, NJ) [Outdoor] - New York Giants, New York Jets",
+     "facts": [
+      "Open-air stadium exposed to weather",
+      "Major League Baseball venue",
+      "Located in East Rutherford, NJ",
+      "Shared by 2 teams"
+     ]
+    }
+   ]
+  },
+  {
+   "fixture": "scoreboard_WNBA_202607.json",
+   "league": "NHL",
+   "why": "Marked not indoors where that's believed, so American Airlines Center reads Outdoor",
+   "venues": [
+    {
+     "id": "516",
+     "name": "American Airlines Center",
+     "city": "Dallas",
+     "state": "TX",
+     "location": "Dallas, TX",
+     "indoor": false,
+     "home_teams": [
+      {
+       "id": "3",
+       "name": "Dallas Wings",
+       "abbreviation": "DAL"
+      }
+     ],
+     "summary": "American Airlines Center (Dallas, TX) [Outdoor] - Dallas Wings",
+     "facts": [
+      "Open-air stadium exposed to weather",
+      "National Hockey League venue",
+      "Located in Dallas, TX",
+      "Home of the Dallas Wings"
+     ]
+    },
+    {
+     "id": "2029",
+     "name": "Target Center",
+     "city": "Minneapolis",
+     "state": "MN",
+     "location": "Minneapolis, MN",
+     "indoor": true,
+     "home_teams": [
+      {
+       "id": "8",
+       "name": "Minnesota Lynx",
+       "abbreviation": "MIN"
+      }
+     ],
+     "summary": "Target Center (Minneapolis, MN) [Indoor] - Minnesota Lynx",
+     "facts": [
+      "Indoor venue",
+      "National Hockey League venue",
+      "Located in Minneapolis, MN",
+      "Home of the Minnesota Lynx"
+     ]
+    },
+    {
+     "id": "1847",
+     "name": "United Center",
+     "city": "Chicago",
+     "state": "IL",
+     "location": "Chicago, IL",
+     "indoor": false,
+     "home_teams": [
+      {
+       "id": "133384",
+       "name": "TEAM COOP",
+       "abbreviation": "COOP"
+      }
+     ],
+     "summary": "United Center (Chicago, IL) [Outdoor] - TEAM COOP",
+     "facts": [
+      "Open-air stadium exposed to weather",
+      "National Hockey League venue",
+      "Located in Chicago, IL",
+      "Home of the TEAM COOP"
      ]
     }
    ]

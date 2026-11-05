@@ -1615,8 +1615,7 @@ class ESPNAPIService {
         if !ignoringCache, let cached = await venueCache.venues(forKey: cacheKey) {
             return cached
         }
-        let today = Calendar.current.dateComponents([.year, .month], from: now)
-        let months = VenueRules.months(for: sport, year: today.year ?? 0, month: today.month ?? 0)
+        let months = VenueRules.months(for: sport, on: now)
         var failed = false
         for month in months {
             let events: [VenueScoreboard.Event]
@@ -1626,7 +1625,9 @@ class ESPNAPIService {
                 if error.code == .cancelled { throw CancellationError() }
                 // With no network an older month won't answer either, and asking would only
                 // make the message later.
-                throw VenuesError.espnDidNotAnswer
+                if Self.meansNoNetwork(error.code) { throw VenuesError.espnDidNotAnswer }
+                failed = true
+                continue
             } catch is CancellationError {
                 throw CancellationError()
             } catch {
@@ -1641,6 +1642,19 @@ class ESPNAPIService {
         }
         if failed { throw VenuesError.espnDidNotAnswer }
         return []
+    }
+
+    /// The same failures Windows stops at: a timeout, or no connection to be had. Something
+    /// else going wrong with one month, such as a connection lost partway through its
+    /// download, is that month's failure, and the month before can stand in.
+    private static func meansNoNetwork(_ code: URLError.Code) -> Bool {
+        switch code {
+        case .timedOut, .notConnectedToInternet, .cannotConnectToHost, .cannotFindHost, .dnsLookupFailed,
+             .secureConnectionFailed, .dataNotAllowed, .internationalRoamingOff:
+            return true
+        default:
+            return false
+        }
     }
 
     private func venueEvents(for sport: Sport, month: String) async throws -> [VenueScoreboard.Event] {

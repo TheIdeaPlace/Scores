@@ -83,6 +83,15 @@ enum VenueRules {
         }
     }
 
+    /// The months to ask for on this date. Gregorian whatever the phone's own calendar is,
+    /// since ESPN's dates are: a phone on the Buddhist calendar would ask for dates=256911.
+    static func months(for sport: Sport, on date: Date) -> [String] {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = .current
+        let today = calendar.dateComponents([.year, .month], from: date)
+        return months(for: sport, year: today.year ?? 0, month: today.month ?? 0)
+    }
+
     /// The months to ask for as YYYYMM, the first of them the latest in-season month at or
     /// before `monthsAhead` from the given one.
     static func months(for sport: Sport, year: Int, month: Int) -> [String] {

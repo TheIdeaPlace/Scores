@@ -42,6 +42,10 @@ def test_windows_asks_for_each_league_as_the_grid_says(league, monkeypatch):
     key = league["league"].lower()
     assert espn_api.LEAGUES[league["league"]] == league["path"]
     assert venue_service._scoreboard_query(key) == league["query"]
+    assert sorted(venue_service.IN_SEASON_MONTHS[key]) == league["in_season"]
+    assert venue_service.MONTHS_AHEAD.get(key, 0) == league["months_ahead"]
+    assert (key in venue_service.ALWAYS_INDOORS) == league["always_indoors"]
+    assert (key in venue_service.HOSTS_NEED_A_CONFERENCE) == league["hosts_need_a_conference"]
 
 
 @pytest.mark.parametrize("month", GRID["months"], ids=lambda m: f"{m['league']}-{m['year']}-{m['month']}")

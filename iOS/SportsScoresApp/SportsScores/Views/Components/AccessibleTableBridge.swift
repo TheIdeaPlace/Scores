@@ -71,12 +71,12 @@ final class DataTableCellElement: UIAccessibilityElement,
 
     /// Opens the row, for a table that does that. Otherwise VoiceOver's double-tap lands
     /// wherever this cell's frame is on the grid below, and rows that wrap can put that on
-    /// another row.
+    /// another row. A column header opens nothing, and saying it's handled keeps that tap
+    /// from landing on a row too.
     override func accessibilityActivate() -> Bool {
-        guard _row > 0,
-              let table = accessibilityContainer as? AccessibleDataTableView,
+        guard let table = accessibilityContainer as? AccessibleDataTableView,
               let open = table.onActivateRow else { return false }
-        open(_row - 1)
+        if _row > 0 { open(_row - 1) }
         return true
     }
 }

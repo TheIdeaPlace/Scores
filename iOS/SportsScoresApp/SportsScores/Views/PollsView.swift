@@ -73,8 +73,9 @@ struct PollsView: View {
     // MARK: - Table view mode
 
     private func rankingTableView(poll: RankingsPoll) -> some View {
-        let headers = ["Rank", "Team", "Record", "Pts"]
-        let rows = poll.ranks.map { rankTableRow($0) }
+        let showsPoints = hasPoints(poll)
+        let headers = showsPoints ? ["Rank", "Team", "Record", "Pts"] : ["Rank", "Team", "Record"]
+        let rows = poll.ranks.map { rankTableRow($0, showsPoints: showsPoints) }
         return ScrollView {
             VStack(spacing: 0) {
                 HStack(spacing: 0) {
@@ -90,7 +91,7 @@ struct PollsView: View {
                 .accessibilityHidden(true)
                 ForEach(Array(poll.ranks.enumerated()), id: \.element.id) { idx, entry in
                     HStack(spacing: 0) {
-                        ForEach(Array(rankTableRow(entry).enumerated()), id: \.offset) { _, val in
+                        ForEach(Array(rankTableRow(entry, showsPoints: showsPoints).enumerated()), id: \.offset) { _, val in
                             Text(val)
                                 .font(.subheadline)
                                 .frame(maxWidth: .infinity)
@@ -114,9 +115,17 @@ struct PollsView: View {
         }
     }
 
-    private func rankTableRow(_ entry: RankingsPoll.RankEntry) -> [String] {
-        let pts = entry.points.map { String(format: $0 >= 100 ? "%.0f" : "%.1f", $0) } ?? "-"
-        return ["\(entry.current)", entry.teamDisplayName, entry.recordSummary ?? "-", pts]
+    /// College hockey's polls have no points, so a column of them would be nothing but dashes.
+    private func hasPoints(_ poll: RankingsPoll) -> Bool {
+        poll.ranks.contains { $0.points != nil }
+    }
+
+    private func rankTableRow(_ entry: RankingsPoll.RankEntry, showsPoints: Bool) -> [String] {
+        var row = ["\(entry.current)", entry.teamDisplayName, entry.recordSummary ?? "-"]
+        if showsPoints {
+            row.append(entry.points.map { String(format: $0 >= 100 ? "%.0f" : "%.1f", $0) } ?? "-")
+        }
+        return row
     }
 
     // MARK: - Quick List view mode
@@ -166,7 +175,9 @@ struct PollsView: View {
                     Text("Team")
                     Spacer()
                     Text("Record").frame(width: 52, alignment: .trailing)
-                    Text("Pts").frame(width: 44, alignment: .trailing)
+                    if hasPoints(poll) {
+                        Text("Pts").frame(width: 44, alignment: .trailing)
+                    }
                 }
                 .font(.caption.bold())
                 .foregroundColor(.secondary)

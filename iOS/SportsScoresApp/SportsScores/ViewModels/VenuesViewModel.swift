@@ -13,10 +13,15 @@ final class VenuesViewModel: ObservableObject {
     /// True from the start, so nothing can read as "no venues" before the first answer.
     @Published private(set) var isLoading = true
     @Published private(set) var errorMessage: String?
+    /// A pull to refresh failed. The list stays, and this says it's the one last loaded.
+    @Published private(set) var refreshFailed = false
 
-    /// What the list on screen was asked for with. Coming back from a venue's details runs
-    /// the view's task again, and reloading then would take VoiceOver off the row it was on.
-    private var loadedQuery: String?
+    /// What was last asked for, whatever came of it. The view's task runs again on coming
+    /// back from a venue's details, and reloading then would take VoiceOver off the row it
+    /// was on. It doesn't ask again after a failure either, which is for Retry.
+    private var attemptedQuery: String?
+    /// Which load is the current one, so that one it has replaced changes nothing.
+    private var latestLoad = 0
     private let apiService: ESPNAPIService
 
     init(apiService: ESPNAPIService = .shared) {
@@ -24,34 +29,48 @@ final class VenuesViewModel: ObservableObject {
     }
 
     func fetchVenues(for sport: Sport) async {
-        guard apiService.venueQuery(for: sport) != loadedQuery else { return }
+        guard apiService.venueQuery(for: sport) != attemptedQuery else { return }
+        await retry(for: sport)
+    }
+
+    func retry(for sport: Sport) async {
+        attemptedQuery = apiService.venueQuery(for: sport)
         isLoading = true
         errorMessage = nil
-        await load(for: sport, ignoringCache: false)
-    }
-
-    /// Pull to refresh asks ESPN again, and the list stays on screen while it does.
-    func refresh(for sport: Sport) async {
-        errorMessage = nil
-        await load(for: sport, ignoringCache: true)
-    }
-
-    private func load(for sport: Sport, ignoringCache: Bool) async {
-        let query = apiService.venueQuery(for: sport)
+        refreshFailed = false
+        latestLoad += 1
+        let load = latestLoad
         do {
-            let list = try await apiService.fetchVenues(for: sport, ignoringCache: ignoringCache)
-            // Gone from the screen, or the coverage setting changed and a newer load has it.
-            guard !Task.isCancelled else { return }
+            let list = try await apiService.fetchVenues(for: sport)
+            guard load == latestLoad else { return }
             venues = list
-            loadedQuery = query
+            isLoading = false
+        } catch is CancellationError {
+            // Gone from the screen, so it's asked for again on coming back.
+            guard load == latestLoad else { return }
+            attemptedQuery = nil
+        } catch {
+            guard load == latestLoad else { return }
+            venues = []
+            errorMessage = error.localizedDescription
+            isLoading = false
+        }
+    }
+
+    /// Pull to refresh asks ESPN again, and the list stays on screen while it does and if it fails.
+    func refresh(for sport: Sport) async {
+        refreshFailed = false
+        latestLoad += 1
+        let load = latestLoad
+        do {
+            let list = try await apiService.fetchVenues(for: sport, ignoringCache: true)
+            guard load == latestLoad else { return }
+            venues = list
         } catch is CancellationError {
             return
         } catch {
-            guard !Task.isCancelled else { return }
-            venues = []
-            loadedQuery = nil
-            errorMessage = error.localizedDescription
+            guard load == latestLoad else { return }
+            refreshFailed = true
         }
-        isLoading = false
     }
 }
