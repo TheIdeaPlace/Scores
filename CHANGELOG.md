@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### In Progress
+- **Game Wrap Up Feature**: ESPN text processing and game story extraction (under construction)
+  - Core infrastructure implemented, text processing being refined
+  - Game story text placeholders currently under investigation
+
+## [1.1.0] - 2026-11-04
+
 ### Changed
 - **Both apps read league leaders from the same place, with the same rules.** They could name
   different players for the same stat, because the iPhone read a feed with no qualifying minimums. It
@@ -156,15 +163,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   preseason total, where the real leader has 2,246.
   The NBA and WNBA have leaders now. ERA, goals against and the like read best first rather than
   worst first, and the dialog says which season you're looking at. Lists go to 20 players, or fewer
-  if that's all ESPN will give, down from 50; MLB stays at 50. If ESPN won't answer at all, the
+  if that's all ESPN will give, down from 50. If ESPN won't answer at all, the
   dialog says so and suggests trying again in a minute. Between seasons you get the last regular
   season, except college football, whose last season runs through the bowl games and says "2025
   Season". College hockey and soccer say there are no leaders, since ESPN has none.
 - **Team statistics on Windows say which season they're from,** if it's the same for every team,
   rather than claiming the full season. The window title has the season too.
-- **A team's stats tab on iPhone asks ESPN for far less.** It could make over a thousand requests
-  to name players on other teams. It now looks up only that team's, a few at a time, and tries
-  again if a name doesn't come back.
 - **League leaders on iPhone read as they should.** 38.3 points per game read 38.29, 0.9 steals
   read .900, and a plus-minus of -3 read -3.000. Half a sack and a passer rating keep their
   fractions, and a three-point percentage reads as a percentage. Windows now reads these the same.
@@ -172,8 +176,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   number for, such as Player Efficiency Rating in the WNBA, is left out.
 - **League leaders on iPhone are never preseason numbers.** In August, the NFL's fell through to
   the preseason with nothing to say so. Between seasons you now get last season's regular season,
-  and MLB no longer shows spring training in February and March. The app doesn't yet say which
-  season you're looking at.
+  and MLB no longer shows spring training in February and March.
 - **Times on Windows in summer.** Eastern and Pacific users fell through to Central, and Mountain
   users to Eastern.
 - **A blank field from ESPN no longer reads out as "None"** in game details, or costs a whole list
@@ -211,11 +214,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   season opens on its last game, not its first preseason game. A past season still opens at its start.
 - **Games in another year show the year.** On Windows, in every row. On iPhone, in Quick List and in
   what VoiceOver reads; the other views have it in the month heading. A season can cross new year.
-
-### In Progress
-- **Game Wrap Up Feature**: ESPN text processing and game story extraction (under construction)
-  - Core infrastructure implemented, text processing being refined
-  - Game story text placeholders currently under investigation
 
 ## [1.0.1] - 2026-11-03
 
