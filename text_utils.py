@@ -45,6 +45,10 @@ class ESPNTextProcessor:
         if not description:
             return description
             
+        # One article's odd field doesn't cost the rest of the list theirs.
+        if not isinstance(description, str):
+            return ""
+
         # Check for placeholder patterns
         has_placeholders = False
         for pattern in self.placeholder_patterns:

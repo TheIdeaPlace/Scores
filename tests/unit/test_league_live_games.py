@@ -525,12 +525,32 @@ class TestAFailureInLiveScores(FailureViews):
 
     def test_someone_landing_on_the_row_in_a_rebuilt_list_hears_it_once(self, view):
         """The list was showing "Loading live scores...", and arriving on the row reads it."""
-        view.live_scores_list.setCurrentRow(0)
-        with patch.object(view, "load_live_scores"):
+        lst = view.live_scores_list
+        lst.setCurrentRow(0)
+        with patch.object(view, "load_live_scores"), patch.object(lst, "hasFocus", return_value=True):
             view.refresh()
-        self.load(view, failed=["NBA"])
-        assert view.live_scores_list.currentRow() == 0
+            self.load(view, failed=["NBA"])
+        assert lst.currentRow() == 0
         self.said.assert_not_called()
+
+    def test_with_focus_off_the_list_a_rebuilt_row_is_still_said(self, view):
+        """Refresh from the combo: nothing read the row, whatever row is current."""
+        lst = view.live_scores_list
+        lst.setCurrentRow(0)
+        with patch.object(view, "load_live_scores"), patch.object(lst, "hasFocus", return_value=False):
+            view.refresh()
+            self.load(view, failed=["NBA"])
+        assert lst.currentRow() == 0
+        self.said.assert_called_once()
+
+    def test_a_game_arriving_above_the_failure_row_leaves_you_on_it(self, view):
+        one, two = self.today_game("1", "NHL"), self.today_game("2", "NHL")
+        self.load(view, [one], ["NBA"])
+        lst = view.live_scores_list
+        lst.setCurrentRow(lst.count() - 1)
+        self.load(view, [one, two], ["NBA"])
+        assert lst.currentRow() == lst.count() - 1
+        assert lst.currentItem().data(self.scores.Qt.ItemDataRole.UserRole) == self.scores.RETRY_ROW
 
     def test_the_failure_row_coming_and_going_leaves_the_games_alone(self, view):
         self.load(view, [self.today_game("1", "NHL"), self.today_game("2", "NHL")])
@@ -715,6 +735,31 @@ class TestAFailureInADialog(FailureViews):
             self.press_f5(dialog)
             self.press_f5(dialog)
         load.assert_called_once()
+
+    def test_the_team_filter_coming_back_says_so_only_after_a_retry(self):
+        teams = [{"team_name": "Bears", "team_id": "3"}]
+        dialog = self.transactions()
+        dialog._on_teams_loaded(teams)
+        self.said.assert_not_called()
+
+        dialog = self.transactions()
+        dialog._on_teams_failed("no")
+        with patch.object(dialog, "_load_teams"):
+            self.press_f5(dialog)
+        self.said.reset_mock()
+        dialog._on_teams_loaded(teams)
+        self.said.assert_called_once_with("Teams loaded.")
+        assert dialog.team_combo.count() == 2
+
+    def test_a_retry_of_the_team_filter_that_fails_again_says_only_that(self):
+        dialog = self.transactions()
+        dialog._on_teams_failed("no")
+        with patch.object(dialog, "_load_teams"):
+            self.press_f5(dialog)
+        self.said.reset_mock()
+        dialog._on_teams_failed("no")
+        self.said.assert_called_once_with(self.scores.TEAMS_UNAVAILABLE)
+        assert dialog._teams_retried is False
 
     def test_a_league_with_no_standings_is_not_a_failed_team_filter(self):
         dialog = self.transactions()

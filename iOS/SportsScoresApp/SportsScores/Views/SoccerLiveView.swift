@@ -19,19 +19,9 @@ struct SoccerLiveView: View {
             if viewModel.isLoading {
                 ProgressView("Loading soccer games...")
             } else if let error = viewModel.errorMessage {
-                VStack(spacing: 16) {
-                    Image(systemName: "calendar.badge.clock")
-                        .font(.system(size: 48))
-                        .foregroundColor(.secondary)
-                    Text(error)
-                        .multilineTextAlignment(.center)
-                        .foregroundColor(.secondary)
-                    Button("Retry") {
-                        Task { await viewModel.fetchAllGames(retrying: true) }
-                    }
-                    .buttonStyle(.bordered)
+                LiveFailureView(message: error, isRetrying: viewModel.isRetrying) {
+                    await viewModel.retry()
                 }
-                .padding()
             } else {
                 scrollContent
             }

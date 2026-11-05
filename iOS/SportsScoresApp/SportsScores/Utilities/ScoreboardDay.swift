@@ -30,10 +30,17 @@ enum ScoreboardDay {
     /// Whether a game on this day's board belongs on the screen for `today`. The day
     /// runs on past midnight to the rollover, and a game being played always counts.
     static func belongsOnToday(_ game: Game, now: Date = Date()) -> Bool {
+        game.status.isLive || startsOnToday(game.date, now: now)
+    }
+
+    /// Whether this starts on the board for `today`, whatever it says about itself. A game
+    /// kept from before a league failed is judged by this alone: its "live" is only what it
+    /// was the last time ESPN answered, perhaps last night.
+    static func startsOnToday(_ date: Date, now: Date = Date()) -> Bool {
         let start = today(now: now)
         let end = (Calendar.current.date(byAdding: .day, value: 1, to: start) ?? start)
             .addingTimeInterval(Double(rolloverHours) * 3600)
-        return game.status.isLive || (game.date >= start && game.date < end)
+        return date >= start && date < end
     }
 
     static func isTomorrow(_ date: Date, now: Date = Date()) -> Bool {

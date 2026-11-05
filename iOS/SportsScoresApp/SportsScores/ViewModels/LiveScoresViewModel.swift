@@ -16,8 +16,10 @@ class LiveScoresViewModel: ObservableObject {
     @Published var errorMessage: String?
     /// Says which leagues didn't answer, under what the others did.
     @Published var failureNote: String?
+    @Published var isRetrying = false
 
     private let apiService = ESPNAPIService.shared
+    private var latestFetch = 0
     
     struct SportGames: Identifiable {
         let id = UUID()
@@ -25,10 +27,12 @@ class LiveScoresViewModel: ObservableObject {
         let games: [Game]
     }
     
-    /// A refresh on the timer leaves an error showing until it has something else to show, since
-    /// swapping in the spinner takes VoiceOver off Retry. Retry itself shows progress.
-    func fetchAllGames(retrying: Bool = false) async {
-        if retrying { errorMessage = nil }
+    /// Leaves an error showing until it has something else to show, since swapping in the
+    /// spinner would take VoiceOver off Retry. Only the newest of these publishes: Retry can
+    /// overlap the timer, and a request that's failing can take a long time to say so.
+    func fetchAllGames() async {
+        latestFetch += 1
+        let thisFetch = latestFetch
         isLoading = errorMessage == nil && liveGames.isEmpty && completedGames.isEmpty && upcomingGames.isEmpty
 
         // Today's date boundaries for filtering
@@ -64,6 +68,7 @@ class LiveScoresViewModel: ObservableObject {
             }
         }
 
+        guard thisFetch == latestFetch else { return }
         // Leaving the screen cancels this, and says nothing about ESPN.
         guard !Task.isCancelled else {
             isLoading = false
@@ -77,12 +82,13 @@ class LiveScoresViewModel: ObservableObject {
 
         for (sport, fetched) in results {
             if fetched == nil { failed.append(sport.displayName) }
-            // A league that failed keeps what it last showed.
-            let games = fetched ?? (liveGames + completedGames + upcomingGames)
-                .filter { $0.sport == sport }
-                .flatMap { $0.games }
-            // Restrict every sport to today — no special football exemption.
-            let relevantGames = games.filter { ScoreboardDay.belongsOnToday($0, now: now) }
+            // Restrict every sport to today — no special football exemption. A league that
+            // failed keeps what it last showed, until its day is over.
+            let relevantGames = fetched?.filter { ScoreboardDay.belongsOnToday($0, now: now) }
+                ?? (liveGames + completedGames + upcomingGames)
+                    .filter { $0.sport == sport }
+                    .flatMap { $0.games }
+                    .filter { ScoreboardDay.startsOnToday($0.date, now: now) }
 
             // Suspended games are halted, not over — they belong with the live ones.
             let liveGamesForSport      = relevantGames.filter { $0.status.isLive || $0.status.isSuspended }
@@ -109,5 +115,13 @@ class LiveScoresViewModel: ObservableObject {
     
     func refresh() async {
         await fetchAllGames()
+    }
+
+    /// Retry stays on the screen while it runs, and what came of it is the error still here, or none.
+    func retry() async -> String? {
+        isRetrying = true
+        await fetchAllGames()
+        isRetrying = false
+        return errorMessage
     }
 }

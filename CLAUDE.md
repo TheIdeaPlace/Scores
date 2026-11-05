@@ -105,7 +105,7 @@ Add a check here when the app starts relying on a new endpoint or field.
 Lives entirely in `iOS/SportsScoresApp/` (Xcode project, SwiftUI). Nothing in the Python app reads from it, and the app itself reads nothing from the Python app — `pytest` and `build.py` ignore the directory completely. Its tests do read the shared `tests/fixtures/`, so a fixture change can fail them.
 
 - `SportsScores/Services/ESPNAPIService.swift` — the iOS equivalent of `espn_api.py`. When you fix an ESPN data quirk on one platform, check whether the other needs the same fix; this has been the main source of drift.
-- **Both apps use the same data sources wherever they can.** If that loses some data, file an issue for what's lost rather than keeping two sources. Rules that must match are held to shared files in `tests/fixtures/`, with a test on each side: `play_geometry_grid.json`, `leader_display_grid.json`, `leader_lists_grid.json`, `soccer_grid.json`, `team_stat_directions.json` and `venues_grid.json`.
+- **Both apps use the same data sources wherever they can.** If that loses some data, file an issue for what's lost rather than keeping two sources. Rules that must match are held to shared files in `tests/fixtures/`, with a test on each side: `play_geometry_grid.json`, `leader_display_grid.json`, `leader_lists_grid.json`, `soccer_grid.json`, `team_stat_directions.json`, `venues_grid.json` and `failed_request_wording.json`.
 - `SportsScoresTests/` — XCTest target: the real models on the real ESPN fixtures, the shared play audio grid, and a check that no scoreboard request uses a date range. Runs on a Mac only, in the workflow below.
 - `.github/workflows/ios-build-check.yml` — simulator build and tests, runs on `main` for changes under `iOS/**` and `tests/fixtures/**`. No signing, no secrets.
 - `.github/workflows/ios-release.yml` — runs on the same `v*` tags as the Windows release (and by manual dispatch); archives on a macOS runner and uploads to TestFlight. Needs the five App Store Connect secrets listed in `.github/workflows/README-ios-release.md`.
@@ -124,7 +124,7 @@ The iOS app previously lived on a separate `iOS` branch that also carried a stal
 
 **Window titles** are set dynamically throughout `scores.py` to give screen readers hierarchical context (e.g., `"Yankees vs Red Sox - MLB - Sports Scores"`). Maintain this pattern when adding new views or dialogs.
 
-**A failed request says so.** A timeout, a 5xx or anything else unexpected raises `ApiError` with a plain sentence, so the screen can say to try again; only an honest empty answer reads as no data. Empty and failed mustn't look the same, and raw `requests` text mustn't reach a screen reader. `tests/unit/replay/test_known_gaps.py` lists where this isn't true yet, as strict xfails.
+**A failed request says so.** A timeout, a 5xx or anything else unexpected raises `ApiError` with a plain sentence, so the screen can say to try again; only an honest empty answer reads as no data. Empty and failed mustn't look the same, and raw `requests` text mustn't reach a screen reader. `tests/unit/replay/test_known_gaps.py` holds the gaps left, as strict xfails.
 
 **Play-by-play parsing** is sport-specific and lives entirely in `espn_api.py`. MLB play-by-play uses ESPN's `summaryType` field (`S`=scoring, `I`=inning marker, `N`=substitution) and has several workarounds for ESPN data quirks documented in recent commits.
 

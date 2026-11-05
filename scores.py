@@ -1126,7 +1126,7 @@ class LiveScoresView(BaseView):
         # Someone on the row, with the list rebuilt under them, has just heard it read.
         current = self.live_scores_list.currentItem()
         if (current is not None and current.data(Qt.ItemDataRole.UserRole) == RETRY_ROW
-                and self._rows_rebuilt):
+                and self._rows_rebuilt and self.live_scores_list.hasFocus()):
             return
         announce(self._failure_text)
 
@@ -1230,6 +1230,12 @@ class LiveScoresView(BaseView):
                     self.live_scores_list.setCurrentRow(row)
                     restored = True
                     break
+        # A game added above moves the failure row down, and Enter on a game wouldn't retry.
+        if not restored and not state and current_data == RETRY_ROW and self.live_scores_list.count():
+            last = self.live_scores_list.count() - 1
+            if self.live_scores_list.item(last).data(Qt.ItemDataRole.UserRole) == RETRY_ROW:
+                self.live_scores_list.setCurrentRow(last)
+                restored = True
         # The row can be past the end now: the failure row someone retried from is last, and gone.
         if not restored and selected_row >= 0 and self.live_scores_list.count():
             self.live_scores_list.setCurrentRow(min(selected_row, self.live_scores_list.count() - 1))
@@ -9369,6 +9375,7 @@ class TransactionsDialog(QDialog):
         self._loaders = []
         self._load_failed = False
         self._teams_failed = False
+        self._teams_retried = False
 
         self.setWindowTitle(f"Transactions — {league} — Sports Scores")
         self.setMinimumSize(700, 500)
@@ -9423,6 +9430,7 @@ class TransactionsDialog(QDialog):
     def _on_teams_failed(self, _message):
         # The list has its own row for its own failure. This one has nowhere else to go.
         self._teams_failed = True
+        self._teams_retried = False
         announce(TEAMS_UNAVAILABLE)
 
     def _on_teams_loaded(self, standings_data):
@@ -9435,6 +9443,10 @@ class TransactionsDialog(QDialog):
         for name, tid in teams:
             self.team_combo.addItem(name, tid)
         self.team_combo.blockSignals(False)
+        # They heard it fail and asked again, and the combo filling makes no sound.
+        if self._teams_retried:
+            self._teams_retried = False
+            announce("Teams loaded.")
 
     def _on_team_changed(self, _index):
         self.current_team_id = self.team_combo.currentData()
@@ -9502,6 +9514,7 @@ class TransactionsDialog(QDialog):
             # Only what failed: what's showing stays.
             if self._teams_failed:
                 self._teams_failed = False
+                self._teams_retried = True
                 self._load_teams()
             if self._load_failed:
                 self._load_transactions(reset=True)

@@ -394,6 +394,51 @@ def test_statistics_say_a_failed_request_failed(espn, reply, monkeypatch):
             getattr(ApiService, name)("NBA")
 
 
+@pytest.mark.parametrize("reply", [FakeResponse(None), [], "text", 5], ids=["null", "a_list", "text", "a_number"])
+@pytest.mark.parametrize("name", ["get_player_statistics", "get_team_statistics"])
+def test_statistics_with_no_object_in_the_answer_do_not_step_back_a_season(espn, name, reply, monkeypatch):
+    """None and {} both mean ESPN has no such season, and a null body is neither."""
+    monkeypatch.setattr(espn_api, "core_season", lambda path, *a, **k: {"year": 2027, "type": {"type": 2}})
+    espn.on(".*", reply)
+    with pytest.raises(ApiError) as caught:
+        getattr(espn_api, name)("NBA")
+    assert str(caught.value) == espn_api.STATISTICS_UNAVAILABLE
+    asked = espn.urls("/leaders") + espn.urls("/statistics/byteam")
+    assert asked and not [url for url in asked if "2026" in url]
+
+
+@pytest.mark.parametrize("reply", [FakeResponse(None), {"players": []}, "text"], ids=["null", "an_object", "text"])
+def test_a_fantasy_board_that_is_not_a_list_is_not_an_unpublished_season(espn, reply):
+    espn.on(".*", reply)
+    with pytest.raises(ApiError) as caught:
+        espn_api.get_fantasy_cheatsheet(2026)
+    assert str(caught.value) == espn_api.FANTASY_UNAVAILABLE
+
+
+def test_a_fantasy_board_of_no_players_still_falls_back_a_season(espn):
+    espn.on(".*", [])
+    assert espn_api.get_fantasy_cheatsheet(2026)["players"] == []
+
+
+@pytest.mark.parametrize("reply", [FakeResponse(None), [], "text"], ids=["null", "a_list", "text"])
+def test_a_team_page_with_no_object_in_it_says_the_record_failed(espn, reply, monkeypatch):
+    monkeypatch.setattr(espn_api, "core_season", lambda path, *a, **k: {"year": 2026, "type": {"type": 4}})
+    espn.on(".*", reply)
+    record, standing, failed, _ = espn_api._team_record_and_standing("basketball/nba", "1", {})
+    assert (record, standing, failed) == (None, None, True)
+
+
+def test_a_team_page_that_answers_with_no_record_has_not_failed(espn, monkeypatch):
+    monkeypatch.setattr(espn_api, "core_season", lambda path, *a, **k: {"year": 2026, "type": {"type": 4}})
+    espn.on(".*", {"team": {}})
+    assert espn_api._team_record_and_standing("basketball/nba", "1", {})[2] is False
+
+
+@pytest.mark.parametrize("description", [5, {"x": 1}, ["a"], True], ids=str)
+def test_a_description_that_is_not_text_costs_only_itself(description):
+    assert text_processor.clean_description(description) == ""
+
+
 @pytest.mark.parametrize("reply", [TIMEOUT, HTTP_500, NOT_JSON], ids=["timeout", "500", "not_json"])
 def test_soccer_standings_and_teams_say_so(espn, reply):
     espn.on(".*", reply)

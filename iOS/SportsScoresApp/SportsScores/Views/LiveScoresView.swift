@@ -8,6 +8,52 @@
 import SwiftUI
 import UIKit
 
+// MARK: - Nothing came back
+
+/// What Live Scores and Live Soccer show with nothing to list. Retry stays where it is while it
+/// runs, so VoiceOver stays on it and can say what came of it: the same words coming back would
+/// otherwise be silent. `retry` returns the error still showing, or nil if the games came back.
+struct LiveFailureView: View {
+    let message: String
+    let isRetrying: Bool
+    let retry: () async -> String?
+
+    var body: some View {
+        VStack(spacing: 16) {
+            Image(systemName: "calendar.badge.clock")
+                .font(.system(size: 48))
+                .foregroundColor(.secondary)
+                .accessibilityHidden(true)
+            Text(message)
+                .multilineTextAlignment(.center)
+                .foregroundColor(.secondary)
+            Button("Retry") {
+                guard !isRetrying else { return }
+                UIAccessibility.post(notification: .announcement, argument: "Retrying")
+                Task {
+                    if let stillFailing = await retry() {
+                        // Queued, or it can cut off "Retrying" when the failure is immediate.
+                        let said = NSAttributedString(
+                            string: stillFailing,
+                            attributes: [.accessibilitySpeechQueueAnnouncement: true])
+                        UIAccessibility.post(notification: .announcement, argument: said)
+                    } else {
+                        // Retry is gone from under VoiceOver. Let the list settle first.
+                        try? await Task.sleep(for: .milliseconds(300))
+                        UIAccessibility.post(notification: .screenChanged, argument: nil)
+                    }
+                }
+            }
+            .buttonStyle(.bordered)
+            if isRetrying {
+                ProgressView()
+                    .accessibilityHidden(true)
+            }
+        }
+        .padding()
+    }
+}
+
 // MARK: - Golf live state (lightweight, separate from team-sport viewmodel)
 
 @MainActor
@@ -45,21 +91,9 @@ struct LiveScoresView: View {
             if viewModel.isLoading {
                 ProgressView("Loading all games...")
             } else if let error = viewModel.errorMessage {
-                VStack(spacing: 16) {
-                    Image(systemName: "calendar.badge.clock")
-                        .font(.system(size: 48))
-                        .foregroundColor(.secondary)
-                    Text(error)
-                        .multilineTextAlignment(.center)
-                        .foregroundColor(.secondary)
-                    Button("Retry") {
-                        Task {
-                            await viewModel.fetchAllGames(retrying: true)
-                        }
-                    }
-                    .buttonStyle(.bordered)
+                LiveFailureView(message: error, isRetrying: viewModel.isRetrying) {
+                    await viewModel.retry()
                 }
-                .padding()
             } else {
                 scrollContent
             }

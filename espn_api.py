@@ -2671,10 +2671,14 @@ def _fetch_leaders(league_path, year):
         params = {"region": "us", "lang": "en", "season": year, "seasontype": 2, **attempt}
         try:
             resp = _http_get(f"{LEADERS_BASE_URL}/{league_path}/leaders", params=params, timeout=15)
-            if resp.status_code == 200:
-                return resp.json()
+            answer = resp.json() if resp.status_code == 200 else None
         except (requests.RequestException, ValueError) as e:
             raise ApiError(STATISTICS_UNAVAILABLE) from e
+        if resp.status_code == 200:
+            # None here means no such season, and a null body isn't ESPN saying that.
+            if not isinstance(answer, dict):
+                raise ApiError(STATISTICS_UNAVAILABLE)
+            return answer
         if resp.status_code == 404:
             return None
         if resp.status_code < 500:
@@ -2979,10 +2983,14 @@ def _fetch_team_stats(league_path, year, sort=None):
         params["sort"] = sort
     try:
         resp = _http_get(f"{TEAM_STATS_BASE_URL}/{league_path}/statistics/byteam", params=params, timeout=20)
-        if resp.status_code == 200:
-            return _as_dict(resp.json())
+        answer = resp.json() if resp.status_code == 200 else None
     except (requests.RequestException, ValueError) as e:
         raise ApiError(STATISTICS_UNAVAILABLE) from e
+    if resp.status_code == 200:
+        # An empty object is a season ESPN doesn't have yet. A null body isn't.
+        if not isinstance(answer, dict):
+            raise ApiError(STATISTICS_UNAVAILABLE)
+        return answer
     if resp.status_code == 404:
         return None
     raise (_TeamStatsServerError if resp.status_code >= 500 else ApiError)(STATISTICS_UNAVAILABLE)
@@ -3149,7 +3157,9 @@ def _team_record_and_standing(league_path, team_id, team):
         resp = _http_get(f"{BASE_URL}/{league_path}/teams/{team_id}?season={year}&seasontype={REGULAR_SEASON}",
                          timeout=8)
         if resp.status_code == 200:
-            regular = _as_dict(_as_dict(resp.json()).get("team"))
+            answer = resp.json()
+            failed = not isinstance(answer, dict)
+            regular = _as_dict(_as_dict(answer).get("team"))
         else:
             failed = resp.status_code not in (400, 404)  # those say ESPN has nothing there
     except (requests.RequestException, ValueError) as e:
@@ -3904,8 +3914,9 @@ def _load_fantasy_season(season, max_rank):
         raise _FantasySeasonNotThere(FANTASY_UNAVAILABLE)
     if resp.status_code != 200:
         raise ApiError(FANTASY_UNAVAILABLE)
+    # An empty list is a season ESPN hasn't published. Anything but a list isn't that.
     if not isinstance(raw_players, list):
-        return []
+        raise ApiError(FANTASY_UNAVAILABLE)
     players = [p for p in (_map_fantasy_player(r, season, max_rank) for r in raw_players) if p]
     del raw_players  # release the ~38 MB payload before returning
     _blank_placeholder_adp(players)
