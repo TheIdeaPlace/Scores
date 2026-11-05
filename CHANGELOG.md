@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### In Progress
+- **Game Wrap Up Feature**: ESPN text processing and game story extraction (under construction)
+  - Core infrastructure implemented, text processing being refined
+  - Game story text placeholders currently under investigation
+
+## [1.1.1] - 2026-11-05
+
 ### Added
 - **Soccer leagues on Windows have Standings, Statistics and Teams.** Standings read position, games
   played, wins, draws, losses, goals for and against, goal difference, points, and where a place leads,
@@ -54,13 +61,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 - **A poll with no points no longer reads as 0 points on iPhone.** Windows already left them blank.
-- **iPhone: weather on a game's details,** for the games ESPN has it: "Weather: 67°F".
-- **iPhone: attendance on a game's details,** once there's a count: "Attendance: 68,739".
-- **iPhone: standings in a game's Info tab,** the tables of the division or conference each team is in.
-- **iPhone: a Game Story in a finished game's Info tab.** The row names the headline, and opens the
-  whole story with a heading or paragraph to a swipe. Before the game, ESPN's preview leads the news list.
-- **iPhone: a Scoring Summary in a football game's Info tab,** by quarter, with the team, clock and play.
-- **iPhone: an injury's type, details and return date,** where ESPN gives them.
 - **A dialog with tabs or a list can't end the app as it's cleaned up.** Tests caught this, once in many
   runs, and it hasn't been seen in the app.
 - **College basketball fouls read and sound where they happened, on Windows and iPhone.** A foul under
@@ -86,11 +86,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - In a World Cup, an answer for a day you've moved on from no longer lands on the day you're on.
 - Live Scores says "Not updated yet" until something has loaded, rather than a time.
 - iPhone: a timer refresh on Live Scores or Live Soccer leaves an error or "No games scheduled today" on screen until it has something else to show, so VoiceOver stays on Retry. Retry itself shows progress.
-
-### In Progress
-- **Game Wrap Up Feature**: ESPN text processing and game story extraction (under construction)
-  - Core infrastructure implemented, text processing being refined
-  - Game story text placeholders currently under investigation
 
 ## [1.1.0] - 2026-11-04
 
