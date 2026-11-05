@@ -2711,6 +2711,13 @@ CORE_REF_TIMEOUT = 10
 # Two rounds of connection failures with no answer between them mean the network has stalled.
 CORE_REF_FAILURES_BEFORE_GIVING_UP = CORE_REF_WORKERS * 2
 _CORE_REF_CACHE = {}  # reference: what was read from it. Names don't change while the app is open.
+_APP_CLOSING = threading.Event()
+
+
+def stop_core_lookups():
+    """For when the app quits. Python works through a pool's whole queue at exit, even with the main
+    thread done, so a list still loading would hold a closed app open for as long as that takes."""
+    _APP_CLOSING.set()
 
 
 class _CoreRefReader:
@@ -2745,8 +2752,7 @@ class _CoreRefReader:
 
     def _read_one(self, reference):
         for attempt in range(2):
-            # Python waits for a pool's queue at exit, which shouldn't hold a closed app open.
-            if self.has_stalled() or not threading.main_thread().is_alive():
+            if self.has_stalled() or _APP_CLOSING.is_set():
                 return None
             if attempt:
                 time.sleep(0.3)
@@ -2830,9 +2836,10 @@ def _athlete_name(athlete):
 
 def _core_player_statistics(league_path):
     """A soccer league's leaders, in the shape get_player_statistics returns. A row whose name or
-    team couldn't be had says so and keeps its place. But a network that stalled partway, or no new
-    name or team coming at all, means ESPN isn't answering, so it fails rather than showing a
-    screen of those."""
+    team couldn't be had says so and keeps its place. But a network that stalled partway, or most
+    names or teams not coming, means ESPN isn't answering, so it fails rather than showing a screen
+    of those. It goes by how many are had, cached or not, since one page that's always a 404 is
+    never cached, and mustn't fail every opening after the first. The iPhone: fetchLeadersForSeason."""
     season = core_season(league_path)
     for year in range(season["year"], season["year"] - CORE_LEADER_SEASONS, -1):
         lists = core_leader_lists(_fetch_core_leaders(league_path, year))
@@ -2844,16 +2851,15 @@ def _core_player_statistics(league_path):
     leaders =[leader for category in lists for leader in category["leaders"]]
     athletes = {leader["athlete"] for leader in leaders} - {""}
     team_references = {leader["team"] for leader in leaders} - {""}
-    known = _CORE_REF_CACHE.keys() & (athletes | team_references)
 
-    def nothing_new(references, found):
-        return bool(references - known) and found.keys() <= known
+    def most_missing(references, found):
+        return len(found) * 2 < len(references)
 
     with _CoreRefReader() as reader:
         teams = reader.read(team_references, _team_abbreviation)
         names = reader.read(athletes, _athlete_name)
         stalled = reader.has_stalled()
-    if stalled or not names or nothing_new(athletes, names) or nothing_new(team_references, teams):
+    if stalled or not names or most_missing(athletes, names) or most_missing(team_references, teams):
         raise ApiError(STATISTICS_UNAVAILABLE)
     categories = [{
         "category": category["title"],

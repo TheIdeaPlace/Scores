@@ -158,6 +158,8 @@ struct StandingsTableView: View {
     @State private var viewMode: ViewMode = .quickList
     @State private var showExpanded = false
     @EnvironmentObject private var appSettings: AppSettings
+    /// A soccer table's fixed widths grow with the text size, so nothing is cut off.
+    @ScaledMetric(relativeTo: .caption) private var soccerWidthScale: CGFloat = 1
 
     // MARK: Column definitions
 
@@ -193,9 +195,9 @@ struct StandingsTableView: View {
     /// each column has its own and the rows line up under the headings.
     private func soccerColumnWidth(_ column: Int) -> CGFloat {
         switch SoccerTableRow.headers[column] {
-        case "Team":   return 64
-        case "Status": return 300
-        default:       return 40
+        case "Team":   return 64 * soccerWidthScale
+        case "Status": return 340 * soccerWidthScale
+        default:       return 40 * soccerWidthScale
         }
     }
 
@@ -444,7 +446,8 @@ struct StandingsTableView: View {
             AccessibleDataTable(
                 headers: activeHeaders,
                 rows: group.entries.map { accessibleRowData(for: $0) },
-                rowHeaderColumn: teamColumn
+                rowHeaderColumn: teamColumn,
+                columnWidths: sport.isSoccer ? activeHeaders.indices.map { soccerColumnWidth($0) } : nil
             )
             .allowsHitTesting(false)
         )

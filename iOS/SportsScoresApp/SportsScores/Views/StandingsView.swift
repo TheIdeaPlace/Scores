@@ -45,6 +45,13 @@ struct StandingsView: View {
                            + "Wild Card shows the division leaders and the wild card race for each league.")
     }
 
+    private var emptyText: String {
+        if viewModel.mode == .wildCard { return "No wild card standings available" }
+        return sport.isSoccer
+            ? "ESPN has no league table for \(sport.displayName) right now. A knockout competition doesn't have one."
+            : "No standings available"
+    }
+
     @ViewBuilder
     private var content: some View {
         if viewModel.isLoading {
@@ -67,15 +74,20 @@ struct StandingsView: View {
                 Image(systemName: "list.bullet.clipboard")
                     .font(.system(size: 48))
                     .foregroundColor(.secondary)
-                Text(viewModel.mode == .wildCard
-                     ? "No wild card standings available"
-                     : sport.isSoccer
-                     ? "ESPN has no league table for \(sport.displayName) right now. A knockout competition doesn't have one."
-                     : "No standings available")
+                    .accessibilityHidden(true)
+                Text(emptyText)
                     .font(.headline)
                     .foregroundColor(.secondary)
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal)
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .onAppear {
+                // It replaces the spinner with nothing else to land on, and it's the answer.
+                if sport.isSoccer {
+                    UIAccessibility.post(notification: .announcement, argument: emptyText)
+                }
+            }
         } else {
             StandingsTableView(standingsGroups: viewModel.visibleGroups,
                                sport: sport,

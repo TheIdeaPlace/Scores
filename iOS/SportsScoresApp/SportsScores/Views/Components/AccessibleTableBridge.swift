@@ -92,6 +92,12 @@ final class AccessibleDataTableView: UIView,
         didSet { if oldValue != rowHeaderColumn { setNeedsLayout() } }
     }
 
+    /// How wide each column is drawn, for a table whose columns have fixed widths, so that
+    /// touching a column finds that column. Without it, the proportions below.
+    var columnWidths: [CGFloat]? = nil {
+        didSet { if oldValue != columnWidths { setNeedsLayout() } }
+    }
+
     // MARK: Private state
     private var headerElements: [DataTableCellElement] = []
     private var rowElements: [[DataTableCellElement]] = []
@@ -137,23 +143,25 @@ final class AccessibleDataTableView: UIView,
         let otherColW = ncols > 1 ? (totalW - col0W) / CGFloat(ncols - 1) : 0
         let rowH = totalH / CGFloat(nrows + 1)  // +1 for header
 
+        let drawnWidths = columnWidths.flatMap { $0.count == ncols ? $0 : nil }
+
         func xOffset(col: Int) -> CGFloat {
-            col == 0 ? 0 : col0W + CGFloat(col - 1) * otherColW
+            if let drawnWidths { return drawnWidths.prefix(col).reduce(0, +) }
+            return col == 0 ? 0 : col0W + CGFloat(col - 1) * otherColW
         }
         func colWidth(col: Int) -> CGFloat {
-            col == 0 ? col0W : otherColW
+            if let drawnWidths { return drawnWidths[col] }
+            return col == 0 ? col0W : otherColW
         }
 
-        func screenFrame(row: Int, col: Int) -> CGRect {
-            let localFrame = CGRect(
+        // In this view's own coordinates, not the screen's, so a frame stays on its cell as the
+        // table scrolls. The screen's were only worked out at layout.
+        func cellFrame(row: Int, col: Int) -> CGRect {
+            CGRect(
                 x: xOffset(col: col),
                 y: CGFloat(row) * rowH,
                 width: colWidth(col: col),
                 height: rowH
-            )
-            return UIAccessibility.convertToScreenCoordinates(
-                localFrame,
-                in: self
             )
         }
 
@@ -167,7 +175,7 @@ final class AccessibleDataTableView: UIView,
                 row: 0,
                 col: col
             )
-            el.accessibilityFrame = screenFrame(row: 0, col: col)
+            el.accessibilityFrameInContainerSpace = cellFrame(row: 0, col: col)
             return el
         }
 
@@ -184,7 +192,7 @@ final class AccessibleDataTableView: UIView,
                     row: row + 1,
                     col: col
                 )
-                el.accessibilityFrame = screenFrame(row: row + 1, col: col)
+                el.accessibilityFrameInContainerSpace = cellFrame(row: row + 1, col: col)
                 return el
             }
         }
@@ -275,6 +283,8 @@ struct AccessibleDataTable: UIViewRepresentable {
     let rows: [[String]]
     /// Column holding each row's identity; see `AccessibleDataTableView.rowHeaderColumn`.
     var rowHeaderColumn: Int = 0
+    /// How wide each column is drawn, if they have fixed widths.
+    var columnWidths: [CGFloat]? = nil
 
     func makeUIView(context: Context) -> AccessibleDataTableView {
         AccessibleDataTableView()
@@ -283,6 +293,7 @@ struct AccessibleDataTable: UIViewRepresentable {
     func updateUIView(_ uiView: AccessibleDataTableView, context: Context) {
         // Guard against redundant rebuilds
         uiView.rowHeaderColumn = rowHeaderColumn
+        uiView.columnWidths = columnWidths
         guard uiView.columnHeaders != headers || uiView.dataRows != rows else {
             return
         }

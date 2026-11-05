@@ -1080,7 +1080,7 @@ class ESPNAPIService {
     private func seasonName(sportType: String, league: String, season: Int, current: CurrentSeasonResponse?) async -> String {
         if let current, current.year == season, let name = current.displayName { return name }
         guard let url = URL(string: "\(coreAPIBaseURL)/\(sportType)/leagues/\(league)/seasons/\(season)"),
-              let (data, response) = try? await session.data(from: url),
+              let (data, response) = try? await session.data(for: URLRequest(url: url, timeoutInterval: 10)),
               (response as? HTTPURLResponse)?.statusCode == 200,
               let answer = try? JSONDecoder().decode(CurrentSeasonResponse.self, from: data),
               let name = answer.displayName else {
@@ -1408,13 +1408,26 @@ class ESPNAPIService {
         }
         let athletes = await resolveRefs(athleteRefs, as: CoreAthleteResponse.self, stallWatch: stallWatch)
 
+        // A soccer row whose name or team couldn't be had says so and keeps its place. But a
+        // network that stalled partway, or most of them not coming, means ESPN isn't answering, so
+        // it fails rather than showing a screen of those. On Windows: `_core_player_statistics`.
+        let isSoccerLeagueList = sportType == "soccer" && onlyTeam == nil
+        if isSoccerLeagueList {
+            let stalled = await stallWatch.hasStalled
+            if stalled || athletes.isEmpty || athletes.count * 2 < athleteRefs.count || teams.count * 2 < teamRefs.count {
+                throw APIError.invalidResponse
+            }
+        }
+
         // Build results using the resolved caches
         return categories.map { category in
             let rows = category.leaders ?? []
             let displays = rows.map { Self.coreLeaderValue(category: category.name, leader: $0) }
             let ranks = Self.sharedRanks(displays)
             let leaders = rows.enumerated().map { index, leader -> LeagueLeaderCategory.LeagueLeaderEntry in
-                let entityTeam = leader.team?.ref.flatMap { teams[secureURL($0)]?.abbreviation } ?? ""
+                // A blank cell would be silent in VoiceOver. Windows says the same.
+                let entityTeam = leader.team?.ref.flatMap { teams[secureURL($0)]?.abbreviation }
+                    ?? (isSoccerLeagueList ? SoccerTableRow.noStatus : "")
                 let entityName: String
                 if let ref = leader.athlete?.ref {
                     // Not the team's name if this lookup failed: that reads as if a team led.
@@ -1434,7 +1447,7 @@ class ESPNAPIService {
             }
             return LeagueLeaderCategory(
                 name: category.name ?? "",
-                displayName: category.displayName ?? "",
+                displayName: category.displayName ?? category.name?.capitalized ?? "",
                 leaders: leaders
             )
         }
@@ -1442,7 +1455,8 @@ class ESPNAPIService {
 
     private static func coreLeaderValue(category: String?, leader: CoreLeadersAPIResponse.CoreCategory.CoreLeader) -> String {
         let value = leaderDisplayValue(category: category, value: leader.value, displayValue: leader.displayValue)
-        return value.isEmpty ? "-" : value
+        // A bare dash isn't spoken at VoiceOver's default punctuation level.
+        return value.isEmpty ? SoccerTableRow.noStatus : value
     }
 
     /// The lists to show from a core API answer, in ESPN's order. A rating with nobody rated isn't

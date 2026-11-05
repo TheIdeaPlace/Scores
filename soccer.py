@@ -75,7 +75,8 @@ def _table_row(entry, group, season, position):
                                 or (f"+{difference}" if difference > 0 else str(difference)),
         "points": number("points"),
         "record": f"{wins}-{draws}-{losses}",
-        "note": _as_dict(entry.get("note")).get("description") or "",
+        # ESPN's can end in a stray tab.
+        "note": str(_as_dict(entry.get("note")).get("description") or "").strip(),
         "division": group,
         "season": season or "",
     }

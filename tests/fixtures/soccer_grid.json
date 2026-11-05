@@ -61,7 +61,7 @@
       {"name": "Group C",
        "rows": [
         ["1", "Real Madrid", "6", "6", "0", "0", "16", "7", "+9", "18", "Qualifies for round of 16"],
-        ["3", "Braga", "6", "1", "1", "4", "6", "12", "-6", "4", "Europa League knockout round playoffs\t"]
+        ["3", "Braga", "6", "1", "1", "4", "6", "12", "-6", "4", "Europa League knockout round playoffs"]
       ]},
       {"name": "Group D",
        "rows": [
@@ -75,7 +75,7 @@
       ]},
       {"name": "Group F",
        "rows": [
-        ["3", "AC Milan", "6", "2", "2", "2", "5", "8", "-3", "8", "Europa League knockout round playoffs\t"],
+        ["3", "AC Milan", "6", "2", "2", "2", "5", "8", "-3", "8", "Europa League knockout round playoffs"],
         ["4", "Newcastle United", "6", "1", "2", "3", "6", "7", "-1", "5", "N/A"]
       ]},
       {"name": "Group G",

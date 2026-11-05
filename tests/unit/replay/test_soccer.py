@@ -4,6 +4,11 @@ import copy
 import json
 from pathlib import Path
 import re
+import subprocess
+import sys
+import textwrap
+import threading
+import time
 
 import pytest
 import requests
@@ -358,15 +363,59 @@ class TestLeaders:
         with pytest.raises(ApiError, match="ESPN isn't providing these right now"):
             espn_api.get_player_statistics("EPL")
 
-    def test_a_closing_app_asks_for_no_more_names(self, leaders, monkeypatch):
-        class Finished:
-            def is_alive(self):
-                return False
+    def test_one_page_that_is_always_a_404_doesnt_fail_later_openings(self, leaders):
+        """It's never cached, so a later opening has it as the only name still to find."""
+        leaders.on(r"/athletes/253989", HTTP_404)
+        for _ in range(3):
+            stats = espn_api.get_player_statistics("EPL")["player_stats"][0]["stats"]
+            assert stats[0]["player_name"] == soccer.NAME_UNAVAILABLE
+            assert stats[1]["player_name"].startswith("Player ")
 
-        monkeypatch.setattr(espn_api.threading, "main_thread", Finished)
+    def test_one_team_that_is_always_a_404_doesnt_fail_later_openings(self, leaders):
+        leaders.on(r"/seasons/\d+/teams/382\b", HTTP_404)
+        for _ in range(2):
+            assert espn_api.get_player_statistics("EPL")["player_stats"]
+
+    def test_a_closing_app_asks_for_no_more_names(self, leaders, monkeypatch):
+        closing = threading.Event()
+        closing.set()
+        monkeypatch.setattr(espn_api, "_APP_CLOSING", closing)
         with pytest.raises(ApiError):
             espn_api.get_player_statistics("EPL")
         assert not leaders.urls("/athletes/")
+
+    def test_a_closing_app_really_does_exit_with_lookups_still_queued(self, tmp_path):
+        """Python joins a pool's workers at exit, and they work through the queue first, with the
+        main thread still counted as alive. 400 lookups of half a second on 8 workers is 25 seconds."""
+        script = tmp_path / "exits.py"
+        script.write_text(textwrap.dedent(f"""
+            import sys, threading, time
+            sys.path.insert(0, {str(Path(__file__).parents[3])!r})
+            import espn_api
+
+            class Answer:
+                status_code = 200
+                def json(self):
+                    return {{"displayName": "A"}}
+
+            def slow(url, **kwargs):
+                time.sleep(0.5)
+                return Answer()
+
+            espn_api._http_get = slow
+            references = {{f"https://espn.example/{{i}}" for i in range(400)}}
+            reader = espn_api._CoreRefReader()
+            threading.Thread(target=reader.read, args=(references, espn_api._athlete_name), daemon=True).start()
+            time.sleep(1)
+            espn_api.stop_core_lookups()
+        """), encoding="utf-8")
+        started = time.monotonic()
+        subprocess.run([sys.executable, str(script)], check=True, timeout=20)
+        assert time.monotonic() - started < 10
+
+    def test_quitting_stops_the_lookups(self):
+        source = (Path(__file__).parents[3] / "scores.py").read_text(encoding="utf-8")
+        assert "aboutToQuit.connect(stop_core_lookups)" in source
 
     def test_every_name_failing_is_a_failure_not_a_screen_of_blanks(self, leaders):
         leaders.on(r"/athletes/\d+", HTTP_500)
@@ -426,7 +475,7 @@ class TestLeaders:
         with pytest.raises(ApiError, match="ESPN isn't providing these right now"):
             espn_api.get_player_statistics("EPL")
 
-    def test_no_new_name_coming_fails_even_with_some_known_already(self, leaders):
+    def test_most_names_not_coming_fails_even_with_some_known_already(self, leaders):
         known = next(iter(soccer.core_leader_lists(load("leaders_core_EPL.json"))))["leaders"][0]["athlete"]
         espn_api._CORE_REF_CACHE[known] = "Erling Haaland"
         leaders.on(r"/athletes/\d+", HTTP_500)

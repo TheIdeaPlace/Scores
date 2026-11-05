@@ -293,7 +293,8 @@ extension SoccerTableRow {
         self.goalsAgainst = number("pointsAgainst")
         self.goalDifference = differenceText.isEmpty ? (difference > 0 ? "+\(difference)" : String(difference)) : differenceText
         self.points = number("points")
-        let note = entry.note?.description ?? ""
+        // ESPN's can end in a stray tab.
+        let note = (entry.note?.description ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
         self.status = note.isEmpty ? Self.noStatus : note
     }
 }

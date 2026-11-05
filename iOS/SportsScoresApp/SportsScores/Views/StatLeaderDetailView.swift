@@ -72,7 +72,7 @@ struct StatLeaderDetailView: View {
         do {
             let allCategories = summary.isTeamCategory
                 ? try await ESPNAPIService.shared.fetchTeamLeaders(for: sport, limit: .max)
-                : try await ESPNAPIService.shared.fetchLeagueLeaders(for: sport, limit: ESPNAPIService.siteLeadersLimit)
+                : try await ESPNAPIService.shared.fetchLeagueLeaders(for: sport, limit: sport.isSoccer ? ESPNAPIService.siteLeadersLimit : 50)
             fullCategory = allCategories.first { $0.name == summary.name }
         } catch {
             loadError = "Couldn't load full list."
