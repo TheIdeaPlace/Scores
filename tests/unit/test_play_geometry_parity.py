@@ -65,7 +65,21 @@ def test_a_play_with_no_type_keeps_its_place():
 
 
 def test_a_foul_under_the_basket_reads_and_sounds_that_way():
-    """It read "deep, 66 feet out", and played a far away note on the wrong side."""
+    """It read "deep, 78 feet out", and played a far away note on the wrong side."""
     play = {"type": {"text": "PersonalFoul"}, "coordinate": {"x": 24, "y": 81}}
     x, y = play_position(play, "NCAAWB")
     assert audio_params("NCAAWB", x, y)[3] == "at the rim"
+
+
+@pytest.mark.parametrize("bad", ["PersonalFoul", 7, ["PersonalFoul"], True])
+def test_a_type_that_isnt_a_dict_keeps_its_place(bad):
+    assert play_position({"type": bad, "coordinate": {"x": 20, "y": 60}}, "NCAAM") == (20, 60)
+
+
+@pytest.mark.parametrize("fixture", ["plays_NCAAM_401845838_3OT.json", "plays_NCAAWB_401911736.json"])
+def test_no_real_college_foul_is_left_past_half_court(fixture):
+    league = "NCAAM" if "NCAAM" in fixture else "NCAAWB"
+    plays = json.loads((Path(__file__).parent.parent / "fixtures" / "espn" / fixture).read_text(encoding="utf-8"))["plays"]
+    fouls = [p for p in plays if "foul" in p["type"]["text"].lower() and has_coordinate(p, league)]
+    assert fouls and any(p["coordinate"]["y"] > 47 for p in fouls), "the fixture should show the problem"
+    assert all(play_position(p, league)[1] <= 47 for p in fouls)

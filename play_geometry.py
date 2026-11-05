@@ -15,7 +15,8 @@ Basketball (`basketball/nba`, `wnba`, both college leagues)
     x: 0-50, the court's width in feet.
     y: distance in feet from the baseline the attacking basket sits on. Every
        play is normalised to one end, so y runs 0 at that baseline up to ~82 for
-       a full-court heave.
+       a full-court heave. College fouls past half court are the exception, and
+       `play_position` mirrors them.
     The basket is at (25, 3). That is not a guess: across six NBA games, dunks
     and layups cluster at x=25, y=2, and measuring from (25, 3) puts the closest
     three-pointer at 21.9 ft with the 5th percentile at 22.4 ft, which is the
@@ -122,7 +123,8 @@ def play_position(play: dict, league: str | None) -> tuple[float, float] | None:
     if not has_coordinate(play, league):
         return None
     x, y = play["coordinate"]["x"], play["coordinate"]["y"]
-    kind = (play.get("type") or {}).get("text") or ""
+    play_type = play.get("type")
+    kind = (play_type.get("text") if isinstance(play_type, dict) else "") or ""
     if ((league or "").upper() in _COLLEGE_BASKETBALL_LEAGUES
             and "foul" in str(kind).lower() and y > _HALF_COURT):
         return _COLLEGE_FOUL_MIRROR[0] - x, max(_COLLEGE_FOUL_MIRROR[1] - y, 0)
@@ -269,7 +271,8 @@ def _basketball_description(field_x: float, distance: float) -> str:
         # occasional long two a three — the same ambiguity the live feed has.
         band = "from three"
     else:
-        return f"deep, {int(round(distance))} feet out"
+        # Not round(), which takes .5 to the even number where Swift's goes up.
+        return f"deep, {math.floor(distance + 0.5)} feet out"
 
     if side == "middle":
         return f"{band}, middle"

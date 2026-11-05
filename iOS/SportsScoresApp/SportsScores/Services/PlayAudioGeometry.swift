@@ -24,7 +24,8 @@
 //    x: 0-50, the court's width in feet.
 //    y: feet from the baseline the attacking basket sits on. Every play is
 //       normalised to one end, so y runs 0 at that baseline up to ~82 for a
-//       full-court heave.
+//       full-court heave. College fouls past half court are the exception, and
+//       `position(for:play:)` mirrors them.
 //    The basket is at (25, 3). Across six NBA games, dunks and layups cluster
 //    at x=25, y=2, and measuring from (25, 3) puts the closest three-pointer at
 //    21.9 ft, which is the 22 ft corner line.
