@@ -12,6 +12,7 @@ import requests
 import espn_api
 from exceptions import ApiError, SOMETHING_WENT_WRONG, plain_message
 from services.api_service import ApiService
+from text_utils import text_processor
 
 from .support import EMPTY_JSON, HTTP_404, HTTP_500, NOT_JSON, TIMEOUT, FakeResponse
 
@@ -127,16 +128,120 @@ def test_espn_having_nothing_reads_as_nothing(espn, call, nothing, sentence, rep
     ("/standings", {"children": None}, lambda: espn_api.get_standings("NCAAM"), espn_api.STANDINGS_UNAVAILABLE),
     ("/standings", {"children": None}, lambda: espn_api.get_standings("EPL"), espn_api.STANDINGS_UNAVAILABLE),
     ("/teams", {"sports": None}, lambda: espn_api._get_standings_original("NBA"), espn_api.STANDINGS_UNAVAILABLE),
+    (".*", {"sports": None}, lambda: espn_api.get_soccer_teams("EPL"), espn_api.TEAMS_UNAVAILABLE),
+    ("/draft", {"year": 2026, "picks": None}, lambda: espn_api.get_draft(2026), espn_api.DRAFT_UNAVAILABLE),
+    ("/draft", {"year": 2026, "picks": None}, lambda: espn_api.get_draft_round(2026, 1), espn_api.DRAFT_UNAVAILABLE),
 ], ids=["scores", "scores_ncaaf", "news", "team_news", "schedule_nfl", "schedule_nba", "schedule_soccer", "rankings",
         "roster", "transactions", "team_transactions", "golf_leaderboard", "golf_schedule", "world_cup_standings",
         "standings_mlb", "standings_nfl", "standings_nba", "standings_nhl", "standings_wnba", "standings_ncaam",
-        "standings_soccer", "standings_slow_path"])
+        "standings_soccer", "standings_slow_path", "soccer_teams", "draft", "draft_round"])
 def test_a_null_list_is_told_apart_from_an_empty_one(espn, route, payload, call, sentence):
     """A null where the whole answer's list should be isn't an answer."""
     espn.on(route, payload)
     with pytest.raises(ApiError) as caught:
         call()
     assert str(caught.value) == sentence
+
+
+@pytest.mark.parametrize("reply", [FakeResponse(None), [], "text", 5], ids=["null", "a_list", "text", "a_number"])
+@pytest.mark.parametrize("call,nothing,sentence", failing(FAILING))
+def test_a_200_with_no_object_in_it_is_not_no_data(espn, call, nothing, sentence, reply):
+    """None from _espn_answer means a 400 or 404, so a 200 can't come out as it."""
+    espn.on(".*", reply)
+    with pytest.raises(ApiError) as caught:
+        call()
+    assert str(caught.value) == sentence
+
+
+@pytest.mark.parametrize("reply", [FakeResponse(None), []], ids=["null", "a_list"])
+def test_a_soccer_league_with_a_null_body_is_not_a_league_with_no_table(espn, reply):
+    """A cup with no table says so, and that would be untrue here."""
+    espn.on("/standings", reply)
+    with pytest.raises(ApiError) as caught:
+        espn_api.get_standings("EPL")
+    assert str(caught.value) == espn_api.STANDINGS_UNAVAILABLE
+    with pytest.raises(ApiError):
+        espn_api.get_soccer_teams("EPL")
+    assert not espn.urls("/teams")
+
+
+def test_a_draft_with_a_null_list_of_picks_is_not_kept(espn):
+    espn.on("/draft", {"year": 2026, "rounds": 7, "picks": None})
+    with pytest.raises(ApiError):
+        espn_api.get_draft(2026)
+    assert espn_api._DRAFT_CACHE == {}
+
+
+class TestOneBadFieldKeepsTheRest:
+    def test_a_transaction_page_with_a_null_page_count_keeps_its_rows(self, espn):
+        row = {"date": "2026-11-01T12:00Z", "description": "Signed someone", "team": {"abbreviation": "GB"}}
+        espn.on("/transactions", {"transactions": [row], "pageCount": None})
+        rows, more = espn_api.get_transactions("NFL")
+        assert [r["description"] for r in rows] == ["Signed someone"]
+        assert more is False
+
+    @pytest.mark.parametrize("count,more", [(3, True), (1, False), ("3", True), ("many", False)])
+    def test_the_page_count(self, espn, count, more):
+        espn.on("/transactions", {"transactions": [], "pageCount": count})
+        assert espn_api.get_transactions("NFL")[1] is more
+
+    @pytest.mark.parametrize("when", [None, 5, "not a date"], ids=["null", "a_number", "text"])
+    def test_a_transaction_with_a_bad_date_keeps_its_row(self, espn, when):
+        espn.on("/transactions", {"transactions": [{"date": when, "description": "Signed someone"}]})
+        assert espn_api.get_transactions("NFL")[0][0]["description"] == "Signed someone"
+        assert espn_api.get_team_transactions("NFL", "9")[0]["description"] == "Signed someone"
+
+    def test_a_world_cup_stat_with_a_null_value_keeps_every_group(self, espn):
+        def stat(name, value, text):
+            return {"name": name, "value": value, "displayValue": text}
+
+        espn.on("/standings", {"children": [{"id": "1", "name": "Group A", "standings": {"entries": [
+            {"team": {"id": "9", "displayName": "Brazil"}, "stats": [stat("points", None, "7"), stat("wins", None, None), None]},
+        ]}}, {"id": "2", "name": "Group B", "standings": {"entries": [
+            {"team": {"id": "8", "displayName": "Spain"}, "stats": [stat("points", 3, "3")]},
+        ]}}]})
+        groups = espn_api.get_world_cup_standings("WC2026")
+        assert [g["name"] for g in groups] == ["Group A", "Group B"]
+        brazil = groups[0]["teams"][0]
+        assert (brazil["team_name"], brazil["points"], brazil["wins"], brazil["rank"]) == ("Brazil", 7, 0, 1)
+
+    @pytest.mark.parametrize("call,broken", [
+        (lambda: ApiService.get_golf_leaderboard("PGA"), "golf_total_to_par"),
+        (lambda: ApiService.get_team_info("NFL", "9"), "_shown_standing"),
+        (lambda: ApiService.get_team_roster("NFL", "9"), "format_height"),
+    ], ids=["golf", "team", "roster"])
+    def test_a_bug_while_reading_an_answer_is_not_no_data(self, espn, monkeypatch, call, broken):
+        """What's left after the sweep in test_missing_fields, which the service reports."""
+        monkeypatch.setattr(espn_api, broken, lambda *a: 1 / 0)
+        monkeypatch.setattr("error_log._write", lambda text: None)
+        competitor = {"athlete": {"displayName": "A"}}
+        espn.on(".*", HTTP_404)
+        espn.on("/scoreboard", {"events": [{"competitions": [{"competitors": [competitor]}]}]})
+        espn.on("/teams/9$", {"team": {"displayName": "Packers"}})
+        espn.on("/roster", {"athletes": [{"displayName": "A", "height": 70}]})
+        espn.on("/season$", {"year": 2026})
+        with pytest.raises(ApiError) as caught:
+            call()
+        assert str(caught.value) == SOMETHING_WENT_WRONG
+
+
+class TestOneBadArticle:
+    BAD = {"headline": "H", "description": "\x01 scored", "leaders": [{"leaders": [
+        {"name": "passingYards", "leaders": [{"athlete": {"displayName": 5}}]}]}]}
+
+    def test_it_keeps_its_own_words_and_the_others_keep_theirs(self, espn):
+        espn.on("/news", {"articles": [self.BAD, {"headline": "G", "description": "Fine."}]})
+        articles = espn_api.get_team_news("NFL", "9")
+        assert [a["description"] for a in articles] == ["\x01 scored", "Fine."]
+
+    @pytest.mark.parametrize("article", [
+        {"leaders": None}, {"leaders": 5}, {"leaders": [None]}, {"leaders": [{"leaders": None}]},
+        {"leaders": [{"leaders": [{"name": None}]}]}, {"boxscore": None}, {"boxscore": {"players": None}},
+        {"boxscore": {"players": [{"statistics": None}]}},
+        {"boxscore": {"players": [{"statistics": [{"name": "passing", "athletes": None}]}]}},
+    ], ids=str)
+    def test_a_hole_in_an_article_is_just_no_names(self, article):
+        assert text_processor.clean_description("\x01 scored", article) == "[Player 1] scored"
 
 
 @pytest.mark.parametrize("reply", [TIMEOUT, HTTP_404, HTTP_500, NOT_JSON, EMPTY_JSON],
@@ -287,6 +392,51 @@ def test_statistics_say_a_failed_request_failed(espn, reply, monkeypatch):
             getattr(espn_api, name)("NBA")
         with pytest.raises(ApiError, match="Try again"):
             getattr(ApiService, name)("NBA")
+
+
+@pytest.mark.parametrize("reply", [FakeResponse(None), [], "text", 5], ids=["null", "a_list", "text", "a_number"])
+@pytest.mark.parametrize("name", ["get_player_statistics", "get_team_statistics"])
+def test_statistics_with_no_object_in_the_answer_do_not_step_back_a_season(espn, name, reply, monkeypatch):
+    """None and {} both mean ESPN has no such season, and a null body is neither."""
+    monkeypatch.setattr(espn_api, "core_season", lambda path, *a, **k: {"year": 2027, "type": {"type": 2}})
+    espn.on(".*", reply)
+    with pytest.raises(ApiError) as caught:
+        getattr(espn_api, name)("NBA")
+    assert str(caught.value) == espn_api.STATISTICS_UNAVAILABLE
+    asked = espn.urls("/leaders") + espn.urls("/statistics/byteam")
+    assert asked and not [url for url in asked if "2026" in url]
+
+
+@pytest.mark.parametrize("reply", [FakeResponse(None), {"players": []}, "text"], ids=["null", "an_object", "text"])
+def test_a_fantasy_board_that_is_not_a_list_is_not_an_unpublished_season(espn, reply):
+    espn.on(".*", reply)
+    with pytest.raises(ApiError) as caught:
+        espn_api.get_fantasy_cheatsheet(2026)
+    assert str(caught.value) == espn_api.FANTASY_UNAVAILABLE
+
+
+def test_a_fantasy_board_of_no_players_still_falls_back_a_season(espn):
+    espn.on(".*", [])
+    assert espn_api.get_fantasy_cheatsheet(2026)["players"] == []
+
+
+@pytest.mark.parametrize("reply", [FakeResponse(None), [], "text"], ids=["null", "a_list", "text"])
+def test_a_team_page_with_no_object_in_it_says_the_record_failed(espn, reply, monkeypatch):
+    monkeypatch.setattr(espn_api, "core_season", lambda path, *a, **k: {"year": 2026, "type": {"type": 4}})
+    espn.on(".*", reply)
+    record, standing, failed, _ = espn_api._team_record_and_standing("basketball/nba", "1", {})
+    assert (record, standing, failed) == (None, None, True)
+
+
+def test_a_team_page_that_answers_with_no_record_has_not_failed(espn, monkeypatch):
+    monkeypatch.setattr(espn_api, "core_season", lambda path, *a, **k: {"year": 2026, "type": {"type": 4}})
+    espn.on(".*", {"team": {}})
+    assert espn_api._team_record_and_standing("basketball/nba", "1", {})[2] is False
+
+
+@pytest.mark.parametrize("description", [5, {"x": 1}, ["a"], True], ids=str)
+def test_a_description_that_is_not_text_costs_only_itself(description):
+    assert text_processor.clean_description(description) == ""
 
 
 @pytest.mark.parametrize("reply", [TIMEOUT, HTTP_500, NOT_JSON], ids=["timeout", "500", "not_json"])

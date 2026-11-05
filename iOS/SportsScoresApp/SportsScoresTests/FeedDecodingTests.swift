@@ -1985,6 +1985,17 @@ final class ScoreboardDayTests: XCTestCase {
         XCTAssertEqual(ScoreboardDay.today(now: date(3, 4)), date(2, 0))
     }
 
+    /// A game kept from before a league failed is judged by this, and its "live" counts for nothing.
+    func testAKeptGameGoesWhenItsDayDoes() {
+        let lastNight = date(2, 23)
+        XCTAssertTrue(ScoreboardDay.startsOnToday(lastNight, now: date(3, 1)))
+        XCTAssertFalse(ScoreboardDay.startsOnToday(lastNight, now: date(3, 5)))
+        XCTAssertFalse(ScoreboardDay.startsOnToday(lastNight, now: date(3, 9)))
+        // The board runs on past midnight to the rollover.
+        XCTAssertTrue(ScoreboardDay.startsOnToday(date(3, 4), now: date(2, 20)))
+        XCTAssertFalse(ScoreboardDay.startsOnToday(date(3, 5), now: date(2, 20)))
+    }
+
     func testFiveAMIsTheNewDay() {
         XCTAssertEqual(ScoreboardDay.today(now: date(3, 5)), date(3, 0))
     }

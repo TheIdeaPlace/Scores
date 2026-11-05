@@ -55,7 +55,7 @@ except ImportError:
 
 # New separated modules
 from exceptions import ApiError, DataModelError, plain_message
-from espn_api import (NCAAF_CONFERENCE_ORDER, live_scores_failure_text, standings_cache_key,
+from espn_api import (NCAAF_CONFERENCE_ORDER, TEAMS_UNAVAILABLE, live_scores_failure_text, standings_cache_key,
                       stop_core_lookups, with_failed_leagues_kept)
 from services.api_service import ApiService
 from services.venue_service import venue_service, venue_summary
@@ -895,8 +895,8 @@ class LiveScoresView(BaseView):
         self.monitored_games = getattr(parent, 'monitored_games', set())
         self._restore_state = None  # where to land after coming back from a game
         self.game_data = {}  # Store complete game data for notifications
-        self.current_time = datetime.now()
-        
+        self.current_time = None  # of the last load that got anything
+
         # Initialize Windows UIA notification helper
         self.notification_helper = WindowsNotificationHelper()
         
@@ -915,7 +915,7 @@ class LiveScoresView(BaseView):
         self._last_games = None  # (day, live, today's games, golf) as last shown
         self._failed_leagues = []  # from the last load, for the row that says so
         self._failure_text = None  # that row's text
-        self._last_failure_text = None  # and what it was before this load
+        self._rows_rebuilt = False  # the last load replaced the rows, so the focused one was read
         self._refresh_asked_for = False  # someone asked for the load in flight
         self._said_failed_leagues = set()  # monitored ones, until they answer again
 
@@ -1019,9 +1019,10 @@ class LiveScoresView(BaseView):
     
     def _update_time_label(self):
         """Update the time label with the time of the last load that got anything"""
-        time_str = self.current_time.strftime("%I:%M %p")
         refresh_mode = self.refresh_combo.currentText() if hasattr(self, 'refresh_combo') else "30 seconds"
-        self.time_label.setText(f"Live Scores - Last updated: {time_str} (Refresh: {refresh_mode})")
+        updated = (f"Last updated: {self.current_time.strftime('%I:%M %p')}" if self.current_time
+                   else "Not updated yet")
+        self.time_label.setText(f"Live Scores - {updated} (Refresh: {refresh_mode})")
     
     def _on_refresh_frequency_changed(self, frequency_text):
         """Handle refresh frequency change"""
@@ -1102,7 +1103,6 @@ class LiveScoresView(BaseView):
         answering shouldn't blank its games, and a refresh that gets nothing keeps the list."""
         day = scoreboard_today()
         self._failed_leagues = sorted(failed)
-        self._last_failure_text = self._failure_text
         last = self._last_games
         if failed and last and last[0] == day:
             live_games = with_failed_leagues_kept(live_games, last[1], failed)
@@ -1123,10 +1123,10 @@ class LiveScoresView(BaseView):
         self._said_failed_leagues = (self._said_failed_leagues | monitored) & set(failed)
         if not failed or not (asked or newly_failed):
             return
-        # Someone on the row, with its text changed, has just heard it read.
+        # Someone on the row, with the list rebuilt under them, has just heard it read.
         current = self.live_scores_list.currentItem()
         if (current is not None and current.data(Qt.ItemDataRole.UserRole) == RETRY_ROW
-                and self._failure_text != self._last_failure_text):
+                and self._rows_rebuilt and self.live_scores_list.hasFocus()):
             return
         announce(self._failure_text)
 
@@ -1137,7 +1137,9 @@ class LiveScoresView(BaseView):
         """Nothing came back at all. Games on the list stay, and with none, a row says so."""
         asked, self._refresh_asked_for = self._refresh_asked_for, False
         lst = self.live_scores_list
-        if any(isinstance(lst.item(row).data(Qt.ItemDataRole.UserRole), dict) for row in range(lst.count())):
+        already_says_so = lst.count() == 1 and lst.item(0).text() == message
+        if already_says_so or any(isinstance(lst.item(row).data(Qt.ItemDataRole.UserRole), dict)
+                                  for row in range(lst.count())):
             if asked:
                 announce(message)
             return
@@ -1147,7 +1149,9 @@ class LiveScoresView(BaseView):
 
     def _refresh_rows_in_place(self, live_games, current_date_games, golf):
         """Render, and when the same rows came back, change only the text that changed.
-        True if so. Otherwise the list holds the new rows and needs its place restored."""
+        True if so. Otherwise the list holds the new rows and needs its place restored.
+        The row saying a league failed isn't one of those: it comes and goes at the end, and
+        rebuilding the list for it would read the focused row out again on a timer refresh."""
         visible = self.live_scores_list
         scratch = QListWidget()
         self.live_scores_list = scratch
@@ -1166,19 +1170,41 @@ class LiveScoresView(BaseView):
             data = item.data(Qt.ItemDataRole.UserRole)
             return data.get("id") if isinstance(data, dict) else item.text()
 
-        same_rows = (visible.count() == scratch.count() and all(
-            row_key(visible.item(i)) == row_key(scratch.item(i)) for i in range(visible.count())))
+        def game_rows(lst):
+            last = lst.count() - 1
+            has_failure_row = last >= 0 and lst.item(last).data(Qt.ItemDataRole.UserRole) == RETRY_ROW
+            return last if has_failure_row else lst.count()
+
+        rows = game_rows(visible)
+        same_rows = (rows == game_rows(scratch) and all(
+            row_key(visible.item(i)) == row_key(scratch.item(i)) for i in range(rows)))
         if same_rows:
-            for i in range(visible.count()):
+            for i in range(rows):
                 old, new = visible.item(i), scratch.item(i)
                 old.setData(Qt.ItemDataRole.UserRole, new.data(Qt.ItemDataRole.UserRole))
                 if old.text() != new.text():
                     old.setText(new.text())
+            self._update_failure_row(visible, rows, scratch.item(rows) if scratch.count() > rows else None)
             return True
         visible.clear()
         while scratch.count():
             visible.addItem(scratch.takeItem(0))
         return False
+
+    @staticmethod
+    def _update_failure_row(lst, row, new):
+        """Add, take away or reword the last row, leaving the rows above it alone."""
+        old = lst.item(row) if lst.count() > row else None
+        if old and new:
+            if old.text() != new.text():
+                old.setText(new.text())
+        elif new:
+            lst.addItem(_failure_row(new.text()))
+        elif old:
+            on_it = lst.currentRow() == row
+            lst.takeItem(row)
+            if on_it and lst.count():
+                lst.setCurrentRow(lst.count() - 1)
 
     def _show_loaded_live_scores(self, live_games, current_date_games, golf=()):
         current = self.live_scores_list.currentItem()
@@ -1190,7 +1216,9 @@ class LiveScoresView(BaseView):
         if state:
             selected_id, selected_row = state.get("selected"), state.get("row", 0)
 
-        if self._refresh_rows_in_place(live_games, current_date_games, golf):
+        in_place = self._refresh_rows_in_place(live_games, current_date_games, golf)
+        self._rows_rebuilt = not in_place
+        if in_place:
             self._check_monitored_scores(self._pending_old_scores)
             return
 
@@ -1202,6 +1230,12 @@ class LiveScoresView(BaseView):
                     self.live_scores_list.setCurrentRow(row)
                     restored = True
                     break
+        # A game added above moves the failure row down, and Enter on a game wouldn't retry.
+        if not restored and not state and current_data == RETRY_ROW and self.live_scores_list.count():
+            last = self.live_scores_list.count() - 1
+            if self.live_scores_list.item(last).data(Qt.ItemDataRole.UserRole) == RETRY_ROW:
+                self.live_scores_list.setCurrentRow(last)
+                restored = True
         # The row can be past the end now: the failure row someone retried from is last, and gone.
         if not restored and selected_row >= 0 and self.live_scores_list.count():
             self.live_scores_list.setCurrentRow(min(selected_row, self.live_scores_list.count() - 1))
@@ -9340,6 +9374,8 @@ class TransactionsDialog(QDialog):
         self.current_team_id = None
         self._loaders = []
         self._load_failed = False
+        self._teams_failed = False
+        self._teams_retried = False
 
         self.setWindowTitle(f"Transactions — {league} — Sports Scores")
         self.setMinimumSize(700, 500)
@@ -9384,22 +9420,33 @@ class TransactionsDialog(QDialog):
         self.setLayout(layout)
 
     def _load_teams(self):
-        loader = StandingsLoader(self.league)
+        # Not StandingsLoader, whose error signal also carries a league having no standings.
+        loader = CallLoader(lambda: ApiService.get_standings(self.league))
         loader.data_loaded.connect(self._on_teams_loaded)
-        loader.error_occurred.connect(lambda _: None)
+        loader.error_occurred.connect(self._on_teams_failed)
         self._loaders.append(loader)
         loader.start()
+
+    def _on_teams_failed(self, _message):
+        # The list has its own row for its own failure. This one has nowhere else to go.
+        self._teams_failed = True
+        self._teams_retried = False
+        announce(TEAMS_UNAVAILABLE)
 
     def _on_teams_loaded(self, standings_data):
         teams = sorted(
             {(t.get('team_name', ''), t.get('team_id', ''))
-             for t in standings_data if t.get('team_name') and t.get('team_id')},
+             for t in standings_data or [] if t.get('team_name') and t.get('team_id')},
             key=lambda x: x[0],
         )
         self.team_combo.blockSignals(True)
         for name, tid in teams:
             self.team_combo.addItem(name, tid)
         self.team_combo.blockSignals(False)
+        # They heard it fail and asked again, and the combo filling makes no sound.
+        if self._teams_retried:
+            self._teams_retried = False
+            announce("Teams loaded.")
 
     def _on_team_changed(self, _index):
         self.current_team_id = self.team_combo.currentData()
@@ -9464,7 +9511,11 @@ class TransactionsDialog(QDialog):
             self.accept()
             return
         if event.key() == Qt.Key.Key_F5:
-            # Only after a failure: what's showing stays, and it's the only thing here to try again.
+            # Only what failed: what's showing stays.
+            if self._teams_failed:
+                self._teams_failed = False
+                self._teams_retried = True
+                self._load_teams()
             if self._load_failed:
                 self._load_transactions(reset=True)
             return
@@ -10676,9 +10727,9 @@ class WorldCupStandingsLoader(QThread):
 
 
 class WorldCupScoresLoader(QThread):
-    """Background loader for World Cup scores on a single date."""
-    data_loaded = pyqtSignal(list)
-    error_occurred = pyqtSignal(str)
+    """Background loader for World Cup scores on a single date, which it says with its answer."""
+    data_loaded = pyqtSignal(object, list)
+    error_occurred = pyqtSignal(object, str)
 
     def __init__(self, league_key: str, date):
         super().__init__()
@@ -10688,9 +10739,9 @@ class WorldCupScoresLoader(QThread):
     def run(self):
         try:
             games = ApiService.get_scores(self.league_key, self.date)
-            self.data_loaded.emit(games or [])
+            self.data_loaded.emit(self.date, games or [])
         except Exception as e:
-            self.error_occurred.emit(_said(e))
+            self.error_occurred.emit(self.date, _said(e))
 
 
 class WorldCupBracketLoader(QThread):
@@ -10965,13 +11016,17 @@ class WorldCupDialog(QDialog):
         if self.phase_combo.currentData() and self.phase_combo.currentData()[0] == "1":
             self._rebuild_groups_widget(self.bracket_groups_layout, self.bracket_groups_content)
 
-    def _on_scores_loaded(self, games: list):
-        self._shown_games = (self.current_date, games)
+    def _on_scores_loaded(self, date, games: list):
+        if date != self.current_date:
+            return  # Someone has moved to another day since this was asked for.
+        self._shown_games = (date, games)
         self._populate_game_list(self.scores_list, games)
 
-    def _on_scores_failed(self, message: str):
+    def _on_scores_failed(self, date, message: str):
+        if date != self.current_date:
+            return
         # A refresh that fails keeps what it had, on the same day.
-        if self._shown_games and self._shown_games[0] == self.current_date:
+        if self._shown_games and self._shown_games[0] == date:
             self._populate_game_list(self.scores_list, self._shown_games[1])
             self._say_refresh_failed(message)
         else:

@@ -195,6 +195,8 @@ class TestFantasyFailures:
         espn.on("/seasons/2026/players", [self.player(1)]).on("/seasons/2025/players", TIMEOUT)
         assert espn_api.get_fantasy_cheatsheet(2026)["season"] == 2026
 
-    def test_not_a_list_is_no_players(self, espn):
+    def test_not_a_list_is_a_failure_rather_than_no_players(self, espn):
         espn.on("/players", {"message": "nope"})
-        assert espn_api.get_fantasy_cheatsheet(2026) == {"season": 2026, "players": []}
+        with pytest.raises(espn_api.ApiError) as caught:
+            espn_api.get_fantasy_cheatsheet(2026)
+        assert str(caught.value) == espn_api.FANTASY_UNAVAILABLE

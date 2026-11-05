@@ -7,6 +7,14 @@ import re
 from typing import Dict, Optional
 
 
+def _as_dict(value):
+    return value if isinstance(value, dict) else {}
+
+
+def _dicts(value):
+    return [item for item in value if isinstance(item, dict)] if isinstance(value, list) else []
+
+
 class ESPNTextProcessor:
     """Processor for cleaning and fixing ESPN news text content"""
     
@@ -37,6 +45,10 @@ class ESPNTextProcessor:
         if not description:
             return description
             
+        # One article's odd field doesn't cost the rest of the list theirs.
+        if not isinstance(description, str):
+            return ""
+
         # Check for placeholder patterns
         has_placeholders = False
         for pattern in self.placeholder_patterns:
@@ -48,14 +60,20 @@ class ESPNTextProcessor:
             # No issues detected, return as-is
             return description
             
-        # If we found placeholder patterns, try to fix them
-        cleaned_text = self._attempt_placeholder_resolution(description, article_data)
-        
-        # If we couldn't resolve placeholders, provide a fallback
-        if self._still_has_placeholders(cleaned_text):
-            return self._create_fallback_description(description, article_data)
-            
-        return cleaned_text
+        # An article this can't make sense of keeps the words it came with, and the rest of
+        # the list keeps theirs.
+        try:
+            # If we found placeholder patterns, try to fix them
+            cleaned_text = self._attempt_placeholder_resolution(description, article_data)
+
+            # If we couldn't resolve placeholders, provide a fallback
+            if self._still_has_placeholders(cleaned_text):
+                return self._create_fallback_description(description, article_data)
+
+            return cleaned_text
+        except Exception as e:
+            print(f"Couldn't clean a description: {e}")
+            return description
     
     def _attempt_placeholder_resolution(self, text: str, article_data: Optional[Dict]) -> str:
         """
@@ -108,37 +126,38 @@ class ESPNTextProcessor:
         player_names = []
         
         # Method 1: Get leaders first (usually the story's main players)
-        leaders = game_data.get('leaders', [])
+        game_data = _as_dict(game_data)
+        leaders = _dicts(game_data.get('leaders'))
         for team_leaders in leaders:
-            for category in team_leaders.get('leaders', []):
+            for category in _dicts(team_leaders.get('leaders')):
                 # Prioritize key statistical categories 
-                category_name = category.get('name', '').lower()
+                category_name = str(category.get('name') or '').lower()
                 priority_categories = ['passingyards', 'rushinyards', 'receivingyards']
                 
                 if any(pri_cat in category_name for pri_cat in priority_categories):
-                    for leader in category.get('leaders', []):
-                        athlete = leader.get('athlete', {})
+                    for leader in _dicts(category.get('leaders')):
+                        athlete = _as_dict(leader.get('athlete'))
                         if athlete.get('displayName'):
                             player_names.append(athlete['displayName'])
         
         # Method 2: Add key players from boxscore passing stats (QBs first)
-        boxscore = game_data.get('boxscore', {})
-        players_data = boxscore.get('players', [])
+        boxscore = _as_dict(game_data.get('boxscore'))
+        players_data = _dicts(boxscore.get('players'))
         for team in players_data:
-            for stat_category in team.get('statistics', []):
+            for stat_category in _dicts(team.get('statistics')):
                 if stat_category.get('name') == 'passing':  # QBs are often story leaders
-                    for athlete_stat in stat_category.get('athletes', []):
-                        athlete = athlete_stat.get('athlete', {})
+                    for athlete_stat in _dicts(stat_category.get('athletes')):
+                        athlete = _as_dict(athlete_stat.get('athlete'))
                         if athlete.get('displayName'):
                             player_names.append(athlete['displayName'])
         
         # Method 3: Add other key statistical performers
         for team in players_data:
-            for stat_category in team.get('statistics', []):
+            for stat_category in _dicts(team.get('statistics')):
                 category_name = stat_category.get('name')
                 if category_name in ['rushing', 'receiving', 'defensive']:  # Key categories
-                    for athlete_stat in stat_category.get('athletes', [][:2]):  # Top 2 per category
-                        athlete = athlete_stat.get('athlete', {})
+                    for athlete_stat in _dicts(stat_category.get('athletes')):
+                        athlete = _as_dict(athlete_stat.get('athlete'))
                         if athlete.get('displayName'):
                             player_names.append(athlete['displayName'])
         
@@ -165,7 +184,7 @@ class ESPNTextProcessor:
         """
         Create a fallback description when we can't resolve placeholders.
         """
-        headline = article_data.get('headline', '') if article_data else ''
+        headline = _as_dict(article_data).get('headline', '')
         
         if headline:
             return f"Story details available in full article: {headline}"

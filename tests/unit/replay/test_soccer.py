@@ -237,6 +237,14 @@ def leaders(espn, monkeypatch):
 
 
 class TestLeaders:
+    def test_a_null_list_of_categories_does_not_step_back_a_season(self, leaders):
+        """Last season's leaders, with no sign anything went wrong."""
+        leaders.on("/leaders", {"categories": None})
+        with pytest.raises(ApiError) as caught:
+            espn_api.get_player_statistics("EPL")
+        assert str(caught.value) == espn_api.STATISTICS_UNAVAILABLE
+        assert len(leaders.urls("/leaders")) == 1
+
     def test_they_come_from_the_core_api_under_type_1_for_espns_season(self, leaders):
         espn_api.get_player_statistics("EPL")
         first = leaders.urls("/leaders")[0]

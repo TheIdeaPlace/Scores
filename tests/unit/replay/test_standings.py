@@ -176,7 +176,7 @@ class TestCollege:
         assert rows and all(r["team_name"] != "Unknown" and r["team_id"] for r in rows)
 
     @pytest.mark.parametrize("league,path", NO_FALLBACK)
-    @pytest.mark.parametrize("reply", [{"children": []}, {}, []], ids=["no_conferences", "nothing", "a_list"])
+    @pytest.mark.parametrize("reply", [{"children": []}, {}], ids=["no_conferences", "nothing"])
     def test_no_standings_says_so_instead_of_asking_for_every_team(self, espn, league, path, reply):
         """The team list has no divisions, so Teams opened with no tabs and said nothing, and
         Standings was one table of playoff records, or the first 50 of a college league's teams.
@@ -186,8 +186,8 @@ class TestCollege:
         assert espn.urls("/teams") == []
 
     @pytest.mark.parametrize("league,path", NO_FALLBACK)
-    @pytest.mark.parametrize("reply", [TIMEOUT, requests.ConnectionError("refused"), HTTP_404, HTTP_500, NOT_JSON],
-                             ids=["timeout", "connection", "404", "500", "not_json"])
+    @pytest.mark.parametrize("reply", [TIMEOUT, requests.ConnectionError("refused"), HTTP_404, HTTP_500, NOT_JSON, []],
+                             ids=["timeout", "connection", "404", "500", "not_json", "a_list"])
     def test_a_failed_request_is_not_no_data(self, espn, league, path, reply):
         """It says so in a sentence, not with the text of a requests exception."""
         espn.on(f"/{path}/standings", reply)
