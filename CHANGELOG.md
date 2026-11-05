@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **iPhone: weather on a game's details,** for the games ESPN has it: "Weather: 67°F".
+- **iPhone: attendance on a game's details,** once there's a count: "Attendance: 68,739".
+- **iPhone: standings in a game's Info tab,** the tables of the division or conference each team is in.
+- **iPhone: a Game Story in a finished game's Info tab.** The row names the headline, and opens the
+  whole story with a heading or paragraph to a swipe. Before the game, ESPN's preview leads the news list.
+- **iPhone: a Scoring Summary in a football game's Info tab,** by quarter, with the team, clock and play.
+- **iPhone: an injury's type, details and return date,** where ESPN gives them.
+
 ### Changed
 - **The college football setting is called Coverage.** It's "College football coverage" on Windows and in
   the iPhone's Scores filter, and "Coverage" under College Football in iPhone Settings, since it also
@@ -14,6 +23,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **A team with no news on iPhone says so,** as on Windows, rather than showing the league's stories under
   the team's name. NBA standings on Windows read the season ESPN calls current, as on iPhone.
 - **VoiceOver reads the View All link on Stats once.**
+- **iPhone: betting lines look in the same place first as Windows,** `odds` and then `pickcenter`, and
+  pass over an empty line. An over/under of 0 isn't read.
+- **iPhone: coming back to a game no longer reloads the screen.** It used to show the spinner, and lose
+  VoiceOver's place, each time. It now refreshes quietly, and a failed refresh leaves what's showing.
+- **A football game's wrap up on Windows names its quarters,** as on iPhone: Quarter 1 and OT, not Period 1.
+- **Attendance sent as text can't lose a game's details on Windows.**
+
+### Fixed
+- **College basketball fouls read and sound where they happened, on Windows and iPhone.** A foul under
+  the basket read "deep, 78 feet out", with a far away note on the wrong side, because ESPN's college
+  feed mirrors most fouls to the far end. It now reads "at the rim", and pans the same way as the shot.
+  Fouls already in the near half stay as they are. The NBA and WNBA were never affected.
 
 ### In Progress
 - **Game Wrap Up Feature**: ESPN text processing and game story extraction (under construction)
