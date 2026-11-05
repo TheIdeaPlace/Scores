@@ -240,7 +240,7 @@ def test_team_rows_keep_the_shared_rank_and_read_best_first(open_dialog):
     assert table.full_list.item(2).text() == "Rank: 3; Team: Heat; Value: 99"
 
 
-def test_mlb_has_no_season_and_full_team_names(open_dialog):
+def test_a_list_with_no_season_and_a_full_team_name(open_dialog):
     view = open_dialog("MLB", "player", NO_SEASON_LEADERS)
     select_stat(view, "Home Runs")
     table = results(view)

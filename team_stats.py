@@ -252,7 +252,7 @@ def _shown(value):
 def ranking_rows(stat_type, data):
     """A ranked list as rows for RANKING_HEADERS, in the order it came, which is best first.
     A team's rows carry their rank. A player's comes from the list, by the same rule, comparing the
-    number as shown: /leaders has no rank, and the MLB Stats API's own 1, 1, 3 comes out the same.
+    number as shown, since /leaders has no rank.
     A player with no team reads N/A, so no cell of the table is silent."""
     if stat_type == "team":
         return [[item.get("rank"), item.get("name") or "Unknown", _shown(item.get("displayValue"))]

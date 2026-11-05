@@ -18,6 +18,8 @@ class StatisticsViewModel: ObservableObject {
     @Published var teamError: String?
 
     private let apiService = ESPNAPIService.shared
+    /// The same words as Windows, rather than the request's own error text.
+    private static let unavailable = "ESPN isn't providing these right now. Try again in a minute."
 
     func fetchLeaders(for sport: Sport) async {
         isLoadingPlayers = playerCategories.isEmpty
@@ -32,14 +34,14 @@ class StatisticsViewModel: ObservableObject {
         do {
             playerCategories = try await playerTask
         } catch {
-            playerError = "Failed to load statistics: \(error.localizedDescription)"
+            playerError = Self.unavailable
         }
         isLoadingPlayers = false
 
         do {
             teamCategories = try await teamTask
         } catch {
-            teamError = "Failed to load team statistics: \(error.localizedDescription)"
+            teamError = Self.unavailable
         }
         isLoadingTeams = false
     }

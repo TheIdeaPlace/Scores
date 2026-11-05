@@ -2581,6 +2581,9 @@ _CORE_SEASON_CACHE = {}  # league path: (when it was asked, ESPN's answer)
 _CORE_SEASON_CACHE_LOCK = threading.Lock()
 # /leaders lists these lowest first, and everything else highest first.
 LOW_IS_GOOD_LEADERS = {"avgGoalsAgainst", "ERA", "WHIP", "opponentAvg"}
+# No qualifying minimum in practice: 2026's list opens with 13 players on .000, catchers and
+# outfielders among them. The iPhone leaves it out too.
+LEADERS_NOT_SHOWN = {"opponentAvg"}
 
 
 def _no_leaders():
@@ -2689,6 +2692,8 @@ def _parse_leaders(data):
     categories = []
     for category in _dicts(_as_dict(data.get("leaders")).get("categories")):
         key = category.get("name") or "unknown"
+        if key in LEADERS_NOT_SHOWN:
+            continue
         title = category.get("displayName") or key.title()
         leaders = _leaders_in_order(key, _dicts(category.get("leaders")))
         if all(not leader.get("value") for leader in leaders):

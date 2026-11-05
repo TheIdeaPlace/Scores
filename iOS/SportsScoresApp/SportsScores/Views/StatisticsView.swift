@@ -154,6 +154,8 @@ struct SeasonLabel: View {
             .font(.subheadline)
             .foregroundColor(.secondary)
             .frame(maxWidth: .infinity, alignment: .leading)
+            // So moving by headings doesn't skip the only sign that it's last season's.
+            .accessibilityAddTraits(.isHeader)
     }
 }
 

@@ -191,12 +191,32 @@ struct SiteLeadersResponse: Decodable {
 
     struct Leaders: Decodable {
         let categories: [Category]?
+
+        enum CodingKeys: String, CodingKey {
+            case categories
+        }
+
+        init(from decoder: Decoder) throws {
+            categories = try decoder.container(keyedBy: CodingKeys.self).lossyArray(forKey: .categories)
+        }
     }
 
     struct Category: Decodable {
         let name: String?
         let displayName: String?
         let leaders: [Leader]?
+
+        enum CodingKeys: String, CodingKey {
+            case name, displayName, leaders
+        }
+
+        /// One null row shouldn't lose the league's whole list.
+        init(from decoder: Decoder) throws {
+            let container = try decoder.container(keyedBy: CodingKeys.self)
+            name = try? container.decodeIfPresent(String.self, forKey: .name)
+            displayName = try? container.decodeIfPresent(String.self, forKey: .displayName)
+            leaders = container.lossyArray(forKey: .leaders)
+        }
     }
 
     struct Leader: Decodable {

@@ -92,6 +92,7 @@ class League:
     player_stats: bool = True  # espn_api.LEADER_LEAGUES, and a test holds the two together
     team_stats: bool = True  # espn_api.TEAM_STAT_LEAGUES, and the same
     core_leaders: bool = True
+    soccer_core_leaders: bool = False
     # ESPN has none of these here, so an empty answer is the normal one.
     team_records: bool = True
     rosters: bool = True
@@ -112,7 +113,7 @@ class League:
 
 _COLLEGE_HOCKEY = dict(box_score=False, plays=False, rankings=True, transactions=False, player_stats=False,
                        team_stats=False, core_leaders=False, team_records=False, rosters=False)
-_SOCCER = dict(plays=False, transactions=False, player_stats=False, team_stats=False, core_leaders=False)
+_SOCCER = dict(plays=False, transactions=False, player_stats=False, team_stats=False, core_leaders=False, soccer_core_leaders=True)
 
 LEAGUES = [
     League("NFL", "football/nfl", FOOTBALL),
@@ -1192,6 +1193,8 @@ def check_statistics(http, report, league, event, in_season):
 
     if league.core_leaders:
         check_core_statistics(http, report, league, event, in_season)
+    if league.soccer_core_leaders:
+        check_soccer_core_leaders(http, report, league, event, in_season)
 
 
 def known_team_stats():
@@ -1395,6 +1398,7 @@ def check_leaders(http, report, league, in_season=True):
     season = data["requestedSeason"]
     report.ok(league.key, "Leaders", f"{season.get('displayName')} {season['type'].get('name')}: "
                                      f"{len(data['leaders']['categories'])} categories", url)
+    http.save("leaders", league.key, data)
     check_leaders_for_a_team(http, report, league, data, season_year)
     wrong_way = leaders_direction_problems(data, espn_api.LOW_IS_GOOD_LEADERS)
     if wrong_way:
@@ -1471,18 +1475,30 @@ def check_core_stats(http, report, league, year, name, tail, read):
     return answers
 
 
+def check_soccer_core_leaders(http, report, league, event, in_season):
+    """/leaders is a 404 for soccer, so the iPhone reads these from the core API, which files a
+    league's whole season under type 1. Windows has no soccer leaders."""
+    year = (event.get("season") or {}).get("year")
+    if not year:
+        report.fail(league.key, "Core API: leaders (iPhone)", f"final {event['id']} has no season")
+        return
+    url = f"{CORE}/{league.core_path}/seasons/{year}/types/1/leaders?limit=1"
+    status, data = http.get(url)
+    categories = (data or {}).get("categories") if status == 200 and isinstance(data, dict) else None
+    if categories:
+        report.ok(league.key, "Core API: leaders (iPhone)", f"{year}: {len(categories)} categories", url)
+    else:
+        report.seasonal(in_season, league.key, "Core API: leaders (iPhone)", f"none for {year}, got {status}", url)
+
+
 def check_core_statistics(http, report, league, event, in_season):
     year = (event.get("season") or {}).get("year")
     team_id = (event["competitions"][0]["competitors"][0].get("team") or {}).get("id")
     if not (year and team_id):
         report.fail(league.key, "Core API (iPhone)", f"final {event['id']} has no season or team id")
         return
-    # Only the leagues with no /leaders read their leaders from the core API.
-    checks = [("Core API: team statistics (iPhone)", f"teams/{team_id}/statistics",
-               lambda d: (d.get("splits") or {}).get("categories"))]
-    if not league.player_stats:
-        checks.append(("Core API: leaders (iPhone)", "leaders", lambda d: d.get("categories")))
-    for name, tail, read in checks:
+    for name, tail, read in (("Core API: team statistics (iPhone)", f"teams/{team_id}/statistics",
+                              lambda d: (d.get("splits") or {}).get("categories")),):
         answers = check_core_stats(http, report, league, year, name, tail, read)
         if answers is not True:
             report.seasonal(in_season, league.key, name,

@@ -13,12 +13,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   now reads the one Windows does, with the same ranks, so two players level both read 1st, and it says
   which season the numbers are from. Lists have up to 20 players on both apps. Soccer stays as it was,
   since ESPN has no such feed for it.
-- **A team's Stats on iPhone lists that team's own players, ranked among themselves.** It used to be
+- **A team's Stats on iPhone lists that team's own players, ranked within the team.** It used to be
   whichever of them made the league's top 100, with their rank in the league. A team with nobody that
-  high had nothing to show.
+  high had nothing to show. Qualified players come first and then the rest, and the screen says so.
 - **MLB leaders on Windows open in about 2 seconds, not 30.** They came from MLB's own feed, in a
   different order each time. They now come from the same place as every other league, on both apps, in
-  a fixed order. There are 20 categories rather than 39. New ones include WAR and quality starts. Gone
+  a fixed order. There are 19 categories rather than 39. New ones include WAR and quality starts. Gone
   are doubles, triples, walks, innings pitched, complete games, shutouts, blown saves, fielding and
   some others.
 

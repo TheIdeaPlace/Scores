@@ -354,12 +354,6 @@ class TestRankingRows:
                                        for name, value in (("A", "9"), ("B", "9"), ("C", "9"), ("D", "4"), ("E", "4"))])
         assert [row[0] for row in rows] == [1, 1, 1, 4, 4]
 
-    def test_mlb_comes_out_with_the_ranks_its_feed_gives(self):
-        leaders = load("mlb_leaders_homeRuns.json")["leagueLeaders"][0]["leaders"]
-        rows = ranking_rows("player", [{"player_name": leader["person"]["fullName"], "value": leader["value"]}
-                                       for leader in leaders])
-        assert [row[0] for row in rows] == [leader["rank"] for leader in leaders] == [1, 1, 3]
-
     def test_real_leaders_become_rows(self):
         categories = espn_api._parse_leaders(load("leaders_v3_NBA.json"))["player_stats"]
         points = next(c for c in categories if c["category"] == "Points Per Game")

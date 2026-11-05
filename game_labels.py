@@ -40,7 +40,7 @@ def leader_display_value(category: Optional[str], value: Any, display_value: Any
 
     if name in _WHOLE_NUMBER_STATS and number.is_integer():
         return str(int(number))
-    if "pct" in name and name != "savepct" and 0 <= number <= 1 and float(display.replace(",", "")) <= 1:
+    if "pct" in name and name not in _THREE_PLACE_STATS and 0 <= number <= 1 and float(display.replace(",", "")) <= 1:
         return f"{number * 100:.1f}"
     if "." not in display and not number.is_integer():
         return f"{number:.1f}"

@@ -1,7 +1,5 @@
 """Bugs the replay tests found and the fixes made for them. The ones not fixed yet
 are in test_known_gaps.py."""
-import io
-import sys
 from datetime import datetime
 
 import pytest

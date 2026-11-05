@@ -169,6 +169,14 @@ class TestRealLeaders:
         league = "NHL" if "NHL" in fixture else "MLB"
         assert len(by_category(espn_api.get_player_statistics(league))[category]) == 2
 
+    def test_a_list_with_no_real_minimum_is_left_out(self):
+        rows = [{"value": 0.0, "displayValue": "1.0 IP", "athlete": {"displayName": "A Catcher"}},
+                {"value": 0.25, "displayValue": "60 IP", "athlete": {"displayName": "A Pitcher"}}]
+        data = {"leaders": {"categories": [
+            {"name": "opponentAvg", "displayName": "Opponent Batting Average", "leaders": rows},
+            {"name": "ERA", "displayName": "ERA", "leaders": rows}]}}
+        assert [c["category"] for c in espn_api._parse_leaders(data)["player_stats"]] == ["ERA"]
+
     def test_ties_and_a_row_with_no_value_do_not_end_a_list(self):
         leaders = [{"value": 5}, {"value": 5}, {}, {"value": 4}, {"value": 9}, {"value": 3}]
         assert [x.get("value") for x in espn_api._leaders_in_order("goals", leaders)] == [5, 5, None, 4]

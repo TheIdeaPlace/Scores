@@ -1721,17 +1721,35 @@ class TestStatistics:
 
     def test_core_gone_for_every_season_type_fails_in_season(self):
         report = v.Report()
-        v.check_core_statistics(FakeHttp(default=(404, None)), report, league("EPL"), event(), True)
-        assert FAIL_IN(report, "Core API: leaders (iPhone)")
+        v.check_core_statistics(FakeHttp(default=(404, None)), report, league("NBA"), event(), True)
         assert FAIL_IN(report, "Core API: team statistics (iPhone)")
-        assert "404" in detail(report, "Core API: leaders (iPhone)")
+        assert "404" in detail(report, "Core API: team statistics (iPhone)")
 
     def test_a_league_with_leaders_isnt_checked_on_the_core_api_for_them(self):
         http = FakeHttp(default=(200, {"splits": {"categories": [1]}}))
         report = v.Report()
         v.check_core_statistics(http, report, league("NBA"), event(), True)
-        assert not any(u.endswith("/leaders") for u in http.urls)
+        assert not any("/leaders" in u for u in http.urls)
         assert statuses(report, "Core API: leaders (iPhone)") == []
+
+    def soccer_season(self, http):
+        played = event()
+        played["season"] = {"year": 2026, "type": 1}
+        report = v.Report()
+        v.check_statistics(http, report, league("EPL"), played, True)
+        return report
+
+    def test_soccer_leaders_are_checked_where_the_iphone_reads_them(self):
+        http = FakeHttp([("/seasons/2026/types/1/leaders", (200, {"categories": [1]}))], default=(404, None))
+        report = self.soccer_season(http)
+        assert statuses(report, "Core API: leaders (iPhone)") == [v.PASS]
+
+    def test_soccer_leaders_gone_fails_in_season(self):
+        report = self.soccer_season(FakeHttp(default=(404, None)))
+        assert FAIL_IN(report, "Core API: leaders (iPhone)")
+
+    def test_only_soccer_has_its_leaders_on_the_core_api(self):
+        assert league("EPL").soccer_core_leaders and not league("NBA").soccer_core_leaders
 
     def test_core_team_statistics_gone(self):
         http = FakeHttp([("/leaders", (200, {"categories": [1]}))], default=(200, {"splits": {}}))
