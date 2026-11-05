@@ -116,9 +116,10 @@ class TestNba:
             "Eastern Conference Southeast", 0, "0.000", "—")
         assert hawks["logo"].endswith("atl.png")
 
-    def test_fresh_standings_with_no_teams_are_empty(self, espn):
+    @pytest.mark.parametrize("teams", [{"sports": []}, {"sports": [None]}], ids=["none", "unreadable"])
+    def test_fresh_standings_with_no_teams_are_empty(self, espn, teams):
         espn.on("/nba/standings", {"children": []})
-        espn.on("/nba/teams$", {"sports": []})
+        espn.on("/nba/teams$", teams)
         assert espn_api.get_standings("NBA") == []
 
     @pytest.mark.parametrize("reply", [HTTP_500, TIMEOUT])

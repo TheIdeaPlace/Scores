@@ -1654,20 +1654,14 @@ def get_rankings(league_key):
     if not league_path:
         return {'polls': []}
     
-    try:
-        url = f"{BASE_URL}/{league_path}/rankings"
-        data = _espn_answer(POLLS_UNAVAILABLE, url)
-        if data is None:
-            return {'polls': []}
-
-        polls = _listed(data, 'rankings', POLLS_UNAVAILABLE)
-
-        return {'polls': polls}
-    except ApiError:
-        raise
-    except Exception as e:
-        print(f"Failed to fetch rankings for {league_key}: {e}")
+    url = f"{BASE_URL}/{league_path}/rankings"
+    data = _espn_answer(POLLS_UNAVAILABLE, url)
+    if data is None:
         return {'polls': []}
+
+    polls = _listed(data, 'rankings', POLLS_UNAVAILABLE)
+
+    return {'polls': polls}
 
 def get_standings(league_key):
     """Get current standings for a specific league using optimized API endpoint"""
@@ -3105,33 +3099,27 @@ def get_team_news(league_key, team_id, limit=25):
     league_path = LEAGUES.get(league_key)
     if not league_path or not team_id:
         return []
-    try:
-        # /teams/{id}/news returns no articles; /news?team={id} does.
-        answer = _espn_answer(NEWS_UNAVAILABLE, f"{BASE_URL}/{league_path}/news",
-                              params={"team": team_id, "limit": limit})
-        if answer is None:
-            return []
-        try:
-            from text_utils import text_processor
-        except ImportError:
-            text_processor = None
-        articles = []
-        for a in _listed(answer, "articles", NEWS_UNAVAILABLE):
-            raw_desc = a.get("description") or ""
-            desc = text_processor.clean_description(raw_desc, a) if text_processor else raw_desc
-            articles.append({
-                "headline":  a.get("headline") or "",
-                "description": desc,
-                "web_url":   _article_href(a, "web"),
-                "published": a.get("published") or "",
-                "byline":    a.get("byline") or "",
-            })
-        return articles
-    except ApiError:
-        raise
-    except Exception as e:
-        print(f"[get_team_news] team {team_id}: {e}")
+    # /teams/{id}/news returns no articles; /news?team={id} does.
+    answer = _espn_answer(NEWS_UNAVAILABLE, f"{BASE_URL}/{league_path}/news",
+                          params={"team": team_id, "limit": limit})
+    if answer is None:
         return []
+    try:
+        from text_utils import text_processor
+    except ImportError:
+        text_processor = None
+    articles = []
+    for a in _listed(answer, "articles", NEWS_UNAVAILABLE):
+        raw_desc = a.get("description") or ""
+        desc = text_processor.clean_description(raw_desc, a) if text_processor else raw_desc
+        articles.append({
+            "headline":  a.get("headline") or "",
+            "description": desc,
+            "web_url":   _article_href(a, "web"),
+            "published": a.get("published") or "",
+            "byline":    a.get("byline") or "",
+        })
+    return articles
 
 
 def get_transactions(league_key, team_id=None, limit=50, page=1):
@@ -3216,21 +3204,15 @@ def get_draft(year):
     Returns dict: {year, num_rounds, status ('pre'/'in'/'post'), rounds: [{number, display_name, short_name}]}
     or None if unavailable.
     """
-    try:
-        data = _fetch_draft(year)
-        if data is None:
-            return None
-        num_rounds = data.get("rounds")
-        num_rounds = num_rounds if isinstance(num_rounds, int) and num_rounds > 0 else 7
-        rounds = [{"number": number, "display_name": f"{_ordinal(number)} Round", "short_name": _ordinal(number)}
-                  for number in range(1, num_rounds + 1)]
-        status = str(_as_dict(data.get("status")).get("state") or "post").lower()
-        return {"year": int(year), "num_rounds": num_rounds, "status": status, "rounds": rounds}
-    except ApiError:
-        raise
-    except Exception as e:
-        print(f"[get_draft] {year}: {e}")
+    data = _fetch_draft(year)
+    if data is None:
         return None
+    num_rounds = data.get("rounds")
+    num_rounds = num_rounds if isinstance(num_rounds, int) and num_rounds > 0 else 7
+    rounds = [{"number": number, "display_name": f"{_ordinal(number)} Round", "short_name": _ordinal(number)}
+              for number in range(1, num_rounds + 1)]
+    status = str(_as_dict(data.get("status")).get("state") or "post").lower()
+    return {"year": int(year), "num_rounds": num_rounds, "status": status, "rounds": rounds}
 
 
 def get_draft_round(year, round_num):
@@ -3239,13 +3221,7 @@ def get_draft_round(year, round_num):
     Each dict: {overall, pick, round, traded, trade_note, team_abbrev, team_name,
                 player_name, position, college, status_name}
     """
-    try:
-        data = _fetch_draft(year)
-    except ApiError:
-        raise
-    except Exception as e:
-        print(f"[get_draft_round] {year}/r{round_num}: {e}")
-        return []
+    data = _fetch_draft(year)
     if data is None:
         return []
     teams = {str(team.get("id")): team for team in _dicts(data.get("teams"))}
