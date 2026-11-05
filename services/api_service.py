@@ -33,12 +33,12 @@ class ApiService:
         return ApiService._call(espn_api.get_mlb_wildcard_standings) or {}
 
     @staticmethod
-    def get_news(league: str, limit: int = 20) -> List[Dict]:
+    def get_news(league: str, limit: int = 25) -> List[Dict]:
         """Get news headlines for a league with configurable limit
         
         Args:
             league: League identifier (e.g., 'MLB', 'NFL') 
-            limit: Number of articles to retrieve (default: 20, max: 50)
+            limit: Number of articles to retrieve (default: 25, max: 50)
         """
         return ApiService._call(espn_api.get_news, league, limit)
 
@@ -49,6 +49,11 @@ class ApiService:
     @staticmethod
     def get_team_schedule(league: str, team_id: str, days_ahead: int = 30, days_behind: int = 30, season=None) -> List[Dict]:
         return ApiService._call(espn_api.get_team_schedule, league, team_id, days_ahead, days_behind, season)
+
+    @staticmethod
+    def get_team_schedule_and_season(league: str, team_id: str, season=None) -> tuple:
+        """(schedule, the season it is from), which isn't the one asked for when it falls back."""
+        return ApiService._call(espn_api.get_team_schedule_and_season, league, team_id, season=season)
 
     @staticmethod  
     def get_available_seasons(league: str) -> List[tuple]:
@@ -67,12 +72,8 @@ class ApiService:
         return ApiService._call(espn_api.format_complex_data, key, value)
 
     @staticmethod
-    def get_statistics(league: str) -> Dict:
-        return ApiService._call(espn_api.get_statistics, league)
-    
-    @staticmethod
     def get_player_statistics(league: str) -> Dict:
-        """Get only player statistics for a league (faster)"""
+        """A league's player leaders. A failed request raises ApiError."""
         return ApiService._call(espn_api.get_player_statistics, league)
     
     @staticmethod
@@ -99,7 +100,7 @@ class ApiService:
         return ApiService._call(espn_api.get_team_roster, league, team_id)
 
     @staticmethod
-    def get_team_news(league: str, team_id: str, limit: int = 15) -> List[Dict]:
+    def get_team_news(league: str, team_id: str, limit: int = 25) -> List[Dict]:
         return ApiService._call(espn_api.get_team_news, league, team_id, limit)
 
     @staticmethod

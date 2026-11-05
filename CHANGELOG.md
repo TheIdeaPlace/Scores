@@ -7,14 +7,213 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Fixed
-- **Utah is in the Central Division in the NHL standings on Windows.** 1.0.1 said it was, but ESPN
-  spells it differently in standings than on its team page, so it stayed in a group of its own.
-
 ### In Progress
 - **Game Wrap Up Feature**: ESPN text processing and game story extraction (under construction)
   - Core infrastructure implemented, text processing being refined
   - Game story text placeholders currently under investigation
+
+## [1.1.0] - 2026-11-04
+
+### Changed
+- **Both apps read league leaders from the same place, with the same rules.** They could name
+  different players for the same stat, because the iPhone read a feed with no qualifying minimums. It
+  now reads the one Windows does, with the same ranks, so two players level both read 1st, and it says
+  which season the numbers are from. Lists have up to 20 players on both apps. Soccer stays as it was,
+  since ESPN has no such feed for it.
+- **A team's Stats on iPhone lists that team's own players, ranked within the team.** It used to be
+  whichever of them made the league's top 100, with their rank in the league. A team with nobody that
+  high had nothing to show. Qualified players come first and then the rest, and the screen says so.
+- **MLB leaders on Windows open in about 2 seconds, not 30.** They came from MLB's own feed, in a
+  different order each time. They now come from the same place as every other league, on both apps, in
+  a fixed order. There are 19 categories rather than 39. New ones include WAR and quality starts. Gone
+  are doubles, triples, walks, innings pitched, complete games, shutouts, blown saves, fielding and
+  some others.
+- **The NFL Draft on Windows opens much faster.** It made a request or more for every pick, and now
+  makes one for the whole draft, the same one as the iPhone. A team now reads as it was named that
+  year, such as the Oakland Raiders in 2012. Focus stays where you are as you arrow through the rounds
+  or the years, rather than jumping to the picks as each loads.
+- **Colleges in the draft read in full on both apps,** such as Georgia State, not Georgia St.
+- **Older drafts name their centers and kickers on both apps.** ESPN's list for those years left them
+  out, so the iPhone showed no position for them.
+- **Hockey games on Windows open with one less download.** Each one also fetched espn.com's web page for
+  more plays, which has stopped giving any. The plays come from where the iPhone's do.
+- **News lists are the same length on both apps,** up to 25 stories.
+
+### Fixed
+- **Player and Team Statistics are a list, and Enter opens the rankings.** The list no longer sits
+  beside the results. Press Enter on a statistic to open its rankings in the list's place, and Escape
+  or the Back button to come back to the same statistic. Ctrl+Tab goes on to the next one, the window
+  title names what's open, and a statistic with nothing to rank says so. With a mouse, double-click a
+  statistic to open it.
+- **Player and Team Statistics results are a real table.** Alt+V, Alt+T, Alt+Q and Alt+F now work on
+  them, as they do on every other table, and they open in your saved view. Player statistics have
+  Rank, Player, Team and Value, and team statistics Rank, Team and Value. A row used to be one line
+  of text, such as "1 Luka Doncic (LAL) 38.3". On any cell a screen reader now hears whose row it
+  is: "Luka Doncic, Value, 38.3". Players level on a number now share a rank, as teams do: two
+  players on 7.5 sacks are both 1st, where one used to read 1st and the other 2nd.
+- **Switching a table's view stays on your row.** The new view could report the row it was last left
+  on before moving to yours, so a screen reader might read the wrong row first.
+- **A game's Leaders opens on Windows.** It showed only an error message, which a screen reader may
+  not have read, for any game with leaders. Each team now has a tab with a table, in all three views,
+  and focus lands on its first row. If the table ever can't be built, a row you can arrow to says so
+  in a plain sentence.
+- **Tab bars work from the keyboard the way Windows lists do, everywhere there are tabs.** Home and
+  End go to the first and last tab, and Left and Right go round past the ends rather than stopping.
+  With focus on the tabs, type a conference's first letter to go to it, and the same letter again
+  goes on to the next one starting with it. Different letters typed quickly narrow it down, so S, U,
+  N reaches Sun Belt. How quick is twice your Windows double-click time, about a second unless you've
+  changed it. Letters typed in a table on a tab still go to the table.
+- **Ctrl+Tab goes straight to the next tab's table.** Focus stopped on the Close button on the way, so
+  a screen reader could say "Close, button" before the new table.
+- **A tab keeps an ampersand in its name.** Texas A&M's tabs lost the & from their text, and Alt+M
+  became a shortcut to one of them.
+- **Tab from MLB's wild card tabs and the NFL Draft's rounds goes to what's on the tab, not to Close.**
+- **More than eight tabs is now a list.** College football, men's and women's college basketball
+  conferences in Standings and Teams, and football box scores, have a list instead of a long row of
+  tabs. Press Enter on the one you want to open its table, and Escape or the Back button to come back
+  to the list on the same row. Up and Down go round past the ends, Home, End and type-ahead find work
+  as they do on tabs, and the window title names what's open. Eight or fewer stay as tabs.
+- **The WNBA has Standings, Statistics, Teams, Transactions and Venues on Windows,** and `--wnba`,
+  `--wnba-teams` and `--wnba-standings` go straight to them. The league view only had games and news.
+  Its games back reads like the NBA's.
+- **Team Hub shows a team's real record and standing, on Windows and iPhone.** During the WNBA
+  playoffs the Lynx, 33-11 and first in the West, read 0-2 and 8th, and teams that missed the playoffs
+  read 0-0. In the MLB playoffs the Dodgers read 5th in the division they won. It's now the regular
+  season's record and standing, the same as Standings, in every league but soccer, whose team pages
+  were already right. From the start of a college team's postseason until the next regular season,
+  the record is labelled Regular Season, because Standings counts those postseason games and this
+  doesn't: Michigan basketball's 2026 reads 31-3 here and 37-3 there. Favorites on Windows get the
+  same record. If ESPN doesn't answer, the page says "Record not available right now" rather than
+  risk showing the wrong one, and the rest of the page still loads. On iPhone, Favorites no longer
+  asks ESPN for team details it never showed.
+- **College hockey teams have a record in Team Hub, on both apps.** ESPN's team page had none for men's
+  college hockey. "Standing: 1st", which ESPN says of every college hockey team, is gone.
+- **The WNBA and college leagues tell a failure from no data in Standings and Teams on Windows.** If
+  ESPN doesn't answer, or answers with an error, they say it isn't providing standings and to try
+  again, rather than opening empty or listing the first 50 teams in the country. College football
+  used to read that as no data, and now says the same. If ESPN answers and has none, they say
+  there's no data. The window title also goes back to what it was after a standings error.
+- **Stat definitions on Alt+D fit the league.** The WNBA and college basketball get the basketball
+  list and college football the football one. They had a general list that included goals.
+- **Screen readers no longer hear "division" for what isn't one.** Standings' tabs are "Standings",
+  a Teams tab reads "Teams in Eastern Conference", and Team Hub says "1st in Western Conference" on
+  both apps rather than "1st in Western Conference Division".
+- **Team statistics on Windows rank the whole league, best first.** College basketball listed the
+  first 50 teams of about 360, and every list ran highest to lowest, so the team with the most
+  turnovers or the worst earned run average read as number one. Now the lowest comes first where
+  low is good and teams level share a rank. College basketball ranks every Division I team who has
+  played, and nobody else. College football ranks FBS teams only, because that's all ESPN lists. A
+  list opens much faster, since it takes one request rather than one per team. The title and the
+  list's name say which season it is, the same one as Player Statistics. What the opposing teams
+  did is now there too, such as points allowed, and so is each team's differential.
+  Windows and iPhone now use the same numbers, and ESPN doesn't give all of them this way, so
+  about half of MLB's columns and a third of the NFL's are gone, with some from every other league:
+  hit by pitch, caught stealing, runs created, passes defended, time of possession, plus/minus,
+  game-winning goals, minutes and two-point numbers among them. If ESPN doesn't answer, the list
+  says so and suggests trying again. In the first days of a new regular season, when ESPN may not
+  have it yet, you get last season's list, and it says so. College hockey and soccer still have no
+  team statistics, because ESPN has none.
+- **Team statistics on iPhone are the whole regular season, out of season too, and say which season
+  they are.** After a season ended, the WNBA listed its 8 playoff teams and MLB its 12, with playoff
+  numbers. They now list all 15 and all 30, with regular season numbers, except a past college
+  football season, whose numbers include the bowl games, as ESPN gives them, and which reads "2025
+  Season". The Teams tab and View All name the season. College basketball keeps every Division I
+  team late in the season, when ESPN's list runs past what it sends at once, and doesn't list a
+  school outside Division I at any point. Teams level share a rank, and View All lists every team
+  rather than the top 50. If ESPN fails in mid-season it says so rather than quietly showing last
+  season's numbers.
+- **A team's ranks on iPhone now match the league list.** They came from different places and
+  often disagreed: a team could read 5th in assists on its page and 11th in the league. College
+  teams had almost no ranks at all, because anything past 34th was hidden. Now 118th shows as
+  "118th of 302", and the rank's color goes by the league's size: red no longer means anything past
+  20th in a list of 300, and green is the WNBA's top quarter. An FCS team, or a past college football
+  season, keeps ESPN's own rank, since the league list doesn't have those numbers. NBA teams gain
+  their per game stats. A team's stats no longer fall back to its preseason or playoffs, and if the
+  network fails it says so, and Retry works.
+- **Venues on Windows now work for college basketball and college hockey, and name the home
+  teams.** Those leagues always said "No venue data", and no league ever listed a home team. Each
+  venue now says who plays there. Only a team's real homes are listed: not an arena used for a
+  neutral site game, a preseason game or a one-off, and not a non-Division I school a college
+  basketball team visited. If ESPN doesn't answer, it says so instead of saying there are no venues,
+  and one month with a server error no longer loses the list.
+- **The venue list only says what's known.** "Unknown Surface" is gone from every row, a venue
+  ESPN says nothing about no longer reads "Outdoor", and a venue with no state no longer reads
+  "City, Unknown".
+- **Team Info shows where a team plays now, on Windows and iPhone.** ESPN's team page still had the
+  Nets at Prudential Center and the Warriors at Oracle Arena. The venue now comes from the team's
+  home games. Teams that had no venue at all, in college, the WNBA and soccer, now have one on both
+  apps, and a World Cup team stays blank since its games are at tournament stadiums.
+- **FCS teams are in college football standings and Teams, on Windows and iPhone.** You could see
+  their games but not the teams: the Big Sky and 13 other conferences were missing. Standings and
+  team lists now follow the "College football games shown" setting, so All Division I lists all 25
+  conferences and FBS only lists the conferences you had before. With All Division I, the Sun Belt
+  shows as one conference rather than East and West, because that's how ESPN answers. Changing the
+  setting takes effect the next time you open them.
+- **If ESPN can't give college football standings on Windows, Standings and Teams say so.** Standings
+  used to list the first 50 teams in the alphabet from every division, Division III included, and
+  Teams opened with nothing in it.
+- **College teams past the first 50 appear in Transactions on iPhone.** The list stopped at 50, part
+  way through the alphabet.
+- **Utah is in the Central Division in the NHL standings on Windows.** 1.0.1 said it was, but ESPN
+  spells it differently in standings than on its team page, so it stayed in a group of its own.
+- **No more blank rows in Live Scores, Venue Details and the bowl list.** They were only spacing,
+  and a screen reader stopped on each one to say "blank".
+- **Player statistics on Windows are the regular season.** NFL and NHL leaders were preseason
+  numbers shown as if they were the regular season: the NFL's passing leader read 509 yards, a
+  preseason total, where the real leader has 2,246.
+  The NBA and WNBA have leaders now. ERA, goals against and the like read best first rather than
+  worst first, and the dialog says which season you're looking at. Lists go to 20 players, or fewer
+  if that's all ESPN will give, down from 50. If ESPN won't answer at all, the
+  dialog says so and suggests trying again in a minute. Between seasons you get the last regular
+  season, except college football, whose last season runs through the bowl games and says "2025
+  Season". College hockey and soccer say there are no leaders, since ESPN has none.
+- **Team statistics on Windows say which season they're from,** if it's the same for every team,
+  rather than claiming the full season. The window title has the season too.
+- **League leaders on iPhone read as they should.** 38.3 points per game read 38.29, 0.9 steals
+  read .900, and a plus-minus of -3 read -3.000. Half a sack and a passer rating keep their
+  fractions, and a three-point percentage reads as a percentage. Windows now reads these the same.
+  A player whose name won't load says "name unavailable" to VoiceOver, and a stat nobody has a
+  number for, such as Player Efficiency Rating in the WNBA, is left out.
+- **League leaders on iPhone are never preseason numbers.** In August, the NFL's fell through to
+  the preseason with nothing to say so. Between seasons you now get last season's regular season,
+  and MLB no longer shows spring training in February and March.
+- **Times on Windows in summer.** Eastern and Pacific users fell through to Central, and Mountain
+  users to Eastern.
+- **A blank field from ESPN no longer reads out as "None"** in game details, or costs a whole list
+  of games, news or a team's page.
+- **Venue Details has its league lines.** A case mismatch kept them from ever appearing.
+- **A football week on iPhone no longer fails to load because of one blank game.** ESPN's list for
+  week 8 of college football in 2025 has an empty entry in it, which lost the whole week.
+- **Team schedules on Windows have the whole football season.** The NFL and college football lists
+  stopped at the regular season, so the Seahawks' 2025 had no Super Bowl. Preseason and postseason
+  games are there now, and the row says what the game was: "Super Bowl LX", "SEC Championship",
+  "Preseason Week 1". A bowl or Super Bowl at a neutral site reads "vs", not "@".
+- **WNBA team schedules on Windows show the whole season, in any year.** They only looked a month
+  either side of today, so out of season a team had no games at all, and past seasons showed nothing.
+  Before a new season's schedule is out, the current season shows the last one, and the season list
+  moves to say so, on Windows as on the iPhone's schedule screen. Team Hub on iPhone now does too.
+- **Soccer team schedules on Windows show the season you picked.** Picking 2020 showed this season's
+  games with old dates on them. A past season now shows its results, and the current one its results
+  and the games to come. Finished matches read as a win, loss or tie with the score, not "FT".
+- **Soccer team schedules work on iPhone.** They read "No schedule available" in every league.
+- **The iPhone's team schedules match Windows.** The NBA, NHL, WNBA and college sports have their
+  preseason games, and every sport's preseason and postseason games say what they were, except in
+  the Table view's visible column. A game at halftime or in a delay reads as under way, and a
+  postponed or canceled one says so, rather than giving its start time.
+- **A tied game on iPhone no longer reads as a loss** in a team's Recent list and on its Info tab.
+- **A past season on Windows that comes back empty stays empty.** College football used to show last
+  year's games as if they were the season you asked for.
+- **A team schedule that fails to load says so, on both apps.** Windows read "No games found", or
+  left out the playoffs with no sign, when ESPN's server had a problem or a request timed out. It
+  now says ESPN didn't answer, and coming back to the tab tries again. The iPhone read as no schedule
+  or showed last season's games, and now says it couldn't load, with a Retry button. If games were
+  already showing on iPhone they stay, with a note that they couldn't be refreshed. Leaving a screen
+  mid-load on iPhone isn't counted as a failure.
+- **A favorite's card on iPhone keeps its last and next games** when only part of the schedule loads.
+- **A team's schedule on Windows opens somewhere useful when the season is over.** The current
+  season opens on its last game, not its first preseason game. A past season still opens at its start.
+- **Games in another year show the year.** On Windows, in every row. On iPhone, in Quick List and in
+  what VoiceOver reads; the other views have it in the month heading. A season can cross new year.
 
 ## [1.0.1] - 2026-11-03
 

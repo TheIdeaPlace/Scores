@@ -25,6 +25,11 @@ struct TeamHubTeamInfo {
     let venueCity: String?
     let coachName: String?
     let nextGame: TeamHubNextGame?
+    /// A failure cost the page its record, which a league with no record to show doesn't.
+    var recordUnavailable = false
+    /// A college team's postseason counts in Standings but not here, from when it starts until
+    /// the next regular season, so "overall" would be wrong: 31-3 here, 37-3 there.
+    var recordIsRegularSeasonOnly = false
 }
 
 struct TeamHubNextGame {
@@ -75,6 +80,26 @@ struct RosterPlayer: Identifiable {
     let displayName: String
     let positionAbbreviation: String
     let age: String
+}
+
+// MARK: - Decodable API Response: the current season (core /leagues/{league}/season)
+
+/// The season ESPN calls current, and what part of it the league is in. From ESPN rather than
+/// the calendar, so a preseason is known for what it is. Soccer's season types are numbers of
+/// their own, and it doesn't ask.
+struct CurrentSeasonResponse: Decodable {
+    let year: Int
+    let type: SeasonType?
+
+    struct SeasonType: Decodable {
+        let type: Int?
+    }
+
+    var isRegularSeason: Bool { type?.type == 2 }
+
+    /// A season's playoffs and off-season come after its regular season and are filed under
+    /// its year, so only a preseason means that the last one is the latest.
+    var regularSeasonYear: Int { type?.type == 1 ? year - 1 : year }
 }
 
 // MARK: - Decodable API Response: Team Info endpoint (/teams/{id})
@@ -142,6 +167,21 @@ struct TeamInfoAPIResponse: Decodable {
             let timeValid: Bool?
             let neutralSite: Bool?
             let competitors: [TeamInfoCompetitor]?
+            let status: TeamInfoStatus?
+
+            struct TeamInfoStatus: Decodable {
+                let type: TeamInfoStatusType?
+
+                struct TeamInfoStatusType: Decodable {
+                    let completed: Bool?
+                    let state: String?
+                }
+            }
+
+            /// Postponed or canceled, the same test as `ScheduleGame.isCalledOff`.
+            var isCalledOff: Bool {
+                status?.type?.completed == false && status?.type?.state == "post"
+            }
 
             struct TeamInfoCompetitor: Decodable {
                 let homeAway: String?

@@ -10,13 +10,10 @@ import requests
 import espn_api
 from exceptions import ApiError
 from services.api_service import ApiService
-from services.venue_service import VenueService
 
 from .support import EMPTY_JSON, HTTP_404, HTTP_500, NOT_JSON, TIMEOUT, FakeResponse
 
 DAY = date(2026, 6, 20)
-NOTHING = {"player_stats": [], "team_stats": []}
-TEAM_NOTHING = {"team_stats": [], "player_stats": []}
 
 # name, call, what it returns when a request fails or has nothing in it. This is what
 # they do today, not what they should: all but the wild card read as "nothing to show"
@@ -33,12 +30,6 @@ QUIET = [
     ("get_golf_schedule", lambda: espn_api.get_golf_schedule("PGA"), []),
     ("get_world_cup_standings", lambda: espn_api.get_world_cup_standings("WC2026"), []),
     ("get_mlb_wildcard_standings", espn_api.get_mlb_wildcard_standings, {}),
-    ("get_player_statistics", lambda: espn_api.get_player_statistics("NBA"), NOTHING),
-    ("get_team_statistics", lambda: espn_api.get_team_statistics("NBA"), TEAM_NOTHING),
-    ("get_statistics", lambda: espn_api.get_statistics("NBA"), NOTHING),
-    ("get_venues_for_league", lambda: VenueService().get_venues_for_league("nfl"), {}),
-    ("get_team_schedule NBA", lambda: espn_api.get_team_schedule("NBA", "15", season=2027), []),
-    ("get_team_schedule scoreboard", lambda: espn_api.get_team_schedule("WNBA", "8", season=2026), []),
 ]
 
 
@@ -64,6 +55,31 @@ def test_an_empty_body_returns_the_empty_shape(espn, call, expected, reply):
     assert call() == expected
 
 
+@pytest.mark.parametrize("league,team,season", [
+    ("NFL", "9", 2026), ("NCAAF", "333", 2026), ("NBA", "15", 2027), ("NHL", "1", 2027), ("MLB", "10", 2026),
+    ("WNBA", "8", 2026), ("NCAAM", "275", 2027), ("NCAAWB", "275", 2027), ("NCAAH", "1", 2027), ("NCAAWH", "1", 2027),
+    ("EPL", "359", 2026),
+])
+class TestScheduleFailures:
+    """A schedule with a part missing looks complete, and one with everything missing looks
+    like an off-season, so a failure reaches the dialog. ESPN saying it has nothing doesn't."""
+
+    @pytest.mark.parametrize("reply", [HTTP_500, FakeResponse({}, status=503), FakeResponse({}, status=403),
+                                       FakeResponse({}, status=429), NOT_JSON],
+                             ids=["500", "503", "403", "429", "not_json"])
+    def test_a_failure_comes_out_and_the_service_wraps_it(self, espn, league, team, season, reply):
+        espn.on(".*", reply)
+        with pytest.raises(Exception):
+            espn_api.get_team_schedule(league, team, season=season)
+        with pytest.raises(ApiError):
+            ApiService.get_team_schedule(league, team, season=season)
+
+    @pytest.mark.parametrize("reply", [HTTP_404, FakeResponse({}, status=400), EMPTY_JSON], ids=["404", "400", "empty"])
+    def test_nothing_there_is_empty(self, espn, league, team, season, reply):
+        espn.on(".*", reply)
+        assert espn_api.get_team_schedule(league, team, season=season) == []
+
+
 class TestGetDraft:
     @pytest.mark.parametrize("reply", [TIMEOUT, HTTP_404, HTTP_500, NOT_JSON])
     def test_failure_is_none(self, espn, reply):
@@ -86,9 +102,11 @@ RAISING = [
     ("get_game_details", lambda: espn_api.get_game_details("NFL", "1"), lambda: ApiService.get_game_details("NFL", "1")),
     ("get_team_schedule NFL", lambda: espn_api.get_team_schedule("NFL", "9"), lambda: ApiService.get_team_schedule("NFL", "9")),
     ("get_team_schedule NCAAF", lambda: espn_api.get_team_schedule("NCAAF", "333"), lambda: ApiService.get_team_schedule("NCAAF", "333")),
+    ("get_team_schedule EPL", lambda: espn_api.get_team_schedule("EPL", "359"), lambda: ApiService.get_team_schedule("EPL", "359")),
+    ("get_team_schedule NBA", lambda: espn_api.get_team_schedule("NBA", "15"), lambda: ApiService.get_team_schedule("NBA", "15")),
+    ("get_team_schedule WNBA", lambda: espn_api.get_team_schedule("WNBA", "8"), lambda: ApiService.get_team_schedule("WNBA", "8")),
     ("get_standings NFL", lambda: espn_api.get_standings("NFL"), lambda: ApiService.get_standings("NFL")),
     ("get_standings soccer", lambda: espn_api.get_standings("EPL"), lambda: ApiService.get_standings("EPL")),
-    ("get_standings college", lambda: espn_api.get_standings("NCAAM"), lambda: ApiService.get_standings("NCAAM")),
 ]
 
 
@@ -105,18 +123,40 @@ class TestTimeoutsReachTheCaller:
             through_service()
 
 
+@pytest.mark.parametrize("reply", [TIMEOUT, requests.ConnectionError("refused"), HTTP_404, HTTP_500, NOT_JSON],
+                         ids=["timeout", "connection", "404", "500", "not_json"])
+def test_standings_with_no_fallback_say_a_failed_request_failed(espn, reply):
+    """Not as no data, and not with the text of a requests exception, through the service too."""
+    espn.on(".*", reply)
+    with pytest.raises(ApiError, match="Try again"):
+        espn_api.get_standings("NCAAM")
+    with pytest.raises(ApiError, match="Try again"):
+        ApiService.get_standings("NCAAM")
+
+
+@pytest.mark.parametrize("reply", [TIMEOUT, requests.ConnectionError("refused"), HTTP_404, HTTP_500, NOT_JSON, EMPTY_JSON],
+                         ids=["timeout", "connection", "404", "500", "not_json", "empty"])
+def test_statistics_say_a_failed_request_failed(espn, reply, monkeypatch):
+    """The Statistics dialog has a row for it, which says to try again."""
+    monkeypatch.setattr(espn_api.time, "sleep", lambda seconds: None)
+    espn.on(".*", reply)
+    for name in ("get_player_statistics", "get_team_statistics"):
+        with pytest.raises(ApiError, match="Try again"):
+            getattr(espn_api, name)("NBA")
+        with pytest.raises(ApiError, match="Try again"):
+            getattr(ApiService, name)("NBA")
+
+
 @pytest.mark.parametrize("call,expected", [
     (lambda: espn_api.get_scores("NBA"), []),
     (lambda: espn_api.get_news("NFL"), []),
     (lambda: espn_api.get_game_details("NFL", "1"), {}),
-    (lambda: espn_api.get_team_schedule("NFL", "9", season=2026), []),
-    (lambda: espn_api.get_team_schedule("NCAAF", "333", season=2026), []),
     (lambda: espn_api.get_standings("NFL"), []),
     (lambda: espn_api.get_standings("MLB"), []),
     (lambda: espn_api.get_standings("NHL"), []),
     (lambda: espn_api.get_standings("NBA"), []),
     (lambda: espn_api.get_live_golf_tournament("PGA"), None),
-], ids=["scores", "news", "details", "schedule_nfl", "schedule_ncaaf", "nfl", "mlb", "nhl", "nba", "live_golf"])
+], ids=["scores", "news", "details", "nfl", "mlb", "nhl", "nba", "live_golf"])
 class TestHttpErrorsOnTheOthers:
     @pytest.mark.parametrize("reply", [HTTP_404, HTTP_500], ids=["404", "500"])
     def test_are_empty(self, espn, call, expected, reply):
@@ -137,11 +177,6 @@ class TestHttpErrorsOnTheOthers:
 def test_an_empty_body_on_the_others_is_empty(espn, call, expected):
     espn.on(".*", EMPTY_JSON)
     assert call() == expected
-
-
-def test_hockey_details_with_an_empty_summary_say_where_the_plays_came_from(espn):
-    espn.on("/summary", EMPTY_JSON).on("www.espn.com", HTTP_404)
-    assert espn_api.get_game_details("NHL", "1") == {"playsSource": "site_summary"}
 
 
 def test_a_live_golf_timeout_reaches_the_live_scores_view_which_handles_it(espn):

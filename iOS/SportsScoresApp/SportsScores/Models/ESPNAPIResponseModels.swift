@@ -17,7 +17,8 @@ struct TeamStatRanking: Identifiable {
     let categoryDisplayName: String  // "ERA", "Home Runs"
     let teamValue: String            // "3.58"
     let leagueRank: Int             // numeric rank, used for color coding
-    let rankDisplay: String          // ESPN display string: "2nd", "Tied-9th"
+    let rankDisplay: String          // "2nd", "Tied-9th", or in college "118th of 302"
+    let leagueSize: Int?             // how many teams the rank is out of, when it's from a list the team is on
 }
 
 // MARK: - Core API Team Statistics Response
@@ -56,6 +57,8 @@ struct LeagueLeaderCategory: Identifiable {
     let leaders: [LeagueLeaderEntry]
     /// True when every entry represents a team rather than an individual player.
     let isTeamCategory: Bool
+    /// Which season the numbers are from, such as "2026-27 Regular Season", if it's known.
+    let seasonLabel: String?
 
     struct LeagueLeaderEntry: Identifiable {
         let id = UUID()
@@ -111,11 +114,19 @@ struct LeagueLeaderCategory: Identifiable {
         }
     }
 
-    init(name: String, displayName: String, leaders: [LeagueLeaderEntry], isTeamCategory: Bool = false) {
+    init(name: String, displayName: String, leaders: [LeagueLeaderEntry], isTeamCategory: Bool = false,
+         seasonLabel: String? = nil) {
         self.name = name
         self.displayName = displayName
         self.leaders = leaders
         self.isTeamCategory = isTeamCategory
+        self.seasonLabel = seasonLabel
+    }
+
+    /// The same list, cut to its first `limit` rows.
+    func keepingFirst(_ limit: Int) -> LeagueLeaderCategory {
+        LeagueLeaderCategory(name: name, displayName: displayName, leaders: Array(leaders.prefix(limit)),
+                             isTeamCategory: isTeamCategory, seasonLabel: seasonLabel)
     }
 
     /// The bare ESPN stat key, used to look up this category's definition.
@@ -162,6 +173,84 @@ struct CoreLeadersAPIResponse: Codable {
     }
 }
 
+/// A league's leaders from `site.web.api.espn.com/apis/site/v3/sports/{sport}/{league}/leaders`,
+/// with names and teams inside the response.
+struct SiteLeadersResponse: Decodable {
+    let requestedSeason: Season?
+    let leaders: Leaders?
+
+    struct Season: Decodable {
+        let displayName: String?
+        let type: SeasonType?
+
+        struct SeasonType: Decodable {
+            let type: Int?
+            let name: String?
+        }
+    }
+
+    struct Leaders: Decodable {
+        let categories: [Category]?
+
+        enum CodingKeys: String, CodingKey {
+            case categories
+        }
+
+        init(from decoder: Decoder) throws {
+            categories = try decoder.container(keyedBy: CodingKeys.self).lossyArray(forKey: .categories)
+        }
+    }
+
+    struct Category: Decodable {
+        let name: String?
+        let displayName: String?
+        let leaders: [Leader]?
+
+        enum CodingKeys: String, CodingKey {
+            case name, displayName, leaders
+        }
+
+        /// One null row shouldn't lose the league's whole list.
+        init(from decoder: Decoder) throws {
+            let container = try decoder.container(keyedBy: CodingKeys.self)
+            name = try? container.decodeIfPresent(String.self, forKey: .name)
+            displayName = try? container.decodeIfPresent(String.self, forKey: .displayName)
+            leaders = container.lossyArray(forKey: .leaders)
+        }
+    }
+
+    struct Leader: Decodable {
+        let displayValue: String?
+        let value: Double?
+        let athlete: Athlete?
+        let team: Team?
+
+        enum CodingKeys: String, CodingKey {
+            case displayValue, value, athlete, team
+        }
+
+        /// One odd field shouldn't lose the league's whole list.
+        init(from decoder: Decoder) throws {
+            let container = try decoder.container(keyedBy: CodingKeys.self)
+            displayValue = try? container.decodeIfPresent(String.self, forKey: .displayValue)
+            value = try? container.decodeIfPresent(Double.self, forKey: .value)
+            athlete = try? container.decodeIfPresent(Athlete.self, forKey: .athlete)
+            team = try? container.decodeIfPresent(Team.self, forKey: .team)
+        }
+    }
+
+    struct Athlete: Decodable {
+        let displayName: String?
+        let fullName: String?
+        let shortName: String?
+    }
+
+    struct Team: Decodable {
+        let abbreviation: String?
+        let displayName: String?
+    }
+}
+
 /// League-wide team statistics — every team's full stat line for the season.
 /// From `site.web.api.espn.com/apis/common/v3/sports/{sport}/{league}/statistics/byteam`.
 ///
@@ -175,6 +264,49 @@ struct TeamStatsByTeamResponse: Codable {
     /// Column metadata. ESPN repeats a category name once per split, and only
     /// the first copy is guaranteed to carry the `names` array.
     let categories: [CategoryMetadata]?
+    /// Only basketball has this. `count` can exceed the teams sent: ESPN sends 400 at most.
+    let pagination: Pagination?
+    /// Which season this really is, whatever was asked for. A past college football season is
+    /// type 3 even when asked for type 2.
+    let requestedSeason: RequestedSeason?
+    /// Not ESPN's: the ids on its team list, for a college basketball list with schools outside
+    /// Division I in it. See `LeagueTeamStats.divisionOneTeams`.
+    var divisionOneTeamIDs: Set<String>? = nil
+
+    /// "2026-27 Regular Season", the same words Windows uses. Asked for a past college football
+    /// season's regular season, ESPN answers with type 3, the numbers running through the bowl
+    /// games, so "Season" says what they are. Fewer teams than ESPN says it has, past the 800 that
+    /// two sorted requests can reach, says so rather than the list looking whole.
+    var seasonLabel: String? {
+        guard let season = requestedSeason else { return nil }
+        let type = season.type?.type == 3 ? "Season" : season.type?.name
+        let label = [season.displayName, type].compactMap { $0 }.joined(separator: " ")
+        guard !label.isEmpty else { return nil }
+        if let count = pagination?.count, count > (teams ?? []).count {
+            return "\(label), some teams missing"
+        }
+        return label
+    }
+
+    /// Whether the numbers are the regular season's, not the bowls as well.
+    var isRegularSeason: Bool {
+        requestedSeason?.type?.type == 2
+    }
+
+    struct Pagination: Codable {
+        let count: Int?
+    }
+
+    struct RequestedSeason: Codable {
+        let year: Int?
+        let displayName: String?
+        let type: SeasonType?
+
+        struct SeasonType: Codable {
+            let type: Int?
+            let name: String?
+        }
+    }
 
     struct CategoryMetadata: Codable {
         let name: String?
@@ -210,6 +342,44 @@ struct TeamStatsByTeamResponse: Codable {
             let values: [Double?]?
         }
     }
+}
+
+/// ESPN's own idea of a league's season now, from the core API's `/season`. On Windows this is
+/// espn_api.core_season, and the two follow the same rule.
+struct CoreSeasonResponse: Decodable {
+    let year: Int?
+    let type: SeasonType?
+
+    struct SeasonType: Decodable {
+        let type: Int?
+        /// "2026-10-20T07:00Z"
+        let startDate: String?
+    }
+
+    /// The year whose regular season to show. A season's playoffs and off-season come after its
+    /// regular season and are filed under its year, so only a preseason means the last one is the
+    /// latest. Nil if ESPN didn't say.
+    var latestRegularSeasonYear: Int? {
+        guard let year else { return nil }
+        return type?.type == 1 ? year - 1 : year
+    }
+
+    /// Whether a regular season began in the last few days. ESPN's type turns over before the
+    /// first game (college basketball at 07:00 UTC on Nov 1, its first game at 14:30), and until
+    /// there are games, some of its feeds answer 500 for the new season.
+    func regularSeasonJustBegan(now: Date = Date()) -> Bool {
+        guard type?.type == 2, let text = type?.startDate, let began = Self.startFormat.date(from: text) else { return false }
+        let seconds = now.timeIntervalSince(began)
+        return seconds >= 0 && seconds <= 3 * 24 * 60 * 60
+    }
+
+    private static let startFormat: DateFormatter = {
+        let format = DateFormatter()
+        format.locale = Locale(identifier: "en_US_POSIX")
+        format.timeZone = TimeZone(secondsFromGMT: 0)
+        format.dateFormat = "yyyy-MM-dd'T'HH:mmX"
+        return format
+    }()
 }
 
 struct CoreAthleteResponse: Codable {
@@ -333,6 +503,59 @@ struct RankingsAPIResponse: Codable {
 
 // MARK: - Scoreboard Response
 
+/// One event ESPN sent oddly costs that event, not the list. ESPN's own list for week 8
+/// of college football in 2025 has a literal {} in it, which used to lose the whole week.
+/// If most of the real entries can't be read, that's a change in the feed rather than a
+/// stray entry, and a short list would look normal, so it's still an error. `judgingAbove`
+/// is for a list short enough for that to mean nothing: a team schedule's postseason page
+/// can be one bowl game, and losing it isn't a reason to lose the season.
+enum LossyEvents {
+    private struct AnyKey: CodingKey {
+        var stringValue: String
+        var intValue: Int? { nil }
+        init?(stringValue: String) { self.stringValue = stringValue }
+        init?(intValue: Int) { nil }
+    }
+
+    /// An entry of `events`: its event if it can be read, and whether it was a blank {}.
+    private struct Row<Event: Decodable>: Decodable {
+        let event: Event?
+        let isBlank: Bool
+
+        init(from decoder: Decoder) throws {
+            event = try? Event(from: decoder)
+            isBlank = (try? decoder.container(keyedBy: AnyKey.self))?.allKeys.isEmpty ?? false
+        }
+    }
+
+    static func decode<Event: Decodable, Key: CodingKey>(from container: KeyedDecodingContainer<Key>,
+                                                         forKey key: Key,
+                                                         judgingAbove minimum: Int = 0) throws -> [Event] {
+        let rows = try container.decode([Row<Event>].self, forKey: key)
+        let events = rows.compactMap { $0.event }
+        let sent = rows.filter { !$0.isBlank }.count
+        if sent > minimum && (sent - events.count) * 2 > sent {
+            throw DecodingError.dataCorruptedError(forKey: key, in: container,
+                                                   debugDescription: "Only \(events.count) of \(sent) events could be read")
+        }
+        return events
+    }
+}
+
+extension ScoreboardResponse {
+    private enum CodingKeys: String, CodingKey {
+        case events, week, season, leagues
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        events = try LossyEvents.decode(from: container, forKey: .events)
+        week = try container.decodeIfPresent(APIWeek.self, forKey: .week)
+        season = try container.decodeIfPresent(APISeason.self, forKey: .season)
+        leagues = try container.decodeIfPresent([APILeague].self, forKey: .leagues)
+    }
+}
+
 struct ScoreboardResponse: Decodable {
     let events: [APIGame]
     /// Present for football sports — describes the current week.
@@ -391,15 +614,20 @@ struct ScoreboardResponse: Decodable {
 enum APIError: LocalizedError {
     case invalidURL
     case invalidResponse
+    /// Any status but 400 or 404, where `invalidResponse` is ESPN answering that it has
+    /// nothing there. Only team schedules tell them apart so far.
+    case unexpectedStatus(Int)
     case decodingError
     case networkError(Error)
-    
+
     var errorDescription: String? {
         switch self {
         case .invalidURL:
             return "Invalid URL"
         case .invalidResponse:
             return "Invalid response from server"
+        case .unexpectedStatus(let status):
+            return "The server answered with an error (\(status))"
         case .decodingError:
             return "Failed to decode response"
         case .networkError(let error):

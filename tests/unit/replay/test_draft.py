@@ -1,118 +1,133 @@
-"""The NFL draft, from the core API's own pieces, and the fantasy feed's failure paths."""
+"""The NFL draft, from the one request both apps make, and the fantasy feed's failure paths."""
 import pytest
 
 import espn_api
 
 from .support import HTTP_404, HTTP_500, TIMEOUT, load
 
-CORE = "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl"
-BUNDLE = load("draft_NFL_2026.json")
+URL = "https://site.api.espn.com/apis/site/v2/sports/football/nfl/draft?season=2026"
 
 
 @pytest.fixture
 def draft(espn):
-    """A real round: rounds, then each pick's athlete and college by their $ref URLs."""
-    espn.on(r"/seasons/2026/draft$", BUNDLE["draft"])
-    espn.on(r"/seasons/2026/draft/status", BUNDLE["status"])
-    espn.on(r"/seasons/2026/draft/rounds", BUNDLE["rounds"])
-    espn.on(r"/football/nfl/teams\?limit=50", {"sports": [{"leagues": [{"teams": [
-        {"team": {"id": "13", "abbreviation": "LV", "displayName": "Las Vegas Raiders"}},
-        {"team": {"id": "20", "abbreviation": "NYJ", "shortDisplayName": "Jets"}},
-    ]}]}]})
-    for url, athlete in BUNDLE["athletes"].items():
-        espn.on(url.replace("?", r"\?"), athlete)
-    for url, college in BUNDLE["colleges"].items():
-        espn.on(url.replace("?", r"\?"), college)
+    espn.on(r"/football/nfl/draft\?season=2026", load("draft_site_NFL_2026.json"))
     return espn
 
 
 class TestDraft:
-    def test_urls(self, draft):
+    def test_one_request(self, draft):
         espn_api.get_draft(2026)
-        assert draft.calls[:2] == [f"{CORE}/seasons/2026/draft", f"{CORE}/seasons/2026/draft/rounds"]
-        assert draft.calls[2].startswith("http://sports.core.api.espn.com/v2/sports/football/leagues/nfl/seasons/2026/draft/status")
+        espn_api.get_draft_round(2026, 1)
+        espn_api.get_draft_round(2026, 2)
+        assert draft.calls == [URL]
+
+    def test_it_is_asked_again_after_a_while_for_a_draft_in_progress(self, draft, monkeypatch):
+        espn_api.get_draft(2026)
+        later = espn_api.time.monotonic() + espn_api.DRAFT_CACHE_SECONDS + 1
+        monkeypatch.setattr(espn_api.time, "monotonic", lambda: later)
+        espn_api.get_draft(2026)
+        assert draft.calls == [URL, URL]
 
     def test_real_draft(self, draft):
-        assert espn_api.get_draft("2026") == {
-            "year": 2026, "num_rounds": 7, "status": "post",
-            "rounds": [{"number": 1, "display_name": "1st Round", "short_name": "1st"},
-                       {"number": 2, "display_name": "2nd Round", "short_name": "2nd"}],
-        }
+        result = espn_api.get_draft("2026")
+        assert (result["year"], result["num_rounds"], result["status"]) == (2026, 7, "post")
+        assert result["rounds"][0] == {"number": 1, "display_name": "1st Round", "short_name": "1st"}
+        assert result["rounds"][2] == {"number": 3, "display_name": "3rd Round", "short_name": "3rd"}
+        assert result["rounds"][6] == {"number": 7, "display_name": "7th Round", "short_name": "7th"}
 
-    def test_a_draft_in_progress(self, draft):
-        draft.on(r"/draft/status", {"type": {"state": "IN"}})
+    def test_a_draft_in_progress(self, espn):
+        data = load("draft_site_NFL_2026.json")
+        data["status"]["state"] = "IN"
+        espn.on("/draft", data)
         assert espn_api.get_draft(2026)["status"] == "in"
 
-    @pytest.mark.parametrize("reply", [HTTP_500, TIMEOUT])
-    def test_status_failing_assumes_finished(self, draft, reply):
-        draft.on(r"/draft/status", reply)
+    def test_no_status_assumes_finished(self, espn):
+        data = load("draft_site_NFL_2026.json")
+        del data["status"]
+        espn.on("/draft", data)
         assert espn_api.get_draft(2026)["status"] == "post"
 
-    def test_rounds_failing_numbers_them_from_the_count(self, draft):
-        draft.on(r"/draft/rounds", HTTP_500)
-        rounds = espn_api.get_draft(2026)["rounds"]
-        assert len(rounds) == 7
-        assert rounds[6] == {"number": 7, "display_name": "Round 7", "short_name": "7"}
+    def test_an_empty_body_is_not_a_finished_seven_round_draft(self, espn):
+        espn.on("/draft", {})
+        assert espn_api.get_draft(2026) is None
+
+    @pytest.mark.parametrize("reply", [HTTP_404, HTTP_500, TIMEOUT])
+    def test_failing_is_none_and_is_not_kept(self, espn, reply):
+        espn.on("/draft", reply)
+        assert espn_api.get_draft(2026) is None
+        espn.on("/draft", load("draft_site_NFL_2026.json"))
+        assert espn_api.get_draft(2026)["num_rounds"] == 7
+
+    def test_ordinals(self):
+        assert [espn_api._ordinal(n) for n in (1, 2, 3, 4, 11, 12, 13, 21, 22, 23)] == [
+            "1st", "2nd", "3rd", "4th", "11th", "12th", "13th", "21st", "22nd", "23rd"]
 
 
 class TestDraftRound:
-    def test_real_picks(self, draft):
-        first, second = espn_api.get_draft_round(2026, 1)
+    def test_real_picks_in_order(self, draft):
+        first, second, sixth = espn_api.get_draft_round(2026, 1)
         assert first == {
             "overall": 1, "pick": 1, "round": 1, "traded": False, "trade_note": "", "team_abbrev": "LV",
             "team_name": "Las Vegas Raiders", "player_name": "Fernando Mendoza", "position": "QB",
             "status_name": "SELECTION_MADE", "college": "Indiana",
         }
         assert (second["player_name"], second["position"], second["college"]) == ("David Bailey", "EDGE", "Texas Tech")
+        assert (sixth["overall"], sixth["traded"], sixth["trade_note"]) == (6, True, "From CLE")
 
-    def test_the_team_list_is_fetched_once(self, draft):
-        espn_api.get_draft_round(2026, 1)
-        espn_api.get_draft_round(2026, 1)
-        assert len(draft.urls(r"/football/nfl/teams")) == 1
-        assert espn_api._DRAFT_TEAM_CACHE["20"] == {"abbrev": "NYJ", "name": "Jets"}
+    def test_a_school_reads_as_its_name_not_its_short_name(self, draft):
+        pick = [pick for pick in espn_api.get_draft_round(2026, 3) if pick["overall"] == 84]
+        assert pick[0]["college"] == "Georgia State"
 
-    def test_a_short_display_name_is_used_when_there_is_no_display_name(self, draft):
-        assert espn_api.get_draft_round(2026, 1)[1]["team_name"] == "Jets"
+    def test_a_position_an_old_drafts_list_leaves_out(self, espn):
+        data = load("draft_site_NFL_2026.json")
+        data["picks"][0]["athlete"]["position"]["id"] = "91"
+        data["picks"][1]["athlete"]["position"]["id"] = "22"
+        data["picks"][4]["athlete"]["position"]["id"] = "99999"
+        espn.on("/draft", data)
+        by_overall = {pick["overall"]: pick for pick in espn_api.get_draft_round(2026, 1)}
+        assert by_overall[1]["position"] == "C"
+        assert by_overall[2]["position"] == "PK"
+        assert by_overall[6]["position"] == ""
+
+    def test_a_draft_yet_to_happen(self, espn):
+        """The real shape: its rounds and status, with no picks and no teams."""
+        espn.on("/draft", {"displayName": "2027 NFL Draft", "picks": [], "positions": [], "rounds": 7,
+                           "status": {"description": "Scheduled", "name": "SCHEDULED", "round": 1, "state": "pre"},
+                           "year": 2027})
+        draft = espn_api.get_draft(2026)
+        assert (draft["status"], draft["num_rounds"]) == ("pre", 7)
+        assert espn_api.get_draft_round(2026, 1) == []
+
+    def test_a_pick_on_the_clock_says_so(self, espn):
+        data = load("draft_site_NFL_2026.json")
+        del data["picks"][0]["athlete"]
+        data["picks"][0]["status"] = "ON_THE_CLOCK"
+        espn.on("/draft", data)
+        assert espn_api.get_draft_round(2026, 1)[0]["status_name"] == "ON_THE_CLOCK"
 
     def test_a_round_that_does_not_exist(self, draft):
         assert espn_api.get_draft_round(2026, 99) == []
 
     @pytest.mark.parametrize("reply", [HTTP_404, TIMEOUT])
-    def test_rounds_failing_is_empty(self, draft, reply):
-        draft.on(r"/draft/rounds", reply)
+    def test_failing_is_empty(self, espn, reply):
+        espn.on("/draft", reply)
         assert espn_api.get_draft_round(2026, 1) == []
 
-    @pytest.mark.parametrize("reply", [HTTP_500, TIMEOUT])
-    def test_teams_failing_keeps_the_picks_without_making_up_a_team(self, draft, reply):
-        draft.on(r"/football/nfl/teams", reply)
+    def test_a_team_missing_from_the_list_is_not_made_up(self, espn):
+        data = load("draft_site_NFL_2026.json")
+        data["teams"] = []
+        espn.on("/draft", data)
         first = espn_api.get_draft_round(2026, 1)[0]
         assert first["player_name"] == "Fernando Mendoza"
         assert (first["team_abbrev"], first["team_name"]) == ("?", "Unknown")
 
-    @pytest.mark.parametrize("reply", [HTTP_500, TIMEOUT])
-    def test_an_athlete_failing_leaves_the_name_blank(self, draft, reply):
-        draft.on(r"/draft/athletes/110770", reply)
-        picks = {p["overall"]: p for p in espn_api.get_draft_round(2026, 1)}
-        assert (picks[1]["player_name"], picks[1]["position"], picks[1]["college"]) == ("", "", "")
-        assert picks[2]["player_name"] == "David Bailey"
-
-    @pytest.mark.parametrize("reply", [HTTP_500, TIMEOUT])
-    def test_a_college_failing_leaves_it_blank(self, draft, reply):
-        draft.on(r"/colleges/84", reply)
-        picks = {p["overall"]: p for p in espn_api.get_draft_round(2026, 1)}
-        assert picks[1]["college"] == ""
-        assert picks[1]["player_name"] == "Fernando Mendoza"
-        assert picks[2]["college"] == "Texas Tech"
-
-    def test_a_pick_not_made_yet_has_no_athlete(self, draft):
-        rounds = load("draft_NFL_2026.json")["rounds"]
-        del rounds["items"][0]["picks"][0]["athlete"]
-        draft.on(r"/draft/rounds", rounds)
-        assert espn_api.get_draft_round(2026, 1)[0]["player_name"] == ""
-
-    def test_a_college_link_with_no_id_is_ignored(self, draft):
-        draft.on(r"/draft/athletes/110770", {"displayName": "A", "college": {"$ref": "http://x/nope"}})
-        assert espn_api.get_draft_round(2026, 1)[0]["college"] == ""
+    def test_a_pick_not_made_yet_has_no_athlete(self, espn):
+        data = load("draft_site_NFL_2026.json")
+        del data["picks"][0]["athlete"]
+        espn.on("/draft", data)
+        first = espn_api.get_draft_round(2026, 1)[0]
+        assert (first["player_name"], first["position"], first["college"]) == ("", "", "")
+        assert first["team_abbrev"] == "LV"
 
 
 class TestFantasyFailures:

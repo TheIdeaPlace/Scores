@@ -23,7 +23,8 @@ def isolated(monkeypatch, tmp_path):
     monkeypatch.setattr(settings, "_SETTINGS_DIR", tmp_path / "Scores")
     monkeypatch.setattr(settings, "_SETTINGS_FILE", tmp_path / "Scores" / "settings.json")
     monkeypatch.setattr(settings, "_cache", None)
-    monkeypatch.setattr(espn_api, "_DRAFT_TEAM_CACHE", {})
+    monkeypatch.setattr(espn_api, "_DRAFT_CACHE", {})
+    monkeypatch.setattr(espn_api, "_CORE_SEASON_CACHE", {})
     monkeypatch.setattr(football_calendar, "_WEEK_DATE_CACHE", {})
     monkeypatch.setattr(football_calendar, "_SEASON_WEEKS_CACHE", {})
 

@@ -10,7 +10,7 @@ from PyQt6.QtGui import QKeyEvent
 from PyQt6.QtWidgets import QApplication, QPushButton, QTabWidget, QVBoxLayout, QWidget
 
 import accessible_table
-from accessible_table import AccessibleTable, StandingsTable, prepare_table_tabs
+from accessible_table import AccessibleTable, RankingsTable, StandingsTable, prepare_table_tabs
 
 HEADERS = ["Player", "Pos", "PTS"]
 ROWS = [["A", "G", "10"], ["B", "F", "4"], ["C", "C"]]
@@ -86,6 +86,94 @@ def test_row_and_column_survive_a_round_trip(app):
     assert (table.table_widget.currentRow(), table.table_widget.currentColumn()) == (1, 2)
 
 
+VIEW_KEYS = {"table": Qt.Key.Key_T, "quick": Qt.Key.Key_Q, "full": Qt.Key.Key_F}
+SWITCHES = [("table", "quick"), ("quick", "full"), ("full", "table"), ("quick", "table")]
+
+
+def view_widget(table, name):
+    return {"table": table.table_widget, "quick": table.quick_list, "full": table.full_list}[name]
+
+
+def go_to_row(table, name, row):
+    """Move one view only, leaving the others on the row they were last left on."""
+    view = view_widget(table, name)
+    if name == "table":
+        view.setCurrentCell(row, 0)
+    else:
+        view.setCurrentRow(row)
+
+
+@pytest.mark.parametrize("source,target", SWITCHES)
+def test_a_view_has_its_row_before_it_is_shown(app, source, target):
+    """Showing a view moves focus to it, so a stale row there gets announced first."""
+    table = make_table(app)
+    table.handle_view_key(alt(VIEW_KEYS[source]))
+    go_to_row(table, source, 2)
+    assert view_widget(table, target).currentRow() == 0
+
+    seen = []
+    show = table.stacked_widget.setCurrentIndex
+    focus = table._set_focus_to_current_view
+
+    def spy_show(index):
+        seen.append(("shown", view_widget(table, target).currentRow()))
+        show(index)
+
+    def spy_focus():
+        seen.append(("focused", view_widget(table, target).currentRow()))
+        focus()
+
+    table.stacked_widget.setCurrentIndex = spy_show
+    table._set_focus_to_current_view = spy_focus
+    table.handle_view_key(alt(VIEW_KEYS[target]))
+    assert seen == [("shown", 2), ("focused", 2)]
+
+
+@pytest.mark.parametrize("source,target", SWITCHES)
+def test_a_views_row_is_on_screen_after_a_switch(app, source, target):
+    """The row is set while the view is hidden, so the scroll has to happen on show."""
+    table = AccessibleTable(accessible_name="T", accessible_description="D")
+    table.setup_columns(HEADERS)
+    table.populate_data([[f"P{i}", "G", str(i)] for i in range(200)], set_focus=False)
+    table.resize(400, 200)
+    table.show()
+    app.processEvents()
+    try:
+        table.handle_view_key(alt(VIEW_KEYS[source]))
+        app.processEvents()
+        go_to_row(table, source, 150)
+        table.handle_view_key(alt(VIEW_KEYS[target]))
+        app.processEvents()
+
+        view = view_widget(table, target)
+        assert view.currentRow() == 150
+        assert view.viewport().rect().contains(view.visualItemRect(view.currentItem()))
+    finally:
+        table.close()
+
+
+def test_holding_enter_activates_a_row_once(app):
+    """It may be a row the same press has just brought up, opening a list's table."""
+    table = make_table(app)
+    activated = []
+    table.table_widget.itemActivated.connect(activated.append)
+    held = QKeyEvent(QEvent.Type.KeyPress, Qt.Key.Key_Return, Qt.KeyboardModifier.NoModifier, "\r", True)
+    QApplication.sendEvent(table.table_widget, held)
+    assert activated == []
+
+
+def test_adopting_the_saved_view_keeps_the_row_and_takes_no_focus(app, view_setting):
+    table = make_table(app)
+    table.table_widget.setCurrentCell(2, 0)
+    focused = []
+    table.quick_list.setFocus = lambda: focused.append("quick")
+    view_setting["default_view_mode"] = table.VIEW_QUICK_LIST
+    table.adopt_saved_view()
+    assert table._current_view == table.VIEW_QUICK_LIST
+    assert table.quick_list.currentRow() == 2
+    assert focused == []
+
+
 def test_saved_view_used_by_a_new_table(app, view_setting):
     view_setting["default_view_mode"] = 2
     table = make_table(app)
@@ -152,6 +240,28 @@ def test_standings_rows_line_up_with_headers(app, league, expanded, headers):
         assert cells["OTL"] == "2" and cells["Pts"] == "20" and cells["PCT"] == "0.714"
     else:
         assert cells["Conf"] == "3-1"
+
+
+def cell_speech(table, row):
+    return [table.table_widget.item(row, col).data(Qt.ItemDataRole.AccessibleTextRole)
+            for col in range(table.columnCount())]
+
+
+def test_a_cell_says_whose_row_it_is_from_the_first_column(app):
+    assert cell_speech(make_table(app), 0) == ["Player, A", "A, Pos, G", "A, PTS, 10"]
+
+
+def test_a_standings_cell_says_the_team_rather_than_its_position(app):
+    table = StandingsTable(division_name="X", league="MLB")
+    table.populate_data([["1", "Yankees", "90", "60", "0.600", "-", "W2"]], set_focus=False)
+    speech = cell_speech(table, 0)
+    assert speech[:3] == ["Yankees, Pos, 1", "Team, Yankees", "Yankees, W, 90"]
+
+
+def test_a_ranking_cell_says_the_name_rather_than_the_rank(app):
+    table = RankingsTable(["Rank", "Team", "Value"])
+    table.populate_data([[1, "Celtics", "120"]], set_focus=False)
+    assert cell_speech(table, 0) == ["Celtics, Rank, 1", "Team, Celtics", "Celtics, Value, 120"]
 
 
 class TestButtonKeys:

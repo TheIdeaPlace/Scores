@@ -1,0 +1,154 @@
+{
+ "leaders": [
+  {
+   "team": {
+    "id": "13",
+    "abbreviation": "LAL",
+    "displayName": "Los Angeles Lakers"
+   },
+   "leaders": [
+    {
+     "name": "points",
+     "displayName": "Points",
+     "leaders": [
+      {
+       "displayValue": "45",
+       "value": 45.0,
+       "athlete": {
+        "id": "3945274",
+        "lastName": "Doncic",
+        "fullName": "Luka Doncic",
+        "displayName": "Luka Doncic",
+        "shortName": "L. Doncic"
+       },
+       "mainStat": {
+        "value": "45",
+        "label": "PTS"
+       },
+       "summary": "12/23 FG, 13/13 FT"
+      }
+     ]
+    },
+    {
+     "name": "assists",
+     "displayName": "Assists",
+     "leaders": [
+      {
+       "displayValue": "6",
+       "value": 6.0,
+       "athlete": {
+        "id": "3945274",
+        "lastName": "Doncic",
+        "fullName": "Luka Doncic",
+        "displayName": "Luka Doncic",
+        "shortName": "L. Doncic"
+       },
+       "mainStat": {
+        "value": "6",
+        "label": "AST"
+       },
+       "summary": "7 TO, 35 MIN"
+      }
+     ]
+    },
+    {
+     "name": "rebounds",
+     "displayName": "Rebounds",
+     "leaders": [
+      {
+       "displayValue": "15",
+       "value": 15.0,
+       "athlete": {
+        "id": "3945274",
+        "lastName": "Doncic",
+        "fullName": "Luka Doncic",
+        "displayName": "Luka Doncic",
+        "shortName": "L. Doncic"
+       },
+       "mainStat": {
+        "value": "15",
+        "label": "REB"
+       },
+       "summary": "15 DREB, 0 OREB"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "team": {
+    "id": "28",
+    "abbreviation": "TOR",
+    "displayName": "Toronto Raptors"
+   },
+   "leaders": [
+    {
+     "name": "points",
+     "displayName": "Points",
+     "leaders": [
+      {
+       "displayValue": "29",
+       "value": 29.0,
+       "athlete": {
+        "id": "4433134",
+        "lastName": "Barnes",
+        "fullName": "Scottie Barnes",
+        "displayName": "Scottie Barnes",
+        "shortName": "S. Barnes"
+       },
+       "mainStat": {
+        "value": "29",
+        "label": "PTS"
+       },
+       "summary": "11/20 FG, 7/13 FT"
+      }
+     ]
+    },
+    {
+     "name": "assists",
+     "displayName": "Assists",
+     "leaders": [
+      {
+       "displayValue": "7",
+       "value": 7.0,
+       "athlete": {
+        "id": "4395724",
+        "lastName": "Quickley",
+        "fullName": "Immanuel Quickley",
+        "displayName": "Immanuel Quickley",
+        "shortName": "I. Quickley"
+       },
+       "mainStat": {
+        "value": "7",
+        "label": "AST"
+       },
+       "summary": "1 TO, 33 MIN"
+      }
+     ]
+    },
+    {
+     "name": "rebounds",
+     "displayName": "Rebounds",
+     "leaders": [
+      {
+       "displayValue": "10",
+       "value": 10.0,
+       "athlete": {
+        "id": "4395625",
+        "lastName": "Barrett",
+        "fullName": "RJ Barrett",
+        "displayName": "RJ Barrett",
+        "shortName": "R. Barrett"
+       },
+       "mainStat": {
+        "value": "10",
+        "label": "REB"
+       },
+       "summary": "7 DREB, 3 OREB"
+      }
+     ]
+    }
+   ]
+  }
+ ]
+}

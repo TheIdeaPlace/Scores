@@ -1,7 +1,5 @@
 """Bugs the replay tests found and the fixes made for them. The ones not fixed yet
 are in test_known_gaps.py."""
-import io
-import sys
 from datetime import datetime
 
 import pytest
@@ -57,14 +55,12 @@ def test_white_sox_are_in_a_division_when_mlb_falls_back_to_team_records(espn):
     assert espn_api._parse_standings_from_teams_api(teams, "MLB")[0]["division"] == "AL Central"
 
 
-def test_nba_reads_the_list_shape_like_nfl_and_nhl(espn):
-    """statistics_NBA.json has no stats today. When ESPN adds them, in the list shape it
-    sends every other league, the NBA parser's .items() raised and lost them all."""
-    espn.on("/nba/statistics", load("statistics_NCAAM.json"))
-    result = espn_api.get_player_statistics("NBA")
-    expected = load("statistics_NCAAM.json")["stats"]["categories"][0]
-    assert result["player_stats"][0]["category"] == expected["displayName"]
-    assert result["player_stats"][0]["stats"][0]["player_name"] == expected["leaders"][0]["athlete"]["displayName"]
+def test_the_nba_has_player_leaders(espn):
+    """ESPN's /statistics has no leaders block for the NBA, so Windows never showed any."""
+    espn.on("/season$", load("season_NBA.json")).on("/leaders", load("leaders_v3_NBA.json"))
+    first = espn_api.get_player_statistics("NBA")["player_stats"][0]
+    assert first["category"] == "Points Per Game"
+    assert (first["stats"][0]["player_name"], first["stats"][0]["value"]) == ("Luka Doncic", "38.3")
 
 
 @pytest.mark.parametrize("key,value,expected", [
@@ -106,15 +102,6 @@ def test_the_game_details_injury_line_counts_players_not_teams():
 def test_team_info_with_no_team_in_the_body_is_empty_not_a_blank_team(espn):
     espn.on("/teams/9$", {})
     assert espn_api.get_team_info("NFL", "9") == {}
-
-
-def test_mlb_statistics_survive_a_console_that_cannot_print_emoji(espn, monkeypatch):
-    """With stdout redirected on Windows, print() encodes as cp1252. Emoji in the progress
-    lines raised UnicodeEncodeError, and every MLB leader was lost."""
-    console = io.TextIOWrapper(io.BytesIO(), encoding="cp1252")
-    monkeypatch.setattr(sys, "stdout", console)
-    espn.on("statsapi.mlb.com", load("mlb_leaders_homeRuns.json"))
-    assert len(espn_api.get_player_statistics("MLB")["player_stats"]) == 39
 
 
 def test_a_null_venue_name_does_not_lose_the_mlb_facts():

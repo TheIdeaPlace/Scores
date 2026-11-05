@@ -87,6 +87,9 @@ struct StatisticsView: View {
     private func categoryScrollList(_ categories: [LeagueLeaderCategory]) -> some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 24) {
+                if let season = categories.first?.seasonLabel {
+                    SeasonLabel(text: season)
+                }
                 ForEach(categories) { category in
                     VStack(alignment: .leading, spacing: 0) {
                         LeaderCategorySection(category: category, viewMode: viewMode, sport: sport)
@@ -140,6 +143,22 @@ struct StatisticsView: View {
     }
 }
 
+// MARK: - Which season
+
+/// Says which season a list's numbers are from: the only way to know it's last season's.
+struct SeasonLabel: View {
+    let text: String
+
+    var body: some View {
+        Text(text)
+            .font(.subheadline)
+            .foregroundColor(.secondary)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            // So moving by headings doesn't skip the only sign that it's last season's.
+            .accessibilityAddTraits(.isHeader)
+    }
+}
+
 // MARK: - Shared category section view
 
 /// Renders a single stat category (header + leader rows) in the current view mode.
@@ -170,9 +189,11 @@ struct LeaderCategorySection: View {
 
     /// What VoiceOver reads for the leading column. Team rows show an
     /// abbreviation on screen but speak the name the user asked for in
-    /// Settings; player rows speak the name as written.
+    /// Settings; player rows speak the name as written. A name that didn't load shows a dash,
+    /// which isn't something to say out loud.
     private func spokenName(_ entry: LeagueLeaderCategory.LeagueLeaderEntry) -> String {
-        entry.teamNames?.voiceOverName(for: appSettings.teamNamePreference) ?? entry.athleteName
+        let name = entry.teamNames?.voiceOverName(for: appSettings.teamNamePreference) ?? entry.athleteName
+        return name == "—" ? "name unavailable" : name
     }
 
     var body: some View {
@@ -338,7 +359,7 @@ struct LeaderCategorySection: View {
                 HStack {
                     Text("#\(entry.rank)")
                         .font(.caption.bold()).foregroundColor(.secondary)
-                        .monospacedDigit().frame(width: 36, alignment: .trailing)
+                        .monospacedDigit().frame(width: 44, alignment: .trailing)
                     Text(entry.athleteName)
                         .font(.subheadline)
                     if hasTeams {
@@ -372,7 +393,7 @@ struct LeaderCategorySection: View {
                 HStack {
                     Text("#\(entry.rank)")
                         .font(.caption.bold()).foregroundColor(.secondary)
-                        .monospacedDigit().frame(width: 36, alignment: .trailing)
+                        .monospacedDigit().frame(width: 44, alignment: .trailing)
                     Text(entry.athleteName)
                         .font(.subheadline)
                     if hasTeams {

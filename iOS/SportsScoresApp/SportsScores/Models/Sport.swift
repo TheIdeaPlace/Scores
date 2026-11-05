@@ -153,8 +153,7 @@ enum Sport: String, CaseIterable, Identifiable, Codable {
     var usesCFLSource: Bool { self == .cfl }
 
     /// True where the standings screen offers a Divisions / Wild Card toggle.
-    /// MLB only — it is the sport whose wild card race MLB publishes officially,
-    /// via `MLBStatsAPIService`.
+    /// MLB only: ESPN's standings have its wild card race, with `type=1`, as on Windows.
     var hasWildCardStandings: Bool { self == .mlb }
 
     /// True for World Cup hub cases.
@@ -200,6 +199,15 @@ enum Sport: String, CaseIterable, Identifiable, Codable {
     var usesNextYearFormat: Bool {
         switch self {
         case .nba, .nhl, .ncaam, .ncaawb, .ncaah, .ncaawh: return true
+        default: return false
+        }
+    }
+
+    /// True for the leagues with ESPN's `/leaders`, with its qualifying minimums, which Windows
+    /// reads too (LEADER_LEAGUES in espn_api.py). It's a 404 for college hockey and soccer.
+    var hasSiteLeaders: Bool {
+        switch self {
+        case .nfl, .ncaaf, .nba, .wnba, .ncaam, .ncaawb, .nhl, .mlb: return true
         default: return false
         }
     }
@@ -362,7 +370,8 @@ enum NCAAFCoverage: String, CaseIterable, Identifiable {
 
     var id: String { rawValue }
 
-    /// The value to send as ESPN's `groups=` scoreboard parameter.
+    /// The value to send as ESPN's `groups=` scoreboard parameter, and as `group=` to
+    /// standings. Each ignores the other's spelling.
     var espnGroupsID: String {
         switch self {
         case .fbs:          return "80"
@@ -388,9 +397,9 @@ enum NCAAFCoverage: String, CaseIterable, Identifiable {
     var settingsDescription: String {
         switch self {
         case .fbs:
-            return "Football Bowl Subdivision only — the roughly 100 games a week most college football coverage means."
+            return "Football Bowl Subdivision only — the roughly 100 games a week most college football coverage means. Standings and team lists show the same teams."
         case .allDivisionI:
-            return "FBS and FCS together — around 200 games a week, and the only way to see most of opening weekend, which is largely FCS."
+            return "FBS and FCS together — around 200 games a week, and the only way to see most of opening weekend, which is largely FCS. Standings and team lists show the same teams."
         }
     }
 }

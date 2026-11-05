@@ -2,6 +2,7 @@
 and no network. Settings go to a temp folder: see the isolated fixture in conftest.py.
 """
 import json
+import re
 from datetime import date, datetime
 
 import pytest
@@ -16,10 +17,18 @@ from models.news import NewsData
 from models.standings import StandingsData
 from services import football_calendar, updater
 from services.api_service import ApiService
-from services.venue_service import VenueService
+from services.venue_service import VenueService, venue_summary
 from text_utils import ESPNTextProcessor, text_processor
 
-from .support import FakeResponse, HTTP_404, HTTP_500, TIMEOUT, load
+from .support import FakeResponse, HTTP_404, HTTP_500, NOT_JSON, TIMEOUT, load
+
+
+def test_team_news_is_as_long_as_the_iphones():
+    import inspect
+
+    from services.api_service import ApiService
+    assert inspect.signature(ApiService.get_team_news).parameters["limit"].default == 25
+    assert inspect.signature(ApiService.get_news).parameters["limit"].default == 25
 
 
 class TestApiService:
@@ -35,7 +44,6 @@ class TestApiService:
         ("get_game_details", "get_game_details", ("NFL", "1")),
         ("extract_meaningful_game_info", "extract_meaningful_game_info", ({},)),
         ("format_complex_data", "format_complex_data", ("news", [])),
-        ("get_statistics", "get_statistics", ("NFL",)),
         ("get_player_statistics", "get_player_statistics", ("NFL",)),
         ("get_team_statistics", "get_team_statistics", ("NFL",)),
         ("get_rankings", "get_rankings", ("NCAAF",)),
@@ -66,6 +74,10 @@ class TestApiService:
             getattr(ApiService, method)(*args)
         assert isinstance(info.value.__cause__, ValueError)
 
+    def test_the_schedule_and_its_season_are_passed_along_and_failures_wrapped(self, espn, monkeypatch):
+        monkeypatch.setattr(espn_api, "get_team_schedule_and_season", lambda *a, **k: ([a], k["season"]))
+        assert ApiService.get_team_schedule_and_season("NFL", "9", season=2025) == ([("NFL", "9")], 2025)
+
     def test_defaults_it_fills_in(self, monkeypatch):
         seen = []
         monkeypatch.setattr(espn_api, "get_news", lambda *a: seen.append(a))
@@ -73,108 +85,419 @@ class TestApiService:
         monkeypatch.setattr(espn_api, "get_mlb_wildcard_standings", lambda: None)
         ApiService.get_news("NFL")
         ApiService.get_team_schedule("NFL", "9")
-        assert seen == [("NFL", 20), ("NFL", "9", 30, 30, None)]
+        assert seen == [("NFL", 25), ("NFL", "9", 30, 30, None)]
         assert ApiService.get_mlb_wildcard_standings() == {}
 
 
 class TestVenueService:
-    def board(self):
-        return load("scoreboard_NWSL.json")
+    """The month chosen, and what it makes of real scoreboards."""
 
-    def test_urls_are_months_not_a_range(self, espn, freeze_now):
-        freeze_now(datetime(2026, 10, 15, 12))
+    NFL = "scoreboard_NFL_202611.json"
+    NBA = "scoreboard_NBA_202611.json"
+    NCAAH = "scoreboard_NCAAH_202611.json"
+
+    @staticmethod
+    def named(venues, name):
+        return next(venue for venue in venues.values() if venue["name"] == name)
+
+    @staticmethod
+    def months(espn):
+        return [re.search(r"dates=(\d+)", url).group(1) for url in espn.calls]
+
+    @pytest.mark.parametrize("today,league,months", [
+        # November, with most leagues in season.
+        ((2026, 11, 4), "mlb", ["202609", "202608", "202607"]),
+        ((2026, 11, 4), "nfl", ["202611", "202609", "202512"]),
+        ((2026, 11, 4), "nba", ["202611", "202603", "202601"]),
+        ((2026, 11, 4), "nhl", ["202611", "202603", "202601"]),
+        ((2026, 11, 4), "wnba", ["202606", "202506", "202406"]),
+        ((2026, 11, 4), "ncaaf", ["202611", "202610", "202511"]),
+        # College basketball and hockey look ahead to conference play.
+        ((2026, 11, 4), "ncaam", ["202702", "202602", "202502"]),
+        ((2026, 11, 4), "ncaawb", ["202702", "202602", "202502"]),
+        ((2026, 11, 4), "ncaah", ["202702", "202602", "202502"]),
+        ((2026, 11, 4), "ncaawh", ["202701", "202601", "202501"]),
+        # July, with most of them out of season.
+        ((2026, 7, 15), "mlb", ["202607", "202606", "202605"]),
+        ((2026, 7, 15), "nfl", ["202512", "202511", "202509"]),
+        ((2026, 7, 15), "nba", ["202603", "202601", "202511"]),
+        ((2026, 7, 15), "nhl", ["202603", "202601", "202512"]),
+        ((2026, 7, 15), "wnba", ["202606", "202506", "202406"]),
+        ((2026, 7, 15), "ncaaf", ["202511", "202510", "202411"]),
+        ((2026, 7, 15), "ncaam", ["202602", "202502", "202402"]),
+        ((2026, 7, 15), "ncaawb", ["202602", "202502", "202402"]),
+        ((2026, 7, 15), "ncaah", ["202602", "202502", "202402"]),
+        ((2026, 7, 15), "ncaawh", ["202601", "202501", "202401"]),
+        # NBA preseason arenas in October, so it's last season's March.
+        ((2026, 10, 15), "nba", ["202603", "202601", "202511"]),
+        # MLB's October is only the playoff teams.
+        ((2026, 10, 15), "mlb", ["202609", "202608", "202607"]),
+        # Off-season across a new year.
+        ((2026, 2, 1), "mlb", ["202509", "202508", "202507"]),
+        # Basketball in the fall and winter. ESPN answers a past November with no games
+        # (dates=202511, November 2026), so that isn't asked for in December or ever.
+        ((2026, 10, 15), "ncaam", ["202602", "202502", "202402"]),
+        ((2026, 12, 15), "ncaam", ["202702", "202602", "202502"]),
+        ((2027, 1, 15), "ncaam", ["202702", "202602", "202502"]),
+        ((2027, 2, 15), "ncaam", ["202702", "202602", "202502"]),
+        ((2027, 3, 15), "ncaam", ["202702", "202602", "202502"]),
+        # Hockey's first month is ahead of the season, and in January it's this one.
+        ((2026, 10, 15), "ncaawh", ["202701", "202601", "202501"]),
+        ((2027, 1, 15), "ncaawh", ["202701", "202601", "202501"]),
+    ])
+    def test_months_it_tries_when_each_comes_back_empty(self, espn, freeze_now, today, league, months):
+        freeze_now(datetime(*today, 12))
         espn.on("/scoreboard", {"events": []})
-        VenueService().get_venues_for_league("nfl")
-        assert espn.calls == [f"{espn_api.BASE_URL}/football/nfl/scoreboard?dates={m}&limit=100"
-                              for m in ("202608", "202609", "202610", "202611")]
+        assert VenueService().get_venues_for_league(league) == {}
+        assert self.months(espn) == months
 
-    def test_venues_from_a_real_board(self, espn):
-        board = self.board()
-        espn.on("/scoreboard", board).on("/teams$", load("teams_NFL.json"))
-        venues = VenueService().get_venues_for_league("nfl")
-        raw = board["events"][0]["competitions"][0]["venue"]
-        venue = venues[raw["id"]]
-        assert venue["name"] == raw["fullName"]
-        assert venue["city"] == raw["address"]["city"]
-        assert venue["indoor"] == raw.get("indoor", False)
-        assert venue["home_teams"] == []
+    def test_a_college_month_ahead_with_nothing_yet_uses_last_season(self, espn, freeze_now):
+        freeze_now(datetime(2026, 11, 4, 12))
+        board = load("scoreboard_NCAAH_202602.json")
+        espn.on("/scoreboard", lambda url: {"events": []} if "dates=202702" in url else board)
+        assert VenueService().get_venues_for_league("ncaah")
+        assert self.months(espn) == ["202702", "202602"]
 
-    def test_a_team_with_this_venue_is_its_home_team(self, espn):
-        board = self.board()
-        venue_id = board["events"][0]["competitions"][0]["venue"]["id"]
-        espn.on("/scoreboard", board)
-        espn.on("/teams$", {"sports": [{"leagues": [{"teams": [
-            {"team": {"id": "9", "displayName": "Packers", "shortDisplayName": "GB", "abbreviation": "GB", "venue": {"id": venue_id}}},
-            {"team": {"id": "1", "displayName": "Elsewhere", "venue": {"id": "nowhere"}}},
-        ]}]}]})
+    @pytest.mark.parametrize("league,path,query,fixture", [
+        ("mlb", "baseball/mlb", "limit=1000", "scoreboard_MLB_202606.json"),
+        ("nfl", "football/nfl", "limit=1000", NFL),
+        ("nba", "basketball/nba", "limit=1000", NBA),
+        ("nhl", "hockey/nhl", "limit=1000", "scoreboard_NHL_202612.json"),
+        ("wnba", "basketball/wnba", "limit=1000", "scoreboard_WNBA_202608.json"),
+        ("ncaaf", "football/college-football", "groups=90&limit=400", NFL),
+        ("ncaam", "basketball/mens-college-basketball", "groups=50&limit=1000", "scoreboard_NCAAM_202611.json"),
+        ("ncaawb", "basketball/womens-college-basketball", "groups=50&limit=1000", "scoreboard_NCAAWB_202611.json"),
+        ("ncaah", "hockey/mens-college-hockey", "limit=1000", NCAAH),
+        ("ncaawh", "hockey/womens-college-hockey", "limit=1000", NCAAH),
+    ])
+    def test_every_league_asks_for_one_whole_month(self, espn, league, path, query, fixture):
+        espn.on("/scoreboard", load(fixture))
+        assert VenueService().get_venues_for_league(league)
+        assert len(espn.calls) == 1
+        assert espn.calls[0].startswith(f"{espn_api.BASE_URL}/{path}/scoreboard?dates=")
+        assert espn.calls[0].endswith(f"&{query}")
+
+    def test_college_football_follows_the_coverage_setting(self, espn):
+        espn.on("/scoreboard", load(self.NFL))
         service = VenueService()
-        teams = service.get_venues_for_league("nfl")[venue_id]["home_teams"]
-        assert teams == [{"name": "Packers", "short_name": "GB", "abbreviation": "GB", "id": "9"}]
+        settings.set("ncaaf_coverage", "fbs")
+        service.get_venues_for_league("ncaaf")
+        assert "groups=80" in espn.calls[-1]
+        settings.set("ncaaf_coverage", "all_d1")
+        service.get_venues_for_league("ncaaf")
+        assert "groups=90" in espn.calls[-1]
+
+    def test_a_venue_from_a_real_board(self, espn):
+        espn.on("/scoreboard", load(self.NBA))
+        venue = self.named(VenueService().get_venues_for_league("nba"), "Barclays Center")
+        assert (venue["city"], venue["state"], venue["location"]) == ("Brooklyn", "NY", "Brooklyn, NY")
+        assert venue["indoor"] is True
+        assert [(t["id"], t["name"], t["abbreviation"]) for t in venue["home_teams"]] == [("17", "Brooklyn Nets", "BKN")]
+
+    def test_two_teams_can_share_a_venue(self, espn):
+        espn.on("/scoreboard", load(self.NFL))
+        metlife = self.named(VenueService().get_venues_for_league("nfl"), "MetLife Stadium")
+        assert [t["name"] for t in metlife["home_teams"]] == ["New York Giants", "New York Jets"]
+
+    def test_a_team_at_home_twice_is_listed_once(self, espn):
+        board = load(self.NFL)
+        board["events"] = board["events"] + board["events"]
+        espn.on("/scoreboard", board)
+        metlife = self.named(VenueService().get_venues_for_league("nfl"), "MetLife Stadium")
+        assert len(metlife["home_teams"]) == 2
+
+    @pytest.mark.parametrize("fixture,league,neutral,team", [
+        (NFL, "nfl", "Santiago Bernab\u00e9u", "Atlanta Falcons"),
+        (NBA, "nba", "Arena CDMX", "Indiana Pacers"),
+        (NCAAH, "ncaah", "SSE Arena (NIR)", "Providence Friars"),
+    ])
+    def test_a_neutral_site_is_nobodys_home(self, espn, fixture, league, neutral, team):
+        """ESPN still calls one of the teams home in these."""
+        board = load(fixture)
+        marked = [e["competitions"][0] for e in board["events"] if e["competitions"][0].get("neutralSite")]
+        assert [comp["venue"]["fullName"] for comp in marked] == [neutral]
+        espn.on("/scoreboard", board)
+        venues = VenueService().get_venues_for_league(league)
+        assert venues
+        assert neutral not in {v["name"] for v in venues.values()}
+        assert team not in {t["name"] for v in venues.values() for t in v["home_teams"]}
+
+    def test_a_neutral_game_at_someones_home_adds_no_team(self, espn):
+        board = load(self.NFL)
+        comps = [e["competitions"][0] for e in board["events"]]
+        madrid = next(comp for comp in comps if comp.get("neutralSite"))
+        madrid["venue"] = next(comp for comp in comps if comp["venue"]["fullName"] == "Lambeau Field")["venue"]
+        espn.on("/scoreboard", board)
+        field = self.named(VenueService().get_venues_for_league("nfl"), "Lambeau Field")
+        assert [t["name"] for t in field["home_teams"]] == ["Green Bay Packers"]
+
+    def test_a_one_off_is_not_a_home(self, espn):
+        """ESPN doesn't mark this neutral. The Mammoth played 1 game at Rice-Eccles Stadium
+        in December 2026, a football stadium, and 5 at Delta Center. It read as a second
+        home, [Outdoor], with 33 NHL venues for 32 teams."""
+        board = load("scoreboard_NHL_202612.json")
+        assert not any(e["competitions"][0].get("neutralSite") for e in board["events"])
+        espn.on("/scoreboard", board)
+        venues = VenueService().get_venues_for_league("nhl")
+        assert [v["name"] for v in venues.values()] == ["Delta Center"]
+
+    def test_a_wnba_one_off_is_not_a_home(self, espn):
+        """TD Garden read as the Connecticut Sun's home."""
+        espn.on("/scoreboard", load("scoreboard_WNBA_202608.json"))
+        venues = VenueService().get_venues_for_league("wnba")
+        assert [v["name"] for v in venues.values()] == ["Mohegan Sun Arena"]
+
+    def test_a_one_off_leaves_the_venue_to_the_team_whose_home_it_is(self, espn):
+        """Bright-Landry read as shared by Harvard and Providence. It's Harvard's."""
+        espn.on("/scoreboard", load("scoreboard_NCAAH_202602.json"))
+        venues = VenueService().get_venues_for_league("ncaah")
+        assert [t["name"] for t in self.named(venues, "Bright-Landry Hockey Center")["home_teams"]] == ["Harvard Crimson"]
+        assert [t["name"] for t in self.named(venues, "Schneider Arena")["home_teams"]] == ["Providence Friars"]
+
+    def test_two_real_homes_both_stay(self, espn):
+        """The Athletics played 9 in Sacramento and 6 in Las Vegas in June 2026."""
+        board = load("scoreboard_MLB_202606.json")
+        by_venue = {e["competitions"][0]["venue"]["fullName"]: e for e in board["events"]}
+        board["events"] = [by_venue["Sutter Health Park"]] * 9 + [by_venue["Las Vegas Ballpark"]] * 6
+        espn.on("/scoreboard", board)
+        venues = VenueService().get_venues_for_league("mlb")
+        assert {v["name"] for v in venues.values()} == {"Sutter Health Park", "Las Vegas Ballpark"}
+
+    def test_the_fixture_as_saved_keeps_both_athletics_parks(self, espn):
+        espn.on("/scoreboard", load("scoreboard_MLB_202606.json"))
+        assert len(VenueService().get_venues_for_league("mlb")) == 2
+
+    @pytest.mark.parametrize("first,second,both", [(2, 1, True), (3, 1, False), (5, 2, False), (4, 2, True), (1, 1, True)])
+    def test_how_far_below_the_most_used_is_a_one_off(self, espn, first, second, both):
+        board = load("scoreboard_NHL_202612.json")
+        delta, rice = board["events"][0], board["events"][-1]
+        board["events"] = [delta] * first + [rice] * second
+        espn.on("/scoreboard", board)
+        assert len(VenueService().get_venues_for_league("nhl")) == (2 if both else 1)
+
+    def test_a_shared_venue_is_not_a_one_off_for_either_team(self, espn):
+        """The counts are per team, so the Jets' games don't make the Giants' fewer."""
+        board = load(self.NFL)
+        jets = next(e for e in board["events"] if e["competitions"][0]["venue"]["fullName"] == "MetLife Stadium")
+        board["events"] = board["events"] + [jets] * 5
+        espn.on("/scoreboard", board)
+        metlife = self.named(VenueService().get_venues_for_league("nfl"), "MetLife Stadium")
+        assert len(metlife["home_teams"]) == 2
+
+    def test_a_preseason_game_makes_no_home(self, espn):
+        board = load("scoreboard_WNBA_202605.json")
+        seasons = {e["competitions"][0]["venue"]["fullName"]: e["season"]["type"] for e in board["events"]}
+        assert seasons == {"Target Center": 1, "Barclays Center": 2}
+        espn.on("/scoreboard", board)
+        assert [v["name"] for v in VenueService().get_venues_for_league("wnba").values()] == ["Barclays Center"]
+
+    @pytest.mark.parametrize("league,fixture,host", [
+        ("ncaam", "scoreboard_NCAAM_202611.json", "Chicago Maroons"),
+        ("ncaam", "scoreboard_NCAAM_202611.json", "Misericordia Cougars"),
+        ("ncaawb", "scoreboard_NCAAWB_202611.json", "Catawba Indians"),
+    ])
+    def test_a_division_one_visit_to_a_lower_division_host_makes_no_home(self, espn, league, fixture, host):
+        """groups=50 keeps the game for the visitor."""
+        board = load(fixture)
+        hosts = [next(c for c in e["competitions"][0]["competitors"] if c["homeAway"] == "home")["team"] for e in board["events"]]
+        assert any(t["displayName"] == host and not t.get("conferenceId") for t in hosts)
+        espn.on("/scoreboard", board)
+        venues = VenueService().get_venues_for_league(league)
+        assert [v["name"] for v in venues.values()] == ["Kohl Center"]
+
+    @pytest.mark.parametrize("fixture,league", [
+        ("scoreboard_NHL_202612.json", "nhl"), (NCAAH, "ncaah"), ("scoreboard_WNBA_202608.json", "wnba"),
+    ])
+    def test_only_college_basketball_needs_a_conference(self, espn, fixture, league):
+        """ESPN gives no team a conferenceId in these."""
+        espn.on("/scoreboard", load(fixture))
+        assert VenueService().get_venues_for_league(league)
 
     def test_the_result_is_cached(self, espn):
-        espn.on("/scoreboard", self.board()).on("/teams$", {"sports": []})
+        espn.on("/scoreboard", load(self.NFL))
         service = VenueService()
         first = service.get_venues_for_league("nfl")
         count = len(espn.calls)
         assert service.get_venues_for_league("nfl") is first
         assert len(espn.calls) == count
 
-    def test_a_failure_is_not_cached(self, espn):
-        espn.on("/scoreboard", TIMEOUT)
+    @pytest.mark.parametrize("reply", [HTTP_500, HTTP_404, NOT_JSON], ids=["500", "404", "not_json"])
+    def test_every_month_failing_is_an_error_not_no_venues(self, espn, reply):
+        espn.on("/scoreboard", reply)
         service = VenueService()
-        assert service.get_venues_for_league("nfl") == {}
+        with pytest.raises(ApiError, match="did not answer"):
+            service.get_venues_for_league("nfl")
+        assert len(espn.calls) == 3
         assert service.venue_cache == {}
 
-    def test_a_failed_month_keeps_the_others(self, espn, freeze_now):
-        freeze_now(datetime(2026, 10, 15, 12))
-        espn.on("/scoreboard", lambda url: self.board() if "202610" in url else HTTP_500)
-        espn.on("/teams$", TIMEOUT)
-        assert VenueService().get_venues_for_league("nfl")
+    @pytest.mark.parametrize("reply", [TIMEOUT, requests.ConnectionError("refused")], ids=["timeout", "connection"])
+    def test_no_network_stops_at_the_first_month(self, espn, reply):
+        """An older month won't answer either, and three could take a minute and a half."""
+        espn.on("/scoreboard", reply)
+        service = VenueService()
+        with pytest.raises(ApiError, match="did not answer"):
+            service.get_venues_for_league("nfl")
+        assert len(espn.calls) == 1
+        assert service.venue_cache == {}
+
+    @pytest.mark.parametrize("body", [{}, {"events": []}, {"events": None}, []], ids=["empty", "no_events", "null", "a_list"])
+    def test_nothing_in_the_answer_is_no_venues(self, espn, body):
+        espn.on("/scoreboard", body)
+        assert VenueService().get_venues_for_league("nfl") == {}
+
+    def test_a_server_error_does_not_lose_the_league(self, espn, freeze_now):
+        freeze_now(datetime(2026, 11, 4, 12))
+        board = load(self.NFL)
+        espn.on("/scoreboard", lambda url: HTTP_500 if "dates=202611" in url else board)
+        service = VenueService()
+        assert service.get_venues_for_league("nfl")
+        assert self.months(espn) == ["202611", "202609"]
+        # Opening it again gives the month it missed another chance.
+        espn.calls.clear()
+        service.get_venues_for_league("nfl")
+        assert self.months(espn) == ["202611", "202609"]
+
+    def test_a_failed_month_and_empty_ones_is_still_an_error(self, espn, freeze_now):
+        """Nothing came back, and the month that could have had it didn't answer."""
+        freeze_now(datetime(2026, 11, 4, 12))
+        espn.on("/scoreboard", lambda url: HTTP_500 if "dates=202611" in url else {"events": []})
+        with pytest.raises(ApiError):
+            VenueService().get_venues_for_league("nfl")
+
+    def test_an_empty_month_falls_back_to_the_one_before_and_is_cached(self, espn, freeze_now):
+        freeze_now(datetime(2026, 11, 4, 12))
+        board = load(self.NBA)
+        espn.on("/scoreboard", lambda url: {"events": []} if "dates=202611" in url else board)
+        service = VenueService()
+        assert service.get_venues_for_league("nba")
+        assert self.months(espn) == ["202611", "202603"]
+        assert service.venue_cache
 
     def test_unknown_league(self, espn):
         assert VenueService().get_venues_for_league("cricket") == {}
         assert espn.calls == []
 
-    def test_unknown_league_finds_no_home_teams(self, espn):
-        venues = {"1": {"home_teams": []}}
-        VenueService()._find_home_teams(venues, "cricket")
-        assert venues == {"1": {"home_teams": []}} and espn.calls == []
+    def test_details_ask_for_nothing(self, espn):
+        espn.on("/scoreboard", load(self.NBA))
+        service = VenueService()
+        venue = self.named(service.get_venues_for_league("nba"), "Chase Center")
+        espn.calls.clear()
+        details = service.venue_details(venue, "nba")
+        assert espn.calls == []
+        assert details["basic_info"] == {"name": "Chase Center", "location": "San Francisco, CA", "league": "NBA"}
+        assert details["characteristics"] == {"indoor": True}
+        assert [t["name"] for t in details["home_teams"]] == ["Golden State Warriors"]
+        assert details["interesting_facts"] == [
+            "Indoor venue", "National Basketball Association venue", "Located in San Francisco, CA",
+            "Home of the Golden State Warriors"]
 
-    def test_details(self, espn):
-        board = self.board()
-        raw = board["events"][0]["competitions"][0]["venue"]
-        espn.on("/scoreboard", board).on("/teams$", {"sports": []})
-        details = VenueService().get_venue_details(raw["id"], "nfl")
-        assert details["basic_info"]["name"] == raw["fullName"]
-        assert details["basic_info"]["league"] == "nfl"
-        assert details["home_teams"] == []
-        assert details["basic_info"]["city"] == raw["address"]["city"]
-        assert any(f.startswith(f"Located in {raw['address']['city']}, ") for f in details["interesting_facts"])
-        assert "National Football League venue" in details["interesting_facts"]
+    def test_no_state_never_reads_unknown(self, espn):
+        board = load(self.NFL)
+        for event in board["events"]:
+            event["competitions"][0]["venue"]["address"].pop("state", None)
+        espn.on("/scoreboard", board)
+        service = VenueService()
+        venues = service.get_venues_for_league("nfl")
+        for venue in venues.values():
+            text = repr(service.venue_details(venue, "nfl")) + venue_summary(venue)
+            assert "Unknown" not in text and "None" not in text
+        lambeau = self.named(venues, "Lambeau Field")
+        assert lambeau["location"] == "Green Bay"
+        assert "Located in Green Bay" in service.venue_details(lambeau, "nfl")["interesting_facts"]
 
-    def test_details_of_a_venue_nobody_knows(self, espn):
-        espn.on("/scoreboard", {"events": []})
-        assert VenueService().get_venue_details("nope", "nfl") is None
+    def test_no_address_says_no_location(self, espn):
+        board = load(self.NFL)
+        for event in board["events"]:
+            event["competitions"][0]["venue"]["address"] = None
+        espn.on("/scoreboard", board)
+        service = VenueService()
+        lambeau = self.named(service.get_venues_for_league("nfl"), "Lambeau Field")
+        assert not any(fact.startswith("Located") for fact in service.venue_details(lambeau, "nfl")["interesting_facts"])
+        assert venue_summary(lambeau) == "Lambeau Field [Outdoor] - Green Bay Packers"
+
+    def test_a_basketball_arena_marked_not_indoors_makes_no_claim(self, espn):
+        board = load("scoreboard_WNBA_202607.json")
+        marks = {e["competitions"][0]["venue"]["fullName"]: e["competitions"][0]["venue"]["indoor"] for e in board["events"]}
+        assert marks["American Airlines Center"] is False
+        espn.on("/scoreboard", board)
+        service = VenueService()
+        venues = service.get_venues_for_league("wnba")
+        arena = self.named(venues, "American Airlines Center")
+        assert venue_summary(arena) == "American Airlines Center (Dallas, TX) - Dallas Wings"
+        assert "Open-air stadium exposed to weather" not in service.venue_details(arena, "wnba")["interesting_facts"]
+        assert self.named(venues, "Target Center")["indoor"] is True
+
+    def test_football_can_be_outdoors(self, espn):
+        espn.on("/scoreboard", load(self.NFL))
+        assert self.named(VenueService().get_venues_for_league("nfl"), "Lambeau Field")["indoor"] is False
+
+    def test_not_saying_indoor_is_not_saying_outdoor(self, espn):
+        board = load(self.NBA)
+        for event in board["events"]:
+            del event["competitions"][0]["venue"]["indoor"]
+        espn.on("/scoreboard", board)
+        service = VenueService()
+        venue = self.named(service.get_venues_for_league("nba"), "Barclays Center")
+        details = service.venue_details(venue, "nba")
+        assert details["characteristics"] == {}
+        assert not any("Indoor" in fact or "Open-air" in fact for fact in details["interesting_facts"])
+        assert venue_summary(venue) == "Barclays Center (Brooklyn, NY) - Brooklyn Nets"
+
+    @pytest.mark.parametrize("change", [
+        lambda comp: comp.update(venue=None),
+        lambda comp: comp.update(venue={"id": None, "fullName": "No Id"}),
+        lambda comp: comp["venue"].update(fullName=None),
+        lambda comp: comp.update(competitors=None),
+        lambda comp: comp.update(competitors=[]),
+        lambda comp: next(c for c in comp["competitors"] if c["homeAway"] == "home").update(team=None),
+        lambda comp: next(c for c in comp["competitors"] if c["homeAway"] == "home")["team"].update(displayName=None, name=None),
+    ], ids=["no_venue", "no_id", "no_name", "null_competitors", "no_competitors", "null_team", "no_team_name"])
+    def test_a_game_with_a_hole_costs_only_itself(self, espn, change):
+        board = load(self.NFL)
+        comps = [e["competitions"][0] for e in board["events"]]
+        change(next(comp for comp in comps if (comp["venue"] or {}).get("fullName") == "Lambeau Field"))
+        espn.on("/scoreboard", board)
+        names = {v["name"] for v in VenueService().get_venues_for_league("nfl").values()}
+        assert "Lambeau Field" not in names
+        assert {"MetLife Stadium", "Highmark Stadium"} <= names
+
+    def test_a_blank_event_costs_only_itself(self, espn):
+        board = load(self.NBA)
+        board["events"] = [None, {}, {"competitions": None}, {"competitions": [None]}] + board["events"]
+        espn.on("/scoreboard", board)
+        assert self.named(VenueService().get_venues_for_league("nba"), "Chase Center")
 
     @pytest.mark.parametrize("venue,league,fact", [
-        ({"grass": True}, "nfl", "Natural grass playing surface"),
-        ({"grass": False}, "nfl", "Artificial turf playing surface"),
-        ({"indoor": True}, "nfl", "Indoor stadium with climate control"),
+        ({"indoor": True}, "nfl", "Indoor venue"),
         ({"indoor": True}, "nfl", "Weather never affects games here"),
-        ({}, "nfl", "Open-air stadium exposed to weather"),
-        ({"capacity": 90000}, "nfl", "Massive stadium seating 90,000 fans"),
-        ({"capacity": 70000}, "nfl", "Large stadium seating 70,000 fans"),
-        ({"capacity": 20000}, "nba", "Intimate venue seating 20,000 fans"),
+        ({"indoor": False}, "nfl", "Open-air stadium exposed to weather"),
         ({"name": "Wrigley Field"}, "mlb", "Classic baseball 'Field' naming"),
         ({"name": "Fenway Park"}, "mlb", "Traditional baseball 'Park' naming"),
         ({"home_teams": [{"name": "Cubs"}]}, "mlb", "Home of the Cubs"),
         ({"home_teams": [{}, {}]}, "nba", "Shared by 2 teams"),
+        ({"location": "Toronto"}, "nba", "Located in Toronto"),
+        ({}, "wnba", "Women's National Basketball Association venue"),
+        ({}, "ncaam", "Men's college basketball venue"),
+        ({}, "ncaawb", "Women's college basketball venue"),
+        ({}, "ncaah", "Men's college hockey venue"),
+        ({}, "ncaawh", "Women's college hockey venue"),
     ])
     def test_facts(self, venue, league, fact):
         assert fact in VenueService()._generate_interesting_facts(venue, league)
 
-    def test_a_capacity_that_is_not_a_number_adds_nothing(self):
-        assert not any("seating" in f for f in VenueService()._generate_interesting_facts({"capacity": "big"}, "nfl"))
+    def test_no_facts_it_cannot_know(self):
+        """Saying nothing about the roof claims nothing about it, and a scoreboard has no
+        playing surface or capacity."""
+        facts = " ".join(VenueService()._generate_interesting_facts({"name": "Somewhere"}, "nba")).lower()
+        assert not any(word in facts for word in ("grass", "turf", "seating", "open-air", "indoor"))
+
+    @pytest.mark.parametrize("venue,text", [
+        ({"name": "A", "location": "B, C", "indoor": True, "home_teams": [{"name": "D"}]}, "A (B, C) [Indoor] - D"),
+        ({"name": "A", "indoor": False, "home_teams": [{"name": "D"}, {"name": "E"}]}, "A [Outdoor] - D, E"),
+        ({"home_teams": [{}]}, "Unknown Venue"),
+    ])
+    def test_a_row(self, venue, text):
+        assert venue_summary(venue) == text
 
 
 class TestSettings:
@@ -417,7 +740,7 @@ class TestGameData:
 class TestNewsData:
     def test_from_get_news(self, espn):
         espn.on("/news", load("news_NFL.json"))
-        article = NewsData(espn_api.get_news("NFL", 20)[0])
+        article = NewsData(espn_api.get_news("NFL", 25)[0])
         text = article.get_display_text()
         assert text.startswith("Knockout league pickups")
         assert "| Tristan H. Cockcroft | 2026-11-03\n" in text

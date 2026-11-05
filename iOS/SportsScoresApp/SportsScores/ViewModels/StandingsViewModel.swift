@@ -65,7 +65,7 @@ class StandingsViewModel: ObservableObject {
     /// people want, is never held up by a second network call.
     func loadWildCardIfNeeded(for sport: Sport) async {
         // The mode check matters: onChange fires on both transitions, and in the
-        // offseason statsapi legitimately returns no records — so without it,
+        // offseason ESPN legitimately returns no records — so without it,
         // every switch *back* to Divisions would re-enter here, blank the loaded
         // divisions table with a spinner, and then show a wild card error over
         // perfectly good division data.

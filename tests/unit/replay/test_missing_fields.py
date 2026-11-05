@@ -10,7 +10,7 @@ import re
 import pytest
 
 import espn_api
-from services.venue_service import VenueService
+from services.venue_service import VenueService, venue_summary
 
 from .support import HTTP_404, load, mutations
 
@@ -22,8 +22,7 @@ def case(name, call, fixture, route, others=None):
 NONE_WORD = re.compile(r"\bNone\b")
 
 # None on purpose: the screens test these for "not set", or never show them.
-MAY_BE_NONE = {"position", "playoff_seed", "clinch_status", "magic_number", "number",
-               "zip_code", "grass", "capacity"}
+MAY_BE_NONE = {"position", "playoff_seed", "clinch_status", "magic_number", "number"}
 
 # ESPN's own data handed on untouched: the screen reading it has to cope, not this.
 RAW_FIELDS = {"competitions", "polls"}
@@ -55,12 +54,13 @@ def summary_lines():
 def venue_facts():
     """A venue list, and the details and facts of each venue on it."""
     service = VenueService()
-    return [service.get_venue_details(venue_id, "mlb") for venue_id in service.get_venues_for_league("mlb")]
+    venues = service.get_venues_for_league("mlb").values()
+    return [service.venue_details(venue, "mlb") for venue in venues] + [venue_summary(venue) for venue in venues]
 
 
 def scoreboard_with_one_team():
-    """A real NWSL board with the same team in both games, as the WNBA and soccer
-    schedule path reads it, a month at a time."""
+    """A real NWSL board with the same team in both games, as the last-resort schedule
+    path reads it, a month at a time."""
     data = load("scoreboard_NWSL.json")
     for event in data["events"]:
         event["competitions"][0]["competitors"][0]["team"]["id"] = "TEAM"
@@ -89,22 +89,29 @@ CASES = [
     case("get_team_schedule NBA", lambda: espn_api.get_team_schedule("NBA", "15"), "schedule_NBA_15.json", "/schedule"),
     case("get_team_schedule MLB", lambda: espn_api.get_team_schedule("MLB", "10"), "schedule_MLB_10.json", "/schedule"),
     case("get_team_schedule NCAAM", lambda: espn_api.get_team_schedule("NCAAM", "275"), "schedule_NCAAM_275.json", "/schedule"),
+    case("get_team_schedule WNBA", lambda: espn_api.get_team_schedule("WNBA", "8"), "schedule_WNBA_8_post.json", "/schedule"),
+    case("get_team_schedule postseason", lambda: espn_api.get_team_schedule("NFL", "26"), "schedule_NFL_26_post.json", "/schedule"),
+    case("get_team_schedule preseason", lambda: espn_api.get_team_schedule("NFL", "26"), "schedule_NFL_26_pre.json", "/schedule"),
+    case("get_team_schedule soccer", lambda: espn_api.get_team_schedule("EPL", "359"), "schedule_EPL_359_results.json", "/schedule"),
+    case("get_team_schedule soccer cup", lambda: espn_api.get_team_schedule("UCL", "359"), "schedule_UCL_359_2025.json", "/schedule"),
     case("parse_schedule_from_api", scoreboard_schedule, scoreboard_with_one_team, "/scoreboard"),
     case("game details NFL", lambda: espn_api.extract_meaningful_game_info(espn_api.get_game_details("NFL", "1")),
          "details_NFL_pieces.json", "/summary"),
     case("game details NCAAH", lambda: espn_api.extract_meaningful_game_info(espn_api.get_game_details("NCAAH", "1")),
          "details_NCAAH_pieces.json", "/summary"),
     case("format_complex_data", summary_lines, "details_NFL_pieces.json", "/summary"),
-    case("venues", venue_facts, "scoreboard_NWSL.json", "/scoreboard", {"/teams$": "teams_NFL.json"}),
+    case("venues", venue_facts, "scoreboard_NFL_202611.json", "/scoreboard"),
     case("get_live_golf_tournament", lambda: espn_api.get_live_golf_tournament("PGA"), live_golf, "/scoreboard"),
     case("get_golf_leaderboard", lambda: espn_api.get_golf_leaderboard("PGA"), "golf_scoreboard_PGA.json", "/scoreboard"),
     case("get_golf_schedule", lambda: espn_api.get_golf_schedule("PGA"), "golf_schedule_PGA.json", "/scoreboard"),
-    case("get_draft_round", lambda: espn_api.get_draft_round(2026, 1), "draft_NFL_2026.json:rounds", "/draft/rounds",
-         {"/teams": "teams_NFL.json"}),
-    case("get_draft", lambda: espn_api.get_draft(2026), "draft_NFL_2026.json:draft", "/draft$",
-         {"/draft/rounds": "draft_NFL_2026.json:rounds", "/draft/status": "draft_NFL_2026.json:status"}),
-    case("get_team_info NFL", lambda: espn_api.get_team_info("NFL", "9"), "team_NFL_9.json", "/teams/9"),
-    case("get_team_info NHL", lambda: espn_api.get_team_info("NHL", "129764"), "team_NHL_utah.json", "/teams/129764"),
+    case("get_draft_round", lambda: espn_api.get_draft_round(2026, 1), "draft_site_NFL_2026.json", "/draft"),
+    case("get_draft", lambda: espn_api.get_draft(2026), "draft_site_NFL_2026.json", "/draft"),
+    case("get_team_info NFL", lambda: espn_api.get_team_info("NFL", "9"), "team_NFL_9.json", "/teams/9",
+         {"/season$": "season_NFL.json"}),
+    case("get_team_info NHL", lambda: espn_api.get_team_info("NHL", "129764"), "team_NHL_utah.json", "/teams/129764",
+         {"/season$": "season_NBA.json"}),
+    case("get_team_info season", lambda: espn_api.get_team_info("WNBA", "8", home_venue=False), "season_WNBA.json", "/season$",
+         {"/teams/8": "team_WNBA_8.json"}),
     case("get_team_roster", lambda: espn_api.get_team_roster("NFL", "9"), "roster_NFL_9.json", "/roster"),
     case("get_team_roster flat", lambda: espn_api.get_team_roster("NBA", "15"), "roster_NBA_15.json", "/roster"),
     case("get_transactions", lambda: espn_api.get_transactions("NFL"), "transactions_NFL.json", "/transactions"),
@@ -115,12 +122,13 @@ CASES = [
     case("get_standings NFL", lambda: espn_api.get_standings("NFL"), "standings_NFL.json", "/standings"),
     case("get_standings NHL", lambda: espn_api.get_standings("NHL"), "standings_NHL.json", "/standings"),
     case("get_standings NCAAH", lambda: espn_api.get_standings("NCAAH"), "standings_NCAAH.json", "/standings"),
+    case("get_standings WNBA", lambda: espn_api.get_standings("WNBA"), "standings_WNBA.json", "/standings"),
     case("get_standings soccer", lambda: espn_api.get_standings("EPL"), "team_EPL_359.json", r"/teams/\d+$",
          {"/teams$": "teams_EPL.json"}),
-    case("get_player_statistics", lambda: espn_api.get_player_statistics("NCAAM"), "statistics_NCAAM.json", "/statistics"),
-    case("get_statistics", lambda: espn_api.get_statistics("NFL"), "statistics_NFL.json", "/statistics"),
-    case("get_team_statistics", lambda: espn_api.get_team_statistics("NBA"), "team_stats_NBA_15.json", r"/statistics",
-         {"/teams$": "teams_NBA.json"}),
+    case("get_player_statistics", lambda: espn_api.get_player_statistics("NBA")["player_stats"], "leaders_v3_NBA.json", "/leaders",
+         {"/season$": "season_NBA.json"}),
+    case("get_team_statistics", lambda: espn_api.get_team_statistics("NBA")["team_stats"], "byteam_NBA.json", "/byteam",
+         {"/season$": "season_NBA.json"}),
 ]
 
 
@@ -146,6 +154,8 @@ def test_no_single_bad_field_raises_or_reads_none(espn, call, fixture, route, ot
     failures = []
     for description, changed in mutations(served["payload"]):
         served["payload"] = changed
+        espn_api._CORE_SEASON_CACHE.clear()
+        espn_api._DRAFT_CACHE.clear()
         try:
             result = call()
         except Exception as e:
