@@ -137,6 +137,30 @@ def _convert_time_with_timezone(time_str: str) -> str:
         print(f"Time conversion failed for '{time_str}': {e}")
         return time_str
 
+def _local_offset_and_dst() -> tuple:
+    """This machine's UTC offset in hours, and whether daylight saving is on."""
+    import time
+
+    offset = datetime.now().astimezone().utcoffset().total_seconds() / 3600
+    return offset, bool(time.daylight and time.localtime().tm_isdst)
+
+
+def _zone_for_offset(offset_hours: float, is_dst: bool) -> str:
+    """The US zone with this offset, by its standard-time offset.
+
+    Daylight saving moves a clock an hour ahead, so New York at -4 in summer is
+    the -5 zone: take the hour back off. Adding it instead sent all of summer's
+    Eastern and Pacific users to the US/Central default, an hour or two out.
+    """
+    standard_offset = offset_hours - 1 if is_dst else offset_hours
+    return {
+        -5: 'US/Eastern',   # EST/EDT
+        -6: 'US/Central',   # CST/CDT
+        -7: 'US/Mountain',  # MST/MDT
+        -8: 'US/Pacific',   # PST/PDT
+    }.get(int(standard_offset), 'US/Central')
+
+
 def get_user_timezone() -> str:
     """
     Detect the user's local timezone
@@ -147,34 +171,7 @@ def get_user_timezone() -> str:
     if not PYTZ_AVAILABLE:
         return 'US/Central'  # Default if pytz not available
     try:
-        # First try to get timezone using datetime
-        from datetime import datetime
-        import time
-        
-        # Get the local timezone offset
-        now = datetime.now()
-        local_offset = now.astimezone().utcoffset().total_seconds() / 3600
-        
-        # Map common US timezone offsets to timezone names
-        offset_mappings = {
-            -5: 'US/Eastern',   # EST/EDT
-            -6: 'US/Central',   # CST/CDT
-            -7: 'US/Mountain',  # MST/MDT
-            -8: 'US/Pacific',   # PST/PDT
-        }
-        
-        # Check if it's currently daylight saving time
-        is_dst = time.daylight and time.localtime().tm_isdst
-        
-        # Adjust offset for DST
-        if is_dst:
-            adjusted_offset = local_offset + 1
-        else:
-            adjusted_offset = local_offset
-            
-        # Return the timezone based on offset
-        return offset_mappings.get(int(adjusted_offset), 'US/Central')
-        
+        return _zone_for_offset(*_local_offset_and_dst())
     except Exception:
         # Fallback: try using time module
         try:

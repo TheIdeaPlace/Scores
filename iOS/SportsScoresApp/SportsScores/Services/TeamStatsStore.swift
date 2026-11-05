@@ -17,8 +17,14 @@ import Foundation
 
 actor TeamStatsStore {
     private let session: URLSession
-    /// ESPN web API root, e.g. "https://site.web.api.espn.com/apis/common/v3/sports"
-    private let baseURL: String
+    /// Where each thing comes from, as `ESPNAPIService` has them.
+    private struct Hosts: Sendable {
+        /// ESPN web API root, e.g. "https://site.web.api.espn.com/apis/common/v3/sports"
+        let web: String
+        let site: String
+        let core: String
+    }
+    private let hosts: Hosts
     private let ttl: TimeInterval = 15 * 60
 
     private struct CachedPayload {
@@ -31,18 +37,20 @@ actor TeamStatsStore {
     private var glossaries: [Sport: [String: String]] = [:]
     private var glossaryTasks: [Sport: Task<[String: String], Never>] = [:]
 
-    init(session: URLSession, baseURL: String) {
+    init(session: URLSession, webBaseURL: String, siteBaseURL: String, coreBaseURL: String) {
         self.session = session
-        self.baseURL = baseURL
+        self.hosts = Hosts(web: webBaseURL, site: siteBaseURL, core: coreBaseURL)
     }
 
     // MARK: - Full payload
 
-    /// Every team's full stat line for the sport's current season.
-    ///
-    /// No season parameters are sent — ESPN resolves the most recent season that
-    /// has data, which is what we want in the offseason (asking for a season
-    /// that hasn't started returns an empty document).
+    /// Every team's full stat line for the latest regular season ESPN has, this year's or last's,
+    /// by the same rule as Windows. The season comes from ESPN rather than the calendar. With no
+    /// `seasontype`, ESPN answers with the postseason from the end of a season until the next one:
+    /// the WNBA's 8 playoff teams, not its 15. A season that hasn't started is an empty document, a
+    /// 404, or in the first days of its regular season a 500, and any of those means last season,
+    /// which the list then says it is. Any other 500 is a failure, not a reason to show last
+    /// season's numbers as if they were current.
     func payload(for sport: Sport) async throws -> TeamStatsByTeamResponse {
         if let cached = payloads[sport], Date().timeIntervalSince(cached.fetchedAt) < ttl {
             return cached.response
@@ -51,12 +59,8 @@ actor TeamStatsStore {
             return try await inFlight.value
         }
 
-        // College leagues need a high limit: ESPN's list runs to several hundred
-        // teams (including non-Division-I opponents), and it is not ordered by
-        // rank, so a small limit would silently drop the actual leaders.
-        let limit = sport.isCollegeSport ? 500 : 50
-        let task = Task<TeamStatsByTeamResponse, Error> { [session, baseURL] in
-            try await Self.fetch(sport: sport, limit: limit, session: session, baseURL: baseURL)
+        let task = Task<TeamStatsByTeamResponse, Error> { [session, hosts] in
+            try await Self.fetchLatestRegularSeason(sport: sport, session: session, hosts: hosts)
         }
         payloadTasks[sport] = task
         defer { payloadTasks[sport] = nil }
@@ -79,12 +83,12 @@ actor TeamStatsStore {
         // metadata, so one team's worth of data (~3 KB) carries every definition
         // instead of the whole league (350 KB for college basketball).
         let cachedResponse = payloads[sport].map(\.response)
-        let task = Task<[String: String], Never> { [session, baseURL] in
+        let task = Task<[String: String], Never> { [session, hosts] in
             let categories: [TeamStatsByTeamResponse.CategoryMetadata]
             if let cachedResponse {
                 categories = cachedResponse.categories ?? []
             } else {
-                let light = try? await Self.fetch(sport: sport, limit: 1, session: session, baseURL: baseURL)
+                let light = try? await Self.fetch(sport: sport, limit: 1, session: session, hosts: hosts)
                 categories = light?.categories ?? []
             }
 
@@ -111,19 +115,119 @@ actor TeamStatsStore {
 
     // MARK: - Networking
 
+    /// Football collapses to 25 teams at 1000. ESPN's list isn't in rank order, so a small limit
+    /// would drop the real leaders.
+    private static let wholeLeagueLimit = 500
+
+    private static func fetchLatestRegularSeason(
+        sport: Sport,
+        session: URLSession,
+        hosts: Hosts
+    ) async throws -> TeamStatsByTeamResponse {
+        let current = try await fetchSeason(sport: sport, session: session, hosts: hosts)
+        guard let year = current.latestRegularSeasonYear else { throw APIError.invalidResponse }
+
+        var anAnswer = false
+        for season in [year, year - 1] {
+            let response: TeamStatsByTeamResponse
+            do {
+                response = try await fetch(sport: sport, limit: wholeLeagueLimit, season: season,
+                                           session: session, hosts: hosts)
+            } catch APIError.invalidResponse {
+                continue    // A 404: ESPN has no such season, yet.
+            } catch APIError.unexpectedStatus(let status)
+                        where status >= 500 && season == year && current.regularSeasonJustBegan() {
+                continue
+            }
+            anAnswer = true
+            let isPreseason = response.requestedSeason?.type?.type == 1
+            if !(response.teams ?? []).isEmpty, !isPreseason {
+                var whole = try await withEveryTeam(response, sport: sport, season: season, session: session, hosts: hosts)
+                if TeamStatCatalog.listHasOtherDivisions(sport),
+                   !(whole.teams ?? []).allSatisfy(LeagueTeamStats.hasOpponents) {
+                    whole.divisionOneTeamIDs = try await fetchTeamList(sport: sport, session: session, hosts: hosts)
+                }
+                return whole
+            }
+        }
+        guard anAnswer else { throw APIError.invalidResponse }
+        return TeamStatsByTeamResponse(teams: [], categories: nil, pagination: nil, requestedSeason: nil)
+    }
+
+    private static func fetchSeason(sport: Sport, session: URLSession, hosts: Hosts) async throws -> CoreSeasonResponse {
+        let parts = sport.apiPath.components(separatedBy: "/")
+        guard parts.count == 2, let url = URL(string: "\(hosts.core)/\(parts[0])/leagues/\(parts[1])/season") else {
+            throw APIError.invalidURL
+        }
+        let (data, response) = try await session.data(from: url)
+        guard (response as? HTTPURLResponse)?.statusCode == 200 else { throw APIError.invalidResponse }
+        return try JSONDecoder().decode(CoreSeasonResponse.self, from: data)
+    }
+
+    /// The ids on ESPN's team list, which for college basketball is Division I alone. A failure
+    /// fails the list, since it would leave out real teams and the ranks behind them would be wrong.
+    private static func fetchTeamList(sport: Sport, session: URLSession, hosts: Hosts) async throws -> Set<String> {
+        struct TeamList: Decodable {
+            struct Sport: Decodable { let leagues: [League]? }
+            struct League: Decodable { let teams: [Entry]? }
+            struct Entry: Decodable { let team: Team? }
+            struct Team: Decodable { let id: String? }
+            let sports: [Sport]?
+        }
+        guard let url = URL(string: "\(hosts.site)/\(sport.apiPath)/teams?limit=1000") else { throw APIError.invalidURL }
+        let (data, response) = try await session.data(from: url)
+        guard (response as? HTTPURLResponse)?.statusCode == 200 else { throw APIError.invalidResponse }
+        let list = try JSONDecoder().decode(TeamList.self, from: data)
+        let entries = list.sports?.first?.leagues?.first?.teams ?? []
+        return Set(entries.compactMap { $0.team?.id })
+    }
+
+    /// ESPN sends 400 teams at most, and page 2 is empty or a 500. Late in a college basketball
+    /// season it has 722, half of them schools that played one Division I game, so the list is
+    /// asked for again sorted each way by a column every team has: 400 from each end cover them
+    /// all, up to 800. A list with some cut would still look whole, with every rank after the gap
+    /// wrong, so a failure here fails the lot.
+    private static func withEveryTeam(
+        _ response: TeamStatsByTeamResponse,
+        sport: Sport,
+        season: Int,
+        session: URLSession,
+        hosts: Hosts
+    ) async throws -> TeamStatsByTeamResponse {
+        var teams = response.teams ?? []
+        guard let count = response.pagination?.count, count > teams.count,
+              let column = TeamStatCatalog.sortColumn(for: sport) else { return response }
+
+        var seen = Set(teams.compactMap(\.team.id))
+        for direction in ["desc", "asc"] {
+            let more = try await fetch(sport: sport, limit: wholeLeagueLimit, season: season,
+                                       sort: "\(column):\(direction)", session: session, hosts: hosts)
+            for team in more.teams ?? [] where team.team.id.map({ seen.insert($0).inserted }) ?? true {
+                teams.append(team)
+            }
+        }
+        return TeamStatsByTeamResponse(teams: teams, categories: response.categories,
+                                       pagination: response.pagination, requestedSeason: response.requestedSeason)
+    }
+
+    /// With no `season`, whatever ESPN answers by default, which is enough for the glossary.
     private static func fetch(
         sport: Sport,
         limit: Int,
+        season: Int? = nil,
+        sort: String? = nil,
         session: URLSession,
-        baseURL: String
+        hosts: Hosts
     ) async throws -> TeamStatsByTeamResponse {
-        let urlString = "\(baseURL)/\(sport.apiPath)/statistics/byteam?region=us&lang=en&limit=\(limit)"
+        var urlString = "\(hosts.web)/\(sport.apiPath)/statistics/byteam?region=us&lang=en&limit=\(limit)"
+        if let season { urlString += "&season=\(season)&seasontype=2" }
+        if let sort { urlString += "&sort=\(sort)" }
         guard let url = URL(string: urlString) else { throw APIError.invalidURL }
 
         let (data, response) = try await session.data(from: url)
-        guard let http = response as? HTTPURLResponse, http.statusCode == 200 else {
-            throw APIError.invalidResponse
-        }
+        let status = (response as? HTTPURLResponse)?.statusCode ?? 0
+        if status == 404 { throw APIError.invalidResponse }
+        guard status == 200 else { throw APIError.unexpectedStatus(status) }
         return try JSONDecoder().decode(TeamStatsByTeamResponse.self, from: data)
     }
 }

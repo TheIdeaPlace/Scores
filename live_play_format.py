@@ -9,7 +9,8 @@ be tested directly.
 import re
 
 # Plays in leagues without an enhanced display are cut to this many characters.
-PLAY_LIMIT = 50
+# Long enough for an assist or a second name. Cutting mid-name loses the point of the play.
+PLAY_LIMIT = 140
 
 # The clock at the start of a status like "12:57 - 4th".
 _STATUS_CLOCK = re.compile(r"^(\d{1,2}:\d{2})\b")
@@ -122,6 +123,10 @@ def use_list_team_names(text, name_map):
     for full in sorted(name_map, key=len, reverse=True):
         short = name_map[full]
         if full and short and full != short:
+            # A list name can contain the full one ("#5 Arizona Wildcats"), and the
+            # text may already use it: undo that first so it isn't added twice.
+            if full in short:
+                score = score.replace(short, full)
             score = score.replace(full, short)
     return score + bar + play + sep + rest
 

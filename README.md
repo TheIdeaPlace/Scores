@@ -38,14 +38,6 @@ Scores is a desktop application that provides real-time access to:
 
 ## Key Features
 
-### Enhanced MLB Statistics 🎯
-**NEW**: Revolutionary MLB statistics powered by the official MLB Stats API:
-- **Full Season Data**: Real season totals, not limited recent performance
-- **39 Statistical Categories**: Hitting (16), Pitching (15), Fielding (8) 
-- **50 Players Per Category**: Comprehensive leaderboards for all statistics
-- **6x Faster Performance**: 157ms response time vs 953ms from ESPN
-- **Official MLB Source**: Direct from statsapi.mlb.com for authoritative data
-
 ### Multi-Sport Coverage
 - **Live scores and updates** for NFL, MLB, NBA, NHL, and more
 - **Detailed play-by-play analysis** with contextual information
@@ -125,16 +117,10 @@ python scores.py
 
 ### Core Application Files
 - `scores.py` - Main application entry point and UI
-- `espn_api.py` - **Enhanced with MLB Stats API integration** for comprehensive baseball statistics
+- `espn_api.py` - All network calls
 - `accessible_table.py` - Accessible table widgets for screen readers
 - `exceptions.py` - Custom error handling
 - `main.py` - Alternative entry point
-
-### MLB API Integration
-- **Official MLB Stats API**: Direct integration with statsapi.mlb.com
-- **39 Statistical Categories**: Complete hitting, pitching, and fielding statistics
-- **Parallel Processing**: Concurrent API requests for optimal performance
-- **Data Format Conversion**: Seamless UI integration with enhanced statistics
 
 ### Audio System Files
 - `simple_audio_mapper.py` - Core pitch-to-audio mapping system

@@ -3,8 +3,9 @@
 //  SportsScores
 //
 //  Full leader list for a single stat category, opened via "View All".
-//  Immediately shows the 10 summary entries already in memory, then
-//  fetches the full list (limit=50) in the background.
+//  Immediately shows the 10 summary entries already in memory, then fetches
+//  the full list in the background: up to 20 players, or every team, so a
+//  college team's rank on its Team Hub can be found here too.
 //
 
 import SwiftUI
@@ -19,7 +20,11 @@ struct StatLeaderDetailView: View {
     @State private var isLoadingMore = false
     @State private var loadError: String?
 
-    private var displayCategory: LeagueLeaderCategory { fullCategory ?? summary }
+    /// ESPN can give a shorter list when it's struggling, and that's no reason to lose rows.
+    private var displayCategory: LeagueLeaderCategory {
+        guard let fullCategory, fullCategory.leaders.count >= summary.leaders.count else { return summary }
+        return fullCategory
+    }
 
     init(category: LeagueLeaderCategory, sport: Sport, initialViewMode: ViewMode) {
         self.summary = category
@@ -31,6 +36,10 @@ struct StatLeaderDetailView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 8) {
+                if let season = displayCategory.seasonLabel {
+                    SeasonLabel(text: season)
+                        .padding([.horizontal, .top])
+                }
                 LeaderCategorySection(category: displayCategory, viewMode: viewMode, sport: sport)
                     .padding()
 
@@ -62,7 +71,7 @@ struct StatLeaderDetailView: View {
         loadError = nil
         do {
             let allCategories = summary.isTeamCategory
-                ? try await ESPNAPIService.shared.fetchTeamLeaders(for: sport, limit: 50)
+                ? try await ESPNAPIService.shared.fetchTeamLeaders(for: sport, limit: .max)
                 : try await ESPNAPIService.shared.fetchLeagueLeaders(for: sport, limit: 50)
             fullCategory = allCategories.first { $0.name == summary.name }
         } catch {

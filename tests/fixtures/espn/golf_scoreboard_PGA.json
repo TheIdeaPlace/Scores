@@ -1,0 +1,101 @@
+{
+ "events": [
+  {
+   "id": "401850979",
+   "date": "2026-11-05T05:00Z",
+   "endDate": "2026-11-08T05:00Z",
+   "name": "World Wide Technology Championship",
+   "shortName": "World Wide Technology Championship",
+   "status": {
+    "type": {
+     "id": "1",
+     "name": "STATUS_SCHEDULED",
+     "state": "pre",
+     "completed": false,
+     "description": "Scheduled"
+    }
+   },
+   "competitions": [
+    {
+     "id": "401850979",
+     "date": "2026-11-05T05:00Z",
+     "endDate": "2026-11-08T05:00Z",
+     "status": {
+      "period": 0,
+      "type": {
+       "id": "1",
+       "name": "STATUS_SCHEDULED",
+       "state": "pre",
+       "completed": false,
+       "description": "Scheduled",
+       "detail": "Thu, November 4th at 12:00 AM EST",
+       "shortDetail": "11/5 - 12:00 AM EST"
+      }
+     },
+     "competitors": [
+      {
+       "id": "2283",
+       "order": 1,
+       "score": "E",
+       "athlete": {
+        "displayName": "Brice Garnett",
+        "fullName": "Brice Garnett",
+        "flag": {
+         "alt": "USA"
+        }
+       },
+       "linescores": [
+        {
+         "period": 1
+        },
+        {
+         "period": 2
+        }
+       ]
+      },
+      {
+       "id": "4638",
+       "order": 2,
+       "score": "E",
+       "athlete": {
+        "displayName": "Ben Martin",
+        "fullName": "Ben Martin",
+        "flag": {
+         "alt": "USA"
+        }
+       },
+       "linescores": [
+        {
+         "period": 1
+        },
+        {
+         "period": 2
+        }
+       ]
+      },
+      {
+       "id": "5692",
+       "order": 3,
+       "score": "E",
+       "athlete": {
+        "displayName": "Peter Malnati",
+        "fullName": "Peter Malnati",
+        "flag": {
+         "alt": "USA"
+        }
+       },
+       "linescores": [
+        {
+         "period": 1
+        },
+        {
+         "period": 2
+        }
+       ]
+      }
+     ]
+    }
+   ]
+  }
+ ]
+}

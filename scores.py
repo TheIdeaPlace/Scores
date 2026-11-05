@@ -13,7 +13,8 @@ import sys
 import webbrowser
 import time
 from datetime import datetime, timedelta
-from typing import Dict, List, Any, Union
+from functools import partial
+from typing import Dict, List, Any, Optional, Union
 # Add project root to sys.path if running as script
 import os
 ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -31,7 +32,7 @@ from version import __version__
 from services import updater
 
 from PyQt6.QtWidgets import (
-    QApplication, QWidget, QVBoxLayout, QListWidget, QPushButton, QLabel,
+    QApplication, QTabBar, QWidget, QVBoxLayout, QListWidget, QPushButton, QLabel,
     QHBoxLayout, QCheckBox, QDialog, QMessageBox, QTextEdit, QScrollArea,
     QTableWidget, QTableWidgetItem, QHeaderView, QTabWidget, QStackedWidget,
     QListWidgetItem, QTreeWidget, QTreeWidgetItem, QSpinBox, QComboBox,
@@ -54,13 +55,20 @@ except ImportError:
 
 # New separated modules
 from exceptions import ApiError, DataModelError
+from espn_api import NCAAF_CONFERENCE_ORDER, standings_cache_key
 from services.api_service import ApiService
-from services.venue_service import venue_service
+from services.venue_service import venue_service, venue_summary
 from models.game import GameData
 from models.news import NewsData
 import live_play_format
 from models.standings import StandingsData
-from accessible_table import AccessibleTable, StandingsTable, WildCardTable, LeadersTable, BoxscoreTable, InjuryTable
+import error_log
+from windows_notifications import announce, set_notifier_window
+from accessible_table import AccessibleTable, StandingsTable, WildCardTable, LeadersTable, RankingsTable, BoxscoreTable, InjuryTable, ListPages, is_tab_bar, keep_in_tab_order, make_tab_area, ButtonKeys
+from tab_keys import group_noun
+from box_score import build_box_tables
+from team_stats import RANKING_HEADERS, ranking_rows, team_stat_lists
+from game_labels import scoreboard_today, basketball_period_label, football_period_label, football_period_sort_key, game_standings_tables, schedule_row_text, schedule_start_row
 
 # Text processing utilities
 try:
@@ -89,13 +97,14 @@ except ImportError:
     PlayAudioMapper = None
 
 # Constants
-DETAIL_FIELDS = ["boxscore", "plays", "drives", "leaders", "standings", "odds", "injuries", "broadcasts", "news", "gameInfo"]
+# Odds, TV, venue and attendance are read into the basic rows above these.
+DETAIL_FIELDS = ["boxscore", "plays", "drives", "leaders", "standings", "injuries", "news"]
 BASEBALL_STAT_HEADERS = ["Player", "Position", "AB", "R", "H", "RBI", "BB", "SO", "AVG"]
-STANDINGS_HEADERS = ["Rank", "Team", "Wins", "Losses", "Win %", "GB", "Streak", "Record"]
 TEAM_SUMMARY_HEADERS = ["Team", "Statistic", "Value"]
 INJURY_HEADERS = ["Player", "Position", "Team", "Status", "Type", "Details", "Return Date"]
 LEADERS_HEADERS = ["Category/Player", "Team", "Statistic", "Value"]
 FOCUS_DELAY_MS = 50
+DIALOG_FOCUS_DELAY_MS = 200
 
 
 def _get_home_leagues(available_leagues):
@@ -166,6 +175,75 @@ def get_pitch_location(horizontal: int, vertical: int, batter_side: str = None) 
         return location  # Already includes height
     else:
         return f"{height_desc} {location}"
+
+def _int_or_none(value):
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        return None
+
+
+def _focus_once_active(dialog, set_focus):
+    """Run `set_focus` once, after the dialog has opened and taken its first focus, so it
+    wins. Windows hands focus to the dialog's first widget, the tab bar, as it activates.
+    The timer belongs to the dialog, so it can't fire on a dialog that's gone. Restoring
+    a minimized dialog doesn't move focus."""
+    timer = QTimer(dialog)
+    timer.setSingleShot(True)
+    timer.setInterval(DIALOG_FOCUS_DELAY_MS)
+    timer.timeout.connect(set_focus)
+    original_show = dialog.showEvent
+    opened = []
+
+    def show_event(event):
+        original_show(event)
+        if not opened and not event.spontaneous():
+            opened.append(True)
+            timer.start()
+
+    dialog.showEvent = show_event
+
+
+def _take_focus_after_load(widget):
+    """Move to freshly loaded data, unless someone is on a tab bar or a combo box: pulling
+    them off it while they arrow through its choices loses their place and cuts off speech.
+    Nor if it's on a tab they have since left, where focus would be on something unseen."""
+    if not (widget.isWindow() or widget.isVisibleTo(widget.window())):
+        return
+    focused = QApplication.focusWidget()
+    if not (is_tab_bar(focused) or isinstance(focused, QComboBox)):
+        widget.setFocus()
+
+
+def _pages_on_show(tabs):
+    """Tabs, or a list with a page open. Ctrl+Tab on a list with none open would move its row
+    with nothing said, and the next Enter would open one nobody heard."""
+    return tabs and not (isinstance(tabs, ListPages) and not tabs.is_open())
+
+
+def _focus_first_table(dialog):
+    """Focus the first table a dialog shows, on its open tab if it has them. A list of pages
+    takes the focus itself, until one of them is opened."""
+    tabs = dialog.findChildren(QTabWidget) or dialog.findChildren(ListPages)
+    if tabs and isinstance(tabs[0], ListPages) and not tabs[0].is_open():
+        tabs[0].tabBar().setFocus()
+        return
+    holder = tabs[0].currentWidget() if tabs else dialog
+    tables = holder.findChildren(AccessibleTable) if holder else []
+    if tables and tables[0].rowCount() > 0:
+        tables[0].setFocus()
+    elif tabs:
+        tabs[0].setFocus()
+
+
+def _message_row(text, name):
+    """A label can't take focus, so a screen reader user would hear nothing at all."""
+    row = QListWidget()
+    row.setAccessibleName(name)
+    row.addItem(text)
+    row.setCurrentRow(0)
+    return row
+
 
 class AudioOnFocusAction(QAction):
     """Custom QAction that plays audio when highlighted in menu (for strike zone exploration)"""
@@ -282,7 +360,8 @@ class HomeSettingsDialog(QDialog):
         self.ncaaf_coverage_combo.setAccessibleName("College football games shown")
         self.ncaaf_coverage_combo.setAccessibleDescription(
             "All Division I shows FBS and FCS together, around 200 games a week, and is the only "
-            "setting that shows opening weekend in full. FBS only shows about 100 games a week.")
+            "setting that shows opening weekend in full. FBS only shows about 100 games a week. "
+            "Standings and Teams list the same teams.")
         cfb_layout.addWidget(self.ncaaf_coverage_combo)
         cfb_layout.addStretch()
         layout.addLayout(cfb_layout)
@@ -296,6 +375,7 @@ class HomeSettingsDialog(QDialog):
 
         ok_layout = QHBoxLayout()
         ok_btn = QPushButton("OK")
+        ok_btn.setDefault(True)
         ok_btn.clicked.connect(self._save_and_accept)
         cancel_btn = QPushButton("Cancel")
         cancel_btn.clicked.connect(self.reject)
@@ -610,8 +690,16 @@ class HomeView(BaseView):
         error_label.setStyleSheet("color: red; font-weight: bold;")
         self.layout.addWidget(error_label)
     
+    def capture_state(self):
+        return {"row": self.league_list.currentRow()}
+
     def on_show(self):
-        self.set_focus_and_select_first(self.league_list)
+        state = getattr(self, 'restore_state', None)
+        if state and 0 <= state.get("row", -1) < self.league_list.count():
+            self.league_list.setCurrentRow(state["row"])
+            self.set_focus_with_delay(self.league_list)
+        else:
+            self.set_focus_and_select_first(self.league_list)
         # Update window title for home view
         if self.parent_app:
             self.parent_app.update_window_title()
@@ -784,7 +872,10 @@ class LiveScoresView(BaseView):
     
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.monitored_games = set()  # Track games being monitored for notifications
+        # Games being monitored for notifications. Kept on the app, because this view
+        # is rebuilt every time someone comes back to it from a game.
+        self.monitored_games = getattr(parent, 'monitored_games', set())
+        self._restore_state = None  # where to land after coming back from a game
         self.game_data = {}  # Store complete game data for notifications
         self.current_time = datetime.now()
         
@@ -879,7 +970,7 @@ class LiveScoresView(BaseView):
             # Update display to remove monitoring indicator
             text = current_item.text()
             if text.endswith(" - monitoring"):
-                current_item.setText(text[:-12])  # Remove " - monitoring"
+                current_item.setText(text[:-len(" - monitoring")])
             self._announce_monitoring(False, game_data)
         else:
             self.monitored_games.add(game_id)
@@ -918,10 +1009,7 @@ class LiveScoresView(BaseView):
         # Announce the change for accessibility
         if frequency_text == "Manual (F5 only)":
             message = "Automatic refresh disabled. Press F5 to refresh manually."
-        else:
-            message = f"Refresh frequency set to {frequency_text}"
-        
-        self.notification_helper.announce(message)
+            self.notification_helper.announce(message)
         self._update_time_label()  # Update the display immediately
     
     def _update_refresh_timer(self):
@@ -975,12 +1063,47 @@ class LiveScoresView(BaseView):
 
     def _on_live_scores_loaded(self, live_games: list, current_date_games: list, golf: list):
         """Show freshly loaded games, keeping the user's place in the list."""
-        # An exception escaping a slot aborts the app under PyQt6.
+        # An exception escaping a slot would reach only error_log.
         try:
             self._show_loaded_live_scores(live_games, current_date_games, golf)
         except Exception as e:
             self._show_api_error(f"Failed to load live scores: {e}")
         self._pending_old_scores = {}
+
+    def _refresh_rows_in_place(self, live_games, current_date_games, golf):
+        """Render, and when the same rows came back, change only the text that changed.
+        True if so. Otherwise the list holds the new rows and needs its place restored."""
+        visible = self.live_scores_list
+        scratch = QListWidget()
+        self.live_scores_list = scratch
+        try:
+            self._render_live_scores(live_games, current_date_games, golf)
+        finally:
+            self.live_scores_list = visible
+
+        for i in range(scratch.count()):
+            item = scratch.item(i)
+            data = item.data(Qt.ItemDataRole.UserRole)
+            if isinstance(data, dict) and data.get("id") in self.monitored_games:
+                item.setText(item.text() + " - monitoring")
+
+        def row_key(item):
+            data = item.data(Qt.ItemDataRole.UserRole)
+            return data.get("id") if isinstance(data, dict) else item.text()
+
+        same_rows = (visible.count() == scratch.count() and all(
+            row_key(visible.item(i)) == row_key(scratch.item(i)) for i in range(visible.count())))
+        if same_rows:
+            for i in range(visible.count()):
+                old, new = visible.item(i), scratch.item(i)
+                old.setData(Qt.ItemDataRole.UserRole, new.data(Qt.ItemDataRole.UserRole))
+                if old.text() != new.text():
+                    old.setText(new.text())
+            return True
+        visible.clear()
+        while scratch.count():
+            visible.addItem(scratch.takeItem(0))
+        return False
 
     def _show_loaded_live_scores(self, live_games, current_date_games, golf=()):
         current = self.live_scores_list.currentItem()
@@ -988,7 +1111,13 @@ class LiveScoresView(BaseView):
         selected_id = current_data.get("id") if isinstance(current_data, dict) else None
         selected_row = self.live_scores_list.currentRow()
 
-        self._render_live_scores(live_games, current_date_games, golf)
+        state, self._restore_state = self._restore_state, None
+        if state:
+            selected_id, selected_row = state.get("selected"), state.get("row", 0)
+
+        if self._refresh_rows_in_place(live_games, current_date_games, golf):
+            self._check_monitored_scores(self._pending_old_scores)
+            return
 
         restored = False
         if selected_id:
@@ -1012,7 +1141,7 @@ class LiveScoresView(BaseView):
         self._update_time_label()
 
         try:
-            today = datetime.now().date()
+            today = scoreboard_today()
 
             # Categorize games
             live_games_dict = {game.get('id', ''): game for game in live_games}
@@ -1045,7 +1174,6 @@ class LiveScoresView(BaseView):
                     item.setData(Qt.ItemDataRole.UserRole,
                                  {"golf_tour": t["tour"], "tour_name": t["tour_name"]})
                     self.live_scores_list.addItem(item)
-                self.live_scores_list.addItem("")
 
             total_games = len(live_games) + len(upcoming_games) + len(completed_games) + len(golf)
             if total_games == 0:
@@ -1109,7 +1237,6 @@ class LiveScoresView(BaseView):
                         if game_id:
                             self.game_data[game_id] = game
                 
-                self.live_scores_list.addItem("")
 
             # Section 2: Upcoming Games
             if upcoming_games:
@@ -1142,9 +1269,7 @@ class LiveScoresView(BaseView):
                         item.setData(Qt.ItemDataRole.UserRole, game_data)
                         self.live_scores_list.addItem(item)
                 
-                self.live_scores_list.addItem("")
 
-                self.live_scores_list.addItem("")
 
             # Section 3: Completed Games
             if completed_games:
@@ -1177,7 +1302,6 @@ class LiveScoresView(BaseView):
                         item.setData(Qt.ItemDataRole.UserRole, game_data)
                         self.live_scores_list.addItem(item)
 
-                self.live_scores_list.addItem("")
         except Exception as e:
             self._show_api_error(f"Failed to load live scores: {str(e)}")
     
@@ -1228,7 +1352,7 @@ class LiveScoresView(BaseView):
             score_text = f"{team1_name} {new_scores[0]} - {team2_name} {new_scores[1]}"
             
             # Use Windows UIA notifications for accessibility
-            self.notification_helper.notify_score_change(game_name, score_text)
+            announce(f"{game_name}: {score_text}")
             
             # Also update the UI
             self.time_label.setText(f"SCORE UPDATE: {game_name} - {score_text}")
@@ -1248,9 +1372,18 @@ class LiveScoresView(BaseView):
         
         self.layout.addLayout(btn_layout)
     
+    def capture_state(self):
+        item = self.live_scores_list.currentItem()
+        data = item.data(Qt.ItemDataRole.UserRole) if item else None
+        return {"selected": data.get("id") if isinstance(data, dict) else None,
+                "row": self.live_scores_list.currentRow()}
+
     def on_show(self):
         """Called when view is shown"""
-        self.set_focus_and_select_first(self.live_scores_list)
+        if self._restore_state:
+            self.set_focus_with_delay(self.live_scores_list)
+        else:
+            self.set_focus_and_select_first(self.live_scores_list)
         # Update window title for live scores view
         if self.parent_app:
             self.parent_app.update_window_title(["Live Scores"])
@@ -1320,7 +1453,7 @@ class LiveScoresView(BaseView):
         from espn_api import GOLF_TOURS
 
         all_games = []
-        today = datetime.now().date()
+        today = scoreboard_today()
 
         leagues = [lg for lg in ApiService.get_leagues() if lg not in GOLF_TOURS]
 
@@ -1439,10 +1572,14 @@ class LiveScoresView(BaseView):
 class LeagueView(BaseView):
     """View showing scores for a specific league"""
     
-    def __init__(self, parent=None, league=None, week=None, season_type=None):
+    def __init__(self, parent=None, league=None, week=None, season_type=None, state=None):
         super().__init__(parent)
         self.league = league
         self.news_headlines = []
+        # Coming back from a game: the date or week and row to return to.
+        self._restore_state = state
+        self._spoken_date_label = None
+        self._skip_date_announcement = bool(state)
 
         # Bumped by every load_scores, so a slow load that finishes after a
         # newer one (stepping weeks quickly) is dropped instead of shown.
@@ -1469,7 +1606,16 @@ class LeagueView(BaseView):
             self.current_season = None
             self.current_week = None
             self.current_season_type = None
-            self.current_date = datetime.now().date()
+            self.current_date = scoreboard_today()
+
+        if state:
+            if self.is_football_league():
+                self._calendar_pending = False
+                self.current_season = state["season"]
+                self.current_week = state["week"]
+                self.current_season_type = state["season_type"]
+            else:
+                self.current_date = state["date"]
 
         self.setup_ui()
 
@@ -1479,8 +1625,6 @@ class LeagueView(BaseView):
     def setup_ui(self):
         # Navigation label (date or week)
         self.date_label = QLabel()
-        self.date_label.setAccessibleName(
-            "Week shown" if self.is_football_league() else "Date shown")
         self.layout.addWidget(self.date_label)
 
         self.layout.addWidget(QLabel(f"Scores for {self.league}:"))
@@ -1492,7 +1636,31 @@ class LeagueView(BaseView):
         self.layout.addWidget(self.scores_list)
 
         self._add_nav_buttons()
-        self.load_scores()
+        self.load_scores(reselect=(self._restore_state or {}).get('selected'))
+
+    def capture_state(self):
+        item = self.scores_list.currentItem()
+        return {'date': self.current_date, 'week': self.current_week, 'season': self.current_season,
+                'season_type': self.current_season_type,
+                'selected': item.data(Qt.ItemDataRole.UserRole) if item else None,
+                'row': self.scores_list.currentRow()}
+
+    def _title_items(self):
+        label = self.date_label.text().removeprefix('Date: ')
+        # The calendar lookup's "Finding the current week..." isn't a place to name.
+        return [label, self.league] if label and not self._calendar_pending else [self.league]
+
+    def _say_date_shown(self):
+        # The date or week isn't in the list, so say it and put it in the title.
+        label = self.date_label.text().removeprefix('Date: ')
+        if self.parent_app and self.league:
+            self.parent_app.update_window_title(self._title_items())
+        if label != self._spoken_date_label:
+            self._spoken_date_label = label
+            if self._skip_date_announcement:
+                self._skip_date_announcement = False
+            else:
+                announce(label)
     
     def _on_score_item_selected(self, item):
         data = item.data(Qt.ItemDataRole.UserRole)
@@ -1530,6 +1698,9 @@ class LeagueView(BaseView):
         Saturday the scoreboard alone is several MB; fetched here it froze the
         window on every open, every week step and every Back from a game.
         """
+        if self._scores_generation > 0:
+            self._restore_state = None  # moved on to another day or week
+            self._skip_date_announcement = False
         self._scores_generation += 1
         self._reselect = (self._scores_generation, reselect) if reselect is not None else None
         football = self.is_football_league()
@@ -1600,6 +1771,10 @@ class LeagueView(BaseView):
         row = 0
         pending, self._reselect = self._reselect, None
         reselect = pending[1] if pending and pending[0] == self._scores_generation else None
+        state, self._restore_state = self._restore_state, None
+        if state:
+            # A section header has no id to look for, and a game can have left the list.
+            row = min(max(state.get("row", 0), 0), self.scores_list.count() - 1)
         if reselect is not None:
             for i in range(self.scores_list.count()):
                 if self.scores_list.item(i).data(Qt.ItemDataRole.UserRole) == reselect:
@@ -1608,6 +1783,7 @@ class LeagueView(BaseView):
         self.scores_list.setCurrentRow(row)
         if had_focus:
             self.scores_list.setFocus()
+        self._say_date_shown()
 
     def _add_game_sections(self, scores_data):
         """Add games under In Progress / Upcoming / Completed / Postponed headers.
@@ -1655,7 +1831,7 @@ class LeagueView(BaseView):
             text, live_play_format.list_team_names(game_raw, game.teams))
 
     def _add_common_sections(self):
-        if self.league in ["MLB", "NFL", "NBA", "NHL", "NCAAF", "NCAAM", "NCAAWB", "NCAAH", "NCAAWH"]:
+        if self.league in ["MLB", "NFL", "NBA", "WNBA", "NHL", "NCAAF", "NCAAM", "NCAAWB", "NCAAH", "NCAAWH"]:
             self.scores_list.addItem("--- Standings ---")
             standings_item = self.scores_list.item(self.scores_list.count()-1)
             standings_item.setData(Qt.ItemDataRole.UserRole, "__standings__")
@@ -1706,12 +1882,12 @@ class LeagueView(BaseView):
             
             # Restore original title when dialog closes
             if self.parent_app:
-                self.parent_app.update_window_title([self.league])
+                self.parent_app.update_window_title(self._title_items())
         except Exception as e:
             QMessageBox.critical(self, "Error", f"Failed to show news: {str(e)}")
             # Restore original title on error
             if self.parent_app:
-                self.parent_app.update_window_title([self.league])
+                self.parent_app.update_window_title(self._title_items())
     
     def _show_standings_dialog(self):
         """Show standings dialog with caching and fast background loading"""
@@ -1730,11 +1906,14 @@ class LeagueView(BaseView):
                 dialog.exec()
                 # Restore original title when dialog closes
                 if self.parent_app:
-                    self.parent_app.update_window_title([self.league])
+                    self.parent_app.update_window_title(self._title_items())
             else:
                 # Load in background (now fast enough to not need loading dialog)
                 self.standings_loader = StandingsLoader(self.league)
-                self.standings_loader.data_loaded.connect(self._on_standings_data_loaded)
+                # A partial, not a lambda: PyQt still sees this view as the receiver, so
+                # the answer goes nowhere if the view has gone by the time it arrives.
+                self.standings_loader.data_loaded.connect(
+                    partial(self._on_standings_data_loaded, self.standings_loader.cache_key))
                 self.standings_loader.error_occurred.connect(self._on_standings_data_error)
                 # A second press, or leaving the view, replaces this reference mid-load.
                 _start_detached_thread(self.standings_loader)
@@ -1745,19 +1924,19 @@ class LeagueView(BaseView):
         """Update standings loading progress (no longer used)"""
         pass
     
-    def _on_standings_data_loaded(self, standings_data):
+    def _on_standings_data_loaded(self, cache_key, standings_data):
         """Handle standings data loaded from background thread"""
         try:
-            # Cache the data
+            # Cache the data under what was asked for, even if the setting has changed since
             cache = DataCache()
-            cache.set_standings(self.league, standings_data)
-            
+            cache.set_standings(cache_key, standings_data)
+
             # Show the dialog immediately (no loading dialog to close)
             dialog = StandingsDialog(standings_data, self.league, self)
             dialog.exec()
             # Restore original title when dialog closes
             if self.parent_app:
-                self.parent_app.update_window_title([self.league])
+                self.parent_app.update_window_title(self._title_items())
         except Exception as e:
             QMessageBox.critical(self, "Error", f"Failed to display standings: {str(e)}")
     
@@ -1773,7 +1952,7 @@ class LeagueView(BaseView):
         except Exception as e:
             QMessageBox.critical(self, "Error", f"Failed to show polls: {str(e)}")
             if self.parent_app:
-                self.parent_app.update_window_title([self.league])
+                self.parent_app.update_window_title(self._title_items())
 
     def _open_polls_dialog(self, polls_data):
         try:
@@ -1782,7 +1961,7 @@ class LeagueView(BaseView):
                                       f"No poll data available for {self.league}.")
                 # Restore original title
                 if self.parent_app:
-                    self.parent_app.update_window_title([self.league])
+                    self.parent_app.update_window_title(self._title_items())
                 return
             
             dialog = PollsDialog(polls_data, self.league, self)
@@ -1790,12 +1969,12 @@ class LeagueView(BaseView):
             
             # Restore original title when dialog closes
             if self.parent_app:
-                self.parent_app.update_window_title([self.league])
+                self.parent_app.update_window_title(self._title_items())
         except Exception as e:
             QMessageBox.critical(self, "Error", f"Failed to show polls: {str(e)}")
             # Restore original title on error
             if self.parent_app:
-                self.parent_app.update_window_title([self.league])
+                self.parent_app.update_window_title(self._title_items())
     
     def _show_statistics_dialog(self):
         """Show statistics dialog with new flow: choose team/player → select stat → view results"""
@@ -1824,6 +2003,8 @@ class LeagueView(BaseView):
                         print(f"DEBUG: About to show StatisticsViewDialog")
                         result = stats_dialog.exec()
                         print(f"DEBUG: StatisticsViewDialog returned with result: {result}")
+                        # It's parented to this view, which outlives this loop's every pass.
+                        stats_dialog.deleteLater()
                         
                         # If the user clicked OK or closed normally, exit the loop
                         # If they pressed Escape (result == 0), continue the loop to show choice again
@@ -1839,7 +2020,7 @@ class LeagueView(BaseView):
             
             # Restore original title when dialog closes
             if self.parent_app:
-                self.parent_app.update_window_title([self.league])
+                self.parent_app.update_window_title(self._title_items())
                     
         except Exception as e:
             print(f"DEBUG: Exception in _show_statistics_dialog: {str(e)}")
@@ -1848,11 +2029,13 @@ class LeagueView(BaseView):
             QMessageBox.critical(self, "Error", f"Failed to display statistics: {str(e)}")
             # Restore original title on error
             if self.parent_app:
-                self.parent_app.update_window_title([self.league])
+                self.parent_app.update_window_title(self._title_items())
     
     def _on_standings_data_error(self, error_message):
         """Handle standings data loading error"""
         QMessageBox.warning(self, "Standings", error_message)
+        if self.parent_app:
+            self.parent_app.update_window_title(self._title_items())
     
     def _show_teams_dialog(self):
         """Show teams dialog with simple tabbed interface"""
@@ -1866,7 +2049,7 @@ class LeagueView(BaseView):
         except Exception as e:
             QMessageBox.critical(self, "Error", f"Failed to show teams: {str(e)}")
             if self.parent_app:
-                self.parent_app.update_window_title([self.league])
+                self.parent_app.update_window_title(self._title_items())
 
     def _open_teams_dialog(self, standings_data):
         try:
@@ -1875,7 +2058,7 @@ class LeagueView(BaseView):
                                       f"No teams data available for {self.league}.")
                 # Restore original title
                 if self.parent_app:
-                    self.parent_app.update_window_title([self.league])
+                    self.parent_app.update_window_title(self._title_items())
                 return
             
             # Filter data by league to avoid MLB/NFL mixing
@@ -1887,12 +2070,12 @@ class LeagueView(BaseView):
             
             # Restore original title when dialog closes
             if self.parent_app:
-                self.parent_app.update_window_title([self.league])
+                self.parent_app.update_window_title(self._title_items())
         except Exception as e:
             QMessageBox.critical(self, "Error", f"Failed to show teams: {str(e)}")
             # Restore original title on error
             if self.parent_app:
-                self.parent_app.update_window_title([self.league])
+                self.parent_app.update_window_title(self._title_items())
     
     def _show_transactions_dialog(self):
         try:
@@ -1901,11 +2084,11 @@ class LeagueView(BaseView):
             dialog = TransactionsDialog(self.league, self)
             dialog.exec()
             if self.parent_app:
-                self.parent_app.update_window_title([self.league])
+                self.parent_app.update_window_title(self._title_items())
         except Exception as e:
             QMessageBox.critical(self, "Error", f"Failed to show transactions: {e}")
             if self.parent_app:
-                self.parent_app.update_window_title([self.league])
+                self.parent_app.update_window_title(self._title_items())
 
     def _show_draft_dialog(self):
         try:
@@ -1946,7 +2129,7 @@ class LeagueView(BaseView):
         except Exception as e:
             QMessageBox.critical(self, "Error", f"Failed to show venues: {str(e)}")
             if self.parent_app:
-                self.parent_app.update_window_title([self.league])
+                self.parent_app.update_window_title(self._title_items())
 
     def _open_venues_dialog(self, venues_data):
         try:
@@ -1955,7 +2138,7 @@ class LeagueView(BaseView):
                                       f"No venue data available for {self.league}.")
                 # Restore original title
                 if self.parent_app:
-                    self.parent_app.update_window_title([self.league])
+                    self.parent_app.update_window_title(self._title_items())
                 return
             
             dialog = VenuesDialog(venues_data, self.league, self)
@@ -1963,12 +2146,12 @@ class LeagueView(BaseView):
             
             # Restore original title when dialog closes
             if self.parent_app:
-                self.parent_app.update_window_title([self.league])
+                self.parent_app.update_window_title(self._title_items())
         except Exception as e:
             QMessageBox.critical(self, "Error", f"Failed to show venues: {str(e)}")
             # Restore original title on error
             if self.parent_app:
-                self.parent_app.update_window_title([self.league])
+                self.parent_app.update_window_title(self._title_items())
     
     def _fetch_then(self, title, fetch, show):
         """Run fetch() on a thread, then show(result) here.
@@ -1997,11 +2180,11 @@ class LeagueView(BaseView):
             finish()
             QMessageBox.critical(self, "Error", f"Failed to show {title.lower()}: {message}")
             if self.parent_app:
-                self.parent_app.update_window_title([self.league])
+                self.parent_app.update_window_title(self._title_items())
 
         def loaded(result):
             finish()
-            # An exception escaping a slot aborts the app under PyQt6.
+            # An exception escaping a slot would reach only error_log.
             try:
                 show(result)
             except Exception as e:
@@ -2025,7 +2208,7 @@ class LeagueView(BaseView):
             
             # Restore original title
             if self.parent_app:
-                self.parent_app.update_window_title([self.league])
+                self.parent_app.update_window_title(self._title_items())
         except Exception as e:
             QMessageBox.critical(self, "Error", f"Failed to show bowls & playoffs: {str(e)}")
 
@@ -2189,10 +2372,14 @@ class LeagueView(BaseView):
             super().keyPressEvent(event)
     
     def on_show(self):
-        self.set_focus_and_select_first(self.scores_list)
+        # Set on Back. The list is loading, and its row is chosen when the load lands.
+        if self._restore_state:
+            self.set_focus_with_delay(self.scores_list)
+        else:
+            self.set_focus_and_select_first(self.scores_list)
         # Update window title for league view
         if self.parent_app and self.league:
-            self.parent_app.update_window_title([self.league])
+            self.parent_app.update_window_title(self._title_items())
 
 class GameDetailsView(BaseView):
     """View showing detailed information for a specific game"""
@@ -2295,24 +2482,12 @@ class GameDetailsView(BaseView):
     def _show_detail_dialog(self, field_name: str, field_data: Any):
         """Show detailed data in a dialog"""
         if field_name == "standings":
-            # Convert game details standings format to list format if needed
-            if isinstance(field_data, dict) and "groups" in field_data:
-                # Game details format - convert to list format
-                standings_list = []
-                for group in field_data.get("groups", []):
-                    standings = group.get("standings", {})
-                    entries = standings.get("entries", [])
-                    for entry in entries:
-                        standings_list.append(entry)
-                dlg = StandingsDetailDialog(standings_list, self.league, self)
-            elif isinstance(field_data, list):
+            if isinstance(field_data, list):
                 # Already in list format (from main standings)
                 dlg = StandingsDetailDialog(field_data, self.league, self)
-            else:
-                QMessageBox.information(self, "Standings", "No standings data available.")
+                dlg.exec()
                 return
-            dlg.exec()
-            return
+            # A game summary's own tables fall through to the dialog built below.
         
         if field_name == "team_schedule":
             # Handle team schedule navigation
@@ -2339,27 +2514,19 @@ class GameDetailsView(BaseView):
         dlg = QDialog(self)
         dlg.setWindowTitle(f"{field_name.title()} Details")
         dlg.resize(DIALOG_WIDTH, DIALOG_HEIGHT)
-        layout = QVBoxLayout()        # Store reference to tab widget for F6 handling
-        tab_widget_ref = None
-        
+        layout = QVBoxLayout()        
         if field_name == "leaders" and isinstance(field_data, (list, dict)):
             try:
                 self._add_leaders_data_to_layout(layout, field_data)
-                # Find the tab widget that was just added for F6 handling
-                for child in layout.children():
-                    if hasattr(child, 'widget') and isinstance(child.widget(), QTabWidget):
-                        tab_widget_ref = child.widget()
-                        break
-            except Exception as e:
-                error_label = QLabel(f"Leaders display error: {str(e)}")
-                layout.addWidget(error_label)
+            except Exception:
+                error_log.log_handled()
+                failure_row = _message_row("Leaders can't be shown for this game.", "Leaders")
+                layout.addWidget(failure_row)
+                _focus_once_active(dlg, failure_row.setFocus)
         elif field_name == "boxscore" and isinstance(field_data, dict):
             self._add_boxscore_data_to_layout(layout, field_data)
-            # Find the tab widget that was just added
-            for child in layout.children():
-                if hasattr(child, 'widget') and isinstance(child.widget(), QTabWidget):
-                    tab_widget_ref = child.widget()
-                    break
+        elif field_name == "standings" and isinstance(field_data, dict):
+            self._add_game_standings_to_layout(layout, field_data)
         elif field_name == "plays" and isinstance(field_data, list):
             self._add_plays_list_to_layout(layout, field_data)
             # A period of play audio runs half a minute; don't let it outlive
@@ -2398,7 +2565,6 @@ class GameDetailsView(BaseView):
         
         # Add F5 refresh support for all dialogs
         original_keyPressEvent = dlg.keyPressEvent
-        focus_state = {"current": "tab_bar"}  # Track current focus state for F6 navigation
         
         def custom_keyPressEvent(event):
             if event.key() == Qt.Key.Key_F5:
@@ -2418,92 +2584,28 @@ class GameDetailsView(BaseView):
                 dlg.reject()
                 return
             
-            # Handle F6 for tabbed dialogs (boxscore and leaders)
-            if event.key() == Qt.Key.Key_F6 and field_name in ["boxscore", "leaders"] and tab_widget_ref:
-                # Cycle through: tab_bar -> first_table -> other_tables -> next_tab -> repeat
-                current_tab_index = tab_widget_ref.currentIndex()
-                current_widget = tab_widget_ref.widget(current_tab_index)
-                
-                if current_widget:
-                    # Find tables based on field type
-                    if field_name == "boxscore":
-                        tables = current_widget.findChildren(BoxscoreTable)
-                    else:  # leaders
-                        tables = current_widget.findChildren(LeadersTable)
-                    
-                    if focus_state["current"] == "tab_bar":
-                        # Move from tab bar to first table in current tab
-                        if tables and tables[0].rowCount() > 0:
-                            tables[0].setFocus()
-                            tables[0].setCurrentCell(0, 0)
-                            focus_state["current"] = f"table_0"
-                        event.accept()
-                        return
-                        
-                    elif focus_state["current"].startswith("table_"):
-                        # Currently on a table, move to next table or next tab
-                        try:
-                            current_table_idx = int(focus_state["current"].split("_")[1])
-                            next_table_idx = current_table_idx + 1
-                            
-                            if next_table_idx < len(tables) and tables[next_table_idx].rowCount() > 0:
-                                # Move to next table in same tab
-                                tables[next_table_idx].setFocus()
-                                tables[next_table_idx].setCurrentCell(0, 0)
-                                focus_state["current"] = f"table_{next_table_idx}"
-                            else:
-                                # Move to next tab
-                                next_tab_index = (current_tab_index + 1) % tab_widget_ref.count()
-                                tab_widget_ref.setCurrentIndex(next_tab_index)
-                                tab_widget_ref.tabBar().setFocus()
-                                focus_state["current"] = "tab_bar"
-                        except:
-                            # Fallback to tab bar
-                            tab_widget_ref.tabBar().setFocus()
-                            focus_state["current"] = "tab_bar"
-                        
-                        event.accept()
-                        return
-                
-                # Fallback: just go to tab bar
-                tab_widget_ref.tabBar().setFocus()
-                focus_state["current"] = "tab_bar"
-                event.accept()
-                return
-                
             original_keyPressEvent(event)
             
         dlg.keyPressEvent = custom_keyPressEvent
         
         # Set focus to first table after dialog is shown (for tabbed dialogs)
-        if field_name in ["boxscore", "leaders"]:
-            def set_focus_to_table():
-                # Find the tab widget in the dialog
-                tab_widgets = dlg.findChildren(QTabWidget)
-                if tab_widgets:
-                    tab_widget = tab_widgets[0]
-                    tab_widget.setFocus()
-                    # Set focus to first table in first tab
-                    first_widget = tab_widget.widget(0)
-                    if first_widget:
-                        if field_name == "boxscore":
-                            tables = first_widget.findChildren(BoxscoreTable)
-                        else:  # leaders
-                            tables = first_widget.findChildren(LeadersTable)
-                        if tables and tables[0].rowCount() > 0:
-                            QTimer.singleShot(100, lambda: tables[0].setFocus())
-                            QTimer.singleShot(100, lambda: tables[0].setCurrentCell(0, 0))
-            
-            QTimer.singleShot(FOCUS_DELAY_MS, set_focus_to_table)
+        if field_name in ["plays", "drives"]:
+            def set_focus_to_tree():
+                trees = dlg.findChildren(QTreeWidget)
+                if trees:
+                    trees[0].setFocus()
+            _focus_once_active(dlg, set_focus_to_tree)
+
+        if field_name in ["boxscore", "leaders", "standings"]:
+            _focus_once_active(dlg, lambda: _focus_first_table(dlg))
         
         dlg.exec()
     
     def load_game_details(self):
         """Start loading detailed game information.
 
-        The summary is fetched on a GameDetailsLoader thread; hockey also
-        scrapes the espn.com game page. Fetched here it froze the window on
-        every game opened and every refresh.
+        The summary is fetched on a GameDetailsLoader thread. Fetched here it
+        froze the window on every game opened and every refresh.
         """
         self._details_generation += 1
         self.details_list.clear()
@@ -2524,13 +2626,13 @@ class GameDetailsView(BaseView):
         had_focus = self.details_list.hasFocus()
         self.details_list.clear()
 
-        # An exception escaping a slot aborts the app under PyQt6.
+        # An exception escaping a slot would reach only error_log.
         try:
             # Store raw details for export functionality
             self.current_raw_details = raw_details
 
             # Display basic game information
-            self._add_basic_game_info(details)
+            self._add_basic_game_info(details, raw_details)
             
             # Show configurable details
             self._add_configurable_details(raw_details)
@@ -2744,7 +2846,9 @@ class GameDetailsView(BaseView):
             team_names = []
             for team in details['teams']:
                 team_names.append(team['name'])
-                home_away = " (Home)" if team['home_away'] == 'home' else " (Away)"
+                # At a neutral site ESPN still names one team home; nobody is.
+                neutral = (((raw_details or {}).get('header') or {}).get('competitions') or [{}])[0].get('neutralSite')
+                home_away = "" if neutral else (" (Home)" if team['home_away'] == 'home' else " (Away)")
                 
                 # Use team_id directly from processed details (infrastructure fix)
                 team_id = team.get('team_id', '')
@@ -2780,13 +2884,6 @@ class GameDetailsView(BaseView):
                 game_title_parts.append(f"{sorted_names[0]} at {sorted_names[1]}")
             elif len(sorted_names) == 1:
                 game_title_parts.append(sorted_names[0])
-        
-        # Add date/status information to title if available
-        if 'status' in details and details['status']:
-            # Only add non-generic status info
-            status = details['status']
-            if status not in ['Final', 'Scheduled', 'In Progress']:
-                game_title_parts.append(status)
         
         # Update window title with game-specific information
         if self.parent_app and self.league:
@@ -2827,7 +2924,7 @@ class GameDetailsView(BaseView):
             if 'officials' in game_info and isinstance(game_info['officials'], list):
                 officials = game_info['officials']
                 if officials:
-                    officials_item = QListWidgetItem(f"Officials: {len(officials)} assigned (Press Enter for details)")
+                    officials_item = QListWidgetItem(f"Officials: {len(officials)} assigned")
                     officials_item.setData(Qt.ItemDataRole.UserRole, {
                         "field": "officials",
                         "data": officials
@@ -2843,6 +2940,10 @@ class GameDetailsView(BaseView):
         # Broadcast info
         if 'broadcast' in details:
             self.details_list.addItem(f"TV: {details['broadcast']}")
+
+        attendance = ((raw_details or {}).get('gameInfo') or {}).get('attendance')
+        if attendance:
+            self.details_list.addItem(f"Attendance: {attendance:,}")
         
         # Injuries
         if 'injuries' in details:
@@ -2864,7 +2965,7 @@ class GameDetailsView(BaseView):
                 state = status_type.get('state', '').lower()
                 if state in ['post', 'final']:
                     # Add only the wrap-up item, no heading
-                    wrap_up_item = QListWidgetItem("🚧 Game Wrap Up")
+                    wrap_up_item = QListWidgetItem("Game Wrap Up")
                     wrap_up_item.setData(Qt.ItemDataRole.UserRole, {
                         "field": "game_wrap_up",
                         "data": self.current_raw_details
@@ -2889,10 +2990,8 @@ class GameDetailsView(BaseView):
         if all_available_fields:
             self.details_list.addItem("--- Additional Details ---")
             for field in all_available_fields:
-                value = raw_details.get(field, "N/A")
-                if value == "N/A" or not value:
-                    self.details_list.addItem(f"{field}: No data available")
-                else:
+                value = raw_details.get(field)
+                if value:
                     self._add_configurable_field(field, value)
     
     def _add_configurable_field(self, field: str, value: Any):
@@ -2912,12 +3011,6 @@ class GameDetailsView(BaseView):
                         list_item_widget.setData(Qt.ItemDataRole.UserRole, {"field": field, "data": self.current_raw_details})
                     else:
                         list_item_widget.setData(Qt.ItemDataRole.UserRole, {"field": field, "data": value})
-            else:
-                try:
-                    formatted_value = ApiService.format_complex_data(field, value)
-                    self.details_list.addItem(f"{field}: {formatted_value}")
-                except ApiError:
-                    self.details_list.addItem(f"{field}: Error formatting data")
         else:
             # Use enhanced formatting for simple data
             try:
@@ -2952,7 +3045,7 @@ class GameDetailsView(BaseView):
                 return len(value) > 0
             return False
         elif field == "boxscore" and isinstance(value, dict):
-            return bool(value.get("teams") or value.get("players"))
+            return bool(build_box_tables(value))
         elif field == "plays" and isinstance(value, list):
             return len(value) > 0
         elif field == "drives" and isinstance(value, dict):
@@ -2969,7 +3062,8 @@ class GameDetailsView(BaseView):
     def _reshow_detail_dialog(self, field_name, raw_details):
         """Reopen a detail dialog with freshly loaded data (F5 inside it)."""
         try:
-            updated_field_data = raw_details.get(field_name)
+            updated_field_data = (((raw_details.get("gameInfo") or {}).get("officials"))
+                                  if field_name == "officials" else raw_details.get(field_name))
             if updated_field_data:
                 self._show_detail_dialog(field_name, updated_field_data)
         except Exception as e:
@@ -3007,116 +3101,6 @@ class GameDetailsView(BaseView):
             # Initial title while loading
             self.parent_app.update_window_title(["Game Details", self.league])
     
-    def _add_standings_table_to_layout(self, layout, data):
-        """Add standings table to layout"""
-        standings_data = StandingsData(data)
-        if not standings_data.teams:
-            layout.addWidget(QLabel("No standings data available."))
-            return
-        
-        # Check if we have division data for MLB
-        has_divisions = len(standings_data.divisions) > 1 or any(
-            div != "League" for div in standings_data.divisions.keys()
-        )
-        
-        if has_divisions and hasattr(self, 'league') and self.league == "MLB":
-            # Create tabbed view for divisions
-            tab_widget = QTabWidget()
-            tab_widget.setAccessibleName("Division Standings")
-            tab_widget.setAccessibleDescription("Baseball divisions, use arrow keys to navigate between divisions")
-            
-            # Sort divisions for consistent ordering
-            division_order = ["AL East", "AL Central", "AL West", "NL East", "NL Central", "NL West", "League"]
-            sorted_divisions = []
-            
-            for div_name in division_order:
-                if div_name in standings_data.divisions:
-                    sorted_divisions.append((div_name, standings_data.divisions[div_name]))
-            
-            # Add any divisions not in our predefined order
-            for div_name, teams in standings_data.divisions.items():
-                if div_name not in division_order:
-                    sorted_divisions.append((div_name, teams))
-            
-            for div_name, teams in sorted_divisions:
-                if teams:  # Only create tab if there are teams
-                    # Create table for this division
-                    table = QTableWidget()
-                    table.setColumnCount(len(STANDINGS_HEADERS))
-                    table.setHorizontalHeaderLabels(STANDINGS_HEADERS)
-                    table.setRowCount(len(teams))
-                    
-                    # Populate table with division ranking
-                    for row, team_data in enumerate(teams):
-                        rank = str(row + 1)  # Rank within division
-                        items_data = [
-                            rank,
-                            team_data["name"],
-                            team_data["wins"],
-                            team_data["losses"],
-                            team_data["win_pct"],
-                            team_data["games_behind"],
-                            team_data.get("streak", "N/A"),
-                            team_data["record"]
-                        ]
-                        
-                        for col, value in enumerate(items_data):
-                            item = QTableWidgetItem(str(value))
-                            table.setItem(row, col, item)
-                    
-                    # Configure table
-                    table.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
-                    table.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
-                    table.setAlternatingRowColors(True)
-                    table.verticalHeader().setVisible(False)
-                    
-                    # Auto-resize columns
-                    header = table.horizontalHeader()
-                    header.setSectionResizeMode(QHeaderView.ResizeMode.ResizeToContents)
-                    header.setSectionResizeMode(1, QHeaderView.ResizeMode.Stretch)  # Team name stretches
-                    
-                    # Add table to tab
-                    tab_widget.addTab(table, div_name)
-            
-            layout.addWidget(tab_widget)
-        else:
-            # Create single table for non-divisional leagues
-            table = QTableWidget()
-            table.setColumnCount(len(STANDINGS_HEADERS))
-            table.setHorizontalHeaderLabels(STANDINGS_HEADERS)
-            table.setRowCount(len(standings_data.teams))
-            
-            # Populate table
-            for row, team_data in enumerate(standings_data.teams):
-                rank = str(row + 1)
-                items_data = [
-                    rank,
-                    team_data["name"],
-                    team_data["wins"],
-                    team_data["losses"],
-                    team_data["win_pct"],
-                    team_data["games_behind"],
-                    team_data.get("streak", "N/A"),
-                    team_data["record"]
-                ]
-                
-                for col, value in enumerate(items_data):
-                    item = QTableWidgetItem(str(value))
-                    table.setItem(row, col, item)
-            
-            # Configure table
-            table.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
-            table.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
-            table.setAlternatingRowColors(True)
-            table.verticalHeader().setVisible(False)
-            
-            # Auto-resize columns
-            header = table.horizontalHeader()
-            header.setSectionResizeMode(QHeaderView.ResizeMode.ResizeToContents)
-            header.setSectionResizeMode(1, QHeaderView.ResizeMode.Stretch)  # Team name stretches
-            
-            layout.addWidget(table)
-    
     def _add_leaders_data_to_layout(self, layout, data):
         """Add leaders data to layout using tabbed interface with one tab per team"""
         if not data:
@@ -3147,9 +3131,9 @@ class GameDetailsView(BaseView):
             return
         
         # Create tab widget for teams
-        tab_widget = QTabWidget()
-        tab_widget.setAccessibleName("Team Leaders")
-        tab_widget.setAccessibleDescription("Statistical leaders by team. Use arrow keys to navigate between teams, Tab to enter table.")
+        tab_widget = make_tab_area(
+            len(valid_teams), "Team Leaders",
+            "Statistical leaders by team. Use arrow keys to navigate between teams, Tab to enter table.")
         
         # Create a tab for each team
         for team_data in valid_teams:
@@ -3159,9 +3143,6 @@ class GameDetailsView(BaseView):
             # Create widget for this team's tab
             team_widget = QWidget()
             team_layout = QVBoxLayout()
-            
-            # Create leaders table for this team
-            leaders_table = LeadersTable(parent=self)
             
             # Parse this team's statistical leaders
             team_leaders = team_data.get("leaders", [])
@@ -3190,31 +3171,12 @@ class GameDetailsView(BaseView):
                     ])
             
             if rows:
-                # Use custom headers for individual team view (no team column needed)
-                leaders_table.setColumnCount(3)
-                leaders_table.setHorizontalHeaderLabels(["Category", "Player", "Value"])
-                leaders_table.setRowCount(len(rows))
-                
-                for row, data_row in enumerate(rows):
-                    for col, value in enumerate(data_row):
-                        item = QTableWidgetItem(str(value))
-                        leaders_table.setItem(row, col, item)
-                
-                # Configure table appearance
-                leaders_table.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
-                leaders_table.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
-                leaders_table.setAlternatingRowColors(True)
-                leaders_table.verticalHeader().setVisible(False)
-                
-                # Resize columns
-                header = leaders_table.horizontalHeader()
-                header.setSectionResizeMode(QHeaderView.ResizeMode.ResizeToContents)
-                header.setSectionResizeMode(1, QHeaderView.ResizeMode.Stretch)  # Player name stretches
-                
-                # Set accessibility
-                leaders_table.setAccessibleName(f"{team_name} Statistical Leaders")
-                leaders_table.setAccessibleDescription(f"Statistical leaders for {team_name}. Use arrow keys to navigate.")
-                
+                leaders_table = LeadersTable()
+                # A tab is one team, so there's no Team column. The player's name stretches.
+                leaders_table.setup_columns(["Category", "Player", "Value"], stretch_column=1)
+                leaders_table.populate_data(rows, set_focus=False)
+                leaders_table.update_accessible_name(f"{team_name} Statistical Leaders")
+                leaders_table.update_accessible_description(f"Statistical leaders for {team_name}")
                 team_layout.addWidget(leaders_table)
             else:
                 team_layout.addWidget(QLabel(f"No statistical leaders available for {team_name}."))
@@ -3230,211 +3192,44 @@ class GameDetailsView(BaseView):
             tab_widget.setCurrentIndex(0)
     
     def _add_boxscore_data_to_layout(self, layout, data):
-        """Add boxscore data to layout using accessible tables with proper keyboard navigation"""
-        if not data:
-            layout.addWidget(QLabel("No boxscore data available."))
+        """One tab per table from box_score.build_box_tables, player tables first."""
+        tables = build_box_tables(data)
+        if not tables:
+            layout.addWidget(QLabel("No box score is available for this game."))
             return
-        
-        # Check if data has the expected ESPN API structure
-        has_teams = isinstance(data, dict) and "teams" in data and data["teams"]
-        has_players = isinstance(data, dict) and "players" in data and data["players"]
-        
-        if not has_teams and not has_players:
-            info_label = QLabel("Boxscore data is not available for this game.\n\n"
-                               "This can happen for several reasons:\n"
-                               "• Game is too old (ESPN may not provide detailed statistics for older games)\n"
-                               "• Game was postponed or cancelled\n"
-                               "• Game has not yet started\n"
-                               "• Data is temporarily unavailable from ESPN\n\n"
-                               "Try checking recent games or games currently in progress for boxscore data.")
-            info_label.setWordWrap(True)
-            info_label.setStyleSheet("padding: 10px; color: #666; font-size: 12px;")
-            layout.addWidget(info_label)
-            return
-        
-        # Create tab widget for organized boxscore display
-        tab_widget = QTabWidget()
-        tab_widget.setAccessibleName("Boxscore Tabs")
-        tab_widget.setAccessibleDescription("Tabbed view of team and player statistics. Use Left/Right arrow keys to navigate tabs, Tab to enter tables.")
-        tab_widget.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
-        
-        # Process each team separately - create tabs for each team
-        if has_teams or has_players:
-            # Determine team names first
-            team_names = []
-            if has_teams:
-                for team_data in data["teams"]:
-                    team_name = team_data.get("team", {}).get("displayName", "Unknown Team")
-                    team_names.append(team_name)
-            elif has_players:
-                for team_players in data["players"]:
-                    team_name = team_players.get("team", {}).get("displayName", "Unknown Team")
-                    team_names.append(team_name)
-            
-            # Create tabs for each team
-            for team_idx in range(len(team_names)):
-                team_name = team_names[team_idx]
-                
-                # Team Statistics Tab
-                if has_teams and team_idx < len(data["teams"]):
-                    team_data = data["teams"][team_idx]
-                    team_stats = team_data.get("statistics", [])
-                    
-                    if team_stats:
-                        team_widget = QWidget()
-                        team_layout = QVBoxLayout()
-                        
-                        # Create team header
-                        team_label = QLabel(f"=== {team_name} Team Statistics ===")
-                        team_label.setStyleSheet("font-weight: bold; font-size: 14px; margin: 10px 0;")
-                        team_layout.addWidget(team_label)
-                        
-                        first_team_table = None  # Track first table for focus
-                        
-                        for stat_group in team_stats:
-                            stat_type = stat_group.get("displayName", stat_group.get("name", "Team Stats"))
-                            stats_array = stat_group.get("stats", [])
-                            
-                            if stats_array:
-                                # Create team statistics table
-                                team_table = BoxscoreTable(title=f"{team_name} {stat_type}")
-                                team_table.setup_columns(["Statistic", "Value"])
-                                
-                                # Prioritize important stats by putting them first
-                                important_stats = ['runs', 'hits', 'errors', 'homeRuns', 'runsBattedIn']
-                                if stat_type.lower() == 'pitching':
-                                    important_stats = ['earnedRuns', 'runs', 'hits', 'strikeouts', 'walks', 'homeRuns']
-                                
-                                stats_data = []
-                                remaining_stats = []
-                                
-                                # First pass: find important stats
-                                for stat in stats_array:
-                                    stat_name = stat.get("displayName", stat.get("name", "Unknown"))
-                                    stat_value = stat.get("displayValue", str(stat.get("value", "N/A")))
-                                    stat_key = stat.get("name", "").lower()
-                                    
-                                    if any(important in stat_key for important in important_stats):
-                                        stats_data.append([stat_name, stat_value])
-                                    else:
-                                        remaining_stats.append([stat_name, stat_value])
-                                
-                                # Add a separator if we have both important and remaining stats
-                                if stats_data and remaining_stats:
-                                    stats_data.append(["--- Other Stats ---", ""])
-                                
-                                # Add remaining stats
-                                stats_data.extend(remaining_stats)
-                                
-                                # Set focus on first table created
-                                should_focus = first_team_table is None
-                                if should_focus:
-                                    first_team_table = team_table
-                                
-                                team_table.populate_data(stats_data, set_focus=should_focus)
-                                team_layout.addWidget(team_table)
-                        
-                        team_widget.setLayout(team_layout)
-                        tab_widget.addTab(team_widget, f"{team_name} Stats")
-                
-                # Player Statistics Tabs for this team
-                if has_players and team_idx < len(data["players"]):
-                    team_players = data["players"][team_idx]
-                    player_stats_groups = team_players.get("statistics", [])
-                    
-                    for stat_group in player_stats_groups:
-                        stat_type = stat_group.get("type", "Unknown")
-                        stat_names = stat_group.get("names", [])
-                        athletes = stat_group.get("athletes", [])
-                        
-                        if not athletes or not stat_names:
-                            continue
-                        
-                        # Create widget for this stat type (batting/pitching)
-                        stat_widget = QWidget()
-                        stat_layout = QVBoxLayout()
-                        
-                        # Create team header
-                        team_label = QLabel(f"=== {team_name} {stat_type.title()} ===")
-                        team_label.setStyleSheet("font-weight: bold; font-size: 14px; margin: 10px 0;")
-                        stat_layout.addWidget(team_label)
-                        
-                        # Create player statistics table
-                        stat_table = BoxscoreTable(title=f"{team_name} {stat_type.title()}")
-                        
-                        # Build headers - Player name + position + stat names
-                        headers = ["Player", "Pos"] + stat_names
-                        stat_table.setup_columns(headers, stretch_column=0)
-                        
-                        # Build player data
-                        player_data = []
-                        for athlete in athletes:
-                            if not athlete.get("active", True):
-                                continue
-                                
-                            player_info = athlete.get("athlete", {})
-                            player_name = player_info.get("displayName", "Unknown")
-                            position = player_info.get("position", {}).get("abbreviation", "")
-                            stats = athlete.get("stats", [])
-                            
-                            # Build row data
-                            row = [player_name, position]
-                            row.extend(stats)
-                            player_data.append(row)
-                        
-                        # Set focus for first tab created
-                        should_focus = tab_widget.count() == 0
-                        stat_table.populate_data(player_data, set_focus=should_focus)
-                        stat_layout.addWidget(stat_table)
-                        
-                        stat_widget.setLayout(stat_layout)
-                        tab_widget.addTab(stat_widget, f"{team_name} {stat_type.title()}")
-        
-        # Add the tab widget to the main layout
+
+        # Football runs to 20 tables and most other sports to 7 or fewer.
+        tab_widget = make_tab_area(
+            len(tables), "Boxscore Tabs", "Tabbed view of team and player statistics.",
+            list_name="Boxscore Tables")
+        for index, box in enumerate(tables):
+            page = QWidget()
+            page_layout = QVBoxLayout()
+            table = BoxscoreTable(title=box.title)
+            table.setup_columns(box.headers, stretch_column=0)
+            table.populate_data(box.rows, set_focus=index == 0)
+            page_layout.addWidget(table)
+            page.setLayout(page_layout)
+            tab_widget.addTab(page, box.title)
         layout.addWidget(tab_widget)
-        
-        # Configure custom keyboard navigation for tab widget
-        original_keyPressEvent = tab_widget.keyPressEvent
-        
-        def custom_keyPressEvent(event):
-            key = event.key()
-            
-            # Handle arrow keys for tab navigation when focus is on tab bar
-            if tab_widget.tabBar().hasFocus():
-                if key == Qt.Key.Key_Left:
-                    current = tab_widget.currentIndex()
-                    new_index = (current - 1) % tab_widget.count()
-                    tab_widget.setCurrentIndex(new_index)
-                    event.accept()
-                    return
-                elif key == Qt.Key.Key_Right:
-                    current = tab_widget.currentIndex()
-                    new_index = (current + 1) % tab_widget.count()
-                    tab_widget.setCurrentIndex(new_index)
-                    event.accept()
-                    return
-                elif key == Qt.Key.Key_Tab:
-                    # Tab from tab bar into first table of current tab
-                    current_widget = tab_widget.currentWidget()
-                    if current_widget:
-                        tables = current_widget.findChildren(BoxscoreTable)
-                        if tables:
-                            tables[0].setFocus()
-                            if tables[0].rowCount() > 0:
-                                tables[0].setCurrentCell(0, 0)
-                    event.accept()
-                    return
-            
-            # Default handling
-            original_keyPressEvent(event)
-        
-        tab_widget.keyPressEvent = custom_keyPressEvent
-        
-        # Set up initial tab focus
-        if tab_widget.count() > 0:
-            tab_widget.setCurrentIndex(0)
-            # Focus on the tab bar initially so arrows can navigate tabs
-            QTimer.singleShot(50, lambda: tab_widget.tabBar().setFocus())
+
+    def _add_game_standings_to_layout(self, layout, data):
+        """The division or conference tables a game summary carries, one tab each."""
+        tables = game_standings_tables(data)
+        if not tables:
+            layout.addWidget(QLabel("No standings are available for this game."))
+            return
+        tab_widget = make_tab_area(len(tables), "Standings Tabs", list_name="Standings Tables")
+        for index, data_table in enumerate(tables):
+            page = QWidget()
+            page_layout = QVBoxLayout()
+            table = BoxscoreTable(title=data_table["title"])
+            table.setup_columns(data_table["headers"], stretch_column=0)
+            table.populate_data(data_table["rows"], set_focus=index == 0)
+            page_layout.addWidget(table)
+            page.setLayout(page_layout)
+            tab_widget.addTab(page, data_table["title"])
+        layout.addWidget(tab_widget)
 
     def _add_plays_list_to_layout(self, layout, data):
         """Add hierarchical play-by-play tree to layout"""
@@ -3465,7 +3260,7 @@ class GameDetailsView(BaseView):
         
         # Add Export Game Log button
         export_btn = QPushButton("Export Game Log")
-        export_btn.setAccessibleName("Export Game Log Button")
+        export_btn.setAccessibleName("Export Game Log")
         export_btn.setAccessibleDescription("Export the complete game log as an HTML file")
         export_btn.clicked.connect(self._export_game_log)
         export_btn.setMaximumWidth(150)
@@ -3485,7 +3280,7 @@ class GameDetailsView(BaseView):
         # The same thing for the sports whose plays carry court/rink coordinates.
         if self.play_audio_mapper and self.play_audio_mapper.supports(sport_type):
             play_audio_btn = QPushButton("Play Audio")
-            play_audio_btn.setAccessibleName("Play Audio Button")
+            play_audio_btn.setAccessibleName("Play Audio")
             play_audio_btn.setAccessibleDescription(
                 "Play spatial audio for the currently selected play (Alt+P). "
                 "Alt+S plays every located play in the period."
@@ -3650,7 +3445,9 @@ class GameDetailsView(BaseView):
         # Add current drive if available
         current_drive = drives_data.get("current")
         if current_drive:
-            all_drives.append(("Current Drive", current_drive))
+            # ESPN also lists the drive in progress under previous.
+            if not any(d.get("id") == current_drive.get("id") for d in drives_data.get("previous") or []):
+                all_drives.append(("Current Drive", current_drive))
         
         # Add previous drives if available
         previous_drives = drives_data.get("previous", [])
@@ -3674,7 +3471,7 @@ class GameDetailsView(BaseView):
         
         # Add Export Game Log button
         export_btn = QPushButton("Export Game Log")
-        export_btn.setAccessibleName("Export Game Log Button")
+        export_btn.setAccessibleName("Export Game Log")
         export_btn.setAccessibleDescription("Export the complete game log as an HTML file")
         export_btn.clicked.connect(self._export_game_log)
         export_btn.setMaximumWidth(150)
@@ -3708,8 +3505,7 @@ class GameDetailsView(BaseView):
             if plays and len(plays) > 0:
                 first_play = plays[0]
                 period_info = first_play.get("period", {})
-                quarter_num = period_info.get("number", "?")
-                quarter = f"Quarter {quarter_num}"
+                quarter = football_period_label(period_info.get("number"))
             
             # Separate kickoffs from regular drive plays
             drive_plays = []
@@ -3739,7 +3535,7 @@ class GameDetailsView(BaseView):
                 quarter_groups[quarter].append((drive_label, modified_drive, team_name, description, False))
         
         # Build tree structure by quarter
-        for quarter in sorted(quarter_groups.keys()):
+        for quarter in sorted(quarter_groups.keys(), key=football_period_sort_key):
             quarter_item = QTreeWidgetItem([quarter])
             quarter_item.setExpanded(True)
             drives_tree.addTopLevelItem(quarter_item)
@@ -3748,7 +3544,7 @@ class GameDetailsView(BaseView):
             for drive_label, drive, team_name, description, is_kickoff in drives_in_quarter:
                 if is_kickoff:
                     # Create kickoff item directly under quarter
-                    kickoff_item = QTreeWidgetItem(["⚡ Kickoff"])
+                    kickoff_item = QTreeWidgetItem(["Kickoff"])
                     kickoff_item.setBackground(0, QColor(240, 240, 255))  # Light blue
                     kickoff_item.setExpanded(False)
                     quarter_item.addChild(kickoff_item)
@@ -3772,7 +3568,7 @@ class GameDetailsView(BaseView):
                     result_info = get_drive_result_info(drive)
                     
                     # Build enhanced drive summary with scoring indicators
-                    enhanced_summary = f"{result_info['icon']} [{result_info['badge']}] {team_name}: {description}"
+                    enhanced_summary = f"[{result_info['badge']}] {team_name}: {description}"
                     
                     drive_item = QTreeWidgetItem([enhanced_summary])
                     drive_item.setExpanded(False)  # Collapsed by default
@@ -4133,7 +3929,10 @@ class GameDetailsView(BaseView):
 
             # Score at end of period + goal/score count
             period_score = ""
-            goals_this_period = sum(max(0, p.get("scoreValue", 0) or 0) for p in plays_in_period)
+            # A shootout's attempts all carry scoreValue, and only one point goes on the
+            # final score, so a goal count there would be wrong.
+            is_shootout = period_label.strip().upper().startswith("SO") or "shootout" in period_label.lower()
+            goals_this_period = 0 if is_shootout else sum(max(0, p.get("scoreValue", 0) or 0) for p in plays_in_period)
             for play in reversed(plays_in_period):
                 away = self._safe_int(play.get("awayScore"))
                 home = self._safe_int(play.get("homeScore"))
@@ -4224,18 +4023,8 @@ class GameDetailsView(BaseView):
                 period_item.addChild(play_item)
 
     def _ordinal_period_label(self, period_num, fallback_display=""):
-        """Convert period number to a readable label (1st Quarter, OT, etc.)"""
-        fb_lower = fallback_display.lower()
-        if "ot" in fb_lower or "overtime" in fb_lower or "extra" in fb_lower:
-            ot_num = period_num - 4
-            return f"OT{ot_num if ot_num > 1 else ''}"
-        ordinals = {1: "1st", 2: "2nd", 3: "3rd", 4: "4th"}
-        if period_num in ordinals:
-            return f"{ordinals[period_num]} Quarter"
-        if period_num > 4:
-            ot_num = period_num - 4
-            return f"OT{ot_num if ot_num > 1 else ''}"
-        return fallback_display or f"Period {period_num}"
+        """A basketball period's name: 1st Half, 3rd Quarter, OT, 2OT."""
+        return basketball_period_label(self.league, period_num, fallback_display)
 
     def _parse_basketball_clock(self, clock_str):
         """Parse basketball clock value into seconds for sorting"""
@@ -4908,14 +4697,7 @@ class GameDetailsView(BaseView):
     def _announce_play_audio(self, message):
         """Say something about the audio through the screen reader."""
         self._on_audio_feedback(message)
-        helper = getattr(self, "notification_helper", None)
-        if helper is None:
-            helper = getattr(getattr(self, "parent_app", None), "notification_helper", None)
-        if helper is not None:
-            try:
-                helper.announce(message)
-            except Exception:
-                pass
+        announce(message)
 
     def _play_play_audio(self, tree_item):
         """Play the tone for one basketball or hockey play."""
@@ -5957,10 +5739,10 @@ class GameDetailsView(BaseView):
         story = re.sub(r'—\s*(?=\s*[A-Z])', '', story)
         
         # Replace HTML links with text only for now (keep the linked text but remove the link)
-        story = re.sub(r'<a[^>]*>(.*?)</a>', r'\\1', story)
+        story = re.sub(r'<a[^>]*>(.*?)</a>', r'\1', story)
         
         # Replace headline tags with proper HTML
-        story = re.sub(r'<hl2>(.*?)</hl2>', r'<h3 style="color: #2e7d32; margin: 20px 0 10px 0;">\\1</h3>', story)
+        story = re.sub(r'<hl2>(.*?)</hl2>', r'<h3 style="color: #2e7d32; margin: 20px 0 10px 0;">\1</h3>', story)
         
         # Clean up extra whitespace and newlines
         story = re.sub(r'\n\s*\n', '\n\n', story)  # Normalize paragraph breaks
@@ -6814,7 +6596,9 @@ class GameDetailsView(BaseView):
         # Add current drive if available
         current_drive = drives_data.get("current")
         if current_drive:
-            all_drives.append(("Current Drive", current_drive))
+            # ESPN also lists the drive in progress under previous.
+            if not any(d.get("id") == current_drive.get("id") for d in drives_data.get("previous") or []):
+                all_drives.append(("Current Drive", current_drive))
         
         # Add previous drives if available
         previous_drives = drives_data.get("previous", [])
@@ -7314,10 +7098,21 @@ class WildCardTabsMixin:
 
     WILDCARD_TABS = (("AL", "AL Wild Card"), ("NL", "NL Wild Card"))
 
+    def _wildcard_tab_count(self) -> int:
+        return len(self.WILDCARD_TABS) if self.league == "MLB" else 0
+
+    def _make_group_area(self, group_names: List[str], description: str):
+        """The dialog's groups as tabs or as a list, counting the wild card tabs still to come."""
+        wildcards = self._wildcard_tab_count()
+        return make_tab_area(
+            len(group_names) + wildcards, "Standings", description,
+            list_name="Divisions and Wild Cards" if wildcards else group_noun(group_names),
+            list_description="Press Enter on one to open its standings. Escape comes back to this list.")
+
     def _build_wildcard_tabs(self):
         self._wildcard_tabs = {}
         self._wildcard_loader = None
-        if self.league != "MLB" or not self.tab_widget:
+        if not self._wildcard_tab_count() or not self.tab_widget:
             return
         for league_key, label in self.WILDCARD_TABS:
             placeholder = QWidget()
@@ -7381,6 +7176,8 @@ class WildCardTabsMixin:
         league_key, label, _ = entry
 
         container = self.tab_widget.widget(index)
+        focused = QApplication.focusWidget()
+        focus_inside = focused is not None and container.isAncestorOf(focused)
         container_layout = container.layout()
         while container_layout.count():
             item = container_layout.takeAt(0)
@@ -7398,28 +7195,28 @@ class WildCardTabsMixin:
                            "Leave this tab and return to try again.")
             status.setAccessibleName(f"{label} unavailable")
             container_layout.addWidget(status)
+            keep_in_tab_order(self.tab_widget, status)
+            if focus_inside:
+                status.setFocus()
             container.table = None  # type: ignore[attr-defined]
             self._announce_wildcard(f"{label} standings unavailable")
             return
 
-        # set_focus=False, and no setFocus() here: currentChanged fires for any
-        # tab change including a plain arrow along the tab bar, so grabbing focus
-        # would trap a keyboard user in the table and stop them arrowing on.
+        # set_focus=False: currentChanged fires for any tab change including a plain
+        # arrow along the tab bar, so grabbing focus would trap a keyboard user in the
+        # table and stop them arrowing on. Only someone on the "Loading" row moves, or
+        # they'd be left on nothing when it goes.
         table = WildCardTable(parent=self, division_name=label)
         table.populate_standings(teams, set_focus=False)
         container_layout.addWidget(table)
+        keep_in_tab_order(self.tab_widget, table)
         container.table = table  # type: ignore[attr-defined]
+        if focus_inside:
+            table.setFocus()
         self._announce_wildcard(f"{label} standings ready, {len(teams)} teams")
 
     def _announce_wildcard(self, message: str):
-        helper = getattr(self, "notification_helper", None)
-        if helper is None:
-            helper = getattr(getattr(self, "parent_app", None), "notification_helper", None)
-        if helper is not None:
-            try:
-                helper.announce(message)
-            except Exception:
-                pass
+        announce(message)
 
 
 class StandingsDetailDialog(WildCardTabsMixin, QDialog):
@@ -7432,10 +7229,11 @@ class StandingsDetailDialog(WildCardTabsMixin, QDialog):
         self.setWindowTitle(f"{league} Standings Details")
         self.resize(STANDINGS_DIALOG_WIDTH, STANDINGS_DIALOG_HEIGHT)
         
-        self.tab_widget: QTabWidget | None = None
+        self.tab_widget: QTabWidget | ListPages | None = None
         self.single_table: StandingsTable | None = None
         
         self.setup_ui()
+        _focus_once_active(self, lambda: _focus_first_table(self))
     
     def setup_ui(self):
         layout = QVBoxLayout()
@@ -7460,14 +7258,6 @@ class StandingsDetailDialog(WildCardTabsMixin, QDialog):
         self.setLayout(layout)
     
     def _build_division_tabs(self, layout: QVBoxLayout):
-        self.tab_widget = QTabWidget()
-        self.tab_widget.setAccessibleName(
-            "Standings" if self.league == "MLB" else "Division Standings")
-        self.tab_widget.setAccessibleDescription(
-            "Team standings by division, plus AL and NL wild card, use arrow keys to move between tabs"
-            if self.league == "MLB"
-            else "Team standings by division, use arrow keys to navigate between divisions")
-        
         if self.league == "MLB":
             division_order = ["AL East", "AL Central", "AL West", "NL East", "NL Central", "NL West", "League"]
         elif self.league == "NFL":
@@ -7483,10 +7273,16 @@ class StandingsDetailDialog(WildCardTabsMixin, QDialog):
         for name, teams in self.standings_data.divisions.items():
             if name not in division_order:
                 ordered.append((name, teams))
+        ordered = [(name, teams) for name, teams in ordered if teams]
+
+        self.tab_widget = self._make_group_area(
+            [name for name, _ in ordered],
+            "Team standings by division, plus AL and NL wild card, use arrow keys to move between tabs"
+            if self.league == "MLB"
+            else "Team standings, use arrow keys to move between tabs")
         for name, teams in ordered:
-            if teams:
-                tab = self._create_division_table(name, teams)
-                self.tab_widget.addTab(tab, name)
+            tab = self._create_division_table(name, teams)
+            self.tab_widget.addTab(tab, name)
 
         self._build_wildcard_tabs()
 
@@ -7495,7 +7291,7 @@ class StandingsDetailDialog(WildCardTabsMixin, QDialog):
             first = self.tab_widget.widget(0)
             if hasattr(first, "table"):
                 first.table.setFocus()  # type: ignore[attr-defined]
-    
+
     def _create_division_table(self, division_name: str, teams: List[Dict]) -> QWidget:
         widget = QWidget()
         layout = QVBoxLayout()
@@ -7539,7 +7335,7 @@ class StandingsDetailDialog(WildCardTabsMixin, QDialog):
         if self.tab_widget:
             if event.key() == Qt.Key.Key_F6:
                 self.tab_widget.setFocus(); event.accept(); return
-            if event.modifiers() == Qt.KeyboardModifier.ControlModifier:
+            if event.modifiers() == Qt.KeyboardModifier.ControlModifier and _pages_on_show(self.tab_widget):
                 if event.key() == Qt.Key.Key_Tab:
                     i = (self.tab_widget.currentIndex() + 1) % self.tab_widget.count()
                     self.tab_widget.setCurrentIndex(i)
@@ -7571,10 +7367,9 @@ class KitchenSinkDialog(QDialog):
     def setup_ui(self):
         layout = QVBoxLayout()
         
-        # Create tabs for different data types
-        self.tab_widget = QTabWidget()
-        self.tab_widget.setAccessibleName("Kitchen Sink Data")
-        self.tab_widget.setAccessibleDescription("Additional baseball data features, use arrow keys to navigate between sections")
+        # Create tabs for different data types: at most the seven added below
+        self.tab_widget = make_tab_area(
+            7, "Kitchen Sink Data", "Additional baseball data features, use arrow keys to navigate between sections")
         
         # Add tabs for each available feature (only if data exists)
         self._add_rosters_tab()
@@ -8185,7 +7980,8 @@ class StandingsLoader(QThread):
     def __init__(self, league: str):
         super().__init__()
         self.league = league
-    
+        self.cache_key = standings_cache_key(league)
+
     def run(self):
         try:
             standings_data = ApiService.get_standings(self.league)
@@ -8271,6 +8067,10 @@ class GameDetailsDialog(QDialog):
         layout.addLayout(button_layout)
         self.setLayout(layout)
     
+    def go_back(self):
+        """Back, from the view inside this dialog, closes the dialog."""
+        self.accept()
+
     def update_window_title(self, context_parts=None):
         """Update dialog window title with context information"""
         if context_parts:
@@ -8340,7 +8140,7 @@ class TeamHubDialog(QDialog):
 
         layout.addLayout(header_layout)
 
-        self.tab_widget = QTabWidget()
+        self.tab_widget = make_tab_area(5, mnemonics=True)
         self.tab_widget.currentChanged.connect(self._on_tab_changed)
 
         # Tab 0 — Info
@@ -8351,13 +8151,15 @@ class TeamHubDialog(QDialog):
         self.info_list.setAccessibleDescription("Team details including record, venue, coach, and next game")
         info_layout.addWidget(self.info_list)
         self.tab_widget.addTab(info_w, "&Info")
+        # Open on the team's details, not on the favorites button above them.
+        _focus_once_active(self, self.info_list.setFocus)
 
         # Tab 1 — Roster
         roster_w = QWidget()
         roster_layout = QVBoxLayout(roster_w)
         self.roster_table = AccessibleTable(accessible_name=f"{self.team_name} Roster",
                                             accessible_description="Team roster. Alt+V to cycle view modes.")
-        self.roster_table.setup_columns(["#", "Name", "Position", "Age", "Height", "Weight"])
+        self.roster_table.setup_columns(["Name", "#", "Position", "Age", "Height", "Weight"])
         roster_layout.addWidget(self.roster_table)
         self.tab_widget.addTab(roster_w, "R&oster")
 
@@ -8394,7 +8196,7 @@ class TeamHubDialog(QDialog):
         self.news_list.setAccessibleDescription("Team news articles. Press Enter to open in browser.")
         self.news_list.itemActivated.connect(self._on_news_activated)
         news_layout.addWidget(self.news_list)
-        open_btn = QPushButton("&Open Story in Browser")
+        open_btn = QPushButton("O&pen Story in Browser")
         open_btn.clicked.connect(self._open_selected_news)
         news_layout.addWidget(open_btn)
         self.tab_widget.addTab(news_w, "&News")
@@ -8406,7 +8208,7 @@ class TeamHubDialog(QDialog):
         self.trans_list.setAccessibleName(f"{self.team_name} Transactions")
         self.trans_list.setAccessibleDescription("Recent player transactions for this team")
         trans_layout.addWidget(self.trans_list)
-        self.tab_widget.addTab(trans_w, "&Transactions")
+        self.tab_widget.addTab(trans_w, "T&ransactions")
 
         layout.addWidget(self.tab_widget)
 
@@ -8447,16 +8249,21 @@ class TeamHubDialog(QDialog):
         self.info_list.clear()
         if not info:
             self.info_list.addItem("No team info available.")
+            self.info_list.setCurrentRow(0)
             return
         def add(label, value):
             if value:
                 self.info_list.addItem(f"{label}: {value}")
         add("Team", info.get('name'))
         add("Division", info.get('division'))
+        add("Standing", info.get('standing'))
         add("Conference", info.get('conference'))
-        add("Record (Overall)", info.get('record_overall'))
+        add("Record (Regular Season)" if info.get('record_regular_season_only') else "Record (Overall)",
+            info.get('record_overall'))
         add("Record (Home)", info.get('record_home'))
         add("Record (Road)", info.get('record_road'))
+        if info.get('record_unavailable'):
+            self.info_list.addItem("Record not available right now")
         add("Head Coach", info.get('head_coach'))
         add("Venue", info.get('venue_name'))
         add("Location", info.get('venue_location'))
@@ -8465,25 +8272,27 @@ class TeamHubDialog(QDialog):
         date = info.get('next_game_date')
         if opp and date:
             add("Next Game", f"{ha} {opp}  —  {date}")
+        self.info_list.setCurrentRow(0)
 
     # -------------------------------------------------------------- roster tab
 
     def _load_roster(self):
-        self.roster_table.populate_data([["Loading roster...", "", "", "", "", ""]])
+        self.roster_table.populate_data([["Loading roster...", "", "", "", "", ""]], set_focus=False)
         loader = TeamRosterLoader(self.team_id, self.league)
         loader.data_loaded.connect(self._on_roster_loaded)
         loader.error_occurred.connect(
-            lambda e: self.roster_table.populate_data([[f"Error: {e}", "", "", "", "", ""]]))
+            lambda e: self.roster_table.populate_data([[f"Error: {e}", "", "", "", "", ""]], set_focus=False))
         self._loaders.append(loader)
         loader.start()
 
     def _on_roster_loaded(self, players):
         if not players:
-            self.roster_table.populate_data([["No roster data available.", "", "", "", "", ""]])
+            self.roster_table.populate_data([["No roster data available.", "", "", "", "", ""]], set_focus=False)
             return
-        rows = [[p['jersey'], p['name'], p['position'], p['age'], p['height'], p['weight']]
+        rows = [[p['name'], p['jersey'], p['position'], p['age'], p['height'], p['weight']]
                 for p in players]
-        self.roster_table.populate_data(rows, set_focus=True)
+        # Not set_focus: someone arrowing along the tabs stays on the tabs.
+        self.roster_table.populate_data(rows, set_focus=False)
 
     # ------------------------------------------------------------ schedule tab
 
@@ -8500,58 +8309,46 @@ class TeamHubDialog(QDialog):
         current = lambda: gen == self._schedule_generation
         loader = TeamScheduleLoader(self.team_id, self.team_name, self.league, season)
         loader.data_loaded.connect(
-            lambda data, name, league: current() and self._on_schedule_loaded(data, name, league))
+            lambda data, name, league, used: current() and self._on_schedule_loaded(data, name, league, used))
         loader.error_occurred.connect(
-            lambda e: current() and self._show_list_error(self.schedule_list, e))
+            lambda e: current() and self._on_schedule_failed(e))
         loader.loading_progress.connect(lambda msg: current() and loading_item.setText(msg))
         self._loaders.append(loader)
         _start_detached_thread(loader)
 
-    def _on_schedule_loaded(self, schedule_data: List[Dict], team_name: str, league: str):
+    def _on_schedule_failed(self, message: str):
+        self.schedule_list.clear()
+        self.schedule_list.addItem(message)
+        self.schedule_list.setCurrentRow(0)
+        # So coming back to the tab asks again.
+        self._tabs_loaded.discard(2)
+        _take_focus_after_load(self.schedule_list)
+
+    def _on_schedule_loaded(self, schedule_data: List[Dict], team_name: str, league: str, season_used: int):
+        # The season list runs newest first, so its top entry is the current season. This
+        # has to be read before the list moves, below.
+        current_season = self.season_combo.currentIndex() <= 0
+        # With nothing yet in the current season, the last one comes back. The list says
+        # so rather than naming a season with no games, and moving it isn't a new choice.
+        used_index = self.season_combo.findData(season_used)
+        if used_index >= 0 and used_index != self.season_combo.currentIndex():
+            was_blocked = self.season_combo.blockSignals(True)
+            self.season_combo.setCurrentIndex(used_index)
+            self.season_combo.blockSignals(was_blocked)
         self.schedule_list.clear()
         if not schedule_data:
             self.schedule_list.addItem("No games found in schedule.")
             return
-        today_idx = -1
-        for i, game in enumerate(schedule_data):
-            date_str   = game.get('date_display', '')
-            opponent   = game.get('opponent', 'Unknown')
-            home_away  = game.get('home_away', '')
-            time_str   = game.get('time', '')
-            status     = game.get('status', '')
-            venue      = game.get('venue', '')
-            if status in ('Final', 'Cancelled', 'Postponed'):
-                hs = game.get('home_score', '')
-                as_ = game.get('away_score', '')
-                if hs and as_:
-                    hi, ai = int(hs), int(as_)
-                    if hi == ai:
-                        txt = f"{date_str}: {home_away} {opponent} - T {hs}-{as_}"
-                    elif home_away == 'vs':
-                        txt = f"{date_str}: {home_away} {opponent} - {'W' if hi>ai else 'L'} {hs}-{as_}"
-                    else:
-                        txt = f"{date_str}: {home_away} {opponent} - {'W' if ai>hi else 'L'} {as_}-{hs}"
-                else:
-                    txt = f"{date_str}: {home_away} {opponent} - {status}"
-            else:
-                txt = f"{date_str}: {home_away} {opponent} - {time_str}"
-                if venue and venue != "TBD":
-                    txt += f" ({venue})"
-            item = QListWidgetItem(txt)
+        for game in schedule_data:
+            item = QListWidgetItem(schedule_row_text(game))
             item.setData(Qt.ItemDataRole.UserRole, game)
             if game.get('is_today', False):
                 f = QFont(); f.setBold(True)
                 item.setFont(f)
                 item.setBackground(QColor(255, 255, 200))
-                today_idx = i
             self.schedule_list.addItem(item)
-        if today_idx >= 0:
-            self.schedule_list.setCurrentRow(today_idx)
-        else:
-            future = next((i for i, g in enumerate(schedule_data)
-                           if g.get('status', '') not in ('Final', 'Cancelled', 'Postponed')), 0)
-            self.schedule_list.setCurrentRow(future)
-        self.schedule_list.setFocus()
+        self.schedule_list.setCurrentRow(schedule_start_row(schedule_data, current_season=current_season))
+        _take_focus_after_load(self.schedule_list)
 
     def _on_game_selected(self, item):
         game_data = item.data(Qt.ItemDataRole.UserRole)
@@ -8629,6 +8426,7 @@ class TeamHubDialog(QDialog):
     def _show_list_error(self, list_widget, error_msg):
         list_widget.clear()
         list_widget.addItem(f"Error loading data: {error_msg}")
+        list_widget.setCurrentRow(0)
 
     def _refresh_fav_button(self):
         if settings.is_favorite(self.team_id, self.league):
@@ -8664,9 +8462,13 @@ TeamScheduleDialog = TeamHubDialog
 
 class TeamScheduleLoader(QThread):
     """Background thread for loading team schedule data"""
-    data_loaded = pyqtSignal(list, str, str)  # schedule_data, team_name, league
+    data_loaded = pyqtSignal(list, str, str, int)  # schedule_data, team_name, league, season it is from
     error_occurred = pyqtSignal(str)
     loading_progress = pyqtSignal(str)  # progress message
+
+    # A raw requests exception runs to hundreds of characters of host, port and URL, and a
+    # screen reader reads every one of them.
+    FAILED = "ESPN didn't answer. Try again in a minute."
 
     def __init__(self, team_id: str, team_name: str, league: str, season=None):
         super().__init__()
@@ -8678,11 +8480,13 @@ class TeamScheduleLoader(QThread):
     def run(self):
         try:
             self.loading_progress.emit("Loading schedule...")
-            schedule_data = ApiService.get_team_schedule(self.league, self.team_id, season=self.season)
+            schedule_data, season_used = ApiService.get_team_schedule_and_season(
+                self.league, self.team_id, season=self.season)
             self.loading_progress.emit(f"Loaded {len(schedule_data)} games")
-            self.data_loaded.emit(schedule_data, self.team_name, self.league)
+            self.data_loaded.emit(schedule_data, self.team_name, self.league, season_used)
         except Exception as e:
-            self.error_occurred.emit(f"Failed to load schedule: {str(e)}")
+            print(f"Team schedule failed for {self.league} {self.team_id}: {e}")
+            self.error_occurred.emit(self.FAILED)
 
 
 class FavoriteCardLoader(QThread):
@@ -8721,7 +8525,7 @@ class FavoriteCardLoader(QThread):
 
         if not summary:
             try:
-                info = espn_api.get_team_info(self.league, self.team_id)
+                info = espn_api.get_team_info(self.league, self.team_id, home_venue=False)
                 rec = info.get('record_overall', '')
                 opp = info.get('next_game_opponent', '')
                 ha = info.get('next_game_home_away', '')
@@ -8921,17 +8725,16 @@ class DataCache:
     
     def get_standings(self, league: str):
         """Get cached standings data"""
-        key = f"standings_{league}"
+        key = standings_cache_key(league)
         if key in self.standings_cache:
             data, timestamp = self.standings_cache[key]
             if time.time() - timestamp < self.cache_timeout:
                 return data
         return None
     
-    def set_standings(self, league: str, data):
-        """Cache standings data"""
-        key = f"standings_{league}"
-        self.standings_cache[key] = (data, time.time())
+    def set_standings(self, cache_key: str, data):
+        """Cache standings data under the standings_cache_key taken when the fetch started"""
+        self.standings_cache[cache_key] = (data, time.time())
 
     def get_mlb_wildcard(self):
         """Get cached MLB wild card standings, or None when stale/absent."""
@@ -8970,11 +8773,12 @@ class StandingsDialog(WildCardTabsMixin, QDialog):
         self.league = league
         self.setWindowTitle(f"{league} Standings")
         self.resize(STANDINGS_DIALOG_WIDTH, STANDINGS_DIALOG_HEIGHT)
-        self.tab_widget: QTabWidget | None = None
+        self.tab_widget: QTabWidget | ListPages | None = None
         self.single_table: StandingsTable | None = None
         self.expanded_view = False
         self.division_tables: List[StandingsTable] = []
         self.setup_ui()
+        _focus_once_active(self, lambda: _focus_first_table(self))
     
     def setup_ui(self):
         layout = QVBoxLayout()
@@ -8988,7 +8792,7 @@ class StandingsDialog(WildCardTabsMixin, QDialog):
             has_divisions = len(self.standings_data.divisions) > 1 or any(
                 d != "League" for d in self.standings_data.divisions
             )
-            if has_divisions and self.league in ["MLB", "NFL", "NBA", "NHL", "NCAAF", "NCAAM", "NCAAWB", "WNBA"]:
+            if has_divisions and self.league in ["MLB", "NFL", "NBA", "NHL", "NCAAF", "NCAAM", "NCAAWB", "NCAAH", "NCAAWH", "WNBA"]:
                 self._build_division_tabs(layout)
             else:
                 self.single_table = self._create_single_standings_table(self.standings_data.teams)
@@ -9045,22 +8849,16 @@ class StandingsDialog(WildCardTabsMixin, QDialog):
             QTimer.singleShot(50, restore_focus)
     
     def _build_division_tabs(self, layout: QVBoxLayout):
-        self.tab_widget = QTabWidget()
-        self.tab_widget.setAccessibleName(
-            "Standings" if self.league == "MLB" else "Division Standings")
-        self.tab_widget.setAccessibleDescription(
-            "Team standings by division, plus AL and NL wild card, use arrow keys to move between tabs"
-            if self.league == "MLB"
-            else "Team standings by division, use arrow keys to navigate between divisions")
-        
         if self.league == "MLB":
             division_order = ["AL East", "AL Central", "AL West", "NL East", "NL Central", "NL West", "League"]
         elif self.league == "NFL":
-            division_order = ["AFC East", "AFC North", "AFC South", "AFC West", 
+            division_order = ["AFC East", "AFC North", "AFC South", "AFC West",
                             "NFC East", "NFC North", "NFC South", "NFC West", "League"]
+        elif self.league == "NCAAF":
+            division_order = NCAAF_CONFERENCE_ORDER
         else:
             division_order = ["League"]
-            
+
         ordered: List[tuple[str, List[Dict]]] = []
         for name in division_order:
             if name in self.standings_data.divisions:
@@ -9068,10 +8866,16 @@ class StandingsDialog(WildCardTabsMixin, QDialog):
         for name, teams in self.standings_data.divisions.items():
             if name not in division_order:
                 ordered.append((name, teams))
+        ordered = [(name, teams) for name, teams in ordered if teams]
+
+        self.tab_widget = self._make_group_area(
+            [name for name, _ in ordered],
+            "Team standings by division, plus AL and NL wild card, use arrow keys to move between tabs"
+            if self.league == "MLB"
+            else "Team standings, use arrow keys to move between tabs")
         for name, teams in ordered:
-            if teams:
-                tab = self._create_division_table(name, teams)
-                self.tab_widget.addTab(tab, name)
+            tab = self._create_division_table(name, teams)
+            self.tab_widget.addTab(tab, name)
 
         self._build_wildcard_tabs()
 
@@ -9080,7 +8884,7 @@ class StandingsDialog(WildCardTabsMixin, QDialog):
             first = self.tab_widget.widget(0)
             if hasattr(first, "table"):
                 first.table.setFocus()  # type: ignore[attr-defined]
-    
+
     def _create_division_table(self, division_name: str, teams: List[Dict]) -> QWidget:
         widget = QWidget()
         layout = QVBoxLayout()
@@ -9122,7 +8926,7 @@ class StandingsDialog(WildCardTabsMixin, QDialog):
             self.reject()
             return
         if self.tab_widget:
-            if event.modifiers() == Qt.KeyboardModifier.ControlModifier:
+            if event.modifiers() == Qt.KeyboardModifier.ControlModifier and _pages_on_show(self.tab_widget):
                 if event.key() == Qt.Key.Key_Tab:
                     i = (self.tab_widget.currentIndex() + 1) % self.tab_widget.count()
                     self.tab_widget.setCurrentIndex(i)
@@ -9216,8 +9020,9 @@ class PollsDialog(QDialog):
         self.league = league
         self.setWindowTitle(f"{league} Polls & Rankings")
         self.resize(STANDINGS_DIALOG_WIDTH, STANDINGS_DIALOG_HEIGHT)
-        self.tab_widget: QTabWidget | None = None
+        self.tab_widget: QTabWidget | ListPages | None = None
         self.setup_ui()
+        _focus_once_active(self, lambda: _focus_first_table(self))
     
     def setup_ui(self):
         layout = QVBoxLayout()
@@ -9243,9 +9048,9 @@ class PollsDialog(QDialog):
     
     def _build_poll_tabs(self, layout: QVBoxLayout, polls: List[Dict]):
         """Build tabbed interface for multiple polls"""
-        self.tab_widget = QTabWidget()
-        self.tab_widget.setAccessibleName("Poll Rankings")
-        self.tab_widget.setAccessibleDescription("Rankings from different polls. Use arrow keys to navigate between polls.")
+        self.tab_widget = make_tab_area(
+            len(polls), "Poll Rankings", "Rankings from different polls. Use arrow keys to navigate between polls.",
+            list_name="Polls")
         
         for poll in polls:
             poll_name = poll.get('shortName', poll.get('name', 'Poll'))
@@ -9265,8 +9070,9 @@ class PollsDialog(QDialog):
         # Set focus on first table
         if self.tab_widget.count() > 0:
             first_widget = self.tab_widget.widget(0)
-            if hasattr(first_widget, 'table'):
-                first_widget.table.setFocus()
+            tables = first_widget.findChildren(AccessibleTable) if first_widget else []
+            if tables:
+                tables[0].setFocus()
     
     def _create_poll_table(self, poll: Dict) -> PollsTable:
         """Create an accessible table for a single poll"""
@@ -9290,7 +9096,7 @@ class PollsDialog(QDialog):
         
         # Tab navigation between polls
         if self.tab_widget:
-            if event.modifiers() == Qt.KeyboardModifier.ControlModifier:
+            if event.modifiers() == Qt.KeyboardModifier.ControlModifier and _pages_on_show(self.tab_widget):
                 if event.key() == Qt.Key.Key_Tab:
                     # Next tab
                     i = (self.tab_widget.currentIndex() + 1) % self.tab_widget.count()
@@ -9422,7 +9228,7 @@ class TransactionsDialog(QDialog):
         self.load_more_btn.setEnabled(has_more)
         if self.current_page == 1 and self.trans_list.count() > 0:
             self.trans_list.setCurrentRow(0)
-            self.trans_list.setFocus()
+            _take_focus_after_load(self.trans_list)
 
     def _on_error(self, _error, loading_item):
         row = self.trans_list.row(loading_item)
@@ -9448,6 +9254,7 @@ class NFLDraftDialog(QDialog):
         self.resize(950, 680)
         self._loaders = []
         self._tabs_loaded: set = set()
+        self._opening = True
         self._current_year: int = datetime.now().year
         self._setup_ui()
         self._load_year(self._current_year)
@@ -9470,8 +9277,8 @@ class NFLDraftDialog(QDialog):
         header.addStretch()
         layout.addLayout(header)
 
-        self.tab_widget = QTabWidget()
-        self.tab_widget.setAccessibleName("Draft rounds")
+        # Built before the rounds are known and refilled per year, and it's been 7 since 1994.
+        self.tab_widget = make_tab_area(7, "Draft rounds")
         self.tab_widget.currentChanged.connect(self._on_tab_changed)
         layout.addWidget(self.tab_widget)
 
@@ -9498,12 +9305,16 @@ class NFLDraftDialog(QDialog):
         self.status_label.setText("Loading…")
 
         loader = NFLDraftMetaLoader(year)
-        loader.data_loaded.connect(self._on_meta_loaded)
-        loader.error_occurred.connect(lambda e: self.status_label.setText(f"Error: {e}"))
+        loader.data_loaded.connect(lambda meta, y=year: self._on_meta_loaded(meta, y))
+        loader.error_occurred.connect(
+            lambda e, y=year: y == self._current_year and self.status_label.setText(f"Error: {e}"))
         self._loaders.append(loader)
         loader.start()
 
-    def _on_meta_loaded(self, meta: dict):
+    def _on_meta_loaded(self, meta: dict, year: Optional[int] = None):
+        # Arrowing through years, a slower year's answer can land after a quicker one's.
+        if year is not None and year != self._current_year:
+            return
         if not meta:
             self.status_label.setText("Draft data not available for this year.")
             return
@@ -9520,6 +9331,7 @@ class NFLDraftDialog(QDialog):
             lw.addItem(f"Loading Round {rd['number']}…")
             lw.setProperty('round_num', rd['number'])
             self.tab_widget.addTab(lw, rd.get('short_name', str(rd['number'])))
+            keep_in_tab_order(self.tab_widget, lw)
         self.tab_widget.blockSignals(False)
 
         if self.tab_widget.count() > 0:
@@ -9540,13 +9352,16 @@ class NFLDraftDialog(QDialog):
         if not round_num:
             return
 
-        loader = NFLDraftRoundLoader(self._current_year, round_num)
-        loader.data_loaded.connect(lambda picks, idx=tab_index: self._on_round_loaded(picks, idx))
-        loader.error_occurred.connect(lambda e, idx=tab_index: self._on_round_error(e, idx))
+        year = self._current_year
+        loader = NFLDraftRoundLoader(year, round_num)
+        loader.data_loaded.connect(lambda picks, idx=tab_index, y=year: self._on_round_loaded(picks, idx, y))
+        loader.error_occurred.connect(lambda e, idx=tab_index, y=year: self._on_round_error(e, idx, y))
         self._loaders.append(loader)
         loader.start()
 
-    def _on_round_loaded(self, picks: list, tab_index: int):
+    def _on_round_loaded(self, picks: list, tab_index: int, year: Optional[int] = None):
+        if year is not None and year != self._current_year:
+            return
         self._tabs_loaded.add(tab_index)
         widget = self.tab_widget.widget(tab_index)
         if not widget:
@@ -9578,9 +9393,17 @@ class NFLDraftDialog(QDialog):
 
         if tab_index == self.tab_widget.currentIndex() and widget.count() > 0:
             widget.setCurrentRow(0)
-            widget.setFocus()
+            # The picks are what the dialog opens on. After that someone arrowing through the
+            # rounds or the years stays where they are: a round loads in moments now.
+            if self._opening:
+                self._opening = False
+                widget.setFocus()
+            else:
+                _take_focus_after_load(widget)
 
-    def _on_round_error(self, error: str, tab_index: int):
+    def _on_round_error(self, error: str, tab_index: int, year: Optional[int] = None):
+        if year is not None and year != self._current_year:
+            return
         self._tabs_loaded.add(tab_index)
         widget = self.tab_widget.widget(tab_index)
         if widget:
@@ -10396,8 +10219,7 @@ class GolfTournamentDialog(QDialog):
         self.tournament_label.setAccessibleName("Current tournament")
         layout.addWidget(self.tournament_label)
 
-        self.tab_widget = QTabWidget()
-        self.tab_widget.setAccessibleName(f"{tour_name} sections")
+        self.tab_widget = make_tab_area(2, f"{tour_name} sections")
 
         self.leaderboard_list = QListWidget()
         self.leaderboard_list.setAccessibleName(f"{tour_name} Leaderboard")
@@ -10679,8 +10501,7 @@ class WorldCupDialog(QDialog):
         self.phase_label.setAccessibleName("Current tournament phase")
         layout.addWidget(self.phase_label)
 
-        self.tab_widget = QTabWidget()
-        self.tab_widget.setAccessibleName(f"{self.display_name} sections")
+        self.tab_widget = make_tab_area(4, f"{self.display_name} sections")
 
         self.tab_widget.addTab(self._build_scores_tab(),  "Scores")
         self.tab_widget.addTab(self._build_groups_tab(),  "Groups")
@@ -11164,6 +10985,8 @@ class StatisticsViewDialog(QDialog):
         self.setWindowTitle(f"{league} {stat_type.title()} Statistics")
         self.resize(1000, 700)
         self.statistics_data = None
+        self.stat_pages = None
+        self._stat_infos = []
         print(f"DEBUG: About to call setup_ui")
         self.setup_ui()
         print(f"DEBUG: setup_ui completed")
@@ -11175,10 +10998,10 @@ class StatisticsViewDialog(QDialog):
         title = QLabel(f"{self.league} {self.stat_type.title()} Statistics")
         layout.addWidget(title)
         
-        # Statistics load on a thread: team stats are one request per team
-        # (30-60+), MLB player stats are 39. Fetched here in the constructor
-        # they froze the window before the dialog even appeared. The dialog
-        # opens at once on a focusable "Loading" row, and the stats replace it.
+        # Statistics load on a thread: a college basketball league's team stats
+        # are several megabytes, MLB player stats are 39 requests. Fetched here in
+        # the constructor they froze the window before the dialog even appeared. The
+        # dialog opens at once on a focusable "Loading" row, and the stats replace it.
         self._content_layout = QVBoxLayout()
         self._loading_list = QListWidget()
         self._loading_list.setAccessibleName(f"{self.stat_type.title()} statistics")
@@ -11206,16 +11029,32 @@ class StatisticsViewDialog(QDialog):
         self._content_layout.removeWidget(self._loading_list)
         self._loading_list.deleteLater()
 
+    def _focus_stats_list(self):
+        """A widget just added to a layout isn't visible until the event loop comes round, and
+        setFocus can't take effect on it then. NVDA still spoke the row, but UI Automation went on
+        reporting the window as focused."""
+        if self.stat_pages is not None:
+            self.stat_pages.show()  # The list sits inside it, and can't show until it does.
+        self.stats_list.show()
+        self.stats_list.setFocus()
+
     def _on_statistics_error(self, message: str):
         self._clear_loading_row()
-        error_label = QLabel(f"Error loading statistics: {message}")
-        self._content_layout.addWidget(error_label)
+        self._show_statistics_message(self._content_layout, f"Unable to load statistics: {message}")
+        self._focus_stats_list()
 
     def _on_statistics_loaded(self, statistics_data: dict):
         self._clear_loading_row()
+        season = (statistics_data or {}).get("season")
+        if season:
+            self.setWindowTitle(f"{self.league} {self.stat_type.title()} Statistics - {season}")
         self._show_statistics(self._content_layout, statistics_data)  # catches its own errors
         if hasattr(self, 'stats_list'):
-            self.stats_list.setFocus()
+            self._focus_stats_list()
+
+    def _show_statistics_message(self, layout, message):
+        self.stats_list = _message_row(message, f"{self.stat_type.title()} statistics")
+        layout.addWidget(self.stats_list)
 
     def _show_statistics(self, layout, statistics_data):
         """Build the statistics interface from loaded data. No network access."""
@@ -11228,18 +11067,12 @@ class StatisticsViewDialog(QDialog):
                 if available_stats:
                     self._create_working_statistics_interface(layout, available_stats)
                 else:
-                    no_data_label = QLabel(f"No {self.stat_type} statistics available for {self.league}")
-                    layout.addWidget(no_data_label)
+                    self._show_statistics_message(layout, f"No {self.stat_type} statistics are available for {self.league}.")
             else:
-                no_data_label = QLabel(f"Unable to load statistics data for {self.league}")
-                layout.addWidget(no_data_label)
+                self._show_statistics_message(layout, f"Unable to load statistics for {self.league}.")
                 
         except Exception as e:
-            print(f"DEBUG: Exception in setup_ui: {str(e)}")
-            import traceback
-            traceback.print_exc()
-            error_label = QLabel(f"Error loading statistics: {str(e)}")
-            layout.addWidget(error_label)
+            self._show_statistics_message(layout, f"Unable to show statistics: {e}")
 
     def _debug_accept(self, reason):
         """Debug wrapper for accept() to track why dialog is closing"""
@@ -11249,19 +11082,9 @@ class StatisticsViewDialog(QDialog):
     def keyPressEvent(self, event):
         """Handle key press events for navigation"""
         if event.key() == Qt.Key.Key_F6:
-            # Cycle between stats list and results list
-            current_focus = self.focusWidget()
-            if hasattr(self, 'stats_list') and hasattr(self, 'results_list'):
-                if current_focus == self.stats_list:
-                    # Move to results list if visible
-                    if self.results_list.isVisible():
-                        self.results_list.setFocus()
-                    else:
-                        # If no results visible, stay on stats list
-                        self.stats_list.setFocus()
-                else:
-                    # Move back to stats list
-                    self.stats_list.setFocus()
+            # From Close. Inside the stat list and its results, the list's own keys have it.
+            if self.stat_pages is not None:
+                self.stat_pages.setFocus()
             event.accept()
         elif event.key() == Qt.Key.Key_D and event.modifiers() == Qt.KeyboardModifier.AltModifier:
             # Alt+D: Show stat definitions
@@ -11270,263 +11093,56 @@ class StatisticsViewDialog(QDialog):
         else:
             super().keyPressEvent(event)
     
-    def _switch_to_player_stats(self):
-        """Switch to player statistics"""
-        self.stat_type = "player"
-        self.setWindowTitle(f"{self.league} {self.stat_type.title()} Statistics")
-        
-        # Clear layout and rebuild
-        layout = self.layout()
-        self._clear_layout(layout)
-        self.setup_ui()
-    
-    def _switch_to_team_stats(self):
-        """Switch to team statistics"""
-        self.stat_type = "team"
-        self.setWindowTitle(f"{self.league} {self.stat_type.title()} Statistics")
-        
-        # Clear layout and rebuild
-        layout = self.layout()
-        self._clear_layout(layout)
-        self.setup_ui()
-    
-    def _clear_layout(self, layout):
-        """Clear all widgets from layout"""
-        while layout.count():
-            child = layout.takeAt(0)
-            if child.widget():
-                child.widget().deleteLater()
-    
     def _create_working_statistics_interface(self, layout, available_stats):
-        """Create working statistics interface with immediate data display"""
-        
-        # Split layout: Left side for stat selection, right side for results
-        h_layout = QHBoxLayout()
-        
-        # Left side: Statistics list
-        left_widget = QWidget()
-        left_widget.setMaximumWidth(300)
-        left_layout = QVBoxLayout()
-        
-        stats_label = QLabel("Select a Statistic:")
-        left_layout.addWidget(stats_label)
-        
-        # Add note about data timeframe  
-        if self.league.upper() == "MLB":
-            note_label = QLabel("📊 Full Season Statistics")
-            note_label.setStyleSheet("color: #0066cc; font-weight: bold; font-size: 9pt;")
-        else:
-            note_label = QLabel("📊 Note: Shows recent performance leaders")
+        """A list of the statistics, and Enter opens one's rankings in its place."""
+        season = (self.statistics_data or {}).get("season")
+        if season:
+            note_label = QLabel(season)
             note_label.setStyleSheet("color: #666; font-style: italic; font-size: 9pt;")
-        note_label.setWordWrap(True)
-        left_layout.addWidget(note_label)
-        
-        self.stats_list = QListWidget()
-        self.stats_list.setAccessibleName(f"{self.stat_type.title()} Statistics List")
-        self.stats_list.setAccessibleDescription(f"List of available {self.stat_type} statistics. Select one to view rankings.")
-        
-        # Populate statistics list with ACTUAL available stats (not categories)
+            note_label.setWordWrap(True)
+            layout.addWidget(note_label)
+
+        self._stat_infos = available_stats
+        self.stat_pages = ListPages()
+        self.stat_pages.set_list_name(
+            f"{self.stat_type.title()} Statistics",
+            "Press Enter on one to open its rankings. Escape comes back to this list.")
         for stat_info in available_stats:
-            stat_name = stat_info.get('name', 'Unknown')
-            item = QListWidgetItem(stat_name)
-            item.setData(Qt.ItemDataRole.UserRole, stat_info)  # Store the actual stat data
-            self.stats_list.addItem(item)
-        
-        # Connect selection events
-        self.stats_list.itemActivated.connect(self._on_working_stat_selected)
-        self.stats_list.itemClicked.connect(self._on_working_stat_selected)
-        
-        left_layout.addWidget(self.stats_list)
-        left_widget.setLayout(left_layout)
-        
-        # Right side: Results display
-        right_widget = QWidget()
-        right_layout = QVBoxLayout()
-        
-        self.results_label = QLabel("Select a statistic to view rankings")
-        right_layout.addWidget(self.results_label)
-        
-        # Results list (concatenated format: rank team value)
-        self.results_list = QListWidget()
-        self.results_list.setAccessibleName("Statistics Results List")
-        self.results_list.setAccessibleDescription("List showing rankings for the selected statistic")
-        self.results_list.hide()  # Hide until stat is selected
-        right_layout.addWidget(self.results_list)
-        
-        right_widget.setLayout(right_layout)
-        
-        # Add to horizontal layout
-        h_layout.addWidget(left_widget)
-        h_layout.addWidget(right_widget)
-        
-        layout.addLayout(h_layout)
-        
-        # Set the main layout
-        self.setLayout(layout)
-    
-    def _on_working_stat_selected(self, item):
-        """Handle stat selection with working approach - data is already loaded"""
-        print(f"DEBUG: _on_working_stat_selected called")
-        if item:
-            stat_info = item.data(Qt.ItemDataRole.UserRole)
-            if stat_info:
-                print(f"DEBUG: Displaying results for: {stat_info.get('name')}")
-                self._display_stat_results(stat_info)
-            else:
-                print(f"DEBUG: No stat_info in item data")
-        else:
-            print(f"DEBUG: _on_working_stat_selected called with None item")
-    
-    def _display_stat_results(self, stat_info):
-        """Display results in concatenated list format for the selected statistic"""
+            page = QWidget()
+            QVBoxLayout(page)
+            self.stat_pages.addTab(page, stat_info.get('name', 'Unknown'))
+        self.stat_pages.pageOpening.connect(self._fill_stat_page)
+        self.stats_list = self.stat_pages.tabBar()
+        layout.addWidget(self.stat_pages)
+
+    def _fill_stat_page(self, index):
+        """A college league has 300 rows on each of dozens of statistics, so each is built only
+        when it's opened."""
+        page = self.stat_pages.widget(index)
+        page_layout = page.layout()
+        if page_layout.count():
+            return
+        stat_info = self._stat_infos[index]
+        name = stat_info.get('name', 'Unknown')
+        stat_type = stat_info.get('type', 'unknown')
         try:
-            stat_name = stat_info.get('stat_name', 'Unknown')
-            stat_type = stat_info.get('type', 'unknown')
-            data = stat_info.get('data', [])
-            
-            # Update results label with data context
-            if stat_type == "player":
-                if self.league.upper() == "MLB":
-                    header_text = f"Season Leaders: {stat_info.get('name', stat_name)}"
-                else:
-                    header_text = f"Recent Performance Leaders: {stat_info.get('name', stat_name)}"
-            else:
-                header_text = f"Top Rankings: {stat_info.get('name', stat_name)}"
-            
-            self.results_label.setText(header_text)
-            
-            # Clear and show results list
-            self.results_list.clear()
-            self.results_list.show()
-            
-            # Display in concatenated list format
-            if stat_type == "player":
-                self._setup_player_results_list(data, stat_name)
-            elif stat_type == "team":
-                self._setup_team_results_list(data, stat_name)
-            
-        except Exception as e:
-            print(f"ERROR in _display_stat_results: {str(e)}")
-            import traceback
-            traceback.print_exc()
-    
-    def _setup_player_results_list(self, data, stat_name):
-        """Setup concatenated list view for player statistics results"""
-        
-        def safe_float_convert(value):
-            """Safely convert value to float for sorting"""
-            try:
-                if isinstance(value, (int, float)):
-                    return float(value)
-                
-                value_str = str(value).strip()
-                if not value_str or value_str.lower() in ['none', 'n/a', '']:
-                    return 0.0
-                
-                # Handle fraction format like "1-1"
-                if '-' in value_str and value_str.count('-') == 1:
-                    parts = value_str.split('-')
-                    if len(parts) == 2:
-                        try:
-                            return float(parts[0]) / max(1, float(parts[1]))
-                        except (ValueError, ZeroDivisionError):
-                            return 0.0
-                
-                return float(value_str)
-            except (ValueError, TypeError):
-                return 0.0
-        
-        # Convert data to proper format with numeric sorting
-        converted_data = []
-        for item in data:
-            player_name = item.get('player_name', 'Unknown')
-            team = item.get('team', '')
-            value = item.get('value', '')
-            
-            numeric_value = safe_float_convert(value)
-            converted_data.append({
-                'name': f"{player_name} ({team})" if team else player_name,
-                'value': numeric_value,
-                'display_value': str(value)
-            })
-        
-        # Sort by numeric value (descending for most stats)
-        converted_data.sort(key=lambda x: x['value'], reverse=True)
-        
-        # Populate the list with rank
-        for rank, item in enumerate(converted_data, 1):
-            list_text = f"{rank} {item['name']} {item['display_value']}"
-            list_item = QListWidgetItem(list_text)
-            self.results_list.addItem(list_item)
-        
-        # Set focus to first item in results list
-        if self.results_list.count() > 0:
-            self.results_list.setCurrentRow(0)
-            self.results_list.setFocus()  # Move focus to results list
-    
-    def _setup_team_results_list(self, data, stat_name):
-        """Setup concatenated list view for team statistics results"""
-        
-        # Sort data by numeric value (descending for most stats)
-        sorted_data = sorted(data, key=lambda x: x.get('value', 0), reverse=True)
-        
-        # Populate the list with rank
-        for rank, item in enumerate(sorted_data, 1):
-            team_name = item.get('name', 'Unknown')
-            display_value = item.get('displayValue', str(item.get('value', '')))
-            list_text = f"{rank} {team_name} {display_value}"
-            list_item = QListWidgetItem(list_text)
-            self.results_list.addItem(list_item)
-        
-        # Set focus to first item in results list
-        if self.results_list.count() > 0:
-            self.results_list.setCurrentRow(0)
-            self.results_list.setFocus()  # Move focus to results list
-    
-    def _get_stat_categories(self):
-        """Get available stat categories without loading full data"""
-        # Return actual individual statistics that users want to see
-        if self.league.upper() == "MLB":
-            if self.stat_type == "team":
-                # Show actual team stats available across all categories
-                return [
-                    "Batting Average", "Home Runs", "RBIs", "Runs", "Hits", "Doubles", "Triples",
-                    "ERA", "Wins", "Strikeouts", "WHIP", "Saves", "Innings Pitched",
-                    "Fielding Percentage", "Errors", "Double Plays"
-                ]
-            else:  # player
-                # Based on actual ESPN player stats structure
-                return [
-                    "Batting Average", "Home Runs", "RBIs", "Runs", "OPS", "On Base Percentage", "Slugging Percentage",
-                    "ERA", "Wins", "Strikeouts", "WHIP", "Saves", "Quality Starts", "Opponent Batting Average",
-                    "Stolen Bases", "Hits", "Holds", "MLB Rating", "Average Game Score", "Wins Above Replacement"
-                ]
-        elif self.league.upper() == "NFL":
-            if self.stat_type == "team":
-                return [
-                    "Total Yards", "Passing Yards", "Rushing Yards", "Points For", "Points Against",
-                    "Turnovers", "Third Down Efficiency", "Red Zone Efficiency"
-                ]
-            else:  # player
-                return [
-                    "Passing Yards", "Passing TDs", "Rushing Yards", "Rushing TDs",
-                    "Receiving Yards", "Receiving TDs", "Tackles", "Sacks", "Interceptions"
-                ]
-        elif self.league.upper() == "NBA":
-            if self.stat_type == "team":
-                return [
-                    "Points Per Game", "Field Goal %", "Three Point %", "Free Throw %",
-                    "Rebounds", "Assists", "Steals", "Blocks", "Turnovers"
-                ]
-            else:  # player
-                return [
-                    "Points Per Game", "Field Goal %", "Three Point %", "Free Throw %",
-                    "Rebounds", "Assists", "Steals", "Blocks", "Minutes"
-                ]
-        else:
-            # Generic categories for other leagues
-            return ["Points", "Wins", "Goals", "Assists"] if self.stat_type == "team" else ["Points", "Goals", "Assists", "Games"]
-    
+            rows = ranking_rows(stat_type, stat_info.get('data', []))
+            if not rows:
+                page_layout.addWidget(_message_row(f"No rankings are available for {name}.", name))
+                return
+            season = (self.statistics_data or {}).get("season") or "Season"
+            heading = f"{season} {'Leaders' if stat_type == 'player' else 'Rankings'}: {name}"
+            table = RankingsTable(RANKING_HEADERS[self.stat_type])
+            # The label can't take focus, so this is how a screen reader hears what the table is.
+            table.update_accessible_name(heading)
+            table.populate_data(rows, set_focus=False)
+        except Exception:
+            error_log.log_handled()
+            page_layout.addWidget(_message_row(f"Unable to show {name}.", name))
+            return
+        page_layout.addWidget(QLabel(heading))
+        page_layout.addWidget(table)
+
     def _get_available_statistics(self):
         """Extract available statistics from the data"""
         print(f"DEBUG: _get_available_statistics called for {self.stat_type}")
@@ -11541,337 +11157,41 @@ class StatisticsViewDialog(QDialog):
             player_stats = self.statistics_data.get("player_stats", [])
             print(f"DEBUG: Found {len(player_stats)} player stat categories")
             
-            # Handle new MLB API format vs old ESPN format
             for i, category in enumerate(player_stats):
-                # Check if this is the new MLB API format
-                if 'leaders' in category and 'name' in category:
-                    # New MLB API format
-                    stat_name = category.get('name', 'Unknown')
-                    leaders = category.get('leaders', [])
-                    
-                    print(f"DEBUG: MLB Category {i}: {stat_name} with {len(leaders)} leaders")
-                    
-                    # Convert MLB format to expected format
-                    converted_leaders = []
-                    for leader in leaders:
-                        converted_leaders.append({
-                            'player_name': leader.get('name', 'Unknown'),
-                            'stat_value': leader.get('value', 0),
-                            'value': leader.get('value', 0),  # Also add 'value' key for compatibility
-                            'team': leader.get('team', 'N/A'),
-                            'position': leader.get('position', None)
-                        })
+                category_name = category.get("category", "Unknown")
+                stats_list = category.get("stats", [])
+                print(f"DEBUG: ESPN Category {i}: {category_name} with {len(stats_list)} stats")
+                
+                # Group by stat types
+                stat_types = {}
+                for stat in stats_list:
+                    stat_name = stat.get("stat_name", "Unknown")
+                    if stat_name not in stat_types:
+                        stat_types[stat_name] = []
+                    stat_types[stat_name].append(stat)
+                
+                # Add each unique stat type
+                for stat_name, stats in stat_types.items():
+                    # Avoid duplicate names when category and stat name are the same
+                    if stat_name.lower() == category_name.lower():
+                        display_name = stat_name  # Just use the stat name
+                    else:
+                        display_name = f"{stat_name} ({category_name})"  # Include category for clarity
                     
                     available_stats.append({
-                        'name': stat_name,
-                        'category': 'MLB Stats',
+                        'name': display_name,
+                        'category': category_name,
                         'stat_name': stat_name,
-                        'data': converted_leaders,
+                        'data': stats,
                         'type': 'player'
                     })
-                    print(f"DEBUG: Added MLB stat: {stat_name} with {len(converted_leaders)} players")
-                    
-                else:
-                    # Old ESPN API format
-                    category_name = category.get("category", "Unknown")
-                    stats_list = category.get("stats", [])
-                    print(f"DEBUG: ESPN Category {i}: {category_name} with {len(stats_list)} stats")
-                    
-                    # Group by stat types
-                    stat_types = {}
-                    for stat in stats_list:
-                        stat_name = stat.get("stat_name", "Unknown")
-                        if stat_name not in stat_types:
-                            stat_types[stat_name] = []
-                        stat_types[stat_name].append(stat)
-                    
-                    # Add each unique stat type
-                    for stat_name, stats in stat_types.items():
-                        # Avoid duplicate names when category and stat name are the same
-                        if stat_name.lower() == category_name.lower():
-                            display_name = stat_name  # Just use the stat name
-                        else:
-                            display_name = f"{stat_name} ({category_name})"  # Include category for clarity
-                        
-                        available_stats.append({
-                            'name': display_name,
-                            'category': category_name,
-                            'stat_name': stat_name,
-                            'data': stats,
-                            'type': 'player'
-                        })
-                        print(f"DEBUG: Added ESPN stat: {display_name} with {len(stats)} players")
-        
+                    print(f"DEBUG: Added ESPN stat: {display_name} with {len(stats)} players")
+    
         elif self.stat_type == "team":
-            team_stats = self.statistics_data.get("team_stats", [])
-            print(f"DEBUG: Found {len(team_stats)} team stat categories")
-            for category in team_stats:
-                category_name = category.get("category", "Unknown")
-                teams_list = category.get("stats", [])
-                
-                if teams_list:
-                    # Get all stat names from first team
-                    first_team = teams_list[0]
-                    team_stats_dict = first_team.get("stats", {})
-                    
-                    for stat_name in team_stats_dict.keys():
-                        # Process the teams data for this specific stat
-                        teams_data = []
-                        for team_info in teams_list:
-                            team_name = team_info.get("team_name", "Unknown")
-                            team_stats_dict = team_info.get("stats", {})
-                            
-                            if stat_name in team_stats_dict:
-                                stat_value = team_stats_dict[stat_name]
-                                
-                                # Try to convert to numeric for sorting
-                                numeric_value = 0
-                                try:
-                                    numeric_value = float(stat_value)
-                                except (ValueError, TypeError):
-                                    pass
-                                
-                                teams_data.append({
-                                    "name": team_name,
-                                    "value": numeric_value,
-                                    "displayValue": str(stat_value)
-                                })
-                        
-                        # Sort teams by value (descending for most stats)
-                        teams_data.sort(key=lambda x: x["value"], reverse=True)
-                        
-                        available_stats.append({
-                            'name': f"{stat_name} ({category_name})",
-                            'category': category_name,
-                            'stat_name': stat_name,
-                            'data': teams_data,  # Pre-processed data ready for display
-                            'type': 'team'
-                        })
-                        print(f"DEBUG: Added team stat: {stat_name} ({category_name}) with {len(teams_data)} teams")
-        
+            available_stats = team_stat_lists(self.statistics_data.get("team_stats", []))
+
         print(f"DEBUG: Total available stats: {len(available_stats)}")
         return available_stats
-    
-    def _on_stat_selected(self, item):
-        """Handle when a statistic is clicked (mouse click)"""
-        print(f"DEBUG: _on_stat_selected called with item: {item}")
-        if item:
-            category_info = item.data(Qt.ItemDataRole.UserRole)
-            print(f"DEBUG: category_info: {category_info}")
-            if category_info:
-                print(f"DEBUG: About to load data for category: {category_info.get('category')}")
-                try:
-                    # Load data on demand
-                    stat_info = self._load_stat_data_for_category(category_info.get('category'))
-                    if stat_info:
-                        self._display_stat_results(stat_info)
-                        print(f"DEBUG: _display_stat_results completed successfully")
-                    else:
-                        print(f"DEBUG: No stat_info returned for category")
-                except Exception as e:
-                    print(f"DEBUG: Exception in _on_stat_selected: {str(e)}")
-                    import traceback
-                    traceback.print_exc()
-            else:
-                print(f"DEBUG: No category_info found in item data")
-        else:
-            print(f"DEBUG: _on_stat_selected called with None item")
-    
-    def _on_stat_activated(self, item):
-        """Handle when a statistic is activated (Enter key or double-click)"""
-        print(f"DEBUG: _on_stat_activated called")
-        self._on_stat_selected(item)  # Use same logic
-    
-    def _load_stat_data_for_category(self, category):
-        """Load statistics data for a specific category on demand"""
-        # Show loading message
-        if hasattr(self, 'results_label'):
-            self.results_label.setText(f"Loading {category}...")
-        
-        # Load full data if not already loaded
-        if not self.statistics_data:
-            try:
-                print(f"DEBUG: Loading statistics data for {self.league}")
-                self.statistics_data = ApiService.get_statistics(self.league)
-            except Exception as e:
-                print(f"DEBUG: Exception loading statistics data: {str(e)}")
-                if hasattr(self, 'results_label'):
-                    self.results_label.setText(f"Error loading data: {str(e)}")
-                return None
-        
-        if not self.statistics_data:
-            print(f"DEBUG: No statistics data available")
-            if hasattr(self, 'results_label'):
-                self.results_label.setText("No statistics data available")
-            return None
-        
-        # Find matching statistics for the category
-        return self._find_stat_for_category(category)
-    
-    def _find_stat_for_category(self, category):
-        """Find the best matching statistic for a given category"""
-        if self.stat_type == "team":
-            team_stats = self.statistics_data.get("team_stats", [])
-            
-            # Search across all team stat categories for the specific stat
-            for stat_category in team_stats:
-                category_name = stat_category.get("category", "")
-                teams_in_category = stat_category.get("stats", [])
-                
-                if teams_in_category:
-                    # Get the first team's stats to see what's available
-                    first_team = teams_in_category[0]
-                    team_stats_dict = first_team.get("stats", {})
-                    
-                    # Look for the exact stat name the user wants
-                    best_stat_name = None
-                    
-                    # Direct match
-                    if category in team_stats_dict:
-                        best_stat_name = category
-                    else:
-                        # Fuzzy matching
-                        for stat_name in team_stats_dict.keys():
-                            if (category.lower() in stat_name.lower() or
-                                self._is_category_match(category, stat_name, stat_name)):
-                                best_stat_name = stat_name
-                                break
-                    
-                    if best_stat_name:
-                        # Collect all teams' data for this stat
-                        teams_data = []
-                        for team_info in teams_in_category:
-                            team_name = team_info.get("team_name", "Unknown")
-                            team_stats_dict = team_info.get("stats", {})
-                            
-                            if best_stat_name in team_stats_dict:
-                                stat_value = team_stats_dict[best_stat_name]
-                                
-                                # Try to convert to numeric for sorting
-                                numeric_value = 0
-                                try:
-                                    numeric_value = float(stat_value)
-                                except (ValueError, TypeError):
-                                    # Keep as string, use 0 for sorting
-                                    pass
-                                
-                                teams_data.append({
-                                    "name": team_name,
-                                    "value": numeric_value,
-                                    "displayValue": str(stat_value)
-                                })
-                        
-                        if teams_data:
-                            # Sort teams by value (descending for most stats)
-                            teams_data.sort(key=lambda x: x["value"], reverse=True)
-                            
-                            return {
-                                'name': f"{best_stat_name}",
-                                'category': category,
-                                'stat_name': best_stat_name,
-                                'data': teams_data,
-                                'type': 'team'
-                            }
-        
-        else:  # player stats
-            player_stats = self.statistics_data.get("player_stats", [])
-            
-            # Player stats structure: [{'category': name, 'stats': [{'player_name': name, 'team': team, 'value': value, 'stat_name': stat}]}]
-            for stat_category in player_stats:
-                category_name = stat_category.get("category", "")
-                stats_list = stat_category.get("stats", [])
-                
-                if not stats_list:
-                    continue
-                
-                # Check if this category matches what we're looking for
-                if (category.lower() in category_name.lower() or
-                    self._is_category_match(category, category_name, category_name)):
-                    
-                    # All stats in this category should be the same stat type
-                    # Just use the data as-is since it's already in the right format
-                    players_data = []
-                    for stat in stats_list:
-                        player_name = stat.get("player_name", "Unknown")
-                        stat_value = stat.get("value", "")
-                        
-                        # Try to convert to numeric for sorting
-                        numeric_value = 0
-                        try:
-                            # Handle fraction format like "1-1" 
-                            if '-' in str(stat_value) and str(stat_value).count('-') == 1:
-                                parts = str(stat_value).split('-')
-                                if len(parts) == 2 and parts[0].isdigit() and parts[1].isdigit():
-                                    numeric_value = int(parts[0]) / max(1, int(parts[1]))  # Avoid division by zero
-                                else:
-                                    numeric_value = float(stat_value)
-                            else:
-                                numeric_value = float(stat_value)
-                        except (ValueError, TypeError):
-                            # Keep as 0 for sorting if can't convert
-                            pass
-                        
-                        players_data.append({
-                            "name": f"{player_name} ({stat.get('team', 'N/A')})",
-                            "value": numeric_value,
-                            "displayValue": str(stat_value)
-                        })
-                    
-                    if players_data:
-                        # Sort players by value (descending for most stats)
-                        players_data.sort(key=lambda x: x["value"], reverse=True)
-                        
-                        return {
-                            'name': f"{category_name}",
-                            'category': category,
-                            'stat_name': category_name,
-                            'data': players_data,
-                            'type': 'player'
-                        }
-        
-        # If no exact match found, return None
-        print(f"DEBUG: No matching stat found for category: {category}")
-        return None
-    
-    def _is_category_match(self, category, stat_name, stat_display_name):
-        """Check if a category matches a statistic using fuzzy matching"""
-        category_lower = category.lower()
-        stat_name_lower = stat_name.lower()
-        stat_display_lower = stat_display_name.lower()
-        
-        # Define mapping for common statistics
-        category_mappings = {
-            "batting average": ["avg", "average", "batting"],
-            "home runs": ["hr", "homerun", "home run"],
-            "rbis": ["rbi", "runs batted in"],
-            "runs": ["run", "r"],
-            "hits": ["hit", "h"],
-            "stolen bases": ["sb", "steal", "stolen"],
-            "era": ["era", "earned run average"],
-            "wins": ["win", "w"],
-            "strikeouts": ["so", "k", "strikeout"],
-            "whip": ["whip", "walks hits innings"],
-            "saves": ["save", "sv"],
-            "innings pitched": ["ip", "inning"],
-            "passing yards": ["passing", "pass yards"],
-            "rushing yards": ["rushing", "rush yards"],
-            "receiving yards": ["receiving", "rec yards"],
-            "touchdowns": ["td", "touchdown"],
-            "points per game": ["ppg", "points"],
-            "field goal": ["fg", "field goal"],
-            "assists": ["ast", "assist"],
-            "rebounds": ["reb", "rebound"],
-            "steals": ["stl", "steal"],
-            "blocks": ["blk", "block"]
-        }
-        
-        # Check if category has specific mappings
-        if category_lower in category_mappings:
-            for mapping in category_mappings[category_lower]:
-                if mapping in stat_name_lower or mapping in stat_display_lower:
-                    return True
-        
-        return False
     
     def _show_stat_definitions(self):
         """Show statistics definitions dialog"""
@@ -11940,7 +11260,7 @@ class StatDefinitionsDialog(QDialog):
                 "SLG (Slugging %)": "Total bases divided by at bats. Measures power hitting.",
                 "OPS": "On-base percentage plus slugging percentage. Overall offensive measure."
             }
-        elif self.league.upper() == "NFL":
+        elif self.league.upper() in ("NFL", "NCAAF"):
             return {
                 "Passing Yards": "Total yards gained through forward passes.",
                 "Passing TDs": "Number of touchdown passes thrown by a quarterback.",
@@ -11959,7 +11279,7 @@ class StatDefinitionsDialog(QDialog):
                 "Turnovers": "Number of times possession was lost (fumbles + interceptions).",
                 "3rd Down %": "Percentage of third down attempts converted for first downs."
             }
-        elif self.league.upper() == "NBA":
+        elif self.league.upper() in ("NBA", "WNBA", "NCAAM", "NCAAWB"):
             return {
                 "PPG (Points Per Game)": "Average number of points scored per game.",
                 "FG% (Field Goal %)": "Percentage of field goal attempts made.",
@@ -12022,9 +11342,8 @@ class StatisticsDialog(QDialog):
             return
         
         # Create tab widget for Player/Team separation
-        self.tab_widget = QTabWidget()
-        self.tab_widget.setAccessibleName("Statistics")
-        self.tab_widget.setAccessibleDescription("Statistics data with player and team tabs. Use Left/Right arrow keys to navigate tabs.")
+        self.tab_widget = make_tab_area(
+            2, "Statistics", "Statistics data with player and team tabs. Use Left/Right arrow keys to navigate tabs.")
         self.tab_widget.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
         
         # Add Player Statistics tab
@@ -12060,9 +11379,9 @@ class StatisticsDialog(QDialog):
             return widget
         
         # Create a tab widget for different player stat categories
-        category_tabs = QTabWidget()
-        category_tabs.setAccessibleName("Player Statistics Categories")
-        category_tabs.setAccessibleDescription("Statistics organized by category. Use Ctrl+Tab to switch between categories.")
+        category_tabs = make_tab_area(
+            sum(1 for category in player_stats if category.get("stats")), "Player Statistics Categories",
+            "Statistics organized by category. Use Ctrl+Tab to switch between categories.")
         
         for category in player_stats:
             category_name = category.get("category", "Unknown")
@@ -12133,9 +11452,9 @@ class StatisticsDialog(QDialog):
             return widget
         
         # Create a tab widget for different team stat categories
-        category_tabs = QTabWidget()
-        category_tabs.setAccessibleName("Team Statistics Categories")
-        category_tabs.setAccessibleDescription("Team statistics organized by category. Use Ctrl+Tab to switch between categories.")
+        category_tabs = make_tab_area(
+            sum(1 for category in team_stats if category.get("stats")), "Team Statistics Categories",
+            "Team statistics organized by category. Use Ctrl+Tab to switch between categories.")
         
         for category in team_stats:
             category_name = category.get("category", "Unknown")
@@ -12206,26 +11525,20 @@ class StatisticsDialog(QDialog):
 
 
 class SimpleTeamsDialog(QDialog):
-    """Simple teams dialog with tabs for divisions"""
+    """Simple teams dialog with tabs for divisions, or a list when there are too many"""
     
     def __init__(self, teams_data: List, league: str, parent=None):
         super().__init__(parent)
         self.teams_data = teams_data
         self.league = league
         self.setWindowTitle(f"{league} Teams")
-        self.resize(600, 400)
+        self.resize(800, 500)  # Room for a table with several columns.
         self.setup_ui()
+        _focus_once_active(self, lambda: _focus_first_table(self))
     
     def setup_ui(self):
         layout = QVBoxLayout()
-        
-        # Create tab widget
-        self.tab_widget = QTabWidget()
-        self.tab_widget.setAccessibleName("Team Information")
-        self.tab_widget.setAccessibleDescription("Team information by division, use arrow keys to navigate between divisions")
-        self.tab_widget.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
-        self.tab_widget.setUsesScrollButtons(False)  # Disable scroll buttons as requested
-        
+
         # Group teams by division
         divisions = {}
         for team in self.teams_data:
@@ -12245,11 +11558,7 @@ class SimpleTeamsDialog(QDialog):
         elif self.league == "NBA":
             division_order = ["Atlantic", "Central", "Southeast", "Northwest", "Pacific", "Southwest"]
         elif self.league == "NCAAF":
-            # Use actual ESPN conference names
-            division_order = ["Southeastern Conference", "Big Ten Conference", "Big 12 Conference", 
-                            "Atlantic Coast Conference", "Pac-12 Conference", "American Conference", 
-                            "Conference USA", "Mid-American Conference", "Mountain West Conference", 
-                            "FBS Independents"]
+            division_order = NCAAF_CONFERENCE_ORDER
         elif self.league in ["NCAAB", "NCAAM", "NCAAW"]:
             # College basketball conferences (major conferences first)
             division_order = ["Southeastern Conference", "Big Ten Conference", "Big 12 Conference",
@@ -12264,16 +11573,17 @@ class SimpleTeamsDialog(QDialog):
         else:
             division_order = []
         
-        # Add tabs in order
-        for div_name in division_order:
-            if div_name in divisions:
-                self.create_division_tab(div_name, divisions[div_name])
-        
-        # Add any remaining divisions not in the standard order
-        for div_name, teams in divisions.items():
-            if div_name not in division_order:
-                self.create_division_tab(div_name, teams)
-        
+        # The standard order, then any remaining divisions not in it
+        ordered = [name for name in division_order if name in divisions]
+        ordered += [name for name in divisions if name not in division_order]
+
+        self.tab_widget = make_tab_area(
+            len(ordered), "Team Information", "Team information, use arrow keys to move between tabs",
+            list_name=group_noun(ordered),
+            list_description="Press Enter on one to open its teams. Escape comes back to this list.")
+        for div_name in ordered:
+            self.create_division_tab(div_name, divisions[div_name])
+
         layout.addWidget(self.tab_widget)
         
         # Close button
@@ -12286,29 +11596,9 @@ class SimpleTeamsDialog(QDialog):
         # Set focus on first tab
         if self.tab_widget.count() > 0:
             first_widget = self.tab_widget.widget(0)
-            if hasattr(first_widget, 'teams_table'):
-                first_widget.teams_table.setFocus()
-    
-    def keyPressEvent(self, event):
-        """Handle key press events to keep focus in tab widget for left/right arrows"""
-        key = event.key()
-        
-        # Handle left/right arrows to stay in tab widget
-        if key in (Qt.Key.Key_Left, Qt.Key.Key_Right):
-            # Ensure focus stays on tab widget navigation
-            self.tab_widget.setFocus()
-            current_index = self.tab_widget.currentIndex()
-            
-            if key == Qt.Key.Key_Left:
-                new_index = current_index - 1 if current_index > 0 else self.tab_widget.count() - 1
-            else:  # Right arrow
-                new_index = current_index + 1 if current_index < self.tab_widget.count() - 1 else 0
-            
-            self.tab_widget.setCurrentIndex(new_index)
-            return
-        
-        # For all other keys, use default behavior
-        super().keyPressEvent(event)
+            tables = first_widget.findChildren(AccessibleTable) if first_widget else []
+            if tables:
+                tables[0].setFocus()
     
     def create_division_tab(self, division_name: str, teams: List):
         """Create a tab for a division with team table"""
@@ -12319,7 +11609,7 @@ class SimpleTeamsDialog(QDialog):
         teams_table = AccessibleTable(
             parent=self,
             accessible_name=f"{division_name} Teams Table",
-            accessible_description=f"Teams in {division_name} division with wins, losses, and other statistics"
+            accessible_description=f"Teams in {division_name} with wins, losses, and other statistics"
         )
         
         # Set up table headers - include Ties for NFL
@@ -12452,38 +11742,7 @@ class VenuesDialog(QDialog):
         
         # Add venues to list with summary info
         for venue in sorted_venues:
-            venue_name = venue.get('name', 'Unknown Venue')
-            city = venue.get('city', 'Unknown')
-            state = venue.get('state', 'Unknown')
-            
-            # Add visual indicators for venue characteristics
-            indicators = []
-            if venue.get('indoor'):
-                indicators.append("Indoor")
-            else:
-                indicators.append("Outdoor")
-            
-            if venue.get('grass') is True:
-                indicators.append("Grass")
-            elif venue.get('grass') is False:
-                indicators.append("Turf")
-            else:
-                indicators.append("Unknown Surface")
-            
-            # Show home teams if available
-            home_teams = venue.get('home_teams', [])
-            team_info = ""
-            if home_teams:
-                if len(home_teams) == 1:
-                    team_info = f" - {home_teams[0].get('name', 'Unknown Team')}"
-                else:
-                    team_info = f" - {len(home_teams)} teams"
-            
-            # Format: "Stadium Name (City, State) [Indoor, Grass] - Team Name" 
-            surface_info = " | ".join(indicators)
-            display_text = f"{venue_name} ({city}, {state}) [{surface_info}]{team_info}"
-            
-            item = QListWidgetItem(display_text)
+            item = QListWidgetItem(venue_summary(venue))
             item.setData(Qt.ItemDataRole.UserRole, venue)
             self.venues_list.addItem(item)
         
@@ -12511,16 +11770,8 @@ class VenuesDialog(QDialog):
         if not venue_data:
             return
         
-        # Get detailed venue information
-        venue_id = venue_data.get('id')
-        league_key = self.league.lower()
-        venue_details = venue_service.get_venue_details(venue_id, league_key)
-        
-        if not venue_details:
-            QMessageBox.information(self, "Venue Details", "No detailed information available for this venue.")
-            return
-        
-        # Show venue details dialog
+        # Everything it shows came with the list, so nothing waits on the network here.
+        venue_details = venue_service.venue_details(venue_data, self.league.lower())
         details_dialog = VenueDetailsDialog(venue_details, self)
         details_dialog.exec()
     
@@ -12548,51 +11799,31 @@ class VenueDetailsDialog(QDialog):
         
         # Create list widget for venue details
         self.details_list = QListWidget()
-        
+        self.details_list.setAccessibleName(self.windowTitle())
+
         # Get venue information sections
         basic_info = self.venue_details.get('basic_info', {})
         characteristics = self.venue_details.get('characteristics', {})
         home_teams = self.venue_details.get('home_teams', [])
         interesting_facts = self.venue_details.get('interesting_facts', [])
-        media = self.venue_details.get('media', {})
-        images = media.get('images', [])
-        
+
         # Venue name header
         venue_name = basic_info.get('name', 'Unknown Venue')
         self.details_list.addItem(QListWidgetItem(f"=== {venue_name} ==="))
-        self.details_list.addItem(QListWidgetItem(""))
         
         # Basic Information Section
         self.details_list.addItem(QListWidgetItem("--- Basic Information ---"))
-        if basic_info.get('city') and basic_info.get('state'):
-            self.details_list.addItem(QListWidgetItem(f"Location: {basic_info['city']}, {basic_info['state']}"))
+        if basic_info.get('location'):
+            self.details_list.addItem(QListWidgetItem(f"Location: {basic_info['location']}"))
         if basic_info.get('league'):
             self.details_list.addItem(QListWidgetItem(f"League: {basic_info['league']}"))
-        if basic_info.get('zip_code'):
-            self.details_list.addItem(QListWidgetItem(f"ZIP Code: {basic_info['zip_code']}"))
-        self.details_list.addItem(QListWidgetItem(""))
-        
+
         # Characteristics Section
-        if characteristics:
+        if characteristics.get('indoor') is not None:
             self.details_list.addItem(QListWidgetItem("--- Stadium Characteristics ---"))
-            if characteristics.get('indoor') is not None:
-                venue_type = "Indoor stadium" if characteristics['indoor'] else "Outdoor stadium"
-                self.details_list.addItem(QListWidgetItem(f"Type: {venue_type}"))
-            
-            if characteristics.get('grass') is not None:
-                if characteristics['grass']:
-                    self.details_list.addItem(QListWidgetItem("Playing Surface: Natural grass"))
-                else:
-                    self.details_list.addItem(QListWidgetItem("Playing Surface: Artificial turf"))
-            
-            if characteristics.get('capacity'):
-                try:
-                    capacity = int(characteristics['capacity'])
-                    self.details_list.addItem(QListWidgetItem(f"Capacity: {capacity:,} fans"))
-                except (ValueError, TypeError):
-                    self.details_list.addItem(QListWidgetItem(f"Capacity: {characteristics['capacity']}"))
-            self.details_list.addItem(QListWidgetItem(""))
-        
+            venue_type = "Indoor stadium" if characteristics['indoor'] else "Outdoor stadium"
+            self.details_list.addItem(QListWidgetItem(f"Type: {venue_type}"))
+
         # Home Teams Section
         if home_teams:
             self.details_list.addItem(QListWidgetItem("--- Home Teams ---"))
@@ -12603,28 +11834,15 @@ class VenueDetailsDialog(QDialog):
                     self.details_list.addItem(QListWidgetItem(f"{team_name} ({team_abbrev})"))
                 else:
                     self.details_list.addItem(QListWidgetItem(team_name))
-            self.details_list.addItem(QListWidgetItem(""))
         
         # Interesting Facts Section
         if interesting_facts:
             self.details_list.addItem(QListWidgetItem("--- Interesting Facts ---"))
             for fact in interesting_facts:
                 self.details_list.addItem(QListWidgetItem(f"• {fact}"))
-            self.details_list.addItem(QListWidgetItem(""))
-        
-        # Images Section
-        if images:
-            self.details_list.addItem(QListWidgetItem("--- Available Media ---"))
-            self.details_list.addItem(QListWidgetItem(f"{len(images)} high-quality images available"))
-            # Show first few image types for information
-            for i, img in enumerate(images[:3]):
-                rel_info = ", ".join(img.get('rel', []))
-                if rel_info:
-                    self.details_list.addItem(QListWidgetItem(f"  • {rel_info.title()} view"))
-            
-            if len(images) > 3:
-                self.details_list.addItem(QListWidgetItem(f"  • ... and {len(images) - 3} more"))
-        
+
+        self.details_list.setCurrentRow(0)
+        _focus_once_active(self, self.details_list.setFocus)
         layout.addWidget(self.details_list)
         
         # Close button
@@ -12726,7 +11944,7 @@ class BowlsAndPlayoffsDialog(QDialog):
             }
             
             for game in games_data:
-                comp_type = game.get('competitions', [{}])[0].get('type', {}).get('id')
+                comp_type = _int_or_none(game.get('competitions', [{}])[0].get('type', {}).get('id'))
                 comp_name = game.get('competitions', [{}])[0].get('type', {}).get('text', '')
                 
                 if comp_type == 33:  # Championship
@@ -12761,8 +11979,6 @@ class BowlsAndPlayoffsDialog(QDialog):
                     for game in games:
                         self._add_game_item(game)
                     
-                    # Add spacing
-                    self.bowl_list.addItem("")
         
         except Exception as e:
             from PyQt6.QtWidgets import QMessageBox
@@ -12792,7 +12008,7 @@ class BowlsAndPlayoffsDialog(QDialog):
         # Format with bowl/playoff name prominently at the start
         if bowl_name:
             # Check if it's a playoff game
-            comp_type_id = comp_type.get('id')
+            comp_type_id = _int_or_none(comp_type.get('id'))
             if comp_type_id in [33, 35, 40]:  # Championship, Semifinal, Major Bowl (Quarterfinals)
                 item_text = f"[{bowl_name}] {item_text}"
             else:
@@ -12838,6 +12054,16 @@ class SportsScoresApp(QWidget):
         # Application state
         self.config = {}
         self.view_stack = []  # Stack for navigation history
+        self.monitored_games = set()  # live games with score alerts on, across views
+        self._button_keys = ButtonKeys(self)
+        QApplication.instance().installEventFilter(self._button_keys)
+        # Without this, a native child makes its siblings native too, and those hold every view.
+        QApplication.setAttribute(Qt.ApplicationAttribute.AA_DontCreateNativeWidgetSiblings)
+        # Hidden and never focused: only here so announcements have a window to come from.
+        self._announcer_window = QWidget(self)
+        self._announcer_window.setAttribute(Qt.WidgetAttribute.WA_NativeWindow)
+        self._announcer_window.hide()
+        set_notifier_window(int(self._announcer_window.winId()))
         self.startup_params = startup_params
         
         # Initialize configuration
@@ -12872,19 +12098,21 @@ class SportsScoresApp(QWidget):
         
         self.setLayout(layout)
     
-    def show_home(self):
+    def show_home(self, state=None):
         """Show the home view"""
         try:
             home_view = HomeView(self)
             home_view.setup_ui()
+            home_view.restore_state = state
             self._switch_to_view(home_view, "home", None)
         except Exception as e:
             QMessageBox.critical(self, "Error", f"Failed to show home view: {str(e)}")
     
-    def show_live_scores(self):
+    def show_live_scores(self, state=None):
         """Show the live scores view"""
         try:
             live_scores_view = LiveScoresView(self)
+            live_scores_view._restore_state = state
             self._switch_to_view(live_scores_view, "live_scores", None)
         except Exception as e:
             QMessageBox.critical(self, "Error", f"Failed to show live scores view: {str(e)}")
@@ -13098,13 +12326,13 @@ class SportsScoresApp(QWidget):
             return
         try:
             prev = self.view_stack.pop()
-            vtype, data = prev.get('type'), prev.get('data')
+            vtype, data, state = prev.get('type'), prev.get('data'), prev.get('state')
             if vtype == "home":
-                self.show_home(); return
+                self.show_home(state); return
             if vtype == "live_scores":
-                self.show_live_scores(); return
+                self.show_live_scores(state); return
             if vtype == "league" and data:
-                self._show_league_view(data); return
+                self._show_league_view(data, state); return
             if vtype == "teams" and data:
                 # Going back from team details -> league (simplified)
                 self._show_league_view(data); return
@@ -13117,9 +12345,9 @@ class SportsScoresApp(QWidget):
         except Exception as e:
             QMessageBox.critical(self, "Error", f"Failed to go back: {e}")
 
-    def _show_league_view(self, data):
+    def _show_league_view(self, data, state=None):
         """Helper method to show league view"""
-        league_view = LeagueView(self, data)
+        league_view = LeagueView(self, data, state=state)
         self._switch_to_view(league_view, "league", data)
 
     def _switch_to_view(self, view: BaseView, view_type: str, data: Any):
@@ -13137,7 +12365,9 @@ class SportsScoresApp(QWidget):
             view.on_show()
 
     def _push_to_stack(self, view_type: str, data: Any):
-        self.view_stack.append({"type": view_type, "data": data})
+        view = self.stacked_widget.currentWidget()
+        state = view.capture_state() if hasattr(view, 'capture_state') else None
+        self.view_stack.append({"type": view_type, "data": data, "state": state})
 
     # ------------------------------------------------------------- updates
 
@@ -13291,6 +12521,7 @@ class SportsScoresApp(QWidget):
                 current_widget.handle_resize(event.size())
 
 if __name__ == "__main__":
+    error_log.install()
     app = QApplication(sys.argv)
     # Held for the life of the process so the installer can detect a running copy.
     app._scores_mutex = updater.hold_app_mutex()

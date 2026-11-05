@@ -20,7 +20,26 @@ struct Game: Identifiable, Codable {
     let situation: Situation?
     /// ESPN season type — 1 preseason, 2 regular, 3 postseason (default 2).
     let seasonType: Int
-    
+    /// False when ESPN's time is a placeholder (TBD); `date` is then noon local on
+    /// the game's date. Nil means known.
+    var timeValid: Bool? = nil
+    /// True when neither team is at home, such as a bowl game.
+    var isNeutralSite: Bool? = nil
+
+    /// Spoken between the teams.
+    var matchupWord: String { isNeutralSite == true ? "vs" : "at" }
+    /// Shown between the teams.
+    var matchupSymbol: String { isNeutralSite == true ? "vs" : "@" }
+    var awayPrefix: String { isNeutralSite == true ? "" : "Away: " }
+    var homePrefix: String { isNeutralSite == true ? "" : "Home: " }
+
+    private static let displayTBDFormatter: DateFormatter = {
+        let f = DateFormatter()
+        f.dateFormat = "EEE M/d"
+        f.timeZone = TimeZone.current
+        return f
+    }()
+
     private static let displayTimeFormatter: DateFormatter = {
         let f = DateFormatter()
         f.dateFormat = "h:mm a EEE M/d"
@@ -29,7 +48,10 @@ struct Game: Identifiable, Codable {
     }()
 
     var displayTime: String {
-        Game.displayTimeFormatter.string(from: date)
+        if timeValid == false {
+            return "Time TBD \(Game.displayTBDFormatter.string(from: date))"
+        }
+        return Game.displayTimeFormatter.string(from: date)
     }
     
     var scoreDisplay: String {
@@ -41,6 +63,8 @@ struct Game: Identifiable, Codable {
             return status.isPostponed ? "Postponed" : "Cancelled"
         } else if status.state == "pre" {
             return displayTime
+        } else if awayTeam.score == nil && homeTeam.score == nil {
+            return status.displayText
         } else {
             return "\(awayTeam.score ?? 0) - \(homeTeam.score ?? 0)"
         }
@@ -54,7 +78,7 @@ struct Game: Identifiable, Codable {
         if status.isCompleted { return false }
 
         // Treat previous-day/previous-season games as "past" and suppress TV network noise.
-        let todayStart = Calendar.current.startOfDay(for: Date())
+        let todayStart = ScoreboardDay.today()
         return date >= todayStart
     }
     
@@ -70,6 +94,13 @@ struct Game: Identifiable, Codable {
         /// Used by the World Cup bracket to determine advancement reliably (knockout
         /// matches decided on penalties have equal scores, so score alone is insufficient).
         var isWinner: Bool? = nil
+        /// Poll rank, 1 to 25, when the team has one.
+        var rank: Int? = nil
+
+        /// The abbreviation as shown in a row, with the rank when there is one.
+        var rankedAbbreviation: String {
+            rank.map { "\($0) \(abbreviation)" } ?? abbreviation
+        }
 
         var displayText: String {
             if let score = score, let record = record {
@@ -264,12 +295,14 @@ extension Game.Team {
     /// Returns the team name string appropriate for a VoiceOver label
     /// given the current user preference.
     func voiceOverName(for preference: TeamNamePreference) -> String {
+        let spoken: String
         switch preference {
-        case .full:         return displayName
-        case .mascot:       return name
-        case .city:         return cityName
-        case .abbreviation: return abbreviation
+        case .full:         spoken = displayName
+        case .mascot:       spoken = name
+        case .city:         spoken = cityName
+        case .abbreviation: spoken = abbreviation
         }
+        return rank.map { "No. \($0) \(spoken)" } ?? spoken
     }
 }
 
@@ -300,8 +333,15 @@ extension Game {
                 break
             }
         }
-        self.date = parsedDate ?? Date()
-        
+        let competitionTimeValid = apiResponse.competitions.first?.timeValid
+        if competitionTimeValid == false, let parsedDate {
+            self.date = ScoreboardDay.localNoon(onUTCDayOf: parsedDate)
+        } else {
+            self.date = parsedDate ?? Date()
+        }
+        self.timeValid = competitionTimeValid
+        self.isNeutralSite = apiResponse.competitions.first?.neutralSite
+
         // Parse status
         self.status = GameStatus(
             state: apiResponse.status.type.state,
@@ -319,7 +359,10 @@ extension Game {
         // Suppress scores for pre-game states (show records instead of 0–0) and for
         // postponed/cancelled games where the API returns "0" as a placeholder.
         let isPreGame = apiResponse.status.type.state == "pre"
-        let suppressScores = isPreGame || self.status.isPostponed || self.status.isCancelled
+        // A delayed game that hasn't started is "in" progress at period 0, and 0 to 0.
+        let hasNotStarted = apiResponse.status.type.state == "in" && apiResponse.status.period == 0
+        let suppressScores = isPreGame || hasNotStarted
+            || self.status.isPostponed || self.status.isCancelled
 
         self.homeTeam = Team(
             id: homeCompetitor?.team.id ?? "",
@@ -330,7 +373,8 @@ extension Game {
             score: suppressScores ? nil : homeCompetitor?.score.flatMap({ Int($0) }),
             record: homeCompetitor?.records?.first?.summary,
             logo: homeCompetitor?.team.logo,
-            isWinner: homeCompetitor?.winner
+            isWinner: homeCompetitor?.winner,
+            rank: homeCompetitor?.curatedRank?.pollRank
         )
         
         self.awayTeam = Team(
@@ -341,7 +385,8 @@ extension Game {
             score: suppressScores ? nil : awayCompetitor?.score.flatMap({ Int($0) }),
             record: awayCompetitor?.records?.first?.summary,
             logo: awayCompetitor?.team.logo,
-            isWinner: awayCompetitor?.winner
+            isWinner: awayCompetitor?.winner,
+            rank: awayCompetitor?.curatedRank?.pollRank
         )
         
         // Parse venue
@@ -357,7 +402,7 @@ extension Game {
         }
         
         // Parse broadcasts
-        self.broadcasts = competitions?.broadcasts?.map { $0.names.first ?? "" } ?? []
+        self.broadcasts = competitions?.broadcasts?.flatMap { $0.names } ?? []
         
         // Parse situation (last play, down & distance for football; bases/count/outs for baseball)
         if let situationData = competitions?.situation {
@@ -414,7 +459,9 @@ struct APIGame: Codable {
         let venue: APIVenue?
         let broadcasts: [APIBroadcast]?
         let situation: APISituation?
-        
+        let timeValid: Bool?
+        let neutralSite: Bool?
+
         struct APICompetitor: Codable {
             let homeAway: String
             let team: APITeam
@@ -422,7 +469,23 @@ struct APIGame: Codable {
             let records: [APIRecord]?
             /// ESPN flags the advancing/winning competitor in completed knockout matches.
             let winner: Bool?
-            
+            let curatedRank: APICuratedRank?
+
+            struct APICuratedRank: Codable {
+                let current: Int?
+
+                init(from decoder: Decoder) throws {
+                    let container = try decoder.container(keyedBy: CodingKeys.self)
+                    current = try? container.decodeIfPresent(Int.self, forKey: .current)
+                }
+
+                /// ESPN sends 99 for unranked.
+                var pollRank: Int? {
+                    guard let current, (1...25).contains(current) else { return nil }
+                    return current
+                }
+            }
+
             struct APITeam: Codable {
                 let id: String
                 let name: String

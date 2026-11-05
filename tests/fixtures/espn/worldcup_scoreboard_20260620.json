@@ -1,0 +1,156 @@
+{
+ "events": [
+  {
+   "id": "760447",
+   "date": "2026-06-20T17:00Z",
+   "name": "Sweden at Netherlands",
+   "shortName": "SWE @ NED",
+   "competitions": [
+    {
+     "id": "760447",
+     "date": "2026-06-20T17:00Z",
+     "timeValid": true,
+     "status": {
+      "type": {
+       "id": "28",
+       "name": "STATUS_FULL_TIME",
+       "state": "post",
+       "completed": true,
+       "description": "Full Time",
+       "detail": "FT",
+       "shortDetail": "FT"
+      }
+     },
+     "venue": {
+      "id": "6262",
+      "fullName": "NRG Stadium",
+      "address": {
+       "city": "Houston, Texas",
+       "country": "USA"
+      }
+     },
+     "competitors": [
+      {
+       "id": "449",
+       "homeAway": "home",
+       "score": "5",
+       "winner": true,
+       "team": {
+        "id": "449",
+        "displayName": "Netherlands",
+        "shortDisplayName": "Netherlands",
+        "name": "Netherlands",
+        "abbreviation": "NED"
+       },
+       "records": [
+        {
+         "name": "All Splits",
+         "type": "total",
+         "summary": "1-1-0",
+         "abbreviation": "Total"
+        }
+       ]
+      },
+      {
+       "id": "466",
+       "homeAway": "away",
+       "score": "1",
+       "winner": false,
+       "team": {
+        "id": "466",
+        "displayName": "Sweden",
+        "shortDisplayName": "Sweden",
+        "name": "Sweden",
+        "abbreviation": "SWE"
+       },
+       "records": [
+        {
+         "name": "All Splits",
+         "type": "total",
+         "summary": "1-0-1",
+         "abbreviation": "Total"
+        }
+       ]
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "760448",
+   "date": "2026-06-20T20:00Z",
+   "name": "Ivory Coast at Germany",
+   "shortName": "CIV @ GER",
+   "competitions": [
+    {
+     "id": "760448",
+     "date": "2026-06-20T20:00Z",
+     "timeValid": true,
+     "status": {
+      "type": {
+       "id": "28",
+       "name": "STATUS_FULL_TIME",
+       "state": "post",
+       "completed": true,
+       "description": "Full Time",
+       "detail": "FT",
+       "shortDetail": "FT"
+      }
+     },
+     "venue": {
+      "id": "10143",
+      "fullName": "BMO Field",
+      "address": {
+       "city": "Toronto",
+       "country": "Canada"
+      }
+     },
+     "competitors": [
+      {
+       "id": "481",
+       "homeAway": "home",
+       "score": "2",
+       "winner": true,
+       "team": {
+        "id": "481",
+        "displayName": "Germany",
+        "shortDisplayName": "Germany",
+        "name": "Germany",
+        "abbreviation": "GER"
+       },
+       "records": [
+        {
+         "name": "All Splits",
+         "type": "total",
+         "summary": "2-0-0",
+         "abbreviation": "Total"
+        }
+       ]
+      },
+      {
+       "id": "4789",
+       "homeAway": "away",
+       "score": "1",
+       "winner": false,
+       "team": {
+        "id": "4789",
+        "displayName": "Ivory Coast",
+        "shortDisplayName": "Ivory Coast",
+        "name": "Ivory Coast",
+        "abbreviation": "CIV"
+       },
+       "records": [
+        {
+         "name": "All Splits",
+         "type": "total",
+         "summary": "1-0-1",
+         "abbreviation": "Total"
+        }
+       ]
+      }
+     ]
+    }
+   ]
+  }
+ ]
+}

@@ -214,7 +214,7 @@ struct SportSelectionView: View {
             .accessibilityLabel("Next Day")
 
             // Today button (if not on today)
-            if !Calendar.current.isDateInToday(homeVM.selectedDate) {
+            if !ScoreboardDay.isToday(homeVM.selectedDate) {
                 Button("Today") {
                     Task { await homeVM.goToToday() }
                 }
@@ -227,7 +227,7 @@ struct SportSelectionView: View {
     }
 
     private var headerText: String {
-        if Calendar.current.isDateInToday(homeVM.selectedDate) {
+        if ScoreboardDay.isToday(homeVM.selectedDate) {
             return "Today's Games"
         }
         return "\(dayOfWeek(homeVM.selectedDate))'s Games"
@@ -240,9 +240,9 @@ struct SportSelectionView: View {
     }
 
     private func accessibilityDate(_ date: Date) -> String {
-        if Calendar.current.isDateInToday(date) { return "Today" }
-        if Calendar.current.isDateInYesterday(date) { return "Yesterday" }
-        if Calendar.current.isDateInTomorrow(date) { return "Tomorrow" }
+        if ScoreboardDay.isToday(date) { return "Today" }
+        if ScoreboardDay.isYesterday(date) { return "Yesterday" }
+        if ScoreboardDay.isTomorrow(date) { return "Tomorrow" }
         let formatter = DateFormatter()
         formatter.dateFormat = "EEEE, MMMM d"
         return formatter.string(from: date)

@@ -1,0 +1,208 @@
+{
+ "team": {
+  "abbreviation": "GB",
+  "displayName": "Green Bay Packers",
+  "franchise": {
+   "abbreviation": "GB",
+   "displayName": "Green Bay Packers",
+   "id": "9",
+   "isActive": true,
+   "location": "Green Bay",
+   "name": "Packers",
+   "nickname": "Packers",
+   "shortDisplayName": "Packers",
+   "venue": {
+    "address": {
+     "city": "Green Bay",
+     "country": "USA",
+     "state": "WI",
+     "zipCode": "54304"
+    },
+    "fullName": "Lambeau Field",
+    "grass": true,
+    "id": "3798",
+    "indoor": false
+   }
+  },
+  "groups": {
+   "id": "7",
+   "isConference": true,
+   "parent": {
+    "id": "9"
+   }
+  },
+  "id": "9",
+  "isActive": true,
+  "location": "Green Bay",
+  "name": "Packers",
+  "nextEvent": [
+   {
+    "competitions": [
+     {
+      "competitors": [
+       {
+        "curatedRank": {
+         "current": 99
+        },
+        "homeAway": "home",
+        "id": "9",
+        "order": 0,
+        "score": {
+         "displayValue": "27",
+         "value": 27.0
+        },
+        "team": {
+         "id": "9",
+         "displayName": "Green Bay Packers",
+         "abbreviation": "GB"
+        },
+        "type": "team",
+        "winner": true
+       },
+       {
+        "curatedRank": {
+         "current": 99
+        },
+        "homeAway": "away",
+        "id": "29",
+        "order": 1,
+        "score": {
+         "displayValue": "19",
+         "value": 19.0
+        },
+        "team": {
+         "id": "29",
+         "displayName": "Carolina Panthers",
+         "abbreviation": "CAR"
+        },
+        "type": "team",
+        "winner": false
+       }
+      ],
+      "date": "2026-10-30T00:15Z",
+      "id": "401873023",
+      "status": {
+       "clock": 0.0,
+       "displayClock": "0:00",
+       "isTBDFlex": false,
+       "period": 4,
+       "type": {
+        "completed": true,
+        "description": "Final",
+        "detail": "Final",
+        "id": "3",
+        "name": "STATUS_FINAL",
+        "shortDetail": "Final",
+        "state": "post"
+       }
+      },
+      "venue": {
+       "address": {
+        "city": "Green Bay",
+        "country": "USA",
+        "state": "WI",
+        "zipCode": "54304"
+       },
+       "fullName": "Lambeau Field"
+      }
+     }
+    ],
+    "date": "2026-10-30T00:15Z",
+    "id": "401873023",
+    "name": "Carolina Panthers at Green Bay Packers",
+    "timeValid": true
+   }
+  ],
+  "nickname": "Packers",
+  "record": {
+   "items": [
+    {
+     "stats": [
+      {
+       "name": "OTLosses",
+       "value": 0.0
+      },
+      {
+       "name": "gamesPlayed",
+       "value": 8.0
+      },
+      {
+       "name": "losses",
+       "value": 3.0
+      },
+      {
+       "name": "pointsAgainst",
+       "value": 164.0
+      },
+      {
+       "name": "pointsFor",
+       "value": 171.0
+      },
+      {
+       "name": "streak",
+       "value": 1.0
+      },
+      {
+       "name": "ties",
+       "value": 0.0
+      },
+      {
+       "name": "wins",
+       "value": 5.0
+      }
+     ],
+     "summary": "5-3",
+     "type": "total"
+    },
+    {
+     "description": "Home Record",
+     "stats": [
+      {
+       "name": "wins",
+       "value": 3.0
+      },
+      {
+       "name": "losses",
+       "value": 1.0
+      },
+      {
+       "name": "ties",
+       "value": 0.0
+      },
+      {
+       "name": "OTLosses",
+       "value": 0.0
+      }
+     ],
+     "summary": "3-1",
+     "type": "home"
+    },
+    {
+     "description": "Away Record",
+     "stats": [
+      {
+       "name": "wins",
+       "value": 2.0
+      },
+      {
+       "name": "losses",
+       "value": 2.0
+      },
+      {
+       "name": "ties",
+       "value": 0.0
+      },
+      {
+       "name": "OTLosses",
+       "value": 0.0
+      }
+     ],
+     "summary": "2-2",
+     "type": "road"
+    }
+   ]
+  },
+  "shortDisplayName": "Packers",
+  "standingSummary": "7th in National Football Conference"
+ }
+}

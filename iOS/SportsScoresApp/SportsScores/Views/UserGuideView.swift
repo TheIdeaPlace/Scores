@@ -70,7 +70,7 @@ struct UserGuideView: View {
                 // MARK: Game Detail
                 GuideSection(icon: "list.bullet.rectangle", title: "Game Detail", color: .green) {
                     Text("Select any game row to open its detail screen. The header shows both teams, the current score or start time, and the venue. Four tabs are available:")
-                    BulletPoint("**Box Score** — line score (baseball) or team stats (other sports)")
+                    BulletPoint("**Box Score** — one tab per team and stat group, then the team comparison. Tables have a Totals row wherever ESPN sends one. Before a game, the team table holds season stats and says so")
                     BulletPoint("**Plays / Drives** — pitch-by-pitch (baseball), play-by-play (basketball, hockey), or drive chart (football)")
                     BulletPoint("**Info** — leaders, injuries, officials, venue, related news")
                     BulletPoint("**More** — win probability and season series; MLB only")
@@ -296,8 +296,10 @@ struct UserGuideView: View {
                     Text("All data comes from ESPN's public API.")
                     BulletPoint("**MLB Spring Training** runs February–March. The app defaults to spring training games during that window")
                     BulletPoint("**NBA, NHL and college basketball/hockey** seasons are shown as the two years they span, e.g. 2026–27. The WNBA plays inside one calendar year, so it shows a single year")
-                    BulletPoint("**NCAA Hockey** data is sometimes incomplete — box scores or play-by-play may be missing for some games")
-                    BulletPoint("Game times are shown in your device's local time zone")
+                    BulletPoint("**NCAA Hockey** data is sometimes incomplete — ESPN sends no box score at all for college hockey, so the Box Score tab says so")
+                    BulletPoint("Game times are shown in your device's local time zone. A game with no set time reads **Time TBD**")
+                    BulletPoint("**\"Today\" lasts until 5 AM.** Until then, Live Scores and the league screens stay on last night's games")
+                    BulletPoint("**College basketball plays** with no real location, such as substitutions and free throws, have no location or tone")
                 }
 
                 // Footer

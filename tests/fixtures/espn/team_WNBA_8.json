@@ -1,0 +1,105 @@
+{
+ "team": {
+  "abbreviation": "MIN",
+  "displayName": "Minnesota Lynx",
+  "groups": {
+   "id": "2",
+   "isConference": true
+  },
+  "id": "8",
+  "isActive": true,
+  "location": "Minnesota",
+  "name": "Lynx",
+  "record": {
+   "items": [
+    {
+     "description": "Overall Record",
+     "stats": [
+      {
+       "name": "OTLosses",
+       "value": 0.0
+      },
+      {
+       "name": "gamesPlayed",
+       "value": 2.0
+      },
+      {
+       "name": "losses",
+       "value": 2.0
+      },
+      {
+       "name": "pointsAgainst",
+       "value": 178.0
+      },
+      {
+       "name": "pointsFor",
+       "value": 146.0
+      },
+      {
+       "name": "streak",
+       "value": -2.0
+      },
+      {
+       "name": "ties",
+       "value": 0.0
+      },
+      {
+       "name": "wins",
+       "value": 0.0
+      }
+     ],
+     "summary": "0-2",
+     "type": "total"
+    },
+    {
+     "description": "Home Record",
+     "stats": [
+      {
+       "name": "wins",
+       "value": 0.0
+      },
+      {
+       "name": "losses",
+       "value": 1.0
+      },
+      {
+       "name": "ties",
+       "value": 0.0
+      },
+      {
+       "name": "OTLosses",
+       "value": 0.0
+      }
+     ],
+     "summary": "0-1",
+     "type": "home"
+    },
+    {
+     "description": "Away Record",
+     "stats": [
+      {
+       "name": "wins",
+       "value": 0.0
+      },
+      {
+       "name": "losses",
+       "value": 1.0
+      },
+      {
+       "name": "ties",
+       "value": 0.0
+      },
+      {
+       "name": "OTLosses",
+       "value": 0.0
+      }
+     ],
+     "summary": "0-1",
+     "type": "road"
+    }
+   ]
+  },
+  "shortDisplayName": "Lynx",
+  "standingSummary": "8th in Western Conference Division"
+ }
+}

@@ -1,0 +1,132 @@
+box_NFL_401873035.json	60 KB	football groups: labels/keys, no names; flat team statistics
+box_NCAAF_401860924.json	64 KB	football groups, flat team statistics
+box_NBA_401909906.json	37 KB	basketball: names, active flag means on floor at the end
+box_WNBA_401918311.json	38 KB	basketball box, same active semantics
+box_NCAAM_401928858.json	37 KB	college basketball box
+box_NCAAWB_401911736.json	37 KB	women's college basketball box
+box_NHL_401892628.json	80 KB	hockey groups: forwards, defenses, goalies; no names
+box_NCAAH_401923148.json	11 KB	college hockey: teams present, athletes empty, zero tabs
+box_NCAAWH_401903813.json	11 KB	women's college hockey, same
+standings_NCAAF.json	122 KB	duplicate stat names by type; Sun Belt nested one level deeper
+standings_NCAAF_group90.json	513 KB	group=90: all 25 conferences under FBS and FCS, Sun Belt flat; one team each, two in the Big Sky (Montana State 8-1)
+standings_NCAAM.json	111 KB	duplicate stat names; last 'wins' is the conference record
+standings_NCAAWB.json	112 KB	same
+standings_NCAAWH.json	14 KB	entries at the root, no children: no conferences
+standings_NCAAH.json	27 KB	tiegames stat, three-part overall
+standings_NHL.json	46 KB	otLosses, streak; Utah is UTA here, UTAH on its team page
+standings_NFL.json	39 KB	streak present
+standings_NBA.json	43 KB	streak present
+standings_WNBA.json	42 KB	both conferences; total, not the playoff record; gamesbehind
+schedule_NBA_15.json	52 KB	evening games: UTC date is the next day
+schedule_NCAAM_275.json	42 KB	dedicated endpoint
+schedule_NFL_9.json	76 KB	Sunday and Thursday night games; timeValid false on TBD
+schedule_WNBA_8.json	47 KB	season=2026&seasontype=2, trimmed; notes on Commissioner's Cup games only
+scoreboard_events_by_status.json	85 KB	one real event per status name: STATUS_DELAYED, STATUS_END_PERIOD, STATUS_FINAL, STATUS_FORFEIT, STATUS_HALFTIME, STATUS_IN_PROGRESS, STATUS_POSTPONED, STATUS_SCHEDULED
+plays_NCAAM_401845838_3OT.json	44 KB	halves as 1st/2nd Half, periods 3-5 OT/2OT/3OT; (25,0) placeholder coordinates
+plays_NCAAWB_401911736.json	41 KB	(25,0) placeholder coordinates on substitutions and timeouts
+plays_NBA_401909906.json	47 KB	sentinel coordinates; real shot coordinates
+plays_NHL_401892616_SO.json	67 KB	shootout: scoreValue on every converted attempt; linescore counts 1
+drives_NCAAF_2OT.json	43 KB	OT drives: Quarter 5, Quarter 6 in the app
+details_NFL_pieces.json	32 KB	TV in media.shortName, odds in pickcenter, injuries by team, officials under gameInfo
+details_NCAAH_pieces.json	9 KB	attendance 0, no plays
+roster_NFL_9.json	14 KB	height and weight are floats: 6.0'5.0"
+roster_NBA_15.json	12 KB	flat shape, floats
+team_NHL_utah.json	20 KB	record summary omits OTL; groups has no name; no venue, no coaches
+bowls_NCAAF.json	13 KB	competition type.id is a string: every bowl lands in Other Bowls
+team_NFL_9.json	4 KB	venue under franchise; nextEvent already final; OTLosses with a capital; no division name
+team_EPL_359.json	6 KB	soccer: record summary is W-D-L, 8-0-1 is 8 wins and 1 loss
+team_WNBA_8.json	2 KB	two-part record; streak is a negative value
+teams_NFL.json	1 KB	team list, trimmed to 3: no venue on these, unlike a single team
+teams_NBA.json	1 KB	team list, trimmed to 3
+teams_EPL.json	1 KB	team list, trimmed to 3; Arsenal is id 359
+news_NFL.json	1 KB	league news, 2 articles, web and mobile links
+team_news_NFL_9.json	1 KB	/news?team=9, 2 articles. /teams/9/news answers 200 with {}
+transactions_NFL.json	1 KB	league-wide: team on each item; pageCount 407
+transactions_NFL_9.json	1 KB	team-filtered: no team on the items
+rankings_NCAAF.json	2 KB	AP and Coaches polls, 3 teams each
+draft_site_NFL_2026.json	11 KB	/draft season=2026, cut to 6 picks and their teams: position only as an id, college on the athlete; 2nd-round pick 33 was traded; round 3's Georgia State is Georgia St as a short name
+golf_schedule_PGA.json	5 KB	dates=2026: a cancelled event with no competitors, a final, a scheduled one
+golf_scoreboard_PGA.json	2 KB	current scoreboard, tournament not started, 3 golfers
+worldcup_standings_WC2026.json	10 KB	2 groups of 4; note.description is the advancement text; a stat with value null
+worldcup_scoreboard_20260620.json	3 KB	2 group games, STATUS_FULL_TIME
+scoreboard_NWSL.json	3 KB	2 games from dates=202610, used by the month-by-month schedule path
+standings_MLB.json	14 KB	AL and NL trimmed to 5 and 3 teams, CHW and ATH included; streak is a signed value
+schedule_MLB_10.json	4 KB	3 finals; score is a dict with displayValue
+schedule_WNBA_8_pre.json	16 KB	seasontype=1, 1 of 3 games: no note and no week, so only the season type names it
+schedule_WNBA_8_post.json	33 KB	season=2025&seasontype=3, 2 of 6: First Round and Semifinals notes, no week
+schedule_NFL_26_pre.json	63 KB	SEA season=2025&seasontype=1: week.text Preseason Week 1 to 3, no notes; a 23-23 tie
+schedule_NFL_26_reg.json	42 KB	SEA season=2025&seasontype=2, 2 of 17: week.text Week 1, Week 2; byeWeek at the top
+schedule_NFL_26_post.json	64 KB	SEA season=2025&seasontype=3: note Super Bowl LX, week.text Super Bowl, neutralSite true, Seattle filed as away
+schedule_NCAAF_333_reg.json	45 KB	Alabama season=2025&seasontype=2, 1 of 13: SEC Championship note on a regular season game
+schedule_NCAAF_333_post.json	91 KB	Alabama season=2025&seasontype=3: playoff notes, week.text Bowls, Rose Bowl at a neutral site
+schedule_EPL_359_results.json	28 KB	Arsenal season=2026, no seasontype, 3 of 9: STATUS_FULL_TIME, seasonType.type is a long id
+schedule_EPL_359_fixture.json	32 KB	Arsenal fixture=true, 3 of 29: games to come, no scores, odds and tickets on each
+schedule_EPL_359_2025.json	27 KB	Arsenal season=2025, 3 of 38: season.year says 2026, requestedSeason 2025
+schedule_UCL_359_2025.json	27 KB	Arsenal season=2025, 3 of 15: STATUS_FINAL_PEN with shootoutScore; 2nd Leg note; a note with no headline
+schedule_MLS_18418_fixture.json	27 KB	Atlanta fixture=true, 2 of 14: requestedSeason is 2027's Sprint season, season.year still 2026
+scoreboard_NFL_202611.json	73 KB	5 games from dates=202611: Falcons listed as home at a neutral site in Madrid, Giants and Jets sharing MetLife
+scoreboard_NBA_202611.json	59 KB	3 games from dates=202611: Nets and Warriors at home, Pacers listed as home at a neutral site in Mexico City
+scoreboard_NCAAH_202611.json	12 KB	3 games from dates=202611: 2 at home, Providence listed as home at a neutral site in Belfast
+team_NBA_17.json	20 KB	Nets: franchise.venue still says Prudential Center
+schedule_NBA_17.json	87 KB	seasontype=2, 5 games: 3 home at Barclays Center, 2 away
+schedule_MLB_11.json	101 KB	seasontype=2, 6 games: Athletics home at Sutter Health Park 3 times, then Las Vegas Ballpark twice, 1 away; state is spelled out
+schedule_NFL_1.json	56 KB	seasontype=2, 3 games: Falcons home at Mercedes-Benz Stadium, then listed as home at a neutral site in Madrid, 1 away
+scoreboard_WNBA_202607.json	55 KB	3 games from dates=202607: American Airlines Center marked not indoor, an All-Star game with TEAM COOP at home
+scoreboard_NHL_202612.json	53 KB	4 games from dates=202612: Mammoth at Delta Center 3 times and a one-off at Rice-Eccles Stadium, not marked neutral
+scoreboard_WNBA_202608.json	82 KB	4 games from dates=202608: Sun at Mohegan Sun Arena 3 times and a one-off at TD Garden, not marked neutral
+scoreboard_WNBA_202605.json	39 KB	2 games from dates=202605: a preseason game with season.type 1, and a regular season one
+scoreboard_NCAAH_202602.json	23 KB	5 games from dates=202602: Providence at Schneider Arena 3 times and once at Harvard's Bright-Landry; Harvard at home
+scoreboard_MLB_202606.json	97 KB	5 games from dates=202606: Athletics at Sutter Health Park 3 times and Las Vegas Ballpark twice
+scoreboard_NCAAM_202611.json	30 KB	3 games from groups=50: Chicago and Misericordia host with no conferenceId and isActive false; Wisconsin has conferenceId
+scoreboard_NCAAWB_202611.json	21 KB	2 games from groups=50: Catawba hosts with no conferenceId; Wisconsin has conferenceId
+schedule_MLB_11_spring.json	73 KB	seasontype=1, 5 games: Athletics home at Hohokam Stadium 4 times, 1 away
+leaders_v3_NFL.json	91 KB	/leaders season=2026 limit=5, cut to 3 categories of 2: 2246 passing, not the preseason's 509; 7.5 sacks reads 8
+leaders_v3_NBA.json	90 KB	/leaders season=2027, 3 categories of 2: the NBA's only source of leaders; 3-point % is a fraction reading 0.6; points read 268.0
+leaders_v3_NHL.json	54 KB	/leaders season=2027, 3 categories of 2: goals 15, not the preseason's 4; goals against best first, lowest
+leaders_v3_NCAAM.json	71 KB	/leaders season=2027, 3 categories of 2: qualified, so 21.0 where core says 41.0; FG% value a fraction; PER all 0.0
+leaders_v3_MLB.json	146 KB	/leaders season=2026, 5 categories of 2: displayValue is a stat line in every category
+leaders_v3_NCAAM_full.json	364 KB	/leaders season=2027 limit=20, field goal % whole and 3-pointers made cut to 9: qualified players, then everyone else from the top again
+leaders_v3_team_NBA_14.json	Heat 2025-26, /leaders team=14, rows without statistics: qualified players first, then others such as Herro at 20.5
+leaders_v3_team_MLB_30.json	Rays 2026, /leaders team=30, rows without statistics: on-base % is plain text, .360
+leaders_v3_team_NFL_3.json	Bears 2025, /leaders team=3, rows without statistics: passingLeader repeats passingYards; sacks tied at 1.5
+leaders_v3_NCAAF_2025.json	27 KB	/leaders season=2025 seasontype=2, 1 category of 2: answers with requestedSeason type 3, Postseason
+leaders_core_NFL_regular.json	5 KB	core seasons/2026/types/2/leaders limit=3, 3 categories: names by $ref only
+leaders_core_NFL_preseason.json	3 KB	core seasons/2026/types/1/leaders limit=3, 3 categories: 509, the numbers /statistics called regular season
+leaders_core_NBA.json	24 KB	core seasons/2027/types/2/leaders limit=3, whole: what the iPhone reads; athlete and team $refs
+leaders_core_NCAAM_per.json	4 KB	core seasons/2027/types/2/leaders limit=3, 2 categories: PER all 0.0, with nobody rated
+leaders_core_MLB.json	5 KB	core seasons/2026/types/2/leaders limit=3, 3 categories: displayValue is a stat line here too
+season_NBA.json	6 KB	core /season: year 2027, displayName 2026-27, type 2
+season_NFL.json	7 KB	core /season: year 2026, type 2; types.items dates the off season under the season just played
+season_WNBA.json	5 KB	core /season: year 2026, type 3, in its playoffs
+byteam_NBA.json	263 KB	season=2027 seasontype=2, whole: 30 teams, own and opponent sections, pagination count 30, ESPN's ranks blank for points per game
+byteam_WNBA.json	126 KB	season=2026 seasontype=2, whole: all 15 teams
+byteam_WNBA_default.json	71 KB	no season or type, in the off season: the 8 playoff teams, requestedSeason type 3
+byteam_NFL.json	89 KB	season=2026 seasontype=2, 7 of 32 teams: no pagination; totalGiveaways tied, and ESPN's rank 1 is the most giveaways
+byteam_NHL.json	50 KB	season=2027 seasontype=2, 7 of 32 teams: no pagination, no opponent sections; a null among the values
+byteam_MLB.json	51 KB	season=2026 seasontype=2, 7 of 30 teams: no pagination, no opponent sections; errors tied
+byteam_MLB_default.json	31 KB	no season or type, in November: 4 of the 12 playoff teams, requestedSeason type 3
+byteam_NCAAF_2025.json	54 KB	season=2025 seasontype=2, 5 of 136 teams: answers with requestedSeason type 3, Postseason, however it's asked
+byteam_NCAAM.json	58 KB	season=2027 seasontype=2 on Nov 4, 2026, 8 of 365 teams, Duke among them: everyone has played once, and only Division I teams have opponent sections
+byteam_NCAAM_2026.json	36 KB	season=2026 seasontype=2, 4 of the 400 returned: pagination count 722, pages 2; UCCS with one game and a section of "-" and nulls
+byteam_NCAAM_2026_desc.json	35 KB	the same, sort=offensive.avgTurnovers:desc: 2 teams only this way round and 1 also in the next
+byteam_NCAAM_2026_asc.json	35 KB	the same, sort=offensive.avgTurnovers:asc: 2 teams only this way round and 1 also in the last
+core_team_stats_NBA_29.json	29 KB	core seasons/2027/types/2/teams/29/statistics: Grizzlies, per-game stats have no rank, totals ranked per game
+core_team_stats_NCAAM_150.json	19 KB	core seasons/2027/types/2/teams/150/statistics: Duke, ranks such as Tied-118th
+core_team_stats_NFL_22.json	77 KB	core seasons/2026/types/2/teams/22/statistics: Cardinals, including ranks that don't match the numbers, Tied-1st net punting at 39.8
+byteam_NCAAWB.json	60 KB	season=2027 seasontype=2 on Nov 4, 2026, 8 of 326 teams: 2 Division I schools moving up, with no opponent sections, 2 non-Division I schools, 4 others
+teams_NCAAWB.json	24 KB	teams?limit=1000, the 6 Division I teams of byteam_NCAAWB out of 362; none from outside Division I
+teams_NCAAM.json	55 KB	teams?limit=1000, the Division I teams of the byteam_NCAAM files out of 362
+byteam_NCAAF.json	55 KB	season=2026 seasontype=2, 5 of 138 teams, Alabama among them: every team has opponent sections
+core_team_stats_NCAAF_333_2025.json	77 KB	core seasons/2025/types/2/teams/333/statistics: Alabama, passing 3,551, 11th, which byteam's type 3 has as 3,953 through the bowls
+core_team_stats_NCAAF_149.json	71 KB	core seasons/2026/types/2/teams/149/statistics: Montana, FCS, so not in byteam; total tackles Tied-363rd
+team_WNBA_8_regular.json	6 KB	Lynx season=2026&seasontype=2: 33-11, home 15-7, road 18-4, 1st; team_WNBA_8.json is the plain answer in the playoffs, 0-2, 8th
+team_WNBA_14.json	7 KB	Storm, not in the playoffs, plain answer in them: 0-0, 4th
+team_WNBA_14_regular.json	7 KB	Storm season=2026&seasontype=2: 8-36, last, as Standings has it
+team_MLB_19.json	23 KB	Dodgers, plain answer in the playoffs: 100-62 but 5th in NL West; nextEvent is spring training
+team_MLB_19_regular.json	11 KB	Dodgers season=2026&seasontype=2: 100-62, 1st in NL West, no nextEvent at all
+season_MLB.json	5 KB	core /season: year 2026, type 3, in its playoffs
+team_NBA_17_regular.json	21 KB	Nets season=2027&seasontype=2: same record as team_NBA_17.json, but nextEvent is in January rather than the next day
+team_NCAAH_130.json	10 KB	Michigan, plain answer: no record and no standing, as for every college hockey team; a next game
+team_NCAAH_130_regular.json	11 KB	Michigan season=2027&seasontype=2: 8-1, standingSummary a bare 1st, nextEvent in January
+summary_leaders_NBA_401909906.json	3 KB	game summary's leaders block only, athletes cut to names: 2 teams, one leader per category, displayValue a plain number
+summary_leaders_NFL_401873035.json	5 KB	game summary's leaders block only, athletes cut to names: displayValue a stat line such as 16/29, 217 YDS, 1 TD

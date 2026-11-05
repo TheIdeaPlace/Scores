@@ -20,7 +20,6 @@ extension Notification.Name {
 
 enum AppLifecycle {
     private static let lastBackgroundKey = "appLastBackgroundDate"
-    private static let resetHour = 6   // 6 AM local time
 
     static func handlePhaseChange(_ phase: ScenePhase) {
         switch phase {
@@ -35,11 +34,8 @@ enum AppLifecycle {
 
     private static func checkForNewDay() {
         guard let lastBg = UserDefaults.standard.object(forKey: lastBackgroundKey) as? Date else { return }
-        let cal = Calendar.current
-        let today  = cal.startOfDay(for: Date())
-        let bgDay  = cal.startOfDay(for: lastBg)
-        guard today > bgDay else { return }          // same day — no reset needed
-        guard cal.component(.hour, from: Date()) >= resetHour else { return }
+        // A late game keeps the app on last night's board until the scoreboard rolls over.
+        guard ScoreboardDay.today() > ScoreboardDay.today(now: lastBg) else { return }
         NotificationCenter.default.post(name: .appReturnedToNewDay, object: nil)
     }
 }

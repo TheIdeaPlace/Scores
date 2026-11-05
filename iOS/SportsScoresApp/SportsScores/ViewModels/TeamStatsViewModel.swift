@@ -28,13 +28,14 @@ class TeamStatsViewModel: ObservableObject {
         playerError = nil
         teamError = nil
 
-        async let playerTask = apiService.fetchLeagueLeadersForTeam(teamAbbreviation: teamAbbreviation, sport: sport)
+        async let playerTask = apiService.fetchLeagueLeadersForTeam(teamId: teamId, teamAbbreviation: teamAbbreviation, sport: sport)
         async let rankingsTask = apiService.fetchTeamStatRankings(teamId: teamId, sport: sport)
 
         do {
             playerCategories = try await playerTask
         } catch {
             playerError = "Failed to load player stats."
+            hasLoaded = false   // so Retry can ask again
         }
         isLoadingPlayers = false
 
@@ -42,6 +43,7 @@ class TeamStatsViewModel: ObservableObject {
             teamRankings = try await rankingsTask
         } catch {
             teamError = "Failed to load team stats."
+            hasLoaded = false
         }
         isLoadingTeamRankings = false
     }

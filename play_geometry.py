@@ -47,6 +47,12 @@ from dataclasses import dataclass
 _SENTINEL = 1_000_000
 
 BASKETBALL_LEAGUES = frozenset({"NBA", "WNBA", "NCAAM", "NCAAWB", "NCAAW"})
+# College feeds use (25, 0) as "no location": across 24 full games 7,818 of 12,399
+# plays sat there, nearly all substitutions, rebounds, free throws and timeouts,
+# and only 4 were field goals. In the NBA and WNBA that spot is a real one, mostly
+# tips and dunks, and in hockey it is on the ice.
+_COLLEGE_BASKETBALL_LEAGUES = frozenset({"NCAAM", "NCAAWB", "NCAAW"})
+_COLLEGE_NO_LOCATION = (25, 0)
 HOCKEY_LEAGUES = frozenset({"NHL", "NCAAH", "NCAAWH"})
 
 # Basketball, in feet.
@@ -87,8 +93,8 @@ class PlayLocation:
     description: str
 
 
-def has_coordinate(play: dict) -> bool:
-    """True when the play carries a usable location.
+def has_coordinate(play: dict, league: str | None) -> bool:
+    """True when the play carries a usable location in this league.
 
     About a third of basketball plays and six percent of hockey plays do not:
     substitutions, timeouts, free throws, period markers and most face-offs.
@@ -98,6 +104,8 @@ def has_coordinate(play: dict) -> bool:
         return False
     x, y = coord.get("x"), coord.get("y")
     if not isinstance(x, (int, float)) or not isinstance(y, (int, float)):
+        return False
+    if (league or "").upper() in _COLLEGE_BASKETBALL_LEAGUES and (x, y) == _COLLEGE_NO_LOCATION:
         return False
     return abs(x) < _SENTINEL and abs(y) < _SENTINEL
 

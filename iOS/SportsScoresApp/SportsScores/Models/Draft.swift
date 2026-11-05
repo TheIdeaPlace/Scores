@@ -15,7 +15,11 @@ struct DraftAthletePosition: Codable {
 }
 
 struct DraftAthleteTeam: Codable {
-    let shortDisplayName: String
+    let location: String?
+    let shortDisplayName: String?
+
+    /// Not the short name first: that reads OSU, FSU and Miss St. Windows reads it the same way.
+    var collegeName: String { location ?? shortDisplayName ?? "" }
 }
 
 struct DraftAthlete: Codable, Identifiable {

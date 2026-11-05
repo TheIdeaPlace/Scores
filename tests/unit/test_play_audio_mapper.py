@@ -102,6 +102,13 @@ class TestGeneratePlaySequence:
     def test_empty_when_nothing_has_a_location(self, mapper):
         assert mapper.generate_play_sequence("NBA", [unlocated_play()] * 4) == 0
 
+    def test_college_placeholder_plays_no_tone(self, mapper):
+        placeholder = nba_play(25, 0)
+        assert mapper.describe_play("NCAAM", placeholder) is None
+        assert mapper.generate_play_audio("NCAAWB", placeholder) is None
+        assert mapper.generate_play_sequence("NCAAM", [placeholder] * 3) == 0
+        assert mapper.describe_play("NBA", placeholder) == "at the rim"
+
     def test_empty_list(self, mapper):
         assert mapper.generate_play_sequence("NBA", []) == 0
 
