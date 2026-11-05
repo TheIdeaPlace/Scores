@@ -23,7 +23,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 - **iPhone: betting lines look in the same place first as Windows,** `odds` and then `pickcenter`, and
-  pass over an empty line.
+  pass over an empty line. An over/under of 0 isn't read.
+- **iPhone: coming back to a game no longer reloads the screen.** It used to show the spinner, and lose
+  VoiceOver's place, each time. It now refreshes quietly, and a failed refresh leaves what's showing.
 
 ## [1.1.0] - 2026-11-04
 

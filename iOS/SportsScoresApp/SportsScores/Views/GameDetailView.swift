@@ -197,24 +197,14 @@ struct GameDetailView: View {
             // Odds (when available from summary API)
             if let odds = viewModel.gameDetails?.bettingLine {
                 HStack(spacing: 12) {
-                    if let spread = odds.details, !spread.isEmpty {
-                        Text("Line: \(spread)")
-                            .font(.caption)
-                            .foregroundColor(.secondary)
-                    }
-                    if let ou = odds.overUnder {
-                        Text("O/U: \(String(format: "%.1f", ou))")
+                    ForEach(odds.shownParts, id: \.self) { part in
+                        Text(part)
                             .font(.caption)
                             .foregroundColor(.secondary)
                     }
                 }
                 .accessibilityElement(children: .ignore)
-                .accessibilityLabel({
-                    var parts: [String] = []
-                    if let s = odds.details, !s.isEmpty { parts.append("Line: \(s)") }
-                    if let o = odds.overUnder { parts.append("Over/under: \(o)") }
-                    return parts.joined(separator: ". ")
-                }())
+                .accessibilityLabel(odds.spokenText)
             }
 
             // Attendance, once there's a count
@@ -372,7 +362,7 @@ struct GameDetailView: View {
         let scoring = details.scoringSummary(isFootball: sport.isFootball)
         let articles = details.relatedArticles
         let standings = details.standings?.tables ?? []
-        let injuredTeams = (details.injuries ?? []).filter { !($0.injuries ?? []).isEmpty }
+        let injuredTeams = (details.injuries ?? []).filter { !$0.listedInjuries.isEmpty }
 
         return ScrollView {
             VStack(spacing: 20) {
@@ -554,12 +544,13 @@ struct GameDetailView: View {
     private func injuriesSection(_ teams: [GameDetails.InjuryTeam]) -> some View {
         sectionCard(title: "Injuries") {
             ForEach(Array(teams.enumerated()), id: \.offset) { _, team in
-                if let injuries = team.injuries, !injuries.isEmpty {
+                if !team.listedInjuries.isEmpty {
                     Text(team.team?.displayName ?? "")
                         .font(.subheadline.bold())
                         .foregroundColor(.secondary)
                         .padding(.top, 4)
-                    ForEach(Array(injuries.enumerated()), id: \.offset) { _, injury in
+                        .accessibilityAddTraits(.isHeader)
+                    ForEach(Array(team.listedInjuries.enumerated()), id: \.offset) { _, injury in
                         HStack(spacing: 8) {
                             VStack(alignment: .leading, spacing: 2) {
                                 Text(injury.athlete?.displayName ?? "")
@@ -767,11 +758,8 @@ struct GameDetailView: View {
         if let venue = game.venue {
             lines.append(venue.fullName)
         }
-        if let odds = viewModel.gameDetails?.bettingLine {
-            var parts: [String] = []
-            if let s = odds.details, !s.isEmpty { parts.append("Line: \(s)") }
-            if let o = odds.overUnder { parts.append("O/U: \(String(format: "%.1f", o))") }
-            if !parts.isEmpty { lines.append(parts.joined(separator: "  ")) }
+        if let odds = viewModel.gameDetails?.bettingLine, !odds.shownParts.isEmpty {
+            lines.append(odds.shownParts.joined(separator: "  "))
         }
         // Top leaders
         if let raw = viewModel.gameDetails?.leaders, !raw.isEmpty {
@@ -853,7 +841,7 @@ struct GameArticleRow: View {
                     .foregroundColor(.primary)
                     .multilineTextAlignment(.leading)
                     .lineLimit(3)
-                if let desc = article.description, !desc.isEmpty {
+                if let desc = article.plainDescription {
                     Text(desc)
                         .font(.caption)
                         .foregroundColor(.secondary)

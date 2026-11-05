@@ -3,9 +3,10 @@
 //  SportsScoresTests
 //
 //  What the game detail screen reads from ESPN's /summary, on real payloads: weather,
-//  attendance, standings, the game story, scoring plays, injury details and odds. The
-//  expected text is what Windows has for the same fixtures, which
-//  tests/unit/replay/test_summary_pieces.py holds it to, except where a comment says not.
+//  attendance, standings, the game story, scoring plays, injury details and odds.
+//  tests/unit/replay/test_summary_pieces.py holds Windows to the same weather, attendance,
+//  standings and odds on the same fixtures. The rest of Windows's text is built in its UI,
+//  which has no tests, so those were compared by reading it.
 //
 
 import XCTest
@@ -165,15 +166,19 @@ final class GameSummaryTests: XCTestCase {
 
     func testAnOddEntryOrStatCostsOnlyItself() throws {
         let json = """
-        {"standings": {"groups": [{"header": "East", "standings": {"entries": [
+        {"standings": {"groups": [{"header": 7, "standings": {"entries": [
           7,
-          {"team": "Ann", "stats": [{"name": "wins", "shortDisplayName": "W", "displayValue": 6},
-                                    {"name": "losses", "shortDisplayName": "L", "displayValue": "1"}]}
+          {"team": 7, "stats": [{"name": "wins", "shortDisplayName": "W", "displayValue": "9"}]},
+          {"team": "Ann", "stats": [7, {"name": "wins", "shortDisplayName": "W", "displayValue": 6},
+                                    {"name": "pct", "shortDisplayName": 7, "displayValue": 0.5},
+                                    {"name": "losses", "shortDisplayName": "L", "displayValue": [1]}]}
         ]}}, 7]}}
         """
         let tables = try XCTUnwrap(try details(json).standings).tables
         XCTAssertEqual(tables.count, 1)
-        XCTAssertEqual(tables[0].rows, [["Ann", "1"]])
+        XCTAssertEqual(tables[0].title, "Standings")
+        XCTAssertEqual(tables[0].headers, ["Team", "W", "pct", "L"])
+        XCTAssertEqual(tables[0].rows, [["Ann", "6", "0.5", ""]], "and no row for a team with no name")
     }
 
     // MARK: Game story
@@ -188,6 +193,28 @@ final class GameSummaryTests: XCTestCase {
     func testAPlayedGamesStoryIsNotAlsoInTheNews() throws {
         let game = try fixture(finalNFL)
         XCTAssertEqual(game.relatedArticles.map(\.id), [50383054, 50371800])
+    }
+
+    func testAStoryInTheNewsIsNotListedThereToo() throws {
+        let game = try details(#"""
+        {"header": {"competitions": [{"competitors": [], "status": {"type": {"state": "post"}}}]},
+         "article": {"id": 1, "headline": "Recap", "story": "Words"},
+         "news": {"articles": [{"id": 2, "headline": "Other"}, {"id": 1, "headline": "Recap"}]}}
+        """#)
+        XCTAssertEqual(game.gameStory?.id, 1)
+        XCTAssertEqual(game.relatedArticles.map(\.id), [2])
+    }
+
+    func testAGameCalledOffHasNoStoryAndItsPreviewStaysInTheNews() throws {
+        for name in ["STATUS_POSTPONED", "STATUS_CANCELED"] {
+            let game = try details(#"""
+            {"header": {"competitions": [{"competitors": [],
+                "status": {"type": {"state": "post", "name": "\#(name)"}}}]},
+             "article": {"id": 1, "type": "Preview", "headline": "Preview", "story": "Words"}}
+            """#)
+            XCTAssertNil(game.gameStory, name)
+            XCTAssertEqual(game.relatedArticles.map(\.id), [1], name)
+        }
     }
 
     func testAPreviewIsNotAStoryButLeadsTheNews() throws {
@@ -218,6 +245,7 @@ final class GameSummaryTests: XCTestCase {
         let game = try fixture("details_NCAAH_pieces.json")
         XCTAssertNil(game.article)
         XCTAssertNil(game.gameStory)
+        XCTAssertTrue(game.relatedArticles.isEmpty)
     }
 
     func testAnAPStoryReadsAsParagraphsAndHeadings() throws {
@@ -339,7 +367,7 @@ final class GameSummaryTests: XCTestCase {
     func testARowWithNoWordsOrThatCanNotBeReadIsLeftOut() throws {
         let game = try details(#"""
         {"scoringPlays": [7, {"text": "", "period": {"number": 1}}, {"period": {"number": 1}},
-                          {"text": "Score", "period": {"number": 2}, "clock": "soon"},
+                          {"text": 7, "period": {"number": 1}},
                           {"text": "Score", "period": {"number": 2}}]}
         """#)
         let periods = game.scoringSummary(isFootball: true)
@@ -347,6 +375,16 @@ final class GameSummaryTests: XCTestCase {
         XCTAssertEqual(periods.first?.plays.count, 1)
         XCTAssertEqual(periods.first?.plays.first?.teamAndClock, "")
         XCTAssertEqual(periods.first?.plays.first?.spokenText, "Score")
+    }
+
+    func testAnOddClockOrTeamDoesNotLoseTheScore() throws {
+        let game = try details(#"""
+        {"scoringPlays": [{"text": "Touchdown", "period": {"number": 2}, "clock": "soon",
+                           "team": {"displayName": "Bears"}},
+                          {"text": "Field Goal", "period": 2, "clock": {"displayValue": "1:00"}, "team": 7}]}
+        """#)
+        let plays = game.scoringSummary(isFootball: true).flatMap(\.plays)
+        XCTAssertEqual(plays.map(\.spokenText), ["Bears: Touchdown", "1:00: Field Goal"])
     }
 
     // MARK: Injuries
@@ -376,6 +414,16 @@ final class GameSummaryTests: XCTestCase {
         let empty = try injury(#"{"details": {"type": " ", "detail": "NOT SPECIFIED", "returnDate": ""}}"#)
         XCTAssertEqual(empty.detailLines, [])
         XCTAssertEqual(empty.spokenText, "")
+    }
+
+    func testAnInjuryWithNothingToSayIsNotListed() throws {
+        let game = try details(#"""
+        {"injuries": [{"team": {"displayName": "Bears"},
+                       "injuries": [{}, {"status": "Out", "athlete": {"displayName": "Ann Lee"}}]},
+                      {"team": {"displayName": "Lions"}, "injuries": [{}]}]}
+        """#)
+        let teams = try XCTUnwrap(game.injuries)
+        XCTAssertEqual(teams.map(\.listedInjuries.count), [1, 0])
     }
 
     func testAReturnDateThatIsNotAPlainDateIsShownAsItCame() throws {
@@ -425,6 +473,26 @@ final class GameSummaryTests: XCTestCase {
         XCTAssertNil(try details(#"{}"#).bettingLine)
     }
 
+    func testALineSaysOnlyWhatItHas() throws {
+        let line = { (json: String) throws -> GameDetails.OddsEntry in
+            try JSONDecoder().decode(GameDetails.OddsEntry.self, from: Data(json.utf8))
+        }
+        let whole = try line(#"{"details": "JAX -10", "overUnder": 39.5}"#)
+        XCTAssertEqual(whole.shownParts, ["Line: JAX -10", "O/U: 39.5"])
+        XCTAssertEqual(whole.spokenText, "Line: JAX -10. Over/under: 39.5")
+
+        let noTotal = try line(#"{"details": "SEA -3", "overUnder": 0}"#)
+        XCTAssertEqual(noTotal.shownParts, ["Line: SEA -3"])
+        XCTAssertEqual(noTotal.spokenText, "Line: SEA -3")
+
+        let noSpread = try line(#"{"details": " ", "overUnder": 41.5}"#)
+        XCTAssertEqual(noSpread.shownParts, ["O/U: 41.5"])
+        XCTAssertEqual(noSpread.spokenText, "Over/under: 41.5")
+
+        XCTAssertEqual(try line(#"{"details": "A -1", "overUnder": "41.5", "provider": 7}"#).spokenText,
+                       "Line: A -1. Over/under: 41.5")
+    }
+
     // MARK: The whole game
 
     func testOddSectionsDoNotCostTheGame() throws {
@@ -450,5 +518,93 @@ final class GameSummaryTests: XCTestCase {
         XCTAssertNotNil(game.article)
         XCTAssertNotNil(game.standings)
         XCTAssertNotNil(game.header)
+    }
+}
+
+/// Going back to a game from its story loads it again, and VoiceOver mustn't lose its place.
+@MainActor
+final class GameDetailReloadTests: XCTestCase {
+    private func screen() -> GameDetailViewModel {
+        let game = Game(id: "401873036", name: "Bears at Seahawks", shortName: "CHI @ SEA", date: Date(),
+                        status: Game.GameStatus(state: "post", detail: "Final", period: nil, clock: nil, name: nil),
+                        homeTeam: Game.Team(id: "26", name: "Seahawks", abbreviation: "SEA",
+                                            displayName: "Seattle Seahawks", score: 17, record: nil, logo: nil),
+                        awayTeam: Game.Team(id: "3", name: "Bears", abbreviation: "CHI",
+                                            displayName: "Chicago Bears", score: 34, record: nil, logo: nil),
+                        venue: nil, broadcasts: [], situation: nil, seasonType: 2)
+        return GameDetailViewModel(game: game, sport: .nfl, apiService: ESPNAPIService(session: StubESPN.session()))
+    }
+
+    private func summary() throws -> Data {
+        try Fixtures.data("summary_final_NFL_401873036.json")
+    }
+
+    /// Runs a load until its request has gone out, then gives back the unfinished load.
+    private func startLoading(_ viewModel: GameDetailViewModel) async throws -> Task<Void, Never> {
+        let task = Task { await viewModel.loadDetails() }
+        for _ in 0..<500 where StubESPN.requests.isEmpty {
+            try await Task.sleep(nanoseconds: 10_000_000)
+        }
+        XCTAssertFalse(StubESPN.requests.isEmpty)
+        return task
+    }
+
+    func testTheFirstLoadShowsTheSpinner() async throws {
+        let viewModel = screen()
+        let body = try summary()
+        StubESPN.answer { _ in .delayed(0.5, body) }
+        let task = try await startLoading(viewModel)
+        XCTAssertTrue(viewModel.isLoading)
+        await task.value
+        XCTAssertFalse(viewModel.isLoading)
+        XCTAssertNotNil(viewModel.gameDetails)
+    }
+
+    func testAFailedFirstLoadSaysSo() async {
+        let viewModel = screen()
+        StubESPN.answer { _ in .status(500) }
+        await viewModel.loadDetails()
+        XCTAssertNil(viewModel.gameDetails)
+        XCTAssertNotNil(viewModel.errorMessage)
+        XCTAssertFalse(viewModel.isLoading)
+    }
+
+    func testComingBackRefreshesWithNoSpinner() async throws {
+        let viewModel = screen()
+        let body = try summary()
+        StubESPN.answer { _ in .body(body) }
+        await viewModel.loadDetails()
+        XCTAssertNotNil(viewModel.gameDetails)
+
+        StubESPN.answer { _ in .delayed(0.5, body) }
+        let task = try await startLoading(viewModel)
+        XCTAssertFalse(viewModel.isLoading, "a spinner would replace the tabs VoiceOver is in")
+        XCTAssertNotNil(viewModel.gameDetails)
+        await task.value
+        XCTAssertNotNil(viewModel.gameDetails)
+        XCTAssertFalse(viewModel.isLoading)
+    }
+
+    func testAFailedRefreshKeepsWhatIsShowing() async throws {
+        let viewModel = screen()
+        let body = try summary()
+        StubESPN.answer { _ in .body(body) }
+        await viewModel.loadDetails()
+
+        for failure in [StubESPN.Reply.status(500), StubESPN.Reply.failure(URLError(.notConnectedToInternet))] {
+            StubESPN.answer { _ in failure }
+            await viewModel.loadDetails()
+            XCTAssertNotNil(viewModel.gameDetails)
+            XCTAssertNil(viewModel.errorMessage)
+            XCTAssertFalse(viewModel.isLoading)
+        }
+    }
+
+    func testACancelledLoadIsNoFailure() async {
+        let viewModel = screen()
+        StubESPN.answer { _ in .failure(URLError(.cancelled)) }
+        await viewModel.loadDetails()
+        XCTAssertNil(viewModel.errorMessage)
+        XCTAssertFalse(viewModel.isLoading)
     }
 }

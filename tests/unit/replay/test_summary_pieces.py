@@ -20,7 +20,7 @@ def test_a_played_game_has_attendance_and_no_weather():
     data = load(FINAL_NFL)
     assert "weather" not in espn_api.extract_meaningful_game_info(data)
     assert espn_api.format_complex_data("gameInfo", data["gameInfo"]).endswith("Attendance: 68,739")
-    assert load(FINAL_EPL)["gameInfo"]["attendance"] == 12041
+    assert espn_api.format_complex_data("gameInfo", load(FINAL_EPL)["gameInfo"]).endswith("Attendance: 12,041")
 
 
 def test_the_tables_of_a_football_game_and_a_whole_league():

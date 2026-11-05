@@ -121,19 +121,22 @@ struct GameDetails: Codable {
     // MARK: - Game story
 
     /// The article to read in full, once the game's over. Windows offers its Game Wrap Up
-    /// for the same games, whichever kind of article ESPN has by then.
+    /// for the same games, whichever kind of article ESPN has by then, except that a game
+    /// called off is "post" too and has only a preview: that stays in the news here.
     var gameStory: GameNewsContainer.GameArticle? {
-        let state = header?.competitions.first?.status?.type?.state?.lowercased()
+        guard let competition = header?.competitions.first, !competition.hasNotBeenPlayed else { return nil }
+        let state = competition.status?.type?.state?.lowercased()
         guard state == "post" || state == "final", article?.headline?.nonBlank != nil else { return nil }
         return article
     }
 
     /// The news list. Windows puts ESPN's article on this game first, so a preview
-    /// goes here until the game has a story of its own.
+    /// goes here until the game has a story of its own. It's never listed twice.
     var relatedArticles: [GameNewsContainer.GameArticle] {
         let others = news?.articles ?? []
-        guard gameStory == nil, let article, article.headline?.nonBlank != nil else { return others }
-        return [article] + others.filter { $0.id == nil || $0.id != article.id }
+        guard let article, article.headline?.nonBlank != nil else { return others }
+        let rest = others.filter { article.id == nil || $0.id != article.id }
+        return gameStory == nil ? [article] + rest : rest
     }
 
     /// The scoring plays by period, in the order they happened. Rows with no words are left out.
@@ -173,6 +176,14 @@ struct GameDetails: Codable {
         let period: Period?
         let clock: Clock?
         let team: Team?
+
+        init(from decoder: Decoder) throws {
+            let container = try decoder.container(keyedBy: CodingKeys.self)
+            text = try? container.decodeIfPresent(String.self, forKey: .text)
+            period = try? container.decodeIfPresent(Period.self, forKey: .period)
+            clock = try? container.decodeIfPresent(Clock.self, forKey: .clock)
+            team = try? container.decodeIfPresent(Team.self, forKey: .team)
+        }
 
         struct Period: Codable {
             let number: Int?
@@ -220,6 +231,12 @@ struct GameDetails: Codable {
             let header: String?
             let standings: Entries?
 
+            init(from decoder: Decoder) throws {
+                let container = try decoder.container(keyedBy: CodingKeys.self)
+                header = try? container.decodeIfPresent(String.self, forKey: .header)
+                standings = try? container.decodeIfPresent(Entries.self, forKey: .standings)
+            }
+
             struct Entries: Codable {
                 let entries: [Entry]?
 
@@ -246,6 +263,21 @@ struct GameDetails: Codable {
             let shortDisplayName: String?
             let abbreviation: String?
             let displayValue: String?
+
+            init(from decoder: Decoder) throws {
+                let container = try decoder.container(keyedBy: CodingKeys.self)
+                name = try? container.decodeIfPresent(String.self, forKey: .name)
+                shortDisplayName = try? container.decodeIfPresent(String.self, forKey: .shortDisplayName)
+                abbreviation = try? container.decodeIfPresent(String.self, forKey: .abbreviation)
+                if let text = try? container.decodeIfPresent(String.self, forKey: .displayValue) {
+                    displayValue = text
+                } else if let number = container.lenientNumber(forKey: .displayValue) {
+                    // A bare number, as Windows would show it.
+                    displayValue = Int(exactly: number).map { String($0) } ?? String(number)
+                } else {
+                    displayValue = nil
+                }
+            }
         }
 
         /// One table, with the team in the first column of `headers` and of each row.
@@ -274,7 +306,8 @@ struct GameDetails: Codable {
         /// the order ESPN first gives them.
         var tables: [Table] {
             (groups ?? []).compactMap { group -> Table? in
-                let entries = group.standings?.entries ?? []
+                // A row with no team would read as numbers about nobody.
+                let entries = (group.standings?.entries ?? []).filter { $0.team?.nonBlank != nil }
                 guard !entries.isEmpty else { return nil }
 
                 var keys: [String] = []
@@ -640,8 +673,40 @@ struct GameDetails: Codable {
         let overUnder: Double?
         let provider: OddsProvider?
 
+        init(from decoder: Decoder) throws {
+            let container = try decoder.container(keyedBy: CodingKeys.self)
+            details = try? container.decodeIfPresent(String.self, forKey: .details)
+            overUnder = container.lenientNumber(forKey: .overUnder)
+            provider = try? container.decodeIfPresent(OddsProvider.self, forKey: .provider)
+        }
+
         struct OddsProvider: Codable {
             let name: String?
+        }
+
+        /// The line, when there's one to read. Nil rather than empty, as with the total.
+        var spreadText: String? { details?.nonBlank }
+
+        /// "39.5". A total of 0 is ESPN having none, not a line anyone would bet.
+        var overUnderText: String? {
+            guard let overUnder, overUnder != 0 else { return nil }
+            return String(format: "%.1f", overUnder)
+        }
+
+        /// "Line: JAX -10", "O/U: 39.5": the row's text and the share sheet's.
+        var shownParts: [String] {
+            var parts: [String] = []
+            if let spread = spreadText { parts.append("Line: \(spread)") }
+            if let total = overUnderText { parts.append("O/U: \(total)") }
+            return parts
+        }
+
+        /// What VoiceOver reads for the row.
+        var spokenText: String {
+            var parts: [String] = []
+            if let spread = spreadText { parts.append("Line: \(spread)") }
+            if let total = overUnderText { parts.append("Over/under: \(total)") }
+            return parts.joined(separator: ". ")
         }
     }
 
@@ -653,6 +718,11 @@ struct GameDetails: Codable {
             let container = try decoder.container(keyedBy: CodingKeys.self)
             team = try? container.decodeIfPresent(InjuryTeamInfo.self, forKey: .team)
             injuries = container.lossyArray(forKey: .injuries)
+        }
+
+        /// The injuries with something to say, so VoiceOver has no silent stops.
+        var listedInjuries: [PlayerInjury] {
+            (injuries ?? []).filter { !$0.spokenText.isEmpty }
         }
 
         struct InjuryTeamInfo: Codable {
