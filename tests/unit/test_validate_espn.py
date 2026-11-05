@@ -1932,6 +1932,23 @@ class TestOtherSources:
         v.check_draft(FakeHttp(default=(200, {"picks": [1]})), report)
         assert FAIL_IN(report, "App: draft")
 
+    @staticmethod
+    def fouls(count, y):
+        return [{"type": {"text": "PersonalFoul"}, "coordinate": {"x": 20, "y": y}} for _ in range(count)]
+
+    def test_college_fouls_past_half_court_are_no_news(self):
+        assert v.foul_mirroring_changed("NCAAM", self.fouls(16, 79) + self.fouls(4, 9)) is None
+
+    def test_college_fouls_no_longer_mirrored_is_worth_a_look(self):
+        assert "stopped mirroring" in v.foul_mirroring_changed("NCAAWB", self.fouls(2, 79) + self.fouls(18, 9))
+
+    def test_nba_fouls_past_half_court_is_worth_a_look(self):
+        assert "started mirroring" in v.foul_mirroring_changed("NBA", self.fouls(10, 79) + self.fouls(10, 9))
+        assert v.foul_mirroring_changed("NBA", self.fouls(20, 5)) is None
+
+    def test_too_few_fouls_to_tell(self):
+        assert v.foul_mirroring_changed("NCAAM", self.fouls(5, 9)) is None
+
     def test_a_draft_with_no_picks_in_two_years_fails(self):
         report = v.Report()
         v.check_draft(FakeHttp(default=(200, {"picks": [], "rounds": [1]})), report)

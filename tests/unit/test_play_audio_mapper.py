@@ -13,6 +13,7 @@ import pytest
 
 import play_audio_mapper
 from play_audio_mapper import PlayAudioMapper
+from play_geometry import audio_params
 
 
 def nba_play(x, y, text="Jump Shot"):
@@ -44,6 +45,31 @@ def mapper():
     m = PlayAudioMapper()
     yield m
     m.cleanup()
+
+
+class TestCollegeFouls:
+    """The mapper is the only way Windows reaches a play's location."""
+
+    FOUL = {"text": "Foul on A.", "type": {"text": "PersonalFoul"}, "coordinate": {"x": 24, "y": 81}}
+    MIRRORED = audio_params("NCAAWB", 26, 3)
+
+    def test_it_reads_where_it_happened(self, mapper):
+        assert mapper.describe_play("NCAAWB", self.FOUL) == "at the rim"
+
+    def test_one_play_sounds_where_it_happened(self, mapper, queued):
+        assert mapper.generate_play_audio("NCAAWB", self.FOUL) == "at the rim"
+        _, args = queued[0]
+        assert args[1] == self.MIRRORED[0]
+        assert args[3] == pytest.approx(self.MIRRORED[2])
+
+    def test_a_sequence_sounds_where_it_happened(self, mapper, queued):
+        assert mapper.generate_play_sequence("NCAAWB", [self.FOUL]) == 1
+        _, args = queued[0]
+        assert args[1] == self.MIRRORED[0]
+        assert args[3] == pytest.approx(self.MIRRORED[2])
+
+    def test_the_nba_is_left_alone(self, mapper):
+        assert "deep" in mapper.describe_play("NBA", self.FOUL)
 
 
 class TestSupports:

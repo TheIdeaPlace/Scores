@@ -144,3 +144,7 @@ core_team_EPL_382.json	5 KB	core team reference from leaders_core_EPL: Mancheste
 season_EPL.json	2 KB	core /season: year 2026, displayName 2026-27 English Premier League, type.type a long id
 season_EPL_2025.json	2 KB	core seasons/2025: displayName 2025-26 English Premier League, for last season's label
 season_NWSL.json	4 KB	core /season in its playoffs: year 2026, type.id 2, and its leaders stay under type 1
+summary_final_NFL_401873036.json	84 KB	Bears at Seahawks, final; root keys header, gameInfo, pickcenter, odds, injuries, scoringPlays, article, standings, news (2 articles): attendance, no weather, a Recap with AP markup, periods as numbers only, injury details with Not Specified
+summary_pre_NFL_401873037.json	45 KB	Jaguars at Ravens, not started; root keys header, gameInfo, pickcenter, odds, article, news (2 articles): weather with a temperature and no displayValue, no attendance, a Preview article
+summary_final_EPL_401879251.json	89 KB	Leeds at Bournemouth, full time; root keys header, gameInfo, pickcenter, odds, article, standings: a line in both odds and pickcenter, story in <p> and <photo> markup, 20-team table, 8 columns
+summary_final_NCAAF_401757313_2OT.json	24 KB	Kennesaw State at Liberty, the game of drives_NCAAF_2OT; root keys header, scoringPlays only: overtime scores are periods 5 and 6

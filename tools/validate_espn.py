@@ -869,11 +869,30 @@ def check_games(http, report, league, finals, in_season):
     return event, summary
 
 
+def foul_mirroring_changed(league_key, plays):
+    """What's changed if the fouls in this game don't sit where both apps expect, or None.
+    College feeds put about 80% of fouls past half court, and the apps mirror them to the near
+    end. If ESPN stopped doing that, the apps would be flipping good ones. The NBA and WNBA put
+    none there. One game can run either way, so this asks only for a clear difference."""
+    from play_geometry import has_coordinate
+
+    fouls = [p for p in plays if "foul" in str((p.get("type") or {}).get("text") or "").lower()
+             and has_coordinate(p, league_key)]
+    if len(fouls) < 10:
+        return None
+    past = sum(1 for p in fouls if p["coordinate"]["y"] > 47) / len(fouls)
+    if league_key in ("NCAAM", "NCAAWB") and past < 0.4:
+        return f"only {past:.0%} of {len(fouls)} fouls are past half court, so ESPN may have stopped mirroring them"
+    if league_key in ("NBA", "WNBA") and past > 0.2:
+        return f"{past:.0%} of {len(fouls)} fouls are past half court, so ESPN may have started mirroring them"
+    return None
+
+
 def check_app_game(report, league, event, summary):
     """The real parsers, on this game."""
     import espn_api
     from box_score import build_box_tables
-    from play_geometry import audio_params, has_coordinate, league_family
+    from play_geometry import audio_params, league_family, play_position
 
     box = summary.get("boxscore")
     try:
@@ -903,8 +922,8 @@ def check_app_game(report, league, event, summary):
     if league.plays and league_family(league.key):
         plays = summary.get("plays") or []
         try:
-            located = [p for p in plays if has_coordinate(p, league.key)]
-            sounds = [audio_params(league.key, p["coordinate"]["x"], p["coordinate"]["y"]) for p in located]
+            located = [position for position in (play_position(p, league.key) for p in plays) if position]
+            sounds = [audio_params(league.key, *position) for position in located]
         except Exception as e:
             report.fail(league.key, "App: play audio", f"raised {type(e).__name__}: {e}")
         else:
@@ -914,6 +933,9 @@ def check_app_game(report, league, event, summary):
                 report.fail(league.key, "App: play audio", "a located play has no sound")
             else:
                 report.ok(league.key, "App: play audio", f"{len(located)} of {len(plays)} plays have a location")
+            changed = foul_mirroring_changed(league.key, plays)
+            if changed:
+                report.warn(league.key, "Foul locations", changed)
 
     try:
         details = espn_api.get_game_details(league.key, event["id"])
