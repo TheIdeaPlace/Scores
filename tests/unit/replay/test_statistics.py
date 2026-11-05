@@ -649,6 +649,8 @@ class TestTeamStatistics:
             espn_api.get_team_statistics("NBA")
         assert not espn.urls(self.BYTEAM)
 
-    def test_a_body_that_isnt_an_object_is_nothing(self, espn):
+    def test_a_body_that_isnt_an_object_is_a_failure_rather_than_nothing(self, espn):
         espn.on("/season$", load("season_NBA.json")).on(self.BYTEAM, [])
-        assert espn_api.get_team_statistics("NBA") == NOTHING
+        with pytest.raises(espn_api.ApiError) as caught:
+            espn_api.get_team_statistics("NBA")
+        assert str(caught.value) == espn_api.STATISTICS_UNAVAILABLE
