@@ -15,6 +15,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   it has no table, and its Teams still lists the teams.
 - **Soccer leaders on Windows, from the same place as the iPhone.** Goals, assists, shots, cards, fouls,
   passes and saves, up to 20 players each, and they say which season they're from.
+- **iPhone: weather on a game's details,** for the games ESPN has it: "Weather: 67°F".
+- **iPhone: attendance on a game's details,** once there's a count: "Attendance: 68,739".
+- **iPhone: standings in a game's Info tab,** the tables of the division or conference each team is in.
+- **iPhone: a Game Story in a finished game's Info tab.** The row names the headline, and opens the
+  whole story with a heading or paragraph to a swipe. Before the game, ESPN's preview leads the news list.
+- **iPhone: a Scoring Summary in a football game's Info tab,** by quarter, with the team, clock and play.
+- **iPhone: an injury's type, details and return date,** where ESPN gives them.
 
 ### Changed
 - **Soccer on iPhone shows what Windows shows.** Standings read position, games played, wins, draws,
@@ -24,6 +31,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Soccer leaders on iPhone match too.** Goals and Assists are listed once rather than twice. Players
   level on a number share a rank. View All has up to 20 players, not 50, and the list says which season
   it's from.
+- **The college football setting is called Coverage.** It's "College football coverage" on Windows and in
+  the iPhone's Scores filter, and "Coverage" under College Football in iPhone Settings, since it also
+  decides the standings and teams you see. Your choice is kept.
+- **A team with no news on iPhone says so,** as on Windows, rather than showing the league's stories under
+  the team's name. NBA standings on Windows read the season ESPN calls current, as on iPhone.
+- **VoiceOver reads the View All link on Stats once.**
+- **iPhone: betting lines look in the same place first as Windows,** `odds` and then `pickcenter`, and
+  pass over an empty line. An over/under of 0 isn't read.
+- **iPhone: coming back to a game no longer reloads the screen.** It used to show the spinner, and lose
+  VoiceOver's place, each time. It now refreshes quietly, and a failed refresh leaves what's showing.
+- **A football game's wrap up on Windows names its quarters,** as on iPhone: Quarter 1 and OT, not Period 1.
+- **Attendance sent as text can't lose a game's details on Windows.**
+
 ### Fixed
 - **College basketball fouls read and sound where they happened, on Windows and iPhone.** A foul under
   the basket read "deep, 78 feet out", with a far away note on the wrong side, because ESPN's college
@@ -34,21 +54,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Game Wrap Up Feature**: ESPN text processing and game story extraction (under construction)
   - Core infrastructure implemented, text processing being refined
   - Game story text placeholders currently under investigation
-
-### Added
-- **iPhone: weather on a game's details,** for the games ESPN has it: "Weather: 67°F".
-- **iPhone: attendance on a game's details,** once there's a count: "Attendance: 68,739".
-- **iPhone: standings in a game's Info tab,** the tables of the division or conference each team is in.
-- **iPhone: a Game Story in a finished game's Info tab.** The row names the headline, and opens the
-  whole story with a heading or paragraph to a swipe. Before the game, ESPN's preview leads the news list.
-- **iPhone: a Scoring Summary in a football game's Info tab,** by quarter, with the team, clock and play.
-- **iPhone: an injury's type, details and return date,** where ESPN gives them.
-
-### Changed
-- **iPhone: betting lines look in the same place first as Windows,** `odds` and then `pickcenter`, and
-  pass over an empty line. An over/under of 0 isn't read.
-- **iPhone: coming back to a game no longer reloads the screen.** It used to show the spinner, and lose
-  VoiceOver's place, each time. It now refreshes quietly, and a failed refresh leaves what's showing.
 
 ## [1.1.0] - 2026-11-04
 

@@ -2100,9 +2100,10 @@ class ESPNAPIService {
         return ([], nil)
     }
 
-    // MARK: - Team Hub: News (team-filtered, falls back to league)
+    // MARK: - Team Hub: News
 
-    /// Fetches news filtered to a specific team; falls back to league news if none returned.
+    /// News for a specific team. A team with none has none, as on Windows, rather than the
+    /// league's stories under its name.
     func fetchTeamNews(teamId: String, sport: Sport, limit: Int = 25) async throws -> [NewsItem] {
         let urlString = "\(baseURL)/\(sport.apiPath)/news?team=\(teamId)&limit=\(limit)"
         guard let url = URL(string: urlString) else { throw APIError.invalidURL }
@@ -2113,10 +2114,7 @@ class ESPNAPIService {
         let decoder = JSONDecoder()
         decoder.dateDecodingStrategy = .iso8601
         let apiResponse = try decoder.decode(NewsAPIResponse.self, from: data)
-        let articles = apiResponse.articles.map { NewsItem(from: $0) }
-        if !articles.isEmpty { return articles }
-        // Fall back to league-wide news
-        return try await fetchNews(for: sport, limit: limit)
+        return apiResponse.articles.map { NewsItem(from: $0) }
     }
 
     // MARK: - Team Hub: Schedule (current season, for Info + Schedule tabs)
