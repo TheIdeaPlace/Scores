@@ -156,10 +156,8 @@ it needs an id→name resolve. Reads naturally as an awards-race view.
   season-by-season career totals.
 - **Extra college football polls** — `rankings` also returns the AFCA Coaches
   Poll, FCS Coaches Poll and AFCA Division II and III polls, not just AP Top 25.
-- **`attendance`** — in both `scoreboard` competitions and `summary.gameInfo`;
-  only 2 references in the Windows app, none on iOS.
-- **iOS gaps that Windows already covers** — `againstTheSpread`, `pickcenter`
-  and `scoringPlays` are all read in `scores.py` but not in the iOS app.
+- **`againstTheSpread`** — on most summaries. Only `KitchenSinkDialog` reads it,
+  and that's never opened, so neither app shows it.
 
 ## Dead ends (don't retry)
 

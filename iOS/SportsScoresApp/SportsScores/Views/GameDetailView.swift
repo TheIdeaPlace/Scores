@@ -168,6 +168,13 @@ struct GameDetailView: View {
                 .accessibilityLabel("Venue: \(venue.fullName)")
             }
 
+            // Weather, for the games ESPN has any
+            if let weather = viewModel.gameDetails?.gameInfo?.weatherText {
+                Text(weather)
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+            }
+
             // Broadcast networks
             // Games opened from a schedule have none of their own, so use the summary's.
             let ownBroadcasts = game.broadcasts.filter { !$0.isEmpty }
@@ -204,10 +211,17 @@ struct GameDetailView: View {
                 .accessibilityElement(children: .ignore)
                 .accessibilityLabel({
                     var parts: [String] = []
-                    if let s = odds.details { parts.append("Line: \(s)") }
+                    if let s = odds.details, !s.isEmpty { parts.append("Line: \(s)") }
                     if let o = odds.overUnder { parts.append("Over/under: \(o)") }
                     return parts.joined(separator: ". ")
                 }())
+            }
+
+            // Attendance, once there's a count
+            if let attendance = viewModel.gameDetails?.gameInfo?.attendanceText {
+                Text(attendance)
+                    .font(.caption)
+                    .foregroundColor(.secondary)
             }
         }
     }
@@ -352,20 +366,38 @@ struct GameDetailView: View {
 
     // MARK: - Leaders tab
 
-    // MARK: - Game Info tab (News + Leaders + Injuries + Officials)
+    // MARK: - Game Info tab (Story + Scoring + News + Leaders + Standings + Injuries + Officials)
 
     private func gameInfoTab(details: GameDetails) -> some View {
-        ScrollView {
+        let scoring = details.scoringSummary(isFootball: sport.isFootball)
+        let articles = details.relatedArticles
+        let standings = details.standings?.tables ?? []
+        let injuredTeams = (details.injuries ?? []).filter { !($0.injuries ?? []).isEmpty }
+
+        return ScrollView {
             VStack(spacing: 20) {
-                // Game-specific news — shown first so it's easy to find
-                if let articles = details.news?.articles, !articles.isEmpty {
+                // The story of a game that's over, and how it was scored, come first
+                if let story = details.gameStory {
+                    gameStorySection(story)
+                }
+
+                if !scoring.isEmpty {
+                    scoringSummarySection(scoring)
+                }
+
+                // Game-specific news — shown early so it's easy to find
+                if !articles.isEmpty {
                     gameNewsSection(articles: articles)
                 }
 
                 leadersSection(details: details)
 
-                if let injuries = details.injuries, !injuries.isEmpty {
-                    injuriesSection(injuries)
+                if !standings.isEmpty {
+                    gameStandingsSection(standings)
+                }
+
+                if !injuredTeams.isEmpty {
+                    injuriesSection(injuredTeams)
                 }
 
                 if let officials = details.gameInfo?.officials, !officials.isEmpty {
@@ -432,6 +464,91 @@ struct GameDetailView: View {
         }
     }
 
+    // MARK: - Game Story section
+
+    private func gameStorySection(_ article: GameDetails.GameNewsContainer.GameArticle) -> some View {
+        sectionCard(title: "Game Story") {
+            if article.storyBlocks.isEmpty {
+                // Only a headline to give, so its row goes to the article itself.
+                GameArticleRow(article: article)
+                    .padding(.vertical, 3)
+            } else {
+                NavigationLink {
+                    GameStoryView(article: article)
+                } label: {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text(article.headline ?? "")
+                            .font(.subheadline.bold())
+                            .foregroundColor(.primary)
+                            .multilineTextAlignment(.leading)
+                        if let description = article.plainDescription {
+                            Text(description)
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                                .multilineTextAlignment(.leading)
+                                .lineLimit(2)
+                        }
+                    }
+                }
+                .buttonStyle(.plain)
+                .padding(.vertical, 3)
+                .accessibilityLabel(article.headline ?? "")
+                .accessibilityHint("Double tap to read the story.")
+            }
+        }
+    }
+
+    // MARK: - Scoring Summary section
+
+    private func scoringSummarySection(_ periods: [GameDetails.ScoringPeriod]) -> some View {
+        sectionCard(title: "Scoring Summary") {
+            ForEach(Array(periods.enumerated()), id: \.offset) { _, period in
+                Text(period.title)
+                    .font(.subheadline.bold())
+                    .foregroundColor(.secondary)
+                    .padding(.top, 4)
+                    .accessibilityAddTraits(.isHeader)
+                ForEach(Array(period.plays.enumerated()), id: \.offset) { _, play in
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(play.teamAndClock)
+                            .font(.subheadline.bold())
+                        Text(play.text ?? "")
+                            .font(.subheadline)
+                    }
+                    .padding(.vertical, 2)
+                    .accessibilityElement(children: .ignore)
+                    .accessibilityLabel(play.spokenText)
+                }
+            }
+        }
+    }
+
+    // MARK: - Standings section
+
+    private func gameStandingsSection(_ tables: [GameDetails.GameStandings.Table]) -> some View {
+        sectionCard(title: "Standings") {
+            ForEach(Array(tables.enumerated()), id: \.offset) { _, table in
+                Text(table.title)
+                    .font(.subheadline.bold())
+                    .foregroundColor(.secondary)
+                    .padding(.top, 4)
+                    .accessibilityAddTraits(.isHeader)
+                ForEach(Array(table.rows.enumerated()), id: \.offset) { _, row in
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(row.first ?? "")
+                            .font(.subheadline)
+                        Text(table.statsText(row: row))
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                    }
+                    .padding(.vertical, 2)
+                    .accessibilityElement(children: .ignore)
+                    .accessibilityLabel(table.spokenText(row: row))
+                }
+            }
+        }
+    }
+
     // MARK: - Injuries section
 
     private func injuriesSection(_ teams: [GameDetails.InjuryTeam]) -> some View {
@@ -450,6 +567,11 @@ struct GameDetailView: View {
                                 Text(injury.athlete?.position?.abbreviation ?? "")
                                     .font(.caption)
                                     .foregroundColor(.secondary)
+                                ForEach(injury.detailLines, id: \.self) { line in
+                                    Text(line)
+                                        .font(.caption)
+                                        .foregroundColor(.secondary)
+                                }
                             }
                             Spacer()
                             Text(injury.status ?? "")
@@ -462,9 +584,7 @@ struct GameDetailView: View {
                         }
                         .padding(.vertical, 3)
                         .accessibilityElement(children: .ignore)
-                        .accessibilityLabel(
-                            "\(injury.athlete?.displayName ?? ""), \(injury.athlete?.position?.abbreviation ?? ""), status: \(injury.status ?? "")"
-                        )
+                        .accessibilityLabel(injury.spokenText)
                     }
                 }
             }
@@ -649,7 +769,7 @@ struct GameDetailView: View {
         }
         if let odds = viewModel.gameDetails?.bettingLine {
             var parts: [String] = []
-            if let s = odds.details { parts.append("Line: \(s)") }
+            if let s = odds.details, !s.isEmpty { parts.append("Line: \(s)") }
             if let o = odds.overUnder { parts.append("O/U: \(String(format: "%.1f", o))") }
             if !parts.isEmpty { lines.append(parts.joined(separator: "  ")) }
         }
@@ -670,6 +790,50 @@ struct GameDetailView: View {
         lines.append("via Sports Scores")
         lines.append("https://testflight.apple.com/join/128FeTqx")
         return lines.joined(separator: "\n")
+    }
+}
+
+// MARK: - Game Story
+
+/// The article in full, a heading or a paragraph to a swipe, so a long one can be
+/// read at any pace and left at any point. Windows opens this in a browser.
+struct GameStoryView: View {
+    let article: GameDetails.GameNewsContainer.GameArticle
+
+    var body: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 12) {
+                Text(article.headline ?? "")
+                    .font(.title3.bold())
+                    .accessibilityAddTraits(.isHeader)
+                if let description = article.descriptionNotInStory {
+                    Text(description)
+                        .font(.body)
+                        .foregroundColor(.secondary)
+                }
+                ForEach(Array(article.storyBlocks.enumerated()), id: \.offset) { _, block in
+                    blockView(block)
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding()
+        }
+        .navigationTitle("Game Story")
+        .navigationBarTitleDisplayMode(.inline)
+    }
+
+    @ViewBuilder
+    private func blockView(_ block: GameStoryBlock) -> some View {
+        switch block {
+        case .heading(let text):
+            Text(text)
+                .font(.headline)
+                .padding(.top, 4)
+                .accessibilityAddTraits(.isHeader)
+        case .paragraph(let text):
+            Text(text)
+                .font(.body)
+        }
     }
 }
 

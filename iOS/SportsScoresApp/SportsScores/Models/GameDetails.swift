@@ -25,6 +25,31 @@ extension KeyedDecodingContainer {
         guard let rows = try? decodeIfPresent([Lossy<Element>].self, forKey: key) else { return nil }
         return rows.compactMap { $0.value }
     }
+
+    /// A number ESPN may send as an int, a float or text such as "64,195"; nil for
+    /// anything else, so an odd value costs that value and not what's around it.
+    func lenientNumber(forKey key: Key) -> Double? {
+        if let number = try? decodeIfPresent(Double.self, forKey: key) {
+            return number.isFinite ? number : nil
+        }
+        guard let text = try? decodeIfPresent(String.self, forKey: key),
+              let number = Double(text.replacingOccurrences(of: ",", with: "")) else { return nil }
+        return number.isFinite ? number : nil
+    }
+}
+
+private extension String {
+    /// Nil when there's nothing here but whitespace. ESPN sends empty strings as well as nulls.
+    var nonBlank: String? {
+        let trimmed = trimmingCharacters(in: .whitespacesAndNewlines)
+        return trimmed.isEmpty ? nil : trimmed
+    }
+
+    /// ESPN's own way of saying it has nothing, as a value in an injury's details.
+    var saysSomething: String? {
+        guard let text = nonBlank, text.lowercased() != "not specified" else { return nil }
+        return text
+    }
 }
 
 struct GameDetails: Codable {
@@ -33,10 +58,10 @@ struct GameDetails: Codable {
     let leaders: [Leader]?
     /// NFL/NCAAF only — drive-by-drive breakdown.
     let drives: DrivesContainer?
-    /// Venue, officials, odds, injuries from the summary API.
+    /// Officials, attendance and weather from the summary API.
     let gameInfo: GameInfo?
+    /// Betting lines. Usually empty outside soccer, where `pickcenter` has them.
     let odds: [OddsEntry]?
-    /// Where ESPN puts betting lines outside soccer; root `odds` is usually empty.
     let pickcenter: [OddsEntry]?
     let injuries: [InjuryTeam]?
     /// Win probability timeline (MLB, per play).
@@ -54,6 +79,12 @@ struct GameDetails: Codable {
     let situation: SummarySituation?
     /// Full rosters from the summary endpoint, used to resolve player IDs to names.
     let rosters: [GameRoster]?
+    /// ESPN's own article on this game: a preview until it's played, then a recap.
+    let article: GameNewsContainer.GameArticle?
+    /// Football only: every score, in order.
+    let scoringPlays: [ScoringPlay]?
+    /// The division or conference tables the two teams are in.
+    let standings: GameStandings?
 
     /// Each section decodes on its own: ESPN's summary varies by sport, league
     /// and game state, and something unreadable in one section must never take
@@ -74,11 +105,201 @@ struct GameDetails: Codable {
         header = try? container.decodeIfPresent(GameHeader.self, forKey: .header)
         situation = try? container.decodeIfPresent(SummarySituation.self, forKey: .situation)
         rosters = container.lossyArray(forKey: .rosters)
+        article = try? container.decodeIfPresent(GameNewsContainer.GameArticle.self, forKey: .article)
+        scoringPlays = container.lossyArray(forKey: .scoringPlays)
+        standings = try? container.decodeIfPresent(GameStandings.self, forKey: .standings)
     }
 
-    /// The betting line to show, wherever ESPN put it.
+    /// The betting line to show: the first with something in it, `odds` before
+    /// `pickcenter`. game_labels.best_odds on Windows.
     var bettingLine: OddsEntry? {
-        ((pickcenter ?? []) + (odds ?? [])).first { $0.details != nil || $0.overUnder != nil }
+        ((odds ?? []) + (pickcenter ?? [])).first { line in
+            line.details?.nonBlank != nil || (line.overUnder ?? 0) != 0
+        }
+    }
+
+    // MARK: - Game story
+
+    /// The article to read in full, once the game's over. Windows offers its Game Wrap Up
+    /// for the same games, whichever kind of article ESPN has by then.
+    var gameStory: GameNewsContainer.GameArticle? {
+        let state = header?.competitions.first?.status?.type?.state?.lowercased()
+        guard state == "post" || state == "final", article?.headline?.nonBlank != nil else { return nil }
+        return article
+    }
+
+    /// The news list. Windows puts ESPN's article on this game first, so a preview
+    /// goes here until the game has a story of its own.
+    var relatedArticles: [GameNewsContainer.GameArticle] {
+        let others = news?.articles ?? []
+        guard gameStory == nil, let article, article.headline?.nonBlank != nil else { return others }
+        return [article] + others.filter { $0.id == nil || $0.id != article.id }
+    }
+
+    /// The scoring plays by period, in the order they happened. Rows with no words are left out.
+    func scoringSummary(isFootball: Bool) -> [ScoringPeriod] {
+        var periods: [ScoringPeriod] = []
+        for play in scoringPlays ?? [] where play.text?.nonBlank != nil {
+            let number = play.period?.number ?? 1
+            if periods.last?.number == number {
+                periods[periods.count - 1].plays.append(play)
+            } else {
+                let title = play.period?.displayName?.nonBlank
+                    ?? ScoringPeriod.title(number: number, isFootball: isFootball)
+                periods.append(ScoringPeriod(number: number, title: title, plays: [play]))
+            }
+        }
+        return periods
+    }
+
+    struct ScoringPeriod {
+        let number: Int
+        let title: String
+        var plays: [ScoringPlay]
+
+        /// ESPN gives scoring plays only a period's number. Football reads the way it
+        /// does on Windows, game_labels.football_period_label.
+        static func title(number: Int, isFootball: Bool) -> String {
+            guard isFootball else { return "Period \(number)" }
+            if number <= 4 { return "Quarter \(number)" }
+            return number == 5 ? "OT" : "\(number - 4)OT"
+        }
+    }
+
+    // MARK: - Scoring plays
+
+    struct ScoringPlay: Codable {
+        let text: String?
+        let period: Period?
+        let clock: Clock?
+        let team: Team?
+
+        struct Period: Codable {
+            let number: Int?
+            let displayName: String?
+        }
+
+        struct Clock: Codable {
+            let displayValue: String?
+        }
+
+        struct Team: Codable {
+            let displayName: String?
+        }
+
+        /// "Chicago Bears - 5:25", the line above the play as Windows has it.
+        var teamAndClock: String {
+            [team?.displayName?.nonBlank, clock?.displayValue?.nonBlank]
+                .compactMap { $0 }
+                .joined(separator: " - ")
+        }
+
+        /// What VoiceOver reads for the row.
+        var spokenText: String {
+            let lead = [team?.displayName?.nonBlank, clock?.displayValue?.nonBlank]
+                .compactMap { $0 }
+                .joined(separator: ", ")
+            let body = text?.nonBlank ?? ""
+            return lead.isEmpty ? body : "\(lead): \(body)"
+        }
+    }
+
+    // MARK: - Standings in a game
+
+    /// Root `standings`: `groups[].standings.entries[]`, where `team` is a plain name.
+    /// The Windows side is game_labels.game_standings_tables.
+    struct GameStandings: Codable {
+        let groups: [Group]?
+
+        init(from decoder: Decoder) throws {
+            let container = try decoder.container(keyedBy: CodingKeys.self)
+            groups = container.lossyArray(forKey: .groups)
+        }
+
+        struct Group: Codable {
+            let header: String?
+            let standings: Entries?
+
+            struct Entries: Codable {
+                let entries: [Entry]?
+
+                init(from decoder: Decoder) throws {
+                    let container = try decoder.container(keyedBy: CodingKeys.self)
+                    entries = container.lossyArray(forKey: .entries)
+                }
+            }
+        }
+
+        struct Entry: Codable {
+            let team: String?
+            let stats: [Stat]?
+
+            init(from decoder: Decoder) throws {
+                let container = try decoder.container(keyedBy: CodingKeys.self)
+                team = try? container.decodeIfPresent(String.self, forKey: .team)
+                stats = container.lossyArray(forKey: .stats)
+            }
+        }
+
+        struct Stat: Codable {
+            let name: String?
+            let shortDisplayName: String?
+            let abbreviation: String?
+            let displayValue: String?
+        }
+
+        /// One table, with the team in the first column of `headers` and of each row.
+        struct Table {
+            let title: String
+            let headers: [String]
+            let rows: [[String]]
+
+            /// "L: 1, PA: 93", leaving out anything blank.
+            func statsText(row: [String]) -> String {
+                zip(headers.dropFirst(), row.dropFirst())
+                    .filter { !$0.1.isEmpty }
+                    .map { "\($0): \($1)" }
+                    .joined(separator: ", ")
+            }
+
+            /// What VoiceOver reads for the row, as in a box score's Quick List.
+            func spokenText(row: [String]) -> String {
+                let stats = statsText(row: row)
+                let team = row.first ?? ""
+                return stats.isEmpty ? team : "\(team), \(stats)"
+            }
+        }
+
+        /// One table per group that has any teams. A column is every stat any team has, in
+        /// the order ESPN first gives them.
+        var tables: [Table] {
+            (groups ?? []).compactMap { group -> Table? in
+                let entries = group.standings?.entries ?? []
+                guard !entries.isEmpty else { return nil }
+
+                var keys: [String] = []
+                var labels: [String: String] = [:]
+                for entry in entries {
+                    for stat in entry.stats ?? [] {
+                        guard let key = stat.name?.nonBlank, labels[key] == nil else { continue }
+                        keys.append(key)
+                        labels[key] = stat.shortDisplayName?.nonBlank ?? stat.abbreviation?.nonBlank ?? key
+                    }
+                }
+
+                let rows = entries.map { entry -> [String] in
+                    var values: [String: String] = [:]
+                    for stat in entry.stats ?? [] {
+                        if let key = stat.name?.nonBlank { values[key] = stat.displayValue ?? "" }
+                    }
+                    return [entry.team ?? ""] + keys.map { values[$0] ?? "" }
+                }
+
+                return Table(title: group.header?.nonBlank ?? "Standings",
+                             headers: ["Team"] + keys.map { labels[$0] ?? $0 },
+                             rows: rows)
+            }
+        }
     }
 
     // MARK: - Player lookup (situation → names)
@@ -283,12 +504,29 @@ struct GameDetails: Codable {
     struct GameNewsContainer: Codable {
         let articles: [GameArticle]?
 
+        init(from decoder: Decoder) throws {
+            let container = try decoder.container(keyedBy: CodingKeys.self)
+            articles = container.lossyArray(forKey: .articles)
+        }
+
         struct GameArticle: Codable, Identifiable {
             let id: Int?
             let headline: String?
             let description: String?
             let type: String?
             let links: ArticleLinks?
+            /// The full text, in ESPN's markup. Only the root `article` has one.
+            let story: String?
+
+            init(from decoder: Decoder) throws {
+                let container = try decoder.container(keyedBy: CodingKeys.self)
+                id = try? container.decodeIfPresent(Int.self, forKey: .id)
+                headline = try? container.decodeIfPresent(String.self, forKey: .headline)
+                description = try? container.decodeIfPresent(String.self, forKey: .description)
+                type = try? container.decodeIfPresent(String.self, forKey: .type)
+                links = try? container.decodeIfPresent(ArticleLinks.self, forKey: .links)
+                story = try? container.decodeIfPresent(String.self, forKey: .story)
+            }
 
             struct ArticleLinks: Codable {
                 let web: WebLink?
@@ -300,6 +538,29 @@ struct GameDetails: Codable {
             var webURL: URL? {
                 links?.web?.href.flatMap { URL(string: $0) }
             }
+
+            /// The story as headings and paragraphs, to read.
+            var storyBlocks: [GameStoryBlock] { GameStoryBlock.blocks(from: story ?? "") }
+
+            /// The description as plain words. AP's start with the dash that follows
+            /// the dateline in the story, which is cut off here: "— Jeffery Simmons ran".
+            var plainDescription: String? {
+                guard let description else { return nil }
+                let text = GameStoryBlock.plainText(description)
+                    .replacingOccurrences(of: "^[—–\\-\\s]+", with: "", options: .regularExpression)
+                return text.nonBlank
+            }
+
+            /// The description, if it adds anything to the story. ESPN's is nearly always the
+            /// story's own opening, cut short, and that's not worth hearing twice.
+            var descriptionNotInStory: String? {
+                guard let description = plainDescription else { return nil }
+                let blocks = storyBlocks
+                guard !blocks.isEmpty else { return description }
+                let storyText = blocks.map(\.text).joined(separator: " ")
+                let opening = String(description.prefix(60))
+                return storyText.contains(opening) ? nil : description
+            }
         }
     }
 
@@ -307,6 +568,35 @@ struct GameDetails: Codable {
 
     struct GameInfo: Codable {
         let officials: [Official]?
+        let attendance: Int?
+        let weather: Weather?
+
+        init(from decoder: Decoder) throws {
+            let container = try decoder.container(keyedBy: CodingKeys.self)
+            officials = container.lossyArray(forKey: .officials)
+            attendance = container.lenientNumber(forKey: .attendance).flatMap { Int(exactly: $0.rounded()) }
+            weather = try? container.decodeIfPresent(Weather.self, forKey: .weather)
+        }
+
+        private static let groupedNumber: NumberFormatter = {
+            let formatter = NumberFormatter()
+            formatter.locale = Locale(identifier: "en_US")
+            formatter.numberStyle = .decimal
+            return formatter
+        }()
+
+        /// "Attendance: 68,739". ESPN sends 0 for a game with no count, and that's no row.
+        var attendanceText: String? {
+            guard let attendance, attendance > 0,
+                  let shown = Self.groupedNumber.string(from: NSNumber(value: attendance)) else { return nil }
+            return "Attendance: \(shown)"
+        }
+
+        /// "Weather: 67°F". Nil for a game with none, which is most: ESPN sends it
+        /// for outdoor football before kickoff.
+        var weatherText: String? {
+            weather?.text.map { "Weather: \($0)" }
+        }
 
         struct Official: Codable {
             let fullName: String?
@@ -314,6 +604,33 @@ struct GameDetails: Codable {
 
             struct OfficialPosition: Codable {
                 let displayName: String?
+            }
+        }
+
+        struct Weather: Codable {
+            /// Windows reads this first, though ESPN's forecasts come without it.
+            let displayValue: String?
+            let temperature: Double?
+
+            init(from decoder: Decoder) throws {
+                let container = try decoder.container(keyedBy: CodingKeys.self)
+                displayValue = try? container.decodeIfPresent(String.self, forKey: .displayValue)
+                temperature = container.lenientNumber(forKey: .temperature)
+            }
+
+            /// 0 is a temperature, not a lack of one.
+            private var temperatureText: String? {
+                guard let temperature else { return nil }
+                if let whole = Int(exactly: temperature) { return "\(whole)°F" }
+                return "\(temperature)°F"
+            }
+
+            /// The words and the temperature, whichever ESPN has, and the temperature
+            /// only once if the words already say it.
+            var text: String? {
+                guard let words = displayValue?.nonBlank else { return temperatureText }
+                guard let temperatureText, !words.contains(temperatureText) else { return words }
+                return "\(words), \(temperatureText)"
             }
         }
     }
@@ -332,6 +649,12 @@ struct GameDetails: Codable {
         let team: InjuryTeamInfo?
         let injuries: [PlayerInjury]?
 
+        init(from decoder: Decoder) throws {
+            let container = try decoder.container(keyedBy: CodingKeys.self)
+            team = try? container.decodeIfPresent(InjuryTeamInfo.self, forKey: .team)
+            injuries = container.lossyArray(forKey: .injuries)
+        }
+
         struct InjuryTeamInfo: Codable {
             let displayName: String?
             let abbreviation: String?
@@ -341,6 +664,68 @@ struct GameDetails: Codable {
             let athlete: InjuryAthlete?
             let type: InjuryType?
             let status: String?
+            /// Type, detail and return date. An odd one costs these and not the player.
+            let details: InjuryDetails?
+
+            init(from decoder: Decoder) throws {
+                let container = try decoder.container(keyedBy: CodingKeys.self)
+                athlete = try? container.decodeIfPresent(InjuryAthlete.self, forKey: .athlete)
+                type = try? container.decodeIfPresent(InjuryType.self, forKey: .type)
+                status = try? container.decodeIfPresent(String.self, forKey: .status)
+                details = try? container.decodeIfPresent(InjuryDetails.self, forKey: .details)
+            }
+
+            /// The columns Windows has after the status, each only when ESPN says
+            /// something: "Type: Knee", "Details: Sprain", "Return Date: Nov 8, 2026".
+            var detailLines: [String] {
+                var lines: [String] = []
+                if let type = details?.type?.saysSomething { lines.append("Type: \(type)") }
+                if let detail = details?.detail?.saysSomething { lines.append("Details: \(detail)") }
+                if let date = details?.returnDateText { lines.append("Return Date: \(date)") }
+                return lines
+            }
+
+            /// What VoiceOver reads for the row.
+            var spokenText: String {
+                var parts: [String] = []
+                if let name = athlete?.displayName?.nonBlank { parts.append(name) }
+                if let position = athlete?.position?.abbreviation?.nonBlank { parts.append(position) }
+                if let status = status?.nonBlank { parts.append("Status: \(status)") }
+                return (parts + detailLines).joined(separator: ", ")
+            }
+
+            struct InjuryDetails: Codable {
+                let type: String?
+                let detail: String?
+                /// A plain date, "2026-11-08".
+                let returnDate: String?
+
+                init(from decoder: Decoder) throws {
+                    let container = try decoder.container(keyedBy: CodingKeys.self)
+                    type = try? container.decodeIfPresent(String.self, forKey: .type)
+                    detail = try? container.decodeIfPresent(String.self, forKey: .detail)
+                    returnDate = try? container.decodeIfPresent(String.self, forKey: .returnDate)
+                }
+
+                private static func formatter(_ format: String) -> DateFormatter {
+                    let formatter = DateFormatter()
+                    formatter.locale = Locale(identifier: "en_US_POSIX")
+                    formatter.timeZone = TimeZone(identifier: "UTC")
+                    formatter.dateFormat = format
+                    return formatter
+                }
+
+                private static let espnDate = formatter("yyyy-MM-dd")
+                private static let spokenDate = formatter("MMM d, yyyy")
+
+                /// "Nov 8, 2026", since VoiceOver reads "2026-11-08" a digit group at a time.
+                /// Anything that isn't a plain date is shown as ESPN sent it.
+                var returnDateText: String? {
+                    guard let returnDate = returnDate?.nonBlank else { return nil }
+                    guard let date = Self.espnDate.date(from: returnDate) else { return returnDate }
+                    return Self.spokenDate.string(from: date)
+                }
+            }
 
             struct InjuryAthlete: Codable {
                 let displayName: String?
@@ -875,5 +1260,55 @@ struct GameDetails: Codable {
                 let displayName: String
             }
         }
+    }
+}
+
+/// One piece of a game story: ESPN's `<hl2>` headings and everything between them.
+enum GameStoryBlock: Equatable {
+    case heading(String)
+    case paragraph(String)
+
+    var text: String {
+        switch self {
+        case .heading(let text), .paragraph(let text): return text
+        }
+    }
+
+    /// Story markup as headings and paragraphs of plain words, Windows's
+    /// _format_article_story for a screen rather than a browser. Links keep their words,
+    /// photos and the like go, and AP's closing "------" is dropped, alone on its line or not.
+    /// ESPN's AP stories have the dateline run into a stray dash, "SEATTLE -- — Jeffery",
+    /// which would be read out.
+    static func blocks(from story: String) -> [GameStoryBlock] {
+        let headingMark = "\u{E000}"
+        let blockBreak = "\u{E001}"
+        var text = story.replacingOccurrences(of: "(?is)<hl2\\b[^>]*>(.*?)</hl2>",
+                                              with: "\(blockBreak)\(headingMark)$1\(blockBreak)",
+                                              options: .regularExpression)
+        text = text.replacingOccurrences(of: "(?i)</?(p|br)\\b[^>]*>", with: blockBreak, options: .regularExpression)
+        text = text.replacingOccurrences(of: "\\n\\s*\\n", with: blockBreak, options: .regularExpression)
+
+        var blocks: [GameStoryBlock] = []
+        for piece in text.components(separatedBy: blockBreak) {
+            let isHeading = piece.trimmingCharacters(in: .whitespacesAndNewlines).hasPrefix(headingMark)
+            let words = plainText(piece.replacingOccurrences(of: headingMark, with: ""))
+                .replacingOccurrences(of: "-- —", with: "--")
+                .replacingOccurrences(of: "\\s*-{3,}$", with: "", options: .regularExpression)
+            guard words.rangeOfCharacter(from: .alphanumerics) != nil else { continue }
+            blocks.append(isHeading ? .heading(words) : .paragraph(words))
+        }
+        return blocks
+    }
+
+    /// Markup and entities out, and whitespace down to single spaces.
+    static func plainText(_ markup: String) -> String {
+        var text = markup.replacingOccurrences(of: "<[^>]+>", with: "", options: .regularExpression)
+        // Ampersand last, so "&amp;lt;" comes out as "&lt;" rather than "<".
+        for (entity, character) in [("&nbsp;", " "), ("&quot;", "\""), ("&#39;", "'"), ("&apos;", "'"),
+                                    ("&lt;", "<"), ("&gt;", ">"), ("&amp;", "&")] {
+            text = text.replacingOccurrences(of: entity, with: character)
+        }
+        return text.replacingOccurrences(of: "\\s+", with: " ", options: .regularExpression)
+            .trimmingCharacters(in: .whitespacesAndNewlines)
     }
 }

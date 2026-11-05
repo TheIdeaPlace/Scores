@@ -130,3 +130,7 @@ team_NCAAH_130.json	10 KB	Michigan, plain answer: no record and no standing, as 
 team_NCAAH_130_regular.json	11 KB	Michigan season=2027&seasontype=2: 8-1, standingSummary a bare 1st, nextEvent in January
 summary_leaders_NBA_401909906.json	3 KB	game summary's leaders block only, athletes cut to names: 2 teams, one leader per category, displayValue a plain number
 summary_leaders_NFL_401873035.json	5 KB	game summary's leaders block only, athletes cut to names: displayValue a stat line such as 16/29, 217 YDS, 1 TD
+summary_final_NFL_401873036.json	84 KB	Bears at Seahawks, final; root keys header, gameInfo, pickcenter, odds, injuries, scoringPlays, article, standings, news (2 articles): attendance, no weather, a Recap with AP markup, periods as numbers only, injury details with Not Specified
+summary_pre_NFL_401873037.json	45 KB	Jaguars at Ravens, not started; root keys header, gameInfo, pickcenter, odds, article, news (2 articles): weather with a temperature and no displayValue, no attendance, a Preview article
+summary_final_EPL_401879251.json	89 KB	Leeds at Bournemouth, full time; root keys header, gameInfo, pickcenter, odds, article, standings: a line in both odds and pickcenter, story in <p> and <photo> markup, 20-team table, 8 columns
+summary_final_NCAAF_401757313_2OT.json	24 KB	Kennesaw State at Liberty, the game of drives_NCAAF_2OT; root keys header, scoringPlays only: overtime scores are periods 5 and 6
