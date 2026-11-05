@@ -1,7 +1,7 @@
 # Minimal requirements for running the Scores application
 PyQt6==6.11.0
 requests==2.34.2
-pytz==2026.5
+pytz==2026.6
 
 # Optional for building executable
 pyinstaller==6.22.3
