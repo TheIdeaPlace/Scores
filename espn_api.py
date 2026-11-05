@@ -2745,7 +2745,8 @@ class _CoreRefReader:
 
     def _read_one(self, reference):
         for attempt in range(2):
-            if self.has_stalled():
+            # Python waits for a pool's queue at exit, which shouldn't hold a closed app open.
+            if self.has_stalled() or not threading.main_thread().is_alive():
                 return None
             if attempt:
                 time.sleep(0.3)
@@ -2828,9 +2829,10 @@ def _athlete_name(athlete):
 
 
 def _core_player_statistics(league_path):
-    """A soccer league's leaders, in the shape get_player_statistics returns. A row whose name
-    couldn't be had says so and keeps its place. But a network that stalled partway, or no new name
-    coming at all, means ESPN isn't answering, so it fails rather than showing a screen of those."""
+    """A soccer league's leaders, in the shape get_player_statistics returns. A row whose name or
+    team couldn't be had says so and keeps its place. But a network that stalled partway, or no new
+    name or team coming at all, means ESPN isn't answering, so it fails rather than showing a
+    screen of those."""
     season = core_season(league_path)
     for year in range(season["year"], season["year"] - CORE_LEADER_SEASONS, -1):
         lists = core_leader_lists(_fetch_core_leaders(league_path, year))
@@ -2841,12 +2843,17 @@ def _core_player_statistics(league_path):
 
     leaders =[leader for category in lists for leader in category["leaders"]]
     athletes = {leader["athlete"] for leader in leaders} - {""}
-    already_known = athletes & _CORE_REF_CACHE.keys()
+    team_references = {leader["team"] for leader in leaders} - {""}
+    known = _CORE_REF_CACHE.keys() & (athletes | team_references)
+
+    def nothing_new(references, found):
+        return bool(references - known) and found.keys() <= known
+
     with _CoreRefReader() as reader:
-        teams = reader.read({leader["team"] for leader in leaders}, _team_abbreviation)
+        teams = reader.read(team_references, _team_abbreviation)
         names = reader.read(athletes, _athlete_name)
         stalled = reader.has_stalled()
-    if stalled or not names or (athletes - already_known and names.keys() <= already_known):
+    if stalled or not names or nothing_new(athletes, names) or nothing_new(team_references, teams):
         raise ApiError(STATISTICS_UNAVAILABLE)
     categories = [{
         "category": category["title"],

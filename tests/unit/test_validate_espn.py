@@ -1093,11 +1093,32 @@ class TestSoccerTables:
         assert statuses(report, "App: standings") == [v.PASS]
         assert statuses(report, "Standings") == []
 
+    def teams_say(self, monkeypatch, answer):
+        import espn_api
+
+        def get_soccer_teams(key):
+            if isinstance(answer, Exception):
+                raise answer
+            return answer
+
+        monkeypatch.setattr(espn_api, "get_soccer_teams", get_soccer_teams)
+
     def test_a_knockout_competition_with_no_table_is_as_expected(self, monkeypatch):
         self.only(monkeypatch, CONCACAF=False)
+        self.teams_say(monkeypatch, [{"team_name": "A"}])
         report = v.Report()
         v.check_soccer_tables(FakeHttp(default=(200, load("standings_CONCACAF.json"))), report)
         assert statuses(report, "Standings") == [v.PASS]
+        assert statuses(report, "App: teams") == [v.PASS]
+
+    @pytest.mark.parametrize("answer,words", [([], "no teams"), (ValueError("bad"), "raised ValueError")])
+    def test_a_knockout_competition_losing_its_team_list_fails(self, monkeypatch, answer, words):
+        self.only(monkeypatch, CONCACAF=False)
+        self.teams_say(monkeypatch, answer)
+        report = v.Report()
+        v.check_soccer_tables(FakeHttp(default=(200, load("standings_CONCACAF.json"))), report)
+        assert FAIL_IN(report, "App: teams")
+        assert words in detail(report, "App: teams")
 
     def test_a_league_with_no_table_only_warns(self, monkeypatch):
         self.only(monkeypatch, UCL=True)

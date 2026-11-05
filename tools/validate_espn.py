@@ -1036,6 +1036,21 @@ def check_app_soccer_table(report, key, entries):
         report.ok(key, "App: standings", f"{len(rows)} teams, every record matches ESPN's")
 
 
+def check_app_soccer_team_list(report, key):
+    """A competition with no table gets its Teams from /teams, so that's all there is to reach one."""
+    import espn_api
+
+    try:
+        teams = espn_api.get_soccer_teams(key)
+    except Exception as e:
+        report.fail(key, "App: teams", f"raised {type(e).__name__}: {e}")
+        return
+    if teams:
+        report.ok(key, "App: teams", f"{len(teams)} teams")
+    else:
+        report.fail(key, "App: teams", "no teams, so none of them can be reached")
+
+
 # Leagues outside the deep list, and whether each has a table. A knockout competition has none,
 # which the app says. Finding one there isn't a break, only news.
 SOCCER_TABLES = {"NWSL": True, "La Liga": True, "Bundesliga": True, "Serie A": True, "Ligue 1": True,
@@ -1061,6 +1076,7 @@ def check_soccer_tables(http, report):
             report.warn(key, "Standings", "no table, which can be between seasons", url)
         else:
             report.ok(key, "Standings", "no table, as expected: the app says so", url)
+            check_app_soccer_team_list(report, key)
 
 
 # A game one feed has and the other doesn't yet isn't a break. A playoff record is much further off.

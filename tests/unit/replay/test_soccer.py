@@ -348,10 +348,25 @@ class TestLeaders:
         assert stats[1]["player_name"].startswith("Player ")
 
     def test_a_team_failing_keeps_the_row_and_reads_not_available(self, leaders):
-        leaders.on(r"/seasons/\d+/teams/\d+", HTTP_404)
+        leaders.on(r"/seasons/\d+/teams/382\b", HTTP_404)
         stats = espn_api.get_player_statistics("EPL")["player_stats"][0]["stats"]
         assert stats[0]["player_name"] == "Erling Haaland"
         assert ranking_rows("player", stats)[0][2] == "N/A"
+
+    def test_every_team_failing_is_a_failure_not_a_column_of_blanks(self, leaders):
+        leaders.on(r"/seasons/\d+/teams/\d+", HTTP_500)
+        with pytest.raises(ApiError, match="ESPN isn't providing these right now"):
+            espn_api.get_player_statistics("EPL")
+
+    def test_a_closing_app_asks_for_no_more_names(self, leaders, monkeypatch):
+        class Finished:
+            def is_alive(self):
+                return False
+
+        monkeypatch.setattr(espn_api.threading, "main_thread", Finished)
+        with pytest.raises(ApiError):
+            espn_api.get_player_statistics("EPL")
+        assert not leaders.urls("/athletes/")
 
     def test_every_name_failing_is_a_failure_not_a_screen_of_blanks(self, leaders):
         leaders.on(r"/athletes/\d+", HTTP_500)

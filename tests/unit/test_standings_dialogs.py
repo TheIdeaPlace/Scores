@@ -224,6 +224,11 @@ class TestSoccerTeams:
         assert table.full_list.item(0).text() == "Team: Arsenal; Played: 9; Wins: 8; Draws: 0; Losses: 1; Points: 24"
         assert table.item(0, 5).data(Qt.ItemDataRole.AccessibleTextRole) == "Arsenal, Points, 24"
 
+    def test_the_title_says_which_season_the_records_are_from(self, app):
+        assert scores.SimpleTeamsDialog(soccer_rows("standings_MLS.json"), "MLS").windowTitle() == "MLS Teams - 2026 MLS"
+        rows = [{"team_name": "A", "team_id": "1", "division": soccer.TEAMS_WITH_NO_GROUP}]
+        assert scores.SimpleTeamsDialog(rows, "CONCACAF").windowTitle() == "CONCACAF Teams"
+
     def test_opening_a_team_doesnt_close_the_list_behind_it(self, app):
         """A table passes Enter on after activating a row, and a default button would take it."""
         dialog = scores.SimpleTeamsDialog(soccer_rows("standings_EPL.json"), "EPL")
@@ -268,8 +273,7 @@ class TestSoccerSections:
 
     def test_teams_asks_for_the_list_that_a_cup_also_has(self, app):
         view = MagicMock(league="CONCACAF")
-        scores.LeagueView._show_teams_dialog(view)
-        fetch = view._fetch_then.call_args.args[1]
         with patch.object(scores.ApiService, "get_soccer_teams", return_value=[]) as teams:
-            fetch()
+            scores.LeagueView._show_teams_dialog(view)
+            view._fetch_then.call_args.args[1]()
         teams.assert_called_once_with("CONCACAF")

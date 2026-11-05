@@ -11594,7 +11594,9 @@ class SimpleTeamsDialog(QDialog):
         super().__init__(parent)
         self.teams_data = teams_data
         self.league = league
-        self.setWindowTitle(f"{league} Teams")
+        # A soccer table can be last season's until the new one has teams, and these are its records.
+        season = next((team.get("season") for team in teams_data if team.get("season")), None)
+        self.setWindowTitle(f"{league} Teams - {season}" if season else f"{league} Teams")
         self.resize(800, 500)  # Room for a table with several columns.
         self.setup_ui()
         _focus_once_active(self, lambda: _focus_first_table(self))
