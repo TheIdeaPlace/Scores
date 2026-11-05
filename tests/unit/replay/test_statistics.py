@@ -166,9 +166,16 @@ class TestRealLeaders:
     ])
     def test_a_low_is_good_list_is_not_cut_short(self, espn, fixture, category):
         espn.on("/season$", load("season_NBA.json")).on("/leaders", load(fixture))
-        espn.on("statsapi.mlb.com", HTTP_500)
         league = "NHL" if "NHL" in fixture else "MLB"
         assert len(by_category(espn_api.get_player_statistics(league))[category]) == 2
+
+    def test_a_list_with_no_real_minimum_is_left_out(self):
+        rows = [{"value": 0.0, "displayValue": "1.0 IP", "athlete": {"displayName": "A Catcher"}},
+                {"value": 0.25, "displayValue": "60 IP", "athlete": {"displayName": "A Pitcher"}}]
+        data = {"leaders": {"categories": [
+            {"name": "opponentAvg", "displayName": "Opponent Batting Average", "leaders": rows},
+            {"name": "ERA", "displayName": "ERA", "leaders": rows}]}}
+        assert [c["category"] for c in espn_api._parse_leaders(data)["player_stats"]] == ["ERA"]
 
     def test_ties_and_a_row_with_no_value_do_not_end_a_list(self):
         leaders = [{"value": 5}, {"value": 5}, {}, {"value": 4}, {"value": 9}, {"value": 3}]
@@ -280,43 +287,23 @@ class TestLeaguesWithNoLeaders:
 
 
 class TestMlbStatistics:
-    def by_category(self, url):
-        return load("mlb_leaders_homeRuns.json") if "leaderCategories=homeRuns" in url else {"leagueLeaders": []}
+    """MLB's leaders come from where every other league's do, on both apps."""
 
-    def test_url(self, espn, freeze_now):
-        freeze_now(datetime(2026, 8, 1))
-        espn.on("statsapi.mlb.com", self.by_category)
-        espn_api.get_player_statistics("MLB")
-        assert ("https://statsapi.mlb.com/api/v1/stats/leaders?leaderCategories=homeRuns"
-                "&statGroup=hitting&season=2026&limit=50") in espn.calls
-        assert len(espn.urls("statGroup=pitching")) == 14
-        assert len(espn.urls("statGroup=fielding")) == 9
-
-    def test_real_leaders(self, espn):
-        espn.on("statsapi.mlb.com", self.by_category)
-        result = espn_api.get_player_statistics("MLB")
-        assert [c["name"] for c in result["player_stats"]] == ["Home Runs"]
-        category = result["player_stats"][0]
-        assert category["abbreviation"] == "homeRuns"
-        assert category["leaders"][0] == {"name": "Pete Crow-Armstrong", "value": "45", "team": "Chicago Cubs", "position": None}
-        assert len(category["leaders"]) == 3
-
-    def test_a_failed_category_only_loses_that_category(self, espn):
-        espn.on("statsapi.mlb.com", lambda url: TIMEOUT if "leaderCategories=rbi" in url else load("mlb_leaders_homeRuns.json"))
-        names = {c["name"] for c in espn_api.get_player_statistics("MLB")["player_stats"]}
-        assert "RBIs" not in names and "Home Runs" in names and len(names) == 38
-
-    def test_the_mlb_api_down_falls_back_to_espn_and_reads_numbers_not_stat_lines(self, espn):
-        espn.on("statsapi.mlb.com", HTTP_500)
+    def test_it_asks_espn_and_reads_numbers_not_stat_lines(self, espn):
         espn.on("/season$", load("season_NFL.json")).on("/leaders", load("leaders_v3_MLB.json"))
         rows = by_category(espn_api.get_player_statistics("MLB"))
         assert rows["Batting Average"][0]["value"] == ".316"
         assert rows["Earned Run Average"][0]["value"] == "1.80"
         assert rows["Home Runs"][0]["value"] == "45"
         assert rows["On-Base-Plus-Slugging"][0]["value"] == "1.033"
+        assert not any("statsapi.mlb.com" in url for url in espn.calls)
 
-    def test_the_mlb_api_down_and_espn_failing_says_so(self, espn):
-        espn.on("statsapi.mlb.com", HTTP_500).on("/season$", load("season_NFL.json")).on("/leaders", HTTP_500)
+    def test_it_says_which_season(self, espn):
+        espn.on("/season$", load("season_NFL.json")).on("/leaders", load("leaders_v3_MLB.json"))
+        assert "2026" in espn_api.get_player_statistics("MLB")["season"]
+
+    def test_espn_failing_says_so(self, espn):
+        espn.on("/season$", load("season_NFL.json")).on("/leaders", HTTP_500)
         with pytest.raises(ApiError, match="Try again"):
             espn_api.get_player_statistics("MLB")
 

@@ -29,6 +29,7 @@
     {"why": "NBA free throws aren't", "category": "FreeThrowPct", "value": 100.0, "display": "100.0", "reads": "100.0"},
     {"why": "baseball's text is a stat line", "category": "avg", "value": 0.3157, "display": "179-567, 42 HR, 3B, 34 2B, 106 RBI, 105 R, 109 BB, SB, 120 K", "reads": ".316"},
     {"why": "OPS over one, which read 1.03 on the iPhone", "category": "OPS", "value": 1.0334, "display": "179-567, 42 HR, 3B, 34 2B, 106 RBI, 105 R, 109 BB, SB, 120 K", "reads": "1.033"},
+    {"why": "on-base percentage as plain text, in a team's answer, which read 36.0 as a fraction", "category": "onBasePct", "value": 0.3604, "display": ".360", "reads": ".360"},
     {"why": "OPS under one", "category": "OPS", "value": 0.9427, "display": "175-626, 45 HR, 8 3B, 31 2B, 107 RBI, 119 R, 83 BB, 41 SB, 187 K", "reads": ".943"},
     {"why": "nobody has hit off him", "category": "opponentAvg", "value": 0.0, "display": "1.0 IP, 0 ER, 0 H, 0 BB", "reads": ".000"},
     {"why": "ERA", "category": "ERA", "value": 1.8034, "display": "174.2 IP, 35 ER, 96 H, 252 K, 44 BB", "reads": "1.80"},

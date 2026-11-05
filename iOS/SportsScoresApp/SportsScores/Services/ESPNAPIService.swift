@@ -861,9 +861,172 @@ class ESPNAPIService {
 
     // MARK: - Fetch League Leaders (Phase 5)
 
-    /// `onlyTeam` is for a caller that will keep just that team's rows: the other rows' names
-    /// aren't looked up, which for one team's stats tab is most of a thousand requests.
-    func fetchLeagueLeaders(for sport: Sport, limit: Int = 10, onlyTeam: String? = nil) async throws -> [LeagueLeaderCategory] {
+    /// A league's player leaders, the first `limit` of each list. They come from the same place
+    /// as on Windows wherever ESPN has it (`Sport.hasSiteLeaders`), with its qualifying minimums.
+    func fetchLeagueLeaders(for sport: Sport, limit: Int = 10) async throws -> [LeagueLeaderCategory] {
+        guard sport.hasSiteLeaders else {
+            return try await fetchCoreLeaders(for: sport, limit: limit, onlyTeam: nil)
+        }
+        return try await fetchSiteLeaders(for: sport, teamId: nil).map { $0.keepingFirst(limit) }
+    }
+
+    /// The regular season ESPN says is the latest, as on Windows: `get_player_statistics`. A new
+    /// regular season can start with nobody on the list yet, or be a 404 for now, so that means
+    /// the one before. Neither existing is a failure rather than nothing to show.
+    private func fetchSiteLeaders(for sport: Sport, teamId: String?) async throws -> [LeagueLeaderCategory] {
+        let season = try await fetchCurrentSeason(sport: sport).regularSeasonYear
+        let latest = try await requestSiteLeaders(for: sport, season: season, teamId: teamId)
+        let categories = Self.leaderCategories(from: latest, oneTeam: teamId != nil)
+        guard categories.isEmpty else { return categories }
+        let previous = try await requestSiteLeaders(for: sport, season: season - 1, teamId: teamId)
+        guard latest != nil || previous != nil else { throw APIError.invalidResponse }
+        return Self.leaderCategories(from: previous, oneTeam: teamId != nil)
+    }
+
+    /// The most rows a list has on both apps, and what to ask for when ESPN won't give that many.
+    /// `/leaders` answers 500 far more often the more it's asked for. It can be a retry away, or
+    /// last for minutes at one limit while a smaller one works, and a shorter list beats none.
+    /// Leaving out region and lang makes the 500s much likelier. On Windows: `_fetch_leaders`.
+    static let siteLeadersLimit = 20
+    static let siteLeadersSmallerLimits = [10, 5]
+
+    /// A season's regular season leaders, or nil if ESPN has no such season. Without `seasontype`,
+    /// a finished season's answer is its postseason. The second try at the full list gets a
+    /// throwaway parameter, since ESPN can cache a 500 for up to 30 seconds.
+    private func requestSiteLeaders(for sport: Sport, season: Int, teamId: String?) async throws -> SiteLeadersResponse? {
+        let attempts: [(Int, Bool)] = [(Self.siteLeadersLimit, false), (Self.siteLeadersLimit, true)]
+            + Self.siteLeadersSmallerLimits.map { ($0, false) }
+        var lastStatus = 0
+        for (limit, freshAnswer) in attempts {
+            var items = [
+                URLQueryItem(name: "region", value: "us"),
+                URLQueryItem(name: "lang", value: "en"),
+                URLQueryItem(name: "season", value: String(season)),
+                URLQueryItem(name: "seasontype", value: "2"),
+                URLQueryItem(name: "limit", value: String(limit)),
+            ]
+            if let teamId { items.append(URLQueryItem(name: "team", value: teamId)) }
+            if freshAnswer {
+                try await Task.sleep(nanoseconds: 1_000_000_000)
+                items.append(URLQueryItem(name: "_", value: String(Int(Date().timeIntervalSince1970 * 1000))))
+            }
+            var components = URLComponents(string: "https://site.web.api.espn.com/apis/site/v3/sports/\(sport.apiPath)/leaders")
+            components?.queryItems = items
+            guard let url = components?.url else { throw APIError.invalidURL }
+
+            let (data, response) = try await session.data(for: URLRequest(url: url, timeoutInterval: 15))
+            let status = (response as? HTTPURLResponse)?.statusCode ?? 0
+            if status == 200 { return try JSONDecoder().decode(SiteLeadersResponse.self, from: data) }
+            if status == 404 { return nil }
+            lastStatus = status
+            if status < 500 { break }
+        }
+        throw APIError.unexpectedStatus(lastStatus)
+    }
+
+    /// `/leaders` lists these lowest first, and everything else highest first.
+    private static let lowIsGoodLeaders: Set<String> = ["avgGoalsAgainst", "ERA", "WHIP", "opponentAvg"]
+
+    /// No qualifying minimum in practice: 2026's list opens with 13 players on .000, catchers and
+    /// outfielders among them. Windows leaves it out too.
+    private static let leadersNotShown: Set<String> = ["opponentAvg"]
+
+    /// A team's answer has these as well, repeating its yards lists with the same players.
+    private static let repeatedForOneTeam: Set<String> = ["passingLeader", "rushingLeader", "receivingLeader"]
+
+    /// The leaders up to the first who breaks the category's direction. ESPN can follow its
+    /// qualified players with everyone else: on Nov 4, 2026, NCAAM field goal percentage read
+    /// 71.4, 64.3, 55.6, 50.0, 46.2, 42.9, then 100.0 fourteen times. Those aren't the next best.
+    private static func leadersInOrder(key: String, _ leaders: [SiteLeadersResponse.Leader]) -> [SiteLeadersResponse.Leader] {
+        var kept = [SiteLeadersResponse.Leader]()
+        var last: Double?
+        for leader in leaders {
+            if let value = leader.value {
+                if let last, lowIsGoodLeaders.contains(key) ? value < last : value > last { break }
+                last = value
+            }
+            kept.append(leader)
+        }
+        return kept
+    }
+
+    /// The first text that says something.
+    private static func firstText(_ candidates: String?...) -> String? {
+        candidates.compactMap { $0 }.first { !$0.isEmpty }
+    }
+
+    /// `/leaders` to the lists the app shows, in ESPN's order, which is best first even for a stat
+    /// where low is good. A preseason is nothing to show: an NFL user in August would read it as
+    /// the real thing. A league's ratings can be there with nobody rated, such as the WNBA's
+    /// Player Efficiency Rating, where the leaders all read 0.0: that isn't a list of leaders.
+    /// On Windows this is `_parse_leaders`, and tests/fixtures/leader_lists_grid.json holds both.
+    ///
+    /// `oneTeam` is an answer for one team, which Windows has no screen for. It has qualified
+    /// players first and then everyone else, and a team's tab shows them all, so its list isn't
+    /// cut where the numbers turn back up: that would lose a real player, such as Tyler Herro on
+    /// 20.5 points, listed after a teammate on 5.6.
+    static func leaderCategories(from response: SiteLeadersResponse?, oneTeam: Bool = false) -> [LeagueLeaderCategory] {
+        guard let response, response.requestedSeason?.type?.type != 1 else { return [] }
+        return (response.leaders?.categories ?? []).compactMap { category -> LeagueLeaderCategory? in
+            let key = firstText(category.name) ?? "unknown"
+            guard !leadersNotShown.contains(key), !(oneTeam && repeatedForOneTeam.contains(key)) else { return nil }
+            let leaders = oneTeam ? (category.leaders ?? []) : leadersInOrder(key: key, category.leaders ?? [])
+            guard leaders.contains(where: { ($0.value ?? 0) != 0 }) else { return nil }
+
+            let rows = leaders.compactMap { leader -> (name: String, team: String, value: String)? in
+                guard let name = firstText(leader.athlete?.displayName, leader.athlete?.fullName, leader.athlete?.shortName) else {
+                    return nil
+                }
+                let value = leaderDisplayValue(category: key, value: leader.value, displayValue: leader.displayValue)
+                return (name, firstText(leader.team?.abbreviation, leader.team?.displayName) ?? "", value.isEmpty ? "-" : value)
+            }
+            guard !rows.isEmpty else { return nil }
+
+            let ranks = sharedRanks(rows.map(\.value))
+            return LeagueLeaderCategory(
+                name: key,
+                displayName: firstText(category.displayName) ?? key.capitalized,
+                leaders: zip(ranks, rows).map { rank, row in
+                    LeagueLeaderCategory.LeagueLeaderEntry(
+                        rank: rank, displayValue: row.value, athleteName: row.name, teamAbbreviation: row.team
+                    )
+                },
+                seasonLabel: leadersSeasonLabel(response.requestedSeason, oneTeam: oneTeam)
+            )
+        }
+    }
+
+    /// Each value's rank, best first: one level with the one before shares its rank, and the next
+    /// rank counts them, so 1, 1, 3. `/leaders` has no rank of its own.
+    static func sharedRanks(_ values: [String]) -> [Int] {
+        var rank = 0
+        var previous: String?
+        return values.enumerated().map { position, value in
+            if value != previous {
+                rank = position + 1
+                previous = value
+            }
+            return rank
+        }
+    }
+
+    /// "2026-27 Regular Season", the same words Windows uses. Asked for a past college football
+    /// season's regular season, ESPN answers with type 3, the numbers running through the bowl
+    /// games, so "Season" says what they are. One team's list says what its ranks are, since
+    /// the same words on the league's list mean the league.
+    private static func leadersSeasonLabel(_ season: SiteLeadersResponse.Season?, oneTeam: Bool) -> String? {
+        let type = season?.type?.type == 3 ? "Season" : season?.type?.name
+        let label = [season?.displayName, type].compactMap { $0 }.joined(separator: " ")
+        guard oneTeam else { return label.isEmpty ? nil : label }
+        return label.isEmpty
+            ? "Ranked within this team, qualified players first"
+            : "\(label), ranked within this team, qualified players first"
+    }
+
+    /// The core API, for the leagues with no `/leaders`. Its leaders have no qualifying minimum,
+    /// and need each name looked up. `onlyTeam` is for a caller that will keep just that team's
+    /// rows: the other rows' names aren't looked up.
+    private func fetchCoreLeaders(for sport: Sport, limit: Int, onlyTeam: String?) async throws -> [LeagueLeaderCategory] {
         // Extract league from apiPath (e.g., "basketball/nba" → "nba")
         let league = sport.apiPath.components(separatedBy: "/").last ?? sport.rawValue.lowercased()
         let sportType = sport.apiPath.components(separatedBy: "/").first ?? "unknown"
@@ -872,8 +1035,7 @@ class ESPNAPIService {
         let seasonYear = sport.currentSeasonYear
 
         // The regular season, this year's or the most recent. Never a preseason: the app has
-        // nowhere to say so, and an NFL user in August would read them as the real thing.
-        // Soccer files its whole league season under type 1.
+        // nowhere to say so. Soccer files its whole league season under type 1.
         let seasonType = sport.isSoccer ? 1 : 2
         let seasonsToTry = [seasonYear, seasonYear - 1, seasonYear - 2]
 
@@ -902,13 +1064,29 @@ class ESPNAPIService {
         return []
     }
     
-    /// Fetch league leaders filtered to players on a specific team.
-    /// Fetches the top 100 across the league, then filters to players on this team.
-    /// limit=100 covers virtually all qualified hitters/pitchers (MLB has ~60-80
-    /// qualifiers per batting stat), so every team player with qualifying stats appears.
-    /// Categories where this team has no players in the top 100 are dropped.
-    func fetchLeagueLeadersForTeam(teamAbbreviation: String, sport: Sport) async throws -> [LeagueLeaderCategory] {
-        let all = try await fetchLeagueLeaders(for: sport, limit: 100, onlyTeam: teamAbbreviation)
+    /// A team's own players in each stat category, ranked among themselves. `/leaders` takes a
+    /// team, which answers with up to 20 of its players, and every category it has anyone in.
+    /// The league's list wouldn't do: 20 rows of it had no Blackhawks in any category. The leagues
+    /// without it get the core API's top 100 across the league, filtered to this team.
+    func fetchLeagueLeadersForTeam(teamId: String, teamAbbreviation: String, sport: Sport) async throws -> [LeagueLeaderCategory] {
+        if sport.hasSiteLeaders {
+            return try await fetchSiteLeaders(for: sport, teamId: teamId).map { category in
+                LeagueLeaderCategory(
+                    name: category.name,
+                    displayName: category.displayName,
+                    leaders: category.leaders.map { entry in
+                        LeagueLeaderCategory.LeagueLeaderEntry(
+                            rank: entry.rank,
+                            displayValue: entry.displayValue,
+                            athleteName: entry.athleteName,
+                            teamAbbreviation: ""   // all of them are on this team
+                        )
+                    },
+                    seasonLabel: category.seasonLabel
+                )
+            }
+        }
+        let all = try await fetchCoreLeaders(for: sport, limit: 100, onlyTeam: teamAbbreviation)
         return all.compactMap { category in
             let teamEntries = category.leaders
                 .filter { $0.teamAbbreviation == teamAbbreviation }
@@ -1111,6 +1289,9 @@ class ESPNAPIService {
         "FreeThrowPct":         "freeThrowPct",
         "3PointPct":            "threePointFieldGoalPct",
         "3PointsMadePerGame":   "avgThreePointFieldGoalsMade",
+        "3PointMadePerGame":    "avgThreePointFieldGoalsMade",
+        "defensiveReboundsPerGame": "avgDefensiveRebounds",
+        "offensiveReboundsPerGame": "avgOffensiveRebounds",
         "quarterbackRating":    "QBRating",
     ]
 
@@ -1259,8 +1440,10 @@ class ESPNAPIService {
         let name = (category ?? "").lowercased()
         let isWhole = number == number.rounded()
 
+        let threePlaces = ["avg", "ops", "onbasepct", "slugavg", "opponentavg", "savepct"].contains(name)
+
         guard display.range(of: #"^[+-]?[\d,]*\.?\d+$"#, options: .regularExpression) != nil else {
-            if ["avg", "ops", "onbasepct", "slugavg", "opponentavg", "savepct"].contains(name) {
+            if threePlaces {
                 let text = String(format: "%.3f", number)
                 return text.hasPrefix("0.") ? String(text.dropFirst()) : text
             }
@@ -1273,7 +1456,7 @@ class ESPNAPIService {
         if ["points", "doubledouble"].contains(name) && isWhole {
             return String(Int(number))
         }
-        if name.contains("pct"), name != "savepct", (0...1).contains(number),
+        if name.contains("pct"), !threePlaces, (0...1).contains(number),
            let shown = Double(display.replacingOccurrences(of: ",", with: "")), shown <= 1 {
             return String(format: "%.1f", number * 100)
         }

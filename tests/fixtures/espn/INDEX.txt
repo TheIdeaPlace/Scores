@@ -51,7 +51,6 @@ worldcup_standings_WC2026.json	10 KB	2 groups of 4; note.description is the adva
 worldcup_scoreboard_20260620.json	3 KB	2 group games, STATUS_FULL_TIME
 scoreboard_NWSL.json	3 KB	2 games from dates=202610, used by the month-by-month schedule path
 standings_MLB.json	14 KB	AL and NL trimmed to 5 and 3 teams, CHW and ATH included; streak is a signed value
-mlb_leaders_homeRuns.json	1 KB	statsapi.mlb.com leaders, 3 players; team has a name but no abbreviation
 schedule_MLB_10.json	4 KB	3 finals; score is a dict with displayValue
 schedule_WNBA_8_pre.json	16 KB	seasontype=1, 1 of 3 games: no note and no week, so only the season type names it
 schedule_WNBA_8_post.json	33 KB	season=2025&seasontype=3, 2 of 6: First Round and Semifinals notes, no week
@@ -87,6 +86,9 @@ leaders_v3_NHL.json	54 KB	/leaders season=2027, 3 categories of 2: goals 15, not
 leaders_v3_NCAAM.json	71 KB	/leaders season=2027, 3 categories of 2: qualified, so 21.0 where core says 41.0; FG% value a fraction; PER all 0.0
 leaders_v3_MLB.json	146 KB	/leaders season=2026, 5 categories of 2: displayValue is a stat line in every category
 leaders_v3_NCAAM_full.json	364 KB	/leaders season=2027 limit=20, field goal % whole and 3-pointers made cut to 9: qualified players, then everyone else from the top again
+leaders_v3_team_NBA_14.json	Heat 2025-26, /leaders team=14, rows without statistics: qualified players first, then others such as Herro at 20.5
+leaders_v3_team_MLB_30.json	Rays 2026, /leaders team=30, rows without statistics: on-base % is plain text, .360
+leaders_v3_team_NFL_3.json	Bears 2025, /leaders team=3, rows without statistics: passingLeader repeats passingYards; sacks tied at 1.5
 leaders_v3_NCAAF_2025.json	27 KB	/leaders season=2025 seasontype=2, 1 category of 2: answers with requestedSeason type 3, Postseason
 leaders_core_NFL_regular.json	5 KB	core seasons/2026/types/2/leaders limit=3, 3 categories: names by $ref only
 leaders_core_NFL_preseason.json	3 KB	core seasons/2026/types/1/leaders limit=3, 3 categories: 509, the numbers /statistics called regular season

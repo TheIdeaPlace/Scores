@@ -25,13 +25,16 @@ FIXTURES = Path(__file__).parent.parent / "fixtures" / "espn"
 TABLE, QUICK, FULL = AccessibleTable.VIEW_TABLE, AccessibleTable.VIEW_QUICK_LIST, AccessibleTable.VIEW_FULL_LIST
 
 NBA_LEADERS = espn_api._parse_leaders(json.loads((FIXTURES / "leaders_v3_NBA.json").read_text(encoding="utf-8")))
-# What espn_api gives the dialog from the MLB Stats API: no season, and a team's full name.
-MLB_LEADERS = {"player_stats": [
-    {"name": "Home Runs", "display_name": "Home Runs", "abbreviation": "homeRuns", "leaders": [
-        {"name": "Aaron Judge", "value": "53", "team": "New York Yankees", "position": None},
-        {"name": "No Team", "value": "40", "team": "N/A", "position": None},
+# No season named, and a team's full name, such as a row with no abbreviation has.
+NO_SEASON_LEADERS = {"player_stats": [
+    {"category": "Home Runs", "stats": [
+        {"player_name": "Aaron Judge", "value": "53", "team": "New York Yankees", "stat_name": "Home Runs"},
+        {"player_name": "No Team", "value": "40", "team": "", "stat_name": "Home Runs"},
+        {"player_name": "Nobody Else", "value": "39", "team": "New York Yankees", "stat_name": "Home Runs"},
     ]},
-    {"name": "Nobody Yet", "display_name": "Nobody Yet", "abbreviation": "none", "leaders": []},
+    {"category": "Saves", "stats": [
+        {"player_name": "Nobody Yet", "value": "1", "team": "", "stat_name": "Saves"},
+    ]},
 ], "team_stats": []}
 TEAM_STATS = {"season": "2026-27 Regular Season", "player_stats": [], "team_stats": [{
     "category": "Offense", "low_is_good": ["Turnovers"],
@@ -148,7 +151,8 @@ def test_a_stat_that_cant_be_built_says_so_and_escape_comes_back(open_dialog):
 
 @pytest.mark.parametrize("start_on_back", [False, True], ids=["from the table", "from Back"])
 def test_ctrl_tab_onto_a_stat_with_no_rows_lands_on_its_message(open_dialog, start_on_back):
-    view = open_dialog("MLB", "player", MLB_LEADERS)
+    view = open_dialog("MLB", "player", NO_SEASON_LEADERS)
+    view._stat_infos[1]["data"] = []
     select_stat(view, "Home Runs")
     start = results(view).table_widget
     if start_on_back:
@@ -158,7 +162,7 @@ def test_ctrl_tab_onto_a_stat_with_no_rows_lands_on_its_message(open_dialog, sta
     press(Qt.Key.Key_Tab, Qt.KeyboardModifier.ControlModifier, start)
     row = view.focusWidget()
     assert isinstance(row, QListWidget) and row is not view.stats_list
-    assert row.item(0).text() == "No rankings are available for Nobody Yet."
+    assert row.item(0).text() == "No rankings are available for Saves."
 
 
 def test_ctrl_tab_keeps_the_chosen_view(open_dialog, saved_view):
@@ -236,8 +240,8 @@ def test_team_rows_keep_the_shared_rank_and_read_best_first(open_dialog):
     assert table.full_list.item(2).text() == "Rank: 3; Team: Heat; Value: 99"
 
 
-def test_mlb_has_no_season_and_full_team_names(open_dialog):
-    view = open_dialog("MLB", "player", MLB_LEADERS)
+def test_a_list_with_no_season_and_a_full_team_name(open_dialog):
+    view = open_dialog("MLB", "player", NO_SEASON_LEADERS)
     select_stat(view, "Home Runs")
     table = results(view)
     assert heading(view) == "Season Leaders: Home Runs"
@@ -245,14 +249,13 @@ def test_mlb_has_no_season_and_full_team_names(open_dialog):
     assert row_cells(table, 1) == ["2", "No Team", "N/A", "40"]
 
 
-def test_mlb_players_level_on_the_number_share_the_rank_its_feed_gives(open_dialog):
-    feed = json.loads((FIXTURES / "mlb_leaders_homeRuns.json").read_text(encoding="utf-8"))["leagueLeaders"][0]["leaders"]
-    leaders = [{"name": leader["person"]["fullName"], "value": leader["value"],
-                "team": leader["team"]["name"], "position": None} for leader in feed]
-    view = open_dialog("MLB", "player", {"player_stats": [{"name": "Home Runs", "leaders": leaders}], "team_stats": []})
+def test_players_level_on_the_number_share_a_rank(open_dialog):
+    stats = [{"player_name": name, "value": value, "team": "NYY", "stat_name": "Home Runs"}
+             for name, value in (("A", "45"), ("B", "45"), ("C", "44"))]
+    view = open_dialog("MLB", "player", {"player_stats": [{"category": "Home Runs", "stats": stats}]})
     select_stat(view, "Home Runs")
     ranks = [row_cells(results(view), row)[0] for row in range(results(view).rowCount())]
-    assert ranks == [str(leader["rank"]) for leader in feed] == ["1", "1", "3"]
+    assert ranks == ["1", "1", "3"]
 
 
 def test_a_row_says_whose_it_is(open_dialog):
@@ -368,12 +371,13 @@ def test_each_stat_keeps_its_own_rows_and_place(open_dialog):
 
 
 def test_a_stat_with_no_rows_says_so_and_escape_comes_back(open_dialog):
-    view = open_dialog("MLB", "player", MLB_LEADERS)
-    select_stat(view, "Nobody Yet")
+    view = open_dialog("MLB", "player", NO_SEASON_LEADERS)
+    view._stat_infos[1]["data"] = []
+    select_stat(view, "Saves")
     assert results(view) is None
     row = view.focusWidget()
     assert isinstance(row, QListWidget) and row is not view.stats_list
-    assert row.item(0).text() == "No rankings are available for Nobody Yet."
+    assert row.item(0).text() == "No rankings are available for Saves."
     press(Qt.Key.Key_Escape, widget=row)
     assert view.focusWidget() is view.stats_list
 
