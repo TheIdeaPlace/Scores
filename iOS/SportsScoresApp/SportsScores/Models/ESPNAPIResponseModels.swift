@@ -634,4 +634,31 @@ enum APIError: LocalizedError {
             return "Network error: \(error.localizedDescription)"
         }
     }
+
+    /// What a screen says when a request failed, in the words the Windows app uses:
+    /// `_unavailable` in espn_api.py, and tests/fixtures/failed_request_wording.json holds
+    /// the two together. Not an error's own description: "Invalid response from server"
+    /// tells someone nothing, and only this says to try again.
+    static func unavailable(_ what: String, source: String = "ESPN") -> String {
+        "\(source) isn't providing \(what) right now. Try again in a minute."
+    }
+
+    /// More leagues than this failing at once isn't worth a screen reader listing them.
+    static let liveFailuresNamed = 4
+
+    /// What Live Scores says about the leagues that didn't answer. `showing` is whether any
+    /// games are on the list. `live_scores_failure_text` in espn_api.py is the other half.
+    static func liveScoresFailure(_ failed: [String], showing: Bool) -> String {
+        let names = failed.sorted()
+        let who: String
+        if names.count > liveFailuresNamed {
+            if !showing { return unavailable("scores") }
+            who = "Some leagues' scores"
+        } else if names.count < 3 {
+            who = "Scores for " + names.joined(separator: " and ")
+        } else {
+            who = "Scores for " + names.dropLast().joined(separator: ", ") + " and " + names[names.count - 1]
+        }
+        return "\(who) may be missing or out of date. ESPN isn't providing them right now. Try again in a minute."
+    }
 }

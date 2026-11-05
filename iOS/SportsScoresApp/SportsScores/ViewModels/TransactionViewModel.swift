@@ -85,7 +85,7 @@ class TransactionViewModel: ObservableObject {
                 noDataForSport = response.count == 0
             }
         } catch {
-            errorMessage = "Could not load transactions."
+            errorMessage = APIError.unavailable("transactions")
             transactions = []
         }
     }

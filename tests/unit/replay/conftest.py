@@ -20,6 +20,7 @@ def isolated(monkeypatch, tmp_path):
         raise AssertionError(f"A replay test reached the network: {request.url}")
 
     monkeypatch.setattr(requests.sessions.Session, "send", blocked)
+    monkeypatch.setenv("APPDATA", str(tmp_path))  # error_log's file, for what the service logs
     monkeypatch.setattr(settings, "_SETTINGS_DIR", tmp_path / "Scores")
     monkeypatch.setattr(settings, "_SETTINGS_FILE", tmp_path / "Scores" / "settings.json")
     monkeypatch.setattr(settings, "_cache", None)

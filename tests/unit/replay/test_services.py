@@ -11,7 +11,7 @@ import requests
 import espn_api
 import settings
 import timezone_utils
-from exceptions import ApiError
+from exceptions import ApiError, SOMETHING_WENT_WRONG
 from models.game import GameData
 from models.news import NewsData
 from models.standings import StandingsData
@@ -70,8 +70,9 @@ class TestApiService:
             raise ValueError("it broke")
 
         monkeypatch.setattr(espn_api, target, boom)
-        with pytest.raises(ApiError, match="it broke") as info:
+        with pytest.raises(ApiError) as info:
             getattr(ApiService, method)(*args)
+        assert str(info.value) == SOMETHING_WENT_WRONG
         assert isinstance(info.value.__cause__, ValueError)
 
     def test_the_schedule_and_its_season_are_passed_along_and_failures_wrapped(self, espn, monkeypatch):

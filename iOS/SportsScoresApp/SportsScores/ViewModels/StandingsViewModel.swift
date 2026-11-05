@@ -54,7 +54,7 @@ class StandingsViewModel: ObservableObject {
                 standingsGroups = try await apiService.fetchStandings(for: sport)
             }
         } catch {
-            errorMessage = "Failed to load standings: \(error.localizedDescription)"
+            errorMessage = APIError.unavailable("standings", source: sport.usesCFLSource ? "The CFL" : "ESPN")
         }
         
         isLoading = false
@@ -77,7 +77,7 @@ class StandingsViewModel: ObservableObject {
         do {
             wildCardGroups = try await apiService.fetchMLBWildCardStandings()
         } catch {
-            errorMessage = "Failed to load wild card standings: \(error.localizedDescription)"
+            errorMessage = APIError.unavailable("wild card standings")
         }
         isLoading = false
     }

@@ -2063,3 +2063,38 @@ final class DraftDecodingTests: XCTestCase {
         XCTAssertEqual(NFLDraftViewModel.positionsLeftOut["22"], "PK")
     }
 }
+
+/// tests/fixtures/failed_request_wording.json holds both apps to the same words for a failed
+/// request. tests/unit/replay/test_failure_paths.py holds the Python side.
+final class FailedRequestWordingTests: XCTestCase {
+    private struct Wording: Decodable {
+        struct Live: Decodable {
+            let failed: [String]
+            let showing: Bool
+            let text: String
+        }
+        let unavailable: [String: String]
+        let live: [Live]
+    }
+
+    private func wording() throws -> Wording {
+        let url = Fixtures.repoRoot.appendingPathComponent("tests/fixtures/failed_request_wording.json")
+        return try JSONDecoder().decode(Wording.self, from: Data(contentsOf: url))
+    }
+
+    func testEachSentenceMatchesTheSharedFile() throws {
+        let wording = try wording()
+        XCTAssertFalse(wording.unavailable.isEmpty)
+        for (what, sentence) in wording.unavailable {
+            XCTAssertEqual(APIError.unavailable(what), sentence)
+        }
+    }
+
+    func testTheLiveScoresRowMatchesTheSharedFile() throws {
+        let wording = try wording()
+        XCTAssertFalse(wording.live.isEmpty)
+        for item in wording.live {
+            XCTAssertEqual(APIError.liveScoresFailure(item.failed, showing: item.showing), item.text)
+        }
+    }
+}

@@ -116,6 +116,13 @@ struct SoccerLiveView: View {
                     .padding(.horizontal)
                 }
 
+                if let note = viewModel.failureNote {
+                    Text(note)
+                        .font(.subheadline)
+                        .foregroundColor(.secondary)
+                        .padding(.horizontal)
+                }
+
                 if viewModel.liveGames.isEmpty && viewModel.upcomingGames.isEmpty && viewModel.completedGames.isEmpty {
                     VStack(spacing: 16) {
                         Image(systemName: "calendar.badge.exclamationmark")

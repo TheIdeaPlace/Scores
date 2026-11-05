@@ -31,7 +31,7 @@ final class GameDetailViewModel: ObservableObject {
         do {
             gameDetails = try await ESPNAPIService.shared.fetchGameDetails(for: game.id, sport: sport)
         } catch {
-            errorMessage = "Failed to load details: \(error.localizedDescription)"
+            errorMessage = APIError.unavailable("this game")
         }
         isLoading = false
     }

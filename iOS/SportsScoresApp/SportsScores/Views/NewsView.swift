@@ -18,7 +18,8 @@ struct NewsView: View {
             if viewModel.isLoading {
                 ProgressView("Loading news…")
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
-            } else if let error = viewModel.errorMessage {
+            } else if let error = viewModel.errorMessage, viewModel.articles.isEmpty {
+                // A refresh that fails keeps what's showing, as the scores list does.
                 errorState(message: error)
             } else if viewModel.articles.isEmpty {
                 emptyState

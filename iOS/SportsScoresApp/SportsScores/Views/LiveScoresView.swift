@@ -170,7 +170,14 @@ struct LiveScoresView: View {
                     }
                     .padding(.horizontal)
                 }
-                
+
+                if let note = viewModel.failureNote {
+                    Text(note)
+                        .font(.subheadline)
+                        .foregroundColor(.secondary)
+                        .padding(.horizontal)
+                }
+
                 if viewModel.liveGames.isEmpty && viewModel.completedGames.isEmpty && viewModel.upcomingGames.isEmpty && (!appSettings.golfHubEnabled || golfVM.activeTournaments.isEmpty) {
                     VStack(spacing: 16) {
                         Image(systemName: "calendar.badge.exclamationmark")

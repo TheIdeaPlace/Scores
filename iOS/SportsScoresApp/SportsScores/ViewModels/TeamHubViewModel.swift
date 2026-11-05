@@ -82,7 +82,7 @@ class TeamHubViewModel: ObservableObject {
         } catch let error where error.isCancellation {
             // With no team info, the next call starts over.
         } catch {
-            errorInfo = "Could not load team info."
+            errorInfo = APIError.unavailable("this team", source: sport.usesCFLSource ? "The CFL" : "ESPN")
         }
         isLoadingInfo = false
         await scheduleTask
@@ -112,7 +112,7 @@ class TeamHubViewModel: ObservableObject {
             // Backfill coach name if not yet set
             if coachName == nil { coachName = result.coachName }
         } catch {
-            errorRoster = "Could not load roster."
+            errorRoster = APIError.unavailable("the roster")
         }
         isLoadingRoster = false
     }
@@ -126,7 +126,7 @@ class TeamHubViewModel: ObservableObject {
         do {
             news = try await apiService.fetchTeamNews(teamId: teamId, sport: sport, limit: 25)
         } catch {
-            errorNews = "Could not load news."
+            errorNews = APIError.unavailable("news")
         }
         isLoadingNews = false
     }
@@ -149,7 +149,7 @@ class TeamHubViewModel: ObservableObject {
             // ESPN says it has nothing there, which isn't a failure to report.
             scheduleAnswered = true
         } catch {
-            errorSchedule = "Could not load schedule."
+            errorSchedule = APIError.unavailable("the schedule", source: sport.usesCFLSource ? "The CFL" : "ESPN")
             scheduleAnswered = true
         }
         isLoadingSchedule = false

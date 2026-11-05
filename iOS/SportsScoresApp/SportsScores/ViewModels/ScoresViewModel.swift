@@ -212,7 +212,7 @@ class ScoresViewModel: ObservableObject {
             }
             errorMessage = nil  // clear any stale error from a concurrent failing fetch
         } catch {
-            errorMessage = "Failed to load games: \(error.localizedDescription)"
+            errorMessage = APIError.unavailable("scores", source: sport.usesCFLSource ? "The CFL" : "ESPN")
         }
 
         isLoading = false

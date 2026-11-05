@@ -2,6 +2,7 @@
 import pytest
 
 import espn_api
+from exceptions import ApiError
 
 from .support import HTTP_404, HTTP_500, TIMEOUT, load
 
@@ -51,10 +52,18 @@ class TestDraft:
         espn.on("/draft", {})
         assert espn_api.get_draft(2026) is None
 
-    @pytest.mark.parametrize("reply", [HTTP_404, HTTP_500, TIMEOUT])
-    def test_failing_is_none_and_is_not_kept(self, espn, reply):
-        espn.on("/draft", reply)
+    def test_espn_having_none_is_none_and_is_not_kept(self, espn):
+        espn.on("/draft", HTTP_404)
         assert espn_api.get_draft(2026) is None
+        espn.on("/draft", load("draft_site_NFL_2026.json"))
+        assert espn_api.get_draft(2026)["num_rounds"] == 7
+
+    @pytest.mark.parametrize("reply", [HTTP_500, TIMEOUT])
+    def test_failing_says_so_and_is_not_kept(self, espn, reply):
+        """The dialog would otherwise say the year has no draft."""
+        espn.on("/draft", reply)
+        with pytest.raises(ApiError, match="the draft"):
+            espn_api.get_draft(2026)
         espn.on("/draft", load("draft_site_NFL_2026.json"))
         assert espn_api.get_draft(2026)["num_rounds"] == 7
 
@@ -108,10 +117,14 @@ class TestDraftRound:
     def test_a_round_that_does_not_exist(self, draft):
         assert espn_api.get_draft_round(2026, 99) == []
 
-    @pytest.mark.parametrize("reply", [HTTP_404, TIMEOUT])
-    def test_failing_is_empty(self, espn, reply):
-        espn.on("/draft", reply)
+    def test_espn_having_none_is_empty(self, espn):
+        espn.on("/draft", HTTP_404)
         assert espn_api.get_draft_round(2026, 1) == []
+
+    def test_failing_says_so(self, espn):
+        espn.on("/draft", TIMEOUT)
+        with pytest.raises(ApiError, match="the draft"):
+            espn_api.get_draft_round(2026, 1)
 
     def test_a_team_missing_from_the_list_is_not_made_up(self, espn):
         data = load("draft_site_NFL_2026.json")
@@ -153,8 +166,15 @@ class TestFantasyFailures:
 
     def test_both_seasons_failing_raises_so_the_caller_can_say_so(self, espn):
         espn.on("/players", HTTP_500)
-        with pytest.raises(RuntimeError, match="HTTP 500"):
+        with pytest.raises(ApiError) as caught:
             espn_api.get_fantasy_cheatsheet(2026)
+        assert str(caught.value) == espn_api.FANTASY_UNAVAILABLE
+
+    def test_both_seasons_timing_out_says_so_in_the_same_words(self, espn):
+        espn.on("/players", TIMEOUT)
+        with pytest.raises(ApiError) as caught:
+            espn_api.get_fantasy_cheatsheet(2026)
+        assert str(caught.value) == espn_api.FANTASY_UNAVAILABLE
 
     def test_a_near_empty_pool_tries_the_last_season(self, espn):
         espn.on("/seasons/2026/players", [self.player(1)])

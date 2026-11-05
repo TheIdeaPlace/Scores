@@ -52,7 +52,8 @@ struct StandingsView: View {
                          ? "Loading wild card standings..."
                          : "Loading standings...")
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
-        } else if let error = viewModel.errorMessage {
+        } else if let error = viewModel.errorMessage, viewModel.visibleGroups.isEmpty {
+            // A refresh that fails keeps what's showing, as the scores list does.
             ErrorStateView(message: error) {
                 Task {
                     if viewModel.mode == .wildCard {

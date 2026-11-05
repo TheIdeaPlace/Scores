@@ -18,7 +18,8 @@ struct PollsView: View {
             if viewModel.isLoading {
                 ProgressView("Loading rankings…")
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
-            } else if let error = viewModel.errorMessage {
+            } else if let error = viewModel.errorMessage, viewModel.polls.isEmpty {
+                // A refresh that fails keeps what's showing, as the scores list does.
                 errorState(message: error)
             } else if viewModel.polls.isEmpty {
                 emptyState

@@ -14,7 +14,9 @@ class LiveScoresViewModel: ObservableObject {
     @Published var upcomingGames: [SportGames] = []
     @Published var isLoading = false
     @Published var errorMessage: String?
-    
+    /// Says which leagues didn't answer, under what the others did.
+    @Published var failureNote: String?
+
     private let apiService = ESPNAPIService.shared
     
     struct SportGames: Identifiable {
@@ -38,7 +40,8 @@ class LiveScoresViewModel: ObservableObject {
         // then get filtered out by the day check below.
         // Soccer leagues are included here so they appear in the all-sports view.
         let allLeagues = Sport.allCases + Sport.soccerLeagues
-        let results: [(Sport, [Game])] = await withTaskGroup(of: (Sport, [Game]).self) { group in
+        // nil is a league that failed, which isn't the same as one with no games.
+        let results: [(Sport, [Game]?)] = await withTaskGroup(of: (Sport, [Game]?).self) { group in
             for sport in allLeagues {
                 group.addTask {
                     do {
@@ -46,11 +49,11 @@ class LiveScoresViewModel: ObservableObject {
                         return (sport, games)
                     } catch {
                         print("Failed to fetch games for \(sport.rawValue): \(error)")
-                        return (sport, [])
+                        return (sport, nil)
                     }
                 }
             }
-            var collected: [(Sport, [Game])] = []
+            var collected: [(Sport, [Game]?)] = []
             for await pair in group { collected.append(pair) }
             // Restore consistent ordering (allLeagues order)
             return collected.sorted {
@@ -59,11 +62,23 @@ class LiveScoresViewModel: ObservableObject {
             }
         }
 
+        // Leaving the screen cancels this, and says nothing about ESPN.
+        guard !Task.isCancelled else {
+            isLoading = false
+            return
+        }
+
         var live: [SportGames] = []
         var completed: [SportGames] = []
         var upcoming: [SportGames] = []
+        var failed: [String] = []
 
-        for (sport, games) in results {
+        for (sport, fetched) in results {
+            if fetched == nil { failed.append(sport.rawValue) }
+            // A league that failed keeps what it last showed.
+            let games = fetched ?? (liveGames + completedGames + upcomingGames)
+                .filter { $0.sport == sport }
+                .flatMap { $0.games }
             // Restrict every sport to today — no special football exemption.
             let relevantGames = games.filter { ScoreboardDay.belongsOnToday($0, now: now) }
 
@@ -82,8 +97,10 @@ class LiveScoresViewModel: ObservableObject {
         completedGames = completed
         upcomingGames = upcoming
 
-        if live.isEmpty && completed.isEmpty && upcoming.isEmpty {
-            errorMessage = "No games scheduled today"
+        let showing = !(live.isEmpty && completed.isEmpty && upcoming.isEmpty)
+        failureNote = showing && !failed.isEmpty ? APIError.liveScoresFailure(failed, showing: true) : nil
+        if !showing {
+            errorMessage = failed.isEmpty ? "No games scheduled today" : APIError.liveScoresFailure(failed, showing: false)
         }
 
         isLoading = false

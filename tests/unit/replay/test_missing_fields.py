@@ -3,6 +3,9 @@ field in turn missing, null, or an empty list. None may raise, none may put the 
 None in its text, and none may hand a screen a None for a field it shows. ESPN does
 send nulls, and a field's absence shouldn't cost the user the rest of the screen.
 `.get(key, default)` is no help: with the key present and null, it returns None.
+
+The one exception is a null where the answer's own list belongs, at the top of the body,
+which isn't an answer. That raises ApiError, as a failed request does.
 """
 import datetime
 import re
@@ -10,6 +13,7 @@ import re
 import pytest
 
 import espn_api
+from exceptions import ApiError
 from services.venue_service import VenueService, venue_summary
 
 from .support import HTTP_404, load, mutations
@@ -158,6 +162,10 @@ def test_no_single_bad_field_raises_or_reads_none(espn, call, fixture, route, ot
         espn_api._DRAFT_CACHE.clear()
         try:
             result = call()
+        except ApiError:
+            if not re.fullmatch(r"\w+ null", description):
+                failures.append(f"{description}: said the request failed")
+            continue
         except Exception as e:
             failures.append(f"{description}: raised {type(e).__name__}: {e}")
             continue

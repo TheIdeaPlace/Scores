@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- A request that fails now says so on every screen, in a plain sentence: "ESPN isn't providing scores right now. Try again in a minute." It used to read as "No games found" or "No news", or read out the text of a network error.
+- A league's list still offers News, Standings and its other sections when only the scores failed. Enter on the failed row tries again, as does Refresh.
+- A refresh that fails keeps what's showing, and says so once if you asked for it. Refreshes on the timer in Live Scores stay quiet, unless a game you're monitoring is affected, and then only the first time.
+- In Live Scores, a league that fails keeps the games it last showed, with a row at the end naming it, and "Last updated" isn't changed by a refresh that got nothing.
+- iPhone: Live Scores and Live Soccer say a failed request failed, with Retry, instead of "No games scheduled today". A league that fails keeps its games, and a note under the list names it.
+- iPhone: failed requests use the same words as Windows, and a refresh that fails keeps News, Polls and Standings on the screen.
+
 ### In Progress
 - **Game Wrap Up Feature**: ESPN text processing and game story extraction (under construction)
   - Core infrastructure implemented, text processing being refined

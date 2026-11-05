@@ -170,7 +170,7 @@ final class FantasyCheatsheetViewModel: ObservableObject {
                 errorMessage = "No fantasy draft data is available yet for the \(season) season."
             }
         } catch {
-            errorMessage = "Could not load fantasy data: \(error.localizedDescription)"
+            errorMessage = APIError.unavailable("the draft board")
         }
     }
 
