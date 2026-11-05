@@ -162,15 +162,17 @@ struct StandingsTableView: View {
     // MARK: Column definitions
 
     private var basicHeaders: [String] {
-        isWildCard
+        if sport.isSoccer { return SoccerTableRow.headers }
+        return isWildCard
             ? ["Pos", "Team", "W", "L", "PCT", "WCGB", "Streak", "Status"]
             : (sport == .nhl ? ["Team", "W", "L", "OTL", "PTS", "Streak"]
                              : ["Team", "W", "L", "PCT", "GB", "Streak"])
     }
 
     private var expandedHeaders: [String] {
-        // The wild card columns are the whole story; there is no wider variant.
-        if isWildCard { return basicHeaders }
+        // The wild card columns are the whole story; there is no wider variant. A soccer table
+        // has one set too, the same as on Windows.
+        if isWildCard || sport.isSoccer { return basicHeaders }
         switch sport {
         case .mlb:  return ["Team", "W", "L", "PCT", "GB", "R", "RA", "Diff", "Home", "Road", "L10"]
         case .nfl:  return ["Team", "W", "L", "T", "PCT", "PF", "PA", "Diff", "Div", "Seed"]
@@ -182,12 +184,25 @@ struct StandingsTableView: View {
 
     private var activeHeaders: [String] { showExpanded ? expandedHeaders : basicHeaders }
 
-    /// Column holding the team name. Wild card rows lead with a position, so the
-    /// team sits at 1 there; everywhere else it is column 0. Drives both the
+    /// Column holding the team name. Wild card and soccer rows lead with a position,
+    /// so the team sits at 1 there; everywhere else it is column 0. Drives both the
     /// flexible-width column and the accessibility row header.
-    private var teamColumn: Int { isWildCard ? 1 : 0 }
+    private var teamColumn: Int { isWildCard || sport.isSoccer ? 1 : 0 }
+
+    /// A soccer table scrolls sideways, where a flexible column has no width to fill, so
+    /// each column has its own and the rows line up under the headings.
+    private func soccerColumnWidth(_ column: Int) -> CGFloat {
+        switch SoccerTableRow.headers[column] {
+        case "Team":   return 64
+        case "Status": return 300
+        default:       return 40
+        }
+    }
 
     private func rowData(for entry: StandingsEntry) -> [String] {
+        if let soccer = entry.soccer {
+            return soccer.cells(team: entry.team.abbreviation)
+        }
         let s = entry.stats
         if let wc = entry.wildCard, isWildCard {
             return [wc.position, entry.team.abbreviation,
@@ -245,8 +260,8 @@ struct StandingsTableView: View {
     /// according to the user's team name setting.
     private func accessibleRowData(for entry: StandingsEntry) -> [String] {
         var cols = rowData(for: entry)
-        // Wild card rows lead with the position, so the team name is column 1.
-        let nameColumn = (isWildCard && entry.wildCard != nil) ? 1 : 0
+        // Wild card and soccer rows lead with the position, so the team name is column 1.
+        let nameColumn = (isWildCard && entry.wildCard != nil) || entry.soccer != nil ? 1 : 0
         if cols.count > nameColumn {
             cols[nameColumn] = entry.team.voiceOverName(for: appSettings.teamNamePreference)
         }
@@ -256,6 +271,9 @@ struct StandingsTableView: View {
     /// Accessibility label for quick list mode: no field names, canonical order, preference-aware team name.
     private func quickListAccessibilityLabel(for entry: StandingsEntry) -> String {
         let teamName = entry.team.voiceOverName(for: appSettings.teamNamePreference)
+        if let soccer = entry.soccer {
+            return soccer.quickText(team: teamName)
+        }
         let s = entry.stats
         if let wc = entry.wildCard, isWildCard {
             let lead = wc.position == "-" ? "" : "\(wc.position). "
@@ -274,6 +292,9 @@ struct StandingsTableView: View {
     /// Accessibility label for full list mode: field names prefix each value, preference-aware team name.
     private func fullListAccessibilityLabel(for entry: StandingsEntry) -> String {
         let teamName = entry.team.voiceOverName(for: appSettings.teamNamePreference)
+        if let soccer = entry.soccer {
+            return soccer.fullText(team: teamName)
+        }
         let s = entry.stats
         if let wc = entry.wildCard, isWildCard {
             return "Position: \(wc.positionText); Team: \(teamName); Wins: \(s.wins); "
@@ -308,8 +329,9 @@ struct StandingsTableView: View {
                             case .table:
                                 // Wild card is 8 columns including a wordy Status,
                                 // so it needs the horizontal scroll that expanded
-                                // mode gets — it does not fit a phone otherwise.
-                                if showExpanded || isWildCard {
+                                // mode gets — it does not fit a phone otherwise. Nor
+                                // does a soccer table's 11.
+                                if showExpanded || isWildCard || sport.isSoccer {
                                     ScrollView(.horizontal, showsIndicators: true) {
                                         standingsTableSection(for: group)
                                     }
@@ -336,9 +358,9 @@ struct StandingsTableView: View {
         }
         .toolbar {
             ToolbarItemGroup(placement: .navigationBarTrailing) {
-                // Wild card has one column set, so Expand would announce a
-                // state change and do nothing.
-                if viewMode == .table && !isWildCard {
+                // Wild card and soccer have one column set, so Expand would
+                // announce a state change and do nothing.
+                if viewMode == .table && !isWildCard && !sport.isSoccer {
                     Button {
                         withAnimation { showExpanded.toggle() }
                     } label: {
@@ -360,7 +382,11 @@ struct StandingsTableView: View {
             // Header row — derived from activeHeaders
             HStack(spacing: 0) {
                 ForEach(Array(activeHeaders.enumerated()), id: \.offset) { idx, col in
-                    if idx == teamColumn {
+                    if sport.isSoccer {
+                        Text(col)
+                            .font(.caption.bold())
+                            .frame(width: soccerColumnWidth(idx))
+                    } else if idx == teamColumn {
                         Text(col)
                             .font(.caption.bold())
                             .frame(maxWidth: .infinity, alignment: .leading)
@@ -381,14 +407,23 @@ struct StandingsTableView: View {
                 let cols = rowData(for: entry)
                 NavigationLink(destination: TeamScheduleView(team: scheduleTeam(from: entry.team), sport: sport)) {
                     HStack(spacing: 0) {
-                        Text(cols[0])   // Team abbreviation — flexible
-                            .font(.subheadline.bold())
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .padding(.horizontal, 8)
-                        ForEach(Array(cols.dropFirst().enumerated()), id: \.offset) { _, value in
-                            Text(value)
-                                .font(.caption.monospacedDigit())
-                                .frame(width: 44)
+                        if sport.isSoccer {
+                            ForEach(Array(cols.enumerated()), id: \.offset) { column, value in
+                                Text(value)
+                                    .font(.caption.monospacedDigit())
+                                    .lineLimit(1)
+                                    .frame(width: soccerColumnWidth(column))
+                            }
+                        } else {
+                            Text(cols[0])   // Team abbreviation — flexible
+                                .font(.subheadline.bold())
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                                .padding(.horizontal, 8)
+                            ForEach(Array(cols.dropFirst().enumerated()), id: \.offset) { _, value in
+                                Text(value)
+                                    .font(.caption.monospacedDigit())
+                                    .frame(width: 44)
+                            }
                         }
                     }
                     .padding(.vertical, 7)
@@ -422,7 +457,8 @@ struct StandingsTableView: View {
         VStack(alignment: .leading, spacing: 4) {
             ForEach(group.entries) { entry in
                 NavigationLink(destination: TeamScheduleView(team: scheduleTeam(from: entry.team), sport: sport)) {
-                    Text(sport == .nhl ? entry.nhlQuickListText : entry.quickListText)
+                    Text(entry.soccer?.quickText(team: entry.team.abbreviation)
+                         ?? (sport == .nhl ? entry.nhlQuickListText : entry.quickListText))
                         .font(.subheadline)
                         .padding(.horizontal, 16)
                         .padding(.vertical, 6)
@@ -445,7 +481,8 @@ struct StandingsTableView: View {
                     VStack(alignment: .leading, spacing: 4) {
                         Text(entry.team.displayName)
                             .font(.headline)
-                        Text(sport == .nhl ? entry.nhlFullListText : entry.fullListText)
+                        Text(entry.soccer?.fullText(team: entry.team.displayName)
+                             ?? (sport == .nhl ? entry.nhlFullListText : entry.fullListText))
                             .font(.caption)
                             .foregroundColor(.secondary)
                     }

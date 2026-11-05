@@ -13,6 +13,42 @@ struct StandingsGroup: Identifiable {
     let entries: [StandingsEntry]
 }
 
+/// A team's row in a soccer table, as Windows has it: soccer.py, and
+/// tests/fixtures/soccer_grid.json holds both. A record is wins, draws, losses, and points rank
+/// the table, so baseball's percentage and games back would say nothing.
+struct SoccerTableRow {
+    static let headers = ["Pos", "Team", "GP", "W", "D", "L", "GF", "GA", "GD", "Pts", "Status"]
+    /// A blank cell would be silent in VoiceOver.
+    static let noStatus = "N/A"
+
+    /// Where ESPN puts this team, with its tiebreakers. If there's no rank, its place in the answer.
+    let position: Int
+    let gamesPlayed: Int
+    let wins: Int
+    let draws: Int
+    let losses: Int
+    let goalsFor: Int
+    let goalsAgainst: Int
+    let goalDifference: String
+    let points: Int
+    let status: String
+
+    func cells(team: String) -> [String] {
+        [String(position), team, String(gamesPlayed), String(wins), String(draws), String(losses),
+         String(goalsFor), String(goalsAgainst), goalDifference, String(points), status]
+    }
+
+    /// The values alone, as Windows's Quick List has them.
+    func quickText(team: String) -> String {
+        cells(team: team).joined(separator: ", ")
+    }
+
+    /// Each value with its heading, as Windows's Full List has them.
+    func fullText(team: String) -> String {
+        zip(Self.headers, cells(team: team)).map { "\($0): \($1)" }.joined(separator: "; ")
+    }
+}
+
 /// A team's place in the wild card picture.
 ///
 /// `nil` on ordinary division standings. The playoff cut line lives in `status`
@@ -46,6 +82,8 @@ struct StandingsEntry: Identifiable {
     var stats: StandingsStats
     /// Set only on wild card standings; nil for division/conference groups.
     var wildCard: WildCardStanding? = nil
+    /// Set only on a soccer league's table, whose columns are its own.
+    var soccer: SoccerTableRow? = nil
     
     struct TeamInfo {
         let id: String
@@ -219,6 +257,45 @@ extension StandingsGroup {
         self.name = apiResponse.name
         self.entries = apiResponse.standings.entries.map { StandingsEntry(fromAPIEntry: $0) }
     }
+
+    /// A soccer league's table, in the order of ESPN's rank. The answer's own order won't do: in
+    /// MLS and a cup's groups, it reads 4th, 8th, 3rd. On Windows: parse_soccer_standings.
+    init(soccerTable group: APIStandingsGroup) {
+        self.name = group.name
+        self.entries = group.standings.entries.enumerated().map { index, apiEntry -> StandingsEntry in
+            var entry = StandingsEntry(fromAPIEntry: apiEntry)
+            entry.soccer = SoccerTableRow(fromAPIEntry: apiEntry, place: index + 1)
+            return entry
+        }
+        .sorted { ($0.soccer?.position ?? 0) < ($1.soccer?.position ?? 0) }
+    }
+}
+
+extension SoccerTableRow {
+    init(fromAPIEntry entry: APIStandingsGroup.APIStandings.APIStandingsEntry, place: Int) {
+        func stat(_ name: String) -> APIStandingsGroup.APIStandings.APIStandingsEntry.APIStat? {
+            entry.stats.first { $0.name == name }
+        }
+        // ESPN can send a null, which reads as 0 here, so its text gets a say.
+        func number(_ name: String) -> Int {
+            guard let stat = stat(name) else { return 0 }
+            return stat.value != 0 ? Int(stat.value) : Int(stat.displayValue) ?? 0
+        }
+        let difference = number("pointDifferential")
+        let differenceText = stat("pointDifferential")?.displayValue ?? ""
+        let rank = number("rank")
+        self.position = rank != 0 ? rank : place
+        self.gamesPlayed = number("gamesPlayed")
+        self.wins = number("wins")
+        self.draws = number("ties")
+        self.losses = number("losses")
+        self.goalsFor = number("pointsFor")
+        self.goalsAgainst = number("pointsAgainst")
+        self.goalDifference = differenceText.isEmpty ? (difference > 0 ? "+\(difference)" : String(difference)) : differenceText
+        self.points = number("points")
+        let note = entry.note?.description ?? ""
+        self.status = note.isEmpty ? Self.noStatus : note
+    }
 }
 
 /// One node of ESPN's standings tree. Leagues nest differently: a node can hold
@@ -256,6 +333,12 @@ struct APIStandingsGroup: Codable {
         struct APIStandingsEntry: Codable {
             let team: APITeam
             let stats: [APIStat]
+            /// Where a place in a soccer table leads, such as "Champions League".
+            let note: APINote?
+
+            struct APINote: Codable {
+                let description: String?
+            }
             
             struct APITeam: Codable {
                 let id: String

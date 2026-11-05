@@ -8,6 +8,9 @@ and the CONCACAF Champions Cup is all knockout and has no groups at all.
 
 Leaders come from the core API, as on the iPhone: its entries are references, so a name takes a
 request. espn_api makes those. What's here is which lists to show and how their numbers read.
+
+The iPhone's twins are SoccerTableRow in Standings.swift and coreLeaderLists in ESPNAPIService.swift.
+tests/fixtures/soccer_grid.json holds both apps to the same rows and lists.
 """
 from game_labels import leader_display_value
 
@@ -155,10 +158,9 @@ def core_leader_lists(data):
     """A core API leaders answer as the lists to show, with references where the names go:
     [{"title", "leaders": [{"athlete", "team", "value"}]}], in ESPN's order.
 
-    As on the iPhone, a list where everyone is on nothing isn't a list of leaders. Unlike it, a list
-    that repeats an earlier one is left out: goalsLeaders and goals are both called Goals, with the
-    same players in the same order, and reading the same once their text is a number. A list that
-    differs in any row stays."""
+    A list where everyone is on nothing isn't a list of leaders. A list that repeats an earlier one
+    is left out: goalsLeaders and goals are both called Goals, with the same players in the same
+    order, and reading the same once their text is a number. A list that differs in any row stays."""
     lists = []
     for category in _dicts(_as_dict(data).get("categories")):
         key = category.get("name") or "unknown"

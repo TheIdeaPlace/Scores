@@ -67,7 +67,7 @@ from windows_notifications import announce, set_notifier_window
 from accessible_table import AccessibleTable, StandingsTable, WildCardTable, LeadersTable, RankingsTable, BoxscoreTable, InjuryTable, ListPages, is_tab_bar, keep_in_tab_order, make_tab_area, ButtonKeys
 from tab_keys import group_noun
 from box_score import build_box_tables
-from soccer import SOCCER_LEAGUES, no_table_message, soccer_teams_table
+from soccer import SOCCER_LEAGUES, TEAM_NAME_ONLY_HEADERS, no_table_message, soccer_teams_table
 from team_stats import RANKING_HEADERS, ranking_rows, team_stat_lists
 from game_labels import scoreboard_today, basketball_period_label, football_period_label, football_period_sort_key, game_standings_tables, schedule_row_text, schedule_start_row
 
@@ -8002,10 +8002,9 @@ class StandingsLoader(QThread):
     def run(self):
         try:
             standings_data = ApiService.get_standings(self.league)
-            if standings_data:
+            # A competition with no table is an honest answer, which its dialog says.
+            if standings_data or self.league in SOCCER_LEAGUES:
                 self.data_loaded.emit(standings_data)
-            elif self.league in SOCCER_LEAGUES:
-                self.error_occurred.emit(no_table_message(self.league))
             else:
                 self.error_occurred.emit(f"No standings data available for {self.league}")
         except Exception as e:
@@ -8145,8 +8144,8 @@ class TeamHubDialog(QDialog):
         rec_text = ""
         if self.league in SOCCER_LEAGUES:
             # Wins, draws, losses, as a soccer record reads everywhere else. A team with no
-            # losses yet still has one, and a cup's team list has none to show.
-            if self.team_data.get('record'):
+            # losses yet still has one. A cup's team list has none, and a game can say N/A.
+            if self.team_data.get('record') not in (None, "", "N/A"):
                 rec_text = f"({self.team_data['record']})"
         elif wins and losses:
             if self.league == "NFL" and ties and int(ties) > 0:
@@ -8803,16 +8802,28 @@ class StandingsDialog(WildCardTabsMixin, QDialog):
         self.single_table: StandingsTable | None = None
         self.expanded_view = False
         self.division_tables: List[StandingsTable] = []
+        self.message_row: QListWidget | None = None
         self.setup_ui()
-        _focus_once_active(self, lambda: _focus_first_table(self))
-    
+        _focus_once_active(self, self._focus_content)
+
+    def _focus_content(self):
+        if self.message_row is not None:
+            self.message_row.setFocus()
+        else:
+            _focus_first_table(self)
+
     def setup_ui(self):
         layout = QVBoxLayout()
-        
+
         # Always use expanded view (no user toggle to prevent issues)
         self.expanded_view = True
-        
-        if not self.standings_data.teams:
+
+        if not self.standings_data.teams and self.league in SOCCER_LEAGUES:
+            # A row that takes focus and reads as what it is: an answer, not an alarm.
+            self.message_row = _message_row(no_table_message(self.league), f"{self.league} Standings")
+            layout.addWidget(self.message_row)
+            self.message_row.setFocus()
+        elif not self.standings_data.teams:
             layout.addWidget(QLabel(f"No standings data available for {self.league}."))
         else:
             has_divisions = len(self.standings_data.divisions) > 1 or any(
@@ -11631,14 +11642,17 @@ class SimpleTeamsDialog(QDialog):
             self.create_division_tab(div_name, divisions[div_name])
 
         layout.addWidget(self.tab_widget)
-        
-        # Close button
+
+        # Close button. Not the dialog's default: a table passes Enter on after activating a row,
+        # and the dialog would then press it, so opening a team would close this behind it.
         close_btn = QPushButton("Close")
+        close_btn.setAutoDefault(False)
         close_btn.clicked.connect(self.accept)
         layout.addWidget(close_btn)
-        
+        self.close_button = close_btn
+
         self.setLayout(layout)
-        
+
         # Set focus on first tab
         if self.tab_widget.count() > 0:
             first_widget = self.tab_widget.widget(0)
@@ -11659,7 +11673,7 @@ class SimpleTeamsDialog(QDialog):
         )
 
         if self.league in SOCCER_LEAGUES:
-            self._fill_soccer_teams(teams_table, teams)
+            self._fill_soccer_teams(teams_table, teams, division_name)
             layout.addWidget(teams_table)
             widget.setLayout(layout)
             widget.teams_table = teams_table
@@ -11746,22 +11760,22 @@ class SimpleTeamsDialog(QDialog):
         
         self.tab_widget.addTab(widget, division_name)
     
-    def _fill_soccer_teams(self, teams_table, teams):
+    def _fill_soccer_teams(self, teams_table, teams, division_name):
         """Draws and points rather than a win percentage, which leaves the draws out. Enter opens
-        a team, as it does for every league."""
+        the team from any cell of its row, and each cell says whose row it's on. A cup's team list
+        has only names, and its one group has no name worth saying."""
         headers, ordered, rows = soccer_teams_table(teams)
-        teams_table.setColumnCount(len(headers))
-        teams_table.setHorizontalHeaderLabels(headers)
-        teams_table.setRowCount(len(rows))
-        for row, (team, cells) in enumerate(zip(ordered, rows)):
-            for column, text in enumerate(cells):
-                teams_table.setItem(row, column, QTableWidgetItem(text))
-            teams_table.item(row, 0).setData(Qt.ItemDataRole.UserRole, team)
-        header = teams_table.horizontalHeader()
-        header.setSectionResizeMode(QHeaderView.ResizeMode.ResizeToContents)
-        header.setSectionResizeMode(0, QHeaderView.ResizeMode.Stretch)
-        if rows:
-            teams_table.setCurrentCell(0, 0)
+        if headers == TEAM_NAME_ONLY_HEADERS:
+            teams_table.update_accessible_name(f"{self.league} Teams")
+            teams_table.update_accessible_description(f"Teams in {self.league}. Press Enter on one to open it")
+        else:
+            teams_table.update_accessible_description(
+                f"Teams in {division_name} with games played, wins, draws, losses and points. Press Enter on one to open it")
+        teams_table.setup_columns(headers, stretch_column=0)
+        teams_table.populate_data(rows, set_focus=False)
+        for row, team in enumerate(ordered):
+            for column in range(len(headers)):
+                teams_table.item(row, column).setData(Qt.ItemDataRole.UserRole, team)
         teams_table.itemActivated.connect(self.on_team_selected)
 
     def on_team_selected(self, item):

@@ -69,6 +69,8 @@ struct StandingsView: View {
                     .foregroundColor(.secondary)
                 Text(viewModel.mode == .wildCard
                      ? "No wild card standings available"
+                     : sport.isSoccer
+                     ? "ESPN has no league table for \(sport.displayName) right now. A knockout competition doesn't have one."
                      : "No standings available")
                     .font(.headline)
                     .foregroundColor(.secondary)

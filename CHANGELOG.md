@@ -14,8 +14,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   Europa League show their league phase. The CONCACAF Champions Cup is all knockout, so its Standings say
   it has no table, and its Teams still lists the teams.
 - **Soccer leaders on Windows, from the same place as the iPhone.** Goals, assists, shots, cards, fouls,
-  passes and saves, up to 20 players each, and they say which season they're from. Goals and Assists come
-  once here, where the iPhone lists each twice with the same players.
+  passes and saves, up to 20 players each, and they say which season they're from.
+
+### Changed
+- **Soccer on iPhone shows what Windows shows.** Standings read position, games played, wins, draws,
+  losses, goals, goal difference, points and where a place leads, in all three views, rather than
+  baseball's win percentage and games back, with no draws or points. MLS is in rank order. A competition
+  with no table says so.
+- **Soccer leaders on iPhone match too.** Goals and Assists are listed once rather than twice. Players
+  level on a number share a rank. View All has up to 20 players, not 50, and the list says which season
+  it's from.
 ### Fixed
 - **College basketball fouls read and sound where they happened, on Windows and iPhone.** A foul under
   the basket read "deep, 78 feet out", with a far away note on the wrong side, because ESPN's college

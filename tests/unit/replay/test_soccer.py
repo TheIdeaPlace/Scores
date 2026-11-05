@@ -1,6 +1,8 @@
 """Soccer's Standings, Statistics and Teams on Windows, on ESPN's real answers: a league with one
 table, MLS's conferences, a cup's league phase or groups, and a cup with no table at all."""
 import copy
+import json
+from pathlib import Path
 import re
 
 import pytest
@@ -396,11 +398,73 @@ class TestLeaders:
         assert len(references) + len(teams) > stopped_at, "the fixture should have enough references to show it"
         assert len(asked) <= stopped_at
 
+    def test_a_network_that_stalls_after_some_names_fails_rather_than_a_screen_of_blanks(self, leaders):
+        answered = []
+
+        def first_then_nothing(url):
+            if not answered:
+                answered.append(url)
+                return athlete(url)
+            return requests.ConnectionError("reset")
+
+        leaders.on(r"/athletes/\d+", first_then_nothing)
+        with pytest.raises(ApiError, match="ESPN isn't providing these right now"):
+            espn_api.get_player_statistics("EPL")
+
+    def test_no_new_name_coming_fails_even_with_some_known_already(self, leaders):
+        known = next(iter(soccer.core_leader_lists(load("leaders_core_EPL.json"))))["leaders"][0]["athlete"]
+        espn_api._CORE_REF_CACHE[known] = "Erling Haaland"
+        leaders.on(r"/athletes/\d+", HTTP_500)
+        with pytest.raises(ApiError, match="ESPN isn't providing these right now"):
+            espn_api.get_player_statistics("EPL")
+
+    def test_every_name_known_already_needs_no_new_one(self, leaders):
+        espn_api.get_player_statistics("EPL")
+        leaders.on(r"/athletes/\d+", HTTP_500)
+        assert espn_api.get_player_statistics("EPL")["player_stats"]
+
     def test_a_name_comes_from_whatever_the_page_has(self):
         assert espn_api._athlete_name({"fullName": "A B"}) == "A B"
         assert espn_api._athlete_name({"shortName": "A. B"}) == "A. B"
         assert espn_api._athlete_name({}) is None
         assert espn_api._team_abbreviation({"displayName": "Arsenal"}) == "Arsenal"
+
+
+GRID = json.loads((Path(__file__).parents[2] / "fixtures" / "soccer_grid.json").read_text(encoding="utf-8"))
+
+
+class TestSharedGrid:
+    """SoccerGridTests in LeagueLeadersTests.swift holds the iPhone to the same file."""
+
+    def test_it_has_the_cases_that_matter(self):
+        assert {case["fixture"] for case in GRID["tables"]} >= {
+            "standings_EPL.json", "standings_MLS.json", "standings_UCL.json", "standings_UCL_2023.json",
+            "standings_LigaMX.json", "standings_CONCACAF.json"}
+        assert GRID["headers"] == soccer.SOCCER_TABLE_HEADERS
+        rows = [row for case in GRID["leaders"] for category in case["lists"] for row in category["rows"]]
+        assert any(row["rank"] == 2 and other["rank"] == 2 and row is not other for row in rows for other in rows), \
+            "it should show a tie"
+
+    @pytest.mark.parametrize("case", GRID["tables"], ids=lambda case: case["fixture"])
+    def test_every_table_reads_as_the_grid_says(self, case):
+        divisions = StandingsData(soccer.parse_soccer_standings(load(case["fixture"]))).divisions
+        groups = [{"name": name, "rows": [soccer.soccer_table_cells(i + 1, team) for i, team in enumerate(teams)]}
+                  for name, teams in divisions.items()]
+        assert groups == case["groups"]
+
+    @pytest.mark.parametrize("case", GRID["leaders"], ids=lambda case: case["fixture"])
+    def test_every_list_of_leaders_reads_as_the_grid_says(self, espn, case):
+        espn.on("/season$", load("season_EPL.json"))
+        espn.on("/types/1/leaders", load(case["fixture"]))
+        espn.on(r"/athletes/\d+", lambda url: {"displayName": "Athlete " + re.search(r"/athletes/(\d+)", url).group(1)})
+        espn.on(r"/seasons/\d+/teams/\d+", lambda url: {"abbreviation": re.search(r"/teams/(\d+)", url).group(1)})
+        answer = espn_api.get_player_statistics("EPL")
+        assert answer["season"] == case["season"]
+        lists = [{"title": category["category"],
+                  "rows": [dict(zip(("rank", "player", "team", "value"), row))
+                           for row in ranking_rows("player", category["stats"])]}
+                 for category in answer["player_stats"]]
+        assert lists == case["lists"]
 
 
 def test_a_reference_that_is_not_text_is_no_reference():

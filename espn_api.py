@@ -2740,13 +2740,13 @@ class _CoreRefReader:
         with self._lock:
             self._failures_in_a_row = 0
 
-    def _has_stalled(self):
+    def has_stalled(self):
         with self._lock:
             return self._failures_in_a_row >= CORE_REF_FAILURES_BEFORE_GIVING_UP
 
     def _read_one(self, reference):
         for attempt in range(2):
-            if self._has_stalled():
+            if self.has_stalled():
                 return None
             if attempt:
                 time.sleep(0.3)
@@ -2830,8 +2830,8 @@ def _athlete_name(athlete):
 
 def _core_player_statistics(league_path):
     """A soccer league's leaders, in the shape get_player_statistics returns. A row whose name
-    couldn't be had says so and keeps its place, but a list of nothing but those says ESPN isn't
-    answering, so it fails rather than showing a screen of them."""
+    couldn't be had says so and keeps its place. But a network that stalled partway, or no new name
+    coming at all, means ESPN isn't answering, so it fails rather than showing a screen of those."""
     season = core_season(league_path)
     for year in range(season["year"], season["year"] - CORE_LEADER_SEASONS, -1):
         lists = core_leader_lists(_fetch_core_leaders(league_path, year))
@@ -2841,10 +2841,13 @@ def _core_player_statistics(league_path):
         return _no_leaders()
 
     leaders =[leader for category in lists for leader in category["leaders"]]
+    athletes = {leader["athlete"] for leader in leaders} - {""}
+    already_known = athletes & _CORE_REF_CACHE.keys()
     with _CoreRefReader() as reader:
         teams = reader.read({leader["team"] for leader in leaders}, _team_abbreviation)
-        names = reader.read({leader["athlete"] for leader in leaders}, _athlete_name)
-    if not names:
+        names = reader.read(athletes, _athlete_name)
+        stalled = reader.has_stalled()
+    if stalled or not names or (athletes - already_known and names.keys() <= already_known):
         raise ApiError(STATISTICS_UNAVAILABLE)
     categories = [{
         "category": category["title"],
