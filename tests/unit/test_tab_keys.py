@@ -198,6 +198,7 @@ class TestGroupNoun:
         (["AFC East", "NFC West"], "Divisions"),
         (["AL East", "NL West"], "Divisions"),
         (["Eastern Conference Atlantic", "Western Conference Pacific"], "Divisions"),
+        (["Group A", "Group B"], "Groups"),
         ([], "Divisions"),
     ])
     def test_the_names_say_which_it_is(self, names, noun):

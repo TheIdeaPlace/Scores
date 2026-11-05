@@ -34,9 +34,12 @@ def group_noun(names: List[str]) -> str:
 
     ESPN's names say so: "Big Ten Conference" and "Eastern Conference" are, and the NBA's
     "Eastern Conference Atlantic" is a division inside one. Some conferences don't say, such as
-    Patriot League and Hockey East, but a league has at least one that does.
+    Patriot League and Hockey East, but a league has at least one that does. A soccer competition's
+    are "Group A" and so on.
     """
-    return "Conferences" if any(name.endswith("Conference") for name in names) else "Divisions"
+    if any(name.endswith("Conference") for name in names):
+        return "Conferences"
+    return "Groups" if any(name.startswith("Group ") for name in names) else "Divisions"
 
 
 def tab_label(text: str) -> str:

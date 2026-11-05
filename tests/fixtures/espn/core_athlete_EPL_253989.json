@@ -1,0 +1,272 @@
+{
+"$ref": "http://sports.core.api.espn.com/v2/sports/soccer/leagues/eng.1/seasons/2026/athletes/253989?lang=en&region=us",
+"id": "253989",
+"uid": "s:600~a:253989",
+"type": "soccer",
+"guid": "63b48f6c-a73d-78e7-71b9-21edae6b0e31",
+"firstName": "Erling",
+"middleName": "",
+"lastName": "Haaland",
+"fullName": "Erling Haaland",
+"displayName": "Erling Haaland",
+"shortName": "E. Haaland",
+"weight": 205.0,
+"displayWeight": "205 lbs",
+"height": 77.0,
+"displayHeight": "6' 5\"",
+"age": 26,
+"dateOfBirth": "2000-07-21T07:00Z",
+"gender": "MALE",
+"links": [
+{
+"language": "en-US",
+"rel": [
+"playercard",
+"desktop",
+"athlete"
+],
+"href": "https://www.espn.com/soccer/player/_/id/253989/erling-haaland",
+"text": "Player Card",
+"shortText": "Player Card",
+"isExternal": false,
+"isPremium": false
+},
+{
+"language": "en-US",
+"rel": [
+"stats",
+"desktop",
+"athlete"
+],
+"href": "https://www.espn.com/soccer/player/stats/_/id/253989/erling-haaland",
+"text": "Stats",
+"shortText": "Stats",
+"isExternal": false,
+"isPremium": false
+},
+{
+"language": "en-US",
+"rel": [
+"stats",
+"sportscenter",
+"app",
+"athlete"
+],
+"href": "sportscenter://x-callback-url/showClubhouse?uid=s:600~a:253989&section=stats",
+"text": "Stats",
+"shortText": "Stats",
+"isExternal": false,
+"isPremium": false
+},
+{
+"language": "en-US",
+"rel": [
+"splits",
+"desktop",
+"athlete"
+],
+"href": "https://www.espn.com/soccer/player/splits/_/id/253989/erling-haaland",
+"text": "Splits",
+"shortText": "Splits",
+"isExternal": false,
+"isPremium": false
+},
+{
+"language": "en-US",
+"rel": [
+"gamelog",
+"desktop",
+"athlete"
+],
+"href": "https://www.espn.com/soccer/player/matches/_/id/253989/erling-haaland",
+"text": "Matches",
+"shortText": "Matches",
+"isExternal": false,
+"isPremium": false
+},
+{
+"language": "en-US",
+"rel": [
+"gamelog",
+"sportscenter",
+"app",
+"athlete"
+],
+"href": "sportscenter://x-callback-url/showClubhouse?uid=s:600~a:253989&section=gamelog",
+"text": "Matches",
+"shortText": "Matches",
+"isExternal": false,
+"isPremium": false
+},
+{
+"language": "en-US",
+"rel": [
+"news",
+"desktop",
+"athlete"
+],
+"href": "https://www.espn.com/soccer/player/news/_/id/253989/erling-haaland",
+"text": "News",
+"shortText": "News",
+"isExternal": false,
+"isPremium": false
+},
+{
+"language": "en-US",
+"rel": [
+"news",
+"sportscenter",
+"app",
+"athlete"
+],
+"href": "sportscenter://x-callback-url/showClubhouse?uid=s:600~a:253989&section=news",
+"text": "News",
+"shortText": "News",
+"isExternal": false,
+"isPremium": false
+},
+{
+"language": "en-US",
+"rel": [
+"bio",
+"desktop",
+"athlete"
+],
+"href": "https://www.espn.com/soccer/player/bio/_/id/253989/erling-haaland",
+"text": "Bio",
+"shortText": "Bio",
+"isExternal": false,
+"isPremium": false
+},
+{
+"language": "en-US",
+"rel": [
+"bio",
+"sportscenter",
+"app",
+"athlete"
+],
+"href": "sportscenter://x-callback-url/showClubhouse?uid=s:600~a:253989&section=bio",
+"text": "Bio",
+"shortText": "Bio",
+"isExternal": false,
+"isPremium": false
+},
+{
+"language": "en-US",
+"rel": [
+"overview",
+"desktop",
+"athlete"
+],
+"href": "https://www.espn.com/soccer/player/_/id/253989/erling-haaland",
+"text": "Overview",
+"shortText": "Overview",
+"isExternal": false,
+"isPremium": false
+},
+{
+"language": "en-US",
+"rel": [
+"overview",
+"sportscenter",
+"app",
+"athlete"
+],
+"href": "sportscenter://x-callback-url/showClubhouse?uid=s:600~a:253989",
+"text": "Overview",
+"shortText": "Overview",
+"isExternal": false,
+"isPremium": false
+},
+{
+"language": "en-US",
+"rel": [
+"transfers",
+"desktop",
+"athlete"
+],
+"href": "https://www.espn.com/soccer/player/transfers/_/id/253989/erling-haaland",
+"text": "Transfers",
+"shortText": "Transfers",
+"isExternal": false,
+"isPremium": false
+},
+{
+"language": "en-US",
+"rel": [
+"transfers",
+"mobile",
+"athlete"
+],
+"href": "https://www.espn.com/soccer/player/transfers/_/id/253989/erling-haaland",
+"text": "Transfers",
+"shortText": "Transfers",
+"isExternal": false,
+"isPremium": false
+}
+],
+"birthPlace": {},
+"citizenship": "Norway",
+"citizenshipCountry": {
+"alternateId": "11",
+"abbreviation": "NOR"
+},
+"slug": "erling-haaland",
+"jersey": "9",
+"flag": {
+"href": "https://a.espncdn.com/i/teamlogos/countries/500/nor.png",
+"alt": "Norway",
+"rel": [
+"country-flag"
+]
+},
+"position": {
+"$ref": "http://sports.core.api.espn.com/v2/sports/soccer/leagues/eng.1/positions/19?lang=en&region=us",
+"id": "19",
+"name": "Forward",
+"displayName": "Forward",
+"abbreviation": "F",
+"leaf": false
+},
+"injuries": [],
+"linked": true,
+"team": {
+"$ref": "http://sports.core.api.espn.com/v2/sports/soccer/leagues/eng.1/seasons/2026/teams/382?lang=en&region=us"
+},
+"statistics": {
+"$ref": "http://sports.core.api.espn.com/v2/sports/soccer/leagues/eng.1/seasons/2026/types/1/athletes/253989/statistics?lang=en&region=us"
+},
+"notes": {
+"$ref": "http://sports.core.api.espn.com/v2/sports/soccer/leagues/eng.1/seasons/2026/athletes/253989/notes?lang=en&region=us"
+},
+"active": true,
+"eventLog": {
+"$ref": "http://sports.core.api.espn.com/v2/sports/soccer/leagues/eng.1/seasons/2026/athletes/253989/eventlog?lang=en&region=us"
+},
+"status": {
+"id": "1",
+"name": "Active",
+"type": "active",
+"abbreviation": "Active"
+},
+"seasons": {
+"$ref": "http://sports.core.api.espn.com/v2/sports/soccer/leagues/eng.1/athletes/253989/seasons?lang=en&region=us"
+},
+"leagues": {
+"$ref": "http://sports.core.api.espn.com/v2/sports/soccer/athletes/253989/leagues?lang=en&region=us"
+},
+"transactions": {
+"$ref": "http://sports.core.api.espn.com/v2/sports/soccer/athletes/253989/transactions?lang=en&region=us"
+},
+"defaultLeague": {
+"$ref": "http://sports.core.api.espn.com/v2/sports/soccer/leagues/eng.1?lang=en&region=us"
+},
+"events": {
+"$ref": "http://sports.core.api.espn.com/v2/sports/soccer/athletes/253989/events?lang=en&region=us"
+},
+"profiled": false,
+"defaultTeam": {
+"$ref": "http://sports.core.api.espn.com/v2/sports/soccer/teams/382?lang=en&region=us"
+}
+}

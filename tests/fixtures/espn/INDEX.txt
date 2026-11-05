@@ -130,3 +130,17 @@ team_NCAAH_130.json	10 KB	Michigan, plain answer: no record and no standing, as 
 team_NCAAH_130_regular.json	11 KB	Michigan season=2027&seasontype=2: 8-1, standingSummary a bare 1st, nextEvent in January
 summary_leaders_NBA_401909906.json	3 KB	game summary's leaders block only, athletes cut to names: 2 teams, one leader per category, displayValue a plain number
 summary_leaders_NFL_401873035.json	5 KB	game summary's leaders block only, athletes cut to names: displayValue a stat line such as 16/29, 217 YDS, 1 TD
+standings_EPL.json	15 KB	one group named for the season, 4 of 20 teams: note says Champions League or Relegation, overall is wins, draws, losses; seasons cut to 2
+standings_MLS.json	29 KB	Eastern and Western conferences, 3 of 15 each: not in rank order, 4th then 8th; root season says 2027, the groups' seasonDisplayName says 2026 MLS
+standings_UCL.json	17 KB	League Phase, 4 of 36 teams: round of 16, knockout playoff and Eliminated
+standings_UCL_2023.json	62 KB	season=2023: Group A to Group H, 2 of 4 teams each, the shape a cup had before the league phase; not in rank order in most groups
+standings_LigaMX.json	16 KB	2026 Torneo Apertura, 3 of 18: no notes at all
+standings_CONCACAF.json	1 KB	knockout only: 200 with no children and no entries, so no table
+teams_CONCACAF.json	4 KB	team list, trimmed to 3 of 27: the only way to its teams, with no table
+leaders_core_EPL.json	20 KB	core seasons/2026/types/1/leaders limit=3, whole: 12 categories, goalsLeaders and goals both called Goals with the same players, the former's text Matches: 9, Goals: 9
+leaders_core_UEL_2024.json	2 KB	core seasons/2024/types/1/leaders limit=2, 2 categories: accurate passes all 0, nobody counted, and goals
+core_athlete_EPL_253989.json	5 KB	core athlete reference from leaders_core_EPL: Erling Haaland
+core_team_EPL_382.json	5 KB	core team reference from leaders_core_EPL: Manchester City, MNC
+season_EPL.json	2 KB	core /season: year 2026, displayName 2026-27 English Premier League, type.type a long id
+season_EPL_2025.json	2 KB	core seasons/2025: displayName 2025-26 English Premier League, for last season's label
+season_NWSL.json	4 KB	core /season in its playoffs: year 2026, type.id 2, and its leaders stay under type 1

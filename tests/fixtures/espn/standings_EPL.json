@@ -1,0 +1,831 @@
+{
+"uid": "s:600~l:700",
+"id": "23",
+"name": "English Premier League",
+"abbreviation": "Premier League",
+"children": [
+{
+"uid": "s:600~l:700~g:1",
+"id": "1",
+"name": "2026-27 English Premier League",
+"abbreviation": "2026-2027",
+"standings": {
+"id": "0",
+"name": "overall",
+"displayName": "Standings",
+"links": [
+{
+"language": "en-US",
+"rel": [
+"standings",
+"desktop"
+],
+"href": "https://www.espn.com/soccer/table/_/league/eng.1",
+"text": "Full Table",
+"shortText": "Standings",
+"isExternal": false,
+"isPremium": false
+}
+],
+"season": 2026,
+"seasonType": 1,
+"seasonDisplayName": "2026-27 English Premier League",
+"entries": [
+{
+"team": {
+"id": "359",
+"uid": "s:600~t:359",
+"location": "Arsenal",
+"name": "Arsenal",
+"abbreviation": "ARS",
+"displayName": "Arsenal",
+"shortDisplayName": "Arsenal",
+"isActive": true,
+"logos": [
+{
+"href": "https://a.espncdn.com/i/teamlogos/soccer/500/359.png",
+"width": 500,
+"height": 500,
+"alt": "",
+"rel": [
+"full",
+"default"
+],
+"lastUpdated": "2019-05-08T16:07Z"
+}
+],
+"links": [
+{
+"language": "en-US",
+"rel": [
+"clubhouse",
+"desktop",
+"team"
+],
+"href": "https://www.espn.com/soccer/club/_/id/359/arsenal",
+"text": "Clubhouse",
+"shortText": "Clubhouse",
+"isExternal": false,
+"isPremium": false
+}
+],
+"isNational": false
+},
+"note": {
+"color": "#81D6AC",
+"description": "Champions League",
+"rank": 1
+},
+"stats": [
+{
+"name": "gamesPlayed",
+"displayName": "Games Played",
+"shortDisplayName": "GP",
+"description": "Number of Games Played",
+"abbreviation": "GP",
+"type": "gamesplayed",
+"value": 9.0,
+"displayValue": "9"
+},
+{
+"name": "losses",
+"displayName": "Losses",
+"shortDisplayName": "L",
+"description": "Losses",
+"abbreviation": "L",
+"type": "losses",
+"value": 1.0,
+"displayValue": "1"
+},
+{
+"name": "pointDifferential",
+"displayName": "Goal Difference",
+"shortDisplayName": "GD",
+"description": "Goal Difference",
+"abbreviation": "GD",
+"type": "pointdifferential",
+"value": 9.0,
+"displayValue": "+9"
+},
+{
+"name": "points",
+"displayName": "Points",
+"shortDisplayName": "P",
+"description": "Points",
+"abbreviation": "P",
+"type": "points",
+"value": 24.0,
+"displayValue": "24"
+},
+{
+"name": "pointsAgainst",
+"displayName": "Goals Against",
+"shortDisplayName": "A",
+"description": "Goals Against",
+"abbreviation": "A",
+"type": "pointsagainst",
+"value": 5.0,
+"displayValue": "5"
+},
+{
+"name": "pointsFor",
+"displayName": "Goals For",
+"shortDisplayName": "F",
+"description": "Goals For",
+"abbreviation": "F",
+"type": "pointsfor",
+"value": 14.0,
+"displayValue": "14"
+},
+{
+"name": "ties",
+"displayName": "Draws",
+"shortDisplayName": "D",
+"description": "Draws",
+"abbreviation": "D",
+"type": "ties",
+"value": 0.0,
+"displayValue": "0"
+},
+{
+"name": "wins",
+"displayName": "Wins",
+"shortDisplayName": "W",
+"description": "Wins",
+"abbreviation": "W",
+"type": "wins",
+"value": 8.0,
+"displayValue": "8"
+},
+{
+"name": "advanced",
+"displayName": "Advanced",
+"shortDisplayName": "ADV",
+"description": "Advanced",
+"abbreviation": "ADV",
+"type": "advanced",
+"value": 0.0,
+"displayValue": "0"
+},
+{
+"name": "deductions",
+"displayName": "Point Deductions",
+"shortDisplayName": "Deductions",
+"description": "Point Deductions",
+"abbreviation": "PD",
+"type": "deductions",
+"value": 0.0,
+"displayValue": ""
+},
+{
+"name": "ppg",
+"displayName": "Points Per Game",
+"shortDisplayName": "PPG",
+"description": "Points Per Game",
+"abbreviation": "PPG",
+"type": "ppg",
+"value": 0.0,
+"displayValue": "0"
+},
+{
+"name": "rank",
+"displayName": "Rank",
+"shortDisplayName": "Rank",
+"description": "Rank",
+"abbreviation": "R",
+"type": "rank",
+"value": 1.0,
+"displayValue": "1"
+},
+{
+"name": "rankChange",
+"displayName": "Rank Change",
+"shortDisplayName": "Rank Change",
+"description": "Rank Change",
+"abbreviation": "RC",
+"type": "rankchange",
+"value": 0.0,
+"displayValue": "0"
+},
+{
+"id": "0",
+"name": "overall",
+"abbreviation": "Total",
+"displayName": "Overall",
+"shortDisplayName": "OVER",
+"description": "Overall Record",
+"type": "total",
+"summary": "8-0-1",
+"displayValue": "8-0-1"
+}
+]
+},
+{
+"team": {
+"id": "382",
+"uid": "s:600~t:382",
+"location": "Manchester City",
+"name": "Manchester City",
+"abbreviation": "MNC",
+"displayName": "Manchester City",
+"shortDisplayName": "Man City",
+"isActive": true,
+"logos": [
+{
+"href": "https://a.espncdn.com/i/teamlogos/soccer/500/382.png",
+"width": 500,
+"height": 500,
+"alt": "",
+"rel": [
+"full",
+"default"
+],
+"lastUpdated": "2019-05-08T16:07Z"
+}
+],
+"links": [
+{
+"language": "en-US",
+"rel": [
+"clubhouse",
+"desktop",
+"team"
+],
+"href": "https://www.espn.com/soccer/club/_/id/382/manchester-city",
+"text": "Clubhouse",
+"shortText": "Clubhouse",
+"isExternal": false,
+"isPremium": false
+}
+],
+"isNational": false
+},
+"note": {
+"color": "#81D6AC",
+"description": "Champions League",
+"rank": 2
+},
+"stats": [
+{
+"name": "gamesPlayed",
+"displayName": "Games Played",
+"shortDisplayName": "GP",
+"description": "Number of Games Played",
+"abbreviation": "GP",
+"type": "gamesplayed",
+"value": 9.0,
+"displayValue": "9"
+},
+{
+"name": "losses",
+"displayName": "Losses",
+"shortDisplayName": "L",
+"description": "Losses",
+"abbreviation": "L",
+"type": "losses",
+"value": 2.0,
+"displayValue": "2"
+},
+{
+"name": "pointDifferential",
+"displayName": "Goal Difference",
+"shortDisplayName": "GD",
+"description": "Goal Difference",
+"abbreviation": "GD",
+"type": "pointdifferential",
+"value": 10.0,
+"displayValue": "+10"
+},
+{
+"name": "points",
+"displayName": "Points",
+"shortDisplayName": "P",
+"description": "Points",
+"abbreviation": "P",
+"type": "points",
+"value": 21.0,
+"displayValue": "21"
+},
+{
+"name": "pointsAgainst",
+"displayName": "Goals Against",
+"shortDisplayName": "A",
+"description": "Goals Against",
+"abbreviation": "A",
+"type": "pointsagainst",
+"value": 10.0,
+"displayValue": "10"
+},
+{
+"name": "pointsFor",
+"displayName": "Goals For",
+"shortDisplayName": "F",
+"description": "Goals For",
+"abbreviation": "F",
+"type": "pointsfor",
+"value": 20.0,
+"displayValue": "20"
+},
+{
+"name": "ties",
+"displayName": "Draws",
+"shortDisplayName": "D",
+"description": "Draws",
+"abbreviation": "D",
+"type": "ties",
+"value": 0.0,
+"displayValue": "0"
+},
+{
+"name": "wins",
+"displayName": "Wins",
+"shortDisplayName": "W",
+"description": "Wins",
+"abbreviation": "W",
+"type": "wins",
+"value": 7.0,
+"displayValue": "7"
+},
+{
+"name": "advanced",
+"displayName": "Advanced",
+"shortDisplayName": "ADV",
+"description": "Advanced",
+"abbreviation": "ADV",
+"type": "advanced",
+"value": 0.0,
+"displayValue": "0"
+},
+{
+"name": "deductions",
+"displayName": "Point Deductions",
+"shortDisplayName": "Deductions",
+"description": "Point Deductions",
+"abbreviation": "PD",
+"type": "deductions",
+"value": 0.0,
+"displayValue": ""
+},
+{
+"name": "ppg",
+"displayName": "Points Per Game",
+"shortDisplayName": "PPG",
+"description": "Points Per Game",
+"abbreviation": "PPG",
+"type": "ppg",
+"value": 0.0,
+"displayValue": "0"
+},
+{
+"name": "rank",
+"displayName": "Rank",
+"shortDisplayName": "Rank",
+"description": "Rank",
+"abbreviation": "R",
+"type": "rank",
+"value": 2.0,
+"displayValue": "2"
+},
+{
+"name": "rankChange",
+"displayName": "Rank Change",
+"shortDisplayName": "Rank Change",
+"description": "Rank Change",
+"abbreviation": "RC",
+"type": "rankchange",
+"value": 0.0,
+"displayValue": "0"
+},
+{
+"id": "0",
+"name": "overall",
+"abbreviation": "Total",
+"displayName": "Overall",
+"shortDisplayName": "OVER",
+"description": "Overall Record",
+"type": "total",
+"summary": "7-0-2",
+"displayValue": "7-0-2"
+}
+]
+},
+{
+"team": {
+"id": "367",
+"uid": "s:600~t:367",
+"location": "Tottenham Hotspur",
+"name": "Tottenham Hotspur",
+"abbreviation": "TOT",
+"displayName": "Tottenham Hotspur",
+"shortDisplayName": "Spurs",
+"isActive": true,
+"logos": [
+{
+"href": "https://a.espncdn.com/i/teamlogos/soccer/500/367.png",
+"width": 500,
+"height": 500,
+"alt": "",
+"rel": [
+"full",
+"default"
+],
+"lastUpdated": "2024-01-04T17:49Z"
+}
+],
+"links": [
+{
+"language": "en-US",
+"rel": [
+"clubhouse",
+"desktop",
+"team"
+],
+"href": "https://www.espn.com/soccer/club/_/id/367/tottenham-hotspur",
+"text": "Clubhouse",
+"shortText": "Clubhouse",
+"isExternal": false,
+"isPremium": false
+}
+],
+"isNational": false
+},
+"stats": [
+{
+"name": "gamesPlayed",
+"displayName": "Games Played",
+"shortDisplayName": "GP",
+"description": "Number of Games Played",
+"abbreviation": "GP",
+"type": "gamesplayed",
+"value": 9.0,
+"displayValue": "9"
+},
+{
+"name": "losses",
+"displayName": "Losses",
+"shortDisplayName": "L",
+"description": "Losses",
+"abbreviation": "L",
+"type": "losses",
+"value": 3.0,
+"displayValue": "3"
+},
+{
+"name": "pointDifferential",
+"displayName": "Goal Difference",
+"shortDisplayName": "GD",
+"description": "Goal Difference",
+"abbreviation": "GD",
+"type": "pointdifferential",
+"value": 0.0,
+"displayValue": "0"
+},
+{
+"name": "points",
+"displayName": "Points",
+"shortDisplayName": "P",
+"description": "Points",
+"abbreviation": "P",
+"type": "points",
+"value": 12.0,
+"displayValue": "12"
+},
+{
+"name": "pointsAgainst",
+"displayName": "Goals Against",
+"shortDisplayName": "A",
+"description": "Goals Against",
+"abbreviation": "A",
+"type": "pointsagainst",
+"value": 10.0,
+"displayValue": "10"
+},
+{
+"name": "pointsFor",
+"displayName": "Goals For",
+"shortDisplayName": "F",
+"description": "Goals For",
+"abbreviation": "F",
+"type": "pointsfor",
+"value": 10.0,
+"displayValue": "10"
+},
+{
+"name": "ties",
+"displayName": "Draws",
+"shortDisplayName": "D",
+"description": "Draws",
+"abbreviation": "D",
+"type": "ties",
+"value": 3.0,
+"displayValue": "3"
+},
+{
+"name": "wins",
+"displayName": "Wins",
+"shortDisplayName": "W",
+"description": "Wins",
+"abbreviation": "W",
+"type": "wins",
+"value": 3.0,
+"displayValue": "3"
+},
+{
+"name": "advanced",
+"displayName": "Advanced",
+"shortDisplayName": "ADV",
+"description": "Advanced",
+"abbreviation": "ADV",
+"type": "advanced",
+"value": 0.0,
+"displayValue": "0"
+},
+{
+"name": "deductions",
+"displayName": "Point Deductions",
+"shortDisplayName": "Deductions",
+"description": "Point Deductions",
+"abbreviation": "PD",
+"type": "deductions",
+"value": 0.0,
+"displayValue": ""
+},
+{
+"name": "ppg",
+"displayName": "Points Per Game",
+"shortDisplayName": "PPG",
+"description": "Points Per Game",
+"abbreviation": "PPG",
+"type": "ppg",
+"value": 0.0,
+"displayValue": "0"
+},
+{
+"name": "rank",
+"displayName": "Rank",
+"shortDisplayName": "Rank",
+"description": "Rank",
+"abbreviation": "R",
+"type": "rank",
+"value": 9.0,
+"displayValue": "9"
+},
+{
+"name": "rankChange",
+"displayName": "Rank Change",
+"shortDisplayName": "Rank Change",
+"description": "Rank Change",
+"abbreviation": "RC",
+"type": "rankchange",
+"value": 0.0,
+"displayValue": "0"
+},
+{
+"id": "0",
+"name": "overall",
+"abbreviation": "Total",
+"displayName": "Overall",
+"shortDisplayName": "OVER",
+"description": "Overall Record",
+"type": "total",
+"summary": "3-3-3",
+"displayValue": "3-3-3"
+}
+]
+},
+{
+"team": {
+"id": "366",
+"uid": "s:600~t:366",
+"location": "Sunderland",
+"name": "Sunderland",
+"abbreviation": "SUN",
+"displayName": "Sunderland",
+"shortDisplayName": "Sunderland",
+"isActive": true,
+"logos": [
+{
+"href": "https://a.espncdn.com/i/teamlogos/soccer/500/366.png",
+"width": 500,
+"height": 500,
+"alt": "",
+"rel": [
+"full",
+"default"
+],
+"lastUpdated": "2019-05-08T16:07Z"
+}
+],
+"links": [
+{
+"language": "en-US",
+"rel": [
+"clubhouse",
+"desktop",
+"team"
+],
+"href": "https://www.espn.com/soccer/club/_/id/366/sunderland",
+"text": "Clubhouse",
+"shortText": "Clubhouse",
+"isExternal": false,
+"isPremium": false
+}
+],
+"isNational": false
+},
+"note": {
+"color": "#FF7F84",
+"description": "Relegation",
+"rank": 20
+},
+"stats": [
+{
+"name": "gamesPlayed",
+"displayName": "Games Played",
+"shortDisplayName": "GP",
+"description": "Number of Games Played",
+"abbreviation": "GP",
+"type": "gamesplayed",
+"value": 9.0,
+"displayValue": "9"
+},
+{
+"name": "losses",
+"displayName": "Losses",
+"shortDisplayName": "L",
+"description": "Losses",
+"abbreviation": "L",
+"type": "losses",
+"value": 6.0,
+"displayValue": "6"
+},
+{
+"name": "pointDifferential",
+"displayName": "Goal Difference",
+"shortDisplayName": "GD",
+"description": "Goal Difference",
+"abbreviation": "GD",
+"type": "pointdifferential",
+"value": -10.0,
+"displayValue": "-10"
+},
+{
+"name": "points",
+"displayName": "Points",
+"shortDisplayName": "P",
+"description": "Points",
+"abbreviation": "P",
+"type": "points",
+"value": 5.0,
+"displayValue": "5"
+},
+{
+"name": "pointsAgainst",
+"displayName": "Goals Against",
+"shortDisplayName": "A",
+"description": "Goals Against",
+"abbreviation": "A",
+"type": "pointsagainst",
+"value": 17.0,
+"displayValue": "17"
+},
+{
+"name": "pointsFor",
+"displayName": "Goals For",
+"shortDisplayName": "F",
+"description": "Goals For",
+"abbreviation": "F",
+"type": "pointsfor",
+"value": 7.0,
+"displayValue": "7"
+},
+{
+"name": "ties",
+"displayName": "Draws",
+"shortDisplayName": "D",
+"description": "Draws",
+"abbreviation": "D",
+"type": "ties",
+"value": 2.0,
+"displayValue": "2"
+},
+{
+"name": "wins",
+"displayName": "Wins",
+"shortDisplayName": "W",
+"description": "Wins",
+"abbreviation": "W",
+"type": "wins",
+"value": 1.0,
+"displayValue": "1"
+},
+{
+"name": "advanced",
+"displayName": "Advanced",
+"shortDisplayName": "ADV",
+"description": "Advanced",
+"abbreviation": "ADV",
+"type": "advanced",
+"value": 0.0,
+"displayValue": "0"
+},
+{
+"name": "deductions",
+"displayName": "Point Deductions",
+"shortDisplayName": "Deductions",
+"description": "Point Deductions",
+"abbreviation": "PD",
+"type": "deductions",
+"value": 0.0,
+"displayValue": ""
+},
+{
+"name": "ppg",
+"displayName": "Points Per Game",
+"shortDisplayName": "PPG",
+"description": "Points Per Game",
+"abbreviation": "PPG",
+"type": "ppg",
+"value": 0.0,
+"displayValue": "0"
+},
+{
+"name": "rank",
+"displayName": "Rank",
+"shortDisplayName": "Rank",
+"description": "Rank",
+"abbreviation": "R",
+"type": "rank",
+"value": 20.0,
+"displayValue": "20"
+},
+{
+"name": "rankChange",
+"displayName": "Rank Change",
+"shortDisplayName": "Rank Change",
+"description": "Rank Change",
+"abbreviation": "RC",
+"type": "rankchange",
+"value": 0.0,
+"displayValue": "0"
+},
+{
+"id": "0",
+"name": "overall",
+"abbreviation": "Total",
+"displayName": "Overall",
+"shortDisplayName": "OVER",
+"description": "Overall Record",
+"type": "total",
+"summary": "1-2-6",
+"displayValue": "1-2-6"
+}
+]
+}
+]
+}
+}
+],
+"season": {
+"year": 2026,
+"startDate": "2026-06-01T04:00Z",
+"endDate": "2027-06-01T03:59Z",
+"displayName": "2026-27 English Premier League"
+},
+"seasons": [
+{
+"year": 2026,
+"startDate": "2026-06-01T04:00Z",
+"endDate": "2027-06-01T03:59Z",
+"displayName": "2026-27 English Premier League",
+"types": [
+{
+"id": "1",
+"name": "2026-27 English Premier League",
+"abbreviation": "2026-27 English Premier League",
+"startDate": "2026-06-01T04:00Z",
+"endDate": "2027-06-01T03:59Z",
+"hasStandings": true
+}
+],
+"seasonYears": "2026-27"
+},
+{
+"year": 2025,
+"startDate": "2025-06-01T04:00Z",
+"endDate": "2026-06-01T03:59Z",
+"displayName": "2025-26 English Premier League",
+"types": [
+{
+"id": "1",
+"name": "2025-26 English Premier League",
+"abbreviation": "2025-26 English Premier League",
+"startDate": "2025-06-01T04:00Z",
+"endDate": "2026-06-01T03:59Z",
+"hasStandings": true
+}
+],
+"seasonYears": "2025-26"
+}
+]
+}

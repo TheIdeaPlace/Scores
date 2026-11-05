@@ -11,6 +11,7 @@ from PyQt6.QtWidgets import (
 from PyQt6.QtCore import Qt, QEvent, QObject, QTimer, pyqtSignal
 from typing import List, Dict, Any, Optional
 import settings
+from soccer import SOCCER_LEAGUES, SOCCER_TABLE_HEADERS, soccer_table_cells
 import tab_keys
 
 
@@ -671,6 +672,8 @@ class StandingsTable(AccessibleTable):
     NHL_BASIC_HEADERS = ["Pos", "Team", "W", "L", "OTL", "Pts", "PCT", "Streak"]
 
     def _headers_for_view(self, league: str, expanded: bool) -> List[str]:
+        if league in SOCCER_LEAGUES:
+            return SOCCER_TABLE_HEADERS
         if league in ("NCAAF", "NCAAM", "NCAAWB"):
             return self.COLLEGE_HEADERS
         if league in ("NCAAH", "NCAAWH"):
@@ -748,6 +751,9 @@ class StandingsTable(AccessibleTable):
 
     def _build_basic_row(self, position: int, team: Dict[str, Any]) -> List[str]:
         """Build basic standings row"""
+        if self.league in SOCCER_LEAGUES:
+            return soccer_table_cells(position, team)
+
         # Handle different field name formats from API vs StandingsData model
         team_name = team.get("team_name") or team.get("name", "")
         wins = str(team.get("wins", ""))

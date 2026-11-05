@@ -1,0 +1,3379 @@
+{
+"uid": "s:600~l:775",
+"id": "8675309",
+"name": "UEFA Champions League",
+"abbreviation": "UEFA Champions League",
+"children": [
+{
+"uid": "s:600~l:775~g:1",
+"id": "1",
+"name": "Group A",
+"abbreviation": "Group A",
+"standings": {
+"id": "0",
+"name": "overall",
+"displayName": "Standings",
+"links": [
+{
+"language": "en-US",
+"rel": [
+"standings",
+"desktop"
+],
+"href": "https://www.espn.com/soccer/table/_/league/uefa.champions",
+"text": "Full Table",
+"shortText": "Standings",
+"isExternal": false,
+"isPremium": false
+}
+],
+"season": 2023,
+"seasonType": 1,
+"seasonDisplayName": "2023-24 UEFA Champions League",
+"entries": [
+{
+"team": {
+"id": "132",
+"uid": "s:600~t:132",
+"location": "Bayern Munich",
+"name": "Bayern Munich",
+"abbreviation": "MUN",
+"displayName": "Bayern Munich",
+"shortDisplayName": "Bayern",
+"isActive": true,
+"logos": [
+{
+"href": "https://a.espncdn.com/i/teamlogos/soccer/500/132.png",
+"width": 500,
+"height": 500,
+"alt": "",
+"rel": [
+"full",
+"default"
+],
+"lastUpdated": "2022-07-27T14:42Z"
+}
+],
+"links": [
+{
+"language": "en-US",
+"rel": [
+"clubhouse",
+"desktop",
+"team"
+],
+"href": "https://www.espn.com/soccer/club/_/id/132/bayern-munich",
+"text": "Clubhouse",
+"shortText": "Clubhouse",
+"isExternal": false,
+"isPremium": false
+}
+],
+"isNational": false
+},
+"note": {
+"color": "#81D6AC",
+"description": "Qualifies for round of 16",
+"rank": 1
+},
+"stats": [
+{
+"name": "gamesPlayed",
+"displayName": "Games Played",
+"shortDisplayName": "GP",
+"description": "Number of Games Played",
+"abbreviation": "GP",
+"type": "gamesplayed",
+"value": 6.0,
+"displayValue": "6"
+},
+{
+"name": "losses",
+"displayName": "Losses",
+"shortDisplayName": "L",
+"description": "Losses",
+"abbreviation": "L",
+"type": "losses",
+"value": 0.0,
+"displayValue": "0"
+},
+{
+"name": "pointDifferential",
+"displayName": "Goal Difference",
+"shortDisplayName": "GD",
+"description": "Goal Difference",
+"abbreviation": "GD",
+"type": "pointdifferential",
+"value": 6.0,
+"displayValue": "+6"
+},
+{
+"name": "points",
+"displayName": "Points",
+"shortDisplayName": "P",
+"description": "Points",
+"abbreviation": "P",
+"type": "points",
+"value": 16.0,
+"displayValue": "16"
+},
+{
+"name": "pointsAgainst",
+"displayName": "Goals Against",
+"shortDisplayName": "A",
+"description": "Goals Against",
+"abbreviation": "A",
+"type": "pointsagainst",
+"value": 6.0,
+"displayValue": "6"
+},
+{
+"name": "pointsFor",
+"displayName": "Goals For",
+"shortDisplayName": "F",
+"description": "Goals For",
+"abbreviation": "F",
+"type": "pointsfor",
+"value": 12.0,
+"displayValue": "12"
+},
+{
+"name": "ties",
+"displayName": "Draws",
+"shortDisplayName": "D",
+"description": "Draws",
+"abbreviation": "D",
+"type": "ties",
+"value": 1.0,
+"displayValue": "1"
+},
+{
+"name": "wins",
+"displayName": "Wins",
+"shortDisplayName": "W",
+"description": "Wins",
+"abbreviation": "W",
+"type": "wins",
+"value": 5.0,
+"displayValue": "5"
+},
+{
+"name": "advanced",
+"displayName": "Advanced",
+"shortDisplayName": "ADV",
+"description": "Advanced",
+"abbreviation": "ADV",
+"type": "advanced",
+"value": 0.0,
+"displayValue": "0"
+},
+{
+"name": "deductions",
+"displayName": "Point Deductions",
+"shortDisplayName": "Deductions",
+"description": "Point Deductions",
+"abbreviation": "PD",
+"type": "deductions",
+"value": 0.0,
+"displayValue": ""
+},
+{
+"name": "ppg",
+"displayName": "Points Per Game",
+"shortDisplayName": "PPG",
+"description": "Points Per Game",
+"abbreviation": "PPG",
+"type": "ppg",
+"value": 0.0,
+"displayValue": "0"
+},
+{
+"name": "rank",
+"displayName": "Rank",
+"shortDisplayName": "Rank",
+"description": "Rank",
+"abbreviation": "R",
+"type": "rank",
+"value": 1.0,
+"displayValue": "1"
+},
+{
+"name": "rankChange",
+"displayName": "Rank Change",
+"shortDisplayName": "Rank Change",
+"description": "Rank Change",
+"abbreviation": "RC",
+"type": "rankchange",
+"value": 0.0,
+"displayValue": "0"
+},
+{
+"id": "0",
+"name": "overall",
+"abbreviation": "Total",
+"displayName": "Overall",
+"shortDisplayName": "OVER",
+"description": "Overall Record",
+"type": "total",
+"summary": "5-1-0",
+"displayValue": "5-1-0"
+}
+]
+},
+{
+"team": {
+"id": "909",
+"uid": "s:600~t:909",
+"location": "F.C. København",
+"name": "F.C. København",
+"abbreviation": "KBH",
+"displayName": "F.C. København",
+"shortDisplayName": "København",
+"isActive": true,
+"logos": [
+{
+"href": "https://a.espncdn.com/i/teamlogos/soccer/500/909.png",
+"width": 500,
+"height": 500,
+"alt": "",
+"rel": [
+"full",
+"default"
+],
+"lastUpdated": "2019-05-08T16:07Z"
+}
+],
+"links": [
+{
+"language": "en-US",
+"rel": [
+"clubhouse",
+"desktop",
+"team"
+],
+"href": "https://www.espn.com/soccer/club/_/id/909/fc-københavn",
+"text": "Clubhouse",
+"shortText": "Clubhouse",
+"isExternal": false,
+"isPremium": false
+}
+],
+"isNational": false
+},
+"note": {
+"color": "#81D6AC",
+"description": "Qualifies for round of 16",
+"rank": 2
+},
+"stats": [
+{
+"name": "gamesPlayed",
+"displayName": "Games Played",
+"shortDisplayName": "GP",
+"description": "Number of Games Played",
+"abbreviation": "GP",
+"type": "gamesplayed",
+"value": 6.0,
+"displayValue": "6"
+},
+{
+"name": "losses",
+"displayName": "Losses",
+"shortDisplayName": "L",
+"description": "Losses",
+"abbreviation": "L",
+"type": "losses",
+"value": 2.0,
+"displayValue": "2"
+},
+{
+"name": "pointDifferential",
+"displayName": "Goal Difference",
+"shortDisplayName": "GD",
+"description": "Goal Difference",
+"abbreviation": "GD",
+"type": "pointdifferential",
+"value": 0.0,
+"displayValue": "0"
+},
+{
+"name": "points",
+"displayName": "Points",
+"shortDisplayName": "P",
+"description": "Points",
+"abbreviation": "P",
+"type": "points",
+"value": 8.0,
+"displayValue": "8"
+},
+{
+"name": "pointsAgainst",
+"displayName": "Goals Against",
+"shortDisplayName": "A",
+"description": "Goals Against",
+"abbreviation": "A",
+"type": "pointsagainst",
+"value": 8.0,
+"displayValue": "8"
+},
+{
+"name": "pointsFor",
+"displayName": "Goals For",
+"shortDisplayName": "F",
+"description": "Goals For",
+"abbreviation": "F",
+"type": "pointsfor",
+"value": 8.0,
+"displayValue": "8"
+},
+{
+"name": "ties",
+"displayName": "Draws",
+"shortDisplayName": "D",
+"description": "Draws",
+"abbreviation": "D",
+"type": "ties",
+"value": 2.0,
+"displayValue": "2"
+},
+{
+"name": "wins",
+"displayName": "Wins",
+"shortDisplayName": "W",
+"description": "Wins",
+"abbreviation": "W",
+"type": "wins",
+"value": 2.0,
+"displayValue": "2"
+},
+{
+"name": "advanced",
+"displayName": "Advanced",
+"shortDisplayName": "ADV",
+"description": "Advanced",
+"abbreviation": "ADV",
+"type": "advanced",
+"value": 0.0,
+"displayValue": "0"
+},
+{
+"name": "deductions",
+"displayName": "Point Deductions",
+"shortDisplayName": "Deductions",
+"description": "Point Deductions",
+"abbreviation": "PD",
+"type": "deductions",
+"value": 0.0,
+"displayValue": ""
+},
+{
+"name": "ppg",
+"displayName": "Points Per Game",
+"shortDisplayName": "PPG",
+"description": "Points Per Game",
+"abbreviation": "PPG",
+"type": "ppg",
+"value": 0.0,
+"displayValue": "0"
+},
+{
+"name": "rank",
+"displayName": "Rank",
+"shortDisplayName": "Rank",
+"description": "Rank",
+"abbreviation": "R",
+"type": "rank",
+"value": 2.0,
+"displayValue": "2"
+},
+{
+"name": "rankChange",
+"displayName": "Rank Change",
+"shortDisplayName": "Rank Change",
+"description": "Rank Change",
+"abbreviation": "RC",
+"type": "rankchange",
+"value": 0.0,
+"displayValue": "0"
+},
+{
+"id": "0",
+"name": "overall",
+"abbreviation": "Total",
+"displayName": "Overall",
+"shortDisplayName": "OVER",
+"description": "Overall Record",
+"type": "total",
+"summary": "2-2-2",
+"displayValue": "2-2-2"
+}
+]
+}
+]
+}
+},
+{
+"uid": "s:600~l:775~g:2",
+"id": "2",
+"name": "Group B",
+"abbreviation": "Group B",
+"standings": {
+"id": "0",
+"name": "overall",
+"displayName": "Standings",
+"links": [
+{
+"language": "en-US",
+"rel": [
+"standings",
+"desktop"
+],
+"href": "https://www.espn.com/soccer/table/_/league/uefa.champions",
+"text": "Full Table",
+"shortText": "Standings",
+"isExternal": false,
+"isPremium": false
+}
+],
+"season": 2023,
+"seasonType": 1,
+"seasonDisplayName": "2023-24 UEFA Champions League",
+"entries": [
+{
+"team": {
+"id": "148",
+"uid": "s:600~t:148",
+"location": "PSV Eindhoven",
+"name": "PSV Eindhoven",
+"abbreviation": "PSV",
+"displayName": "PSV Eindhoven",
+"shortDisplayName": "PSV",
+"isActive": true,
+"logos": [
+{
+"href": "https://a.espncdn.com/i/teamlogos/soccer/500/148.png",
+"width": 500,
+"height": 500,
+"alt": "",
+"rel": [
+"full",
+"default"
+],
+"lastUpdated": "2020-11-16T15:55Z"
+}
+],
+"links": [
+{
+"language": "en-US",
+"rel": [
+"clubhouse",
+"desktop",
+"team"
+],
+"href": "https://www.espn.com/soccer/club/_/id/148/psv-eindhoven",
+"text": "Clubhouse",
+"shortText": "Clubhouse",
+"isExternal": false,
+"isPremium": false
+}
+],
+"isNational": false
+},
+"note": {
+"color": "#81D6AC",
+"description": "Qualifies for round of 16",
+"rank": 2
+},
+"stats": [
+{
+"name": "gamesPlayed",
+"displayName": "Games Played",
+"shortDisplayName": "GP",
+"description": "Number of Games Played",
+"abbreviation": "GP",
+"type": "gamesplayed",
+"value": 6.0,
+"displayValue": "6"
+},
+{
+"name": "losses",
+"displayName": "Losses",
+"shortDisplayName": "L",
+"description": "Losses",
+"abbreviation": "L",
+"type": "losses",
+"value": 1.0,
+"displayValue": "1"
+},
+{
+"name": "pointDifferential",
+"displayName": "Goal Difference",
+"shortDisplayName": "GD",
+"description": "Goal Difference",
+"abbreviation": "GD",
+"type": "pointdifferential",
+"value": -2.0,
+"displayValue": "-2"
+},
+{
+"name": "points",
+"displayName": "Points",
+"shortDisplayName": "P",
+"description": "Points",
+"abbreviation": "P",
+"type": "points",
+"value": 9.0,
+"displayValue": "9"
+},
+{
+"name": "pointsAgainst",
+"displayName": "Goals Against",
+"shortDisplayName": "A",
+"description": "Goals Against",
+"abbreviation": "A",
+"type": "pointsagainst",
+"value": 10.0,
+"displayValue": "10"
+},
+{
+"name": "pointsFor",
+"displayName": "Goals For",
+"shortDisplayName": "F",
+"description": "Goals For",
+"abbreviation": "F",
+"type": "pointsfor",
+"value": 8.0,
+"displayValue": "8"
+},
+{
+"name": "ties",
+"displayName": "Draws",
+"shortDisplayName": "D",
+"description": "Draws",
+"abbreviation": "D",
+"type": "ties",
+"value": 3.0,
+"displayValue": "3"
+},
+{
+"name": "wins",
+"displayName": "Wins",
+"shortDisplayName": "W",
+"description": "Wins",
+"abbreviation": "W",
+"type": "wins",
+"value": 2.0,
+"displayValue": "2"
+},
+{
+"name": "advanced",
+"displayName": "Advanced",
+"shortDisplayName": "ADV",
+"description": "Advanced",
+"abbreviation": "ADV",
+"type": "advanced",
+"value": 0.0,
+"displayValue": "0"
+},
+{
+"name": "deductions",
+"displayName": "Point Deductions",
+"shortDisplayName": "Deductions",
+"description": "Point Deductions",
+"abbreviation": "PD",
+"type": "deductions",
+"value": 0.0,
+"displayValue": ""
+},
+{
+"name": "ppg",
+"displayName": "Points Per Game",
+"shortDisplayName": "PPG",
+"description": "Points Per Game",
+"abbreviation": "PPG",
+"type": "ppg",
+"value": 0.0,
+"displayValue": "0"
+},
+{
+"name": "rank",
+"displayName": "Rank",
+"shortDisplayName": "Rank",
+"description": "Rank",
+"abbreviation": "R",
+"type": "rank",
+"value": 2.0,
+"displayValue": "2"
+},
+{
+"name": "rankChange",
+"displayName": "Rank Change",
+"shortDisplayName": "Rank Change",
+"description": "Rank Change",
+"abbreviation": "RC",
+"type": "rankchange",
+"value": 0.0,
+"displayValue": "0"
+},
+{
+"id": "0",
+"name": "overall",
+"abbreviation": "Total",
+"displayName": "Overall",
+"shortDisplayName": "OVER",
+"description": "Overall Record",
+"type": "total",
+"summary": "2-3-1",
+"displayValue": "2-3-1"
+}
+]
+},
+{
+"team": {
+"id": "359",
+"uid": "s:600~t:359",
+"location": "Arsenal",
+"name": "Arsenal",
+"abbreviation": "ARS",
+"displayName": "Arsenal",
+"shortDisplayName": "Arsenal",
+"isActive": true,
+"logos": [
+{
+"href": "https://a.espncdn.com/i/teamlogos/soccer/500/359.png",
+"width": 500,
+"height": 500,
+"alt": "",
+"rel": [
+"full",
+"default"
+],
+"lastUpdated": "2019-05-08T16:07Z"
+}
+],
+"links": [
+{
+"language": "en-US",
+"rel": [
+"clubhouse",
+"desktop",
+"team"
+],
+"href": "https://www.espn.com/soccer/club/_/id/359/arsenal",
+"text": "Clubhouse",
+"shortText": "Clubhouse",
+"isExternal": false,
+"isPremium": false
+}
+],
+"isNational": false
+},
+"note": {
+"color": "#81D6AC",
+"description": "Qualifies for round of 16",
+"rank": 1
+},
+"stats": [
+{
+"name": "gamesPlayed",
+"displayName": "Games Played",
+"shortDisplayName": "GP",
+"description": "Number of Games Played",
+"abbreviation": "GP",
+"type": "gamesplayed",
+"value": 6.0,
+"displayValue": "6"
+},
+{
+"name": "losses",
+"displayName": "Losses",
+"shortDisplayName": "L",
+"description": "Losses",
+"abbreviation": "L",
+"type": "losses",
+"value": 1.0,
+"displayValue": "1"
+},
+{
+"name": "pointDifferential",
+"displayName": "Goal Difference",
+"shortDisplayName": "GD",
+"description": "Goal Difference",
+"abbreviation": "GD",
+"type": "pointdifferential",
+"value": 12.0,
+"displayValue": "+12"
+},
+{
+"name": "points",
+"displayName": "Points",
+"shortDisplayName": "P",
+"description": "Points",
+"abbreviation": "P",
+"type": "points",
+"value": 13.0,
+"displayValue": "13"
+},
+{
+"name": "pointsAgainst",
+"displayName": "Goals Against",
+"shortDisplayName": "A",
+"description": "Goals Against",
+"abbreviation": "A",
+"type": "pointsagainst",
+"value": 4.0,
+"displayValue": "4"
+},
+{
+"name": "pointsFor",
+"displayName": "Goals For",
+"shortDisplayName": "F",
+"description": "Goals For",
+"abbreviation": "F",
+"type": "pointsfor",
+"value": 16.0,
+"displayValue": "16"
+},
+{
+"name": "ties",
+"displayName": "Draws",
+"shortDisplayName": "D",
+"description": "Draws",
+"abbreviation": "D",
+"type": "ties",
+"value": 1.0,
+"displayValue": "1"
+},
+{
+"name": "wins",
+"displayName": "Wins",
+"shortDisplayName": "W",
+"description": "Wins",
+"abbreviation": "W",
+"type": "wins",
+"value": 4.0,
+"displayValue": "4"
+},
+{
+"name": "advanced",
+"displayName": "Advanced",
+"shortDisplayName": "ADV",
+"description": "Advanced",
+"abbreviation": "ADV",
+"type": "advanced",
+"value": 0.0,
+"displayValue": "0"
+},
+{
+"name": "deductions",
+"displayName": "Point Deductions",
+"shortDisplayName": "Deductions",
+"description": "Point Deductions",
+"abbreviation": "PD",
+"type": "deductions",
+"value": 0.0,
+"displayValue": ""
+},
+{
+"name": "ppg",
+"displayName": "Points Per Game",
+"shortDisplayName": "PPG",
+"description": "Points Per Game",
+"abbreviation": "PPG",
+"type": "ppg",
+"value": 0.0,
+"displayValue": "0"
+},
+{
+"name": "rank",
+"displayName": "Rank",
+"shortDisplayName": "Rank",
+"description": "Rank",
+"abbreviation": "R",
+"type": "rank",
+"value": 1.0,
+"displayValue": "1"
+},
+{
+"name": "rankChange",
+"displayName": "Rank Change",
+"shortDisplayName": "Rank Change",
+"description": "Rank Change",
+"abbreviation": "RC",
+"type": "rankchange",
+"value": 0.0,
+"displayValue": "0"
+},
+{
+"id": "0",
+"name": "overall",
+"abbreviation": "Total",
+"displayName": "Overall",
+"shortDisplayName": "OVER",
+"description": "Overall Record",
+"type": "total",
+"summary": "4-1-1",
+"displayValue": "4-1-1"
+}
+]
+}
+]
+}
+},
+{
+"uid": "s:600~l:775~g:3",
+"id": "3",
+"name": "Group C",
+"abbreviation": "Group C",
+"standings": {
+"id": "0",
+"name": "overall",
+"displayName": "Standings",
+"links": [
+{
+"language": "en-US",
+"rel": [
+"standings",
+"desktop"
+],
+"href": "https://www.espn.com/soccer/table/_/league/uefa.champions",
+"text": "Full Table",
+"shortText": "Standings",
+"isExternal": false,
+"isPremium": false
+}
+],
+"season": 2023,
+"seasonType": 1,
+"seasonDisplayName": "2023-24 UEFA Champions League",
+"entries": [
+{
+"team": {
+"id": "86",
+"uid": "s:600~t:86",
+"location": "Real Madrid",
+"name": "Real Madrid",
+"abbreviation": "RMA",
+"displayName": "Real Madrid",
+"shortDisplayName": "Real Madrid",
+"isActive": true,
+"logos": [
+{
+"href": "https://a.espncdn.com/i/teamlogos/soccer/500/86.png",
+"width": 500,
+"height": 500,
+"alt": "",
+"rel": [
+"full",
+"default"
+],
+"lastUpdated": "2019-05-08T16:07Z"
+}
+],
+"links": [
+{
+"language": "en-US",
+"rel": [
+"clubhouse",
+"desktop",
+"team"
+],
+"href": "https://www.espn.com/soccer/club/_/id/86/real-madrid",
+"text": "Clubhouse",
+"shortText": "Clubhouse",
+"isExternal": false,
+"isPremium": false
+}
+],
+"isNational": false
+},
+"note": {
+"color": "#81D6AC",
+"description": "Qualifies for round of 16",
+"rank": 1
+},
+"stats": [
+{
+"name": "gamesPlayed",
+"displayName": "Games Played",
+"shortDisplayName": "GP",
+"description": "Number of Games Played",
+"abbreviation": "GP",
+"type": "gamesplayed",
+"value": 6.0,
+"displayValue": "6"
+},
+{
+"name": "losses",
+"displayName": "Losses",
+"shortDisplayName": "L",
+"description": "Losses",
+"abbreviation": "L",
+"type": "losses",
+"value": 0.0,
+"displayValue": "0"
+},
+{
+"name": "pointDifferential",
+"displayName": "Goal Difference",
+"shortDisplayName": "GD",
+"description": "Goal Difference",
+"abbreviation": "GD",
+"type": "pointdifferential",
+"value": 9.0,
+"displayValue": "+9"
+},
+{
+"name": "points",
+"displayName": "Points",
+"shortDisplayName": "P",
+"description": "Points",
+"abbreviation": "P",
+"type": "points",
+"value": 18.0,
+"displayValue": "18"
+},
+{
+"name": "pointsAgainst",
+"displayName": "Goals Against",
+"shortDisplayName": "A",
+"description": "Goals Against",
+"abbreviation": "A",
+"type": "pointsagainst",
+"value": 7.0,
+"displayValue": "7"
+},
+{
+"name": "pointsFor",
+"displayName": "Goals For",
+"shortDisplayName": "F",
+"description": "Goals For",
+"abbreviation": "F",
+"type": "pointsfor",
+"value": 16.0,
+"displayValue": "16"
+},
+{
+"name": "ties",
+"displayName": "Draws",
+"shortDisplayName": "D",
+"description": "Draws",
+"abbreviation": "D",
+"type": "ties",
+"value": 0.0,
+"displayValue": "0"
+},
+{
+"name": "wins",
+"displayName": "Wins",
+"shortDisplayName": "W",
+"description": "Wins",
+"abbreviation": "W",
+"type": "wins",
+"value": 6.0,
+"displayValue": "6"
+},
+{
+"name": "advanced",
+"displayName": "Advanced",
+"shortDisplayName": "ADV",
+"description": "Advanced",
+"abbreviation": "ADV",
+"type": "advanced",
+"value": 0.0,
+"displayValue": "0"
+},
+{
+"name": "deductions",
+"displayName": "Point Deductions",
+"shortDisplayName": "Deductions",
+"description": "Point Deductions",
+"abbreviation": "PD",
+"type": "deductions",
+"value": 0.0,
+"displayValue": ""
+},
+{
+"name": "ppg",
+"displayName": "Points Per Game",
+"shortDisplayName": "PPG",
+"description": "Points Per Game",
+"abbreviation": "PPG",
+"type": "ppg",
+"value": 0.0,
+"displayValue": "0"
+},
+{
+"name": "rank",
+"displayName": "Rank",
+"shortDisplayName": "Rank",
+"description": "Rank",
+"abbreviation": "R",
+"type": "rank",
+"value": 1.0,
+"displayValue": "1"
+},
+{
+"name": "rankChange",
+"displayName": "Rank Change",
+"shortDisplayName": "Rank Change",
+"description": "Rank Change",
+"abbreviation": "RC",
+"type": "rankchange",
+"value": 0.0,
+"displayValue": "0"
+},
+{
+"id": "0",
+"name": "overall",
+"abbreviation": "Total",
+"displayName": "Overall",
+"shortDisplayName": "OVER",
+"description": "Overall Record",
+"type": "total",
+"summary": "6-0-0",
+"displayValue": "6-0-0"
+}
+]
+},
+{
+"team": {
+"id": "2994",
+"uid": "s:600~t:2994",
+"location": "Braga",
+"name": "Braga",
+"abbreviation": "SCB",
+"displayName": "Braga",
+"shortDisplayName": "Braga",
+"isActive": true,
+"logos": [
+{
+"href": "https://a.espncdn.com/i/teamlogos/soccer/500/2994.png",
+"width": 500,
+"height": 500,
+"alt": "",
+"rel": [
+"full",
+"default"
+],
+"lastUpdated": "2019-05-08T16:07Z"
+}
+],
+"links": [
+{
+"language": "en-US",
+"rel": [
+"clubhouse",
+"desktop",
+"team"
+],
+"href": "https://www.espn.com/soccer/club/_/id/2994/braga",
+"text": "Clubhouse",
+"shortText": "Clubhouse",
+"isExternal": false,
+"isPremium": false
+}
+],
+"isNational": false
+},
+"note": {
+"color": "#B2BFD0",
+"description": "Europa League knockout round playoffs\t",
+"rank": 3
+},
+"stats": [
+{
+"name": "gamesPlayed",
+"displayName": "Games Played",
+"shortDisplayName": "GP",
+"description": "Number of Games Played",
+"abbreviation": "GP",
+"type": "gamesplayed",
+"value": 6.0,
+"displayValue": "6"
+},
+{
+"name": "losses",
+"displayName": "Losses",
+"shortDisplayName": "L",
+"description": "Losses",
+"abbreviation": "L",
+"type": "losses",
+"value": 4.0,
+"displayValue": "4"
+},
+{
+"name": "pointDifferential",
+"displayName": "Goal Difference",
+"shortDisplayName": "GD",
+"description": "Goal Difference",
+"abbreviation": "GD",
+"type": "pointdifferential",
+"value": -6.0,
+"displayValue": "-6"
+},
+{
+"name": "points",
+"displayName": "Points",
+"shortDisplayName": "P",
+"description": "Points",
+"abbreviation": "P",
+"type": "points",
+"value": 4.0,
+"displayValue": "4"
+},
+{
+"name": "pointsAgainst",
+"displayName": "Goals Against",
+"shortDisplayName": "A",
+"description": "Goals Against",
+"abbreviation": "A",
+"type": "pointsagainst",
+"value": 12.0,
+"displayValue": "12"
+},
+{
+"name": "pointsFor",
+"displayName": "Goals For",
+"shortDisplayName": "F",
+"description": "Goals For",
+"abbreviation": "F",
+"type": "pointsfor",
+"value": 6.0,
+"displayValue": "6"
+},
+{
+"name": "ties",
+"displayName": "Draws",
+"shortDisplayName": "D",
+"description": "Draws",
+"abbreviation": "D",
+"type": "ties",
+"value": 1.0,
+"displayValue": "1"
+},
+{
+"name": "wins",
+"displayName": "Wins",
+"shortDisplayName": "W",
+"description": "Wins",
+"abbreviation": "W",
+"type": "wins",
+"value": 1.0,
+"displayValue": "1"
+},
+{
+"name": "advanced",
+"displayName": "Advanced",
+"shortDisplayName": "ADV",
+"description": "Advanced",
+"abbreviation": "ADV",
+"type": "advanced",
+"value": 0.0,
+"displayValue": "0"
+},
+{
+"name": "deductions",
+"displayName": "Point Deductions",
+"shortDisplayName": "Deductions",
+"description": "Point Deductions",
+"abbreviation": "PD",
+"type": "deductions",
+"value": 0.0,
+"displayValue": ""
+},
+{
+"name": "ppg",
+"displayName": "Points Per Game",
+"shortDisplayName": "PPG",
+"description": "Points Per Game",
+"abbreviation": "PPG",
+"type": "ppg",
+"value": 0.0,
+"displayValue": "0"
+},
+{
+"name": "rank",
+"displayName": "Rank",
+"shortDisplayName": "Rank",
+"description": "Rank",
+"abbreviation": "R",
+"type": "rank",
+"value": 3.0,
+"displayValue": "3"
+},
+{
+"name": "rankChange",
+"displayName": "Rank Change",
+"shortDisplayName": "Rank Change",
+"description": "Rank Change",
+"abbreviation": "RC",
+"type": "rankchange",
+"value": 0.0,
+"displayValue": "0"
+},
+{
+"id": "0",
+"name": "overall",
+"abbreviation": "Total",
+"displayName": "Overall",
+"shortDisplayName": "OVER",
+"description": "Overall Record",
+"type": "total",
+"summary": "1-1-4",
+"displayValue": "1-1-4"
+}
+]
+}
+]
+}
+},
+{
+"uid": "s:600~l:775~g:4",
+"id": "4",
+"name": "Group D",
+"abbreviation": "Group D",
+"standings": {
+"id": "0",
+"name": "overall",
+"displayName": "Standings",
+"links": [
+{
+"language": "en-US",
+"rel": [
+"standings",
+"desktop"
+],
+"href": "https://www.espn.com/soccer/table/_/league/uefa.champions",
+"text": "Full Table",
+"shortText": "Standings",
+"isExternal": false,
+"isPremium": false
+}
+],
+"season": 2023,
+"seasonType": 1,
+"seasonDisplayName": "2023-24 UEFA Champions League",
+"entries": [
+{
+"team": {
+"id": "89",
+"uid": "s:600~t:89",
+"location": "Real Sociedad",
+"name": "Real Sociedad",
+"abbreviation": "RSO",
+"displayName": "Real Sociedad",
+"shortDisplayName": "Real Sociedad",
+"isActive": true,
+"logos": [
+{
+"href": "https://a.espncdn.com/i/teamlogos/soccer/500/89.png",
+"width": 500,
+"height": 500,
+"alt": "",
+"rel": [
+"full",
+"default"
+],
+"lastUpdated": "2019-05-08T16:07Z"
+}
+],
+"links": [
+{
+"language": "en-US",
+"rel": [
+"clubhouse",
+"desktop",
+"team"
+],
+"href": "https://www.espn.com/soccer/club/_/id/89/real-sociedad",
+"text": "Clubhouse",
+"shortText": "Clubhouse",
+"isExternal": false,
+"isPremium": false
+}
+],
+"isNational": false
+},
+"note": {
+"color": "#81D6AC",
+"description": "Qualifies for round of 16",
+"rank": 1
+},
+"stats": [
+{
+"name": "gamesPlayed",
+"displayName": "Games Played",
+"shortDisplayName": "GP",
+"description": "Number of Games Played",
+"abbreviation": "GP",
+"type": "gamesplayed",
+"value": 6.0,
+"displayValue": "6"
+},
+{
+"name": "losses",
+"displayName": "Losses",
+"shortDisplayName": "L",
+"description": "Losses",
+"abbreviation": "L",
+"type": "losses",
+"value": 0.0,
+"displayValue": "0"
+},
+{
+"name": "pointDifferential",
+"displayName": "Goal Difference",
+"shortDisplayName": "GD",
+"description": "Goal Difference",
+"abbreviation": "GD",
+"type": "pointdifferential",
+"value": 5.0,
+"displayValue": "+5"
+},
+{
+"name": "points",
+"displayName": "Points",
+"shortDisplayName": "P",
+"description": "Points",
+"abbreviation": "P",
+"type": "points",
+"value": 12.0,
+"displayValue": "12"
+},
+{
+"name": "pointsAgainst",
+"displayName": "Goals Against",
+"shortDisplayName": "A",
+"description": "Goals Against",
+"abbreviation": "A",
+"type": "pointsagainst",
+"value": 2.0,
+"displayValue": "2"
+},
+{
+"name": "pointsFor",
+"displayName": "Goals For",
+"shortDisplayName": "F",
+"description": "Goals For",
+"abbreviation": "F",
+"type": "pointsfor",
+"value": 7.0,
+"displayValue": "7"
+},
+{
+"name": "ties",
+"displayName": "Draws",
+"shortDisplayName": "D",
+"description": "Draws",
+"abbreviation": "D",
+"type": "ties",
+"value": 3.0,
+"displayValue": "3"
+},
+{
+"name": "wins",
+"displayName": "Wins",
+"shortDisplayName": "W",
+"description": "Wins",
+"abbreviation": "W",
+"type": "wins",
+"value": 3.0,
+"displayValue": "3"
+},
+{
+"name": "advanced",
+"displayName": "Advanced",
+"shortDisplayName": "ADV",
+"description": "Advanced",
+"abbreviation": "ADV",
+"type": "advanced",
+"value": 0.0,
+"displayValue": "0"
+},
+{
+"name": "deductions",
+"displayName": "Point Deductions",
+"shortDisplayName": "Deductions",
+"description": "Point Deductions",
+"abbreviation": "PD",
+"type": "deductions",
+"value": 0.0,
+"displayValue": ""
+},
+{
+"name": "ppg",
+"displayName": "Points Per Game",
+"shortDisplayName": "PPG",
+"description": "Points Per Game",
+"abbreviation": "PPG",
+"type": "ppg",
+"value": 0.0,
+"displayValue": "0"
+},
+{
+"name": "rank",
+"displayName": "Rank",
+"shortDisplayName": "Rank",
+"description": "Rank",
+"abbreviation": "R",
+"type": "rank",
+"value": 1.0,
+"displayValue": "1"
+},
+{
+"name": "rankChange",
+"displayName": "Rank Change",
+"shortDisplayName": "Rank Change",
+"description": "Rank Change",
+"abbreviation": "RC",
+"type": "rankchange",
+"value": 0.0,
+"displayValue": "0"
+},
+{
+"id": "0",
+"name": "overall",
+"abbreviation": "Total",
+"displayName": "Overall",
+"shortDisplayName": "OVER",
+"description": "Overall Record",
+"type": "total",
+"summary": "3-3-0",
+"displayValue": "3-3-0"
+}
+]
+},
+{
+"team": {
+"id": "2790",
+"uid": "s:600~t:2790",
+"location": "RB Salzburg",
+"name": "RB Salzburg",
+"abbreviation": "SLZ",
+"displayName": "RB Salzburg",
+"shortDisplayName": "RB Salzburg",
+"isActive": true,
+"logos": [
+{
+"href": "https://a.espncdn.com/i/teamlogos/soccer/500/2790.png",
+"width": 500,
+"height": 500,
+"alt": "",
+"rel": [
+"full",
+"default"
+],
+"lastUpdated": "2019-05-08T16:07Z"
+}
+],
+"links": [
+{
+"language": "en-US",
+"rel": [
+"clubhouse",
+"desktop",
+"team"
+],
+"href": "https://www.espn.com/soccer/club/_/id/2790/rb-salzburg",
+"text": "Clubhouse",
+"shortText": "Clubhouse",
+"isExternal": false,
+"isPremium": false
+}
+],
+"isNational": false
+},
+"stats": [
+{
+"name": "gamesPlayed",
+"displayName": "Games Played",
+"shortDisplayName": "GP",
+"description": "Number of Games Played",
+"abbreviation": "GP",
+"type": "gamesplayed",
+"value": 6.0,
+"displayValue": "6"
+},
+{
+"name": "losses",
+"displayName": "Losses",
+"shortDisplayName": "L",
+"description": "Losses",
+"abbreviation": "L",
+"type": "losses",
+"value": 4.0,
+"displayValue": "4"
+},
+{
+"name": "pointDifferential",
+"displayName": "Goal Difference",
+"shortDisplayName": "GD",
+"description": "Goal Difference",
+"abbreviation": "GD",
+"type": "pointdifferential",
+"value": -4.0,
+"displayValue": "-4"
+},
+{
+"name": "points",
+"displayName": "Points",
+"shortDisplayName": "P",
+"description": "Points",
+"abbreviation": "P",
+"type": "points",
+"value": 4.0,
+"displayValue": "4"
+},
+{
+"name": "pointsAgainst",
+"displayName": "Goals Against",
+"shortDisplayName": "A",
+"description": "Goals Against",
+"abbreviation": "A",
+"type": "pointsagainst",
+"value": 8.0,
+"displayValue": "8"
+},
+{
+"name": "pointsFor",
+"displayName": "Goals For",
+"shortDisplayName": "F",
+"description": "Goals For",
+"abbreviation": "F",
+"type": "pointsfor",
+"value": 4.0,
+"displayValue": "4"
+},
+{
+"name": "ties",
+"displayName": "Draws",
+"shortDisplayName": "D",
+"description": "Draws",
+"abbreviation": "D",
+"type": "ties",
+"value": 1.0,
+"displayValue": "1"
+},
+{
+"name": "wins",
+"displayName": "Wins",
+"shortDisplayName": "W",
+"description": "Wins",
+"abbreviation": "W",
+"type": "wins",
+"value": 1.0,
+"displayValue": "1"
+},
+{
+"name": "advanced",
+"displayName": "Advanced",
+"shortDisplayName": "ADV",
+"description": "Advanced",
+"abbreviation": "ADV",
+"type": "advanced",
+"value": 0.0,
+"displayValue": "0"
+},
+{
+"name": "deductions",
+"displayName": "Point Deductions",
+"shortDisplayName": "Deductions",
+"description": "Point Deductions",
+"abbreviation": "PD",
+"type": "deductions",
+"value": 0.0,
+"displayValue": ""
+},
+{
+"name": "ppg",
+"displayName": "Points Per Game",
+"shortDisplayName": "PPG",
+"description": "Points Per Game",
+"abbreviation": "PPG",
+"type": "ppg",
+"value": 0.0,
+"displayValue": "0"
+},
+{
+"name": "rank",
+"displayName": "Rank",
+"shortDisplayName": "Rank",
+"description": "Rank",
+"abbreviation": "R",
+"type": "rank",
+"value": 4.0,
+"displayValue": "4"
+},
+{
+"name": "rankChange",
+"displayName": "Rank Change",
+"shortDisplayName": "Rank Change",
+"description": "Rank Change",
+"abbreviation": "RC",
+"type": "rankchange",
+"value": 0.0,
+"displayValue": "0"
+},
+{
+"id": "0",
+"name": "overall",
+"abbreviation": "Total",
+"displayName": "Overall",
+"shortDisplayName": "OVER",
+"description": "Overall Record",
+"type": "total",
+"summary": "1-1-4",
+"displayValue": "1-1-4"
+}
+]
+}
+]
+}
+},
+{
+"uid": "s:600~l:775~g:5",
+"id": "5",
+"name": "Group E",
+"abbreviation": "Group E",
+"standings": {
+"id": "0",
+"name": "overall",
+"displayName": "Standings",
+"links": [
+{
+"language": "en-US",
+"rel": [
+"standings",
+"desktop"
+],
+"href": "https://www.espn.com/soccer/table/_/league/uefa.champions",
+"text": "Full Table",
+"shortText": "Standings",
+"isExternal": false,
+"isPremium": false
+}
+],
+"season": 2023,
+"seasonType": 1,
+"seasonDisplayName": "2023-24 UEFA Champions League",
+"entries": [
+{
+"team": {
+"id": "112",
+"uid": "s:600~t:112",
+"location": "Lazio",
+"name": "Lazio",
+"abbreviation": "LAZ",
+"displayName": "Lazio",
+"shortDisplayName": "Lazio",
+"isActive": true,
+"logos": [
+{
+"href": "https://a.espncdn.com/i/teamlogos/soccer/500/112.png",
+"width": 500,
+"height": 500,
+"alt": "",
+"rel": [
+"full",
+"default"
+],
+"lastUpdated": "2024-01-04T17:49Z"
+}
+],
+"links": [
+{
+"language": "en-US",
+"rel": [
+"clubhouse",
+"desktop",
+"team"
+],
+"href": "https://www.espn.com/soccer/club/_/id/112/lazio",
+"text": "Clubhouse",
+"shortText": "Clubhouse",
+"isExternal": false,
+"isPremium": false
+}
+],
+"isNational": false
+},
+"note": {
+"color": "#81D6AC",
+"description": "Qualifies for round of 16",
+"rank": 2
+},
+"stats": [
+{
+"name": "gamesPlayed",
+"displayName": "Games Played",
+"shortDisplayName": "GP",
+"description": "Number of Games Played",
+"abbreviation": "GP",
+"type": "gamesplayed",
+"value": 6.0,
+"displayValue": "6"
+},
+{
+"name": "losses",
+"displayName": "Losses",
+"shortDisplayName": "L",
+"description": "Losses",
+"abbreviation": "L",
+"type": "losses",
+"value": 2.0,
+"displayValue": "2"
+},
+{
+"name": "pointDifferential",
+"displayName": "Goal Difference",
+"shortDisplayName": "GD",
+"description": "Goal Difference",
+"abbreviation": "GD",
+"type": "pointdifferential",
+"value": 0.0,
+"displayValue": "0"
+},
+{
+"name": "points",
+"displayName": "Points",
+"shortDisplayName": "P",
+"description": "Points",
+"abbreviation": "P",
+"type": "points",
+"value": 10.0,
+"displayValue": "10"
+},
+{
+"name": "pointsAgainst",
+"displayName": "Goals Against",
+"shortDisplayName": "A",
+"description": "Goals Against",
+"abbreviation": "A",
+"type": "pointsagainst",
+"value": 7.0,
+"displayValue": "7"
+},
+{
+"name": "pointsFor",
+"displayName": "Goals For",
+"shortDisplayName": "F",
+"description": "Goals For",
+"abbreviation": "F",
+"type": "pointsfor",
+"value": 7.0,
+"displayValue": "7"
+},
+{
+"name": "ties",
+"displayName": "Draws",
+"shortDisplayName": "D",
+"description": "Draws",
+"abbreviation": "D",
+"type": "ties",
+"value": 1.0,
+"displayValue": "1"
+},
+{
+"name": "wins",
+"displayName": "Wins",
+"shortDisplayName": "W",
+"description": "Wins",
+"abbreviation": "W",
+"type": "wins",
+"value": 3.0,
+"displayValue": "3"
+},
+{
+"name": "advanced",
+"displayName": "Advanced",
+"shortDisplayName": "ADV",
+"description": "Advanced",
+"abbreviation": "ADV",
+"type": "advanced",
+"value": 0.0,
+"displayValue": "0"
+},
+{
+"name": "deductions",
+"displayName": "Point Deductions",
+"shortDisplayName": "Deductions",
+"description": "Point Deductions",
+"abbreviation": "PD",
+"type": "deductions",
+"value": 0.0,
+"displayValue": ""
+},
+{
+"name": "ppg",
+"displayName": "Points Per Game",
+"shortDisplayName": "PPG",
+"description": "Points Per Game",
+"abbreviation": "PPG",
+"type": "ppg",
+"value": 0.0,
+"displayValue": "0"
+},
+{
+"name": "rank",
+"displayName": "Rank",
+"shortDisplayName": "Rank",
+"description": "Rank",
+"abbreviation": "R",
+"type": "rank",
+"value": 2.0,
+"displayValue": "2"
+},
+{
+"name": "rankChange",
+"displayName": "Rank Change",
+"shortDisplayName": "Rank Change",
+"description": "Rank Change",
+"abbreviation": "RC",
+"type": "rankchange",
+"value": 0.0,
+"displayValue": "0"
+},
+{
+"id": "0",
+"name": "overall",
+"abbreviation": "Total",
+"displayName": "Overall",
+"shortDisplayName": "OVER",
+"description": "Overall Record",
+"type": "total",
+"summary": "3-1-2",
+"displayValue": "3-1-2"
+}
+]
+},
+{
+"team": {
+"id": "1068",
+"uid": "s:600~t:1068",
+"location": "Atlético Madrid",
+"name": "Atlético Madrid",
+"abbreviation": "ATM",
+"displayName": "Atlético Madrid",
+"shortDisplayName": "Atlético",
+"isActive": true,
+"logos": [
+{
+"href": "https://a.espncdn.com/i/teamlogos/soccer/500/1068.png",
+"width": 500,
+"height": 500,
+"alt": "",
+"rel": [
+"full",
+"default"
+],
+"lastUpdated": "2025-09-19T20:43Z"
+}
+],
+"links": [
+{
+"language": "en-US",
+"rel": [
+"clubhouse",
+"desktop",
+"team"
+],
+"href": "https://www.espn.com/soccer/club/_/id/1068/atletico-madrid",
+"text": "Clubhouse",
+"shortText": "Clubhouse",
+"isExternal": false,
+"isPremium": false
+}
+],
+"isNational": false
+},
+"note": {
+"color": "#81D6AC",
+"description": "Qualifies for round of 16",
+"rank": 1
+},
+"stats": [
+{
+"name": "gamesPlayed",
+"displayName": "Games Played",
+"shortDisplayName": "GP",
+"description": "Number of Games Played",
+"abbreviation": "GP",
+"type": "gamesplayed",
+"value": 6.0,
+"displayValue": "6"
+},
+{
+"name": "losses",
+"displayName": "Losses",
+"shortDisplayName": "L",
+"description": "Losses",
+"abbreviation": "L",
+"type": "losses",
+"value": 0.0,
+"displayValue": "0"
+},
+{
+"name": "pointDifferential",
+"displayName": "Goal Difference",
+"shortDisplayName": "GD",
+"description": "Goal Difference",
+"abbreviation": "GD",
+"type": "pointdifferential",
+"value": 11.0,
+"displayValue": "+11"
+},
+{
+"name": "points",
+"displayName": "Points",
+"shortDisplayName": "P",
+"description": "Points",
+"abbreviation": "P",
+"type": "points",
+"value": 14.0,
+"displayValue": "14"
+},
+{
+"name": "pointsAgainst",
+"displayName": "Goals Against",
+"shortDisplayName": "A",
+"description": "Goals Against",
+"abbreviation": "A",
+"type": "pointsagainst",
+"value": 6.0,
+"displayValue": "6"
+},
+{
+"name": "pointsFor",
+"displayName": "Goals For",
+"shortDisplayName": "F",
+"description": "Goals For",
+"abbreviation": "F",
+"type": "pointsfor",
+"value": 17.0,
+"displayValue": "17"
+},
+{
+"name": "ties",
+"displayName": "Draws",
+"shortDisplayName": "D",
+"description": "Draws",
+"abbreviation": "D",
+"type": "ties",
+"value": 2.0,
+"displayValue": "2"
+},
+{
+"name": "wins",
+"displayName": "Wins",
+"shortDisplayName": "W",
+"description": "Wins",
+"abbreviation": "W",
+"type": "wins",
+"value": 4.0,
+"displayValue": "4"
+},
+{
+"name": "advanced",
+"displayName": "Advanced",
+"shortDisplayName": "ADV",
+"description": "Advanced",
+"abbreviation": "ADV",
+"type": "advanced",
+"value": 0.0,
+"displayValue": "0"
+},
+{
+"name": "deductions",
+"displayName": "Point Deductions",
+"shortDisplayName": "Deductions",
+"description": "Point Deductions",
+"abbreviation": "PD",
+"type": "deductions",
+"value": 0.0,
+"displayValue": ""
+},
+{
+"name": "ppg",
+"displayName": "Points Per Game",
+"shortDisplayName": "PPG",
+"description": "Points Per Game",
+"abbreviation": "PPG",
+"type": "ppg",
+"value": 0.0,
+"displayValue": "0"
+},
+{
+"name": "rank",
+"displayName": "Rank",
+"shortDisplayName": "Rank",
+"description": "Rank",
+"abbreviation": "R",
+"type": "rank",
+"value": 1.0,
+"displayValue": "1"
+},
+{
+"name": "rankChange",
+"displayName": "Rank Change",
+"shortDisplayName": "Rank Change",
+"description": "Rank Change",
+"abbreviation": "RC",
+"type": "rankchange",
+"value": 0.0,
+"displayValue": "0"
+},
+{
+"id": "0",
+"name": "overall",
+"abbreviation": "Total",
+"displayName": "Overall",
+"shortDisplayName": "OVER",
+"description": "Overall Record",
+"type": "total",
+"summary": "4-2-0",
+"displayValue": "4-2-0"
+}
+]
+}
+]
+}
+},
+{
+"uid": "s:600~l:775~g:6",
+"id": "6",
+"name": "Group F",
+"abbreviation": "Group F",
+"standings": {
+"id": "0",
+"name": "overall",
+"displayName": "Standings",
+"links": [
+{
+"language": "en-US",
+"rel": [
+"standings",
+"desktop"
+],
+"href": "https://www.espn.com/soccer/table/_/league/uefa.champions",
+"text": "Full Table",
+"shortText": "Standings",
+"isExternal": false,
+"isPremium": false
+}
+],
+"season": 2023,
+"seasonType": 1,
+"seasonDisplayName": "2023-24 UEFA Champions League",
+"entries": [
+{
+"team": {
+"id": "103",
+"uid": "s:600~t:103",
+"location": "AC Milan",
+"name": "AC Milan",
+"abbreviation": "MIL",
+"displayName": "AC Milan",
+"shortDisplayName": "Milan",
+"isActive": true,
+"logos": [
+{
+"href": "https://a.espncdn.com/i/teamlogos/soccer/500/103.png",
+"width": 500,
+"height": 500,
+"alt": "",
+"rel": [
+"full",
+"default"
+],
+"lastUpdated": "2024-01-04T17:49Z"
+}
+],
+"links": [
+{
+"language": "en-US",
+"rel": [
+"clubhouse",
+"desktop",
+"team"
+],
+"href": "https://www.espn.com/soccer/club/_/id/103/ac-milan",
+"text": "Clubhouse",
+"shortText": "Clubhouse",
+"isExternal": false,
+"isPremium": false
+}
+],
+"isNational": false
+},
+"note": {
+"color": "#B2BFD0",
+"description": "Europa League knockout round playoffs\t",
+"rank": 3
+},
+"stats": [
+{
+"name": "gamesPlayed",
+"displayName": "Games Played",
+"shortDisplayName": "GP",
+"description": "Number of Games Played",
+"abbreviation": "GP",
+"type": "gamesplayed",
+"value": 6.0,
+"displayValue": "6"
+},
+{
+"name": "losses",
+"displayName": "Losses",
+"shortDisplayName": "L",
+"description": "Losses",
+"abbreviation": "L",
+"type": "losses",
+"value": 2.0,
+"displayValue": "2"
+},
+{
+"name": "pointDifferential",
+"displayName": "Goal Difference",
+"shortDisplayName": "GD",
+"description": "Goal Difference",
+"abbreviation": "GD",
+"type": "pointdifferential",
+"value": -3.0,
+"displayValue": "-3"
+},
+{
+"name": "points",
+"displayName": "Points",
+"shortDisplayName": "P",
+"description": "Points",
+"abbreviation": "P",
+"type": "points",
+"value": 8.0,
+"displayValue": "8"
+},
+{
+"name": "pointsAgainst",
+"displayName": "Goals Against",
+"shortDisplayName": "A",
+"description": "Goals Against",
+"abbreviation": "A",
+"type": "pointsagainst",
+"value": 8.0,
+"displayValue": "8"
+},
+{
+"name": "pointsFor",
+"displayName": "Goals For",
+"shortDisplayName": "F",
+"description": "Goals For",
+"abbreviation": "F",
+"type": "pointsfor",
+"value": 5.0,
+"displayValue": "5"
+},
+{
+"name": "ties",
+"displayName": "Draws",
+"shortDisplayName": "D",
+"description": "Draws",
+"abbreviation": "D",
+"type": "ties",
+"value": 2.0,
+"displayValue": "2"
+},
+{
+"name": "wins",
+"displayName": "Wins",
+"shortDisplayName": "W",
+"description": "Wins",
+"abbreviation": "W",
+"type": "wins",
+"value": 2.0,
+"displayValue": "2"
+},
+{
+"name": "advanced",
+"displayName": "Advanced",
+"shortDisplayName": "ADV",
+"description": "Advanced",
+"abbreviation": "ADV",
+"type": "advanced",
+"value": 0.0,
+"displayValue": "0"
+},
+{
+"name": "deductions",
+"displayName": "Point Deductions",
+"shortDisplayName": "Deductions",
+"description": "Point Deductions",
+"abbreviation": "PD",
+"type": "deductions",
+"value": 0.0,
+"displayValue": ""
+},
+{
+"name": "ppg",
+"displayName": "Points Per Game",
+"shortDisplayName": "PPG",
+"description": "Points Per Game",
+"abbreviation": "PPG",
+"type": "ppg",
+"value": 0.0,
+"displayValue": "0"
+},
+{
+"name": "rank",
+"displayName": "Rank",
+"shortDisplayName": "Rank",
+"description": "Rank",
+"abbreviation": "R",
+"type": "rank",
+"value": 3.0,
+"displayValue": "3"
+},
+{
+"name": "rankChange",
+"displayName": "Rank Change",
+"shortDisplayName": "Rank Change",
+"description": "Rank Change",
+"abbreviation": "RC",
+"type": "rankchange",
+"value": 0.0,
+"displayValue": "0"
+},
+{
+"id": "0",
+"name": "overall",
+"abbreviation": "Total",
+"displayName": "Overall",
+"shortDisplayName": "OVER",
+"description": "Overall Record",
+"type": "total",
+"summary": "2-2-2",
+"displayValue": "2-2-2"
+}
+]
+},
+{
+"team": {
+"id": "361",
+"uid": "s:600~t:361",
+"location": "Newcastle United",
+"name": "Newcastle United",
+"abbreviation": "NEW",
+"displayName": "Newcastle United",
+"shortDisplayName": "Newcastle",
+"isActive": true,
+"logos": [
+{
+"href": "https://a.espncdn.com/i/teamlogos/soccer/500/361.png",
+"width": 500,
+"height": 500,
+"alt": "",
+"rel": [
+"full",
+"default"
+],
+"lastUpdated": "2024-01-04T17:49Z"
+}
+],
+"links": [
+{
+"language": "en-US",
+"rel": [
+"clubhouse",
+"desktop",
+"team"
+],
+"href": "https://www.espn.com/soccer/club/_/id/361/newcastle-united",
+"text": "Clubhouse",
+"shortText": "Clubhouse",
+"isExternal": false,
+"isPremium": false
+}
+],
+"isNational": false
+},
+"stats": [
+{
+"name": "gamesPlayed",
+"displayName": "Games Played",
+"shortDisplayName": "GP",
+"description": "Number of Games Played",
+"abbreviation": "GP",
+"type": "gamesplayed",
+"value": 6.0,
+"displayValue": "6"
+},
+{
+"name": "losses",
+"displayName": "Losses",
+"shortDisplayName": "L",
+"description": "Losses",
+"abbreviation": "L",
+"type": "losses",
+"value": 3.0,
+"displayValue": "3"
+},
+{
+"name": "pointDifferential",
+"displayName": "Goal Difference",
+"shortDisplayName": "GD",
+"description": "Goal Difference",
+"abbreviation": "GD",
+"type": "pointdifferential",
+"value": -1.0,
+"displayValue": "-1"
+},
+{
+"name": "points",
+"displayName": "Points",
+"shortDisplayName": "P",
+"description": "Points",
+"abbreviation": "P",
+"type": "points",
+"value": 5.0,
+"displayValue": "5"
+},
+{
+"name": "pointsAgainst",
+"displayName": "Goals Against",
+"shortDisplayName": "A",
+"description": "Goals Against",
+"abbreviation": "A",
+"type": "pointsagainst",
+"value": 7.0,
+"displayValue": "7"
+},
+{
+"name": "pointsFor",
+"displayName": "Goals For",
+"shortDisplayName": "F",
+"description": "Goals For",
+"abbreviation": "F",
+"type": "pointsfor",
+"value": 6.0,
+"displayValue": "6"
+},
+{
+"name": "ties",
+"displayName": "Draws",
+"shortDisplayName": "D",
+"description": "Draws",
+"abbreviation": "D",
+"type": "ties",
+"value": 2.0,
+"displayValue": "2"
+},
+{
+"name": "wins",
+"displayName": "Wins",
+"shortDisplayName": "W",
+"description": "Wins",
+"abbreviation": "W",
+"type": "wins",
+"value": 1.0,
+"displayValue": "1"
+},
+{
+"name": "advanced",
+"displayName": "Advanced",
+"shortDisplayName": "ADV",
+"description": "Advanced",
+"abbreviation": "ADV",
+"type": "advanced",
+"value": 0.0,
+"displayValue": "0"
+},
+{
+"name": "deductions",
+"displayName": "Point Deductions",
+"shortDisplayName": "Deductions",
+"description": "Point Deductions",
+"abbreviation": "PD",
+"type": "deductions",
+"value": 0.0,
+"displayValue": ""
+},
+{
+"name": "ppg",
+"displayName": "Points Per Game",
+"shortDisplayName": "PPG",
+"description": "Points Per Game",
+"abbreviation": "PPG",
+"type": "ppg",
+"value": 0.0,
+"displayValue": "0"
+},
+{
+"name": "rank",
+"displayName": "Rank",
+"shortDisplayName": "Rank",
+"description": "Rank",
+"abbreviation": "R",
+"type": "rank",
+"value": 4.0,
+"displayValue": "4"
+},
+{
+"name": "rankChange",
+"displayName": "Rank Change",
+"shortDisplayName": "Rank Change",
+"description": "Rank Change",
+"abbreviation": "RC",
+"type": "rankchange",
+"value": 0.0,
+"displayValue": "0"
+},
+{
+"id": "0",
+"name": "overall",
+"abbreviation": "Total",
+"displayName": "Overall",
+"shortDisplayName": "OVER",
+"description": "Overall Record",
+"type": "total",
+"summary": "1-2-3",
+"displayValue": "1-2-3"
+}
+]
+}
+]
+}
+},
+{
+"uid": "s:600~l:775~g:7",
+"id": "7",
+"name": "Group G",
+"abbreviation": "Group G",
+"standings": {
+"id": "0",
+"name": "overall",
+"displayName": "Standings",
+"links": [
+{
+"language": "en-US",
+"rel": [
+"standings",
+"desktop"
+],
+"href": "https://www.espn.com/soccer/table/_/league/uefa.champions",
+"text": "Full Table",
+"shortText": "Standings",
+"isExternal": false,
+"isPremium": false
+}
+],
+"season": 2023,
+"seasonType": 1,
+"seasonDisplayName": "2023-24 UEFA Champions League",
+"entries": [
+{
+"team": {
+"id": "382",
+"uid": "s:600~t:382",
+"location": "Manchester City",
+"name": "Manchester City",
+"abbreviation": "MNC",
+"displayName": "Manchester City",
+"shortDisplayName": "Man City",
+"isActive": true,
+"logos": [
+{
+"href": "https://a.espncdn.com/i/teamlogos/soccer/500/382.png",
+"width": 500,
+"height": 500,
+"alt": "",
+"rel": [
+"full",
+"default"
+],
+"lastUpdated": "2019-05-08T16:07Z"
+}
+],
+"links": [
+{
+"language": "en-US",
+"rel": [
+"clubhouse",
+"desktop",
+"team"
+],
+"href": "https://www.espn.com/soccer/club/_/id/382/manchester-city",
+"text": "Clubhouse",
+"shortText": "Clubhouse",
+"isExternal": false,
+"isPremium": false
+}
+],
+"isNational": false
+},
+"note": {
+"color": "#81D6AC",
+"description": "Qualifies for round of 16",
+"rank": 1
+},
+"stats": [
+{
+"name": "gamesPlayed",
+"displayName": "Games Played",
+"shortDisplayName": "GP",
+"description": "Number of Games Played",
+"abbreviation": "GP",
+"type": "gamesplayed",
+"value": 6.0,
+"displayValue": "6"
+},
+{
+"name": "losses",
+"displayName": "Losses",
+"shortDisplayName": "L",
+"description": "Losses",
+"abbreviation": "L",
+"type": "losses",
+"value": 0.0,
+"displayValue": "0"
+},
+{
+"name": "pointDifferential",
+"displayName": "Goal Difference",
+"shortDisplayName": "GD",
+"description": "Goal Difference",
+"abbreviation": "GD",
+"type": "pointdifferential",
+"value": 11.0,
+"displayValue": "+11"
+},
+{
+"name": "points",
+"displayName": "Points",
+"shortDisplayName": "P",
+"description": "Points",
+"abbreviation": "P",
+"type": "points",
+"value": 18.0,
+"displayValue": "18"
+},
+{
+"name": "pointsAgainst",
+"displayName": "Goals Against",
+"shortDisplayName": "A",
+"description": "Goals Against",
+"abbreviation": "A",
+"type": "pointsagainst",
+"value": 7.0,
+"displayValue": "7"
+},
+{
+"name": "pointsFor",
+"displayName": "Goals For",
+"shortDisplayName": "F",
+"description": "Goals For",
+"abbreviation": "F",
+"type": "pointsfor",
+"value": 18.0,
+"displayValue": "18"
+},
+{
+"name": "ties",
+"displayName": "Draws",
+"shortDisplayName": "D",
+"description": "Draws",
+"abbreviation": "D",
+"type": "ties",
+"value": 0.0,
+"displayValue": "0"
+},
+{
+"name": "wins",
+"displayName": "Wins",
+"shortDisplayName": "W",
+"description": "Wins",
+"abbreviation": "W",
+"type": "wins",
+"value": 6.0,
+"displayValue": "6"
+},
+{
+"name": "advanced",
+"displayName": "Advanced",
+"shortDisplayName": "ADV",
+"description": "Advanced",
+"abbreviation": "ADV",
+"type": "advanced",
+"value": 0.0,
+"displayValue": "0"
+},
+{
+"name": "deductions",
+"displayName": "Point Deductions",
+"shortDisplayName": "Deductions",
+"description": "Point Deductions",
+"abbreviation": "PD",
+"type": "deductions",
+"value": 0.0,
+"displayValue": ""
+},
+{
+"name": "ppg",
+"displayName": "Points Per Game",
+"shortDisplayName": "PPG",
+"description": "Points Per Game",
+"abbreviation": "PPG",
+"type": "ppg",
+"value": 0.0,
+"displayValue": "0"
+},
+{
+"name": "rank",
+"displayName": "Rank",
+"shortDisplayName": "Rank",
+"description": "Rank",
+"abbreviation": "R",
+"type": "rank",
+"value": 1.0,
+"displayValue": "1"
+},
+{
+"name": "rankChange",
+"displayName": "Rank Change",
+"shortDisplayName": "Rank Change",
+"description": "Rank Change",
+"abbreviation": "RC",
+"type": "rankchange",
+"value": 0.0,
+"displayValue": "0"
+},
+{
+"id": "0",
+"name": "overall",
+"abbreviation": "Total",
+"displayName": "Overall",
+"shortDisplayName": "OVER",
+"description": "Overall Record",
+"type": "total",
+"summary": "6-0-0",
+"displayValue": "6-0-0"
+}
+]
+},
+{
+"team": {
+"id": "11420",
+"uid": "s:600~t:11420",
+"location": "RB Leipzig",
+"name": "RB Leipzig",
+"abbreviation": "RBL",
+"displayName": "RB Leipzig",
+"shortDisplayName": "RB Leipzig",
+"isActive": true,
+"logos": [
+{
+"href": "https://a.espncdn.com/i/teamlogos/soccer/500/11420.png",
+"width": 500,
+"height": 500,
+"alt": "",
+"rel": [
+"full",
+"default"
+],
+"lastUpdated": "2024-01-04T17:49Z"
+}
+],
+"links": [
+{
+"language": "en-US",
+"rel": [
+"clubhouse",
+"desktop",
+"team"
+],
+"href": "https://www.espn.com/soccer/club/_/id/11420/rb-leipzig",
+"text": "Clubhouse",
+"shortText": "Clubhouse",
+"isExternal": false,
+"isPremium": false
+}
+],
+"isNational": false
+},
+"note": {
+"color": "#81D6AC",
+"description": "Qualifies for round of 16",
+"rank": 2
+},
+"stats": [
+{
+"name": "gamesPlayed",
+"displayName": "Games Played",
+"shortDisplayName": "GP",
+"description": "Number of Games Played",
+"abbreviation": "GP",
+"type": "gamesplayed",
+"value": 6.0,
+"displayValue": "6"
+},
+{
+"name": "losses",
+"displayName": "Losses",
+"shortDisplayName": "L",
+"description": "Losses",
+"abbreviation": "L",
+"type": "losses",
+"value": 2.0,
+"displayValue": "2"
+},
+{
+"name": "pointDifferential",
+"displayName": "Goal Difference",
+"shortDisplayName": "GD",
+"description": "Goal Difference",
+"abbreviation": "GD",
+"type": "pointdifferential",
+"value": 3.0,
+"displayValue": "+3"
+},
+{
+"name": "points",
+"displayName": "Points",
+"shortDisplayName": "P",
+"description": "Points",
+"abbreviation": "P",
+"type": "points",
+"value": 12.0,
+"displayValue": "12"
+},
+{
+"name": "pointsAgainst",
+"displayName": "Goals Against",
+"shortDisplayName": "A",
+"description": "Goals Against",
+"abbreviation": "A",
+"type": "pointsagainst",
+"value": 10.0,
+"displayValue": "10"
+},
+{
+"name": "pointsFor",
+"displayName": "Goals For",
+"shortDisplayName": "F",
+"description": "Goals For",
+"abbreviation": "F",
+"type": "pointsfor",
+"value": 13.0,
+"displayValue": "13"
+},
+{
+"name": "ties",
+"displayName": "Draws",
+"shortDisplayName": "D",
+"description": "Draws",
+"abbreviation": "D",
+"type": "ties",
+"value": 0.0,
+"displayValue": "0"
+},
+{
+"name": "wins",
+"displayName": "Wins",
+"shortDisplayName": "W",
+"description": "Wins",
+"abbreviation": "W",
+"type": "wins",
+"value": 4.0,
+"displayValue": "4"
+},
+{
+"name": "advanced",
+"displayName": "Advanced",
+"shortDisplayName": "ADV",
+"description": "Advanced",
+"abbreviation": "ADV",
+"type": "advanced",
+"value": 0.0,
+"displayValue": "0"
+},
+{
+"name": "deductions",
+"displayName": "Point Deductions",
+"shortDisplayName": "Deductions",
+"description": "Point Deductions",
+"abbreviation": "PD",
+"type": "deductions",
+"value": 0.0,
+"displayValue": ""
+},
+{
+"name": "ppg",
+"displayName": "Points Per Game",
+"shortDisplayName": "PPG",
+"description": "Points Per Game",
+"abbreviation": "PPG",
+"type": "ppg",
+"value": 0.0,
+"displayValue": "0"
+},
+{
+"name": "rank",
+"displayName": "Rank",
+"shortDisplayName": "Rank",
+"description": "Rank",
+"abbreviation": "R",
+"type": "rank",
+"value": 2.0,
+"displayValue": "2"
+},
+{
+"name": "rankChange",
+"displayName": "Rank Change",
+"shortDisplayName": "Rank Change",
+"description": "Rank Change",
+"abbreviation": "RC",
+"type": "rankchange",
+"value": 0.0,
+"displayValue": "0"
+},
+{
+"id": "0",
+"name": "overall",
+"abbreviation": "Total",
+"displayName": "Overall",
+"shortDisplayName": "OVER",
+"description": "Overall Record",
+"type": "total",
+"summary": "4-0-2",
+"displayValue": "4-0-2"
+}
+]
+}
+]
+}
+},
+{
+"uid": "s:600~l:775~g:8",
+"id": "8",
+"name": "Group H",
+"abbreviation": "Group H",
+"standings": {
+"id": "0",
+"name": "overall",
+"displayName": "Standings",
+"links": [
+{
+"language": "en-US",
+"rel": [
+"standings",
+"desktop"
+],
+"href": "https://www.espn.com/soccer/table/_/league/uefa.champions",
+"text": "Full Table",
+"shortText": "Standings",
+"isExternal": false,
+"isPremium": false
+}
+],
+"season": 2023,
+"seasonType": 1,
+"seasonDisplayName": "2023-24 UEFA Champions League",
+"entries": [
+{
+"team": {
+"id": "83",
+"uid": "s:600~t:83",
+"location": "Barcelona",
+"name": "Barcelona",
+"abbreviation": "BAR",
+"displayName": "Barcelona",
+"shortDisplayName": "Barcelona",
+"isActive": true,
+"logos": [
+{
+"href": "https://a.espncdn.com/i/teamlogos/soccer/500/83.png",
+"width": 500,
+"height": 500,
+"alt": "",
+"rel": [
+"full",
+"default"
+],
+"lastUpdated": "2019-05-08T16:07Z"
+}
+],
+"links": [
+{
+"language": "en-US",
+"rel": [
+"clubhouse",
+"desktop",
+"team"
+],
+"href": "https://www.espn.com/soccer/club/_/id/83/barcelona",
+"text": "Clubhouse",
+"shortText": "Clubhouse",
+"isExternal": false,
+"isPremium": false
+}
+],
+"isNational": false
+},
+"note": {
+"color": "#81D6AC",
+"description": "Qualifies for round of 16",
+"rank": 1
+},
+"stats": [
+{
+"name": "gamesPlayed",
+"displayName": "Games Played",
+"shortDisplayName": "GP",
+"description": "Number of Games Played",
+"abbreviation": "GP",
+"type": "gamesplayed",
+"value": 6.0,
+"displayValue": "6"
+},
+{
+"name": "losses",
+"displayName": "Losses",
+"shortDisplayName": "L",
+"description": "Losses",
+"abbreviation": "L",
+"type": "losses",
+"value": 2.0,
+"displayValue": "2"
+},
+{
+"name": "pointDifferential",
+"displayName": "Goal Difference",
+"shortDisplayName": "GD",
+"description": "Goal Difference",
+"abbreviation": "GD",
+"type": "pointdifferential",
+"value": 6.0,
+"displayValue": "+6"
+},
+{
+"name": "points",
+"displayName": "Points",
+"shortDisplayName": "P",
+"description": "Points",
+"abbreviation": "P",
+"type": "points",
+"value": 12.0,
+"displayValue": "12"
+},
+{
+"name": "pointsAgainst",
+"displayName": "Goals Against",
+"shortDisplayName": "A",
+"description": "Goals Against",
+"abbreviation": "A",
+"type": "pointsagainst",
+"value": 6.0,
+"displayValue": "6"
+},
+{
+"name": "pointsFor",
+"displayName": "Goals For",
+"shortDisplayName": "F",
+"description": "Goals For",
+"abbreviation": "F",
+"type": "pointsfor",
+"value": 12.0,
+"displayValue": "12"
+},
+{
+"name": "ties",
+"displayName": "Draws",
+"shortDisplayName": "D",
+"description": "Draws",
+"abbreviation": "D",
+"type": "ties",
+"value": 0.0,
+"displayValue": "0"
+},
+{
+"name": "wins",
+"displayName": "Wins",
+"shortDisplayName": "W",
+"description": "Wins",
+"abbreviation": "W",
+"type": "wins",
+"value": 4.0,
+"displayValue": "4"
+},
+{
+"name": "advanced",
+"displayName": "Advanced",
+"shortDisplayName": "ADV",
+"description": "Advanced",
+"abbreviation": "ADV",
+"type": "advanced",
+"value": 0.0,
+"displayValue": "0"
+},
+{
+"name": "deductions",
+"displayName": "Point Deductions",
+"shortDisplayName": "Deductions",
+"description": "Point Deductions",
+"abbreviation": "PD",
+"type": "deductions",
+"value": 0.0,
+"displayValue": ""
+},
+{
+"name": "ppg",
+"displayName": "Points Per Game",
+"shortDisplayName": "PPG",
+"description": "Points Per Game",
+"abbreviation": "PPG",
+"type": "ppg",
+"value": 0.0,
+"displayValue": "0"
+},
+{
+"name": "rank",
+"displayName": "Rank",
+"shortDisplayName": "Rank",
+"description": "Rank",
+"abbreviation": "R",
+"type": "rank",
+"value": 1.0,
+"displayValue": "1"
+},
+{
+"name": "rankChange",
+"displayName": "Rank Change",
+"shortDisplayName": "Rank Change",
+"description": "Rank Change",
+"abbreviation": "RC",
+"type": "rankchange",
+"value": 0.0,
+"displayValue": "0"
+},
+{
+"id": "0",
+"name": "overall",
+"abbreviation": "Total",
+"displayName": "Overall",
+"shortDisplayName": "OVER",
+"description": "Overall Record",
+"type": "total",
+"summary": "4-0-2",
+"displayValue": "4-0-2"
+}
+]
+},
+{
+"team": {
+"id": "17544",
+"uid": "s:600~t:17544",
+"location": "Antwerp",
+"name": "Antwerp",
+"abbreviation": "ANT",
+"displayName": "Antwerp",
+"shortDisplayName": "Antwerp",
+"isActive": true,
+"logos": [
+{
+"href": "https://a.espncdn.com/i/teamlogos/soccer/500/17544.png",
+"width": 500,
+"height": 500,
+"alt": "",
+"rel": [
+"full",
+"default"
+],
+"lastUpdated": "2019-05-08T16:07Z"
+}
+],
+"links": [
+{
+"language": "en-US",
+"rel": [
+"clubhouse",
+"desktop",
+"team"
+],
+"href": "https://www.espn.com/soccer/club/_/id/17544/antwerp",
+"text": "Clubhouse",
+"shortText": "Clubhouse",
+"isExternal": false,
+"isPremium": false
+}
+],
+"isNational": false
+},
+"stats": [
+{
+"name": "gamesPlayed",
+"displayName": "Games Played",
+"shortDisplayName": "GP",
+"description": "Number of Games Played",
+"abbreviation": "GP",
+"type": "gamesplayed",
+"value": 6.0,
+"displayValue": "6"
+},
+{
+"name": "losses",
+"displayName": "Losses",
+"shortDisplayName": "L",
+"description": "Losses",
+"abbreviation": "L",
+"type": "losses",
+"value": 5.0,
+"displayValue": "5"
+},
+{
+"name": "pointDifferential",
+"displayName": "Goal Difference",
+"shortDisplayName": "GD",
+"description": "Goal Difference",
+"abbreviation": "GD",
+"type": "pointdifferential",
+"value": -11.0,
+"displayValue": "-11"
+},
+{
+"name": "points",
+"displayName": "Points",
+"shortDisplayName": "P",
+"description": "Points",
+"abbreviation": "P",
+"type": "points",
+"value": 3.0,
+"displayValue": "3"
+},
+{
+"name": "pointsAgainst",
+"displayName": "Goals Against",
+"shortDisplayName": "A",
+"description": "Goals Against",
+"abbreviation": "A",
+"type": "pointsagainst",
+"value": 17.0,
+"displayValue": "17"
+},
+{
+"name": "pointsFor",
+"displayName": "Goals For",
+"shortDisplayName": "F",
+"description": "Goals For",
+"abbreviation": "F",
+"type": "pointsfor",
+"value": 6.0,
+"displayValue": "6"
+},
+{
+"name": "ties",
+"displayName": "Draws",
+"shortDisplayName": "D",
+"description": "Draws",
+"abbreviation": "D",
+"type": "ties",
+"value": 0.0,
+"displayValue": "0"
+},
+{
+"name": "wins",
+"displayName": "Wins",
+"shortDisplayName": "W",
+"description": "Wins",
+"abbreviation": "W",
+"type": "wins",
+"value": 1.0,
+"displayValue": "1"
+},
+{
+"name": "advanced",
+"displayName": "Advanced",
+"shortDisplayName": "ADV",
+"description": "Advanced",
+"abbreviation": "ADV",
+"type": "advanced",
+"value": 0.0,
+"displayValue": "0"
+},
+{
+"name": "deductions",
+"displayName": "Point Deductions",
+"shortDisplayName": "Deductions",
+"description": "Point Deductions",
+"abbreviation": "PD",
+"type": "deductions",
+"value": 0.0,
+"displayValue": ""
+},
+{
+"name": "ppg",
+"displayName": "Points Per Game",
+"shortDisplayName": "PPG",
+"description": "Points Per Game",
+"abbreviation": "PPG",
+"type": "ppg",
+"value": 0.0,
+"displayValue": "0"
+},
+{
+"name": "rank",
+"displayName": "Rank",
+"shortDisplayName": "Rank",
+"description": "Rank",
+"abbreviation": "R",
+"type": "rank",
+"value": 4.0,
+"displayValue": "4"
+},
+{
+"name": "rankChange",
+"displayName": "Rank Change",
+"shortDisplayName": "Rank Change",
+"description": "Rank Change",
+"abbreviation": "RC",
+"type": "rankchange",
+"value": 0.0,
+"displayValue": "0"
+},
+{
+"id": "0",
+"name": "overall",
+"abbreviation": "Total",
+"displayName": "Overall",
+"shortDisplayName": "OVER",
+"description": "Overall Record",
+"type": "total",
+"summary": "1-0-5",
+"displayValue": "1-0-5"
+}
+]
+}
+]
+}
+}
+],
+"season": {
+"year": 2023,
+"startDate": "2023-08-24T04:00Z",
+"endDate": "2024-07-01T03:59Z",
+"displayName": "2023-24 UEFA Champions League"
+},
+"seasons": [
+{
+"year": 2026,
+"startDate": "2026-07-01T04:00Z",
+"endDate": "2027-07-01T03:59Z",
+"displayName": "2026-27 UEFA Champions League",
+"types": [
+{
+"id": "1",
+"name": "League Phase",
+"abbreviation": "League Phase",
+"startDate": "2026-08-27T04:00Z",
+"endDate": "2027-02-15T04:59Z",
+"hasStandings": true
+},
+{
+"id": "2",
+"name": "Knockout Round Playoffs",
+"abbreviation": "Knockout Round Playoffs",
+"startDate": "2027-02-15T05:00Z",
+"endDate": "2027-03-08T04:59Z",
+"hasStandings": false
+},
+{
+"id": "3",
+"name": "Round of 16",
+"abbreviation": "Round of 16",
+"startDate": "2027-03-08T05:00Z",
+"endDate": "2027-04-05T03:59Z",
+"hasStandings": false
+},
+{
+"id": "4",
+"name": "Quarterfinals",
+"abbreviation": "Quarterfinals",
+"startDate": "2027-04-05T04:00Z",
+"endDate": "2027-04-26T03:59Z",
+"hasStandings": false
+},
+{
+"id": "5",
+"name": "Semifinals",
+"abbreviation": "Semifinals",
+"startDate": "2027-04-26T04:00Z",
+"endDate": "2027-06-01T03:59Z",
+"hasStandings": false
+},
+{
+"id": "6",
+"name": "Final",
+"abbreviation": "Final",
+"startDate": "2027-06-01T04:00Z",
+"endDate": "2027-07-01T03:59Z",
+"hasStandings": false
+}
+],
+"seasonYears": "2026-27"
+},
+{
+"year": 2025,
+"startDate": "2025-07-01T04:00Z",
+"endDate": "2026-07-01T03:59Z",
+"displayName": "2025-26 UEFA Champions League",
+"types": [
+{
+"id": "1",
+"name": "League Phase",
+"abbreviation": "League Phase",
+"startDate": "2025-08-28T04:00Z",
+"endDate": "2026-01-30T04:59Z",
+"hasStandings": true
+},
+{
+"id": "2",
+"name": "Knockout Round Playoffs",
+"abbreviation": "Knockout Round Playoffs",
+"startDate": "2026-01-30T05:00Z",
+"endDate": "2026-02-27T04:59Z",
+"hasStandings": false
+},
+{
+"id": "3",
+"name": "Round of 16",
+"abbreviation": "Round of 16",
+"startDate": "2026-02-27T05:00Z",
+"endDate": "2026-03-20T03:59Z",
+"hasStandings": false
+},
+{
+"id": "4",
+"name": "Quarterfinals",
+"abbreviation": "Quarterfinals",
+"startDate": "2026-03-20T04:00Z",
+"endDate": "2026-04-17T03:59Z",
+"hasStandings": false
+},
+{
+"id": "5",
+"name": "Semifinals",
+"abbreviation": "Semifinals",
+"startDate": "2026-04-17T04:00Z",
+"endDate": "2026-05-08T03:59Z",
+"hasStandings": false
+},
+{
+"id": "6",
+"name": "Final",
+"abbreviation": "Final",
+"startDate": "2026-05-08T04:00Z",
+"endDate": "2026-07-01T03:59Z",
+"hasStandings": false
+}
+],
+"seasonYears": "2025-26"
+}
+]
+}

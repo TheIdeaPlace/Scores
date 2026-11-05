@@ -1,0 +1,252 @@
+{
+"sports": [
+{
+"id": "600",
+"leagues": [
+{
+"abbreviation": "Concacaf Champions Cup",
+"id": "5699",
+"name": "Concacaf Champions Cup",
+"season": {
+"displayName": "2026",
+"year": 2026
+},
+"shortName": "Concacaf Champions Cup",
+"slug": "concacaf.champions",
+"teams": [
+{
+"team": {
+"abbreviation": "ALA",
+"alternateColor": "000000",
+"color": "000000",
+"displayName": "Alajuelense",
+"id": "2057",
+"isActive": true,
+"isAllStar": false,
+"links": [
+{
+"href": "https://www.espn.com/soccer/club/_/id/2057/alajuelense",
+"isExternal": false,
+"isHidden": false,
+"isPremium": false,
+"language": "en-US",
+"rel": [
+"clubhouse",
+"desktop",
+"team"
+],
+"shortText": "Clubhouse",
+"text": "Clubhouse"
+},
+{
+"href": "https://www.espn.com/soccer/team/stats/_/id/2057/alajuelense",
+"isExternal": false,
+"isHidden": false,
+"isPremium": false,
+"language": "en-US",
+"rel": [
+"stats",
+"desktop",
+"team"
+],
+"shortText": "Stats",
+"text": "Stats"
+},
+{
+"href": "https://www.espn.com/soccer/team/fixtures/_/id/2057/alajuelense",
+"isExternal": false,
+"isHidden": false,
+"isPremium": false,
+"language": "en-US",
+"rel": [
+"schedule",
+"desktop",
+"team"
+],
+"shortText": "Fixtures",
+"text": "Fixtures"
+}
+],
+"location": "Alajuelense",
+"logos": [
+{
+"alt": "",
+"height": 500,
+"href": "https://a.espncdn.com/i/teamlogos/soccer/500/2057.png",
+"rel": [
+"full",
+"default"
+],
+"width": 500
+},
+{
+"alt": "",
+"height": 500,
+"href": "https://a.espncdn.com/i/teamlogos/soccer/500-dark/2057.png",
+"rel": [
+"full",
+"dark"
+],
+"width": 500
+}
+],
+"name": "Alajuelense",
+"shortDisplayName": "Alajuelense",
+"slug": "crc.alajuelense",
+"uid": "s:600~t:2057"
+}
+},
+{
+"team": {
+"abbreviation": "AME",
+"alternateColor": "001C58",
+"color": "ffff91",
+"displayName": "América",
+"id": "227",
+"isActive": true,
+"isAllStar": false,
+"links": [
+{
+"href": "https://www.espn.com/soccer/club/_/id/227/america",
+"isExternal": false,
+"isHidden": false,
+"isPremium": false,
+"language": "en-US",
+"rel": [
+"clubhouse",
+"desktop",
+"team"
+],
+"shortText": "Clubhouse",
+"text": "Clubhouse"
+},
+{
+"href": "https://www.espn.com/soccer/team/stats/_/id/227/america",
+"isExternal": false,
+"isHidden": false,
+"isPremium": false,
+"language": "en-US",
+"rel": [
+"stats",
+"desktop",
+"team"
+],
+"shortText": "Stats",
+"text": "Stats"
+},
+{
+"href": "https://www.espn.com/soccer/team/fixtures/_/id/227/america",
+"isExternal": false,
+"isHidden": false,
+"isPremium": false,
+"language": "en-US",
+"rel": [
+"schedule",
+"desktop",
+"team"
+],
+"shortText": "Fixtures",
+"text": "Fixtures"
+}
+],
+"location": "América",
+"logos": [
+{
+"alt": "",
+"height": 500,
+"href": "https://a.espncdn.com/i/teamlogos/soccer/500/227.png",
+"rel": [
+"full",
+"default"
+],
+"width": 500
+},
+{
+"alt": "",
+"height": 500,
+"href": "https://a.espncdn.com/i/teamlogos/soccer/500-dark/227.png",
+"rel": [
+"full",
+"dark"
+],
+"width": 500
+}
+],
+"name": "América",
+"shortDisplayName": "América",
+"slug": "mex.america",
+"uid": "s:600~t:227"
+}
+},
+{
+"team": {
+"abbreviation": "OTT",
+"alternateColor": "C60000",
+"color": "000000",
+"displayName": "Atlético Ottawa",
+"id": "131584",
+"isActive": true,
+"isAllStar": false,
+"links": [
+{
+"href": "https://www.espn.com/soccer/club/_/id/131584/atletico-ottawa",
+"isExternal": false,
+"isHidden": false,
+"isPremium": false,
+"language": "en-US",
+"rel": [
+"clubhouse",
+"desktop",
+"team"
+],
+"shortText": "Clubhouse",
+"text": "Clubhouse"
+},
+{
+"href": "https://www.espn.com/soccer/team/stats/_/id/131584/atletico-ottawa",
+"isExternal": false,
+"isHidden": false,
+"isPremium": false,
+"language": "en-US",
+"rel": [
+"stats",
+"desktop",
+"team"
+],
+"shortText": "Stats",
+"text": "Stats"
+},
+{
+"href": "https://www.espn.com/soccer/team/fixtures/_/id/131584/atletico-ottawa",
+"isExternal": false,
+"isHidden": false,
+"isPremium": false,
+"language": "en-US",
+"rel": [
+"schedule",
+"desktop",
+"team"
+],
+"shortText": "Fixtures",
+"text": "Fixtures"
+}
+],
+"location": "Atlético Ottawa",
+"name": "Atlético Ottawa",
+"nickname": "ATLOTTAWA",
+"shortDisplayName": "Atl Ottawa",
+"slug": "atlottawa",
+"uid": "s:600~t:131584"
+}
+}
+],
+"uid": "s:600~l:5699",
+"year": 2026
+}
+],
+"name": "Soccer",
+"slug": "soccer",
+"uid": "s:600"
+}
+]
+}

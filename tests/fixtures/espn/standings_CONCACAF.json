@@ -1,0 +1,96 @@
+{
+"uid": "s:600~l:5699",
+"id": "8675309",
+"name": "Concacaf Champions Cup",
+"abbreviation": "Concacaf Champions Cup",
+"season": {
+"year": 2026,
+"startDate": "2026-01-01T05:00Z",
+"endDate": "2026-12-31T04:59Z",
+"displayName": "2026 Concacaf Champions Cup"
+},
+"seasons": [
+{
+"year": 2016,
+"startDate": "2016-07-01T04:00Z",
+"endDate": "2017-07-01T03:59Z",
+"displayName": "2016-17 CONCACAF Champions League",
+"types": [
+{
+"id": "1",
+"name": "2016 Group Stage",
+"abbreviation": "2016 Group Stage",
+"startDate": "2016-06-01T04:00Z",
+"endDate": "2017-01-01T04:59Z",
+"hasStandings": true
+},
+{
+"id": "2",
+"name": "Quarter-finals",
+"abbreviation": "Quarter-finals",
+"startDate": "2017-01-01T05:00Z",
+"endDate": "2017-03-12T04:59Z",
+"hasStandings": false
+},
+{
+"id": "3",
+"name": "Semi-finals",
+"abbreviation": "Semi-finals",
+"startDate": "2017-03-12T05:00Z",
+"endDate": "2017-04-09T03:59Z",
+"hasStandings": false
+},
+{
+"id": "4",
+"name": "Final",
+"abbreviation": "Final",
+"startDate": "2017-04-09T04:00Z",
+"endDate": "2017-06-01T03:59Z",
+"hasStandings": false
+}
+],
+"seasonYears": "2016-17"
+},
+{
+"year": 2015,
+"startDate": "2015-07-01T04:00Z",
+"endDate": "2016-07-01T03:59Z",
+"displayName": "2015/16 CONCACAF Champions League",
+"types": [
+{
+"id": "1",
+"name": "2015 Group Stage",
+"abbreviation": "2015 Group Stage",
+"startDate": "2015-06-01T04:00Z",
+"endDate": "2016-01-01T04:59Z",
+"hasStandings": true
+},
+{
+"id": "2",
+"name": "Quarter-finals",
+"abbreviation": "Quarter-finals",
+"startDate": "2016-01-01T05:00Z",
+"endDate": "2016-03-13T04:59Z",
+"hasStandings": false
+},
+{
+"id": "3",
+"name": "Semi-finals",
+"abbreviation": "Semi-finals",
+"startDate": "2016-03-13T05:00Z",
+"endDate": "2016-04-10T03:59Z",
+"hasStandings": false
+},
+{
+"id": "4",
+"name": "Final",
+"abbreviation": "Final",
+"startDate": "2016-04-10T04:00Z",
+"endDate": "2016-06-01T03:59Z",
+"hasStandings": false
+}
+],
+"seasonYears": "2015-16"
+}
+]
+}

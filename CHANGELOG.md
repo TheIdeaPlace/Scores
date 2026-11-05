@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **Soccer leagues on Windows have Standings, Statistics and Teams.** Standings read position, games
+  played, wins, draws, losses, goals for and against, goal difference, points, and where a place leads,
+  such as Champions League or Relegation. MLS has a tab for each conference. The Champions League and
+  Europa League show their league phase. The CONCACAF Champions Cup is all knockout, so its Standings say
+  it has no table, and its Teams still lists the teams.
+- **Soccer leaders on Windows, from the same place as the iPhone.** Goals, assists, shots, cards, fouls,
+  passes and saves, up to 20 players each, and they say which season they're from. Goals and Assists come
+  once here, where the iPhone lists each twice with the same players.
+
 ### In Progress
 - **Game Wrap Up Feature**: ESPN text processing and game story extraction (under construction)
   - Core infrastructure implemented, text processing being refined
