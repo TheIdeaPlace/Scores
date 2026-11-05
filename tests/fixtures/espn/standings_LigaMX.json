@@ -1,0 +1,840 @@
+{
+"uid": "s:600~l:760",
+"id": "22",
+"name": "Mexican Liga BBVA MX",
+"abbreviation": "Liga MX",
+"children": [
+{
+"uid": "s:600~l:760~g:1",
+"id": "1",
+"name": "2026 Torneo Apertura",
+"abbreviation": "Torneo Apertura",
+"standings": {
+"id": "0",
+"name": "overall",
+"displayName": "Standings",
+"links": [
+{
+"language": "en-US",
+"rel": [
+"standings",
+"desktop"
+],
+"href": "https://www.espn.com/soccer/table/_/league/mex.1",
+"text": "Full Table",
+"shortText": "Standings",
+"isExternal": false,
+"isPremium": false
+}
+],
+"season": 2026,
+"seasonType": 1,
+"seasonDisplayName": "2026-27 Liga BBVA MX",
+"entries": [
+{
+"team": {
+"id": "227",
+"uid": "s:600~t:227",
+"location": "América",
+"name": "América",
+"abbreviation": "AME",
+"displayName": "América",
+"shortDisplayName": "América",
+"isActive": true,
+"logos": [
+{
+"href": "https://a.espncdn.com/i/teamlogos/soccer/500/227.png",
+"width": 500,
+"height": 500,
+"alt": "",
+"rel": [
+"full",
+"default"
+],
+"lastUpdated": "2019-05-08T16:07Z"
+}
+],
+"links": [
+{
+"language": "en-US",
+"rel": [
+"clubhouse",
+"desktop",
+"team"
+],
+"href": "https://www.espn.com/soccer/club/_/id/227/america",
+"text": "Clubhouse",
+"shortText": "Clubhouse",
+"isExternal": false,
+"isPremium": false
+}
+],
+"isNational": false
+},
+"stats": [
+{
+"name": "gamesPlayed",
+"displayName": "Games Played",
+"shortDisplayName": "GP",
+"description": "Number of Games Played",
+"abbreviation": "GP",
+"type": "gamesplayed",
+"value": 15.0,
+"displayValue": "15"
+},
+{
+"name": "losses",
+"displayName": "Losses",
+"shortDisplayName": "L",
+"description": "Losses",
+"abbreviation": "L",
+"type": "losses",
+"value": 2.0,
+"displayValue": "2"
+},
+{
+"name": "pointDifferential",
+"displayName": "Goal Difference",
+"shortDisplayName": "GD",
+"description": "Goal Difference",
+"abbreviation": "GD",
+"type": "pointdifferential",
+"value": 15.0,
+"displayValue": "+15"
+},
+{
+"name": "points",
+"displayName": "Points",
+"shortDisplayName": "P",
+"description": "Points",
+"abbreviation": "P",
+"type": "points",
+"value": 29.0,
+"displayValue": "29"
+},
+{
+"name": "pointsAgainst",
+"displayName": "Goals Against",
+"shortDisplayName": "A",
+"description": "Goals Against",
+"abbreviation": "A",
+"type": "pointsagainst",
+"value": 21.0,
+"displayValue": "21"
+},
+{
+"name": "pointsFor",
+"displayName": "Goals For",
+"shortDisplayName": "F",
+"description": "Goals For",
+"abbreviation": "F",
+"type": "pointsfor",
+"value": 36.0,
+"displayValue": "36"
+},
+{
+"name": "ties",
+"displayName": "Draws",
+"shortDisplayName": "D",
+"description": "Draws",
+"abbreviation": "D",
+"type": "ties",
+"value": 5.0,
+"displayValue": "5"
+},
+{
+"name": "wins",
+"displayName": "Wins",
+"shortDisplayName": "W",
+"description": "Wins",
+"abbreviation": "W",
+"type": "wins",
+"value": 8.0,
+"displayValue": "8"
+},
+{
+"name": "advanced",
+"displayName": "Advanced",
+"shortDisplayName": "ADV",
+"description": "Advanced",
+"abbreviation": "ADV",
+"type": "advanced",
+"value": 0.0,
+"displayValue": "0"
+},
+{
+"name": "deductions",
+"displayName": "Point Deductions",
+"shortDisplayName": "Deductions",
+"description": "Point Deductions",
+"abbreviation": "PD",
+"type": "deductions",
+"value": 0.0,
+"displayValue": ""
+},
+{
+"name": "ppg",
+"displayName": "Points Per Game",
+"shortDisplayName": "PPG",
+"description": "Points Per Game",
+"abbreviation": "PPG",
+"type": "ppg",
+"value": 0.0,
+"displayValue": "0"
+},
+{
+"name": "rank",
+"displayName": "Rank",
+"shortDisplayName": "Rank",
+"description": "Rank",
+"abbreviation": "R",
+"type": "rank",
+"value": 1.0,
+"displayValue": "1"
+},
+{
+"name": "rankChange",
+"displayName": "Rank Change",
+"shortDisplayName": "Rank Change",
+"description": "Rank Change",
+"abbreviation": "RC",
+"type": "rankchange",
+"value": 0.0,
+"displayValue": "0"
+},
+{
+"id": "0",
+"name": "overall",
+"abbreviation": "Total",
+"displayName": "Overall",
+"shortDisplayName": "OVER",
+"description": "Overall Record",
+"type": "total",
+"summary": "8-5-2",
+"displayValue": "8-5-2"
+}
+]
+},
+{
+"team": {
+"id": "219",
+"uid": "s:600~t:219",
+"location": "Guadalajara",
+"name": "Guadalajara",
+"abbreviation": "GDL",
+"displayName": "Guadalajara",
+"shortDisplayName": "Guadalajara",
+"isActive": true,
+"logos": [
+{
+"href": "https://a.espncdn.com/i/teamlogos/soccer/500/219.png",
+"width": 500,
+"height": 500,
+"alt": "",
+"rel": [
+"full",
+"default"
+],
+"lastUpdated": "2023-08-10T22:15Z"
+}
+],
+"links": [
+{
+"language": "en-US",
+"rel": [
+"clubhouse",
+"desktop",
+"team"
+],
+"href": "https://www.espn.com/soccer/club/_/id/219/guadalajara",
+"text": "Clubhouse",
+"shortText": "Clubhouse",
+"isExternal": false,
+"isPremium": false
+}
+],
+"isNational": false
+},
+"stats": [
+{
+"name": "gamesPlayed",
+"displayName": "Games Played",
+"shortDisplayName": "GP",
+"description": "Number of Games Played",
+"abbreviation": "GP",
+"type": "gamesplayed",
+"value": 15.0,
+"displayValue": "15"
+},
+{
+"name": "losses",
+"displayName": "Losses",
+"shortDisplayName": "L",
+"description": "Losses",
+"abbreviation": "L",
+"type": "losses",
+"value": 2.0,
+"displayValue": "2"
+},
+{
+"name": "pointDifferential",
+"displayName": "Goal Difference",
+"shortDisplayName": "GD",
+"description": "Goal Difference",
+"abbreviation": "GD",
+"type": "pointdifferential",
+"value": 11.0,
+"displayValue": "+11"
+},
+{
+"name": "points",
+"displayName": "Points",
+"shortDisplayName": "P",
+"description": "Points",
+"abbreviation": "P",
+"type": "points",
+"value": 29.0,
+"displayValue": "29"
+},
+{
+"name": "pointsAgainst",
+"displayName": "Goals Against",
+"shortDisplayName": "A",
+"description": "Goals Against",
+"abbreviation": "A",
+"type": "pointsagainst",
+"value": 14.0,
+"displayValue": "14"
+},
+{
+"name": "pointsFor",
+"displayName": "Goals For",
+"shortDisplayName": "F",
+"description": "Goals For",
+"abbreviation": "F",
+"type": "pointsfor",
+"value": 25.0,
+"displayValue": "25"
+},
+{
+"name": "ties",
+"displayName": "Draws",
+"shortDisplayName": "D",
+"description": "Draws",
+"abbreviation": "D",
+"type": "ties",
+"value": 5.0,
+"displayValue": "5"
+},
+{
+"name": "wins",
+"displayName": "Wins",
+"shortDisplayName": "W",
+"description": "Wins",
+"abbreviation": "W",
+"type": "wins",
+"value": 8.0,
+"displayValue": "8"
+},
+{
+"name": "advanced",
+"displayName": "Advanced",
+"shortDisplayName": "ADV",
+"description": "Advanced",
+"abbreviation": "ADV",
+"type": "advanced",
+"value": 0.0,
+"displayValue": "0"
+},
+{
+"name": "deductions",
+"displayName": "Point Deductions",
+"shortDisplayName": "Deductions",
+"description": "Point Deductions",
+"abbreviation": "PD",
+"type": "deductions",
+"value": 0.0,
+"displayValue": ""
+},
+{
+"name": "ppg",
+"displayName": "Points Per Game",
+"shortDisplayName": "PPG",
+"description": "Points Per Game",
+"abbreviation": "PPG",
+"type": "ppg",
+"value": 0.0,
+"displayValue": "0"
+},
+{
+"name": "rank",
+"displayName": "Rank",
+"shortDisplayName": "Rank",
+"description": "Rank",
+"abbreviation": "R",
+"type": "rank",
+"value": 2.0,
+"displayValue": "2"
+},
+{
+"name": "rankChange",
+"displayName": "Rank Change",
+"shortDisplayName": "Rank Change",
+"description": "Rank Change",
+"abbreviation": "RC",
+"type": "rankchange",
+"value": 0.0,
+"displayValue": "0"
+},
+{
+"id": "0",
+"name": "overall",
+"abbreviation": "Total",
+"displayName": "Overall",
+"shortDisplayName": "OVER",
+"description": "Overall Record",
+"type": "total",
+"summary": "8-5-2",
+"displayValue": "8-5-2"
+}
+]
+},
+{
+"team": {
+"id": "17851",
+"uid": "s:600~t:17851",
+"location": "FC Juárez",
+"name": "FC Juárez",
+"abbreviation": "JUA",
+"displayName": "FC Juárez",
+"shortDisplayName": "Juárez",
+"isActive": true,
+"logos": [
+{
+"href": "https://a.espncdn.com/i/teamlogos/soccer/500/17851.png",
+"width": 500,
+"height": 500,
+"alt": "",
+"rel": [
+"full",
+"default"
+],
+"lastUpdated": "2019-05-08T16:07Z"
+}
+],
+"links": [
+{
+"language": "en-US",
+"rel": [
+"clubhouse",
+"desktop",
+"team"
+],
+"href": "https://www.espn.com/soccer/club/_/id/17851/fc-juarez",
+"text": "Clubhouse",
+"shortText": "Clubhouse",
+"isExternal": false,
+"isPremium": false
+}
+],
+"isNational": false
+},
+"stats": [
+{
+"name": "gamesPlayed",
+"displayName": "Games Played",
+"shortDisplayName": "GP",
+"description": "Number of Games Played",
+"abbreviation": "GP",
+"type": "gamesplayed",
+"value": 15.0,
+"displayValue": "15"
+},
+{
+"name": "losses",
+"displayName": "Losses",
+"shortDisplayName": "L",
+"description": "Losses",
+"abbreviation": "L",
+"type": "losses",
+"value": 11.0,
+"displayValue": "11"
+},
+{
+"name": "pointDifferential",
+"displayName": "Goal Difference",
+"shortDisplayName": "GD",
+"description": "Goal Difference",
+"abbreviation": "GD",
+"type": "pointdifferential",
+"value": -22.0,
+"displayValue": "-22"
+},
+{
+"name": "points",
+"displayName": "Points",
+"shortDisplayName": "P",
+"description": "Points",
+"abbreviation": "P",
+"type": "points",
+"value": 8.0,
+"displayValue": "8"
+},
+{
+"name": "pointsAgainst",
+"displayName": "Goals Against",
+"shortDisplayName": "A",
+"description": "Goals Against",
+"abbreviation": "A",
+"type": "pointsagainst",
+"value": 34.0,
+"displayValue": "34"
+},
+{
+"name": "pointsFor",
+"displayName": "Goals For",
+"shortDisplayName": "F",
+"description": "Goals For",
+"abbreviation": "F",
+"type": "pointsfor",
+"value": 12.0,
+"displayValue": "12"
+},
+{
+"name": "ties",
+"displayName": "Draws",
+"shortDisplayName": "D",
+"description": "Draws",
+"abbreviation": "D",
+"type": "ties",
+"value": 2.0,
+"displayValue": "2"
+},
+{
+"name": "wins",
+"displayName": "Wins",
+"shortDisplayName": "W",
+"description": "Wins",
+"abbreviation": "W",
+"type": "wins",
+"value": 2.0,
+"displayValue": "2"
+},
+{
+"name": "advanced",
+"displayName": "Advanced",
+"shortDisplayName": "ADV",
+"description": "Advanced",
+"abbreviation": "ADV",
+"type": "advanced",
+"value": 0.0,
+"displayValue": "0"
+},
+{
+"name": "deductions",
+"displayName": "Point Deductions",
+"shortDisplayName": "Deductions",
+"description": "Point Deductions",
+"abbreviation": "PD",
+"type": "deductions",
+"value": 0.0,
+"displayValue": ""
+},
+{
+"name": "ppg",
+"displayName": "Points Per Game",
+"shortDisplayName": "PPG",
+"description": "Points Per Game",
+"abbreviation": "PPG",
+"type": "ppg",
+"value": 0.0,
+"displayValue": "0"
+},
+{
+"name": "rank",
+"displayName": "Rank",
+"shortDisplayName": "Rank",
+"description": "Rank",
+"abbreviation": "R",
+"type": "rank",
+"value": 18.0,
+"displayValue": "18"
+},
+{
+"name": "rankChange",
+"displayName": "Rank Change",
+"shortDisplayName": "Rank Change",
+"description": "Rank Change",
+"abbreviation": "RC",
+"type": "rankchange",
+"value": 0.0,
+"displayValue": "0"
+},
+{
+"id": "0",
+"name": "overall",
+"abbreviation": "Total",
+"displayName": "Overall",
+"shortDisplayName": "OVER",
+"description": "Overall Record",
+"type": "total",
+"summary": "2-2-11",
+"displayValue": "2-2-11"
+}
+]
+}
+]
+}
+}
+],
+"season": {
+"year": 2026,
+"startDate": "2026-06-01T04:00Z",
+"endDate": "2027-06-01T03:59Z",
+"displayName": "2026-27 Liga BBVA MX"
+},
+"seasons": [
+{
+"year": 2026,
+"startDate": "2026-06-01T04:00Z",
+"endDate": "2027-06-01T03:59Z",
+"displayName": "2026-27 Liga BBVA MX",
+"types": [
+{
+"id": "1",
+"name": "Torneo Apertura",
+"abbreviation": "2026 Liga MX Apertura",
+"startDate": "2026-06-01T04:00Z",
+"endDate": "2026-11-24T04:59Z",
+"hasStandings": true
+},
+{
+"id": "2",
+"name": "Apertura - 7th Place vs 8th Place",
+"abbreviation": "2026 Liga MX Apertura Playoffs",
+"startDate": "2026-11-11T05:00Z",
+"endDate": "2026-11-21T04:59Z",
+"hasStandings": false
+},
+{
+"id": "3",
+"name": "Apertura - 9th Place vs 10th Place",
+"abbreviation": "Apertura - 9th Place vs 10th Place",
+"startDate": "2026-11-11T05:00Z",
+"endDate": "2026-11-21T04:59Z",
+"hasStandings": false
+},
+{
+"id": "4",
+"name": "Apertura - 8th Seed Game",
+"abbreviation": "Apertura - 8th Seed Game",
+"startDate": "2026-11-21T05:00Z",
+"endDate": "2026-11-25T04:59Z",
+"hasStandings": false
+},
+{
+"id": "5",
+"name": "Apertura - Quarterfinals",
+"abbreviation": "Apertura - Quarterfinals",
+"startDate": "2026-11-25T05:00Z",
+"endDate": "2026-12-01T04:59Z",
+"hasStandings": false
+},
+{
+"id": "6",
+"name": "Apertura - Semifinals",
+"abbreviation": "Apertura - Semifinals",
+"startDate": "2026-12-01T05:00Z",
+"endDate": "2026-12-09T04:59Z",
+"hasStandings": false
+},
+{
+"id": "7",
+"name": "Apertura - Finals",
+"abbreviation": "Apertura - Finals",
+"startDate": "2026-12-09T05:00Z",
+"endDate": "2027-01-01T04:59Z",
+"hasStandings": false
+},
+{
+"id": "8",
+"name": "Torneo Clausura",
+"abbreviation": "2026 Liga MX Clausura",
+"startDate": "2027-01-01T05:00Z",
+"endDate": "2027-04-28T03:59Z",
+"hasStandings": true
+},
+{
+"id": "9",
+"name": "Clausura 2026 - 7th Seed Game",
+"abbreviation": "2026 Liga MX Clausura Playoffs",
+"startDate": "2027-04-24T04:00Z",
+"endDate": "2027-04-28T03:59Z",
+"hasStandings": false
+},
+{
+"id": "10",
+"name": "Clausura - 9th Place vs 10th Place",
+"abbreviation": "Clausura - 9th Place vs 10th Place",
+"startDate": "2027-04-24T04:00Z",
+"endDate": "2027-04-28T03:59Z",
+"hasStandings": false
+},
+{
+"id": "11",
+"name": "Clausura - 8th Seed Game",
+"abbreviation": "Clausura - 8th Seed Game",
+"startDate": "2027-04-28T04:00Z",
+"endDate": "2027-05-05T03:59Z",
+"hasStandings": false
+},
+{
+"id": "12",
+"name": "Clausura - Quarterfinals",
+"abbreviation": "Clausura - Quarterfinals",
+"startDate": "2026-11-24T05:00Z",
+"endDate": "2026-12-31T04:59Z",
+"hasStandings": false
+},
+{
+"id": "13",
+"name": "Clausura - Semifinals",
+"abbreviation": "Clausura - Semifinals",
+"startDate": "2026-11-25T05:00Z",
+"endDate": "2026-12-31T04:59Z",
+"hasStandings": false
+},
+{
+"id": "14",
+"name": "Clausura - Finals",
+"abbreviation": "Clausura - Finals",
+"startDate": "2026-11-26T05:00Z",
+"endDate": "2026-12-31T04:59Z",
+"hasStandings": false
+}
+],
+"seasonYears": "2026-27"
+},
+{
+"year": 2025,
+"startDate": "2025-06-01T04:00Z",
+"endDate": "2026-06-01T03:59Z",
+"displayName": "2025-26 Liga BBVA MX",
+"types": [
+{
+"id": "1",
+"name": "Torneo Apertura",
+"abbreviation": "2025 Liga MX Apertura",
+"startDate": "2025-06-01T04:00Z",
+"endDate": "2025-11-11T04:59Z",
+"hasStandings": true
+},
+{
+"id": "2",
+"name": "Apertura - 7th Place vs 8th Place",
+"abbreviation": "2025 Liga MX Apertura Playoffs",
+"startDate": "2025-11-11T05:00Z",
+"endDate": "2025-11-21T04:59Z",
+"hasStandings": false
+},
+{
+"id": "3",
+"name": "Apertura - 9th Place vs 10th Place",
+"abbreviation": "Apertura - 9th Place vs 10th Place",
+"startDate": "2025-11-11T05:00Z",
+"endDate": "2025-11-21T04:59Z",
+"hasStandings": false
+},
+{
+"id": "4",
+"name": "Apertura - 8th Seed Game",
+"abbreviation": "Apertura - 8th Seed Game",
+"startDate": "2025-11-21T05:00Z",
+"endDate": "2025-11-25T04:59Z",
+"hasStandings": false
+},
+{
+"id": "5",
+"name": "Apertura - Quarterfinals",
+"abbreviation": "Apertura - Quarterfinals",
+"startDate": "2025-11-25T05:00Z",
+"endDate": "2025-12-01T04:59Z",
+"hasStandings": false
+},
+{
+"id": "6",
+"name": "Apertura - Semifinals",
+"abbreviation": "Apertura - Semifinals",
+"startDate": "2025-12-01T05:00Z",
+"endDate": "2025-12-09T04:59Z",
+"hasStandings": false
+},
+{
+"id": "7",
+"name": "Apertura - Finals",
+"abbreviation": "Apertura - Finals",
+"startDate": "2025-12-09T05:00Z",
+"endDate": "2026-01-01T04:59Z",
+"hasStandings": false
+},
+{
+"id": "8",
+"name": "Torneo Clausura",
+"abbreviation": "2026 Liga MX Clausura",
+"startDate": "2026-01-01T05:00Z",
+"endDate": "2026-04-28T03:59Z",
+"hasStandings": true
+},
+{
+"id": "9",
+"name": "Clausura 2026 - 7th Seed Game",
+"abbreviation": "2026 Liga MX Clausura Playoffs",
+"startDate": "2026-04-24T04:00Z",
+"endDate": "2026-04-28T03:59Z",
+"hasStandings": false
+},
+{
+"id": "10",
+"name": "Clausura - 9th Place vs 10th Place",
+"abbreviation": "Clausura - 9th Place vs 10th Place",
+"startDate": "2026-04-24T04:00Z",
+"endDate": "2026-04-28T03:59Z",
+"hasStandings": false
+},
+{
+"id": "11",
+"name": "Clausura - 8th Seed Game",
+"abbreviation": "Clausura - 8th Seed Game",
+"startDate": "2026-04-28T04:00Z",
+"endDate": "2026-05-05T03:59Z",
+"hasStandings": false
+},
+{
+"id": "12",
+"name": "Clausura - Quarterfinals",
+"abbreviation": "Clausura - Quarterfinals",
+"startDate": "2026-04-28T04:00Z",
+"endDate": "2026-05-08T03:59Z",
+"hasStandings": false
+},
+{
+"id": "13",
+"name": "Clausura - Semifinals",
+"abbreviation": "Clausura - Semifinals",
+"startDate": "2026-05-08T04:00Z",
+"endDate": "2026-05-18T03:59Z",
+"hasStandings": false
+},
+{
+"id": "14",
+"name": "Clausura - Finals",
+"abbreviation": "Clausura - Finals",
+"startDate": "2026-05-18T04:00Z",
+"endDate": "2026-06-01T03:59Z",
+"hasStandings": false
+}
+],
+"seasonYears": "2025-26"
+}
+]
+}

@@ -101,10 +101,24 @@ private final class StandInESPN: URLProtocol {
     static var referenceError: URLError.Code?
     /// The status of a leaders request, by its URL. 200 sends `leaders`.
     static var leadersStatus: (String) -> Int = { _ in 200 }
+    /// ESPN's idea of the season, which soccer asks for first.
+    static var season = Data(#"{"year":2026,"displayName":"2026-27 Stand-in League"}"#.utf8)
+    static var seasonStatus = 200
+    /// Whether a season asked for by its year has an answer, which names it "Season" and its year.
+    static var seasonAnswerByYear = true
+    /// Athletes and teams whose references are always a 404, by the end of their path.
+    static var alwaysMissing = Set<String>()
+    /// Every team's reference fails, as well as the athletes' `failuresFirst`.
+    static var teamsFail = false
 
     static func reset(leaders: Data) {
         lock.withLock {
             self.leaders = leaders
+            season = Data(#"{"year":2026,"displayName":"2026-27 Stand-in League"}"#.utf8)
+            seasonStatus = 200
+            seasonAnswerByYear = true
+            alwaysMissing = []
+            teamsFail = false
             requests = []
             failuresFirst = 0
             failureStatus = 503
@@ -123,7 +137,12 @@ private final class StandInESPN: URLProtocol {
     }
 
     static var referenceRequests: [String] {
-        lock.withLock { requests.filter { !$0.contains("/leaders") } }
+        lock.withLock { requests.filter { !$0.contains("/leaders") && !isSeason($0) } }
+    }
+
+    /// The season now, or one by its year: not a reference to look up.
+    private static func isSeason(_ url: String) -> Bool {
+        url.hasSuffix("/season") || url.range(of: #"/seasons/\d+$"#, options: .regularExpression) != nil
     }
 
     override class func canInit(with request: URLRequest) -> Bool { true }
@@ -133,7 +152,8 @@ private final class StandInESPN: URLProtocol {
     override func startLoading() {
         guard let url = request.url else { return }
         if let code = Self.lock.withLock({ () -> URLError.Code? in
-            guard !url.absoluteString.contains("/leaders"), let code = Self.referenceError else { return nil }
+            guard !url.absoluteString.contains("/leaders"), !Self.isSeason(url.absoluteString),
+                  let code = Self.referenceError else { return nil }
             Self.requests.append(url.absoluteString)
             return code
         }) {
@@ -153,11 +173,18 @@ private final class StandInESPN: URLProtocol {
         let text = url.absoluteString
         requests.append(text)
         let id = url.lastPathComponent
+        if isSeason(text) {
+            if text.hasSuffix("/season") { return (seasonStatus, seasonStatus == 200 ? season : Data()) }
+            guard seasonAnswerByYear else { return (404, Data()) }
+            return (200, Data(#"{"year":\#(id),"displayName":"Season \#(id)"}"#.utf8))
+        }
         if text.contains("/leaders") {
             let status = leadersStatus(text)
             return (status, status == 200 ? leaders : Data())
         }
+        if alwaysMissing.contains(id) { return (404, Data()) }
         if text.contains("/teams/") {
+            if teamsFail { return (500, Data()) }
             return (200, Data(#"{"displayName":"Team \#(id)","abbreviation":"\#(id)"}"#.utf8))
         }
         if failures[text, default: 0] < failuresFirst {
@@ -243,7 +270,7 @@ final class LeagueLeadersRequestTests: XCTestCase {
 
     func testAFailureThatLastsReadsAsADashWithoutLosingTheRow() async throws {
         StandInESPN.lock.withLock { StandInESPN.failuresFirst = 10 }
-        let categories = try await service.fetchLeagueLeaders(for: soccer, limit: 3)
+        let categories = try await service.fetchLeagueLeaders(for: .ncaah, limit: 3)
         let names = categories.flatMap(\.leaders).map(\.athleteName)
         XCTAssertFalse(names.isEmpty)
         XCTAssertTrue(names.allSatisfy { $0 == "—" })
@@ -256,7 +283,7 @@ final class LeagueLeadersRequestTests: XCTestCase {
 
     func testATimeoutIsNotAskedAgain() async throws {
         StandInESPN.lock.withLock { StandInESPN.referenceError = .timedOut }
-        _ = try await service.fetchLeagueLeaders(for: soccer, limit: 3)
+        _ = try await service.fetchLeagueLeaders(for: .ncaah, limit: 3)
         let requests = StandInESPN.referenceRequests
         XCTAssertEqual(requests.count, Set(requests).count)
     }
@@ -265,7 +292,7 @@ final class LeagueLeadersRequestTests: XCTestCase {
         XCTAssertGreaterThan(uniqueReferences, ESPNAPIService.refFailuresBeforeGivingUp + ESPNAPIService.maxConcurrentRefRequests,
                              "the fixture should have enough references to show it")
         StandInESPN.lock.withLock { StandInESPN.referenceError = .timedOut }
-        let categories = try await service.fetchLeagueLeaders(for: soccer, limit: 3)
+        let categories = try await service.fetchLeagueLeaders(for: .ncaah, limit: 3)
         XCTAssertLessThan(StandInESPN.referenceRequests.count, uniqueReferences)
         XCTAssertTrue(categories.flatMap(\.leaders).allSatisfy { $0.athleteName == "—" }, "the rows are still there")
         XCTAssertFalse(categories.isEmpty)
@@ -273,7 +300,7 @@ final class LeagueLeadersRequestTests: XCTestCase {
 
     func testALostConnectionIsAskedAgain() async throws {
         StandInESPN.lock.withLock { StandInESPN.referenceError = .networkConnectionLost }
-        _ = try await service.fetchLeagueLeaders(for: soccer, limit: 3)
+        _ = try await service.fetchLeagueLeaders(for: .ncaah, limit: 3)
         let requests = StandInESPN.referenceRequests
         XCTAssertGreaterThan(requests.count, Set(requests).count)
     }
@@ -285,7 +312,7 @@ final class LeagueLeadersRequestTests: XCTestCase {
             return URLSession(configuration: config)
         }()
         do {
-            _ = try await ESPNAPIService(session: session).fetchLeagueLeaders(for: soccer)
+            _ = try await ESPNAPIService(session: session).fetchLeagueLeaders(for: .ncaah)
             XCTFail("it should have thrown")
         } catch is URLError {
             XCTAssertEqual(NoConnection.count, 1)
@@ -313,6 +340,101 @@ final class LeagueLeadersRequestTests: XCTestCase {
         XCTAssertTrue(StandInESPN.leadersRequests.first?.contains("/types/1/") ?? false)
     }
 
+    // MARK: Soccer's season, as on Windows
+
+    func testSoccerGoesByESPNsSeasonNotTheCalendarAndSaysWhichItIs() async throws {
+        StandInESPN.lock.withLock { StandInESPN.season = Data(#"{"year":2031,"displayName":"2031-32 Stand-in"}"#.utf8) }
+        let categories = try await service.fetchLeagueLeaders(for: soccer, limit: 3)
+        XCTAssertTrue(StandInESPN.leadersRequests.first?.contains("/seasons/2031/types/1/") ?? false)
+        XCTAssertEqual(categories.first?.seasonLabel, "2031-32 Stand-in")
+    }
+
+    func testSoccerWithNoListYetMeansTheSeasonBeforeAndSaysSo() async throws {
+        StandInESPN.lock.withLock {
+            StandInESPN.leadersStatus = { $0.contains("/seasons/2026/") ? 404 : 200 }
+            StandInESPN.season = Data(#"{"year":2026,"displayName":"This season"}"#.utf8)
+        }
+        let categories = try await service.fetchLeagueLeaders(for: soccer, limit: 3)
+        XCTAssertTrue(StandInESPN.leadersRequests.last?.contains("/seasons/2025/") ?? false)
+        XCTAssertEqual(categories.first?.seasonLabel, "Season 2025")
+    }
+
+    func testAnEarlierSeasonsNameNotComingStillSaysItsYear() async throws {
+        StandInESPN.lock.withLock {
+            StandInESPN.leadersStatus = { $0.contains("/seasons/2026/") ? 404 : 200 }
+            StandInESPN.seasonAnswerByYear = false
+        }
+        let categories = try await service.fetchLeagueLeaders(for: soccer, limit: 3)
+        XCTAssertEqual(categories.first?.seasonLabel, "2025")
+    }
+
+    func testAFailedSoccerListSaysSoRatherThanShowingLastSeasons() async {
+        StandInESPN.lock.withLock { StandInESPN.leadersStatus = { _ in 500 } }
+        do {
+            _ = try await service.fetchLeagueLeaders(for: soccer, limit: 3)
+            XCTFail("it should have thrown")
+        } catch {
+            XCTAssertEqual(StandInESPN.leadersRequests.count, 1, "no other season asked for")
+        }
+    }
+
+    func testTheSeasonFailingIsAFailure() async {
+        StandInESPN.lock.withLock { StandInESPN.seasonStatus = 500 }
+        do {
+            _ = try await service.fetchLeagueLeaders(for: soccer, limit: 3)
+            XCTFail("it should have thrown")
+        } catch {
+            XCTAssertTrue(StandInESPN.leadersRequests.isEmpty)
+        }
+    }
+
+    // MARK: Soccer's failed names, as on Windows
+
+    private func assertSoccerFails(file: StaticString = #filePath, line: UInt = #line) async {
+        do {
+            _ = try await service.fetchLeagueLeaders(for: soccer, limit: 3)
+            XCTFail("it should have thrown", file: file, line: line)
+        } catch {}
+    }
+
+    func testEveryNameFailingFailsRatherThanAScreenOfDashes() async {
+        StandInESPN.lock.withLock { StandInESPN.failuresFirst = 10 }
+        await assertSoccerFails()
+    }
+
+    func testEveryTeamFailingFailsRatherThanAColumnOfBlanks() async {
+        StandInESPN.lock.withLock { StandInESPN.teamsFail = true }
+        await assertSoccerFails()
+    }
+
+    func testAStalledNetworkFailsForSoccer() async {
+        StandInESPN.lock.withLock { StandInESPN.referenceError = .timedOut }
+        await assertSoccerFails()
+    }
+
+    func testOneNameFailingKeepsItsRowAndEveryOther() async throws {
+        let leader = try XCTUnwrap(realLeaders.categories?.first?.leaders?.first)
+        let missing = try teamId(ofRef: leader.athlete?.ref)
+        StandInESPN.lock.withLock { StandInESPN.alwaysMissing = [missing] }
+        for _ in 0..<2 {
+            let names = try await service.fetchLeagueLeaders(for: soccer, limit: 3).flatMap(\.leaders).map(\.athleteName)
+            XCTAssertTrue(names.contains("—"))
+            XCTAssertTrue(names.contains { $0 != "—" })
+        }
+    }
+
+    func testOneTeamFailingReadsNotAvailableNotBlank() async throws {
+        let leader = try XCTUnwrap(realLeaders.categories?.first?.leaders?.first)
+        let missing = try teamId(ofRef: leader.team?.ref)
+        StandInESPN.lock.withLock { StandInESPN.alwaysMissing = [missing] }
+        let first = try await service.fetchLeagueLeaders(for: soccer, limit: 3).first?.leaders.first
+        XCTAssertEqual(first?.teamAbbreviation, SoccerTableRow.noStatus)
+    }
+
+    func testViewAllAsksForTheSameLengthAsWindows() {
+        XCTAssertEqual(ESPNAPIService.siteLeadersLimit, 20)
+    }
+
     // MARK: Nobody rated
 
     func testARatingWithNobodyRatedIsLeftOut() async throws {
@@ -331,9 +453,187 @@ final class LeagueLeadersRequestTests: XCTestCase {
             StandInESPN.failuresFirst = 10
             StandInESPN.failureStatus = 404
         }
-        _ = try await service.fetchLeagueLeaders(for: soccer, limit: 3)
+        _ = try await service.fetchLeagueLeaders(for: .ncaah, limit: 3)
         let requests = StandInESPN.athleteRequests
         XCTAssertEqual(requests.count, Set(requests).count)
+    }
+}
+
+// MARK: - Soccer, against the grid Windows is also held to
+
+/// Answers a league's /standings with one fixture.
+private final class StandInStandings: URLProtocol {
+    static var body = Data()
+
+    override class func canInit(with request: URLRequest) -> Bool { true }
+    override class func canonicalRequest(for request: URLRequest) -> URLRequest { request }
+    override func stopLoading() {}
+
+    override func startLoading() {
+        guard let url = request.url else { return }
+        let response = HTTPURLResponse(url: url, statusCode: 200, httpVersion: nil, headerFields: nil)!
+        client?.urlProtocol(self, didReceive: response, cacheStoragePolicy: .notAllowed)
+        client?.urlProtocol(self, didLoad: Self.body)
+        client?.urlProtocolDidFinishLoading(self)
+    }
+}
+
+final class SoccerGridTests: XCTestCase {
+    private struct Grid: Decodable {
+        struct Table: Decodable {
+            let fixture: String
+            let groups: [Group]
+        }
+        struct Group: Decodable {
+            let name: String
+            let rows: [[String]]
+        }
+        struct Leaders: Decodable {
+            let fixture: String
+            let season: String
+            let lists: [List]
+        }
+        struct List: Decodable {
+            let title: String
+            let rows: [Row]
+        }
+        struct Row: Decodable {
+            let rank: Int
+            let player: String
+            let team: String
+            let value: String
+        }
+        let headers: [String]
+        let tables: [Table]
+        let leaders: [Leaders]
+    }
+
+    private func grid() throws -> Grid {
+        let url = Fixtures.repoRoot.appendingPathComponent("tests/fixtures/soccer_grid.json")
+        return try JSONDecoder().decode(Grid.self, from: Data(contentsOf: url))
+    }
+
+    /// The real request, through the app's own choice of how to read a soccer league.
+    private func standings(_ fixture: String) async throws -> [StandingsGroup] {
+        StandInStandings.body = try Fixtures.data(fixture)
+        let config = URLSessionConfiguration.ephemeral
+        config.protocolClasses = [StandInStandings.self]
+        return try await ESPNAPIService(session: URLSession(configuration: config)).fetchStandings(for: .soccerEPL)
+    }
+
+    func testTheHeadersAreTheSameInTheSameOrder() throws {
+        XCTAssertEqual(SoccerTableRow.headers, try grid().headers)
+    }
+
+    func testEveryTableReadsAsTheSharedGridSays() async throws {
+        let cases = try grid().tables
+        XCTAssertGreaterThanOrEqual(cases.count, 6)
+        for item in cases {
+            let groups = try await standings(item.fixture)
+            XCTAssertEqual(groups.map(\.name), item.groups.map(\.name), item.fixture)
+            for (group, expected) in zip(groups, item.groups) {
+                let rows = group.entries.map { $0.soccer?.cells(team: $0.team.displayName) ?? [] }
+                XCTAssertEqual(rows, expected.rows, "\(item.fixture) \(expected.name)")
+            }
+        }
+    }
+
+    func testMLSGoesByESPNsRankNotTheOrderOfItsAnswer() async throws {
+        let east = try await standings("standings_MLS.json")[0]
+        let places = east.entries.compactMap { $0.soccer?.position }
+        XCTAssertEqual(places, places.sorted())
+        let raw = try JSONDecoder().decode(APIStandingsResponse.self, from: Fixtures.data("standings_MLS.json"))
+        let answered = raw.groupsWithEntries[0].standings.entries.map { $0.team.displayName }
+        XCTAssertNotEqual(east.entries.map(\.team.displayName), answered, "the fixture should show the problem")
+    }
+
+    func testAKnockoutCompetitionHasNoTable() async throws {
+        let groups = try await standings("standings_CONCACAF.json")
+        XCTAssertTrue(groups.isEmpty)
+    }
+
+    func testAllThreeViewsReadTheWholeRow() async throws {
+        let groups = try await standings("standings_EPL.json")
+        let arsenal = try XCTUnwrap(groups.first?.entries.first?.soccer)
+        XCTAssertEqual(arsenal.cells(team: "ARS"), ["1", "ARS", "9", "8", "0", "1", "14", "5", "+9", "24", "Champions League"])
+        XCTAssertEqual(arsenal.quickText(team: "Arsenal"), "1, Arsenal, 9, 8, 0, 1, 14, 5, +9, 24, Champions League")
+        XCTAssertEqual(arsenal.fullText(team: "Arsenal"),
+                       "Pos: 1; Team: Arsenal; GP: 9; W: 8; D: 0; L: 1; GF: 14; GA: 5; GD: +9; Pts: 24; Status: Champions League")
+    }
+
+    func testNoCellIsSilent() async throws {
+        let rows = try await standings("standings_LigaMX.json").flatMap(\.entries).compactMap(\.soccer)
+        XCTAssertFalse(rows.isEmpty)
+        XCTAssertTrue(rows.allSatisfy { $0.status == SoccerTableRow.noStatus })
+        XCTAssertTrue(rows.allSatisfy { row in row.cells(team: "X").allSatisfy { !$0.isEmpty } })
+    }
+
+    func testARankMissingIsItsPlaceInTheAnswer() throws {
+        let json = #"{"team":{"id":"1","name":"A","abbreviation":"A","displayName":"A"},"stats":[{"name":"wins","value":2,"displayValue":"2"}]}"#
+        let entry = try JSONDecoder().decode(APIStandingsGroup.APIStandings.APIStandingsEntry.self, from: Data(json.utf8))
+        XCTAssertEqual(SoccerTableRow(fromAPIEntry: entry, place: 7).position, 7)
+        XCTAssertEqual(SoccerTableRow(fromAPIEntry: entry, place: 7).goalDifference, "0")
+    }
+
+    func testAGoalDifferenceWithNoTextReadsWithItsSign() throws {
+        func row(_ value: Int) throws -> SoccerTableRow {
+            let json = #"{"team":{"id":"1","name":"A","abbreviation":"A","displayName":"A"},"stats":[{"name":"pointDifferential","value":\#(value),"displayValue":""}]}"#
+            let entry = try JSONDecoder().decode(APIStandingsGroup.APIStandings.APIStandingsEntry.self, from: Data(json.utf8))
+            return SoccerTableRow(fromAPIEntry: entry, place: 1)
+        }
+        XCTAssertEqual(try row(9).goalDifference, "+9")
+        XCTAssertEqual(try row(-3).goalDifference, "-3")
+    }
+
+    func testANullNumberFallsBackToItsText() throws {
+        let json = #"{"team":{"id":"1","name":"A","abbreviation":"A","displayName":"A"},"stats":[{"name":"wins","value":null,"displayValue":"8"},{"name":"losses","value":null,"displayValue":"not a number"}]}"#
+        let entry = try JSONDecoder().decode(APIStandingsGroup.APIStandings.APIStandingsEntry.self, from: Data(json.utf8))
+        let row = SoccerTableRow(fromAPIEntry: entry, place: 1)
+        XCTAssertEqual(row.wins, 8)
+        XCTAssertEqual(row.losses, 0)
+    }
+
+    func testEveryListOfLeadersReadsAsTheSharedGridSays() async throws {
+        let config = URLSessionConfiguration.ephemeral
+        config.protocolClasses = [StandInESPN.self]
+        let service = ESPNAPIService(session: URLSession(configuration: config))
+        for item in try grid().leaders {
+            StandInESPN.reset(leaders: try Fixtures.data(item.fixture))
+            let season = try Fixtures.data("season_EPL.json")
+            StandInESPN.lock.withLock { StandInESPN.season = season }
+            let categories = try await service.fetchLeagueLeaders(for: .soccerEPL, limit: ESPNAPIService.siteLeadersLimit)
+            XCTAssertEqual(categories.map(\.displayName), item.lists.map(\.title), item.fixture)
+            for (category, expected) in zip(categories, item.lists) {
+                XCTAssertEqual(category.seasonLabel, item.season, item.fixture)
+                XCTAssertEqual(category.leaders.map(\.rank), expected.rows.map(\.rank), "\(item.fixture) \(expected.title)")
+                XCTAssertEqual(category.leaders.map(\.athleteName), expected.rows.map(\.player), "\(item.fixture) \(expected.title)")
+                XCTAssertEqual(category.leaders.map(\.teamAbbreviation), expected.rows.map(\.team), "\(item.fixture) \(expected.title)")
+                XCTAssertEqual(category.leaders.map(\.displayValue), expected.rows.map(\.value), "\(item.fixture) \(expected.title)")
+            }
+        }
+    }
+
+    func testAStatusLosesESPNsStrayTab() throws {
+        let json = #"{"team":{"id":"1","name":"A","abbreviation":"A","displayName":"A"},"stats":[],"note":{"description":"Eliminated\t"}}"#
+        let entry = try JSONDecoder().decode(APIStandingsGroup.APIStandings.APIStandingsEntry.self, from: Data(json.utf8))
+        XCTAssertEqual(SoccerTableRow(fromAPIEntry: entry, place: 1).status, "Eliminated")
+    }
+
+    func testAListWithNoNameIsCalledByItsKey() async throws {
+        let json = #"{"categories":[{"name":"goals","leaders":[{"value":3,"displayValue":"3","athlete":{"$ref":"https://espn.example/athletes/1"},"team":{"$ref":"https://espn.example/teams/2"}}]}]}"#
+        StandInESPN.reset(leaders: Data(json.utf8))
+        let config = URLSessionConfiguration.ephemeral
+        config.protocolClasses = [StandInESPN.self]
+        let categories = try await ESPNAPIService(session: URLSession(configuration: config)).fetchLeagueLeaders(for: .soccerEPL)
+        XCTAssertEqual(categories.first?.displayName, "Goals")
+    }
+
+    func testAListThatDiffersInARowStays() throws {
+        let row = #"{"value":3,"displayValue":"3","athlete":{"$ref":"a"},"team":{"$ref":"t"}}"#
+        let other = #"{"value":4,"displayValue":"4","athlete":{"$ref":"a"},"team":{"$ref":"t"}}"#
+        let json = #"{"categories":[{"name":"goalsLeaders","displayName":"Goals","leaders":[\#(row)]},{"name":"goals","displayName":"Goals","leaders":[\#(row)]},{"name":"third","displayName":"Goals","leaders":[\#(other)]}]}"#
+        let response = try JSONDecoder().decode(CoreLeadersAPIResponse.self, from: Data(json.utf8))
+        XCTAssertEqual(ESPNAPIService.coreLeaderLists(response).map(\.name), ["goalsLeaders", "third"])
     }
 }
 

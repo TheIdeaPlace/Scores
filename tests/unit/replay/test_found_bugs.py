@@ -185,28 +185,7 @@ class TestNullIsNotTheWordNone:
         assert "Atlantic" in {row["division"] for row in espn_api.get_standings("NHL")}
 
 
-def test_soccer_standings_read_the_record_not_0_0(espn):
-    """A three-part summary raised inside _get_team_record, so every soccer team read 0-0."""
-    espn.on(r"/soccer/eng\.1/teams$", load("teams_EPL.json"))
-    espn.on(r"/soccer/eng\.1/teams/\d+$", load("team_EPL_359.json"))
-    arsenal = next(row for row in espn_api.get_standings("EPL") if row["team_name"] == "Arsenal")
-    assert (arsenal["wins"], arsenal["losses"], arsenal["win_percentage"]) == (8, 1, "0.889")
-
-
 def test_team_record_without_stats_falls_back_to_the_summary(espn):
     team = {"team": {"record": {"items": [{"type": "total", "summary": "10-4-1"}]}}}
     espn.on("/teams/1$", team)
     assert espn_api._get_team_record("1", "NFL") == (10, 4, "0.714", "")
-
-
-@pytest.mark.parametrize("summary,expected", [
-    ("8-5-1", (8, 1, "0.889", "")),   # 5 draws are not 5 losses
-    ("8-0-1", (8, 1, "0.889", "")),
-    ("0-9-0", (0, 0, "0.000", "")),
-])
-def test_a_soccer_summary_is_wins_draws_losses(espn, summary, expected):
-    team = load("team_EPL_359.json")
-    assert team["team"]["record"]["items"][0]["summary"] == "8-0-1"
-    team["team"]["record"]["items"][0].update(summary=summary, stats=[])
-    espn.on("/teams/359$", team)
-    assert espn_api._get_team_record("359", "EPL") == expected

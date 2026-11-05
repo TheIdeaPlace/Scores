@@ -51,3 +51,31 @@ def test_real_statistics_take_focus(dialog):
     QApplication.instance().processEvents()
     assert dialog.stats_list.isVisible()
     assert dialog.focusWidget() is dialog.stats_list
+
+
+def soccer_answer():
+    stats = [{"player_name": "Erling Haaland", "team": "MNC", "value": "9", "stat_name": "Goals"},
+             {"player_name": "Name not available", "team": "", "value": "9", "stat_name": "Goals"}]
+    return {"player_stats": [{"category": "Goals", "stats": stats}], "team_stats": [],
+            "season": "2026-27 English Premier League"}
+
+
+def test_soccer_leaders_say_their_season_and_open_to_ranked_rows():
+    app = QApplication.instance() or QApplication([])
+    with patch.object(scores, "_start_detached_thread"):
+        view = scores.StatisticsViewDialog("EPL", "player")
+    view.show()
+    app.processEvents()
+    view._on_statistics_loaded(soccer_answer())
+    app.processEvents()
+    assert view.windowTitle() == "EPL Player Statistics - 2026-27 English Premier League"
+    assert view.stat_pages.tabText(0) == "Goals"
+    assert view.focusWidget() is view.stats_list
+    view._fill_stat_page(0)
+    table = view.stat_pages.widget(0).findChild(scores.RankingsTable)
+    assert table.table_widget.accessibleName() == "2026-27 English Premier League Leaders: Goals"
+    assert [table.item(0, column).text() for column in range(4)] == ["1", "Erling Haaland", "MNC", "9"]
+    assert [table.item(1, column).text() for column in range(4)] == ["1", "Name not available", "N/A", "9"]
+    view.close()
+    view.deleteLater()
+    app.processEvents()

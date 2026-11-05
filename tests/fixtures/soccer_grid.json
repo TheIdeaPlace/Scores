@@ -1,0 +1,170 @@
+{
+  "note": "What a real soccer answer reads as, on both apps. tests/unit/replay/test_soccer.py checks Windows and SoccerGridTests in LeagueLeadersTests.swift the iPhone. A table's rows are its cells under headers, in the order of ESPN's rank. In the leaders, an athlete's reference answers with Athlete and its id and a team's with its id as its abbreviation, since only the references are in the fixture, and the season comes from season_EPL.json.",
+  "headers": ["Pos", "Team", "GP", "W", "D", "L", "GF", "GA", "GD", "Pts", "Status"],
+  "tables": [
+    {"fixture": "standings_EPL.json",
+     "groups": [
+      {"name": "2026-27 English Premier League",
+       "rows": [
+        ["1", "Arsenal", "9", "8", "0", "1", "14", "5", "+9", "24", "Champions League"],
+        ["2", "Manchester City", "9", "7", "0", "2", "20", "10", "+10", "21", "Champions League"],
+        ["9", "Tottenham Hotspur", "9", "3", "3", "3", "10", "10", "0", "12", "N/A"],
+        ["20", "Sunderland", "9", "1", "2", "6", "7", "17", "-10", "5", "Relegation"]
+      ]}
+    ]},
+    {"fixture": "standings_MLS.json",
+     "groups": [
+      {"name": "Eastern Conference",
+       "rows": [
+        ["4", "Chicago Fire FC", "33", "16", "7", "10", "61", "50", "+11", "55", "Qualifies for MLS Cup Playoffs - Round One Best-of-3 series"],
+        ["5", "Charlotte FC", "33", "15", "8", "10", "63", "48", "+15", "53", "Qualifies for MLS Cup Playoffs - Round One Best-of-3 series"],
+        ["8", "Columbus Crew", "33", "13", "5", "15", "55", "49", "+6", "44", "Qualifies for MLS Cup Playoffs - Wild Card Matches"]
+      ]},
+      {"name": "Western Conference",
+       "rows": [
+        ["2", "FC Dallas", "33", "15", "10", "8", "59", "50", "+9", "55", "Qualifies for MLS Cup Playoffs - Round One Best-of-3 series"],
+        ["9", "Colorado Rapids", "33", "12", "7", "14", "46", "47", "-1", "43", "Qualifies for MLS Cup Playoffs - Wild Card Matches"],
+        ["13", "San Diego FC", "33", "9", "11", "13", "57", "62", "-5", "38", "N/A"]
+      ]}
+    ]},
+    {"fixture": "standings_UCL.json",
+     "groups": [
+      {"name": "League Phase",
+       "rows": [
+        ["1", "Paris Saint-Germain", "4", "4", "0", "0", "20", "5", "+15", "12", "Qualifies for round of 16"],
+        ["9", "Club Brugge", "4", "3", "0", "1", "11", "7", "+4", "9", "Knockout phase playoffs - seeded"],
+        ["25", "Bodo/Glimt", "4", "1", "1", "2", "4", "9", "-5", "4", "Eliminated"],
+        ["36", "Slovan Bratislava", "4", "0", "0", "4", "1", "17", "-16", "0", "Eliminated"]
+      ]}
+    ]},
+    {"fixture": "standings_LigaMX.json",
+     "groups": [
+      {"name": "2026 Torneo Apertura",
+       "rows": [
+        ["1", "América", "15", "8", "5", "2", "36", "21", "+15", "29", "N/A"],
+        ["2", "Guadalajara", "15", "8", "5", "2", "25", "14", "+11", "29", "N/A"],
+        ["18", "FC Juárez", "15", "2", "2", "11", "12", "34", "-22", "8", "N/A"]
+      ]}
+    ]},
+    {"fixture": "standings_UCL_2023.json",
+     "groups": [
+      {"name": "Group A",
+       "rows": [
+        ["1", "Bayern Munich", "6", "5", "1", "0", "12", "6", "+6", "16", "Qualifies for round of 16"],
+        ["2", "F.C. København", "6", "2", "2", "2", "8", "8", "0", "8", "Qualifies for round of 16"]
+      ]},
+      {"name": "Group B",
+       "rows": [
+        ["1", "Arsenal", "6", "4", "1", "1", "16", "4", "+12", "13", "Qualifies for round of 16"],
+        ["2", "PSV Eindhoven", "6", "2", "3", "1", "8", "10", "-2", "9", "Qualifies for round of 16"]
+      ]},
+      {"name": "Group C",
+       "rows": [
+        ["1", "Real Madrid", "6", "6", "0", "0", "16", "7", "+9", "18", "Qualifies for round of 16"],
+        ["3", "Braga", "6", "1", "1", "4", "6", "12", "-6", "4", "Europa League knockout round playoffs"]
+      ]},
+      {"name": "Group D",
+       "rows": [
+        ["1", "Real Sociedad", "6", "3", "3", "0", "7", "2", "+5", "12", "Qualifies for round of 16"],
+        ["4", "RB Salzburg", "6", "1", "1", "4", "4", "8", "-4", "4", "N/A"]
+      ]},
+      {"name": "Group E",
+       "rows": [
+        ["1", "Atlético Madrid", "6", "4", "2", "0", "17", "6", "+11", "14", "Qualifies for round of 16"],
+        ["2", "Lazio", "6", "3", "1", "2", "7", "7", "0", "10", "Qualifies for round of 16"]
+      ]},
+      {"name": "Group F",
+       "rows": [
+        ["3", "AC Milan", "6", "2", "2", "2", "5", "8", "-3", "8", "Europa League knockout round playoffs"],
+        ["4", "Newcastle United", "6", "1", "2", "3", "6", "7", "-1", "5", "N/A"]
+      ]},
+      {"name": "Group G",
+       "rows": [
+        ["1", "Manchester City", "6", "6", "0", "0", "18", "7", "+11", "18", "Qualifies for round of 16"],
+        ["2", "RB Leipzig", "6", "4", "0", "2", "13", "10", "+3", "12", "Qualifies for round of 16"]
+      ]},
+      {"name": "Group H",
+       "rows": [
+        ["1", "Barcelona", "6", "4", "0", "2", "12", "6", "+6", "12", "Qualifies for round of 16"],
+        ["4", "Antwerp", "6", "1", "0", "5", "6", "17", "-11", "3", "N/A"]
+      ]}
+    ]},
+    {"fixture": "standings_CONCACAF.json",
+     "groups": []}
+  ],
+  "leaders": [
+    {"fixture": "leaders_core_EPL.json",
+     "season": "2026-27 English Premier League",
+     "lists": [
+      {"title": "Goals",
+       "rows": [
+        {"rank": 1, "player": "Athlete 253989", "team": "382", "value": "9"},
+        {"rank": 2, "player": "Athlete 235662", "team": "364", "value": "6"},
+        {"rank": 3, "player": "Athlete 265653", "team": "363", "value": "5"}
+      ]},
+      {"title": "Assists",
+       "rows": [
+        {"rank": 1, "player": "Athlete 238262", "team": "359", "value": "5"},
+        {"rank": 2, "player": "Athlete 132659", "team": "331", "value": "4"},
+        {"rank": 2, "player": "Athlete 102368", "team": "349", "value": "4"}
+      ]},
+      {"title": "Shots On Target",
+       "rows": [
+        {"rank": 1, "player": "Athlete 253989", "team": "382", "value": "16"},
+        {"rank": 2, "player": "Athlete 301166", "team": "368", "value": "13"},
+        {"rank": 2, "player": "Athlete 243364", "team": "349", "value": "13"}
+      ]},
+      {"title": "Yellow Cards",
+       "rows": [
+        {"rank": 1, "player": "Athlete 234698", "team": "362", "value": "5"},
+        {"rank": 1, "player": "Athlete 153613", "team": "306", "value": "5"},
+        {"rank": 3, "player": "Athlete 241317", "team": "357", "value": "4"}
+      ]},
+      {"title": "Red Cards",
+       "rows": [
+        {"rank": 1, "player": "Athlete 296395", "team": "363", "value": "1"},
+        {"rank": 1, "player": "Athlete 225564", "team": "337", "value": "1"},
+        {"rank": 1, "player": "Athlete 230081", "team": "366", "value": "1"}
+      ]},
+      {"title": "Fouls Committed",
+       "rows": [
+        {"rank": 1, "player": "Athlete 250936", "team": "362", "value": "19"},
+        {"rank": 2, "player": "Athlete 241317", "team": "357", "value": "18"},
+        {"rank": 2, "player": "Athlete 197717", "team": "357", "value": "18"}
+      ]},
+      {"title": "Fouls Suffered",
+       "rows": [
+        {"rank": 1, "player": "Athlete 238472", "team": "382", "value": "28"},
+        {"rank": 2, "player": "Athlete 162843", "team": "362", "value": "22"},
+        {"rank": 3, "player": "Athlete 250936", "team": "362", "value": "21"}
+      ]},
+      {"title": "Total Shots",
+       "rows": [
+        {"rank": 1, "player": "Athlete 253989", "team": "382", "value": "34"},
+        {"rank": 2, "player": "Athlete 301166", "team": "368", "value": "30"},
+        {"rank": 3, "player": "Athlete 296395", "team": "363", "value": "28"}
+      ]},
+      {"title": "Accurate Passes",
+       "rows": [
+        {"rank": 1, "player": "Athlete 234878", "team": "382", "value": "736"},
+        {"rank": 2, "player": "Athlete 282583", "team": "367", "value": "725"},
+        {"rank": 3, "player": "Athlete 238472", "team": "382", "value": "596"}
+      ]},
+      {"title": "Saves",
+       "rows": [
+        {"rank": 1, "player": "Athlete 307118", "team": "357", "value": "33"},
+        {"rank": 2, "player": "Athlete 284199", "team": "306", "value": "32"},
+        {"rank": 3, "player": "Athlete 319267", "team": "361", "value": "31"}
+      ]}
+    ]},
+    {"fixture": "leaders_core_UEL_2024.json",
+     "season": "2026-27 English Premier League",
+     "lists": [
+      {"title": "Goals",
+       "rows": [
+        {"rank": 1, "player": "Athlete 124091", "team": "360", "value": "7"},
+        {"rank": 1, "player": "Athlete 272624", "team": "2980", "value": "7"}
+      ]}
+    ]}
+  ]
+}

@@ -8,6 +8,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Soccer leagues on Windows have Standings, Statistics and Teams.** Standings read position, games
+  played, wins, draws, losses, goals for and against, goal difference, points, and where a place leads,
+  such as Champions League or Relegation. MLS has a tab for each conference. The Champions League and
+  Europa League show their league phase. The CONCACAF Champions Cup is all knockout, so its Standings say
+  it has no table, and its Teams still lists the teams.
+- **Soccer leaders on Windows, from the same place as the iPhone.** Goals, assists, shots, cards, fouls,
+  passes and saves, up to 20 players each, and they say which season they're from.
+- **iPhone: weather on a game's details,** for the games ESPN has it: "Weather: 67°F".
+- **iPhone: attendance on a game's details,** once there's a count: "Attendance: 68,739".
+- **iPhone: standings in a game's Info tab,** the tables of the division or conference each team is in.
+- **iPhone: a Game Story in a finished game's Info tab.** The row names the headline, and opens the
+  whole story with a heading or paragraph to a swipe. Before the game, ESPN's preview leads the news list.
+- **iPhone: a Scoring Summary in a football game's Info tab,** by quarter, with the team, clock and play.
+- **iPhone: an injury's type, details and return date,** where ESPN gives them.
 - **The iPhone has Venues, with the same list as Windows.** Each of the ten leagues Windows offers it
   for has a Venues tab, listing the stadiums and arenas with their city and state, indoor or outdoor
   where ESPN says, and their home teams. Selecting one shows its details. Both apps work out the list
@@ -18,6 +32,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   do on Windows.
 
 ### Changed
+- **Soccer on iPhone shows what Windows shows.** Standings read position, games played, wins, draws,
+  losses, goals, goal difference, points and where a place leads, in all three views, rather than
+  baseball's win percentage and games back, with no draws or points. MLS is in rank order. A competition
+  with no table says so.
+- **Soccer leaders on iPhone match too.** Goals and Assists are listed once rather than twice. Players
+  level on a number share a rank. View All has up to 20 players, not 50, and the list says which season
+  it's from.
 - **The college football setting is called Coverage.** It's "College football coverage" on Windows and in
   the iPhone's Scores filter, and "Coverage" under College Football in iPhone Settings, since it also
   decides the standings and teams you see. Your choice is kept.
