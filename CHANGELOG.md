@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- **College basketball fouls read and sound where they happened, on Windows and iPhone.** A foul under
+  the basket read "deep, 78 feet out", with a far away note on the wrong side, because ESPN's college
+  feed mirrors most fouls to the far end. It now reads "at the rim", and pans the same way as the shot.
+  Fouls already in the near half stay as they are. The NBA and WNBA were never affected.
+
 ### In Progress
 - **Game Wrap Up Feature**: ESPN text processing and game story extraction (under construction)
   - Core infrastructure implemented, text processing being refined

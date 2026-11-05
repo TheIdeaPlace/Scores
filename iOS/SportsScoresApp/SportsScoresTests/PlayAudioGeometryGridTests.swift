@@ -30,13 +30,51 @@ final class PlayAudioGeometryGridTests: XCTestCase {
             let y: Double
             let located: Bool
         }
+        struct Foul: Decodable {
+            let league: String
+            let type: String
+            let x: Double
+            let y: Double
+            let to_x: Double
+            let to_y: Double
+        }
         let cases: [Case]
         let located: [Located]
+        let fouls: [Foul]
+    }
+
+    private func play(type: String, x: Double, y: Double) throws -> GameDetails.Play {
+        let json = #"{"x": \#(x), "y": \#(y)}"#
+        let coordinate = try JSONDecoder().decode(GameDetails.Play.PlayCoordinate.self, from: Data(json.utf8))
+        return GameDetails.Play(id: "1", text: "Foul on A.", type: .init(text: type, type: nil),
+                                scoreValue: nil, period: nil, coordinate: coordinate)
     }
 
     private func grid() throws -> Grid {
         let url = Fixtures.repoRoot.appendingPathComponent("tests/fixtures/play_geometry_grid.json")
         return try JSONDecoder().decode(Grid.self, from: Data(contentsOf: url))
+    }
+
+    func testCollegeFoulsPastHalfCourtAreMirrored() throws {
+        let grid = try grid()
+        XCTAssertGreaterThan(grid.fouls.count, 10)
+        for item in grid.fouls {
+            let label = "\(item.league) \(item.type) (\(item.x), \(item.y))"
+            let sport = try XCTUnwrap(Sport(rawValue: item.league), label)
+            let position = try XCTUnwrap(PlayAudioGeometry.position(for: sport, play: play(type: item.type, x: item.x, y: item.y)), label)
+            XCTAssertEqual(position.x, item.to_x, label)
+            XCTAssertEqual(position.y, item.to_y, label)
+        }
+    }
+
+    func testAFoulUnderTheBasketReadsThatWay() throws {
+        let foul = try play(type: "PersonalFoul", x: 24, y: 81)
+        XCTAssertEqual(PlayAudioGeometry.location(for: .ncaawb, play: foul)?.description, "at the rim")
+        XCTAssertEqual(PlayAudioGeometry.audioParameters(for: .ncaawb, play: foul)?.description, "at the rim")
+    }
+
+    func testAFoulWithThePlaceholderStillHasNoLocation() throws {
+        XCTAssertNil(PlayAudioGeometry.position(for: .ncaam, play: try play(type: "PersonalFoul", x: 25, y: 0)))
     }
 
     func testEveryCaseMatchesTheSharedGrid() throws {
