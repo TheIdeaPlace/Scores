@@ -1152,6 +1152,25 @@ class TestListPages:
         for leftover in QApplication.topLevelWidgets():  # In case it wasn't collected after all.
             leftover.close()
 
+    def test_an_area_that_has_lost_its_attributes_doesnt_raise(self, pages_with_tables):
+        """The garbage collector clears a widget's attributes while Qt can still call it, and an
+        exception from an override ends the app. CI stopped dead on this, once in many runs."""
+        pages = pages_with_tables
+        keys = pages.findChild(_TabBarViewKeys)
+        bar = pages.tabBar()
+        event = QKeyEvent(QEvent.Type.KeyPress, Qt.Key.Key_Down, PLAIN)
+        saved_keys, saved_pages = dict(keys.__dict__), dict(pages.__dict__)
+        try:
+            keys.__dict__.clear()
+            pages.__dict__.clear()
+            assert keys.eventFilter(bar, event) is False
+            assert accessible_table._focus_is_on_a_page_being_swapped(pages) is False
+            assert isinstance(ListPages.focusNextPrevChild(pages, True), bool)
+            ListPages._show_page(pages, 1)
+        finally:
+            keys.__dict__.update(saved_keys)
+            pages.__dict__.update(saved_pages)
+
     def test_view_keys_wait_until_a_table_is_open(self, pages_with_tables):
         pages = pages_with_tables
         table = self.table_on(pages, 0)
