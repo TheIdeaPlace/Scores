@@ -2055,7 +2055,7 @@ class ESPNAPIService {
         return ([], nil)
     }
 
-    // MARK: - Team Hub: News (team-filtered, falls back to league)
+    // MARK: - Team Hub: News
 
     /// News for a specific team. A team with none has none, as on Windows, rather than the
     /// league's stories under its name.

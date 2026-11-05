@@ -1335,8 +1335,8 @@ class ListPages(QWidget):
         """The window title names the page, and Tab goes through it before the Back button."""
         name = self.tabText(self.currentIndex())
         self.window().setWindowTitle(f"{name} - {self._dialog_title}" if self._dialog_title else name)
-        # Once a page: what's on it is built by now, and there's no need to shuffle the focus
-        # chain again each time it opens.
+        # Once a page, rather than shuffling the focus chain each time it opens. A page filled
+        # after this, such as a wild card table, calls keep_in_tab_order itself.
         index = self.currentIndex()
         if index not in self._pages_in_tab_order:
             self._pages_in_tab_order.add(index)
