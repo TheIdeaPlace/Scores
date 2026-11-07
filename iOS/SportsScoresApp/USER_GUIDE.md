@@ -59,7 +59,7 @@ Each sport screen has five tabs along the bottom:
 | **Standings** | Division or conference standings |
 | **News** | Recent news and headlines |
 | **Stats** | League statistical leaders |
-| **Polls** | AP, Coaches and USCHO polls — college sports only, when available |
+| **Polls** | Every poll ESPN publishes, in ESPN's order — college sports only, when available. College football has six (CFP, AP, AFCA Coaches, FCS Coaches, AFCA Division II and III) in a Poll menu |
 | **Venues** | Each stadium and arena with its home teams; select one for its details. Not for soccer or CFL |
 
 Select any game row to open its detail view.

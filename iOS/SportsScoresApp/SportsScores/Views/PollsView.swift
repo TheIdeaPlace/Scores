@@ -68,14 +68,28 @@ struct PollsView: View {
 
     // MARK: - Poll picker
 
+    /// Every poll ESPN has, in its order. College football has six, the playoff committee's first,
+    /// and six segments would cut most of their names short, so past a few it's a menu.
+    @ViewBuilder
     private var pollPicker: some View {
-        Picker("Poll", selection: $viewModel.selectedPollIndex) {
+        let picker = Picker("Poll", selection: $viewModel.selectedPollIndex) {
             ForEach(viewModel.polls.indices, id: \.self) { idx in
                 Text(viewModel.polls[idx].shortName).tag(idx)
             }
         }
-        .pickerStyle(.segmented)
         .accessibilityLabel("Select poll")
+        // The menu shows "Poll" beside it; Voice Control should answer to either.
+        .accessibilityInputLabels(["Poll", "Select poll"])
+        if PollsViewModel.usesMenu(pollCount: viewModel.polls.count) {
+            HStack {
+                Text("Poll")
+                    .accessibilityHidden(true)
+                Spacer()
+                picker.pickerStyle(.menu)
+            }
+        } else {
+            picker.pickerStyle(.segmented)
+        }
     }
 
     // MARK: - Table view mode

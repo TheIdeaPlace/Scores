@@ -19,8 +19,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     Live Scores, a Listen to the Game menu on a game's details, a radio button in Team Hub, and
     **Game Radio** in The Bench.
   - Both apps read the same list, `radio_links.json`, and the nightly data check opens every link in it.
+- **Every college football poll, on both apps.** Polls for NCAAF shows all six that ESPN publishes, in
+  ESPN's order: the College Football Playoff committee's rankings, the AP Poll, the AFCA Coaches Poll, the
+  FCS Coaches Poll, and the AFCA Division II and Division III polls. Both apps already passed on whatever
+  ESPN sent; they are now tested against all six, and the user guides name them. The committee doesn't
+  vote, so its rankings have no points.
+  - Windows: a tab for each poll, as before.
+  - iPhone: with this many polls, a **Poll** menu chooses one, since six segments would cut their names
+    short. Basketball's two polls and hockey's one keep the segmented control.
 
 ### Fixed
+- **Windows: a poll's cells say which team they're for.** Moving across or down a Polls table read the
+  rank as the row's context, "2, Previous, NR"; it now reads the team, "Georgia Bulldogs, Previous, NR".
+  A poll with no votes, the playoff committee's or college hockey's, has no Points column any more, so
+  the Quick List no longer reads blanks such as "3, Utah Utes, 8-0, , NR". From the NVDA college
+  football bug bash.
 - **iPhone: a golf tournament in progress stays on Live Scores when a refresh fails.** It used to vanish
   with nothing said. Now, as on Windows, the tournament last shown stays and the note under the list
   names the tour ESPN didn't answer for. A tournament in progress also no longer hides behind "No games
