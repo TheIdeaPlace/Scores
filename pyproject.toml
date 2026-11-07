@@ -19,3 +19,9 @@ source_pkgs = [
 fail_under = 98
 precision = 2
 show_missing = true
+
+# A bare `pytest` run from the repo root collects tests/ only. Without
+# this it wandered into TheBench/ (an archive of old scripts, some of which call
+# sys.exit at import) and any stray test_*.py in the root.
+[tool.pytest.ini_options]
+testpaths = ["tests"]
