@@ -30,6 +30,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   Alt+L used to open a menu that JAWS and NVDA said nothing about until an arrow key was pressed. The app's own menus (a
   game's options, Listen to the Game, play and pitch audio, the Pitch Explorer's) now open on their
   first item. The standard Cut, Copy and Paste menu in a text field is still silent until an arrow key.
+- **Windows: MLB pitch audio on an at-bat.** Alt+S on an at-bat plays that at-bat's pitches; it used to
+  walk the half-inning and play nothing. A new Alt+S replaces a sequence still playing, and closing
+  the plays stops it. Alt+P on an at-bat or an inning, and Alt+S on an inning, say what to select; a
+  pitch with no location says so instead of staying silent. Which rows count as pitches is now
+  decided when the tree is built, not guessed from words like "ball" and "foul" in the row's text.
 
 ### Changed
 - **iPhone builds: the TestFlight build number can't repeat.** It is now one more than the highest build
