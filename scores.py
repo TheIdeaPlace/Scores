@@ -9064,16 +9064,20 @@ class FantasyCheatsheetLoader(QThread):
 
 
 class GolfLeaderboardLoader(QThread):
+    """A tournament's leaderboard: the tour's current one, or with `date` and `event_id`
+    one chosen from the schedule (scoreboard?dates=YYYYMMDD, as the iPhone asks)."""
     data_loaded = pyqtSignal(dict)
     error_occurred = pyqtSignal(str)
 
-    def __init__(self, tour: str):
+    def __init__(self, tour: str, date: str = None, event_id: str = None):
         super().__init__()
         self.tour = tour
+        self.date = date
+        self.event_id = event_id
 
     def run(self):
         try:
-            self.data_loaded.emit(ApiService.get_golf_leaderboard(self.tour) or {})
+            self.data_loaded.emit(ApiService.get_golf_leaderboard(self.tour, self.date, self.event_id) or {})
         except Exception as e:
             self.error_occurred.emit(_said(e))
 
@@ -10740,19 +10744,28 @@ class FantasyPlayerDialog(QDialog):
 
 
 class GolfTournamentDialog(QDialog):
-    """Golf tournament viewer: current leaderboard + full season schedule."""
+    """Golf tournament viewer: a leaderboard + the full season schedule.
+
+    The leaderboard opens on the tour's current tournament. Enter on a schedule row opens
+    that tournament's leaderboard in its place (scoreboard?dates=YYYYMMDD, picked by id,
+    the way the iPhone opens a past tournament).
+    """
 
     _TOUR_NAMES = {"PGA": "PGA Tour", "LPGA": "LPGA Tour"}
 
     def __init__(self, tour: str, parent=None):
         super().__init__(parent)
         self.tour = tour
-        tour_name = self._TOUR_NAMES.get(tour, tour)
-        self.setWindowTitle(f"{tour_name} — Sports Scores")
+        self.tour_name = self._TOUR_NAMES.get(tour, tour)
+        self.setWindowTitle(f"{self.tour_name} — Sports Scores")
         self.setMinimumSize(700, 500)
         self.resize(950, 680)
         self._loaders = []
         self._failed_lists = set()
+        # The schedule event the leaderboard shows, or None for the tour's current one.
+        self._chosen = None
+        # Counts leaderboard requests, so only the newest one's answer is shown.
+        self._leaderboard_request = 0
         self._setup_ui()
         self._load_leaderboard()
         self._load_schedule()
@@ -10766,7 +10779,7 @@ class GolfTournamentDialog(QDialog):
         layout.addWidget(header)
 
         self.tournament_label = QLabel("Loading current tournament…")
-        self.tournament_label.setAccessibleName("Current tournament")
+        self.tournament_label.setAccessibleName("Tournament")
         layout.addWidget(self.tournament_label)
 
         self.tab_widget = make_tab_area(2, f"{tour_name} sections")
@@ -10774,21 +10787,24 @@ class GolfTournamentDialog(QDialog):
         self.leaderboard_list = QListWidget()
         self.leaderboard_list.setAccessibleName(f"{tour_name} Leaderboard")
         self.leaderboard_list.setAccessibleDescription(
-            "Current tournament leaderboard. Each entry shows position, player name, total score, and round scores.")
+            "Tournament leaderboard. Each entry shows position, player name, total score, and round scores.")
         self.leaderboard_list.addItem("Loading leaderboard…")
         self.tab_widget.addTab(self.leaderboard_list, "Leaderboard")
 
         self.schedule_list = QListWidget()
         self.schedule_list.setAccessibleName(f"{tour_name} Schedule")
         self.schedule_list.setAccessibleDescription(
-            "Season schedule. Completed events show winner and score. Upcoming events show dates.")
+            "Season schedule. Completed events show winner and score. "
+            "Press Enter on a tournament to open its leaderboard.")
         self.schedule_list.addItem("Loading schedule…")
+        self.schedule_list.itemActivated.connect(self._open_tournament)
         self.tab_widget.addTab(self.schedule_list, "Schedule")
 
         layout.addWidget(self.tab_widget)
 
         btn_row = QHBoxLayout()
         btn_row.addStretch()
+        # Stays auto-default so Enter on it closes; Enter in a list is kept from it in keyPressEvent.
         close_btn = QPushButton("&Close")
         close_btn.clicked.connect(self.accept)
         btn_row.addWidget(close_btn)
@@ -10797,11 +10813,33 @@ class GolfTournamentDialog(QDialog):
         self.setLayout(layout)
 
     def _load_leaderboard(self):
-        loader = GolfLeaderboardLoader(self.tour)
-        loader.data_loaded.connect(self._on_leaderboard_loaded)
-        loader.error_occurred.connect(lambda e: self._list_error(self.leaderboard_list, e))
+        self._leaderboard_request += 1
+        request = self._leaderboard_request
+        chosen = self._chosen or {}
+        loader = GolfLeaderboardLoader(self.tour, chosen.get("start_date"), chosen.get("id"))
+        # Only the newest request's answer: an older one can arrive after it.
+        loader.data_loaded.connect(
+            lambda data: request == self._leaderboard_request and self._on_leaderboard_loaded(data))
+        loader.error_occurred.connect(
+            lambda e: request == self._leaderboard_request and self._list_error(self.leaderboard_list, e))
         self._loaders.append(loader)
         loader.start()
+
+    def _open_tournament(self, item):
+        """Enter on a schedule row: that tournament's leaderboard, on the Leaderboard tab."""
+        event = item.data(Qt.ItemDataRole.UserRole) if item is not None else None
+        if not isinstance(event, dict) or not event.get("start_date"):
+            return  # "Loading schedule…", an error or "No schedule available."
+        self._chosen = event
+        self._failed_lists.discard(self.leaderboard_list)
+        name = event.get("name") or "the tournament"
+        self.tournament_label.setText(f"Loading {name}…")
+        self.leaderboard_list.clear()
+        self.leaderboard_list.addItem(f"Loading {name}…")
+        self.leaderboard_list.setCurrentRow(0)
+        self.tab_widget.setCurrentIndex(0)
+        self.leaderboard_list.setFocus()
+        self._load_leaderboard()
 
     def _load_schedule(self):
         loader = GolfScheduleLoader(self.tour)
@@ -10822,10 +10860,25 @@ class GolfTournamentDialog(QDialog):
         except Exception:
             return f"{start}–{end}" if end else start
 
+    def _title_for(self, tournament):
+        """The window title names the tournament shown, or just the tour when there's none."""
+        if tournament:
+            self.setWindowTitle(f"{tournament} — {self.tour_name} — Sports Scores")
+        else:
+            self.setWindowTitle(f"{self.tour_name} — Sports Scores")
+
     def _on_leaderboard_loaded(self, data: dict):
         self.leaderboard_list.clear()
         if not data:
-            self.leaderboard_list.addItem("No current tournament data available.")
+            if self._chosen:
+                name = self._chosen.get("name") or "this tournament"
+                self.tournament_label.setText(name)
+                self.leaderboard_list.addItem(f"No leaderboard available for {name}.")
+            else:
+                self.tournament_label.clear()  # It says it's loading the tournament.
+                self.leaderboard_list.addItem("No current tournament data available.")
+            self._title_for(self._chosen and self._chosen.get("name"))
+            self.leaderboard_list.setCurrentRow(0)
             return
 
         name = data.get('name', '')
@@ -10835,10 +10888,12 @@ class GolfTournamentDialog(QDialog):
         date_range = self._fmt_date_range(start, end) if start else ''
         header_parts = [p for p in [name, status_detail, date_range] if p]
         self.tournament_label.setText("  |  ".join(header_parts))
+        self._title_for(name or (self._chosen and self._chosen.get("name")))
 
         players = data.get('players', [])
         if not players:
             self.leaderboard_list.addItem("No leaderboard data available.")
+            self.leaderboard_list.setCurrentRow(0)
             return
 
         # Detect ties: group players by total_score, record first position for each score
@@ -10890,17 +10945,23 @@ class GolfTournamentDialog(QDialog):
 
             if state == 'post' and winner:
                 line = f"[Final]  {name}  —  {date_str}  —  {winner}"
+            elif state == 'post':
+                # Finished with no winner: ESPN's word for it, such as Canceled.
+                line = f"[{event.get('status') or 'Final'}]  {name}  —  {date_str}"
             elif state == 'in':
                 line = f"[Live]   {name}  —  {date_str}"
             else:
                 line = f"         {name}  —  {date_str}"
 
-            self.schedule_list.addItem(line)
+            item = QListWidgetItem(line)
+            item.setData(Qt.ItemDataRole.UserRole, event)
+            self.schedule_list.addItem(item)
 
     def _list_error(self, lw: QListWidget, error: str):
         self._failed_lists.add(lw)
         if lw is self.leaderboard_list:
             self.tournament_label.clear()  # It says it's loading the tournament.
+            self._title_for(self._chosen and self._chosen.get("name"))
         lw.clear()
         lw.addItem(error)
         lw.setCurrentRow(0)
@@ -10910,6 +10971,10 @@ class GolfTournamentDialog(QDialog):
     def keyPressEvent(self, event):
         if event.key() == Qt.Key.Key_Escape:
             self.accept()
+        elif event.key() in (Qt.Key.Key_Return, Qt.Key.Key_Enter) and \
+                self.focusWidget() in (self.leaderboard_list, self.schedule_list):
+            # The list has acted on it (a schedule row opens); it mustn't press Close too.
+            event.accept()
         elif event.key() == Qt.Key.Key_F5:
             # Only what failed: what loaded stays as it is.
             failed, self._failed_lists = self._failed_lists, set()

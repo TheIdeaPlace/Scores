@@ -48,6 +48,10 @@ rankings_NCAAF.json	7 KB	week 10 of 2026: all six polls in ESPN's order (CFP, AP
 draft_site_NFL_2026.json	11 KB	/draft season=2026, cut to 6 picks and their teams: position only as an id, college on the athlete; 2nd-round pick 33 was traded; round 3's Georgia State is Georgia St as a short name
 golf_schedule_PGA.json	5 KB	dates=2026: a cancelled event with no competitors, a final, a scheduled one
 golf_scoreboard_PGA.json	2 KB	current scoreboard, tournament not started, 3 golfers
+golf_schedule_PGA_2026.json	207 KB	dates=2026 captured Nov 7 2026, all 49 events with the season calendar, top 2 by order, no hole scores: The Sentry cancelled (post, no field); the Zurich Classic's teams have no athlete, two at -30 (order 1 won the playoff); the Presidents Cup's 2 teams with winner true and points 17; one event in progress; 4 scheduled with no field. Event status says completed false even on a Final
+golf_scoreboard_LPGA_between_rounds.json	10 KB	current scoreboard Nov 7 2026, TOTO Japan Classic between rounds: the event's status is in, its competition's post ("Round 3 - Play Complete"); 4 golfers, no hole scores
+golf_scoreboard_PGA_20260305.json	15 KB	dates=20260305: two events that week, the Arnold Palmer Invitational and the opposite-field Puerto Rico Open, both final; 3 golfers each
+golf_scoreboard_PGA_20260423.json	11 KB	dates=20260423: the Zurich Classic, a team event: competitors are teams ("Smalley/Springer") with no athlete; 3 teams
 worldcup_standings_WC2026.json	10 KB	2 groups of 4; note.description is the advancement text; a stat with value null
 worldcup_scoreboard_20260620.json	3 KB	2 group games, STATUS_FULL_TIME
 scoreboard_NWSL.json	3 KB	2 games from dates=202610, used by the month-by-month schedule path

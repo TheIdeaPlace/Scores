@@ -19,6 +19,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     Live Scores, a Listen to the Game menu on a game's details, a radio button in Team Hub, and
     **Game Radio** in The Bench.
   - Both apps read the same list, `radio_links.json`, and the nightly data check opens every link in it.
+- **Golf: past leaderboards on Windows, winners on the iPhone (#189).** Each app had half of this.
+  - Windows: press Enter on any tournament in the golf dialog's Schedule to open its leaderboard. The
+    window title and the line above the tabs name the tournament shown, and F5 retries it if it fails.
+    A cancelled tournament now says Canceled in the schedule.
+  - iPhone: the golf Schedule shows each finished tournament's winner and score in all three view modes
+    (a cancelled one says Canceled), and Table view's rows open the tournament with VoiceOver. If the winners can't be loaded, the schedule
+    says so and a pull to refresh tries again.
+  - Both apps ask ESPN the same two ways (the season for the winners, a tournament's date for its
+    leaderboard) and follow the same rules for which tournament to show and who won, held to one shared
+    test grid. In a week with two tournaments, the one you picked is the one that opens. Team events
+    (the Zurich Classic, the Presidents Cup) name the team.
 - **Every college football poll, on both apps.** Polls for NCAAF shows all six that ESPN publishes, in
   ESPN's order: the College Football Playoff committee's rankings, the AP Poll, the AFCA Coaches Poll, the
   FCS Coaches Poll, and the AFCA Division II and Division III polls. Both apps already passed on whatever
@@ -53,6 +64,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   A poll with no votes, the playoff committee's or college hockey's, has no Points column any more, so
   the Quick List no longer reads blanks such as "3, Utah Utes, 8-0, , NR". From the NVDA college
   football bug bash.
+- **iPhone: one odd entry from ESPN no longer loses a whole golf tour (#206).** A calendar entry,
+  golfer or field ESPN sends incomplete is skipped instead, so the Golf hub and Live Scores show what's
+  there. Team events, whose players are teams, used to fail outright and now show.
+- **Golf: the tournament being played is the one shown (#206).** In a week with two PGA events, the
+  iPhone took whichever ESPN listed first, and the Windows leaderboard did the same. Both now show the
+  one in progress. Between rounds, overnight, Windows' Live Scores now keeps showing a tournament that's
+  still on, as the iPhone always has.
 - **iPhone: a golf tournament in progress stays on Live Scores when a refresh fails.** It used to vanish
   with nothing said. Now, as on Windows, the tournament last shown stays and the note under the list
   names the tour ESPN didn't answer for. A tournament in progress also no longer hides behind "No games

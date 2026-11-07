@@ -14,6 +14,8 @@
 		7E57A00000000000000000B9 /* RadioLinksGridTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E57A00000000000000000B8 /* RadioLinksGridTests.swift */; };
 		7E57A0000000000000001041 /* CollegePollsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E57A0000000000000001040 /* CollegePollsTests.swift */; };
 		7E57A00000000000000000C1 /* LiveScoresGolfTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E57A00000000000000000C0 /* LiveScoresGolfTests.swift */; };
+		7E57A00000000000000000D1 /* GolfRules.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E57A00000000000000000D0 /* GolfRules.swift */; };
+		7E57A00000000000000000D3 /* GolfGridTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E57A00000000000000000D2 /* GolfGridTests.swift */; };
 		7E57A00000000000000000E1 /* ViewModeDefaultTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E57A00000000000000000E0 /* ViewModeDefaultTests.swift */; };
 		7E57B0E1500000000000000B /* Postseason.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E57B0E1500000000000000A /* Postseason.swift */; };
 		7E57B0E1500000000000000D /* BowlsViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E57B0E1500000000000000C /* BowlsViewModel.swift */; };
@@ -175,6 +177,8 @@
 		7E57A00000000000000000B8 /* RadioLinksGridTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RadioLinksGridTests.swift; sourceTree = "<group>"; };
 		7E57A0000000000000001040 /* CollegePollsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CollegePollsTests.swift; sourceTree = "<group>"; };
 		7E57A00000000000000000C0 /* LiveScoresGolfTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveScoresGolfTests.swift; sourceTree = "<group>"; };
+		7E57A00000000000000000D0 /* GolfRules.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GolfRules.swift; sourceTree = "<group>"; };
+		7E57A00000000000000000D2 /* GolfGridTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GolfGridTests.swift; sourceTree = "<group>"; };
 		7E57A00000000000000000E0 /* ViewModeDefaultTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ViewModeDefaultTests.swift; sourceTree = "<group>"; };
 		7E57B0E1500000000000000A /* Postseason.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Postseason.swift; sourceTree = "<group>"; };
 		7E57B0E1500000000000000C /* BowlsViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BowlsViewModel.swift; sourceTree = "<group>"; };
@@ -518,6 +522,7 @@
 				D9E24CEFF6C7E1D434DB90C5 /* GameDetails.swift */,
 				DACD1DD000CD9B7A9D3FBA99 /* Golf.swift */,
 				EE9AB71F6059AED1535F97A5 /* GolfAPIModels.swift */,
+				7E57A00000000000000000D0 /* GolfRules.swift */,
 				3C2563CBCB32601D5263CEEF /* News.swift */,
 				C2D67B211A7F23E4A6A52ACF /* RaceTrackGeometry.swift */,
 				A123364C5844F97428FC4E90 /* Racing.swift */,
@@ -551,6 +556,7 @@
 				7E57A00000000000000000B8 /* RadioLinksGridTests.swift */,
 				7E57A0000000000000001040 /* CollegePollsTests.swift */,
 				7E57A00000000000000000C0 /* LiveScoresGolfTests.swift */,
+				7E57A00000000000000000D2 /* GolfGridTests.swift */,
 				7E57A00000000000000000E0 /* ViewModeDefaultTests.swift */,
 				7E57B0E15000000000000010 /* BowlsTests.swift */,
 			);
@@ -708,6 +714,7 @@
 				3D763611A00B01CF66A2DB5C /* GameDetails.swift in Sources */,
 				742E7893A7F2DB90E8FCA57F /* Golf.swift in Sources */,
 				653CCA7C4DB692421571D3B5 /* GolfAPIModels.swift in Sources */,
+				7E57A00000000000000000D1 /* GolfRules.swift in Sources */,
 				B50DBF1CC05B839C0E1C521D /* GolfHubView.swift in Sources */,
 				976CAEAE9184F2A78CC4262E /* GolfLeaderboardView.swift in Sources */,
 				B0A1FBA873B32E84234F9AE7 /* GolfLeagueView.swift in Sources */,
@@ -821,6 +828,7 @@
 				7E57A00000000000000000B9 /* RadioLinksGridTests.swift in Sources */,
 				7E57A0000000000000001041 /* CollegePollsTests.swift in Sources */,
 				7E57A00000000000000000C1 /* LiveScoresGolfTests.swift in Sources */,
+				7E57A00000000000000000D3 /* GolfGridTests.swift in Sources */,
 				7E57A00000000000000000E1 /* ViewModeDefaultTests.swift in Sources */,
 				7E57B0E15000000000000011 /* BowlsTests.swift in Sources */,
 			);

@@ -78,6 +78,9 @@ def scoreboard_schedule():
 def live_golf():
     """The saved tournament hadn't started; get_live_golf_tournament only reads one in progress."""
     data = load("golf_scoreboard_PGA.json")
+    # Both, as ESPN sends a round in play: the event's state is read first, its competition's
+    # when it has none (golf.event_state).
+    data["events"][0]["status"]["type"]["state"] = "in"
     data["events"][0]["competitions"][0]["status"]["type"]["state"] = "in"
     return data
 
