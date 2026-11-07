@@ -1757,7 +1757,7 @@ class ESPNAPIService {
         // Golf date strings omit seconds ("2026-04-09T04:00Z") — use lenient parser
         let apiResponse = try decoder.decode(GolfScoreboardResponse.self, from: data)
 
-        let calendar = apiResponse.leagues.first?.calendar.compactMap { entry -> GolfCalendarEntry? in
+        let calendar = apiResponse.leagues?.first?.calendar.compactMap { entry -> GolfCalendarEntry? in
             guard let start = parseESPNDateString(entry.startDate),
                   let end   = parseESPNDateString(entry.endDate) else { return nil }
             return GolfCalendarEntry(id: entry.id, name: entry.label, startDate: start, endDate: end)
