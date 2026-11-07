@@ -63,6 +63,7 @@ from services.venue_service import venue_service, venue_summary
 from models.game import GameData
 from models.news import NewsData
 import live_play_format
+import on_ice
 import radio_links
 from popup_menu import exec_menu as _exec_menu
 from models.standings import StandingsData
@@ -2784,7 +2785,8 @@ class GameDetailsView(BaseView):
         self.current_raw_details = None  # the game summary, once loaded
         self._shown_details = None  # (raw summary, details) as last shown, for a refresh that fails
         self._details_generation = 0  # newest load_game_details; older results are dropped
-        
+        self._game_title = ""  # "Away at Home", once the summary has said
+
         # Initialize audio pitch mapper
         self.audio_mapper = None
         if AUDIO_AVAILABLE:
@@ -2866,6 +2868,9 @@ class GameDetailsView(BaseView):
         field_data = data.get("data")
         if field_name == "listen":
             self._listen_to_game()
+            return
+        if field_name == "on_ice":
+            OnIceDialog(self.league, self.game_id, self._game_title, field_data, self).exec()
             return
 
         if not field_name or not field_data:
@@ -3291,7 +3296,8 @@ class GameDetailsView(BaseView):
                 game_title_parts.append(f"{sorted_names[0]} at {sorted_names[1]}")
             elif len(sorted_names) == 1:
                 game_title_parts.append(sorted_names[0])
-        
+        self._game_title = game_title_parts[0] if game_title_parts else ""
+
         # Update window title with game-specific information
         if self.parent_app and self.league:
             title_context = game_title_parts + [self.league] if game_title_parts else ["Game Details", self.league]
@@ -3308,7 +3314,14 @@ class GameDetailsView(BaseView):
         
         if 'detailed_status' in details and details['detailed_status'] != 'N/A':
             self.details_list.addItem(f"Game Time: {details['detailed_status']}")
-        
+
+        # Live NHL: who is on the ice. Enter opens each team's players.
+        on_ice_teams = on_ice.lineup(raw_details) if self.league == "NHL" else []
+        if on_ice_teams:
+            on_ice_item = QListWidgetItem(on_ice.summary_line(on_ice_teams))
+            on_ice_item.setData(Qt.ItemDataRole.UserRole, {"field": "on_ice", "data": raw_details})
+            self.details_list.addItem(on_ice_item)
+
         # Venue information
         if 'venue' in details:
             venue_info = details['venue']
@@ -12550,6 +12563,88 @@ class RadioDialog(QDialog):
             return
         _show_listen_menu(self, options, f"Listen to the {data.get('team', self.league)}",
                           _menu_position(self.radio_list, item))
+
+
+ON_ICE_NOBODY = "ESPN isn't saying who is on the ice right now."
+
+
+class OnIceDialog(QDialog):
+    """Who is on the ice in a live NHL game: each team's heading, then its forwards,
+    defense and goalie. F5 asks ESPN again and keeps the row you were on."""
+
+    def __init__(self, league: str, game_id, game_title: str, summary: dict, parent=None):
+        super().__init__(parent)
+        self.league = league
+        self.game_id = game_id
+        self._generation = 0
+        title = f"{game_title} - " if game_title else ""
+        self.setWindowTitle(f"On the Ice - {title}{league} - Sports Scores")
+        self.resize(DIALOG_WIDTH, DIALOG_HEIGHT)
+        layout = QVBoxLayout(self)
+        self.players_list = QListWidget()
+        self.players_list.setAccessibleName("On the Ice")
+        self.players_list.setAccessibleDescription("Each team, then its players on the ice. F5 updates it.")
+        layout.addWidget(self.players_list)
+        close_btn = QPushButton("Close")
+        close_btn.setAutoDefault(False)
+        close_btn.clicked.connect(self.accept)
+        layout.addWidget(close_btn)
+        self._fill(summary)
+        self.players_list.setCurrentRow(0)
+        _focus_once_active(self, self.players_list.setFocus)
+        # Lines change every minute or so, and game details don't update themselves:
+        # show what the row had at once, then ask again quietly.
+        self.refresh(quiet=True)
+
+    def _fill(self, summary):
+        self.players_list.clear()
+        teams = on_ice.lineup(summary)
+        if not teams:
+            self.players_list.addItem(ON_ICE_NOBODY)
+            return
+        for team in teams:
+            self.players_list.addItem(on_ice.team_heading(team))
+            for player in team["players"]:
+                self.players_list.addItem(on_ice.player_text(player))
+
+    def keyPressEvent(self, event):
+        if event.key() == Qt.Key.Key_F5:
+            self.refresh()
+            return
+        super().keyPressEvent(event)
+
+    def refresh(self, quiet=False):
+        """Ask ESPN again. `quiet` is the check as the dialog opens: it says nothing unless
+        the list changed, and a failure leaves what's showing without a word."""
+        self._generation += 1
+        self._quiet = quiet
+        loader = GameDetailsLoader(self._generation, self.league, self.game_id)
+        loader.data_loaded.connect(self._on_loaded)
+        loader.error_occurred.connect(self._on_error)
+        _start_detached_thread(loader)
+
+    def _rows(self):
+        return [self.players_list.item(i).text() for i in range(self.players_list.count())]
+
+    def _on_loaded(self, generation, raw, _details):
+        if generation != self._generation or not self.isVisible():
+            return
+        before = self._rows()
+        row = max(self.players_list.currentRow(), 0)
+        current = before[row] if row < len(before) else None
+        self._fill(raw)
+        after = self._rows()
+        # The same player if still on, since a penalty moves everyone below a row.
+        self.players_list.setCurrentRow(after.index(current) if current in after
+                                        else min(row, len(after) - 1))
+        if not self._quiet:
+            announce("On the ice updated")
+        elif after != before:
+            announce("On the ice changed")
+
+    def _on_error(self, generation, message):
+        if generation == self._generation and not self._quiet and self.isVisible():
+            announce(message)
 
 
 class VenueDetailsDialog(QDialog):
