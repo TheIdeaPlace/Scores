@@ -1746,9 +1746,12 @@ class ESPNAPIService {
         guard let url = URL(string: urlString) else { throw APIError.invalidURL }
 
         let (data, response) = try await session.data(from: url)
-        guard let http = response as? HTTPURLResponse, http.statusCode == 200 else {
-            throw APIError.invalidResponse
+        guard let http = response as? HTTPURLResponse else { throw APIError.invalidResponse }
+        // ESPN saying it has nothing there, as on Windows and in fetchGames. Any other failure says so.
+        if http.statusCode == 400 || http.statusCode == 404 {
+            return GolfTournamentResult(tournament: nil, calendar: [])
         }
+        guard http.statusCode == 200 else { throw APIError.invalidResponse }
 
         let decoder = JSONDecoder()
         // Golf date strings omit seconds ("2026-04-09T04:00Z") — use lenient parser
