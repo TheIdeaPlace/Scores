@@ -63,6 +63,7 @@ from models.game import GameData
 from models.news import NewsData
 import live_play_format
 import radio_links
+from popup_menu import exec_menu as _exec_menu
 from models.standings import StandingsData
 import error_log
 from windows_notifications import announce, set_notifier_window
@@ -305,7 +306,7 @@ def _show_listen_menu(parent, options, title, position):
         action.setToolTip(option["url"])
         action.triggered.connect(partial(_open_listen_link, option))
         menu.addAction(action)
-    menu.exec(position)
+    _exec_menu(menu, position)
 
 
 def _listen_title(league, away_name, home_name, neutral=False):
@@ -346,7 +347,7 @@ def _add_listen_keys(list_widget, listen, open_details, is_game, can_listen=lamb
         menu.setAccessibleName("Game Options")
         details = menu.addAction("Game Details\tEnter")
         listen_action = menu.addAction("Listen to the Game\tAlt+L") if can_listen() else None
-        chosen = menu.exec(_menu_position(list_widget, list_widget.currentItem()))
+        chosen = _exec_menu(menu, _menu_position(list_widget, list_widget.currentItem()))
         # After the first menu has closed, so the listen menu isn't opened inside it.
         if chosen is None:
             return
@@ -5155,7 +5156,7 @@ class GameDetailsView(BaseView):
         sequence_action.triggered.connect(lambda: self._play_play_sequence(tree_item))
         menu.addAction(sequence_action)
 
-        menu.exec(global_position)
+        _exec_menu(menu, global_position)
 
     def _play_current_play_audio(self, plays_tree):
         """Play Audio button: sonify whatever the tree has selected."""
@@ -5357,7 +5358,7 @@ class GameDetailsView(BaseView):
         menu.addAction(explore_action)
         
         # Show menu
-        menu.exec(global_position)
+        _exec_menu(menu, global_position)
     
     def _play_pitch_sequence(self, tree_item):
         """Play audio sequence for all pitches in the current batter's at-bat"""

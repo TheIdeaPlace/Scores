@@ -22,6 +22,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 - **Windows: Enter on an upcoming or finished game in Live Scores opens it.** It did nothing before.
+- **Windows: a context menu is announced as soon as it opens.** Shift+F10, the Applications key and
+  Alt+L used to open a menu that JAWS and NVDA said nothing about until an arrow key was pressed. The app's own menus (a
+  game's options, Listen to the Game, play and pitch audio, the Pitch Explorer's) now open on their
+  first item. The standard Cut, Copy and Paste menu in a text field is still silent until an arrow key.
 
 ### In Progress
 - **Game Wrap Up Feature**: ESPN text processing and game story extraction (under construction)
