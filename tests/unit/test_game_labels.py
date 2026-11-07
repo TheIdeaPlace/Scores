@@ -11,7 +11,7 @@ from game_labels import (basketball_period_label, best_odds, broadcast_names,
                          format_weight, game_standings_tables, injured_player_count,
                          leader_display_value, local_schedule_datetime, schedule_game_is_over,
                          schedule_game_label, schedule_row_text, schedule_start_row, scoreboard_today,
-                         on_todays_scoreboard)
+                         on_todays_scoreboard, team_record_text)
 
 FIXTURES = os.path.join(os.path.dirname(__file__), "..", "fixtures", "espn")
 
@@ -243,6 +243,34 @@ class TestCollegeStandings:
 
     def test_empty(self):
         assert espn_api.parse_college_standings({}) == []
+
+    def test_an_unbeaten_team_has_a_record(self):
+        """#203: the Team Hub dropped 8-0 and 0-9, treating 0 as no record."""
+        rows = espn_api.parse_college_standings(load("standings_NCAAF_group90.json"))
+        miami = next(r for r in rows if r["team_name"] == "Miami Hurricanes")
+        assert team_record_text(miami["wins"], miami["losses"], miami["ties"]) == "8-0"
+
+    def test_a_record_with_ties(self):
+        yale = self.team("NCAAWH", "Yale Bulldogs")
+        assert team_record_text(yale["wins"], yale["losses"], yale["ties"]) == "2-1-1"
+
+
+@pytest.mark.parametrize("wins,losses,ties,expected", [
+    (8, 0, 0, "8-0"),
+    (0, 9, 0, "0-9"),
+    (7, 2, None, "7-2"),
+    ("8", "0", "0", "8-0"),
+    (10, 6, 1, "10-6-1"),
+    (0, 0, 1, "0-0-1"),
+    (0, 0, 0, ""),        # hasn't played
+    ("", "", 0, ""),      # opened from Favorites: loaded later
+    (None, 3, 0, ""),
+    ("x", 3, 0, ""),
+    (True, 0, 0, ""),
+    (-1, 2, 0, ""),
+])
+def test_team_record_text(wins, losses, ties, expected):
+    assert team_record_text(wins, losses, ties) == expected
 
 
 def leader_display_cases():

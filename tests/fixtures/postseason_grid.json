@@ -1,0 +1,25 @@
+{
+  "description": "Which Bowls & Playoffs heading a college football postseason game goes under, from its note headline and competition type id. postseason.py (Windows) and Models/Postseason.swift (iPhone) are both held to this file. The headline decides; the type id is read only when there is no headline. headings is the list order.",
+  "headings": ["Playoff First Round", "Playoff Quarterfinals", "Playoff Semifinals", "National Championship", "Bowl Games"],
+  "round_cases": [
+    {"headline": "College Football Playoff First Round Game", "type_id": 1, "expected": "Playoff First Round"},
+    {"headline": "CFP First Round", "type_id": 1, "expected": "Playoff First Round"},
+    {"headline": "College Football Playoff Quarterfinal at the Vrbo Fiesta Bowl", "type_id": 40, "expected": "Playoff Quarterfinals"},
+    {"headline": "College Football Playoff Quarterfinal at the Rose Bowl", "type_id": 40, "expected": "Playoff Quarterfinals"},
+    {"headline": "College Football Playoff Semifinal at the Capital One Orange Bowl", "type_id": 35, "expected": "Playoff Semifinals"},
+    {"headline": "CFP Semifinal at the Orange Bowl", "type_id": 35, "expected": "Playoff Semifinals"},
+    {"headline": "College Football Playoff Semifinal at the Rose Bowl", "type_id": 42, "expected": "Playoff Semifinals"},
+    {"headline": "College Football Playoff National Championship Presented by AT&T", "type_id": 33, "expected": "National Championship"},
+    {"headline": "Cricket Celebration Bowl", "type_id": 42, "expected": "Bowl Games"},
+    {"headline": "Duke's Mayo Bowl", "type_id": 42, "expected": "Bowl Games"},
+    {"headline": "NCAA Division I FCS Playoff - First Round", "type_id": 1, "expected": "Bowl Games"},
+    {"headline": "NCAA Division I Football Championship", "type_id": 33, "expected": "Bowl Games"},
+    {"headline": "NCAA Division II Football Championship", "type_id": 1, "expected": "Bowl Games"},
+    {"headline": "College Football Playoff Game", "type_id": 1, "expected": "Bowl Games"},
+    {"headline": null, "type_id": 33, "expected": "National Championship"},
+    {"headline": "", "type_id": 35, "expected": "Playoff Semifinals"},
+    {"headline": null, "type_id": 40, "expected": "Bowl Games"},
+    {"headline": null, "type_id": 42, "expected": "Bowl Games"},
+    {"headline": null, "type_id": null, "expected": "Bowl Games"}
+  ]
+}

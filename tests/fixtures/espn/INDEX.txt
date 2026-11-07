@@ -28,6 +28,8 @@ plays_NBA_401909906.json	47 KB	sentinel coordinates; real shot coordinates
 plays_NHL_401892616_SO.json	67 KB	shootout: scoreValue on every converted attempt; linescore counts 1
 plays_MLB_401817091.json	109 KB	summary header, plays of innings 2 and 8 only: atBatId and summaryType A/P/N/S/C/I, pitchCoordinate on every pitch, a pinch hitter and relief changes
 drives_NCAAF_2OT.json	43 KB	OT drives: Quarter 5, Quarter 6 in the app
+drives_NCAAF_401858286.json	102 KB	Duke 41 at NC State 3, header teams and drives only: NC State's drive 40185828616 is marked TD for Duke's 100-yard missed field goal return
+drives_NCAAF_401866682_2OT.json	117 KB	Towson 43 at Sacred Heart 40 (2OT), header teams and drives only: a kickoff-only Sacred Heart drive marked TD for Towson's return, a blocked try run back for 2, a walk-off TD of 6
 details_NFL_pieces.json	32 KB	TV in media.shortName, odds in pickcenter, injuries by team, officials under gameInfo
 details_NCAAH_pieces.json	9 KB	attendance 0, no plays
 roster_NFL_9.json	14 KB	height and weight are floats: 6.0'5.0"

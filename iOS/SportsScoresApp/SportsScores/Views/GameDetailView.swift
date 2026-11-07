@@ -306,7 +306,9 @@ struct GameDetailView: View {
                 NFLDrivesView(
                     drives: allDrives,
                     awayAbbr: game.awayTeam.abbreviation,
-                    homeAbbr: game.homeTeam.abbreviation
+                    homeAbbr: game.homeTeam.abbreviation,
+                    awayID: game.awayTeam.id,
+                    homeID: game.homeTeam.id
                 )
             } else {
                 let plays = details.plays ?? []
