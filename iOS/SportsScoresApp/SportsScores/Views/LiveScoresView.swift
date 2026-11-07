@@ -54,35 +54,8 @@ struct LiveFailureView: View {
     }
 }
 
-// MARK: - Golf live state (lightweight, separate from team-sport viewmodel)
-
-@MainActor
-private class GolfLiveViewModel: ObservableObject {
-    @Published var activeTournaments: [(sport: Sport, tournament: GolfTournament)] = []
-    private let api = ESPNAPIService.shared
-
-    func fetch() async {
-        var found: [(sport: Sport, tournament: GolfTournament)] = []
-        await withTaskGroup(of: (Sport, GolfTournament?).self) { group in
-            for tour in Sport.golfTours {
-                group.addTask {
-                    let result = try? await self.api.fetchGolfTournament(for: tour)
-                    return (tour, result?.tournament)
-                }
-            }
-            for await (tour, tournament) in group {
-                if let t = tournament, t.isInProgress {
-                    found.append((sport: tour, tournament: t))
-                }
-            }
-        }
-        activeTournaments = found.sorted { $0.sport.rawValue < $1.sport.rawValue }
-    }
-}
-
 struct LiveScoresView: View {
     @StateObject private var viewModel = LiveScoresViewModel()
-    @StateObject private var golfVM   = GolfLiveViewModel()
     @State private var viewMode: ViewMode = .quickList
     @EnvironmentObject private var appSettings: AppSettings
 
@@ -92,7 +65,7 @@ struct LiveScoresView: View {
                 ProgressView("Loading all games...")
             } else if let error = viewModel.errorMessage {
                 LiveFailureView(message: error, isRetrying: viewModel.isRetrying) {
-                    await viewModel.retry()
+                    await viewModel.retry(golf: appSettings.golfHubEnabled)
                 }
             } else {
                 scrollContent
@@ -126,12 +99,15 @@ struct LiveScoresView: View {
             }
         }
         .task {
-            await viewModel.fetchAllGames()
-            if appSettings.golfHubEnabled { await golfVM.fetch() }
+            await viewModel.fetchAllGames(golf: appSettings.golfHubEnabled)
         }
         // Switching college football coverage changes the NCAAF slate ESPN returns.
         .onChange(of: appSettings.ncaafCoverage) {
-            Task { await viewModel.refresh() }
+            Task { await viewModel.refresh(golf: appSettings.golfHubEnabled) }
+        }
+        // Golf's rows, and any tour named in the failure note, come and go with the setting.
+        .onChange(of: appSettings.golfHubEnabled) {
+            Task { await viewModel.refresh(golf: appSettings.golfHubEnabled) }
         }
         .task(id: appSettings.autoRefreshInterval) {
             while !Task.isCancelled {
@@ -139,20 +115,18 @@ struct LiveScoresView: View {
                 if secs > 0 {
                     try? await Task.sleep(for: .seconds(secs))
                     guard !Task.isCancelled else { break }
-                    await viewModel.refresh()
-                    if appSettings.golfHubEnabled { await golfVM.fetch() }
+                    await viewModel.refresh(golf: appSettings.golfHubEnabled)
                 } else {
                     try? await Task.sleep(for: .seconds(86400))
                 }
             }
         }
         .refreshable {
-            await viewModel.refresh()
+            await viewModel.refresh(golf: appSettings.golfHubEnabled)
             // Someone asked for this one. The timer's stay quiet.
             if let note = viewModel.failureNote {
                 UIAccessibility.post(notification: .announcement, argument: note)
             }
-            if appSettings.golfHubEnabled { await golfVM.fetch() }
         }
     }
     
@@ -161,10 +135,10 @@ struct LiveScoresView: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 24) {
                 // Golf Live Now section (shown first when a tournament is in progress)
-                if appSettings.golfHubEnabled && !golfVM.activeTournaments.isEmpty {
+                if appSettings.golfHubEnabled && !viewModel.activeTournaments.isEmpty {
                     VStack(alignment: .leading, spacing: 12) {
-                        sectionHeader(title: "⛳ GOLF LIVE", count: golfVM.activeTournaments.count)
-                        ForEach(golfVM.activeTournaments, id: \.sport.rawValue) { item in
+                        sectionHeader(title: "⛳ GOLF LIVE", count: viewModel.activeTournaments.count)
+                        ForEach(viewModel.activeTournaments, id: \.sport.rawValue) { item in
                             NavigationLink(destination: GolfLeagueView(sport: item.sport)) {
                                 golfTournamentRow(item.tournament, sport: item.sport)
                             }
@@ -217,7 +191,7 @@ struct LiveScoresView: View {
                         .padding(.horizontal)
                 }
 
-                if viewModel.liveGames.isEmpty && viewModel.completedGames.isEmpty && viewModel.upcomingGames.isEmpty && (!appSettings.golfHubEnabled || golfVM.activeTournaments.isEmpty) {
+                if viewModel.liveGames.isEmpty && viewModel.completedGames.isEmpty && viewModel.upcomingGames.isEmpty && (!appSettings.golfHubEnabled || viewModel.activeTournaments.isEmpty) {
                     VStack(spacing: 16) {
                         Image(systemName: "calendar.badge.exclamationmark")
                             .font(.system(size: 48))

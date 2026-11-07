@@ -21,6 +21,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Both apps read the same list, `radio_links.json`, and the nightly data check opens every link in it.
 
 ### Fixed
+- **iPhone: a golf tournament in progress stays on Live Scores when a refresh fails.** It used to vanish
+  with nothing said. Now, as on Windows, the tournament last shown stays and the note under the list
+  names the tour ESPN didn't answer for. A tournament in progress also no longer hides behind "No games
+  scheduled today" when there are no team games, and pulling to refresh announces a golf failure too.
 - **Windows: Enter on an upcoming or finished game in Live Scores opens it.** It did nothing before.
 - **Windows: a context menu is announced as soon as it opens.** Shift+F10, the Applications key and
   Alt+L used to open a menu that JAWS and NVDA said nothing about until an arrow key was pressed. The app's own menus (a

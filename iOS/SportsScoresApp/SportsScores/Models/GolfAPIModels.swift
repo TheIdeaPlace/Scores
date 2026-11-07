@@ -16,7 +16,9 @@ import Foundation
 // MARK: - Top-level response
 
 struct GolfScoreboardResponse: Decodable {
-    let leagues: [GolfLeagueAPIResponse]
+    /// Only the Golf hub's calendar comes from here, so a scoreboard without it still shows
+    /// its tournament, as on Windows.
+    let leagues: [GolfLeagueAPIResponse]?
     let events: [GolfEventAPIResponse]
 }
 
