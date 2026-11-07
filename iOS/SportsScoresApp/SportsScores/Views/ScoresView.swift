@@ -684,6 +684,7 @@ struct ScoresView: View {
         NavigationLink(destination: GameDetailView(game: game, sport: sport)) {
             GameRow(game: game, sport: sport, sectionContext: context)
         }
+        .listenToGame(game, sport: sport)
     }
 }
 

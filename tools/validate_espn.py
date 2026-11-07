@@ -2004,6 +2004,35 @@ def check_fantasy(http, report):
         report.ok("Fantasy", "App: cheatsheet", f"{board.get('season')}: {len(players)} players")
 
 
+def check_radio_links(http, report):
+    """Every page radio_links.json sends someone to still answers. A dead link is worth a
+    look, not a break: the app still works, and some stations turn away scripts."""
+    import radio_links
+
+    data = radio_links.load(os.path.join(ROOT, "radio_links.json"))
+    tables = data.get("tables") or {}
+    if not tables:
+        report.fail("Radio", "Links file", "radio_links.json is missing or unreadable")
+        return
+    urls = {}
+    for table_name, table in tables.items():
+        for link in radio_links._links(table):
+            urls.setdefault(link["url"], f"{table_name}: {link['label']}")
+        for team in (table.get("teams") or {}).values():
+            for link in radio_links._links(team):
+                urls.setdefault(link["url"], f"{team.get('name')}: {link['label']}")
+
+    def status(url):
+        return url, http.get(url, attempts=1, timeout=20)[0]
+
+    with ThreadPoolExecutor(max_workers=8) as pool:
+        answers = list(pool.map(status, urls))
+    dead = [(url, code) for url, code in answers if not (isinstance(code, int) and code < 400)]
+    for url, code in dead:
+        report.warn("Radio", urls[url], f"answered {code}", url)
+    report.ok("Radio", "Links answer", f"{len(answers) - len(dead)} of {len(answers)} pages")
+
+
 def check_others_twice(http, seasons):
     report = check_others(http, seasons)
     if not report.failed:
@@ -2017,7 +2046,8 @@ def check_others_twice(http, seasons):
 def check_others(http, seasons):
     report = Report()
     for check in (check_every_league_path, check_football_calendar, check_past_postseasons, check_soccer_schedules,
-                  check_soccer_tables, check_golf, check_draft, check_world_cup, check_cfl, check_fantasy):
+                  check_soccer_tables, check_golf, check_draft, check_world_cup, check_cfl, check_fantasy,
+                  check_radio_links):
         try:
             check(http, report)
         except Exception as e:

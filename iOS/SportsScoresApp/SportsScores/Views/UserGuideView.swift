@@ -38,7 +38,7 @@ struct UserGuideView: View {
                 GuideSection(icon: "sportscourt", title: "Getting Around", color: .blue) {
                     Text("The app has three tabs along the bottom:")
                     IconRow(symbol: "sportscourt",        color: .blue,   label: "Scores",    detail: "Sports list and live scores — the home page")
-                    IconRow(symbol: "waveform.and.mic",   color: .purple, label: "The Bench", detail: "Team Hub, venue tours, NFL Draft, Transaction Hub")
+                    IconRow(symbol: "waveform.and.mic",   color: .purple, label: "The Bench", detail: "Team Hub, Game Radio, venue tours, NFL Draft, Transaction Hub")
                     IconRow(symbol: "gearshape",          color: .gray,   label: "Settings",  detail: "Display preferences")
 
                     Text("**Home Screen**")
@@ -82,6 +82,16 @@ struct UserGuideView: View {
                     IconRow(symbol: "figure.walk",        color: .green,  label: "Field tour",    detail: "Opens the audio stadium tour for that ballpark — appears next to the venue name")
                     IconRow(symbol: "hand.tap",           color: .green,  label: "Explore Zone",  detail: "Opens the pitch zone explorer — appears in the Plays tab when pitch data is available")
                     IconRow(symbol: "square.and.arrow.up", color: .blue,  label: "Share",         detail: "Share a text summary of the final score — appears for completed games")
+                }
+
+                // MARK: Listen to the Game
+                GuideSection(icon: "radio", title: "Listen to the Game", color: .red) {
+                    Text("For the NFL, NBA, NHL, and college football and basketball, the app knows where to hear a game on the radio: each team's radio, then the services that carry every game, such as SiriusXM.")
+                    BulletPoint("On a game in Scores or Live Scores, use the **Listen to the Game** VoiceOver action (swipe up or down), or press and hold the game for its menu")
+                    BulletPoint("A game's detail screen has a **Listen to the Game** menu under the TV listing")
+                    BulletPoint("Team Hub has a radio button in the top-right corner")
+                    BulletPoint("**Game Radio** in The Bench lists every team and its station")
+                    Text("Each place opens in Safari, or in the service's app if you have it. Sign in or subscribe there if it asks; the app doesn't play the audio itself.")
                 }
 
                 // MARK: Table View Modes

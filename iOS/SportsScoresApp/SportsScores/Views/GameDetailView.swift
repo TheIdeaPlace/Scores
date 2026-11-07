@@ -194,6 +194,20 @@ struct GameDetailView: View {
                 .accessibilityLabel("TV: \(activeBroadcasts.joined(separator: ", "))")
             }
 
+            // Where to hear it on the radio
+            let listenOptions = game.listenOptions(league: sport.rawValue)
+            if !listenOptions.isEmpty {
+                Menu {
+                    ForEach(listenOptions) { option in
+                        Link(option.label, destination: option.url)
+                    }
+                } label: {
+                    Label("Listen to the Game", systemImage: "radio")
+                        .font(.subheadline)
+                }
+                .accessibilityHint("Places to hear it on the radio. Each opens outside the app.")
+            }
+
             // Odds (when available from summary API)
             if let odds = viewModel.gameDetails?.bettingLine {
                 HStack(spacing: 12) {

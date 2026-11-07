@@ -286,6 +286,7 @@ struct LiveScoresView: View {
                         CompactGameRow(game: game, isLive: isLive, sport: sportGames.sport)
                     }
                     .buttonStyle(.plain)
+                    .listenToGame(game, sport: sportGames.sport)
                 }
             }
         }

@@ -1,0 +1,2562 @@
+{
+ "about": "Where to listen to games. Read by radio_links.py on Windows and RadioLinks.swift on the iPhone, which keeps a byte-equal copy at iOS/SportsScoresApp/SportsScores/radio_links.json. Teams are keyed by ESPN team id. Every link opens a web page; none is a stream. tools/validate_espn.py opens them nightly.",
+ "checked": "2026-11-07",
+ "tables": {
+  "NFL": {
+   "links": [
+    {
+     "label": "NFL+ (live audio of every game)",
+     "url": "https://www.nfl.com/plus/"
+    },
+    {
+     "label": "SiriusXM NFL play-by-play",
+     "url": "https://www.siriusxm.com/sports/nfl"
+    },
+    {
+     "label": "SiriusXM NFL Radio",
+     "url": "https://www.siriusxm.com/channels/siriusxm-nfl-radio"
+    },
+    {
+     "label": "Westwood One Sports",
+     "url": "https://www.westwoodonesports.com/"
+    }
+   ],
+   "teams": {
+    "22": {
+     "name": "Arizona Cardinals",
+     "station": "Arizona Sports 98.7 FM (KMVP-FM), Phoenix",
+     "links": [
+      {
+       "label": "Arizona Sports 98.7 live stream",
+       "url": "https://tuner.bonneville.com/live/KMVP-FM/"
+      },
+      {
+       "label": "Arizona Sports 98.7",
+       "url": "https://arizonasports.com/"
+      },
+      {
+       "label": "Cardinals on SiriusXM",
+       "url": "https://www.siriusxm.com/sports/nfl/arizona-cardinals"
+      }
+     ]
+    },
+    "1": {
+     "name": "Atlanta Falcons",
+     "station": "92.9 The Game (WZGC-FM), Atlanta",
+     "links": [
+      {
+       "label": "92.9 The Game",
+       "url": "https://www.audacy.com/929thegame"
+      },
+      {
+       "label": "Falcons on SiriusXM",
+       "url": "https://www.siriusxm.com/sports/nfl/atlanta-falcons"
+      }
+     ]
+    },
+    "33": {
+     "name": "Baltimore Ravens",
+     "station": "WBAL 1090 AM and 98 Rock 97.9 FM (WIYY), Baltimore",
+     "links": [
+      {
+       "label": "Ravens live game broadcast (WBAL)",
+       "url": "https://www.baltimoreravens.com/audio/live-game-broadcast"
+      },
+      {
+       "label": "Ravens Watch, Listen, Stream",
+       "url": "https://www.baltimoreravens.com/broadcast/watch-listen-stream/"
+      },
+      {
+       "label": "98 Rock live player",
+       "url": "https://www.98online.com/player"
+      },
+      {
+       "label": "Ravens on SiriusXM",
+       "url": "https://www.siriusxm.com/sports/nfl/baltimore-ravens"
+      }
+     ]
+    },
+    "2": {
+     "name": "Buffalo Bills",
+     "station": "WGRF 96.9 FM (97 Rock) and WBBF 98.9 FM / 1120 AM, Buffalo",
+     "links": [
+      {
+       "label": "97 Rock live stream",
+       "url": "https://www.iheart.com/live/97-rock-5355/"
+      },
+      {
+       "label": "Bills Radio Network stations",
+       "url": "https://www.buffalobills.com/audio/radio-network"
+      },
+      {
+       "label": "Bills on SiriusXM",
+       "url": "https://www.siriusxm.com/sports/nfl/buffalo-bills"
+      }
+     ]
+    },
+    "29": {
+     "name": "Carolina Panthers",
+     "station": "WRFX 99.7 The Fox, Charlotte",
+     "links": [
+      {
+       "label": "Panthers live game audio",
+       "url": "https://www.panthers.com/audio/gameday-stream"
+      },
+      {
+       "label": "99.7 The Fox live stream",
+       "url": "https://www.iheart.com/live/997-the-fox-1613/"
+      },
+      {
+       "label": "Panthers Radio",
+       "url": "https://www.panthers.com/audio/radio"
+      },
+      {
+       "label": "Panthers on SiriusXM",
+       "url": "https://www.siriusxm.com/sports/nfl/carolina-panthers"
+      }
+     ]
+    },
+    "3": {
+     "name": "Chicago Bears",
+     "station": "ESPN 1000 (WMVP 1000 AM, 100.3 FM HD2), Chicago",
+     "links": [
+      {
+       "label": "ESPN 1000 live stream",
+       "url": "https://www.iheart.com/live/espn-1000-7907/"
+      },
+      {
+       "label": "Bears on SiriusXM",
+       "url": "https://www.siriusxm.com/sports/nfl/chicago-bears"
+      }
+     ]
+    },
+    "4": {
+     "name": "Cincinnati Bengals",
+     "station": "700 WLW, ESPN 1530 (WCKY) and 102.7 WEBN, Cincinnati",
+     "links": [
+      {
+       "label": "Bengals live game day audio",
+       "url": "https://www.bengals.com/audio/live-game-day-audio"
+      },
+      {
+       "label": "Bengals Radio Network",
+       "url": "https://www.bengals.com/broadcast/radio"
+      },
+      {
+       "label": "700 WLW live stream",
+       "url": "https://www.iheart.com/live/newsradio-700-wlw-1713/"
+      },
+      {
+       "label": "ESPN 1530 live stream",
+       "url": "https://www.iheart.com/live/espn-1530-1697/"
+      },
+      {
+       "label": "102.7 WEBN live stream",
+       "url": "https://www.iheart.com/live/1027-webn-1701/"
+      },
+      {
+       "label": "Bengals on SiriusXM",
+       "url": "https://www.siriusxm.com/sports/nfl/cincinnati-bengals"
+      }
+     ]
+    },
+    "5": {
+     "name": "Cleveland Browns",
+     "station": "850 ESPN Cleveland (WKNR), 98.5 WNCX and 92.3 The Fan (WKRK-FM), Cleveland",
+     "links": [
+      {
+       "label": "Browns Radio Network (live radio)",
+       "url": "https://www.clevelandbrowns.com/audio/radio"
+      },
+      {
+       "label": "98.5 WNCX live stream",
+       "url": "https://www.iheart.com/live/985-wncx-10855/"
+      },
+      {
+       "label": "92.3 The Fan",
+       "url": "https://www.audacy.com/923thefan"
+      },
+      {
+       "label": "Browns on SiriusXM",
+       "url": "https://www.siriusxm.com/sports/nfl/cleveland-browns"
+      }
+     ]
+    },
+    "6": {
+     "name": "Dallas Cowboys",
+     "station": "105.3 The Fan (KRLD-FM), Dallas/Fort Worth",
+     "links": [
+      {
+       "label": "105.3 The Fan",
+       "url": "https://www.audacy.com/1053thefan"
+      },
+      {
+       "label": "Cowboys on SiriusXM",
+       "url": "https://www.siriusxm.com/sports/nfl/dallas-cowboys"
+      }
+     ]
+    },
+    "7": {
+     "name": "Denver Broncos",
+     "station": "KOA 850 AM / 94.1 FM, Denver",
+     "links": [
+      {
+       "label": "KOA live stream",
+       "url": "https://www.iheart.com/live/850-941-koa-389/"
+      },
+      {
+       "label": "Broncos on SiriusXM",
+       "url": "https://www.siriusxm.com/sports/nfl/denver-broncos"
+      }
+     ]
+    },
+    "8": {
+     "name": "Detroit Lions",
+     "station": "97.1 The Ticket (WXYT-FM), Detroit",
+     "links": [
+      {
+       "label": "97.1 The Ticket",
+       "url": "https://www.audacy.com/971theticket"
+      },
+      {
+       "label": "Lions Radio Network affiliates",
+       "url": "https://www.detroitlions.com/tunein/lions-radio-network"
+      },
+      {
+       "label": "Lions on SiriusXM",
+       "url": "https://www.siriusxm.com/sports/nfl/detroit-lions"
+      }
+     ]
+    },
+    "9": {
+     "name": "Green Bay Packers",
+     "station": "95.7 BIG FM (WRIT), Milwaukee",
+     "links": [
+      {
+       "label": "95.7 BIG FM live stream",
+       "url": "https://www.iheart.com/live/957-big-fm-2689/"
+      },
+      {
+       "label": "Packers Radio Network",
+       "url": "https://www.packers.com/video/radio-network"
+      },
+      {
+       "label": "Packers on SiriusXM",
+       "url": "https://www.siriusxm.com/sports/nfl/green-bay-packers"
+      }
+     ]
+    },
+    "34": {
+     "name": "Houston Texans",
+     "station": "95.7 The Fan (KIKK-FM) and SportsRadio 610 AM, Houston",
+     "links": [
+      {
+       "label": "95.7 The Fan",
+       "url": "https://www.audacy.com/957thefan"
+      },
+      {
+       "label": "Texans Radio Networks",
+       "url": "https://www.houstontexans.com/podcasts/radio-networks"
+      },
+      {
+       "label": "Texans on SiriusXM",
+       "url": "https://www.siriusxm.com/sports/nfl/houston-texans"
+      }
+     ]
+    },
+    "11": {
+     "name": "Indianapolis Colts",
+     "station": "93.5 / 107.5 The Fan and 97.1 HANK FM, Indianapolis",
+     "links": [
+      {
+       "label": "Colts ways to watch and listen",
+       "url": "https://www.colts.com/watch-live-games/ways-to-watch"
+      },
+      {
+       "label": "107.5 The Fan live stream",
+       "url": "https://www.iheart.com/live/1075-the-fan-6056/"
+      },
+      {
+       "label": "97.1 HANK FM live stream",
+       "url": "https://www.iheart.com/live/country-971-hank-fm-6058/"
+      },
+      {
+       "label": "Colts radio affiliates",
+       "url": "https://www.colts.com/audio/radio-affiliates"
+      },
+      {
+       "label": "Colts on SiriusXM",
+       "url": "https://www.siriusxm.com/sports/nfl/indianapolis-colts"
+      }
+     ]
+    },
+    "30": {
+     "name": "Jacksonville Jaguars",
+     "station": "1010 XL / 92.5 FM (WJXL), Jacksonville",
+     "links": [
+      {
+       "label": "Jaguars broadcast and radio",
+       "url": "https://www.jaguars.com/broadcast/"
+      },
+      {
+       "label": "1010 XL / 92.5 FM listen",
+       "url": "https://1010xl.com/listen-2/"
+      },
+      {
+       "label": "Jaguars on SiriusXM",
+       "url": "https://www.siriusxm.com/sports/nfl/jacksonville-jaguars"
+      }
+     ]
+    },
+    "12": {
+     "name": "Kansas City Chiefs",
+     "station": "96.5 The Fan (KFNZ-FM), Kansas City",
+     "links": [
+      {
+       "label": "Chiefs Radio Network stream",
+       "url": "https://www.chiefs.com/listen/96-5-the-fan-the-kansas-city-chiefs-radio-network-stream"
+      },
+      {
+       "label": "96.5 The Fan",
+       "url": "https://www.audacy.com/965thefan"
+      },
+      {
+       "label": "Chiefs on SiriusXM",
+       "url": "https://www.siriusxm.com/sports/nfl/kansas-city-chiefs"
+      }
+     ]
+    },
+    "13": {
+     "name": "Las Vegas Raiders",
+     "station": "KOMP 92.3 FM and Raider Nation Radio 920 AM (KRLV), Las Vegas",
+     "links": [
+      {
+       "label": "Raiders Live Gameday Radio",
+       "url": "https://www.raiders.com/audio/live-gameday-radio"
+      },
+      {
+       "label": "KOMP 92.3 live stream",
+       "url": "https://www.iheart.com/live/komp-923-11813/"
+      },
+      {
+       "label": "Raider Nation Radio 920 live stream",
+       "url": "https://www.iheart.com/live/raider-nation-radio-920-11833/"
+      },
+      {
+       "label": "Raiders game radio broadcast info",
+       "url": "https://www.raiders.com/multimedia/game-radio-broadcast-information"
+      },
+      {
+       "label": "Raiders on SiriusXM",
+       "url": "https://www.siriusxm.com/sports/nfl/las-vegas-raiders"
+      }
+     ]
+    },
+    "24": {
+     "name": "Los Angeles Chargers",
+     "station": "KFI AM 640, Los Angeles",
+     "links": [
+      {
+       "label": "Chargers live game audio",
+       "url": "https://www.chargers.com/audio/live-game-audio"
+      },
+      {
+       "label": "KFI AM 640 live stream",
+       "url": "https://www.iheart.com/live/kfi-am-640-177/"
+      },
+      {
+       "label": "Chargers on SiriusXM",
+       "url": "https://www.siriusxm.com/sports/nfl/los-angeles-chargers"
+      }
+     ]
+    },
+    "14": {
+     "name": "Los Angeles Rams",
+     "station": "ESPN 710 AM (KSPN), Los Angeles",
+     "links": [
+      {
+       "label": "710 ESPN LA live stream",
+       "url": "https://www.iheart.com/live/710-espn-la-7906/"
+      },
+      {
+       "label": "Rams on SiriusXM",
+       "url": "https://www.siriusxm.com/sports/nfl/los-angeles-rams"
+      }
+     ]
+    },
+    "15": {
+     "name": "Miami Dolphins",
+     "station": "BIG 105.9 FM (WBGG) and Fox Sports 940 AM (WINZ), Miami",
+     "links": [
+      {
+       "label": "BIG 105.9 live stream",
+       "url": "https://www.iheart.com/live/big-1059-557/"
+      },
+      {
+       "label": "Fox Sports 940 live stream",
+       "url": "https://www.iheart.com/live/fox-sports-940-565/"
+      },
+      {
+       "label": "Dolphins on SiriusXM",
+       "url": "https://www.siriusxm.com/sports/nfl/miami-dolphins"
+      }
+     ]
+    },
+    "16": {
+     "name": "Minnesota Vikings",
+     "station": "KFAN 100.3 FM and KTLK 1130 AM, Minneapolis-St. Paul",
+     "links": [
+      {
+       "label": "Vikings live game radio",
+       "url": "https://www.vikings.com/audio/live-radio"
+      },
+      {
+       "label": "KFAN 100.3 live stream",
+       "url": "https://www.iheart.com/live/kfan-fm-1003-1209/"
+      },
+      {
+       "label": "Vikings on SiriusXM",
+       "url": "https://www.siriusxm.com/sports/nfl/minnesota-vikings"
+      }
+     ]
+    },
+    "17": {
+     "name": "New England Patriots",
+     "station": "98.5 The Sports Hub (WBZ-FM), Boston",
+     "links": [
+      {
+       "label": "Patriots game radio broadcast info",
+       "url": "https://www.patriots.com/audio/game-broadcast-info"
+      },
+      {
+       "label": "98.5 The Sports Hub: how to listen",
+       "url": "https://985thesportshub.com/listen"
+      },
+      {
+       "label": "Patriots on SiriusXM",
+       "url": "https://www.siriusxm.com/sports/nfl/new-england-patriots"
+      }
+     ]
+    },
+    "18": {
+     "name": "New Orleans Saints",
+     "station": "WWL 870 AM / 105.3 FM, New Orleans",
+     "links": [
+      {
+       "label": "WWL",
+       "url": "https://www.audacy.com/wwl"
+      },
+      {
+       "label": "Saints radio broadcasting",
+       "url": "https://www.neworleanssaints.com/news/broadcasting"
+      },
+      {
+       "label": "Saints on SiriusXM",
+       "url": "https://www.siriusxm.com/sports/nfl/new-orleans-saints"
+      }
+     ]
+    },
+    "19": {
+     "name": "New York Giants",
+     "station": "WFAN 101.9 FM / 660 AM, New York",
+     "links": [
+      {
+       "label": "Giants ways to watch and listen",
+       "url": "https://www.giants.com/watch-live-games/ways-to-watch"
+      },
+      {
+       "label": "WFAN",
+       "url": "https://www.audacy.com/wfan"
+      },
+      {
+       "label": "Giants on SiriusXM",
+       "url": "https://www.siriusxm.com/sports/nfl/new-york-giants"
+      }
+     ]
+    },
+    "20": {
+     "name": "New York Jets",
+     "station": "Q104.3 (WAXQ-FM), New York",
+     "links": [
+      {
+       "label": "Jets live game radio broadcast",
+       "url": "https://www.newyorkjets.com/audio/live-game-day-audio"
+      },
+      {
+       "label": "Q104.3 live stream",
+       "url": "https://www.iheart.com/live/q1043-1465/"
+      },
+      {
+       "label": "Jets on SiriusXM",
+       "url": "https://www.siriusxm.com/sports/nfl/new-york-jets"
+      }
+     ]
+    },
+    "21": {
+     "name": "Philadelphia Eagles",
+     "station": "SportsRadio 94WIP (WIP-FM), Philadelphia",
+     "links": [
+      {
+       "label": "Eagles Live Gameday Radio",
+       "url": "https://www.philadelphiaeagles.com/liveradio"
+      },
+      {
+       "label": "SportsRadio 94WIP",
+       "url": "https://www.audacy.com/94wip"
+      },
+      {
+       "label": "Eagles on SiriusXM",
+       "url": "https://www.siriusxm.com/sports/nfl/philadelphia-eagles"
+      }
+     ]
+    },
+    "23": {
+     "name": "Pittsburgh Steelers",
+     "station": "WDVE 102.5 FM and WBGG 970 AM, Pittsburgh",
+     "links": [
+      {
+       "label": "Steelers Nation Radio (live)",
+       "url": "https://www.steelers.com/audio/steelers-audio-network/snr"
+      },
+      {
+       "label": "102.5 DVE live stream",
+       "url": "https://www.iheart.com/live/1025-dve-2017/"
+      },
+      {
+       "label": "Fox Sports 970 live stream",
+       "url": "https://www.iheart.com/live/fox-sports-970-2013/"
+      },
+      {
+       "label": "Steelers Audio Network",
+       "url": "https://www.steelers.com/audio/steelers-audio-network/"
+      },
+      {
+       "label": "Steelers on SiriusXM",
+       "url": "https://www.siriusxm.com/sports/nfl/pittsburgh-steelers"
+      }
+     ]
+    },
+    "25": {
+     "name": "San Francisco 49ers",
+     "station": "KSAN 107.7 The Bone and KNBR 680 AM / 104.5 FM, San Francisco",
+     "links": [
+      {
+       "label": "107.7 The Bone live stream",
+       "url": "https://www.iheart.com/live/1077-the-bone-5529/"
+      },
+      {
+       "label": "KNBR live stream",
+       "url": "https://www.iheart.com/live/680-1045-knbr-5530/"
+      },
+      {
+       "label": "49ers TV and radio partners",
+       "url": "https://www.49ers.com/fans/tv-radio"
+      },
+      {
+       "label": "49ers on SiriusXM",
+       "url": "https://www.siriusxm.com/sports/nfl/san-francisco-49ers"
+      }
+     ]
+    },
+    "26": {
+     "name": "Seattle Seahawks",
+     "station": "Seattle Sports 710 AM (KIRO-AM) and KIRO Newsradio 97.3 FM, Seattle",
+     "links": [
+      {
+       "label": "Seattle Sports 710 live stream",
+       "url": "https://tuner.bonneville.com/live/KIRO-AM"
+      },
+      {
+       "label": "KIRO Newsradio 97.3 live stream",
+       "url": "https://tuner.bonneville.com/live/KIRO-FM"
+      },
+      {
+       "label": "Seahawks ways to watch and listen",
+       "url": "https://www.seahawks.com/watch-live-games/ways-to-watch"
+      },
+      {
+       "label": "Seahawks Radio Network affiliates",
+       "url": "https://www.seahawks.com/game-day/broadcasting/radio/"
+      },
+      {
+       "label": "Seahawks on SiriusXM",
+       "url": "https://www.siriusxm.com/sports/nfl/seattle-seahawks"
+      }
+     ]
+    },
+    "27": {
+     "name": "Tampa Bay Buccaneers",
+     "station": "98ROCK 97.9 FM (WXTB), Tampa Bay",
+     "links": [
+      {
+       "label": "98ROCK live stream",
+       "url": "https://www.iheart.com/live/98rock-tampa-bay-697/"
+      },
+      {
+       "label": "Listen to the Bucs",
+       "url": "https://www.buccaneers.com/fans/listen"
+      },
+      {
+       "label": "Buccaneers on SiriusXM",
+       "url": "https://www.siriusxm.com/sports/nfl/tampa-bay-buccaneers"
+      }
+     ]
+    },
+    "10": {
+     "name": "Tennessee Titans",
+     "station": "104.5 The Zone (WGFX), Nashville",
+     "links": [
+      {
+       "label": "Titans live game audio",
+       "url": "https://www.tennesseetitans.com/broadcast/titans-radio/live-game-day-audio"
+      },
+      {
+       "label": "104.5 The Zone live stream",
+       "url": "https://www.iheart.com/live/1045-the-zone-5453/"
+      },
+      {
+       "label": "Titans Radio affiliates",
+       "url": "https://www.tennesseetitans.com/broadcast/titans-radio/titans-radio-affiliates"
+      },
+      {
+       "label": "Titans on SiriusXM",
+       "url": "https://www.siriusxm.com/sports/nfl/tennessee-titans"
+      }
+     ]
+    },
+    "28": {
+     "name": "Washington Commanders",
+     "station": "BIG 100.3 FM (WBIG), Washington",
+     "links": [
+      {
+       "label": "BIG 100.3 live stream",
+       "url": "https://www.iheart.com/live/big-100-2505/"
+      },
+      {
+       "label": "Commanders ways to watch and listen",
+       "url": "https://www.commanders.com/watch-live-games/ways-to-watch"
+      },
+      {
+       "label": "Commanders on SiriusXM",
+       "url": "https://www.siriusxm.com/sports/nfl/washington-commanders"
+      }
+     ]
+    }
+   }
+  },
+  "NBA": {
+   "links": [
+    {
+     "label": "SiriusXM NBA play-by-play",
+     "url": "https://www.siriusxm.com/sports/nba"
+    },
+    {
+     "label": "NBA League Pass (includes live radio of every game)",
+     "url": "https://www.nba.com/league-pass-purchase"
+    },
+    {
+     "label": "NBA App",
+     "url": "https://www.nba.com/app"
+    }
+   ],
+   "teams": {
+    "1": {
+     "name": "Atlanta Hawks",
+     "station": "WZGC 92.9 FM (92.9 The Game), Atlanta",
+     "links": [
+      {
+       "label": "92.9 The Game on Audacy",
+       "url": "https://www.audacy.com/929thegame"
+      },
+      {
+       "label": "Hawks Tune-In",
+       "url": "https://www.nba.com/hawks/tunein"
+      },
+      {
+       "label": "SiriusXM: Atlanta Hawks",
+       "url": "https://www.siriusxm.com/sports/nba/atlanta-hawks"
+      }
+     ]
+    },
+    "2": {
+     "name": "Boston Celtics",
+     "station": "WBZ-FM 98.5 (98.5 The Sports Hub), Boston",
+     "links": [
+      {
+       "label": "98.5 The Sports Hub: listen live",
+       "url": "https://985thesportshub.com/listen/"
+      },
+      {
+       "label": "SiriusXM: Boston Celtics",
+       "url": "https://www.siriusxm.com/sports/nba/boston-celtics"
+      }
+     ]
+    },
+    "17": {
+     "name": "Brooklyn Nets",
+     "station": "WFAN 66 AM / 101.9 FM, New York",
+     "links": [
+      {
+       "label": "WFAN on Audacy",
+       "url": "https://www.audacy.com/wfan"
+      },
+      {
+       "label": "SiriusXM: Brooklyn Nets",
+       "url": "https://www.siriusxm.com/sports/nba/brooklyn-nets"
+      }
+     ]
+    },
+    "30": {
+     "name": "Charlotte Hornets",
+     "station": "WFNZ 92.7 FM / 610 AM, Charlotte",
+     "links": [
+      {
+       "label": "WFNZ: listen live",
+       "url": "https://wfnz.com/listen-live/"
+      },
+      {
+       "label": "Hornets Radio Network",
+       "url": "https://www.nba.com/hornets/radio"
+      },
+      {
+       "label": "SiriusXM: Charlotte Hornets",
+       "url": "https://www.siriusxm.com/sports/nba/charlotte-hornets"
+      }
+     ]
+    },
+    "4": {
+     "name": "Chicago Bulls",
+     "station": "WSCR 104.3 FM / 670 AM (The Score), Chicago",
+     "links": [
+      {
+       "label": "104.3 The Score on Audacy",
+       "url": "https://www.audacy.com/thescorechicago"
+      },
+      {
+       "label": "SiriusXM: Chicago Bulls",
+       "url": "https://www.siriusxm.com/sports/nba/chicago-bulls"
+      }
+     ]
+    },
+    "5": {
+     "name": "Cleveland Cavaliers",
+     "station": "WTAM 1100 AM / 106.9 FM and WMMS 100.7 FM, Cleveland",
+     "links": [
+      {
+       "label": "Newsradio WTAM 1100 on iHeartRadio",
+       "url": "https://www.iheart.com/live/newsradio-wtam-1100-1749/"
+      },
+      {
+       "label": "Newsradio WTAM 1100",
+       "url": "https://wtam.iheart.com/"
+      },
+      {
+       "label": "SiriusXM: Cleveland Cavaliers",
+       "url": "https://www.siriusxm.com/sports/nba/cleveland-cavaliers"
+      }
+     ]
+    },
+    "6": {
+     "name": "Dallas Mavericks",
+     "station": "KRLD-FM 105.3 (105.3 The Fan), Dallas",
+     "links": [
+      {
+       "label": "105.3 The Fan on Audacy",
+       "url": "https://www.audacy.com/1053thefan"
+      },
+      {
+       "label": "Where to Watch and Listen",
+       "url": "https://www.nba.com/mavs/tunein"
+      },
+      {
+       "label": "SiriusXM: Dallas Mavericks",
+       "url": "https://www.siriusxm.com/sports/nba/dallas-mavericks"
+      }
+     ]
+    },
+    "7": {
+     "name": "Denver Nuggets",
+     "station": "KKSE-FM 92.5 (Altitude Sports Radio), Denver",
+     "links": [
+      {
+       "label": "Altitude Sports 92.5 FM live player",
+       "url": "https://player.listenlive.co/20551"
+      },
+      {
+       "label": "Altitude Sports Radio",
+       "url": "https://www.altitudesportsradio.com/"
+      },
+      {
+       "label": "SiriusXM: Denver Nuggets",
+       "url": "https://www.siriusxm.com/sports/nba/denver-nuggets"
+      }
+     ]
+    },
+    "8": {
+     "name": "Detroit Pistons",
+     "station": "WXYT-FM 97.1 (97.1 The Ticket), Detroit",
+     "links": [
+      {
+       "label": "97.1 The Ticket on Audacy",
+       "url": "https://www.audacy.com/971theticket"
+      },
+      {
+       "label": "Detroit Pistons Radio",
+       "url": "https://www.nba.com/pistons/radio"
+      },
+      {
+       "label": "SiriusXM: Detroit Pistons",
+       "url": "https://www.siriusxm.com/sports/nba/detroit-pistons"
+      }
+     ]
+    },
+    "9": {
+     "name": "Golden State Warriors",
+     "station": "KGMZ-FM 95.7 (95.7 The Game), San Francisco",
+     "links": [
+      {
+       "label": "95.7 The Game on Audacy",
+       "url": "https://www.audacy.com/957thegame"
+      },
+      {
+       "label": "Warriors Radio Network",
+       "url": "https://www.nba.com/warriors/radio-network"
+      },
+      {
+       "label": "SiriusXM: Golden State Warriors",
+       "url": "https://www.siriusxm.com/sports/nba/golden-state-warriors"
+      }
+     ]
+    },
+    "10": {
+     "name": "Houston Rockets",
+     "station": "KBME 790 AM (SportsTalk 790), Houston",
+     "links": [
+      {
+       "label": "SportsTalk 790 on iHeartRadio",
+       "url": "https://www.iheart.com/live/sportstalk-790-2257/"
+      },
+      {
+       "label": "Rockets Broadcast Information",
+       "url": "https://www.nba.com/rockets/broadcast-information"
+      },
+      {
+       "label": "SiriusXM: Houston Rockets",
+       "url": "https://www.siriusxm.com/sports/nba/houston-rockets"
+      }
+     ]
+    },
+    "11": {
+     "name": "Indiana Pacers",
+     "station": "93.5 / 107.5 FM (The Fan), Indianapolis",
+     "links": [
+      {
+       "label": "93.5 / 107.5 The Fan: listen live",
+       "url": "https://1075thefan.com/listen-live/"
+      },
+      {
+       "label": "Where to Watch and Listen",
+       "url": "https://www.nba.com/pacers/where-to-watch"
+      },
+      {
+       "label": "SiriusXM: Indiana Pacers",
+       "url": "https://www.siriusxm.com/sports/nba/indiana-pacers"
+      }
+     ]
+    },
+    "12": {
+     "name": "LA Clippers",
+     "station": "KLAC 570 AM (AM 570 LA Sports), Los Angeles",
+     "links": [
+      {
+       "label": "570 KLAC on iHeartRadio",
+       "url": "https://www.iheart.com/live/570-klac-189/"
+      },
+      {
+       "label": "How to Watch LA Clippers Games",
+       "url": "https://www.nba.com/clippers/watch"
+      },
+      {
+       "label": "SiriusXM: LA Clippers",
+       "url": "https://www.siriusxm.com/sports/nba/los-angeles-clippers"
+      }
+     ]
+    },
+    "13": {
+     "name": "Los Angeles Lakers",
+     "station": "KSPN 710 AM (ESPN LA 710), Los Angeles",
+     "links": [
+      {
+       "label": "ESPN LA 710 (Listen Live)",
+       "url": "https://goodkarmasports.com/espn-la/"
+      },
+      {
+       "label": "Lakers Watch & Listen",
+       "url": "https://www.nba.com/lakers/broadcast/watch-listen"
+      },
+      {
+       "label": "SiriusXM: Los Angeles Lakers",
+       "url": "https://www.siriusxm.com/sports/nba/los-angeles-lakers"
+      }
+     ]
+    },
+    "29": {
+     "name": "Memphis Grizzlies",
+     "station": "WMFS-FM 92.9 (92.9 FM ESPN), Memphis",
+     "links": [
+      {
+       "label": "92.9 FM ESPN on Audacy",
+       "url": "https://www.audacy.com/929espn"
+      },
+      {
+       "label": "SiriusXM: Memphis Grizzlies",
+       "url": "https://www.siriusxm.com/sports/nba/memphis-grizzlies"
+      }
+     ]
+    },
+    "14": {
+     "name": "Miami Heat",
+     "station": "WQAM 560 AM / 104.3 FM, Miami",
+     "links": [
+      {
+       "label": "WQAM on Audacy",
+       "url": "https://www.audacy.com/wqam"
+      },
+      {
+       "label": "SiriusXM: Miami Heat",
+       "url": "https://www.siriusxm.com/sports/nba/miami-heat"
+      }
+     ]
+    },
+    "15": {
+     "name": "Milwaukee Bucks",
+     "station": "WTMJ 620 AM, Milwaukee",
+     "links": [
+      {
+       "label": "WTMJ: listen live",
+       "url": "https://wtmj.com/listen-live/"
+      },
+      {
+       "label": "Bucks Radio Network (affiliates)",
+       "url": "https://www.nba.com/bucks/radio-network"
+      },
+      {
+       "label": "SiriusXM: Milwaukee Bucks",
+       "url": "https://www.siriusxm.com/sports/nba/milwaukee-bucks"
+      }
+     ]
+    },
+    "16": {
+     "name": "Minnesota Timberwolves",
+     "station": "WCCO 830 AM, Minneapolis",
+     "links": [
+      {
+       "label": "830 WCCO on Audacy",
+       "url": "https://www.audacy.com/wccoradio"
+      },
+      {
+       "label": "SiriusXM: Minnesota Timberwolves",
+       "url": "https://www.siriusxm.com/sports/nba/minnesota-timberwolves"
+      }
+     ]
+    },
+    "3": {
+     "name": "New Orleans Pelicans",
+     "station": "WWL 870 AM / 105.3 FM, New Orleans",
+     "links": [
+      {
+       "label": "WWL Radio on Audacy",
+       "url": "https://www.audacy.com/wwl"
+      },
+      {
+       "label": "Pelicans Broadcasting Information",
+       "url": "https://www.nba.com/pelicans/broadcasting"
+      },
+      {
+       "label": "SiriusXM: New Orleans Pelicans",
+       "url": "https://www.siriusxm.com/sports/nba/new-orleans-pelicans"
+      }
+     ]
+    },
+    "18": {
+     "name": "New York Knicks",
+     "station": "WHSQ 880 AM (ESPN New York), New York",
+     "links": [
+      {
+       "label": "ESPN New York (Listen Live)",
+       "url": "https://goodkarmasports.com/espn-new-york/"
+      },
+      {
+       "label": "SiriusXM: New York Knicks",
+       "url": "https://www.siriusxm.com/sports/nba/new-york-knicks"
+      }
+     ]
+    },
+    "25": {
+     "name": "Oklahoma City Thunder",
+     "station": "WWLS-FM 98.1 (The Sports Animal), Oklahoma City",
+     "links": [
+      {
+       "label": "98.1 The Sports Animal: listen",
+       "url": "https://www.thesportsanimal.com/listennow/"
+      },
+      {
+       "label": "Thunder Radio",
+       "url": "https://www.nba.com/thunder/radio"
+      },
+      {
+       "label": "SiriusXM: Oklahoma City Thunder",
+       "url": "https://www.siriusxm.com/sports/nba/oklahoma-city-thunder"
+      }
+     ]
+    },
+    "19": {
+     "name": "Orlando Magic",
+     "station": "WYGM 96.9 FM (96.9 The Game), Orlando",
+     "links": [
+      {
+       "label": "96.9 The Game on iHeartRadio",
+       "url": "https://www.iheart.com/live/969-the-game-601/"
+      },
+      {
+       "label": "SiriusXM: Orlando Magic",
+       "url": "https://www.siriusxm.com/sports/nba/orlando-magic"
+      }
+     ]
+    },
+    "20": {
+     "name": "Philadelphia 76ers",
+     "station": "WPEN 97.5 FM (97.5 The Fanatic), Philadelphia",
+     "links": [
+      {
+       "label": "97.5 The Fanatic: how to listen",
+       "url": "https://975thefanatic.com/listen/"
+      },
+      {
+       "label": "How to Listen to the Sixers Game",
+       "url": "https://www.nba.com/sixers/sixers-radio-network"
+      },
+      {
+       "label": "SiriusXM: Philadelphia 76ers",
+       "url": "https://www.siriusxm.com/sports/nba/philadelphia-76ers"
+      }
+     ]
+    },
+    "21": {
+     "name": "Phoenix Suns",
+     "station": "KMVP-FM 98.7 (Arizona Sports), Phoenix",
+     "links": [
+      {
+       "label": "Arizona Sports 98.7 live player",
+       "url": "https://tuner.bonneville.com/live/KMVP-FM/"
+      },
+      {
+       "label": "SiriusXM: Phoenix Suns",
+       "url": "https://www.siriusxm.com/sports/nba/phoenix-suns"
+      }
+     ]
+    },
+    "22": {
+     "name": "Portland Trail Blazers",
+     "station": "KPOJ 620 AM (Rip City Radio 620), Portland",
+     "links": [
+      {
+       "label": "620 Rip City Radio on iHeartRadio",
+       "url": "https://www.iheart.com/live/620-rip-city-radio-1965/"
+      },
+      {
+       "label": "Rip City Radio 620",
+       "url": "https://ripcityradio.iheart.com/"
+      },
+      {
+       "label": "SiriusXM: Portland Trail Blazers",
+       "url": "https://www.siriusxm.com/sports/nba/portland-trail-blazers"
+      }
+     ]
+    },
+    "23": {
+     "name": "Sacramento Kings",
+     "station": "No local station: Kings Radio (team-run, online and in the Kings app)",
+     "links": [
+      {
+       "label": "Kings App (radio game feed)",
+       "url": "https://www.nba.com/kings/app"
+      },
+      {
+       "label": "SiriusXM: Sacramento Kings",
+       "url": "https://www.siriusxm.com/sports/nba/sacramento-kings"
+      }
+     ]
+    },
+    "24": {
+     "name": "San Antonio Spurs",
+     "station": "WOAI 1200 AM, San Antonio",
+     "links": [
+      {
+       "label": "NewsRadio 1200 WOAI on iHeartRadio",
+       "url": "https://www.iheart.com/live/newsradio-1200-woai-2361/"
+      },
+      {
+       "label": "Spurs Broadcast",
+       "url": "https://www.nba.com/spurs/spurs-broadcast"
+      },
+      {
+       "label": "SiriusXM: San Antonio Spurs",
+       "url": "https://www.siriusxm.com/sports/nba/san-antonio-spurs"
+      }
+     ]
+    },
+    "28": {
+     "name": "Toronto Raptors",
+     "station": "CJCL 590 AM (Sportsnet 590 The FAN) and CHUM 1050 AM (TSN 1050), Toronto",
+     "links": [
+      {
+       "label": "Sportsnet 590 The FAN",
+       "url": "https://www.sportsnet.ca/590/"
+      },
+      {
+       "label": "TSN 1050 Raptors",
+       "url": "https://www.tsn.ca/radio/toronto-1050/raps"
+      },
+      {
+       "label": "SiriusXM: Toronto Raptors",
+       "url": "https://www.siriusxm.com/sports/nba/toronto-raptors"
+      }
+     ]
+    },
+    "26": {
+     "name": "Utah Jazz",
+     "station": "KZNS 1280 AM / KZNS-FM 97.5 (KSL Sports Zone), Salt Lake City",
+     "links": [
+      {
+       "label": "KSL Sports Zone 97.5 live player",
+       "url": "https://tuner.bonneville.com/live/KZNS-FM/"
+      },
+      {
+       "label": "SiriusXM: Utah Jazz",
+       "url": "https://www.siriusxm.com/sports/nba/utah-jazz"
+      }
+     ]
+    },
+    "27": {
+     "name": "Washington Wizards",
+     "station": "WJFK-FM 106.7 (106.7 The Fan), Washington",
+     "links": [
+      {
+       "label": "Wizards Radio 24/7 live player",
+       "url": "https://player.listenlive.co/75971"
+      },
+      {
+       "label": "Wizards Radio 24/7",
+       "url": "https://www.nba.com/wizards/wizards-radio-247"
+      },
+      {
+       "label": "106.7 The Fan on Audacy",
+       "url": "https://www.audacy.com/thefandc"
+      },
+      {
+       "label": "SiriusXM: Washington Wizards",
+       "url": "https://www.siriusxm.com/sports/nba/washington-wizards"
+      }
+     ]
+    }
+   }
+  },
+  "NHL": {
+   "links": [
+    {
+     "label": "SiriusXM NHL play-by-play",
+     "url": "https://www.siriusxm.com/sports/nhl"
+    },
+    {
+     "label": "SiriusXM NHL Network Radio (channel 91)",
+     "url": "https://www.siriusxm.com/channels/siriusxm-nhl-radio"
+    },
+    {
+     "label": "NHL App",
+     "url": "https://www.nhl.com/app/nhl-app"
+    }
+   ],
+   "teams": {
+    "25": {
+     "name": "Anaheim Ducks",
+     "station": "Ducks Stream on TuneIn (streaming only, no radio station)",
+     "links": [
+      {
+       "label": "Ducks Stream",
+       "url": "https://www.nhl.com/ducks/multimedia/ducks-stream"
+      },
+      {
+       "label": "Ducks Stream on TuneIn",
+       "url": "https://tunein.com/radio/Ducks-Stream-s320793/"
+      }
+     ]
+    },
+    "1": {
+     "name": "Boston Bruins",
+     "station": "WBZ-FM 98.5 The Sports Hub, Boston",
+     "links": [
+      {
+       "label": "98.5 The Sports Hub: how to listen",
+       "url": "https://985thesportshub.com/listen/"
+      },
+      {
+       "label": "98.5 The Sports Hub",
+       "url": "https://985thesportshub.com/"
+      },
+      {
+       "label": "Bruins broadcast schedule",
+       "url": "https://www.nhl.com/bruins/team/broadcast-schedule"
+      }
+     ]
+    },
+    "2": {
+     "name": "Buffalo Sabres",
+     "station": "WGR 550 AM, Buffalo",
+     "links": [
+      {
+       "label": "WGR 550 on Audacy",
+       "url": "https://www.audacy.com/wgr550"
+      },
+      {
+       "label": "Sabres Radio Network",
+       "url": "https://www.nhl.com/sabres/fans/sabres-radio-network"
+      }
+     ]
+    },
+    "3": {
+     "name": "Calgary Flames",
+     "station": "CHQR QR Calgary 770 AM, Calgary",
+     "links": [
+      {
+       "label": "QR Calgary live player",
+       "url": "https://globalnews.ca/radio/qrcalgary/player/"
+      },
+      {
+       "label": "QR Calgary",
+       "url": "https://globalnews.ca/radio/qrcalgary/"
+      }
+     ]
+    },
+    "7": {
+     "name": "Carolina Hurricanes",
+     "station": "WCMC-FM 99.9 The Fan, Raleigh",
+     "links": [
+      {
+       "label": "99.9 The Fan live stream",
+       "url": "https://www.999thefan.com/livestreams/999-the-fan/55869"
+      },
+      {
+       "label": "Hurricanes broadcast info",
+       "url": "https://www.nhl.com/hurricanes/team/broadcast-info/"
+      }
+     ]
+    },
+    "4": {
+     "name": "Chicago Blackhawks",
+     "station": "WGN 720 AM, Chicago",
+     "links": [
+      {
+       "label": "Blackhawks broadcast info",
+       "url": "https://www.nhl.com/blackhawks/team/broadcast"
+      }
+     ]
+    },
+    "17": {
+     "name": "Colorado Avalanche",
+     "station": "KKSE-FM Altitude Sports Radio 92.5 FM / 950 AM, Denver",
+     "links": [
+      {
+       "label": "Altitude Sports Radio 92.5 live",
+       "url": "https://player.listenlive.co/20551"
+      },
+      {
+       "label": "Altitude Sports Radio",
+       "url": "https://www.altitudesportsradio.com/"
+      },
+      {
+       "label": "Avalanche: how to watch and listen",
+       "url": "https://www.nhl.com/avalanche/fans/how-to-watch"
+      }
+     ]
+    },
+    "29": {
+     "name": "Columbus Blue Jackets",
+     "station": "WBNS-FM 97.1 The Fan, Columbus",
+     "links": [
+      {
+       "label": "CBJ Radio live",
+       "url": "https://player.listenlive.co/67971"
+      },
+      {
+       "label": "Blue Jackets Radio Network",
+       "url": "https://www.nhl.com/bluejackets/multimedia/radio-network"
+      },
+      {
+       "label": "97.1 The Fan",
+       "url": "https://www.971thefan.com/"
+      }
+     ]
+    },
+    "9": {
+     "name": "Dallas Stars",
+     "station": "KTCK 96.7 FM / 1310 AM The Ticket, Dallas",
+     "links": [
+      {
+       "label": "The Ticket",
+       "url": "https://www.theticket.com/"
+      },
+      {
+       "label": "Stars broadcast info",
+       "url": "https://www.nhl.com/stars/multimedia/broadcast"
+      }
+     ]
+    },
+    "5": {
+     "name": "Detroit Red Wings",
+     "station": "WXYT-FM 97.1 The Ticket, Detroit",
+     "links": [
+      {
+       "label": "97.1 The Ticket on Audacy",
+       "url": "https://www.audacy.com/971theticket"
+      },
+      {
+       "label": "Red Wings broadcast schedule",
+       "url": "https://www.nhl.com/redwings/tickets/broadcast"
+      },
+      {
+       "label": "Red Wings radio affiliates",
+       "url": "https://www.nhl.com/redwings/multimedia/radio-affiliates"
+      }
+     ]
+    },
+    "6": {
+     "name": "Edmonton Oilers",
+     "station": "CHED 880 AM, Edmonton",
+     "links": [
+      {
+       "label": "880 CHED live player",
+       "url": "https://globalnews.ca/radio/880ched/player/"
+      }
+     ]
+    },
+    "26": {
+     "name": "Florida Panthers",
+     "station": "WQAM-FM 104.3, Miami",
+     "links": [
+      {
+       "label": "WQAM on Audacy",
+       "url": "https://www.audacy.com/wqam"
+      },
+      {
+       "label": "How to listen to Panthers games (WQAM)",
+       "url": "https://www.audacy.com/wqam/how-to-listen-to-florida-panthers-games"
+      },
+      {
+       "label": "Panthers Radio Corner",
+       "url": "https://www.nhl.com/panthers/multimedia/radiocorner"
+      }
+     ]
+    },
+    "8": {
+     "name": "Los Angeles Kings",
+     "station": "KLAA AM 830, Los Angeles (some games on ESPN LA 710; Spanish on La Primera AM 1330)",
+     "links": [
+      {
+       "label": "Kings: how to watch and listen",
+       "url": "https://www.nhl.com/kings/fans/tune-in"
+      }
+     ]
+    },
+    "30": {
+     "name": "Minnesota Wild",
+     "station": "KFAN 100.3 FM, Minneapolis-St. Paul",
+     "links": [
+      {
+       "label": "KFAN on iHeartRadio",
+       "url": "https://www.iheart.com/live/kfan-fm-1003-1209/"
+      },
+      {
+       "label": "Wild Radio Network",
+       "url": "https://www.nhl.com/wild/info/radio-network"
+      }
+     ]
+    },
+    "10": {
+     "name": "Montreal Canadiens",
+     "station": "CHMP 98.5 FM (French) and CKGM TSN 690 AM (English), Montreal",
+     "links": [
+      {
+       "label": "TSN 690 (English) on iHeartRadio",
+       "url": "https://www.iheart.com/live/tsn-690-7450/"
+      },
+      {
+       "label": "TSN 690 Montreal",
+       "url": "https://www.tsn.ca/radio/montreal-690/"
+      },
+      {
+       "label": "98.5 Montreal sports (French)",
+       "url": "https://www.985fm.ca/sports"
+      },
+      {
+       "label": "Canadiens: how to watch or listen",
+       "url": "https://www.nhl.com/canadiens/fans/broadcast"
+      }
+     ]
+    },
+    "27": {
+     "name": "Nashville Predators",
+     "station": "WPRT-FM 102.5 The Game, Nashville",
+     "links": [
+      {
+       "label": "102.5 The Game live player",
+       "url": "https://www.thegamenashville.com/player/"
+      },
+      {
+       "label": "102.5 The Game: Predators",
+       "url": "https://www.thegamenashville.com/nashville-predators/"
+      }
+     ]
+    },
+    "11": {
+     "name": "New Jersey Devils",
+     "station": "Devils Hockey Network (streaming, no over-the-air flagship)",
+     "links": [
+      {
+       "label": "Devils Hockey Network radio player",
+       "url": "https://radio.njdevils.red/"
+      },
+      {
+       "label": "Devils Hockey Network",
+       "url": "https://www.nhl.com/devils/team/devils-hockey-network"
+      }
+     ]
+    },
+    "12": {
+     "name": "New York Islanders",
+     "station": "WRHU 88.7 FM, Hempstead (also WRCN 103.9 FM LI News Radio)",
+     "links": [
+      {
+       "label": "WRHU 88.7 live",
+       "url": "https://web01.streamwrhu.net/wrhu.php"
+      },
+      {
+       "label": "103.9 LI News Radio live",
+       "url": "https://player.listenlive.co/59311"
+      },
+      {
+       "label": "Islanders tune-in info",
+       "url": "https://www.nhl.com/islanders/info/tune-in"
+      }
+     ]
+    },
+    "13": {
+     "name": "New York Rangers",
+     "station": "WHSQ 880 AM ESPN New York (some games on 1050 AM), New York",
+     "links": [
+      {
+       "label": "Rangers broadcast schedule",
+       "url": "https://www.nhl.com/rangers/team/broadcast"
+      }
+     ]
+    },
+    "14": {
+     "name": "Ottawa Senators",
+     "station": "CFGO TSN 1200 AM (English), Ottawa; CKOF 104.7 FM Outaouais (French)",
+     "links": [
+      {
+       "label": "TSN 1200 on iHeartRadio",
+       "url": "https://www.iheart.com/live/tsn-1200-7503/"
+      },
+      {
+       "label": "TSN 1200 Ottawa",
+       "url": "https://www.tsn.ca/radio/ottawa-1200/"
+      },
+      {
+       "label": "Senators TV and radio partners",
+       "url": "https://www.nhl.com/senators/equipe/tv-radio-partners"
+      }
+     ]
+    },
+    "15": {
+     "name": "Philadelphia Flyers",
+     "station": "WPEN-FM 97.5 The Fanatic, Philadelphia (alternate: WMMR 93.3)",
+     "links": [
+      {
+       "label": "97.5 The Fanatic",
+       "url": "https://975thefanatic.com/"
+      },
+      {
+       "label": "Flyers: how to watch",
+       "url": "https://www.nhl.com/flyers/info/how-to-watch"
+      }
+     ]
+    },
+    "16": {
+     "name": "Pittsburgh Penguins",
+     "station": "WXDX-FM 105.9 The X, Pittsburgh",
+     "links": [
+      {
+       "label": "105.9 The X on iHeartRadio",
+       "url": "https://www.iheart.com/live/1059-the-x-2033/"
+      },
+      {
+       "label": "105.9 The X",
+       "url": "https://1059thex.iheart.com/"
+      },
+      {
+       "label": "Penguins: how to watch games",
+       "url": "https://www.nhl.com/penguins/fans/how-to-watch-games"
+      }
+     ]
+    },
+    "18": {
+     "name": "San Jose Sharks",
+     "station": "Sharks Audio Network (streaming, no Bay Area flagship)",
+     "links": [
+      {
+       "label": "Sharks Audio Network",
+       "url": "https://www.nhl.com/sharks/multimedia/audio"
+      },
+      {
+       "label": "Sharks Audio Network on TuneIn",
+       "url": "https://tunein.com/radio/San-Jose-Sharks-Audio-Network-s321245/"
+      }
+     ]
+    },
+    "124292": {
+     "name": "Seattle Kraken",
+     "station": "KJR-FM Sports Radio 93.3 KJR, Seattle",
+     "links": [
+      {
+       "label": "Kraken Audio Network (93.3 KJR)",
+       "url": "https://933kjr.iheart.com/featured/seattle-kraken/"
+      },
+      {
+       "label": "93.3 KJR on iHeartRadio",
+       "url": "https://www.iheart.com/live/sportsradio-933-kjr-2577/"
+      },
+      {
+       "label": "Kraken broadcast information",
+       "url": "https://www.nhl.com/kraken/fans/broadcast-schedule"
+      }
+     ]
+    },
+    "19": {
+     "name": "St. Louis Blues",
+     "station": "WXOS 101.1 FM 101 ESPN, St. Louis",
+     "links": [
+      {
+       "label": "101 ESPN: listen",
+       "url": "https://www.101espn.com/listen/"
+      },
+      {
+       "label": "Blues: where to watch",
+       "url": "https://www.nhl.com/blues/fans/where-to-watch"
+      }
+     ]
+    },
+    "20": {
+     "name": "Tampa Bay Lightning",
+     "station": "WHPT 102.5 The Bone, Tampa",
+     "links": [
+      {
+       "label": "102.5 The Bone",
+       "url": "https://www.theboneonline.com/"
+      }
+     ]
+    },
+    "21": {
+     "name": "Toronto Maple Leafs",
+     "station": "Split between CHUM TSN 1050 AM and CJCL Sportsnet 590 The Fan, Toronto",
+     "links": [
+      {
+       "label": "TSN 1050 on iHeartRadio",
+       "url": "https://www.iheart.com/live/tsn-1050-7495/"
+      },
+      {
+       "label": "TSN 1050 Leafs broadcast schedule",
+       "url": "https://www.tsn.ca/radio/toronto-1050/article/tsn-1050-maple-leafs-broadcast-schedule/"
+      },
+      {
+       "label": "TSN 1050 Toronto",
+       "url": "https://www.tsn.ca/radio/toronto-1050/"
+      },
+      {
+       "label": "Sportsnet 590 The Fan",
+       "url": "https://www.sportsnet.ca/590/"
+      }
+     ]
+    },
+    "129764": {
+     "name": "Utah Mammoth",
+     "station": "KZNS KSL Sports Zone 97.5 FM / 1280 AM, Salt Lake City",
+     "links": [
+      {
+       "label": "KSL Sports Zone live",
+       "url": "https://tuner.bonneville.com/live/KZNS-FM/"
+      },
+      {
+       "label": "KSL Sports",
+       "url": "https://sports.ksl.com/"
+      }
+     ]
+    },
+    "22": {
+     "name": "Vancouver Canucks",
+     "station": "KiSS West Coast 104.9 FM, Vancouver (formerly KiSS Throwbacks; also 92.5 Abbotsford, 107.5 Chilliwack)",
+     "links": []
+    },
+    "37": {
+     "name": "Vegas Golden Knights",
+     "station": "KVGS X 107.9 FM, Las Vegas (Spanish: KOAS 105.7 Maxima)",
+     "links": [
+      {
+       "label": "Golden Knights: where to listen",
+       "url": "https://www.nhl.com/goldenknights/info/how-to-tune-in"
+      },
+      {
+       "label": "X 107.9: how to listen",
+       "url": "https://x1079.com/listen/"
+      }
+     ]
+    },
+    "23": {
+     "name": "Washington Capitals",
+     "station": "WJFK-FM 106.7 The Fan, Washington (also WFED 1500 AM)",
+     "links": [
+      {
+       "label": "Capitals Radio Network",
+       "url": "https://www.nhl.com/capitals/multimedia/caps-radio"
+      },
+      {
+       "label": "106.7 The Fan on Audacy",
+       "url": "https://www.audacy.com/thefandc"
+      }
+     ]
+    },
+    "28": {
+     "name": "Winnipeg Jets",
+     "station": "CJOB 680 AM, Winnipeg (also Power 97)",
+     "links": [
+      {
+       "label": "680 CJOB live player",
+       "url": "https://globalnews.ca/radio/cjob/player/"
+      },
+      {
+       "label": "Jets broadcast information",
+       "url": "https://www.nhl.com/jets/multimedia/broadcast-information"
+      }
+     ]
+    }
+   }
+  },
+  "NCAA": {
+   "links": [
+    {
+     "label": "The Varsity Network (Learfield)",
+     "url": "https://thevarsitynetwork.com/"
+    },
+    {
+     "label": "SiriusXM college football",
+     "url": "https://www.siriusxm.com/sports/college-football"
+    },
+    {
+     "label": "SiriusXM college basketball",
+     "url": "https://www.siriusxm.com/blog/college-basketball-siriusxm"
+    },
+    {
+     "label": "TuneIn college sports networks",
+     "url": "https://tunein.com/radio/Live-Stream-College-Sports-Radio-c100003401/"
+    },
+    {
+     "label": "Westwood One Sports",
+     "url": "https://www.westwoodonesports.com/"
+    }
+   ],
+   "teams": {
+    "333": {
+     "name": "Alabama Crimson Tide",
+     "station": "Crimson Tide Sports Network (Learfield)",
+     "links": [
+      {
+       "label": "Crimson Tide radio and TV information",
+       "url": "https://rolltide.com/sports/2016/8/25/crimson-tide-radio-and-television-information"
+      },
+      {
+       "label": "Alabama Crimson Tide Sports Network on TuneIn",
+       "url": "https://tunein.com/radio/Stream-Alabama-Crimson-Tide-Sports-Network-c100000264/"
+      }
+     ]
+    },
+    "9": {
+     "name": "Arizona State Sun Devils",
+     "station": "Sun Devil Radio Network (Learfield)",
+     "links": [
+      {
+       "label": "Media coverage (radio network)",
+       "url": "https://thesundevils.com/media-coverage"
+      },
+      {
+       "label": "Arizona State Sun Devils Sports Network on TuneIn",
+       "url": "https://tunein.com/radio/Stream-Arizona-State-Sun-Devils-Sports-Network-c100000266/"
+      }
+     ]
+    },
+    "12": {
+     "name": "Arizona Wildcats",
+     "station": "Arizona Wildcats Radio Network (Learfield)",
+     "links": [
+      {
+       "label": "Live audio",
+       "url": "https://arizonawildcats.com/sports/2016/8/16/live-audio"
+      },
+      {
+       "label": "Arizona Wildcats Sports Network on TuneIn",
+       "url": "https://tunein.com/radio/Stream-Arizona-Wildcats-Sports-Network-c100000265/"
+      }
+     ]
+    },
+    "8": {
+     "name": "Arkansas Razorbacks",
+     "station": "Razorback Sports Network (Learfield)",
+     "links": [
+      {
+       "label": "How to listen to Razorback football",
+       "url": "https://arkansasrazorbacks.com/how-to-listen-to-razorback-football-2026/"
+      },
+      {
+       "label": "How to listen to Razorback basketball",
+       "url": "https://arkansasrazorbacks.com/how-to-listen-to-razorback-basketball-2022/"
+      },
+      {
+       "label": "Arkansas Razorbacks Sports Network on TuneIn",
+       "url": "https://tunein.com/radio/Stream-Arkansas-Razorbacks-Sports-Network-c100000267/"
+      }
+     ]
+    },
+    "2": {
+     "name": "Auburn Tigers",
+     "station": "Auburn Sports Network (Learfield)",
+     "links": [
+      {
+       "label": "Auburn Sports Network: listen",
+       "url": "https://auburntigers.com/auburn-sports-network-listen"
+      }
+     ]
+    },
+    "252": {
+     "name": "BYU Cougars",
+     "station": "BYU Sports Network: BYU Radio and KSL NewsRadio 102.7 FM / 1160 AM",
+     "links": [
+      {
+       "label": "BYU broadcast information",
+       "url": "https://byucougars.com/how-to-watch-byu-this-season"
+      },
+      {
+       "label": "BYU Radio sports (listen live)",
+       "url": "https://www.byuradio.org/sports"
+      }
+     ]
+    },
+    "239": {
+     "name": "Baylor Bears",
+     "station": "Baylor IMG Sports Network (Learfield)",
+     "links": [
+      {
+       "label": "Baylor radio",
+       "url": "https://baylorbears.com/sports/2018/5/17/radio?path=radio"
+      },
+      {
+       "label": "Baylor Bears Sports Network on TuneIn",
+       "url": "https://tunein.com/radio/Stream-Baylor-Bears-Sports-Network-c100000269/"
+      }
+     ]
+    },
+    "103": {
+     "name": "Boston College Eagles",
+     "station": "Boston College Eagles Radio Network, flagship WEEI 850 AM / 93.7 FM",
+     "links": []
+    },
+    "25": {
+     "name": "California Golden Bears",
+     "station": "Cal Bears Sports Network (Learfield)",
+     "links": [
+      {
+       "label": "Cal Bears Sports Network on TuneIn",
+       "url": "https://tunein.com/radio/Stream-Cal-Bears-Sports-Network-c100000273/"
+      }
+     ]
+    },
+    "2132": {
+     "name": "Cincinnati Bearcats",
+     "station": "Bearcats Radio Network, flagship 700 WLW / 102.7 WEBN (iHeart)",
+     "links": [
+      {
+       "label": "Cincinnati Bearcats Sports Network on TuneIn",
+       "url": "https://tunein.com/radio/Stream-Cincinnati-Bearcats-Sports-Network-c100000276/"
+      }
+     ]
+    },
+    "228": {
+     "name": "Clemson Tigers",
+     "station": "Clemson Athletic Network (Learfield)",
+     "links": [
+      {
+       "label": "Live audio",
+       "url": "https://clemsontigers.com/live-audio"
+      },
+      {
+       "label": "Clemson Athletic Network radio affiliates",
+       "url": "https://clemsontigers.com/radio-affiliates"
+      },
+      {
+       "label": "Clemson Tigers Sports Network on TuneIn",
+       "url": "https://tunein.com/radio/Stream-Clemson-Tigers-Sports-Network-c100001735/"
+      }
+     ]
+    },
+    "38": {
+     "name": "Colorado Buffaloes",
+     "station": "Colorado Buffaloes Radio Network (Learfield)",
+     "links": [
+      {
+       "label": "Colorado Radio Network",
+       "url": "https://cubuffs.com/sports/2007/10/9/1265154"
+      },
+      {
+       "label": "Colorado Buffaloes Sports Network on TuneIn",
+       "url": "https://tunein.com/radio/Stream-Colorado-Buffaloes-Sports-Network-c100000277/"
+      }
+     ]
+    },
+    "150": {
+     "name": "Duke Blue Devils",
+     "station": "Duke Radio Network (Learfield)",
+     "links": [
+      {
+       "label": "Local radio affiliates",
+       "url": "https://goduke.com/sports/2022/8/6/local-radio-affiliates"
+      },
+      {
+       "label": "Duke Blue Devils Sports Network on TuneIn",
+       "url": "https://tunein.com/radio/Stream-Duke-Blue-Devils-Sports-Network-c100000278/"
+      }
+     ]
+    },
+    "57": {
+     "name": "Florida Gators",
+     "station": "Gator Sports Network (Learfield)",
+     "links": [
+      {
+       "label": "Gator Sports Network radio affiliates",
+       "url": "https://floridagators.com/sports/2015/12/11/_radio_affiliates_"
+      },
+      {
+       "label": "Florida Gators Radio on TuneIn",
+       "url": "https://tunein.com/radio/Florida-Gators-Radio-c100000281/"
+      }
+     ]
+    },
+    "52": {
+     "name": "Florida State Seminoles",
+     "station": "Seminole IMG Sports Network (Learfield)",
+     "links": [
+      {
+       "label": "Radio broadcast guide",
+       "url": "https://seminoles.com/sports/2017/7/5/seminole-img-sports-network-broadcast-guide"
+      }
+     ]
+    },
+    "61": {
+     "name": "Georgia Bulldogs",
+     "station": "Bulldog Network (Learfield)",
+     "links": [
+      {
+       "label": "How to listen free",
+       "url": "https://georgiadogs.com/sports/2017/6/23/how-to-listen-free"
+      },
+      {
+       "label": "Georgia audio broadcasts",
+       "url": "https://georgiadogs.com/sports/2017/6/23/georgia-audio-broadcasts"
+      },
+      {
+       "label": "Georgia Bulldogs Sports Network on TuneIn",
+       "url": "https://tunein.com/radio/Stream-Georgia-Bulldogs-Sports-Network-c100000284/"
+      }
+     ]
+    },
+    "59": {
+     "name": "Georgia Tech Yellow Jackets",
+     "station": "Georgia Tech Sports Network",
+     "links": [
+      {
+       "label": "Georgia Tech radio",
+       "url": "https://ramblinwreck.com/radio/"
+      }
+     ]
+    },
+    "248": {
+     "name": "Houston Cougars",
+     "station": "Houston Cougars Radio Network (Learfield)",
+     "links": [
+      {
+       "label": "Houston On Air",
+       "url": "https://uhcougars.com/sports/2018/6/12/football-broadcast-html"
+      },
+      {
+       "label": "Houston Cougars Sports Network on TuneIn",
+       "url": "https://tunein.com/radio/Stream-Houston-Cougars-Sports-Network-c100000286/"
+      }
+     ]
+    },
+    "356": {
+     "name": "Illinois Fighting Illini",
+     "station": "Illinois Sports Network (Learfield)",
+     "links": [
+      {
+       "label": "Illinois Fighting Illini Sports Network on TuneIn",
+       "url": "https://tunein.com/radio/Stream-Illinois-Fighting-Illini-Sports-Network-c100000287/"
+      }
+     ]
+    },
+    "84": {
+     "name": "Indiana Hoosiers",
+     "station": "Indiana Sports Radio Network (Learfield)",
+     "links": [
+      {
+       "label": "Indiana Hoosiers Sports Network on TuneIn",
+       "url": "https://tunein.com/radio/Stream-Indiana-Hoosiers-Sports-Network-c100000288/"
+      }
+     ]
+    },
+    "2294": {
+     "name": "Iowa Hawkeyes",
+     "station": "Hawkeye Radio Network (Learfield)",
+     "links": [
+      {
+       "label": "Hawkeye Radio Network",
+       "url": "https://hawkeyesports.com/hawkeye-radio-network"
+      },
+      {
+       "label": "Iowa Hawkeyes Sports Network on TuneIn",
+       "url": "https://tunein.com/radio/Stream-Iowa-Hawkeyes-Sports-Network-c100000289/"
+      }
+     ]
+    },
+    "66": {
+     "name": "Iowa State Cyclones",
+     "station": "Cyclone Radio Network (Learfield)",
+     "links": [
+      {
+       "label": "Iowa State Cyclones Sports Network on TuneIn",
+       "url": "https://tunein.com/radio/Stream-Iowa-State-Cyclones-Sports-Network-c100001092/"
+      }
+     ]
+    },
+    "2305": {
+     "name": "Kansas Jayhawks",
+     "station": "Jayhawk Radio Network (Learfield)",
+     "links": [
+      {
+       "label": "KU live and on-demand audio (LeanStream)",
+       "url": "https://kuathletics.leanplayer.com/"
+      },
+      {
+       "label": "Kansas Jayhawks Sports Network on TuneIn",
+       "url": "https://tunein.com/radio/Stream-Kansas-Jayhawks-Sports-Network-c100000290/"
+      }
+     ]
+    },
+    "2306": {
+     "name": "Kansas State Wildcats",
+     "station": "K-State Sports Network (Learfield)",
+     "links": [
+      {
+       "label": "K-State Sports Network",
+       "url": "https://www.kstatesports.com/sports/2015/6/29/_131476204439108399"
+      },
+      {
+       "label": "Kansas State Wildcats Sports Network on TuneIn",
+       "url": "https://tunein.com/radio/Stream-Kansas-State-Wildcats-Sports-Network-c100000291/"
+      }
+     ]
+    },
+    "96": {
+     "name": "Kentucky Wildcats",
+     "station": "UK Sports Network (JMI Sports)",
+     "links": [
+      {
+       "label": "UK Sports Network",
+       "url": "https://ukathletics.com/uk-sports-network/"
+      }
+     ]
+    },
+    "99": {
+     "name": "LSU Tigers",
+     "station": "LSU Sports Network (Learfield)",
+     "links": [
+      {
+       "label": "Listen live (LeanStream)",
+       "url": "https://lsusports.net/leanstream"
+      }
+     ]
+    },
+    "97": {
+     "name": "Louisville Cardinals",
+     "station": "Louisville Cardinals Radio Network (Learfield), flagship 93.9 The Ville",
+     "links": [
+      {
+       "label": "Louisville Cardinals Sports Network on TuneIn",
+       "url": "https://tunein.com/radio/Stream-Louisville-Cardinals-Sports-Network-c100000293/"
+      },
+      {
+       "label": "93.9 The Ville (WLCL), Louisville",
+       "url": "https://www.939theville.com/"
+      }
+     ]
+    },
+    "120": {
+     "name": "Maryland Terrapins",
+     "station": "Maryland Sports Radio Network (Learfield)",
+     "links": [
+      {
+       "label": "Maryland Sports Radio Network",
+       "url": "https://umterps.com/sports/2018/6/18/maryland-sports-radio-network"
+      },
+      {
+       "label": "Maryland Terrapins Sports Network on TuneIn",
+       "url": "https://tunein.com/radio/Stream-Maryland-Terrapins-Sports-Network-c100000295/"
+      }
+     ]
+    },
+    "2390": {
+     "name": "Miami Hurricanes",
+     "station": "Miami Hurricanes Radio Network (Learfield), flagship WQAM 560",
+     "links": []
+    },
+    "127": {
+     "name": "Michigan State Spartans",
+     "station": "Spartan Media Network (Learfield)",
+     "links": [
+      {
+       "label": "Spartan Media Network",
+       "url": "https://msuspartans.com/sports/2018/7/20/sports-m-footbl-spec-rel-radioaffiliates-html"
+      }
+     ]
+    },
+    "130": {
+     "name": "Michigan Wolverines",
+     "station": "Michigan IMG Sports Network (Learfield)",
+     "links": [
+      {
+       "label": "Football broadcast information",
+       "url": "https://mgoblue.com/sports/2017/6/16/football-broadcast-information"
+      },
+      {
+       "label": "Men's basketball broadcast information",
+       "url": "https://mgoblue.com/sports/2017/6/16/mens-basketball-broadcast-information"
+      },
+      {
+       "label": "Michigan Wolverines Sports Network on TuneIn",
+       "url": "https://tunein.com/radio/Stream-Michigan-Wolverines-Sports-Network-c100000297/"
+      }
+     ]
+    },
+    "135": {
+     "name": "Minnesota Golden Gophers",
+     "station": "Gopher Radio Network (Learfield)",
+     "links": [
+      {
+       "label": "Broadcast and streaming partners",
+       "url": "https://gophersports.com/sports/2024/1/4/broadcast-partners"
+      },
+      {
+       "label": "Minnesota Golden Gophers Sports Network on TuneIn",
+       "url": "https://tunein.com/radio/Stream-Minnesota-Golden-Gophers-Sports-Network-c100000298/"
+      }
+     ]
+    },
+    "344": {
+     "name": "Mississippi State Bulldogs",
+     "station": "Mississippi State Radio Network (Learfield)",
+     "links": [
+      {
+       "label": "MSU radio broadcasts and affiliates",
+       "url": "https://hailstate.com/sports/2007/6/20/926532"
+      },
+      {
+       "label": "Mississippi State Bulldogs Sports Network on TuneIn",
+       "url": "https://tunein.com/radio/Stream-Mississippi-State-Bulldogs-Sports-Network-c100001006/"
+      }
+     ]
+    },
+    "142": {
+     "name": "Missouri Tigers",
+     "station": "Tiger Radio Network (Learfield)",
+     "links": [
+      {
+       "label": "Mizzou live audio (LeanStream)",
+       "url": "https://missouri.leanplayer.com"
+      },
+      {
+       "label": "Missouri Tigers Sports Network on TuneIn",
+       "url": "https://tunein.com/radio/Stream-Missouri-Tigers-Sports-Network-c100000346/"
+      }
+     ]
+    },
+    "152": {
+     "name": "NC State Wolfpack",
+     "station": "Wolfpack Sports Network (Learfield)",
+     "links": [
+      {
+       "label": "Wolfpack Sports Network",
+       "url": "https://gopack.com/sports/2022/8/29/wolfpack-sports-network-radio-affiliates"
+      },
+      {
+       "label": "NC State Wolfpack Sports Network on TuneIn",
+       "url": "https://tunein.com/radio/Stream-NC-State-Wolfpack-Sports-Network-c100000347/"
+      }
+     ]
+    },
+    "158": {
+     "name": "Nebraska Cornhuskers",
+     "station": "Huskers Radio Network",
+     "links": [
+      {
+       "label": "Huskers Radio Network",
+       "url": "https://huskers.com/radio"
+      },
+      {
+       "label": "Huskers live audio (LeanStream)",
+       "url": "https://nebraska.leanplayer.com"
+      }
+     ]
+    },
+    "153": {
+     "name": "North Carolina Tar Heels",
+     "station": "Tar Heel Sports Network (Learfield)",
+     "links": [
+      {
+       "label": "North Carolina Tar Heels Sports Network on TuneIn",
+       "url": "https://tunein.com/radio/Stream-North-Carolina-Tar-Heels-Sports-Network-c100001712/"
+      }
+     ]
+    },
+    "77": {
+     "name": "Northwestern Wildcats",
+     "station": "Northwestern Wildcats Radio Network, flagship WGN Radio 720",
+     "links": []
+    },
+    "87": {
+     "name": "Notre Dame Fighting Irish",
+     "station": "SoFi Notre Dame Radio Network",
+     "links": [
+      {
+       "label": "Notre Dame Radio Network",
+       "url": "https://fightingirish.com/radioaffiliates"
+      }
+     ]
+    },
+    "194": {
+     "name": "Ohio State Buckeyes",
+     "station": "Ohio State Sports Network (Learfield), flagship 97.1 The Fan",
+     "links": [
+      {
+       "label": "The Ohio State Sports Network",
+       "url": "https://ohiostatebuckeyes.com/sports/2023/9/2/sportsnetwork"
+      },
+      {
+       "label": "97.1 The Fan (WBNS-FM), Columbus",
+       "url": "https://www.971thefan.com/"
+      },
+      {
+       "label": "Ohio State Buckeyes Sports Network on TuneIn",
+       "url": "https://tunein.com/radio/Stream-Ohio-State-Buckeyes-Sports-Network-c100000304/"
+      }
+     ]
+    },
+    "201": {
+     "name": "Oklahoma Sooners",
+     "station": "Sooner Sports Radio Network (Learfield)",
+     "links": [
+      {
+       "label": "Oklahoma Sooners Sports Network on TuneIn",
+       "url": "https://tunein.com/radio/Stream-Oklahoma-Sooners-Sports-Network-c100000984/"
+      }
+     ]
+    },
+    "197": {
+     "name": "Oklahoma State Cowboys",
+     "station": "Cowboy Radio Network (Learfield)",
+     "links": [
+      {
+       "label": "Cowboy Radio Network",
+       "url": "https://okstate.com/sports/2015/3/17/GEN_2014010188"
+      },
+      {
+       "label": "Oklahoma State Cowboys Sports Network on TuneIn",
+       "url": "https://tunein.com/radio/Stream-Oklahoma-State-Cowboys-Sports-Network-c100000305/"
+      }
+     ]
+    },
+    "145": {
+     "name": "Ole Miss Rebels",
+     "station": "Ole Miss Radio Network (Learfield)",
+     "links": [
+      {
+       "label": "Radio and TV affiliates",
+       "url": "https://olemisssports.com/sports/2018/7/25/radio-tv-affiliates"
+      },
+      {
+       "label": "Ole Miss Rebels Sports Network on TuneIn",
+       "url": "https://tunein.com/radio/Stream-Ole-Miss-Rebels-Sports-Network-c100000306/"
+      }
+     ]
+    },
+    "2483": {
+     "name": "Oregon Ducks",
+     "station": "Oregon Sports Network (Learfield)",
+     "links": [
+      {
+       "label": "Live audio broadcasts",
+       "url": "https://goducks.com/sports/2016/8/16/live-audio"
+      },
+      {
+       "label": "Oregon Ducks Sports Network on TuneIn",
+       "url": "https://tunein.com/radio/Stream-Oregon-Ducks-Sports-Network-c100000307/"
+      }
+     ]
+    },
+    "213": {
+     "name": "Penn State Nittany Lions",
+     "station": "Penn State Sports Network (Learfield)",
+     "links": [
+      {
+       "label": "Radio affiliates",
+       "url": "https://gopsusports.com/radio-affiliates"
+      },
+      {
+       "label": "Penn State Nittany Lions Sports Network on TuneIn",
+       "url": "https://tunein.com/radio/Stream-Penn-State-Nittany-Lions-Sports-Network-c100000309/"
+      }
+     ]
+    },
+    "221": {
+     "name": "Pittsburgh Panthers",
+     "station": "Panthers Radio Network (Learfield)",
+     "links": [
+      {
+       "label": "Panthers Radio Network",
+       "url": "https://pittsburghpanthers.com/sports/2018/3/7/game-broadcasts"
+      },
+      {
+       "label": "Pittsburgh Panthers Sports Network on TuneIn",
+       "url": "https://tunein.com/radio/Stream-Pittsburgh-Panthers-Sports-Network-c100000310/"
+      }
+     ]
+    },
+    "2509": {
+     "name": "Purdue Boilermakers",
+     "station": "Purdue Sports Network (Learfield), flagship WAZY 96.5 FM",
+     "links": [
+      {
+       "label": "Boilermakers on the radio",
+       "url": "https://purduesports.com/radio"
+      },
+      {
+       "label": "Purdue Boilermakers Sports Network on TuneIn",
+       "url": "https://tunein.com/radio/Stream-Purdue-Boilermakers-Sports-Network-c100000311/"
+      }
+     ]
+    },
+    "164": {
+     "name": "Rutgers Scarlet Knights",
+     "station": "Scarlet Knights Radio Network (Learfield)",
+     "links": [
+      {
+       "label": "Radio listings",
+       "url": "https://scarletknights.com/sports/2017/6/23/radio-listings"
+      },
+      {
+       "label": "Rutgers Scarlet Knights Sports Network on TuneIn",
+       "url": "https://tunein.com/radio/Stream-Rutgers-Scarlet-Knights-Sports-Network-c100000313/"
+      }
+     ]
+    },
+    "2567": {
+     "name": "SMU Mustangs",
+     "station": "SMU Mustangs Radio Network",
+     "links": [
+      {
+       "label": "Broadcast information",
+       "url": "https://smumustangs.com/sports/2016/6/15/broadcast-information"
+      },
+      {
+       "label": "SMU Mustangs Sports Network on TuneIn",
+       "url": "https://tunein.com/radio/Stream-Southern-Methodist-Mustangs-Sports-Network-c100000314/"
+      }
+     ]
+    },
+    "2579": {
+     "name": "South Carolina Gamecocks",
+     "station": "Gamecock Radio Network (Learfield)",
+     "links": [
+      {
+       "label": "Listen live",
+       "url": "https://gamecocksonline.com/stream/"
+      },
+      {
+       "label": "South Carolina Gamecocks Sports Network on TuneIn",
+       "url": "https://tunein.com/radio/Stream-South-Carolina-Gamecocks-Sports-Network-c100000315/"
+      }
+     ]
+    },
+    "24": {
+     "name": "Stanford Cardinal",
+     "station": "Stanford Cardinal Sports Network (Learfield)",
+     "links": [
+      {
+       "label": "Football audio streaming",
+       "url": "https://gostanford.com/fbaudio"
+      },
+      {
+       "label": "Men's basketball audio streaming",
+       "url": "https://gostanford.com/mbbaudio"
+      },
+      {
+       "label": "Stanford Cardinal Sports Network on TuneIn",
+       "url": "https://tunein.com/radio/Stream-Stanford-Cardinal-Sports-Network-c100000318/"
+      }
+     ]
+    },
+    "183": {
+     "name": "Syracuse Orange",
+     "station": "Syracuse IMG Sports Network (Learfield)",
+     "links": [
+      {
+       "label": "Syracuse IMG Sports Network",
+       "url": "https://cuse.com/sports/2016/3/22/syracuse-img-sports-network"
+      },
+      {
+       "label": "Syracuse Orange Sports Network on TuneIn",
+       "url": "https://tunein.com/radio/Stream-Syracuse-Orange-Sports-Network-c100000319/"
+      }
+     ]
+    },
+    "2628": {
+     "name": "TCU Horned Frogs",
+     "station": "TCU IMG Sports Network (Learfield)",
+     "links": [
+      {
+       "label": "TCU Horned Frogs Sports Network on TuneIn",
+       "url": "https://tunein.com/radio/Stream-TCU-Horned-Frogs-Sports-Network-c100000320/"
+      }
+     ]
+    },
+    "2633": {
+     "name": "Tennessee Volunteers",
+     "station": "Vol Network (Learfield)",
+     "links": [
+      {
+       "label": "Vol Network radio affiliates",
+       "url": "https://utsports.com/sports/2017/6/14/volnetwork-affiliates"
+      },
+      {
+       "label": "Tennessee Volunteers Sports Network on TuneIn",
+       "url": "https://tunein.com/radio/Stream-Tennessee-Volunteers-Sports-Network-c100000322/"
+      }
+     ]
+    },
+    "245": {
+     "name": "Texas A&M Aggies",
+     "station": "Texas A&M Sports Network (Learfield)",
+     "links": [
+      {
+       "label": "Texas A&M Sports Network",
+       "url": "https://12thman.com/tamu-sports-network"
+      },
+      {
+       "label": "Texas A&M Aggies Sports Network on TuneIn",
+       "url": "https://tunein.com/radio/Stream-Texas-AM-Aggies-Sports-Network-c100000324/"
+      }
+     ]
+    },
+    "251": {
+     "name": "Texas Longhorns",
+     "station": "Longhorn Radio Network (Learfield)",
+     "links": [
+      {
+       "label": "Longhorn Radio Network affiliates",
+       "url": "https://texaslonghorns.com/sports/2013/7/27/sponsor_0727135359"
+      },
+      {
+       "label": "Free streaming audio",
+       "url": "https://texaslonghorns.com/sports/2014/11/19/GEN_1119144623"
+      },
+      {
+       "label": "Texas Longhorns Sports Network on TuneIn",
+       "url": "https://tunein.com/radio/Stream-Texas-Longhorns-Sports-Network-c100000323/"
+      }
+     ]
+    },
+    "2641": {
+     "name": "Texas Tech Red Raiders",
+     "station": "Texas Tech Sports Network (Learfield)",
+     "links": [
+      {
+       "label": "Texas Tech Red Raiders Sports Network on TuneIn",
+       "url": "https://tunein.com/radio/Stream-Texas-Tech-Red-Raiders-Sports-Network-c100000325/"
+      }
+     ]
+    },
+    "2116": {
+     "name": "UCF Knights",
+     "station": "UCF Knights Radio Network, flagship 96.9 The Game / 740 AM (iHeart)",
+     "links": [
+      {
+       "label": "96.9 The Game, Orlando (iHeart)",
+       "url": "https://www.iheart.com/live/969-the-game-601/"
+      }
+     ]
+    },
+    "26": {
+     "name": "UCLA Bruins",
+     "station": "UCLA Bruins Audio Network (Learfield)",
+     "links": [
+      {
+       "label": "Listen live",
+       "url": "https://uclabruins.com/listen-live"
+      },
+      {
+       "label": "UCLA Bruins Sports Network on TuneIn",
+       "url": "https://tunein.com/radio/Stream-UCLA-Bruins-Sports-Network-c100000328/"
+      }
+     ]
+    },
+    "30": {
+     "name": "USC Trojans",
+     "station": "Trojans Radio Network, flagship ESPN LA 710",
+     "links": [
+      {
+       "label": "TV and radio information",
+       "url": "https://usctrojans.com/sports/2024/4/1/usc-trojans-athletics-tv-radio-big-ten-networks-how-to-watch-listen-follow"
+      }
+     ]
+    },
+    "254": {
+     "name": "Utah Utes",
+     "station": "Utah Utes Radio Network (Learfield), flagship ESPN 700 / 92.1 KALL",
+     "links": [
+      {
+       "label": "Utes flagship radio: ESPN 700 and 92.1 KALL",
+       "url": "https://utahutes.com/sports/2023/7/26/utah-utes-radio-flagship-espn-700-92-1-kall"
+      },
+      {
+       "label": "ESPN 700 Salt Lake City live stream",
+       "url": "https://listen.streamon.fm/kallam"
+      }
+     ]
+    },
+    "238": {
+     "name": "Vanderbilt Commodores",
+     "station": "Vanderbilt Radio Network (Learfield)",
+     "links": [
+      {
+       "label": "Vanderbilt Radio Network",
+       "url": "https://vucommodores.com/radio-network"
+      },
+      {
+       "label": "Vanderbilt live audio (LeanStream)",
+       "url": "https://vanderbilt.leanplayer.com"
+      },
+      {
+       "label": "Vanderbilt Commodores Sports Network on TuneIn",
+       "url": "https://tunein.com/radio/Stream-Vanderbilt-Commodores-Sports-Network-c100000336/"
+      }
+     ]
+    },
+    "258": {
+     "name": "Virginia Cavaliers",
+     "station": "Virginia Sports Radio Network (Learfield)",
+     "links": [
+      {
+       "label": "Virginia Sports Radio Network: listen live",
+       "url": "https://virginiasports.com/radio"
+      },
+      {
+       "label": "Virginia Cavaliers Sports Network on TuneIn",
+       "url": "https://tunein.com/radio/Stream-Virginia-Cavaliers-Sports-Network-c100000335/"
+      }
+     ]
+    },
+    "259": {
+     "name": "Virginia Tech Hokies",
+     "station": "Virginia Tech Sports Network (Learfield)",
+     "links": [
+      {
+       "label": "Virginia Tech Sports Network",
+       "url": "https://hokiesports.com/virginia-tech-sports-network"
+      },
+      {
+       "label": "Virginia Tech Hokies Sports Network on TuneIn",
+       "url": "https://tunein.com/radio/Stream-Virginia-Tech-Hokies-Sports-Network-c100000338/"
+      }
+     ]
+    },
+    "154": {
+     "name": "Wake Forest Demon Deacons",
+     "station": "Wake Forest IMG Sports Network (Learfield)",
+     "links": [
+      {
+       "label": "Wake Forest Demon Deacons Sports Network on TuneIn",
+       "url": "https://tunein.com/radio/Stream-Wake-Forest-Demon-Deacons-Sports-Network-c100000339/"
+      }
+     ]
+    },
+    "264": {
+     "name": "Washington Huskies",
+     "station": "Washington Huskies Radio Network (Learfield)",
+     "links": [
+      {
+       "label": "Football broadcast information",
+       "url": "https://gohuskies.com/sports/2016/6/27/football-radio"
+      },
+      {
+       "label": "Huskies live audio (LeanStream)",
+       "url": "https://gohuskies.leanplayer.com/"
+      },
+      {
+       "label": "Washington Huskies Sports Network on TuneIn",
+       "url": "https://tunein.com/radio/Stream-Washington-Huskies-Sports-Network-c100000340/"
+      }
+     ]
+    },
+    "277": {
+     "name": "West Virginia Mountaineers",
+     "station": "Mountaineer Sports Network (Learfield)",
+     "links": [
+      {
+       "label": "West Virginia Mountaineers Sports Network on TuneIn",
+       "url": "https://tunein.com/radio/Stream-West-Virginia-Mountaineers-Sports-Network-c100000342/"
+      }
+     ]
+    },
+    "275": {
+     "name": "Wisconsin Badgers",
+     "station": "Badger Radio Network (Learfield)",
+     "links": [
+      {
+       "label": "Badger Radio Network",
+       "url": "https://uwbadgers.com/sports/2026/10/7/badger-radio-network"
+      },
+      {
+       "label": "Wisconsin Badgers Sports Network on TuneIn",
+       "url": "https://tunein.com/radio/Stream-Wisconsin-Badgers-Sports-Network-c100000344/"
+      }
+     ]
+    }
+   }
+  }
+ }
+}

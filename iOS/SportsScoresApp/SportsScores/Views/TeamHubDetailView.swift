@@ -93,6 +93,20 @@ struct TeamHubDetailView: View {
                     if selectedTab == .stats {
                         ViewModeMenuButton(currentMode: $teamStatsViewMode)
                     }
+                    let listenOptions = RadioLinks.shared.teamListenOptions(
+                        sport.rawValue, teamId: team.id, teamName: team.displayName)
+                    if !listenOptions.isEmpty {
+                        Menu {
+                            ForEach(listenOptions) { option in
+                                Link(option.label, destination: option.url)
+                            }
+                        } label: {
+                            Image(systemName: "radio")
+                                .foregroundColor(.accentColor)
+                        }
+                        .accessibilityLabel("Listen on the Radio")
+                        .accessibilityHint("Places to hear \(team.displayName) games. Each opens outside the app.")
+                    }
                     Button {
                         if isFavorite {
                             appSettings.removeFavorite(teamId: team.id, sport: sport)
