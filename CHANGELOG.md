@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **Listen to the game.** For the NFL, NBA, NHL, and college football and basketball (the SEC, Big Ten,
+  ACC, Big 12 and Notre Dame), Scores lists where to hear a game: each team's radio and the services that
+  carry every game, such as SiriusXM. Each opens in your browser, or on the iPhone in the service's app;
+  you sign in there if it asks.
+  - Windows: Alt+L on a game in the scores list or Live Scores, or **Listen to the Game** in its
+    context menu. Game details have a Listen row and button, Team Hub has **Listen on the Radio**, and each
+    of these leagues' lists ends with **Game Radio**, every team and its station.
+  - iPhone: a **Listen to the Game** VoiceOver action and context menu item on every game in Scores and
+    Live Scores, a Listen to the Game menu on a game's details, a radio button in Team Hub, and
+    **Game Radio** in The Bench.
+  - Both apps read the same list, `radio_links.json`, and the nightly data check opens every link in it.
+
+### Fixed
+- **Windows: Enter on an upcoming or finished game in Live Scores opens it.** It did nothing before.
+
 ### In Progress
 - **Game Wrap Up Feature**: ESPN text processing and game story extraction (under construction)
   - Core infrastructure implemented, text processing being refined

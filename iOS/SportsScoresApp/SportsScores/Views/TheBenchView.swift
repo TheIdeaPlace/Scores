@@ -39,6 +39,15 @@ struct TheBenchView: View {
 
             Section {
                 rowLink(
+                    title: "Game Radio",
+                    subtitle: "Where to listen · every team's radio, SiriusXM & more",
+                    icon: "radio",
+                    destination: GameRadioView()
+                )
+            }
+
+            Section {
+                rowLink(
                     title: "Transaction Hub",
                     subtitle: "Player moves, signings & releases",
                     icon: "arrow.left.arrow.right",

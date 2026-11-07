@@ -615,6 +615,7 @@ struct ScoresView: View {
                     .buttonStyle(.plain)
                     .accessibilityLabel(gameQuickAccessibilityText(game))
                     .accessibilityHint("Opens game details")
+                    .listenToGame(game, sport: sport)
                 }
             }
         }
@@ -684,6 +685,7 @@ struct ScoresView: View {
         NavigationLink(destination: GameDetailView(game: game, sport: sport)) {
             GameRow(game: game, sport: sport, sectionContext: context)
         }
+        .listenToGame(game, sport: sport)
     }
 }
 

@@ -34,7 +34,7 @@ import sys
 
 APP_NAME = "Scores"
 ENTRY = "main.py"
-DATAS = ["user_guide.html"]
+DATAS = ["user_guide.html", "radio_links.json"]
 
 # Separate work directories: the two builds share a name, so a shared build/
 # cache lets one leg's analysis leak into the other's.

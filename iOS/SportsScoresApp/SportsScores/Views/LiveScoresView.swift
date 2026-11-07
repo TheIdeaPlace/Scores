@@ -286,6 +286,7 @@ struct LiveScoresView: View {
                         CompactGameRow(game: game, isLive: isLive, sport: sportGames.sport)
                     }
                     .buttonStyle(.plain)
+                    .listenToGame(game, sport: sportGames.sport)
                 }
             }
         }
@@ -370,6 +371,7 @@ struct LiveScoresView: View {
                 .buttonStyle(.plain)
                 .accessibilityLabel(liveQuickAccessibilityText(game))
                 .accessibilityHint("Opens game details")
+                .listenToGame(game, sport: sport)
             }
         }
     }

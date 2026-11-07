@@ -1,0 +1,88 @@
+{
+ "about": "Where to listen to a game, from a small links file. radio_links.py is held to it by tests/unit/test_radio_links.py, and the iPhone's RadioLinks.swift by RadioLinksGridTests.swift. Change both together.",
+ "data": {
+  "tables": {
+   "NFL": {
+    "links": [
+     {"label": "SiriusXM NFL", "url": "https://example.com/sxm-nfl"},
+     {"label": "Not a web page", "url": "ftp://example.com/nope"}
+    ],
+    "teams": {
+     "9": {"name": "Green Bay Packers", "station": "WTMJ 620 AM", "links": [
+      {"label": "Packers Radio Network", "url": "https://example.com/packers"},
+      {"label": "WTMJ live", "url": "https://example.com/wtmj"}
+     ]},
+     "3": {"name": "Chicago Bears", "station": "WBBM 780 AM", "links": [
+      {"label": "Bears radio", "url": "https://example.com/bears"},
+      {"label": "Same as SiriusXM", "url": "https://example.com/sxm-nfl"}
+     ]},
+     "4": {"name": "Cincinnati Bengals", "station": "WLW 700 AM", "links": []}
+    }
+   },
+   "NCAA": {
+    "links": [{"label": "Varsity Network", "url": "https://example.com/varsity"}],
+    "teams": {
+     "275": {"name": "Wisconsin Badgers", "station": "Badger Sports Network", "links": [
+      {"label": "Badgers radio", "url": "https://example.com/badgers"}
+     ]}
+    }
+   }
+  }
+ },
+ "game_cases": [
+  {"name": "both teams, then the league", "league": "NFL",
+   "away_id": "3", "away_name": "Bears", "home_id": "9", "home_name": "Packers",
+   "expected": [
+    {"label": "Bears: Bears radio", "url": "https://example.com/bears"},
+    {"label": "Bears: Same as SiriusXM", "url": "https://example.com/sxm-nfl"},
+    {"label": "Packers: Packers Radio Network", "url": "https://example.com/packers"},
+    {"label": "Packers: WTMJ live", "url": "https://example.com/wtmj"}
+   ]},
+  {"name": "a team with no links and one not in the file", "league": "NFL",
+   "away_id": "4", "away_name": "Bengals", "home_id": "999", "home_name": "Nobody",
+   "expected": [
+    {"label": "SiriusXM NFL", "url": "https://example.com/sxm-nfl"}
+   ]},
+  {"name": "no name given uses the file's", "league": "NFL",
+   "away_id": "", "away_name": "", "home_id": "9", "home_name": "",
+   "expected": [
+    {"label": "Green Bay Packers: Packers Radio Network", "url": "https://example.com/packers"},
+    {"label": "Green Bay Packers: WTMJ live", "url": "https://example.com/wtmj"},
+    {"label": "SiriusXM NFL", "url": "https://example.com/sxm-nfl"}
+   ]},
+  {"name": "college basketball reads the college table", "league": "NCAAM",
+   "away_id": "275", "away_name": "Wisconsin", "home_id": "1", "home_name": "Somewhere",
+   "expected": [
+    {"label": "Wisconsin: Badgers radio", "url": "https://example.com/badgers"},
+    {"label": "Varsity Network", "url": "https://example.com/varsity"}
+   ]},
+  {"name": "a league with no table", "league": "MLB",
+   "away_id": "9", "away_name": "Packers", "home_id": "3", "home_name": "Bears",
+   "expected": []}
+ ],
+ "team_cases": [
+  {"name": "a team, then the league", "league": "NFL", "team_id": "9", "team_name": "Packers",
+   "expected": [
+    {"label": "Packers: Packers Radio Network", "url": "https://example.com/packers"},
+    {"label": "Packers: WTMJ live", "url": "https://example.com/wtmj"},
+    {"label": "SiriusXM NFL", "url": "https://example.com/sxm-nfl"}
+   ]},
+  {"name": "women's college basketball reads the college table too", "league": "NCAAWB",
+   "team_id": "275", "team_name": "Wisconsin",
+   "expected": [
+    {"label": "Wisconsin: Badgers radio", "url": "https://example.com/badgers"},
+    {"label": "Varsity Network", "url": "https://example.com/varsity"}
+   ]}
+ ],
+ "directory_cases": [
+  {"league": "NFL", "expected_names": ["Chicago Bears", "Cincinnati Bengals", "Green Bay Packers"],
+   "expected_link_counts": [2, 0, 2]},
+  {"league": "NHL", "expected_names": [], "expected_link_counts": []}
+ ],
+ "covers_cases": [
+  {"league": "NFL", "expected": true},
+  {"league": "NCAAF", "expected": true},
+  {"league": "NHL", "expected": false},
+  {"league": "MLB", "expected": false}
+ ]
+}
