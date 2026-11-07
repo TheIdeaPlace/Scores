@@ -72,7 +72,12 @@ from tab_keys import group_noun
 from box_score import build_box_tables
 from soccer import SOCCER_LEAGUES, TEAM_NAME_ONLY_HEADERS, no_table_message, soccer_teams_table
 from team_stats import RANKING_HEADERS, ranking_rows, team_stat_lists
-from game_labels import scoreboard_today, on_todays_scoreboard, basketball_period_label, football_period_label, football_period_sort_key, game_standings_tables, schedule_row_text, schedule_start_row
+from drive_results import (
+    FG as DRIVE_FG, RETURN_TD as DRIVE_RETURN_TD, TD as DRIVE_TD,
+    chronological_drives, drive_badge, drive_results, summary_teams,
+)
+from postseason import PLAYOFF_ROUNDS, game_headline, heading_text, postseason_sections
+from game_labels import scoreboard_today, on_todays_scoreboard, basketball_period_label, football_period_label, football_period_sort_key, game_standings_tables, schedule_row_text, schedule_start_row, team_record_text
 
 # Text processing utilities
 try:
@@ -3802,22 +3807,64 @@ class GameDetailsView(BaseView):
     def _add_drives_list_to_layout(self, layout, drives_data):
         """Add NFL/NCAAF drives data to layout (Football-specific method)"""
         
+        teams = summary_teams(getattr(self, "current_raw_details", None))
+        away_team = teams.get("away", {})
+        home_team = teams.get("home", {})
+        team_names = {"away": away_team.get("name", ""), "home": home_team.get("name", "")}
+        scored = {}
+        # Without both teams the scorer can't be told from the side with the ball, so
+        # the badges fall back to ESPN's result, without points.
+        if away_team.get("id") and home_team.get("id"):
+            played = chronological_drives(drives_data)
+            scored = dict(zip(
+                (id(d) for d in played),
+                drive_results(played, away_team["id"], home_team["id"]),
+            ))
+
         def get_drive_result_info(drive):
             """Get scoring drive information with accessibility-compliant colors"""
-            result = drive.get('result', '').upper()
-            
+            result = (drive.get('result') or '').upper()
+
+            # Who scored and how many points, from the plays' scores: ESPN marks a
+            # return touchdown on the drive of the team that gave it up (#204).
+            score = scored.get(id(drive))
+            if score is not None and score.kind is not None:
+                other = "home" if score.scorer == "away" else "away"
+                badge = drive_badge(score, team_names.get(score.scorer, ""), team_names.get(other, ""))
+                if score.kind in (DRIVE_TD, DRIVE_RETURN_TD):
+                    return {
+                        'icon': '🏈',
+                        'badge': badge,
+                        'color': QColor(0, 100, 0, 80),
+                        'accessible_text': 'Touchdown scoring drive',
+                    }
+                if score.kind == DRIVE_FG:
+                    return {
+                        'icon': '🥅',
+                        'badge': badge,
+                        'color': QColor(0, 0, 139, 60),
+                        'accessible_text': 'Field goal scoring drive',
+                    }
+                return {
+                    'icon': '🛡️',
+                    'badge': badge,
+                    'color': QColor(128, 0, 128, 60),
+                    'accessible_text': 'Scoring drive',
+                }
+
             # WCAG AA compliant colors (4.5:1 contrast ratio minimum)
             if result == 'TD':
+                # ESPN says touchdown but the plays carry no score change.
                 return {
-                    'icon': '🏈', 
-                    'badge': 'TD 7pts', 
+                    'icon': '🏈',
+                    'badge': 'TD',
                     'color': QColor(0, 100, 0, 80),      # Dark green background
                     'accessible_text': 'Touchdown scoring drive'
                 }
             elif result == 'FG':
                 return {
-                    'icon': '🥅', 
-                    'badge': 'FG 3pts', 
+                    'icon': '🥅',
+                    'badge': 'FG',
                     'color': QColor(0, 0, 139, 60),      # Dark blue background
                     'accessible_text': 'Field goal scoring drive'
                 }
@@ -3858,8 +3905,8 @@ class GameDetailsView(BaseView):
                 }
             elif result == 'SAFETY':
                 return {
-                    'icon': '🛡️', 
-                    'badge': 'SAFETY 2pts', 
+                    'icon': '🛡️',
+                    'badge': 'SAFETY',
                     'color': QColor(128, 0, 128, 60),    # Purple background
                     'accessible_text': 'Safety scoring drive'
                 }
@@ -3959,16 +4006,25 @@ class GameDetailsView(BaseView):
             # Group by quarter
             if quarter not in quarter_groups:
                 quarter_groups[quarter] = []
-            
+
+            # Taken from the whole drive, before its kickoffs are split off.
+            result_info = get_drive_result_info(drive)
+            # A drive that is only a kickoff shows as the kickoff alone, so a kickoff
+            # run back for a touchdown says so there.
+            kickoff_label = "Kickoff"
+            score = scored.get(id(drive))
+            if not drive_plays and score is not None and score.kind is not None:
+                kickoff_label = f"[{result_info['badge']}] Kickoff"
+
             # Add kickoffs as separate entries
             for kickoff in kickoff_plays:
-                quarter_groups[quarter].append(("Kickoff", {"plays": [kickoff]}, "Special Teams", "Kickoff", True))
-            
+                quarter_groups[quarter].append((kickoff_label, {"plays": [kickoff]}, "Special Teams", "Kickoff", True, None))
+
             # Add regular drive if it has non-kickoff plays
             if drive_plays:
                 modified_drive = drive.copy()
                 modified_drive["plays"] = drive_plays
-                quarter_groups[quarter].append((drive_label, modified_drive, team_name, description, False))
+                quarter_groups[quarter].append((drive_label, modified_drive, team_name, description, False, result_info))
         
         # Build tree structure by quarter
         for quarter in sorted(quarter_groups.keys(), key=football_period_sort_key):
@@ -3977,10 +4033,10 @@ class GameDetailsView(BaseView):
             drives_tree.addTopLevelItem(quarter_item)
             
             drives_in_quarter = quarter_groups[quarter]
-            for drive_label, drive, team_name, description, is_kickoff in drives_in_quarter:
+            for drive_label, drive, team_name, description, is_kickoff, result_info in drives_in_quarter:
                 if is_kickoff:
                     # Create kickoff item directly under quarter
-                    kickoff_item = QTreeWidgetItem(["Kickoff"])
+                    kickoff_item = QTreeWidgetItem([drive_label])
                     kickoff_item.setBackground(0, QColor(240, 240, 255))  # Light blue
                     kickoff_item.setExpanded(False)
                     quarter_item.addChild(kickoff_item)
@@ -4000,9 +4056,6 @@ class GameDetailsView(BaseView):
                         play_item = QTreeWidgetItem([play_text])
                         kickoff_item.addChild(play_item)
                 else:
-                    # Create enhanced drive summary node with scoring information
-                    result_info = get_drive_result_info(drive)
-                    
                     # Build enhanced drive summary with scoring indicators
                     enhanced_summary = f"[{result_info['badge']}] {team_name}: {description}"
                     
@@ -8552,20 +8605,18 @@ class TeamHubDialog(QDialog):
         name_lbl.setAccessibleName(f"Team: {self.team_name}")
         header_layout.addWidget(name_lbl)
 
-        wins = self.team_data.get('wins', '')
-        losses = self.team_data.get('losses', '')
-        ties = self.team_data.get('ties', 0)
         rec_text = ""
         if self.league in SOCCER_LEAGUES:
             # Wins, draws, losses, as a soccer record reads everywhere else. A team with no
             # losses yet still has one. A cup's team list has none, and a game can say N/A.
             if self.team_data.get('record') not in (None, "", "N/A"):
                 rec_text = f"({self.team_data['record']})"
-        elif wins and losses:
-            if self.league == "NFL" and ties and int(ties) > 0:
-                rec_text = f"({wins}-{losses}-{ties})"
-            else:
-                rec_text = f"({wins}-{losses})"
+        else:
+            # 8-0 and 0-9 are records too (#203).
+            record = team_record_text(self.team_data.get('wins'), self.team_data.get('losses'),
+                                      self.team_data.get('ties'))
+            if record:
+                rec_text = f"({record})"
         if rec_text:
             rec_lbl = QLabel(rec_text)
             rec_lbl.setFont(font)
@@ -12631,6 +12682,7 @@ class BowlsAndPlayoffsDialog(QDialog):
         
         # List of bowl games
         self.bowl_list = QListWidget()
+        self.bowl_list.setAccessibleName("Bowls & Playoffs")
         self.bowl_list.itemActivated.connect(self.on_bowl_game_selected)
         layout.addWidget(self.bowl_list)
         
@@ -12681,82 +12733,45 @@ class BowlsAndPlayoffsDialog(QDialog):
                 self.bowl_list.addItem("No bowl games or playoff games found.")
                 return
             
-            # Categorize games by competition type
-            categories = {
-                'Championship': [],  # type 33
-                'Semifinals': [],     # type 35
-                'Quarterfinals': [],  # type 40 (Major Bowl)
-                'First Round': [],    # type 42 (Bowl Game) - early playoff games
-                'Other Bowls': []     # Other bowl games
-            }
-            
-            for game in games_data:
-                comp_type = _int_or_none(game.get('competitions', [{}])[0].get('type', {}).get('id'))
-                comp_name = game.get('competitions', [{}])[0].get('type', {}).get('text', '')
-                
-                if comp_type == 33:  # Championship
-                    categories['Championship'].append(game)
-                elif comp_type == 35:  # Semifinal
-                    categories['Semifinals'].append(game)
-                elif comp_type == 40:  # Major Bowl (Quarterfinals)
-                    categories['Quarterfinals'].append(game)
-                elif comp_type == 42:  # Bowl Game
-                    # Check if it's part of CFP or regular bowl
-                    notes = game.get('competitions', [{}])[0].get('notes', [])
-                    if notes and 'first round' in notes[0].get('headline', '').lower():
-                        categories['First Round'].append(game)
-                    else:
-                        categories['Other Bowls'].append(game)
-                else:
-                    categories['Other Bowls'].append(game)
-            
-            # Display categories in order
-            for category_name in ['Championship', 'Semifinals', 'Quarterfinals', 'First Round', 'Other Bowls']:
-                games = categories[category_name]
-                if games:
-                    # Add category header
-                    header_item = QListWidgetItem(f"=== {category_name} ===")
-                    header_item.setFlags(Qt.ItemFlag.NoItemFlags)  # Not selectable
-                    font = header_item.font()
-                    font.setBold(True)
-                    header_item.setFont(font)
-                    self.bowl_list.addItem(header_item)
-                    
-                    # Add games in this category
-                    for game in games:
-                        self._add_game_item(game)
-                    
-        
+            # The playoff in the order it's played, then the bowls, as on the iPhone.
+            for round_name, games in postseason_sections(games_data):
+                # A heading is a row you land on, read by its name and count, so
+                # Down doesn't run one round's games into the last (#202).
+                header_item = QListWidgetItem(heading_text(round_name, len(games)))
+                header_item.setFlags(Qt.ItemFlag.ItemIsSelectable | Qt.ItemFlag.ItemIsEnabled)
+                font = header_item.font()
+                font.setBold(True)
+                header_item.setFont(font)
+                self.bowl_list.addItem(header_item)
+
+                for game in games:
+                    self._add_game_item(game, playoff=round_name in PLAYOFF_ROUNDS)
+
         except Exception as e:
             from PyQt6.QtWidgets import QMessageBox
             QMessageBox.critical(self, "Error", f"Failed to load bowl games: {_said(e)}")
     
-    def _add_game_item(self, game):
+    def _add_game_item(self, game, playoff=False):
         """Add a game item to the list"""
         from models.game import GameData
 
         # Get bowl/playoff information
-        comp = game.get('competitions', [{}])[0]
-        notes = comp.get('notes', [])
-        comp_type = comp.get('type', {})
+        comp = (game.get('competitions') or [{}])[0]
+        comp_type = comp.get('type') or {}
         comp_type_text = comp_type.get('text', '')
-        
+
         # Get bowl name from notes or use competition type
-        bowl_name = ''
-        if notes and notes[0].get('headline'):
-            bowl_name = notes[0].get('headline', '')
-        elif comp_type_text and comp_type_text != 'Standard':
+        bowl_name = game_headline(game)
+        if not bowl_name and comp_type_text and comp_type_text != 'Standard':
             bowl_name = comp_type_text
-        
+
         # Create game data object for display
         game_obj = GameData(game, self.league)
         item_text = game_obj.get_display_text()
-        
+
         # Format with bowl/playoff name prominently at the start
         if bowl_name:
-            # Check if it's a playoff game
-            comp_type_id = _int_or_none(comp_type.get('id'))
-            if comp_type_id in [33, 35, 40]:  # Championship, Semifinal, Major Bowl (Quarterfinals)
+            if playoff:
                 item_text = f"[{bowl_name}] {item_text}"
             else:
                 item_text = f"{bowl_name} - {item_text}"
