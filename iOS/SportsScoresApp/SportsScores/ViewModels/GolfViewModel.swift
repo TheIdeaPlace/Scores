@@ -19,8 +19,18 @@ class GolfViewModel: ObservableObject {
     @Published var selectedCalendarIndex: Int?
     @Published var isLoading = false
     @Published var errorMessage: String?
+    /// This season's events by id, with each finished one's winner, for the schedule.
+    @Published var seasonEvents: [String: GolfSeasonEvent] = [:]
+    /// The schedule's winners couldn't be loaded; the calendar still shows without them.
+    @Published var seasonFailed = false
 
-    private let apiService = ESPNAPIService.shared
+    private let apiService: ESPNAPIService
+    private let clock: () -> Date
+
+    init(apiService: ESPNAPIService = .shared, clock: @escaping () -> Date = Date.init) {
+        self.apiService = apiService
+        self.clock = clock
+    }
 
     // MARK: - Navigation helpers
 
@@ -64,7 +74,8 @@ class GolfViewModel: ObservableObject {
                 return
             }
             let entry = calendar[idx]
-            let result = try await apiService.fetchGolfTournament(for: sport, startDate: entry.startDate)
+            let result = try await apiService.fetchGolfTournament(for: sport, startDate: entry.startDate,
+                                                                  eventID: entry.id)
             tournament = result.tournament
             // Refresh calendar too in case season rolled over
             if !result.calendar.isEmpty { calendar = result.calendar }
@@ -92,12 +103,29 @@ class GolfViewModel: ObservableObject {
         errorMessage = nil
         do {
             let entry = calendar[index]
-            let result = try await apiService.fetchGolfTournament(for: sport, startDate: entry.startDate)
+            // By id as well as date: a week with an opposite-field event lists two.
+            let result = try await apiService.fetchGolfTournament(for: sport, startDate: entry.startDate,
+                                                                  eventID: entry.id)
             tournament = result.tournament
         } catch {
             errorMessage = APIError.unavailable("the leaderboard")
         }
         isLoading = false
+    }
+
+    // MARK: - Season winners
+
+    /// Who won each finished event this season, from the same request Windows' schedule
+    /// makes. A failure leaves what was shown and says so under the schedule.
+    func fetchSeason(for sport: Sport) async {
+        let year = Calendar(identifier: .gregorian).component(.year, from: clock())
+        do {
+            let events = try await apiService.fetchGolfSeason(for: sport, year: year)
+            seasonEvents = Dictionary(events.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
+            seasonFailed = false
+        } catch {
+            seasonFailed = true
+        }
     }
 
     // MARK: - Private helpers

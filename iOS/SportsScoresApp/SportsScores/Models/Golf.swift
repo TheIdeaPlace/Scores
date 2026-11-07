@@ -213,16 +213,17 @@ struct GolfTournament: Identifiable {
         id = api.id
         name = api.name
         startDate = parseDate(api.date ?? "") ?? Date()
-        statusState = api.status.type.state
-        statusDescription = api.status.type.description
-        isCompleted = api.status.type.completed
-
         let competition = api.competitions.first
-        broadcasts = competition?.broadcasts?.flatMap(\.names) ?? []
+        let type = api.status?.type ?? competition?.status?.type
+        statusState = GolfRules.state(of: api)
+        statusDescription = type?.description ?? ""
+        isCompleted = type?.completed ?? false
 
-        var ranked = (competition?.competitors ?? [])
-            .sorted { $0.order < $1.order }
-            .map { GolfCompetitor(from: $0) }
+        broadcasts = competition?.broadcasts.flatMap(\.names) ?? []
+
+        var ranked = GolfRules.byOrder(competition?.competitors ?? [])
+            .enumerated()
+            .map { GolfCompetitor(from: $0.element, place: $0.offset + 1) }
         // Golfers on the same score share the first position among them ("T1").
         let active = ranked.filter(\.isActive)
         let counts = Dictionary(grouping: active, by: \.overallScore).mapValues(\.count)
@@ -240,18 +241,21 @@ struct GolfTournament: Identifiable {
 // MARK: - GolfCompetitor init from API
 
 extension GolfCompetitor {
-    init(from api: GolfCompetitorAPIResponse) {
-        id = api.id
-        position = api.order
-        playerName = api.athlete.fullName
-        shortName = api.athlete.shortName ?? api.athlete.fullName
-        country = api.athlete.flag?.alt ?? ""
+    /// `place` stands in for ESPN's `order` when it's left out: the row's place on the board.
+    init(from api: GolfCompetitorAPIResponse, place: Int) {
+        position = api.order ?? place
+        id = api.id.isEmpty ? "row-\(place)" : api.id
+        // A team event's competitor is a team ("Smalley/Springer"), with no athlete.
+        playerName = GolfRules.competitorName(api)
+        let short = api.athlete?.shortName?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        shortName = short.isEmpty ? playerName : short
+        country = api.athlete?.flag?.alt ?? ""
         overallScore = GolfCompetitor.totalToPar(
-            score: api.score, roundScores: (api.linescores ?? []).map(\.displayValue))
+            score: api.score, roundScores: api.linescores.map(\.displayValue))
 
-        rounds = (api.linescores ?? []).map { ls in
+        rounds = api.linescores.map { ls in
             let strokes = ls.value.map { Int($0) } ?? 0
-            let holes = (ls.linescores ?? []).map { h -> GolfHole in
+            let holes = ls.linescores.map { h -> GolfHole in
                 GolfHole(
                     number: h.period,
                     strokes: h.value.map { Int($0) } ?? 0,
@@ -303,4 +307,18 @@ extension GolfCompetitor {
 struct GolfTournamentResult {
     let tournament: GolfTournament?
     let calendar: [GolfCalendarEntry]
+}
+
+/// One event of the season, from `scoreboard?dates=YEAR` (the request Windows' schedule
+/// makes): its state, and once it's finished, who won. Keyed to the calendar by `id`.
+struct GolfSeasonEvent: Equatable {
+    let id: String
+    let state: String       // "pre", "in", "post", or "" when ESPN doesn't say
+    let winner: GolfWinner?
+
+    init(from api: GolfEventAPIResponse) {
+        id = api.id
+        state = GolfRules.state(of: api)
+        winner = GolfRules.winner(of: api)
+    }
 }

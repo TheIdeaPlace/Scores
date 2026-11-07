@@ -319,7 +319,7 @@ class TestGolf:
         freeze_now(datetime(2026, 11, 3))
         espn.on("/scoreboard", load("golf_schedule_PGA.json"))
         cancelled, played, upcoming = espn_api.get_golf_schedule("PGA")
-        assert cancelled == {"name": "The Sentry", "start_date": "2026-01-08", "end_date": "2026-01-11",
+        assert cancelled == {"id": "401811927", "name": "The Sentry", "start_date": "2026-01-08", "end_date": "2026-01-11",
                              "status": "Canceled", "state": "post", "winner": ""}
         assert (played["name"], played["winner"], played["status"]) == ("Sony Open in Hawaii", "Chris Gotterup (-16)", "Final")
         assert (upcoming["state"], upcoming["winner"]) == ("pre", "")
@@ -355,6 +355,7 @@ class TestGolf:
     def test_live_tournament_has_ties_and_totals(self, espn):
         data = load("golf_schedule_PGA.json")
         event = data["events"][1]
+        event["status"]["type"]["state"] = "in"
         event["competitions"][0]["status"]["type"]["state"] = "in"
         event["competitions"][0]["status"]["type"]["detail"] = "Round 3"
         espn.on("/scoreboard", {"events": [data["events"][0], event]})
@@ -363,6 +364,66 @@ class TestGolf:
         assert live["leaders"][0][:2] == ("1", "Chris Gotterup")
         assert live["leaders"][0][2] == "-16"
         assert len(live["leaders"]) == 3
+
+    def test_a_past_tournament_by_its_date_and_id(self, espn):
+        """The week of March 5 had two events; the schedule row's id says which."""
+        espn.on("/golf/pga/scoreboard", load("golf_scoreboard_PGA_20260305.json"))
+        board = espn_api.get_golf_leaderboard("PGA", "2026-03-05", "401811936")
+        assert espn.calls == [f"{SITE}/golf/pga/scoreboard?dates=20260305"]
+        assert (board["id"], board["name"], board["state"]) == ("401811936", "Puerto Rico Open", "post")
+        assert board["players"][0]["name"] == "Ricky Castillo"
+        assert board["players"][0]["total_score"] == "-17"
+
+    def test_a_past_week_without_the_id_shows_the_first(self, espn):
+        espn.on("/golf/pga/scoreboard", load("golf_scoreboard_PGA_20260305.json"))
+        board = espn_api.get_golf_leaderboard("PGA", "20260305")
+        assert espn.calls == [f"{SITE}/golf/pga/scoreboard?dates=20260305"]
+        assert board["name"] == "Arnold Palmer Invitational pres. by Mastercard"
+
+    def test_a_date_that_is_not_a_date_asks_nothing(self, espn):
+        assert espn_api.get_golf_leaderboard("PGA", "next week") is None
+        assert espn.calls == []
+
+    def test_the_leaderboard_shows_the_event_in_progress_not_the_first(self, espn):
+        """An opposite-field week: the one being played, wherever ESPN lists it."""
+        first, second = load("golf_scoreboard_PGA_20260305.json")["events"]
+        second["status"]["type"]["state"] = "in"
+        espn.on("/golf/pga/scoreboard", {"events": [first, second]})
+        assert espn_api.get_golf_leaderboard("PGA")["name"] == "Puerto Rico Open"
+
+    def test_a_team_event_leaderboard_names_the_teams(self, espn):
+        espn.on("/golf/pga/scoreboard", load("golf_scoreboard_PGA_20260423.json"))
+        players = espn_api.get_golf_leaderboard("PGA", "2026-04-23", "401811943")["players"]
+        assert [p["name"] for p in players[:2]] == ["Smalley/Springer", "Reitan/Ventura"]
+        assert [p["position"] for p in players[:2]] == [1, 2]
+
+    def test_a_golfer_with_no_order_goes_last_rather_than_first(self, espn):
+        event = load("golf_scoreboard_PGA_20260305.json")["events"][0]
+        golfers = event["competitions"][0]["competitors"]
+        del golfers[2]["order"]
+        golfers.insert(0, golfers.pop(2))
+        espn.on("/golf/pga/scoreboard", {"events": [event]})
+        players = espn_api.get_golf_leaderboard("PGA")["players"]
+        assert [p["position"] for p in players] == [1, 2, 3]
+        assert players[0]["name"] == "Akshay Bhatia"
+
+    def test_live_between_rounds(self, espn):
+        """ESPN calls the event in progress overnight while its round says play is complete;
+        the tournament is still on, as the iPhone has always shown it."""
+        espn.on("/scoreboard", load("golf_scoreboard_LPGA_between_rounds.json"))
+        live = espn_api.get_live_golf_tournament("LPGA")
+        assert (live["name"], live["status"]) == ("TOTO Japan Classic", "Round 3 - Play Complete")
+        assert live["leaders"][0][1] == "Aki Iwai"
+
+    def test_schedule_winners_for_the_whole_season(self, espn, freeze_now):
+        freeze_now(datetime(2026, 11, 7))
+        espn.on("/scoreboard", load("golf_schedule_PGA_2026.json"))
+        events = {e["id"]: e for e in espn_api.get_golf_schedule("PGA")}
+        assert len(events) == 49
+        assert events["401811943"]["winner"] == "Smalley/Springer (-30)"
+        assert events["401824815"]["winner"] == "USA (17)"
+        assert (events["401850979"]["state"], events["401850979"]["winner"]) == ("in", "")
+        assert (events["401811927"]["status"], events["401811927"]["winner"]) == ("Canceled", "")
 
     @pytest.mark.parametrize("call", [espn_api.get_golf_leaderboard, espn_api.get_live_golf_tournament])
     def test_unknown_tour(self, espn, call):

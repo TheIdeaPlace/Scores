@@ -3,7 +3,8 @@
 //  SportsScores
 //
 //  Full-season tournament schedule list for a golf tour.
-//  Grouped by month, shows past/current/upcoming tournaments.
+//  Grouped by month, shows past/current/upcoming tournaments, and each finished
+//  tournament's winner and score (from scoreboard?dates=YEAR, as on Windows).
 //  Tapping a row navigates to that tournament in GolfLeagueView.
 //
 
@@ -12,9 +13,15 @@ import SwiftUI
 struct GolfScheduleView: View {
 
     let calendar: [GolfCalendarEntry]
+    /// This season's events by id, with their state and each finished one's winner.
+    var seasonEvents: [String: GolfSeasonEvent] = [:]
+    /// The winners couldn't be loaded; the schedule shows without them and says so.
+    var seasonFailed = false
     let selectedIndex: Int?
     let onSelect: (Int) -> Void
     @State private var viewMode: ViewMode = .quickList
+
+    static let winnersUnavailable = "Winners aren't available right now. Pull down to try again."
 
     private var groupedByMonth: [(String, [(Int, GolfCalendarEntry)])] {
         let fmt = DateFormatter()
@@ -70,12 +77,55 @@ struct GolfScheduleView: View {
         }
     }
 
+    /// Says the winners are missing, above the schedule in every view mode.
+    @ViewBuilder
+    private var winnersNote: some View {
+        if seasonFailed {
+            Text(Self.winnersUnavailable)
+                .font(.footnote)
+                .foregroundColor(.secondary)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.horizontal, 16)
+                .padding(.vertical, 6)
+        }
+    }
+
+    // MARK: - Status and winner
+
+    private enum Status { case active, past, upcoming }
+
+    /// ESPN's state for the event when the season has loaded, else judged from the dates.
+    private func status(_ entry: GolfCalendarEntry) -> Status {
+        switch seasonEvents[entry.id]?.state {
+        case "in":   return .active
+        case "post": return .past
+        case "pre":  return .upcoming
+        default:
+            let now = Date()
+            if entry.startDate <= now && entry.endDate >= now { return .active }
+            return entry.endDate < now ? .past : .upcoming
+        }
+    }
+
+    private func winner(_ entry: GolfCalendarEntry) -> GolfWinner? {
+        seasonEvents[entry.id]?.winner
+    }
+
+    private func tournamentStatusText(_ entry: GolfCalendarEntry) -> String {
+        switch status(entry) {
+        case .active:   return "Active"
+        case .past:     return "Past"
+        case .upcoming: return "Upcoming"
+        }
+    }
+
     // MARK: - Table view mode
 
     private var tournamentTableView: some View {
-        let headers = ["Tournament", "Dates", "Status"]
+        let headers = ["Tournament", "Dates", "Status", "Winner"]
         let rows = calendar.map { tournamentTableRowData($0) }
         return ScrollView {
+            winnersNote
             VStack(spacing: 0) {
                 HStack(spacing: 0) {
                     ForEach(headers, id: \.self) { h in
@@ -110,7 +160,9 @@ struct GolfScheduleView: View {
             .cornerRadius(8)
             .accessibilityHidden(true)
             .overlay(
-                AccessibleDataTable(headers: headers, rows: rows)
+                AccessibleDataTable(headers: headers, rows: rows,
+                                    onActivateRow: { onSelect($0) },
+                                    activationHint: "Double tap to view leaderboard")
                     .allowsHitTesting(false)
             )
             .padding(.horizontal)
@@ -118,20 +170,15 @@ struct GolfScheduleView: View {
         }
     }
 
-    private func tournamentStatusText(_ entry: GolfCalendarEntry) -> String {
-        let isActive = entry.startDate <= Date() && entry.endDate >= Date()
-        let isPast = entry.endDate < Date()
-        return isActive ? "Active" : (isPast ? "Past" : "Upcoming")
-    }
-
     private func tournamentTableRowData(_ entry: GolfCalendarEntry) -> [String] {
-        [entry.name, entry.dateRangeText, tournamentStatusText(entry)]
+        [entry.name, entry.dateRangeText, tournamentStatusText(entry), winner(entry)?.text ?? ""]
     }
 
     // MARK: - Quick List view mode
 
     private var tournamentQuickListView: some View {
         ScrollView {
+            winnersNote
             LazyVStack(alignment: .leading, spacing: 2) {
                 ForEach(Array(calendar.enumerated()), id: \.element.id) { idx, entry in
                     Button { onSelect(idx) } label: {
@@ -152,13 +199,18 @@ struct GolfScheduleView: View {
     }
 
     private func tournamentQuickText(_ entry: GolfCalendarEntry) -> String {
-        "\(entry.name) — \(entry.dateRangeText) [\(tournamentStatusText(entry))]"
+        var text = "\(entry.name) — \(entry.dateRangeText) [\(tournamentStatusText(entry))]"
+        if let won = winner(entry) { text += " — Winner: \(won.text)" }
+        return text
     }
 
     // MARK: - Full List view mode
 
     private var tournamentFullListView: some View {
         List {
+            if seasonFailed {
+                Section { winnersNote }
+            }
             ForEach(groupedByMonth, id: \.0) { month, entries in
                 Section(header: Text(month).accessibilityAddTraits(.isHeader)) {
                     ForEach(entries, id: \.0) { idx, entry in
@@ -172,8 +224,10 @@ struct GolfScheduleView: View {
 
     private func tournamentRow(entry: GolfCalendarEntry, index: Int) -> some View {
         let isSelected = selectedIndex == index
-        let isPast     = entry.endDate < Date()
-        let isActive   = entry.startDate <= Date() && entry.endDate >= Date()
+        let entryStatus = status(entry)
+        let isPast      = entryStatus == .past
+        let isActive    = entryStatus == .active
+        let entryWinner = winner(entry)
 
         return Button {
             onSelect(index)
@@ -192,6 +246,11 @@ struct GolfScheduleView: View {
                     Text(entry.dateRangeText)
                         .font(.caption)
                         .foregroundColor(.secondary)
+                    if let entryWinner {
+                        Text("Winner: \(entryWinner.text)")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                    }
                 }
 
                 Spacer()
@@ -206,7 +265,8 @@ struct GolfScheduleView: View {
         }
         .buttonStyle(.plain)
         .listRowBackground(isSelected ? Color.accentColor.opacity(0.08) : Color.clear)
-        .accessibilityLabel(accessibilityLabel(entry: entry, isPast: isPast, isActive: isActive, isSelected: isSelected))
+        .accessibilityLabel(accessibilityLabel(entry: entry, isPast: isPast, isActive: isActive,
+                                               isSelected: isSelected, winner: entryWinner))
         .accessibilityHint("Double tap to view leaderboard")
     }
 
@@ -216,9 +276,11 @@ struct GolfScheduleView: View {
         return Color.secondary.opacity(0.2)
     }
 
-    private func accessibilityLabel(entry: GolfCalendarEntry, isPast: Bool, isActive: Bool, isSelected: Bool) -> String {
+    private func accessibilityLabel(entry: GolfCalendarEntry, isPast: Bool, isActive: Bool,
+                                    isSelected: Bool, winner: GolfWinner?) -> String {
         let status = isActive ? "In progress" : (isPast ? "Completed" : "Upcoming")
+        let won = winner.map { ", won by \($0.text)" } ?? ""
         let selected = isSelected ? ", currently selected" : ""
-        return "\(entry.name), \(entry.dateRangeText), \(status)\(selected)"
+        return "\(entry.name), \(entry.dateRangeText), \(status)\(won)\(selected)"
     }
 }
