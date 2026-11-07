@@ -70,7 +70,7 @@ Add a check here when the app starts relying on a new endpoint or field.
 - `tests/fixtures/espn/` — Real ESPN payloads per sport (`INDEX.txt` says what each shows). Test parsing against these, not hand-made dicts.
 - `services/api_service.py` — Thin wrapper around `espn_api.py` with unified error handling
 - `services/venue_service.py` — Stadium/venue info
-- `services/football_calendar.py` — NFL week/season calendar utilities
+- `services/football_calendar.py` — NFL and NCAAF weeks: the current season's from the scoreboard calendar, any other season's from the core API's `weeks` and `weeks/{n}` (its `text` is the name), as the iPhone does. `prepare_week` fetches on the loader thread; `get_week_label` and `step_week` read only the cache, since the UI thread calls them.
 - `services/updater.py` — In-app update check against the GitHub release feed; downloads and launches the installer
 - `models/` — `GameData`, `NewsData`, `StandingsData` dataclasses
 

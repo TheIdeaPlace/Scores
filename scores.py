@@ -2702,6 +2702,10 @@ class LeagueView(BaseView):
         preseason game apart from the September opener. Prefixed like the
         non-football "Date: …" label so a screen reader hearing the window
         knows what the value refers to.
+
+        Read from the cache, never the network: the loader's prepare_week
+        fetched the name, from the Core API for a past season, as the iPhone
+        does. Until then, or if that failed, it is "Week N".
         """
         try:
             from services.football_calendar import get_week_label
@@ -8324,6 +8328,13 @@ class LeagueScoresLoader(QThread):
             scores = ApiService.get_scores(self.league, **self.request) or []
             if self.request.get("week") is not None:
                 scores = ApiService.freshen_live_games(self.league, scores)
+                # The week's name and the season's weeks, for the label and the
+                # week arrows, which read them from the cache on the UI thread.
+                # A past season's come from the Core API. After the games, so a
+                # failed games request isn't kept waiting on it. Never raises.
+                from services.football_calendar import prepare_week
+                prepare_week(self.league, self.request.get("season"),
+                             self.request.get("seasontype"), self.request["week"])
             try:
                 news = ApiService.get_news(self.league) or []
             except Exception:

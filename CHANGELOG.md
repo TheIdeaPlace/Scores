@@ -67,6 +67,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   the plays stops it. Alt+P on an at-bat or an inning, and Alt+S on an inning, say what to select; a
   pitch with no location says so instead of staying silent. Which rows count as pitches is now
   decided when the tree is built, not guessed from words like "ball" and "foul" in the row's text.
+- **Windows: football weeks outside the current season have ESPN's names.** ESPN's scoreboard calendar
+  only covers the current season, so any other season's weeks read "Week 1", "Week 2" through the
+  playoffs. Windows now reads those names from the same place as the iPhone, ESPN's Core API: Hall of
+  Fame Weekend and Preseason Week 1, then Wild Card, Divisional Round, Conference Championship and Super
+  Bowl, or Bowls for college. The week arrows go from preseason to the regular season to the postseason
+  in those seasons too. The name is fetched with the games, never while you wait on a key press; if it
+  can't be had, the week is "Week N", as on the iPhone, and the games still say if they failed (#192).
 - **iPhone: every table opens in your Default view.** The setting in Settings used to reach only a few
   screens; scores, Live Scores, standings, box scores, statistics, polls, schedules, Team Hub's stats,
   golf, racing and the fantasy cheatsheet all opened in Quick List whatever it said. Each screen now

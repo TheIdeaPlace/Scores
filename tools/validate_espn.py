@@ -1727,6 +1727,18 @@ def check_football_calendar(http, report):
         else:
             report.ok(key, "Core API: weeks (iPhone)", f"{data.get('count')} weeks", url)
 
+        # A past season's week names, which both apps read from here: the
+        # scoreboard calendar only describes the current season.
+        url = f"{CORE}/{league.core_path}/seasons/{season - 1}/types/3/weeks/1"
+        status, data = http.get(url)
+        text = data.get("text") if isinstance(data, dict) else None
+        if status != 200 or not isinstance(data, dict):
+            report.fail(key, "Core API: past week name", f"got {status}, so last season's weeks would be numbers", url)
+        elif not isinstance(text, str) or not text.strip():
+            report.fail(key, "Core API: past week name", f"{season - 1} postseason week 1 has no text", url)
+        else:
+            report.ok(key, "Core API: past week name", f"{season - 1} postseason week 1: {text}", url)
+
 
 def _event_label_words(event):
     """The words the apps could label a game with: ESPN's notes and its week."""
