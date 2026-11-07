@@ -47,6 +47,8 @@ The Soccer hub mirrors the main home screen but scoped to soccer leagues. It has
 
 The Golf hub shows PGA Tour and LPGA Tour. Each tour leads to a leaderboard view for the current or most recent tournament.
 
+The **Schedule** tab lists every tournament this season. A finished one shows who won and their score, such as "won by Chris Gotterup (-16)", and a cancelled one says Canceled, in every view mode. Double tap any tournament to open its leaderboard. If the winners can't be loaded, the schedule still shows and says so at the top; pull down to try again.
+
 ---
 
 ### Sport Screen
@@ -59,7 +61,7 @@ Each sport screen has five tabs along the bottom:
 | **Standings** | Division or conference standings |
 | **News** | Recent news and headlines |
 | **Stats** | League statistical leaders |
-| **Polls** | AP, Coaches and USCHO polls — college sports only, when available |
+| **Polls** | Every poll ESPN publishes, in ESPN's order — college sports only, when available. College football has six (CFP, AP, AFCA Coaches, FCS Coaches, AFCA Division II and III) in a Poll menu |
 | **Venues** | Each stadium and arena with its home teams; select one for its details. Not for soccer or CFL |
 
 Select any game row to open its detail view.

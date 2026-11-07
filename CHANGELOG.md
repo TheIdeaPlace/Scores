@@ -30,8 +30,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     leaderboard) and follow the same rules for which tournament to show and who won, held to one shared
     test grid. In a week with two tournaments, the one you picked is the one that opens. Team events
     (the Zurich Classic, the Presidents Cup) name the team.
+- **Every college football poll, on both apps.** Polls for NCAAF shows all six that ESPN publishes, in
+  ESPN's order: the College Football Playoff committee's rankings, the AP Poll, the AFCA Coaches Poll, the
+  FCS Coaches Poll, and the AFCA Division II and Division III polls. Both apps already passed on whatever
+  ESPN sent; they are now tested against all six, and the user guides name them. The committee doesn't
+  vote, so its rankings have no points.
+  - Windows: a tab for each poll, as before.
+  - iPhone: with this many polls, a **Poll** menu chooses one, since six segments would cut their names
+    short. Basketball's two polls and hockey's one keep the segmented control.
 
 ### Fixed
+- **Windows: a poll's cells say which team they're for.** Moving across or down a Polls table read the
+  rank as the row's context, "2, Previous, NR"; it now reads the team, "Georgia Bulldogs, Previous, NR".
+  A poll with no votes, the playoff committee's or college hockey's, has no Points column any more, so
+  the Quick List no longer reads blanks such as "3, Utah Utes, 8-0, , NR". From the NVDA college
+  football bug bash.
 - **iPhone: one odd entry from ESPN no longer loses a whole golf tour (#206).** A calendar entry,
   golfer or field ESPN sends incomplete is skipped instead, so the Golf hub and Live Scores show what's
   there. Team events, whose players are teams, used to fail outright and now show.
@@ -48,6 +61,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   Alt+L used to open a menu that JAWS and NVDA said nothing about until an arrow key was pressed. The app's own menus (a
   game's options, Listen to the Game, play and pitch audio, the Pitch Explorer's) now open on their
   first item. The standard Cut, Copy and Paste menu in a text field is still silent until an arrow key.
+- **Windows: MLB pitch audio on an at-bat.** Alt+S on an at-bat plays that at-bat's pitches; it used to
+  walk the half-inning and play nothing. A new Alt+S replaces a sequence still playing, and closing
+  the plays stops it. Alt+P on an at-bat or an inning, and Alt+S on an inning, say what to select; a
+  pitch with no location says so instead of staying silent. Which rows count as pitches is now
+  decided when the tree is built, not guessed from words like "ball" and "foul" in the row's text.
+- **iPhone: every table opens in your Default view.** The setting in Settings used to reach only a few
+  screens; scores, Live Scores, standings, box scores, statistics, polls, schedules, Team Hub's stats,
+  golf, racing and the fantasy cheatsheet all opened in Quick List whatever it said. Each screen now
+  starts in the chosen view, and the view menu still changes it for that screen.
+- **iPhone: VoiceOver reads a standings row's Full List in full.** A wild card row's Record and an NHL
+  row's Last 10 were shown but not spoken. Each Full List row is now spoken as it reads. An NHL row
+  also reads "Overtime losses" rather than "OT Losses", and starts with the team's rank when ESPN sends one.
 
 ### Changed
 - **iPhone builds: the TestFlight build number can't repeat.** It is now one more than the highest build

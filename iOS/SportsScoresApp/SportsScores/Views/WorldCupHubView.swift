@@ -24,8 +24,7 @@ struct WorldCupHubView: View {
 
     @StateObject private var viewModel: WorldCupViewModel
     @State private var selectedTab: WCTab = .scores
-    @State private var viewMode: ViewMode = .quickList
-    @State private var viewModeInitialized = false
+    @State private var viewMode: ViewMode = .savedDefault()
     @EnvironmentObject private var appSettings: AppSettings
 
     init(sport: Sport) {
@@ -78,11 +77,6 @@ struct WorldCupHubView: View {
                 }
             case .news: break
             }
-        }
-        .onAppear {
-            guard !viewModeInitialized else { return }
-            viewMode = appSettings.defaultTableViewMode
-            viewModeInitialized = true
         }
     }
 

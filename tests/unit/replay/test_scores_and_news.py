@@ -292,9 +292,12 @@ class TestRankings:
         espn.on("/rankings", load("rankings_NCAAF.json"))
         polls = espn_api.get_rankings("NCAAF")["polls"]
         assert espn.calls == [f"{SITE}/football/college-football/rankings"]
-        assert [p["name"] for p in polls] == ["AP Top 25", "AFCA Coaches Poll"]
-        top = polls[0]["ranks"][0]
+        # Every poll ESPN has, in its order. CollegePollsTests.swift holds the iPhone to the same.
+        assert [p["shortName"] for p in polls] == [
+            "CFP Rankings", "AP Poll", "AFCA Coaches Poll", "FCS Coaches Poll", "AFCA Div II", "AFCA Div III"]
+        top = polls[1]["ranks"][0]
         assert (top["current"], top["team"]["nickname"], top["recordSummary"]) == (1, "Miami", "8-0")
+        assert polls[3]["ranks"][0]["team"]["location"] == "Tarleton State"
 
     @pytest.mark.parametrize("league,path,fixture,name,top", [
         ("NCAAH", "hockey/mens-college-hockey", "rankings_NCAAH.json", "USCHO Men's Poll", "Wisconsin"),

@@ -93,25 +93,21 @@ If you want to run from source or contribute to development:
 git clone https://github.com/TheIdeaPlace/Scores.git
 cd Scores
 
-# Use the automated build setup (recommended)
-build-enhanced.bat
-
-# OR manual setup:
-# Create virtual environment
+# Create and activate a virtual environment
 python -m venv .venv
-
-# Activate virtual environment
-# Windows:
 .venv\Scripts\activate
-# macOS/Linux:
-source .venv/bin/activate
 
 # Install dependencies
 pip install -r requirements.txt
 
 # Run the application
 python scores.py
+
+# Run the tests
+pytest
 ```
+
+To build `Scores.exe` and the installer, see [BUILD_GUIDE.md](BUILD_GUIDE.md).
 
 ## Application Structure
 

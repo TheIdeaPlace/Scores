@@ -19,7 +19,7 @@ struct GolfScheduleView: View {
     var seasonFailed = false
     let selectedIndex: Int?
     let onSelect: (Int) -> Void
-    @State private var viewMode: ViewMode = .quickList
+    @State private var viewMode: ViewMode = .savedDefault()
 
     static let winnersUnavailable = "Winners aren't available right now. Pull down to try again."
 

@@ -172,21 +172,30 @@ struct StandingsEntry: Identifiable {
         return text
     }
 
-    var nhlFullListText: String {
-        var text = "Team: \(team.displayName); Wins: \(stats.wins); Losses: \(stats.losses); OT Losses: \(stats.otLosses ?? 0); Points: \(stats.nhlPoints ?? 0); Streak: \(stats.streak)"
-        if let l10 = stats.lastTenRecord { text += "; Last 10: \(l10)" }
-        return text
-    }
+    var nhlFullListText: String { nhlFullListText(team: team.displayName) }
 
     // For full list display
-    var fullListText: String {
+    var fullListText: String { fullListText(team: team.displayName) }
+
+    /// A Full List row, with `name` for the team. The row shows it with the team's full name
+    /// and VoiceOver speaks it with the name the Team names setting asks for; nothing else
+    /// differs, so VoiceOver hears every field the row shows.
+    func fullListText(team name: String) -> String {
         if let wc = wildCard {
-            return "Position: \(wc.positionText); Team: \(team.displayName); Wins: \(stats.wins); "
+            return "Position: \(wc.positionText); Team: \(name); Wins: \(stats.wins); "
                 + "Losses: \(stats.losses); Win%: \(stats.displayWinPercent); "
                 + "Wild card games back: \(wc.gamesBack); Streak: \(stats.streak); "
                 + "Record: \(stats.record); Status: \(wc.spokenStatus)"
         }
-        var text = "\(rank > 0 ? "Rank: \(rank); " : "")Team: \(team.displayName); Wins: \(stats.wins); Losses: \(stats.losses); Win%: \(stats.displayWinPercent); Games Back: \(stats.gamesBack); Streak: \(stats.streak); Record: \(stats.record)"
+        // ESPN sends no rank stat in most leagues, so don't read "Rank: 0".
+        var text = "\(rank > 0 ? "Rank: \(rank); " : "")Team: \(name); Wins: \(stats.wins); Losses: \(stats.losses); Win%: \(stats.displayWinPercent); Games Back: \(stats.gamesBack); Streak: \(stats.streak); Record: \(stats.record)"
+        if let l10 = stats.lastTenRecord { text += "; Last 10: \(l10)" }
+        return text
+    }
+
+    /// The NHL's Full List row, shown and spoken alike, as `fullListText(team:)` is.
+    func nhlFullListText(team name: String) -> String {
+        var text = "\(rank > 0 ? "Rank: \(rank); " : "")Team: \(name); Wins: \(stats.wins); Losses: \(stats.losses); Overtime losses: \(stats.otLosses ?? 0); Points: \(stats.nhlPoints ?? 0); Streak: \(stats.streak)"
         if let l10 = stats.lastTenRecord { text += "; Last 10: \(l10)" }
         return text
     }
