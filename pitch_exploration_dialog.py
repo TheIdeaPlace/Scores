@@ -445,14 +445,16 @@ class PitchExplorationDialog(QDialog):
         menu = self.create_pitch_context_menu(item, item_data)
         if menu:
             global_pos = self.pitch_tree.mapToGlobal(position)
-            menu.exec(global_pos)
+            from popup_menu import exec_menu
+            exec_menu(menu, global_pos)
     
     def create_pitch_context_menu(self, item, item_data):
         """Create context menu based on item type"""
         from PyQt6.QtWidgets import QMenu
         
         menu = QMenu(self)
-        
+        menu.setAccessibleName("Pitch Options")
+
         if item_data.get('type') == 'pitch':
             # Individual pitch actions (matching main app)
             play_action = QAction("Play Pitch Audio", self)
