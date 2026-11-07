@@ -6,9 +6,11 @@ boundary, resolving today's week during preseason, and stepping across a
 season-type boundary.
 """
 
+import json
 import os
 import sys
 from datetime import date
+from types import SimpleNamespace
 from unittest.mock import patch
 
 import pytest
@@ -45,13 +47,17 @@ NFL_CALENDAR = [
 ]
 
 
+CACHES = ("_SEASON_WEEKS_CACHE", "_WEEK_DATE_CACHE", "_SERVED_SEASON",
+          "_CORE_SEASON_CACHE", "_CORE_WEEK_TEXT_CACHE")
+
+
 @pytest.fixture(autouse=True)
 def clear_caches():
-    fc._SEASON_WEEKS_CACHE.clear()
-    fc._WEEK_DATE_CACHE.clear()
+    for name in CACHES:
+        getattr(fc, name).clear()
     yield
-    fc._SEASON_WEEKS_CACHE.clear()
-    fc._WEEK_DATE_CACHE.clear()
+    for name in CACHES:
+        getattr(fc, name).clear()
 
 
 def calendar_payload(season_year=2026):
@@ -69,6 +75,14 @@ def nfl_calendar():
         fake_requests.get.return_value.status_code = 200
         fake_requests.get.return_value.json.return_value = calendar_payload(2026)
         yield fake_requests
+
+
+@pytest.fixture
+def calendar_loaded(nfl_calendar):
+    """The calendar as the loader thread leaves it: fetched and cached. The label
+    and the week arrows read only the cache, since the UI thread calls them."""
+    fc.prepare_week("NFL", 2026, 2, 1)
+    return nfl_calendar
 
 
 class TestBoundDates:
@@ -189,37 +203,37 @@ class TestCurrentWeek:
 
 
 class TestStepWeek:
-    def test_forward_within_a_season_type(self, nfl_calendar):
+    def test_forward_within_a_season_type(self, calendar_loaded):
         assert fc.step_week("NFL", 2026, 1, 1, +1) == (1, 2)
 
-    def test_forward_rolls_into_the_regular_season(self, nfl_calendar):
+    def test_forward_rolls_into_the_regular_season(self, calendar_loaded):
         assert fc.step_week("NFL", 2026, 1, 4, +1) == (2, 1)
 
-    def test_back_rolls_into_the_preseason(self, nfl_calendar):
+    def test_back_rolls_into_the_preseason(self, calendar_loaded):
         # Without this there is no route to preseason at all once the regular
         # season is the default view.
         assert fc.step_week("NFL", 2026, 2, 1, -1) == (1, 4)
 
-    def test_stops_at_the_first_week(self, nfl_calendar):
+    def test_stops_at_the_first_week(self, calendar_loaded):
         assert fc.step_week("NFL", 2026, 1, 1, -1) == (1, 1)
 
-    def test_stops_at_the_last_week(self, nfl_calendar):
+    def test_stops_at_the_last_week(self, calendar_loaded):
         assert fc.step_week("NFL", 2026, 3, 1, +1) == (3, 1)
 
-    def test_unknown_week_is_left_alone(self, nfl_calendar):
+    def test_unknown_week_is_left_alone(self, calendar_loaded):
         assert fc.step_week("NFL", 2026, 2, 99, +1) == (2, 99)
 
 
 class TestWeekLabel:
-    def test_preseason_labels_are_not_bare_week_numbers(self, nfl_calendar):
+    def test_preseason_labels_are_not_bare_week_numbers(self, calendar_loaded):
         assert fc.get_week_label("NFL", 2026, 1, 1) == "Hall of Fame Weekend"
         assert fc.get_week_label("NFL", 2026, 1, 2) == "Preseason Week 1"
 
-    def test_regular_and_post_labels(self, nfl_calendar):
+    def test_regular_and_post_labels(self, calendar_loaded):
         assert fc.get_week_label("NFL", 2026, 2, 1) == "Week 1"
         assert fc.get_week_label("NFL", 2026, 3, 1) == "Wild Card"
 
-    def test_unknown_week_falls_back(self, nfl_calendar):
+    def test_unknown_week_falls_back(self, calendar_loaded):
         assert fc.get_week_label("NFL", 2026, 2, 99) == "Week 99"
 
 
@@ -247,3 +261,214 @@ class TestWeekDates:
             fake_requests.get.return_value.status_code = 503
             assert fc.get_week_dates("NFL", 1, 2026, season_type=2) == (None, None)
             assert ("NFL", 2026, 2, 1) not in fc._WEEK_DATE_CACHE
+
+
+# --- A past season: the Core API, as the iPhone reads it (#192) -------------------
+
+FIXTURES = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "fixtures", "espn")
+
+
+def core_fixture(key):
+    """Real Core API answers for the 2024 season, keyed by the path after the league."""
+    with open(os.path.join(FIXTURES, f"core_weeks_{key}_2024.json"), encoding="utf-8") as f:
+        return json.load(f)
+
+
+class FakeEspn:
+    """The scoreboard serving its 2026 calendar, and the Core API answering from the
+    saved 2024 responses. `fail` maps a URL fragment to a status code or exception."""
+
+    def __init__(self, calendar=True):
+        self.core = {"nfl": core_fixture("NFL"), "college-football": core_fixture("NCAAF")}
+        self.calendar = calendar
+        self.fail = {}
+        self.urls = []
+
+    def get(self, url, timeout=None):
+        self.urls.append(url)
+        for fragment, failure in self.fail.items():
+            if fragment in url:
+                if isinstance(failure, Exception):
+                    raise failure
+                return SimpleNamespace(status_code=failure, json=lambda: {})
+        if "/scoreboard" in url:
+            if not self.calendar:
+                return SimpleNamespace(status_code=503, json=lambda: {})
+            return SimpleNamespace(status_code=200, json=lambda: calendar_payload(2026))
+        league, path = url.split("/football/leagues/")[1].split("?")[0].split("/", 1)
+        answer = self.core[league].get(path)
+        if answer is None:
+            return SimpleNamespace(status_code=404, json=lambda: {"error": {"code": 404}})
+        return SimpleNamespace(status_code=200, json=lambda: answer)
+
+    def core_urls(self):
+        return [u for u in self.urls if "sports.core.api" in u]
+
+
+@pytest.fixture
+def espn():
+    fake = FakeEspn()
+    with patch.object(fc.requests, "get", fake.get):
+        yield fake
+
+
+def visit(league, season, season_type, week):
+    """What the loader does for a week, then what the UI thread shows for it."""
+    fc.prepare_week(league, season, season_type, week)
+    return fc.get_week_label(league, season, season_type, week)
+
+
+class TestPastSeasonWeekNames:
+    def test_the_nfl_postseason_has_its_names(self, espn):
+        names = [visit("NFL", 2024, 3, week) for week in range(1, 6)]
+        assert names == ["Wild Card", "Divisional Round", "Conference Championship",
+                         "Pro Bowl", "Super Bowl"]
+
+    def test_the_nfl_preseason_is_told_apart_from_the_regular_season(self, espn):
+        assert visit("NFL", 2024, 1, 1) == "Hall of Fame Weekend"
+        assert visit("NFL", 2024, 1, 2) == "Preseason Week 1"
+        assert visit("NFL", 2024, 2, 1) == "Week 1"
+
+    def test_college_bowls(self, espn):
+        assert visit("NCAAF", 2024, 3, 1) == "Bowls"
+        assert visit("NCAAF", 2024, 2, 16) == "Week 16"
+
+    def test_every_saved_week_reads_as_espn_s_text(self, espn):
+        """The whole rule, on every real week: the label is ESPN's `text`."""
+        for key, league in (("NFL", "nfl"), ("NCAAF", "college-football")):
+            for path, answer in core_fixture(key).items():
+                if path.endswith("/weeks"):
+                    continue
+                _, _, _, season_type, _, week = path.split("/")
+                assert visit(key, 2024, int(season_type), int(week)) == answer["text"], path
+
+    def test_the_current_season_keeps_the_scoreboard_calendar(self, espn):
+        assert visit("NFL", 2026, 3, 1) == "Wild Card"
+        assert espn.core_urls() == []
+
+    def test_a_season_is_listed_once_and_a_week_named_once(self, espn):
+        visit("NFL", 2024, 3, 1)
+        visit("NFL", 2024, 3, 1)
+        visit("NFL", 2024, 3, 2)
+        lists = [u for u in espn.core_urls() if u.endswith("/weeks?limit=100")]
+        weeks = [u for u in espn.core_urls() if "/weeks/" in u]
+        assert len(lists) == 3      # preseason, regular season, postseason
+        assert len(weeks) == 2      # week 1 once, week 2 once
+        # The scoreboard was asked once, and then known not to describe 2024.
+        assert len([u for u in espn.urls if "/scoreboard" in u]) == 1
+
+    def test_without_the_calendar_the_core_api_still_names_the_week(self):
+        """If the scoreboard fails, the week shown is named from the Core API
+        rather than left as a number."""
+        fake = FakeEspn(calendar=False)
+        with patch.object(fc.requests, "get", fake.get):
+            assert visit("NFL", 2024, 3, 5) == "Super Bowl"
+
+    def test_the_dates_come_with_the_name(self, espn):
+        visit("NFL", 2024, 3, 5)
+        # 2025-02-06T08:00Z to 2025-02-14T07:59Z: the end is Pacific midnight.
+        assert fc._WEEK_DATE_CACHE[("NFL", 2024, 3, 5)] == ("20250206", "20250213")
+
+    def test_week_dates_for_a_past_season_cache_the_name_too(self, espn):
+        assert fc.get_week_dates("NFL", 1, 2024, season_type=3) == ("20250108", "20250115")
+        assert fc.get_week_label("NFL", 2024, 3, 1) == "Wild Card"
+
+
+class TestPastSeasonWeekNameFailures:
+    """The iPhone falls back to "Week N" without a word when the Core API fails, and
+    so does Windows: the games come from their own request, which says if it fails."""
+
+    @pytest.mark.parametrize("failure", [500, 404, TimeoutError("timed out")])
+    def test_a_failed_name_is_week_n_and_is_asked_again(self, espn, failure):
+        espn.fail["/types/3/weeks/1"] = failure
+        assert visit("NFL", 2024, 3, 1) == "Week 1"
+        assert ("NFL", 2024, 3, 1) not in fc._CORE_WEEK_TEXT_CACHE
+        del espn.fail["/types/3/weeks/1"]
+        assert visit("NFL", 2024, 3, 1) == "Wild Card"
+
+    def test_a_week_with_no_text_is_week_n(self, espn):
+        espn.core["nfl"]["seasons/2024/types/3/weeks/1"] = {"number": 1, "text": "  "}
+        assert visit("NFL", 2024, 3, 1) == "Week 1"
+
+    def test_an_answer_that_is_not_an_object_is_week_n(self, espn):
+        espn.core["nfl"]["seasons/2024/types/3/weeks/1"] = ["not", "a", "week"]
+        assert visit("NFL", 2024, 3, 1) == "Week 1"
+
+    def test_a_failed_season_list_is_not_cached(self, espn):
+        espn.fail["/types/2/weeks?limit=100"] = 503
+        fc.prepare_week("NFL", 2024, 1, 4)
+        assert ("NFL", 2024) not in fc._CORE_SEASON_CACHE
+        del espn.fail["/types/2/weeks?limit=100"]
+        fc.prepare_week("NFL", 2024, 1, 4)
+        assert fc.step_week("NFL", 2024, 1, 4, +1) == (2, 1)
+
+    def test_prepare_week_never_raises(self, espn):
+        espn.fail["/scoreboard"] = RuntimeError("boom")
+        espn.fail["sports.core.api"] = RuntimeError("boom")
+        fc.prepare_week("NFL", 2024, 3, 1)
+        assert fc.get_week_label("NFL", 2024, 3, 1) == "Week 1"
+
+    def test_other_leagues_and_missing_weeks_ask_nothing(self, espn):
+        fc.prepare_week("NBA", 2024, 2, 1)
+        fc.prepare_week("NFL", 2024, 2, None)
+        fc.prepare_week("NFL", None, 2, 1)
+        assert espn.urls == []
+
+
+class TestPastSeasonStepping:
+    """Stepping through a past season crosses preseason, regular season and
+    postseason as the current season's calendar does."""
+
+    @pytest.fixture(autouse=True)
+    def loaded(self, espn):
+        fc.prepare_week("NFL", 2024, 2, 1)
+        fc.prepare_week("NCAAF", 2024, 2, 1)
+
+    def test_preseason_into_the_regular_season(self):
+        assert fc.step_week("NFL", 2024, 1, 4, +1) == (2, 1)
+        assert fc.step_week("NFL", 2024, 2, 1, -1) == (1, 4)
+
+    def test_regular_season_into_the_postseason(self):
+        assert fc.step_week("NFL", 2024, 2, 18, +1) == (3, 1)
+        assert fc.step_week("NFL", 2024, 3, 1, -1) == (2, 18)
+
+    def test_through_the_playoffs_to_the_super_bowl_and_no_further(self):
+        assert fc.step_week("NFL", 2024, 3, 4, +1) == (3, 5)
+        assert fc.step_week("NFL", 2024, 3, 5, +1) == (3, 5)
+        assert fc.step_week("NFL", 2024, 1, 1, -1) == (1, 1)
+
+    def test_college_into_the_bowls(self):
+        assert fc.step_week("NCAAF", 2024, 2, 16, +1) == (3, 1)
+        assert fc.step_week("NCAAF", 2024, 3, 1, +1) == (3, 1)
+        assert fc.step_week("NCAAF", 2024, 1, 1, +1) == (2, 1)
+
+    def test_the_names_along_the_way(self, espn):
+        season_type, week, heard = 2, 18, []
+        for _ in range(3):
+            season_type, week = fc.step_week("NFL", 2024, season_type, week, +1)
+            heard.append(visit("NFL", 2024, season_type, week))
+        assert heard == ["Wild Card", "Divisional Round", "Conference Championship"]
+
+
+class TestNoNetworkOnTheUiThread:
+    def test_label_and_step_only_read_the_cache(self):
+        with patch.object(fc.requests, "get", side_effect=AssertionError("network")):
+            assert fc.get_week_label("NFL", 2024, 3, 1) == "Week 1"
+            assert fc.step_week("NFL", 2024, 2, 18, +1) == (2, 19)
+            assert fc.get_week_label("NFL", 2026, 3, 1) == "Week 1"
+            assert fc.step_week("NFL", 2026, 2, 1, -1) == (2, 1)
+
+
+class TestCoreTypeWeeks:
+    def test_week_numbers_come_from_the_references(self):
+        answer = {"count": 2, "items": [{"$ref": ".../types/3/weeks/1?lang=en"},
+                                        {"$ref": ".../types/3/weeks/999?lang=en"}]}
+        with patch.object(fc.requests, "get",
+                          return_value=SimpleNamespace(status_code=200, json=lambda: answer)):
+            assert fc._core_type_weeks("NCAAF", 2024, 3) == [1, 999]
+
+    def test_without_references_the_count_numbers_them_from_one(self):
+        answer = {"count": 3, "items": [{}]}
+        with patch.object(fc.requests, "get",
+                          return_value=SimpleNamespace(status_code=200, json=lambda: answer)):
+            assert fc._core_type_weeks("NFL", 2024, 1) == [1, 2, 3]

@@ -1188,11 +1188,31 @@ class TestFootballCalendar:
         """On New Year's Day this year's season isn't published. ESPN's own season number is."""
         self.stub(monkeypatch, (2026, self.WEEKS))
         http = FakeHttp([("/seasons/2026/types/2/weeks", (200, {"count": 18, "items": [1]})),
+                         ("/seasons/2025/types/3/weeks/1", (200, {"text": "Wild Card"})),
                          ("week=1", (200, {"events": []}))])
         report = v.Report()
         v.check_football_calendar(http, report)
         assert statuses(report, "Core API: weeks (iPhone)") == [v.PASS, v.PASS]
         assert not report.failed
+
+    def test_a_past_season_s_week_name(self, monkeypatch):
+        """Last season's week names come from the Core API on both apps (#192)."""
+        self.stub(monkeypatch, (2026, self.WEEKS))
+        http = FakeHttp([("nfl/seasons/2025/types/3/weeks/1", (200, {"number": 1, "text": "Wild Card"})),
+                         ("college-football/seasons/2025/types/3/weeks/1", (200, {"number": 1})),
+                         ("/weeks", (200, {"count": 18, "items": [1]})), ("week=1", (200, {"events": []}))])
+        report = v.Report()
+        v.check_football_calendar(http, report)
+        assert statuses(report, "Core API: past week name") == [v.PASS, v.FAIL]
+        assert "Wild Card" in detail(report, "Core API: past week name")
+
+    def test_a_past_season_s_week_refused_fails(self, monkeypatch):
+        self.stub(monkeypatch, (2026, self.WEEKS))
+        http = FakeHttp([("/types/3/weeks/1", (500, None)),
+                         ("/weeks", (200, {"count": 18, "items": [1]})), ("week=1", (200, {"events": []}))])
+        report = v.Report()
+        v.check_football_calendar(http, report)
+        assert statuses(report, "Core API: past week name") == [v.FAIL, v.FAIL]
 
     def test_college_football_weeks_are_asked_for_on_their_own_path(self, monkeypatch):
         self.stub(monkeypatch, (2026, self.WEEKS))

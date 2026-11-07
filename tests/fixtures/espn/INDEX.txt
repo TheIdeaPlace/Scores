@@ -153,3 +153,5 @@ summary_final_NFL_401873036.json	84 KB	Bears at Seahawks, final; root keys heade
 summary_pre_NFL_401873037.json	45 KB	Jaguars at Ravens, not started; root keys header, gameInfo, pickcenter, odds, article, news (2 articles): weather with a temperature and no displayValue, no attendance, a Preview article
 summary_final_EPL_401879251.json	89 KB	Leeds at Bournemouth, full time; root keys header, gameInfo, pickcenter, odds, article, standings: a line in both odds and pickcenter, story in <p> and <photo> markup, 20-team table, 8 columns
 summary_final_NCAAF_401757313_2OT.json	24 KB	Kennesaw State at Liberty, the game of drives_NCAAF_2OT; root keys header, scoringPlays only: overtime scores are periods 5 and 6
+core_weeks_NFL_2024.json	31 KB	core seasons/2024/types/{1,2,3}/weeks?limit=100 and every weeks/{n} they list, keyed by the path after leagues/nfl/: text Hall of Fame Weekend, Preseason Week 1 to 3, Week 1 to 18, Wild Card, Divisional Round, Conference Championship, Pro Bowl, Super Bowl
+core_weeks_NCAAF_2024.json	14 KB	the same for leagues/college-football/: preseason week 1 is text Week 1, regular Week 1 to 16, postseason week 1 Bowls

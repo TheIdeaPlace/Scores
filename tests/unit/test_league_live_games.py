@@ -267,8 +267,10 @@ class TestLoaderFreshensFootballWeeksOnly:
     def run_loader(self, request):
         loader = self.scores.LeagueScoresLoader(1, "NFL", request)
         api = self.scores.ApiService
+        from services import football_calendar
         with patch.object(api, "get_scores", return_value=[]), \
                 patch.object(api, "get_news", return_value=[]), \
+                patch.object(football_calendar, "prepare_week") as self.prepared, \
                 patch.object(api, "freshen_live_games", return_value=[]) as freshen:
             loader.run()
         return freshen
@@ -278,6 +280,16 @@ class TestLoaderFreshensFootballWeeksOnly:
 
     def test_date_request_is_not(self):
         self.run_loader(dict(date=date(2026, 10, 9))).assert_not_called()
+
+    def test_a_week_s_name_is_fetched_on_the_loader_thread(self):
+        """The label and the week arrows read the cache on the UI thread, so the
+        loader fetches the week's name (a past season's from the Core API) first."""
+        self.run_loader(dict(week=1, season=2024, seasontype=3))
+        self.prepared.assert_called_once_with("NFL", 2024, 3, 1)
+
+    def test_a_date_request_fetches_no_week_name(self):
+        self.run_loader(dict(date=date(2026, 10, 9)))
+        self.prepared.assert_not_called()
 
 
 class TestFreshenNeverCostsTheWeek:
