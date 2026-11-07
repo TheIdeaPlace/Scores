@@ -95,6 +95,14 @@ struct UserGuideView: View {
                     Text("Each place opens in Safari, or in the service's app if you have it. Sign in or subscribe there if it asks; the app doesn't play the audio itself.")
                 }
 
+                // MARK: Golf
+                GuideSection(icon: "figure.golf", title: "Golf", color: .green) {
+                    Text("PGA Tour and LPGA Tour each have four tabs: Leaderboard, Schedule, Stats and News. The leaderboard opens on the tournament being played, or this week's.")
+                    BulletPoint("The **Schedule** lists every tournament this season. A finished one shows who won and their score, such as \"won by Chris Gotterup (-16)\", in every view mode")
+                    BulletPoint("Double tap any tournament to open its leaderboard; the arrows beside the tournament name move to the one before or after")
+                    BulletPoint("If the winners can't be loaded, the schedule still shows and says so at the top. Pull down to try again")
+                }
+
                 // MARK: Table View Modes
                 GuideSection(icon: "tablecells", title: "Table View Modes", color: .orange) {
                     Text("Screens that show statistics, standings, rosters, or box scores have a view-mode button in the toolbar. Three modes are available:")

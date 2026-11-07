@@ -132,8 +132,8 @@ class ApiService:
         return ApiService._call(espn_api.get_draft_round, year, round_num)
 
     @staticmethod
-    def get_golf_leaderboard(tour: str) -> Dict:
-        return ApiService._call(espn_api.get_golf_leaderboard, tour)
+    def get_golf_leaderboard(tour: str, date: str = None, event_id: str = None) -> Dict:
+        return ApiService._call(espn_api.get_golf_leaderboard, tour, date, event_id)
 
     @staticmethod
     def get_golf_schedule(tour: str) -> List[Dict]:

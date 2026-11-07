@@ -1,0 +1,407 @@
+{
+ "leagues": [
+  {
+   "id": "1107",
+   "name": "Ladies Pro Golf Association",
+   "abbreviation": "LPGA",
+   "calendar": [
+    {
+     "id": "401835135",
+     "label": "Hilton Grand Vacations Tournament of Champions",
+     "startDate": "2026-01-29T08:00Z",
+     "endDate": "2026-02-01T08:00Z"
+    },
+    {
+     "id": "401835136",
+     "label": "Honda LPGA Thailand",
+     "startDate": "2026-02-19T08:00Z",
+     "endDate": "2026-02-22T08:00Z"
+    },
+    {
+     "id": "401835137",
+     "label": "HSBC Women's World Championship",
+     "startDate": "2026-02-26T08:00Z",
+     "endDate": "2026-03-01T08:00Z"
+    },
+    {
+     "id": "401835138",
+     "label": "Blue Bay LPGA",
+     "startDate": "2026-03-05T08:00Z",
+     "endDate": "2026-03-08T08:00Z"
+    },
+    {
+     "id": "401835152",
+     "label": "Fortinet Founders Cup",
+     "startDate": "2026-03-19T07:00Z",
+     "endDate": "2026-03-22T07:00Z"
+    },
+    {
+     "id": "401835140",
+     "label": "Ford Championship pres. by Wild Horse Pass",
+     "startDate": "2026-03-26T07:00Z",
+     "endDate": "2026-03-29T07:00Z"
+    },
+    {
+     "id": "401835143",
+     "label": "Aramco Championship",
+     "startDate": "2026-04-02T07:00Z",
+     "endDate": "2026-04-05T07:00Z"
+    },
+    {
+     "id": "401835146",
+     "label": "JM Eagle LA Championship pres. by Plastpro",
+     "startDate": "2026-04-16T07:00Z",
+     "endDate": "2026-04-19T07:00Z"
+    },
+    {
+     "id": "401835149",
+     "label": "The Chevron Championship",
+     "startDate": "2026-04-23T07:00Z",
+     "endDate": "2026-04-26T07:00Z"
+    },
+    {
+     "id": "401835150",
+     "label": "Riviera Maya Open at Mayakoba",
+     "startDate": "2026-04-30T07:00Z",
+     "endDate": "2026-05-03T07:00Z"
+    },
+    {
+     "id": "401835151",
+     "label": "Mizuho Americas Open",
+     "startDate": "2026-05-07T07:00Z",
+     "endDate": "2026-05-10T07:00Z"
+    },
+    {
+     "id": "401835154",
+     "label": "Kroger Queen City Championship pres by P&G",
+     "startDate": "2026-05-14T07:00Z",
+     "endDate": "2026-05-17T07:00Z"
+    },
+    {
+     "id": "401835157",
+     "label": "ShopRite LPGA Classic powered by Wakefern",
+     "startDate": "2026-05-29T07:00Z",
+     "endDate": "2026-05-31T07:00Z"
+    },
+    {
+     "id": "401835158",
+     "label": "U.S. Women's Open pres. by Ally",
+     "startDate": "2026-06-04T07:00Z",
+     "endDate": "2026-06-07T07:00Z"
+    },
+    {
+     "id": "401835159",
+     "label": "Dow Championship",
+     "startDate": "2026-06-11T07:00Z",
+     "endDate": "2026-06-14T07:00Z"
+    },
+    {
+     "id": "401835160",
+     "label": "Meijer LPGA Classic for Simply Give",
+     "startDate": "2026-06-18T07:00Z",
+     "endDate": "2026-06-21T07:00Z"
+    },
+    {
+     "id": "401835161",
+     "label": "KPMG Women's PGA Championship",
+     "startDate": "2026-06-25T07:00Z",
+     "endDate": "2026-06-28T07:00Z"
+    },
+    {
+     "id": "401835162",
+     "label": "The Amundi Evian Championship",
+     "startDate": "2026-07-09T07:00Z",
+     "endDate": "2026-07-12T07:00Z"
+    },
+    {
+     "id": "401835163",
+     "label": "ISPS HANDA Women's Scottish Open",
+     "startDate": "2026-07-23T07:00Z",
+     "endDate": "2026-07-26T07:00Z"
+    },
+    {
+     "id": "401835164",
+     "label": "AIG Women's Open",
+     "startDate": "2026-07-30T07:00Z",
+     "endDate": "2026-08-02T07:00Z"
+    },
+    {
+     "id": "401835165",
+     "label": "The Standard Portland Classic",
+     "startDate": "2026-08-13T07:00Z",
+     "endDate": "2026-08-16T07:00Z"
+    },
+    {
+     "id": "401835166",
+     "label": "CPKC Women's Open",
+     "startDate": "2026-08-20T07:00Z",
+     "endDate": "2026-08-23T07:00Z"
+    },
+    {
+     "id": "401835167",
+     "label": "FM Championship",
+     "startDate": "2026-08-27T07:00Z",
+     "endDate": "2026-08-30T07:00Z"
+    },
+    {
+     "id": "401835169",
+     "label": "Solheim Cup",
+     "startDate": "2026-09-11T07:00Z",
+     "endDate": "2026-09-13T07:00Z"
+    },
+    {
+     "id": "401835170",
+     "label": "Walmart NW Arkansas Championship pres. by P&G",
+     "startDate": "2026-09-25T07:00Z",
+     "endDate": "2026-09-27T07:00Z"
+    },
+    {
+     "id": "401835171",
+     "label": "LOTTE Championship pres. by Hoakalei",
+     "startDate": "2026-10-01T07:00Z",
+     "endDate": "2026-10-04T07:00Z"
+    },
+    {
+     "id": "401835172",
+     "label": "Buick LPGA Shanghai",
+     "startDate": "2026-10-15T07:00Z",
+     "endDate": "2026-10-18T07:00Z"
+    },
+    {
+     "id": "401835173",
+     "label": "BMW Ladies Championship",
+     "startDate": "2026-10-22T07:00Z",
+     "endDate": "2026-10-25T07:00Z"
+    },
+    {
+     "id": "401835174",
+     "label": "Maybank Championship",
+     "startDate": "2026-10-29T07:00Z",
+     "endDate": "2026-11-01T07:00Z"
+    },
+    {
+     "id": "401835175",
+     "label": "TOTO Japan Classic",
+     "startDate": "2026-11-05T08:00Z",
+     "endDate": "2026-11-08T08:00Z"
+    },
+    {
+     "id": "401835176",
+     "label": "The ANNIKA driven by Gainbridge at Pelican",
+     "startDate": "2026-11-12T08:00Z",
+     "endDate": "2026-11-15T08:00Z"
+    },
+    {
+     "id": "401835177",
+     "label": "CME Group Tour Championship",
+     "startDate": "2026-11-19T08:00Z",
+     "endDate": "2026-11-22T08:00Z"
+    }
+   ]
+  }
+ ],
+ "events": [
+  {
+   "id": "401835175",
+   "uid": "s:1100~l:1107~e:401835175",
+   "date": "2026-11-05T05:00Z",
+   "endDate": "2026-11-08T05:00Z",
+   "name": "TOTO Japan Classic",
+   "shortName": "TOTO Japan Classic",
+   "status": {
+    "type": {
+     "id": "2",
+     "name": "STATUS_IN_PROGRESS",
+     "state": "in",
+     "completed": false,
+     "description": "In Progress"
+    }
+   },
+   "competitions": [
+    {
+     "id": "401835175",
+     "date": "2026-11-05T05:00Z",
+     "endDate": "2026-11-08T05:00Z",
+     "status": {
+      "period": 3,
+      "type": {
+       "id": "35",
+       "name": "STATUS_PLAY_COMPLETE",
+       "state": "post",
+       "completed": true,
+       "description": "Play Complete",
+       "detail": "Round 3 - Play Complete",
+       "shortDetail": "Round 3 - Play Complete"
+      }
+     },
+     "broadcasts": [
+      {
+       "market": "national",
+       "names": [
+        "Golf Chnl"
+       ]
+      }
+     ],
+     "competitors": [
+      {
+       "id": "5129950",
+       "uid": "s:1100~l:1107~a:5129950",
+       "type": "athlete",
+       "order": 1,
+       "athlete": {
+        "fullName": "Aki Iwai",
+        "displayName": "Aki Iwai",
+        "shortName": "A. Iwai",
+        "flag": {
+         "href": "https://a.espncdn.com/i/teamlogos/countries/500/jpn.png",
+         "alt": "Japan",
+         "rel": [
+          "country-flag"
+         ]
+        }
+       },
+       "score": "-15",
+       "linescores": [
+        {
+         "value": 66.0,
+         "displayValue": "-6",
+         "period": 1
+        },
+        {
+         "value": 69.0,
+         "displayValue": "-3",
+         "period": 2
+        },
+        {
+         "value": 66.0,
+         "displayValue": "-6",
+         "period": 3
+        },
+        {
+         "period": 4
+        }
+       ]
+      },
+      {
+       "id": "5084271",
+       "uid": "s:1100~l:1107~a:5084271",
+       "type": "athlete",
+       "order": 2,
+       "athlete": {
+        "fullName": "Arpichaya Yubol",
+        "displayName": "Arpichaya Yubol",
+        "shortName": "A. Yubol",
+        "flag": {
+         "href": "https://a.espncdn.com/i/teamlogos/countries/500/tha.png",
+         "alt": "Thailand",
+         "rel": [
+          "country-flag"
+         ]
+        }
+       },
+       "score": "-14",
+       "linescores": [
+        {
+         "value": 72.0,
+         "displayValue": "E",
+         "period": 1
+        },
+        {
+         "value": 65.0,
+         "displayValue": "-7",
+         "period": 2
+        },
+        {
+         "value": 65.0,
+         "displayValue": "-7",
+         "period": 3
+        },
+        {
+         "period": 4
+        }
+       ]
+      },
+      {
+       "id": "4413602",
+       "uid": "s:1100~l:1107~a:4413602",
+       "type": "athlete",
+       "order": 3,
+       "athlete": {
+        "fullName": "Erika Hara",
+        "displayName": "Erika Hara",
+        "shortName": "E. Hara",
+        "flag": {
+         "href": "https://a.espncdn.com/i/teamlogos/countries/500/jpn.png",
+         "alt": "Japan",
+         "rel": [
+          "country-flag"
+         ]
+        }
+       },
+       "score": "-13",
+       "linescores": [
+        {
+         "value": 70.0,
+         "displayValue": "-2",
+         "period": 1
+        },
+        {
+         "value": 65.0,
+         "displayValue": "-7",
+         "period": 2
+        },
+        {
+         "value": 68.0,
+         "displayValue": "-4",
+         "period": 3
+        },
+        {
+         "period": 4
+        }
+       ]
+      },
+      {
+       "id": "5141008",
+       "uid": "s:1100~l:1107~a:5141008",
+       "type": "athlete",
+       "order": 4,
+       "athlete": {
+        "fullName": "Youmin Hwang",
+        "displayName": "Youmin Hwang",
+        "shortName": "Y. Hwang",
+        "flag": {
+         "href": "https://a.espncdn.com/i/teamlogos/countries/500/sko.png",
+         "alt": "South Korea",
+         "rel": [
+          "country-flag"
+         ]
+        }
+       },
+       "score": "-13",
+       "linescores": [
+        {
+         "value": 68.0,
+         "displayValue": "-4",
+         "period": 1
+        },
+        {
+         "value": 67.0,
+         "displayValue": "-5",
+         "period": 2
+        },
+        {
+         "value": 68.0,
+         "displayValue": "-4",
+         "period": 3
+        },
+        {
+         "period": 4
+        }
+       ]
+      }
+     ]
+    }
+   ]
+  }
+ ]
+}

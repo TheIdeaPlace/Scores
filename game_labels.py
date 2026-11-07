@@ -55,6 +55,32 @@ def scoreboard_today(now: Optional[datetime] = None):
     return (now - timedelta(hours=5)).date()
 
 
+def scoreboard_date(date_str: str, time_valid: bool = True):
+    """The day whose scoreboard has this game. ESPN files a game under its US Eastern date,
+    whatever the time zone you're in, so a 7 PM Eastern kickoff is that day's even where
+    it's after midnight. A game whose time isn't set is at a placeholder hour, and its UTC
+    date is the true one."""
+    import pytz
+    parsed = datetime.fromisoformat(date_str.replace("Z", "+00:00"))
+    if parsed.tzinfo is None:
+        parsed = pytz.utc.localize(parsed)
+    if not time_valid:
+        return parsed.astimezone(pytz.utc).date()
+    return parsed.astimezone(pytz.timezone("US/Eastern")).date()
+
+
+def on_todays_scoreboard(date_str: Optional[str], time_valid: bool = True,
+                         now: Optional[datetime] = None) -> bool:
+    """Whether a game is on the scoreboard Live Scores shows, `scoreboard_today`'s, which
+    is last night's until 5 AM. Only those can be monitored."""
+    if not isinstance(date_str, str) or not date_str:
+        return False
+    try:
+        return scoreboard_date(date_str, time_valid) == scoreboard_today(now)
+    except (TypeError, ValueError):
+        return False
+
+
 def _overtime_label(number: int) -> str:
     return "OT" if number <= 1 else f"{number}OT"
 

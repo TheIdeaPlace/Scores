@@ -1756,12 +1756,21 @@ class ESPNAPIService {
     /// - `startDate` provided → fetches the scoreboard for that date, which ESPN returns
     ///   the tournament active during that week.
     ///
+    /// The tournament is the one `eventID` names if it's there, else the first in progress,
+    /// else the first (`GolfRules.pickEvent`, the rule Windows follows): a week can have an
+    /// opposite-field event beside the main one.
+    ///
     /// Always returns the full season calendar from `leagues[0].calendar` regardless
     /// of whether a tournament is active.
-    func fetchGolfTournament(for sport: Sport, startDate: Date? = nil) async throws -> GolfTournamentResult {
+    func fetchGolfTournament(for sport: Sport, startDate: Date? = nil,
+                             eventID: String? = nil) async throws -> GolfTournamentResult {
         var urlString = "\(baseURL)/\(sport.apiPath)/scoreboard"
         if let date = startDate {
             let fmt = DateFormatter()
+            fmt.locale = Locale(identifier: "en_US_POSIX")
+            fmt.calendar = Calendar(identifier: .gregorian)
+            // The device's time zone on purpose: parseESPNDateString reads a calendar date's
+            // literal "Z" as local time, so formatting it back in local time gives ESPN's day.
             fmt.dateFormat = "yyyyMMdd"
             urlString += "?dates=\(fmt.string(from: date))"
         }
@@ -1775,9 +1784,9 @@ class ESPNAPIService {
         }
         guard http.statusCode == 200 else { throw APIError.invalidResponse }
 
-        let decoder = JSONDecoder()
+        // Lenient: an entry ESPN sends oddly is skipped rather than failing the tour.
         // Golf date strings omit seconds ("2026-04-09T04:00Z") — use lenient parser
-        let apiResponse = try decoder.decode(GolfScoreboardResponse.self, from: data)
+        let apiResponse = try JSONDecoder().decode(GolfScoreboardResponse.self, from: data)
 
         let calendar = apiResponse.leagues?.first?.calendar.compactMap { entry -> GolfCalendarEntry? in
             guard let start = parseESPNDateString(entry.startDate),
@@ -1785,11 +1794,25 @@ class ESPNAPIService {
             return GolfCalendarEntry(id: entry.id, name: entry.label, startDate: start, endDate: end)
         } ?? []
 
-        let tournament = apiResponse.events.first.map {
+        let tournament = GolfRules.pickEvent(apiResponse.events, id: eventID).map {
             GolfTournament(from: $0, parseDate: { [weak self] s in self?.parseESPNDateString(s) })
         }
 
         return GolfTournamentResult(tournament: tournament, calendar: calendar)
+    }
+
+    /// The season's events with their state and each finished one's winner, from
+    /// `scoreboard?dates=YEAR`, the request Windows' golf schedule makes. ESPN's 400/404
+    /// is nothing there; any other failure throws, so the schedule can say so.
+    func fetchGolfSeason(for sport: Sport, year: Int) async throws -> [GolfSeasonEvent] {
+        guard let url = URL(string: "\(baseURL)/\(sport.apiPath)/scoreboard?dates=\(year)") else {
+            throw APIError.invalidURL
+        }
+        let (data, response) = try await session.data(from: url)
+        guard let http = response as? HTTPURLResponse else { throw APIError.invalidResponse }
+        if http.statusCode == 400 || http.statusCode == 404 { return [] }
+        guard http.statusCode == 200 else { throw APIError.invalidResponse }
+        return try JSONDecoder().decode(GolfScoreboardResponse.self, from: data).events.map(GolfSeasonEvent.init(from:))
     }
 
     // MARK: - Racing (F1, IndyCar, NASCAR Cup)

@@ -1188,11 +1188,31 @@ class TestFootballCalendar:
         """On New Year's Day this year's season isn't published. ESPN's own season number is."""
         self.stub(monkeypatch, (2026, self.WEEKS))
         http = FakeHttp([("/seasons/2026/types/2/weeks", (200, {"count": 18, "items": [1]})),
+                         ("/seasons/2025/types/3/weeks/1", (200, {"text": "Wild Card"})),
                          ("week=1", (200, {"events": []}))])
         report = v.Report()
         v.check_football_calendar(http, report)
         assert statuses(report, "Core API: weeks (iPhone)") == [v.PASS, v.PASS]
         assert not report.failed
+
+    def test_a_past_season_s_week_name(self, monkeypatch):
+        """Last season's week names come from the Core API on both apps (#192)."""
+        self.stub(monkeypatch, (2026, self.WEEKS))
+        http = FakeHttp([("nfl/seasons/2025/types/3/weeks/1", (200, {"number": 1, "text": "Wild Card"})),
+                         ("college-football/seasons/2025/types/3/weeks/1", (200, {"number": 1})),
+                         ("/weeks", (200, {"count": 18, "items": [1]})), ("week=1", (200, {"events": []}))])
+        report = v.Report()
+        v.check_football_calendar(http, report)
+        assert statuses(report, "Core API: past week name") == [v.PASS, v.FAIL]
+        assert "Wild Card" in detail(report, "Core API: past week name")
+
+    def test_a_past_season_s_week_refused_fails(self, monkeypatch):
+        self.stub(monkeypatch, (2026, self.WEEKS))
+        http = FakeHttp([("/types/3/weeks/1", (500, None)),
+                         ("/weeks", (200, {"count": 18, "items": [1]})), ("week=1", (200, {"events": []}))])
+        report = v.Report()
+        v.check_football_calendar(http, report)
+        assert statuses(report, "Core API: past week name") == [v.FAIL, v.FAIL]
 
     def test_college_football_weeks_are_asked_for_on_their_own_path(self, monkeypatch):
         self.stub(monkeypatch, (2026, self.WEEKS))
@@ -2372,10 +2392,43 @@ class TestRemainingChecks:
     def test_a_tournament_with_no_name_fails(self, monkeypatch):
         import espn_api
         monkeypatch.setattr(espn_api, "get_golf_schedule", lambda t: [{"name": "x"}])
-        monkeypatch.setattr(espn_api, "get_golf_leaderboard", lambda t: {"players": []})
+        monkeypatch.setattr(espn_api, "get_golf_leaderboard", lambda t, *a: {"players": []})
         report = v.Report()
         v.check_golf(FakeHttp(), report)
         assert FAIL_IN(report, "App: golf leaderboard")
+
+    SEASON = [
+        {"id": "1", "name": "Sony Open", "start_date": "2026-01-15", "state": "post", "winner": "Chris Gotterup (-16)"},
+        {"id": "2", "name": "Masters", "start_date": "2026-04-09", "state": "post", "winner": "Rory McIlroy (-12)"},
+        {"id": "3", "name": "Next", "start_date": "2026-12-01", "state": "pre", "winner": ""},
+    ]
+
+    def past_board(self, monkeypatch, schedule, answer):
+        import espn_api
+        asked = []
+        monkeypatch.setattr(espn_api, "get_golf_schedule", lambda t: schedule)
+        monkeypatch.setattr(espn_api, "get_golf_leaderboard",
+                            lambda t, date=None, event_id=None: asked.append((date, event_id)) or answer(date))
+        report = v.Report()
+        v.check_golf(FakeHttp(), report)
+        return report, asked
+
+    def test_the_last_finished_tournament_opens_by_date_and_id(self, monkeypatch):
+        board = {"id": "2", "name": "Masters", "players": [{"name": "Rory McIlroy"}]}
+        report, asked = self.past_board(monkeypatch, self.SEASON, lambda date: board)
+        assert ("2026-04-09", "2") in asked
+        assert v.PASS in statuses(report, "App: past golf leaderboard")
+
+    def test_a_past_date_answering_with_another_tournament_fails(self, monkeypatch):
+        other = {"id": "9", "name": "Elsewhere", "players": [{"name": "x"}]}
+        report, _ = self.past_board(monkeypatch, self.SEASON, lambda date: other)
+        assert FAIL_IN(report, "App: past golf leaderboard")
+
+    def test_finished_tournaments_with_no_winners_fail(self, monkeypatch):
+        season = [dict(e, winner="") for e in self.SEASON]
+        report, asked = self.past_board(monkeypatch, season, lambda date: None)
+        assert FAIL_IN(report, "App: golf winners")
+        assert asked == [(None, None), (None, None)]
 
     @pytest.mark.parametrize("board", [{"players": []}, {"players": [{"name": ""}]}, None])
     def test_a_fantasy_board_with_no_real_players_fails(self, monkeypatch, board):
