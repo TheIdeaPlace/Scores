@@ -371,6 +371,7 @@ struct LiveScoresView: View {
                 .buttonStyle(.plain)
                 .accessibilityLabel(liveQuickAccessibilityText(game))
                 .accessibilityHint("Opens game details")
+                .listenToGame(game, sport: sport)
             }
         }
     }

@@ -308,9 +308,9 @@ def _show_listen_menu(parent, options, title, position):
     menu.exec(position)
 
 
-def _listen_title(league, away_name, home_name):
+def _listen_title(league, away_name, home_name, neutral=False):
     if away_name and home_name:
-        return f"Listen to {away_name} at {home_name}"
+        return f"Listen to {away_name} {'vs' if neutral else 'at'} {home_name}"
     return f"Listen to the {league} game" if league else "Listen to the game"
 
 
@@ -321,13 +321,14 @@ def _show_game_listen_menu(parent, league, competition, position):
     if not options and not radio_links.covers(_radio_data(), league):
         announce(f"No radio links for {league} yet" if league else "No radio links for this game yet")
         return
-    _show_listen_menu(parent, options, _listen_title(league, away_name, home_name), position)
+    neutral = bool(competition.get("neutralSite")) if isinstance(competition, dict) else False
+    _show_listen_menu(parent, options, _listen_title(league, away_name, home_name, neutral), position)
 
 
-def _add_listen_keys(list_widget, listen, open_details, is_game):
+def _add_listen_keys(list_widget, listen, open_details, is_game, can_listen=lambda: True):
     """Alt+L on a list of games opens the listen menu for the selected game, and the
     context key (Shift+F10, the Applications key, a right click) offers the game's
-    details and the same menu."""
+    details and, when its league has radio links, the same menu."""
     action = QAction("Listen to the Game", list_widget)
     action.setShortcut("Alt+L")
     action.setShortcutContext(Qt.ShortcutContext.WidgetShortcut)
@@ -336,14 +337,19 @@ def _add_listen_keys(list_widget, listen, open_details, is_game):
     list_widget.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
 
     def show_menu(_pos):
+        # The selected row, not the one under a mouse: a menu from the keyboard reports
+        # the middle of the list, which would be some other game.
         if not is_game():
+            announce("No options for this row")
             return
         menu = QMenu(list_widget)
         menu.setAccessibleName("Game Options")
         details = menu.addAction("Game Details\tEnter")
-        listen_action = menu.addAction("Listen to the Game\tAlt+L")
+        listen_action = menu.addAction("Listen to the Game\tAlt+L") if can_listen() else None
         chosen = menu.exec(_menu_position(list_widget, list_widget.currentItem()))
         # After the first menu has closed, so the listen menu isn't opened inside it.
+        if chosen is None:
+            return
         if chosen is details:
             open_details()
         elif chosen is listen_action:
@@ -1047,7 +1053,8 @@ class LiveScoresView(BaseView):
         self.live_scores_list.itemActivated.connect(self._on_game_selected)
         self.layout.addWidget(self.live_scores_list)
         _add_listen_keys(self.live_scores_list, self._listen_to_current_game,
-                         self._open_current_game, lambda: self._current_game() is not None)
+                         self._open_current_game, lambda: self._current_game() is not None,
+                         lambda: radio_links.covers(_radio_data(), (self._current_game() or {}).get("league")))
 
         self._add_nav_buttons()
         self.load_live_scores()
@@ -1871,13 +1878,16 @@ class LeagueView(BaseView):
 
         self.scores_list = QListWidget()
         self.scores_list.setAccessibleName("Scores List")
-        self.scores_list.setAccessibleDescription("List of games and scores for the selected date or week. Alt+L to listen to a game.")
+        self.scores_list.setAccessibleDescription("List of games and scores for the selected date or week")
         self.scores_list.itemActivated.connect(self._on_score_item_selected)
         self.layout.addWidget(self.scores_list)
         # A game's raw scoreboard entry by id, for the listen menu.
         self._games_by_id = {}
-        _add_listen_keys(self.scores_list, self._listen_to_current_game,
-                         self._open_current_game, lambda: self._current_game() is not None)
+        if radio_links.covers(_radio_data(), self.league):
+            _add_listen_keys(self.scores_list, self._listen_to_current_game,
+                             self._open_current_game, lambda: self._current_game() is not None)
+            self.scores_list.setAccessibleDescription(
+                "List of games and scores for the selected date or week. Alt+L to listen to a game.")
 
         self._add_nav_buttons()
         self.load_scores(reselect=(self._restore_state or {}).get('selected'))
@@ -3444,11 +3454,12 @@ class GameDetailsView(BaseView):
         refresh_btn.clicked.connect(self.refresh)
         btn_layout.addWidget(refresh_btn)
 
-        listen_btn = QPushButton("Listen (Alt+L)")
-        listen_btn.setShortcut("Alt+L")
-        listen_btn.setAccessibleDescription("Places to hear this game on the radio")
-        listen_btn.clicked.connect(self._listen_to_game)
-        btn_layout.addWidget(listen_btn)
+        if radio_links.covers(_radio_data(), self.league):
+            listen_btn = QPushButton("Listen (Alt+L)")
+            listen_btn.setShortcut("Alt+L")
+            listen_btn.setAccessibleDescription("Places to hear this game on the radio")
+            listen_btn.clicked.connect(self._listen_to_game)
+            btn_layout.addWidget(listen_btn)
 
         self.layout.addLayout(btn_layout)
 
@@ -8609,6 +8620,7 @@ class TeamHubDialog(QDialog):
         btn_row.addStretch()
         if radio_links.covers(_radio_data(), self.league):
             listen_btn = QPushButton("&Listen on the Radio")
+            listen_btn.setAutoDefault(False)  # Enter in a tab's list mustn't press it
             listen_btn.setAccessibleDescription(f"Places to hear {self.team_name} games")
             listen_btn.clicked.connect(lambda: _show_listen_menu(
                 self, radio_links.team_listen_options(_radio_data(), self.league, self.team_id, self.team_name),
@@ -12368,7 +12380,7 @@ class RadioDialog(QDialog):
     def __init__(self, league: str, parent=None):
         super().__init__(parent)
         self.league = league
-        self.setWindowTitle(f"{league} Game Radio")
+        self.setWindowTitle(f"Game Radio - {league} - Sports Scores")
         self.resize(700, 600)
         data = _radio_data()
         layout = QVBoxLayout(self)
@@ -12392,6 +12404,9 @@ class RadioDialog(QDialog):
         self.radio_list.itemActivated.connect(self._on_activated)
         layout.addWidget(self.radio_list)
         close_btn = QPushButton("Close")
+        # Enter on a row is passed on to the dialog after the row has it; a default Close
+        # would end the dialog with every choice.
+        close_btn.setAutoDefault(False)
         close_btn.clicked.connect(self.accept)
         layout.addWidget(close_btn)
         if self.radio_list.count():

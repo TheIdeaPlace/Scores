@@ -615,6 +615,7 @@ struct ScoresView: View {
                     .buttonStyle(.plain)
                     .accessibilityLabel(gameQuickAccessibilityText(game))
                     .accessibilityHint("Opens game details")
+                    .listenToGame(game, sport: sport)
                 }
             }
         }

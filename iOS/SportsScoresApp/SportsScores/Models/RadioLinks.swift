@@ -124,7 +124,7 @@ struct RadioLinks {
     /// Every team in a league's table, by name, links or not.
     func directory(_ league: String) -> [RadioDirectoryTeam] {
         (table(league)?.teams ?? [:]).map { id, team in
-            RadioDirectoryTeam(id: id, name: team.name ?? id, station: team.station ?? "",
+            RadioDirectoryTeam(id: id, name: (team.name ?? "").isEmpty ? id : team.name!, station: team.station ?? "",
                                links: Self.usable(team.links))
         }
         .sorted { $0.name.lowercased() < $1.name.lowercased() }

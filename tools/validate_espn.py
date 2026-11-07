@@ -2023,7 +2023,15 @@ def check_radio_links(http, report):
                 urls.setdefault(link["url"], f"{team.get('name')}: {link['label']}")
 
     def status(url):
-        return url, http.get(url, attempts=1, timeout=20)[0]
+        """The status alone. Streamed and closed unread, so a page is never downloaded and
+        a link to an endless audio stream can't hold the run."""
+        if http.deadline is not None and time.monotonic() > http.deadline:
+            return url, "out of time"
+        try:
+            with http.session.get(url, timeout=20, stream=True) as response:
+                return url, response.status_code
+        except requests.RequestException as e:
+            return url, type(e).__name__
 
     with ThreadPoolExecutor(max_workers=8) as pool:
         answers = list(pool.map(status, urls))

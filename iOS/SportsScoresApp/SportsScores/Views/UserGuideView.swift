@@ -87,7 +87,7 @@ struct UserGuideView: View {
                 // MARK: Listen to the Game
                 GuideSection(icon: "radio", title: "Listen to the Game", color: .red) {
                     Text("For the NFL, NBA, NHL, and college football and basketball, the app knows where to hear a game on the radio: each team's radio, then the services that carry every game, such as SiriusXM.")
-                    BulletPoint("On a game in Scores or Live Scores, use the **Listen to the Game** VoiceOver action (swipe up or down), or press and hold the game for its menu")
+                    BulletPoint("On a game in Scores or Live Scores, use the **Listen to the Game** VoiceOver action (swipe up or down), or press and hold the game for its menu. This is in the Quick List and Full List views, not Table view")
                     BulletPoint("A game's detail screen has a **Listen to the Game** menu under the TV listing")
                     BulletPoint("Team Hub has a radio button in the top-right corner")
                     BulletPoint("**Game Radio** in The Bench lists every team and its station")
