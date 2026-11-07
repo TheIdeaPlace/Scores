@@ -10764,8 +10764,8 @@ class GolfTournamentDialog(QDialog):
 
         btn_row = QHBoxLayout()
         btn_row.addStretch()
+        # Stays auto-default so Enter on it closes; Enter in a list is kept from it in keyPressEvent.
         close_btn = QPushButton("&Close")
-        close_btn.setAutoDefault(False)  # Enter on a schedule row opens it, not this
         close_btn.clicked.connect(self.accept)
         btn_row.addWidget(close_btn)
         layout.addLayout(btn_row)
@@ -10820,6 +10820,13 @@ class GolfTournamentDialog(QDialog):
         except Exception:
             return f"{start}–{end}" if end else start
 
+    def _title_for(self, tournament):
+        """The window title names the tournament shown, or just the tour when there's none."""
+        if tournament:
+            self.setWindowTitle(f"{tournament} — {self.tour_name} — Sports Scores")
+        else:
+            self.setWindowTitle(f"{self.tour_name} — Sports Scores")
+
     def _on_leaderboard_loaded(self, data: dict):
         self.leaderboard_list.clear()
         if not data:
@@ -10830,6 +10837,7 @@ class GolfTournamentDialog(QDialog):
             else:
                 self.tournament_label.clear()  # It says it's loading the tournament.
                 self.leaderboard_list.addItem("No current tournament data available.")
+            self._title_for(self._chosen and self._chosen.get("name"))
             self.leaderboard_list.setCurrentRow(0)
             return
 
@@ -10840,12 +10848,12 @@ class GolfTournamentDialog(QDialog):
         date_range = self._fmt_date_range(start, end) if start else ''
         header_parts = [p for p in [name, status_detail, date_range] if p]
         self.tournament_label.setText("  |  ".join(header_parts))
-        if name:
-            self.setWindowTitle(f"{name} — {self.tour_name} — Sports Scores")
+        self._title_for(name or (self._chosen and self._chosen.get("name")))
 
         players = data.get('players', [])
         if not players:
             self.leaderboard_list.addItem("No leaderboard data available.")
+            self.leaderboard_list.setCurrentRow(0)
             return
 
         # Detect ties: group players by total_score, record first position for each score
@@ -10913,6 +10921,7 @@ class GolfTournamentDialog(QDialog):
         self._failed_lists.add(lw)
         if lw is self.leaderboard_list:
             self.tournament_label.clear()  # It says it's loading the tournament.
+            self._title_for(self._chosen and self._chosen.get("name"))
         lw.clear()
         lw.addItem(error)
         lw.setCurrentRow(0)
@@ -10922,6 +10931,10 @@ class GolfTournamentDialog(QDialog):
     def keyPressEvent(self, event):
         if event.key() == Qt.Key.Key_Escape:
             self.accept()
+        elif event.key() in (Qt.Key.Key_Return, Qt.Key.Key_Enter) and \
+                self.focusWidget() in (self.leaderboard_list, self.schedule_list):
+            # The list has acted on it (a schedule row opens); it mustn't press Close too.
+            event.accept()
         elif event.key() == Qt.Key.Key_F5:
             # Only what failed: what loaded stays as it is.
             failed, self._failed_lists = self._failed_lists, set()

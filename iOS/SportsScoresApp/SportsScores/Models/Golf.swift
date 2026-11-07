@@ -315,10 +315,15 @@ struct GolfSeasonEvent: Equatable {
     let id: String
     let state: String       // "pre", "in", "post", or "" when ESPN doesn't say
     let winner: GolfWinner?
+    /// ESPN's word for the event's status ("Final", "Canceled"), as Windows shows a finished
+    /// event with no winner.
+    let statusDescription: String
 
     init(from api: GolfEventAPIResponse) {
         id = api.id
         state = GolfRules.state(of: api)
         winner = GolfRules.winner(of: api)
+        let type = api.status?.type ?? api.competitions.first?.status?.type
+        statusDescription = type?.description?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
     }
 }

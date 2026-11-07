@@ -23,8 +23,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Windows: press Enter on any tournament in the golf dialog's Schedule to open its leaderboard. The
     window title and the line above the tabs name the tournament shown, and F5 retries it if it fails.
     A cancelled tournament now says Canceled in the schedule.
-  - iPhone: the golf Schedule shows each finished tournament's winner and score in all three view modes,
-    and Table view's rows open the tournament with VoiceOver. If the winners can't be loaded, the schedule
+  - iPhone: the golf Schedule shows each finished tournament's winner and score in all three view modes
+    (a cancelled one says Canceled), and Table view's rows open the tournament with VoiceOver. If the winners can't be loaded, the schedule
     says so and a pull to refresh tries again.
   - Both apps ask ESPN the same two ways (the season for the winners, a tournament's date for its
     leaderboard) and follow the same rules for which tournament to show and who won, held to one shared

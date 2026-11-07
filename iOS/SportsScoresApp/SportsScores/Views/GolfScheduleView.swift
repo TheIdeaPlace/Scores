@@ -111,12 +111,26 @@ struct GolfScheduleView: View {
         seasonEvents[entry.id]?.winner
     }
 
+    /// A finished event with no winner in ESPN's own word, such as "Canceled", as on Windows.
+    private func finishedWithoutWinner(_ entry: GolfCalendarEntry) -> String? {
+        guard let event = seasonEvents[entry.id], event.state == "post", event.winner == nil,
+              !event.statusDescription.isEmpty else { return nil }
+        return event.statusDescription
+    }
+
     private func tournamentStatusText(_ entry: GolfCalendarEntry) -> String {
+        if let word = finishedWithoutWinner(entry) { return word }
         switch status(entry) {
         case .active:   return "Active"
         case .past:     return "Past"
         case .upcoming: return "Upcoming"
         }
+    }
+
+    /// The Winner cell: never blank, so VoiceOver has something to say on it.
+    private func winnerCellText(_ entry: GolfCalendarEntry) -> String {
+        if let won = winner(entry) { return won.text }
+        return status(entry) == .past ? "None" : "Not yet"
     }
 
     // MARK: - Table view mode
@@ -171,7 +185,7 @@ struct GolfScheduleView: View {
     }
 
     private func tournamentTableRowData(_ entry: GolfCalendarEntry) -> [String] {
-        [entry.name, entry.dateRangeText, tournamentStatusText(entry), winner(entry)?.text ?? ""]
+        [entry.name, entry.dateRangeText, tournamentStatusText(entry), winnerCellText(entry)]
     }
 
     // MARK: - Quick List view mode
@@ -278,7 +292,7 @@ struct GolfScheduleView: View {
 
     private func accessibilityLabel(entry: GolfCalendarEntry, isPast: Bool, isActive: Bool,
                                     isSelected: Bool, winner: GolfWinner?) -> String {
-        let status = isActive ? "In progress" : (isPast ? "Completed" : "Upcoming")
+        let status = finishedWithoutWinner(entry) ?? (isActive ? "In progress" : (isPast ? "Completed" : "Upcoming"))
         let won = winner.map { ", won by \($0.text)" } ?? ""
         let selected = isSelected ? ", currently selected" : ""
         return "\(entry.name), \(entry.dateRangeText), \(status)\(won)\(selected)"

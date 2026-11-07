@@ -1747,6 +1747,8 @@ class ESPNAPIService {
             let fmt = DateFormatter()
             fmt.locale = Locale(identifier: "en_US_POSIX")
             fmt.calendar = Calendar(identifier: .gregorian)
+            // The device's time zone on purpose: parseESPNDateString reads a calendar date's
+            // literal "Z" as local time, so formatting it back in local time gives ESPN's day.
             fmt.dateFormat = "yyyyMMdd"
             urlString += "?dates=\(fmt.string(from: date))"
         }

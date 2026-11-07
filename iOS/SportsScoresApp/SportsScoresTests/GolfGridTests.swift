@@ -153,6 +153,7 @@ final class GolfGridTests: XCTestCase {
         XCTAssertEqual(byID["401811928"]?.winner?.text, "Chris Gotterup (-16)")
         XCTAssertEqual(byID["401824815"]?.winner?.text, "USA (17)")
         XCTAssertNil(byID["401811927"]?.winner)  // cancelled
+        XCTAssertEqual(byID["401811927"]?.statusDescription, "Canceled")
         XCTAssertEqual(byID["401850979"]?.state, "in")
     }
 

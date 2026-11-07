@@ -137,7 +137,51 @@ class TestGolfDialog:
         assert len(FakeLoader.made) == 1
         assert dialog._chosen is None
 
-    def test_enter_in_a_list_does_not_press_close(self):
+    def test_enter_on_a_schedule_row_opens_it_and_does_not_close(self):
+        from PyQt6.QtCore import Qt
+        from PyQt6.QtTest import QTest
+        dialog = self.dialog()
+        dialog.show()
+        dialog.tab_widget.setCurrentIndex(1)
+        dialog.schedule_list.setFocus()
+        dialog.schedule_list.setCurrentRow(1)
+        self.app.processEvents()
+        QTest.keyClick(dialog.schedule_list, Qt.Key.Key_Return)
+        assert dialog.isVisible()
+        assert (FakeLoader.made[-1].date, FakeLoader.made[-1].event_id) == ("2026-01-15", "401811928")
+        # And on the leaderboard it lands on.
+        QTest.keyClick(dialog.leaderboard_list, Qt.Key.Key_Return)
+        assert dialog.isVisible()
+        dialog.close()
+
+    def test_enter_on_close_closes(self):
+        from PyQt6.QtCore import Qt
+        from PyQt6.QtTest import QTest
         from PyQt6.QtWidgets import QPushButton
         dialog = self.dialog()
-        assert not any(b.autoDefault() or b.isDefault() for b in dialog.findChildren(QPushButton))
+        dialog.show()
+        close = next(b for b in dialog.findChildren(QPushButton) if b.text() == "&Close")
+        close.setFocus()
+        self.app.processEvents()
+        QTest.keyClick(close, Qt.Key.Key_Return)
+        assert not dialog.isVisible()
+
+    def test_a_tournament_with_no_field_says_so_on_a_current_row(self):
+        dialog = self.dialog()
+        dialog._open_tournament(dialog.schedule_list.item(2))
+        FakeLoader.made[-1].data_loaded.emit({"id": "401850979", "name": "World Wide Technology Championship",
+                                              "players": []})
+        assert self.rows(dialog.leaderboard_list) == ["No leaderboard data available."]
+        assert dialog.leaderboard_list.currentRow() == 0
+
+    def test_the_title_follows_the_tournament_even_when_it_has_nothing(self):
+        dialog = self.dialog()
+        dialog._open_tournament(dialog.schedule_list.item(1))
+        FakeLoader.made[-1].data_loaded.emit(SONY)
+        assert dialog.windowTitle().startswith("Sony Open in Hawaii")
+        dialog._open_tournament(dialog.schedule_list.item(0))
+        FakeLoader.made[-1].data_loaded.emit({})
+        assert dialog.windowTitle() == "The Sentry — PGA Tour — Sports Scores"
+        dialog._open_tournament(dialog.schedule_list.item(1))
+        FakeLoader.made[-1].error_occurred.emit(FAILED)
+        assert dialog.windowTitle() == "Sony Open in Hawaii — PGA Tour — Sports Scores"
