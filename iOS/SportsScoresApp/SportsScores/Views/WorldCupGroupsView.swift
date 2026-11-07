@@ -21,9 +21,7 @@ struct WorldCupGroupsView: View {
     let error: String?
     let onRetry: () -> Void
 
-    @State private var viewMode: ViewMode = .quickList
-    @State private var viewModeInitialized = false
-    @EnvironmentObject private var appSettings: AppSettings
+    @State private var viewMode: ViewMode = .savedDefault()
 
     private let headers = ["Team", "GP", "W", "D", "L", "GD", "Pts"]
 
@@ -45,11 +43,6 @@ struct WorldCupGroupsView: View {
             ToolbarItem(placement: .navigationBarTrailing) {
                 ViewModeMenuButton(currentMode: $viewMode)
             }
-        }
-        .onAppear {
-            guard !viewModeInitialized else { return }
-            viewMode = appSettings.defaultTableViewMode
-            viewModeInitialized = true
         }
     }
 

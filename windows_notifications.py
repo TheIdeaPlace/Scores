@@ -1,12 +1,11 @@
 """
-Windows UIA Notification Helper for Screen Reader Accessibility
+The app's spoken messages, raised as UIA notifications.
 
-This module provides Windows UIA (User Interface Automation) notifications
-for screen readers and other assistive technologies.
+uia_notifier.py does the work: it raises each notification from a hidden child window
+with its own UIA provider (a notification from UiaHostProviderFromHwnd never reaches a
+screen reader). Until the app has handed over that window, or off Windows, a message
+is quietly dropped. Nothing prints in its place: print is invisible in the windowed build.
 """
-
-import sys
-import platform
 
 _notifier = None
 
@@ -27,43 +26,9 @@ def _raise_uia_notification(message):
 
 
 class WindowsNotificationHelper:
-    """Helper class for Windows UIA notifications."""
-    
-    def __init__(self):
-        """Initialize the notification helper."""
-        self.enabled = False
-        self._init_uia()
-    
-    def _init_uia(self):
-        """Initialize Windows UIA if available."""
-        if platform.system() != "Windows":
-            print("Windows UIA notifications not available on this platform")
-            return
-            
-        try:
-            # Try to import Windows UIA components
-            import ctypes
-            from ctypes import wintypes
-            
-            # Load the required Windows libraries
-            self.user32 = ctypes.windll.user32
-            self.oleacc = ctypes.windll.oleacc
-            
-            # Define UIA notification types
-            self.UIA_NOTIFICATION_KIND_ITEM_ADDED = 0
-            self.UIA_NOTIFICATION_KIND_ITEM_REMOVED = 1
-            self.UIA_NOTIFICATION_KIND_OTHER = 2
-            
-            self.UIA_NOTIFICATION_PROCESSING_IMPORT_AS_TRANSIENT = 0
-            self.UIA_NOTIFICATION_PROCESSING_IMPORT_AS_PERSISTENT = 1
-            self.UIA_NOTIFICATION_PROCESSING_CURRENT_THEN_MOST_RECENT = 2
-            
-            self.enabled = True
-            
-        except (ImportError, OSError, AttributeError) as e:
-            print(f"Windows UIA initialization failed: {e}")
-            self.enabled = False
-    
+    """The same announcements, for code that holds a helper object. Every one goes
+    through _raise_uia_notification; nothing here prints or beeps instead."""
+
     def announce(self, message):
         """
         Announce a message to screen readers.

@@ -19,8 +19,7 @@ struct WorldCupBracketView: View {
     @ObservedObject var viewModel: WorldCupViewModel
     let sport: Sport
 
-    @State private var viewMode: ViewMode = .quickList
-    @State private var viewModeInitialized = false
+    @State private var viewMode: ViewMode = .savedDefault()
     @EnvironmentObject private var appSettings: AppSettings
 
     var body: some View {
@@ -55,11 +54,6 @@ struct WorldCupBracketView: View {
             // Load the full knockout bracket so placeholders ("Round of 32 N
             // Winner") can be resolved to real teams and Path to the Cup is ready.
             await viewModel.loadFullBracket()
-        }
-        .onAppear {
-            guard !viewModeInitialized else { return }
-            viewMode = appSettings.defaultTableViewMode
-            viewModeInitialized = true
         }
     }
 
