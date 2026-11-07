@@ -58,6 +58,14 @@ def run_checks():
     results["a plain menu opens with nothing selected"] = (
         _selected_on_open(menu, lambda m, p: m.exec(p)) == [None])
 
+    # A submenu first is selected, not opened.
+    menu = QMenu()
+    submenu = menu.addMenu("More")
+    submenu.addAction("Inside")
+    seen = _selected_on_open(menu, exec_menu)
+    results["a submenu first is selected, not opened"] = (
+        seen == [submenu.menuAction()] and not submenu.isVisible())
+
     # The first item is already selected, so one Down reaches the second.
     menu = QMenu()
     menu.addAction("Game Details")
@@ -77,7 +85,7 @@ def test_menus_open_on_their_first_item():
     run = subprocess.run([sys.executable, os.path.abspath(__file__)], cwd=ROOT, env=env,
                          capture_output=True, text=True, timeout=60)
     lines = [line for line in run.stdout.splitlines() if line.startswith(("PASS ", "FAIL "))]
-    assert run.returncode == 0 and len(lines) == 4, run.stdout + run.stderr
+    assert run.returncode == 0 and len(lines) == 5, run.stdout + run.stderr
     assert all(line.startswith("PASS ") for line in lines), "\n".join(lines)
 
 
