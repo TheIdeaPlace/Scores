@@ -30,7 +30,7 @@ on:
   workflow_dispatch:
     inputs:
       build_number:
-        description: "Build number override. Leave blank to use the commit count, which only ever grows. Set it to re-upload a commit that already has a build."
+        description: "Build number override. Leave blank for one more than the highest build App Store Connect has, or the commit count if that is higher. A value here always wins."
         required: false
         type: string
       marketing_version:
@@ -73,6 +73,11 @@ jobs:
       (inputs.existing_build == '' || inputs.existing_build == null)
     runs-on: macos-latest
     timeout-minutes: 45
+    # One upload at a time, so a second run's build number lookup comes after
+    # the first upload rather than racing it.
+    concurrency:
+      group: ios-build-upload
+      cancel-in-progress: false
     outputs:
       marketing_version: ${{ steps.version.outputs.marketing_version }}
       build_number: ${{ steps.version.outputs.build_number }}
@@ -81,7 +86,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v7
         with:
-          fetch-depth: 0  # full history: the build number is the commit count
+          fetch-depth: 0  # full history: the commit count is the build number's floor
 
       - name: Select latest stable Xcode
         uses: maxim-lobanov/setup-xcode@v1
@@ -110,11 +115,23 @@ jobs:
           fi
           echo "Build machine is on released macOS. Proceeding."
 
+      # The App Store Connect API client, used here for the build number and
+      # later for the provisioning profile.
+      - name: Install App Store Connect API client
+        run: |
+          set -euo pipefail
+          python3 -m venv "$RUNNER_TEMP/asc"
+          "$RUNNER_TEMP/asc/bin/pip" install --quiet "pyjwt[crypto]" requests
+
       - name: Set version and build number
         id: version
         env:
           INPUT_BUILD_NUMBER: ${{ inputs.build_number }}
           INPUT_MARKETING_VERSION: ${{ inputs.marketing_version }}
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+          ASC_KEY_P8_BASE64: ${{ secrets.ASC_KEY_P8_BASE64 }}
+          BUNDLE_ID: com.sportsscores.app
         run: |
           set -euo pipefail
           APP_VERSION="$(tr -d '[:space:]' < VERSION)"
@@ -127,9 +144,30 @@ jobs:
           # App Store marketing versions have at most three parts; a four-part
           # VERSION (a Windows-only patch) leaves iOS on its first three.
           MARKETING_VERSION="${INPUT_MARKETING_VERSION:-$(echo "$APP_VERSION" | cut -d. -f1-3)}"
-          # The commit count only grows, so each release commit gets a new,
-          # higher build number with nothing to remember or bump by hand.
-          BUILD_NUMBER="${INPUT_BUILD_NUMBER:-$(git rev-list --count HEAD)}"
+          # Build number: the override if one was given, otherwise
+          # max(highest build App Store Connect already has + 1, commit count).
+          # The commit count alone repeats after a squash merge (issue #112).
+          # If App Store Connect can't be asked, the script warns and falls
+          # back to the commit count rather than failing the run.
+          COMMIT_COUNT="$(git rev-list --count HEAD)"
+          INPUT_BUILD_NUMBER="$(printf '%s' "$INPUT_BUILD_NUMBER" | tr -d '[:space:]')"
+          if [ -n "$INPUT_BUILD_NUMBER" ]; then
+            BUILD_NUMBER="$INPUT_BUILD_NUMBER"
+            echo "Build number override: $BUILD_NUMBER"
+          else
+            ASC_KEY_P8="$(echo "$ASC_KEY_P8_BASE64" | base64 --decode || true)"
+            export ASC_KEY_P8
+            BUILD_NUMBER="$("$RUNNER_TEMP/asc/bin/python" \
+              iOS/SportsScoresApp/scripts/next_build_number.py "$COMMIT_COUNT" || true)"
+            if ! [[ "$BUILD_NUMBER" =~ ^[0-9]+$ ]]; then
+              echo "::warning::The build number lookup failed; using the commit count, $COMMIT_COUNT."
+              BUILD_NUMBER="$COMMIT_COUNT"
+            fi
+          fi
+          if ! [[ "$BUILD_NUMBER" =~ ^[0-9]+(\.[0-9]+)*$ ]]; then
+            echo "::error::Build number '$BUILD_NUMBER' is not a valid build number."
+            exit 1
+          fi
           echo "Marketing version $MARKETING_VERSION, build $BUILD_NUMBER"
           echo "marketing_version=$MARKETING_VERSION" >> "$GITHUB_OUTPUT"
           echo "build_number=$BUILD_NUMBER" >> "$GITHUB_OUTPUT"
@@ -184,8 +222,6 @@ jobs:
           BUNDLE_ID: com.sportsscores.app
         run: |
           set -euo pipefail
-          python3 -m venv "$RUNNER_TEMP/asc"
-          "$RUNNER_TEMP/asc/bin/pip" install --quiet "pyjwt[crypto]" requests
           CERT_SERIAL="$(security find-certificate -c "Apple Distribution" -p "$KEYCHAIN" \
             | openssl x509 -noout -serial | cut -d= -f2)"
           export CERT_SERIAL

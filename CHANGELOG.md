@@ -27,6 +27,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   game's options, Listen to the Game, play and pitch audio, the Pitch Explorer's) now open on their
   first item. The standard Cut, Copy and Paste menu in a text field is still silent until an arrow key.
 
+### Changed
+- **iPhone builds: the TestFlight build number can't repeat.** It is now one more than the highest build
+  App Store Connect already has, or the commit count if that is higher. The commit count alone could land
+  on a number Apple had already seen after a squash merge, and the upload was rejected (#112).
+
 ### In Progress
 - **Game Wrap Up Feature**: ESPN text processing and game story extraction (under construction)
   - Core infrastructure implemented, text processing being refined
