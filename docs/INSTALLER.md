@@ -142,7 +142,8 @@ main and pull requests are unaffected — they never sign.
 The tag releases both apps. `scores.yml` tests, builds both Windows targets,
 signs, packages the installer, signs it, and publishes the release with both
 assets attached. `ios-release.yml` archives the iOS app at the same version and
-uploads it to TestFlight, with the commit count as its build number (see
+uploads it to TestFlight, with a build number one past the highest Apple
+already has, or the commit count if that is higher (see
 `.github/workflows/README-ios-release.md`). The installer asset must stay
 on every release: the in-app updater looks for a name ending in `Setup.exe`.
 

@@ -111,7 +111,7 @@ Lives entirely in `iOS/SportsScoresApp/` (Xcode project, SwiftUI). Nothing in th
 - `.github/workflows/ios-build-check.yml` — simulator build and tests, runs on `main` for changes under `iOS/**` and `tests/fixtures/**`. No signing, no secrets.
 - `.github/workflows/ios-release.yml` — runs on the same `v*` tags as the Windows release (and by manual dispatch); archives on a macOS runner and uploads to TestFlight. Needs the five App Store Connect secrets listed in `.github/workflows/README-ios-release.md`.
 
-Both apps share one version: `VERSION` drives the Windows build and the iOS marketing version, and one `v*` tag releases both. The iOS build number is the commit count. Keep `MARKETING_VERSION` in `iOS/SportsScoresApp/project.yml` and `project.pbxproj` equal to `VERSION`; `tests/unit/test_version_sync.py` enforces it.
+Both apps share one version: `VERSION` drives the Windows build and the iOS marketing version, and one `v*` tag releases both. The iOS build number is one more than the highest build App Store Connect already has for the app, or the commit count if that is higher (`iOS/SportsScoresApp/scripts/next_build_number.py`; the commit count alone repeats after a squash merge). Keep `MARKETING_VERSION` in `iOS/SportsScoresApp/project.yml` and `project.pbxproj` equal to `VERSION`; `tests/unit/test_version_sync.py` enforces it.
 
 A four-part version (e.g. `0.9.9.1`) is a Windows-only patch release: the iOS project keeps the three-part version it shipped at (App Store marketing versions allow only three parts), and `ios-release.yml` skips the build for that tag. The next release of both apps moves to the next three-part version.
 

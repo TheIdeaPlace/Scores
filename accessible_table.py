@@ -1047,27 +1047,8 @@ class InjuryTable(AccessibleTable):
             f"Injury report table with {injury_count} injuries across {team_count} teams. "
             "Use arrow keys to navigate between cells, Tab to exit table."
         )
-
-    def enhance_cell_accessibility(self, row: int, col: int, value: Any):
-        """Add injury-specific accessibility enhancements"""
-        item = self.table_widget.item(row, col)
-        if not item:
-            return
-
-        # Add contextual descriptions for injury data
-        player_name_item = self.table_widget.item(row, 0)
-        player_name = player_name_item.text() if player_name_item else "Unknown"
-
-        if col == 3:  # Status column
-            item.setAccessibleDescription(f"{player_name} injury status: {value}")
-        elif col == 4:  # Type column
-            item.setAccessibleDescription(f"{player_name} injury type: {value}")
-        elif col == 5:  # Details column
-            item.setAccessibleDescription(f"{player_name} injury details: {value}")
-        elif col == 6:  # Return date column
-            item.setAccessibleDescription(f"{player_name} expected return: {value}")
-        else:
-            item.setAccessibleDescription(f"{value}")
+        # Each cell already says whose row it is ("Player, Status, Out"), through
+        # _update_cell_accessibility, as every table's cells do.
 
 
 class ButtonKeys(QObject):

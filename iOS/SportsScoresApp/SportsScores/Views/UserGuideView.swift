@@ -57,7 +57,7 @@ struct UserGuideView: View {
                     BulletPoint("**Standings** — division or conference table. For MLB, a Divisions / Wild Card control at the top switches to the playoff picture: each league's three division leaders, then the wild card race in MLB's official order, with the teams currently holding a spot marked \"Wild card 1, 2, 3\".")
                     BulletPoint("**News** — recent headlines")
                     BulletPoint("**Stats** — league statistical leaders")
-                    BulletPoint("**Polls** — AP, Coaches and USCHO rankings; college sports only, when available")
+                    BulletPoint("**Polls** — every poll ESPN publishes, in ESPN's order; college sports only, when available. College football has six: the College Football Playoff committee's rankings, AP, AFCA Coaches, FCS Coaches, and AFCA Division II and III, chosen from the **Poll** menu. Basketball has AP and Coaches, and hockey USCHO")
                     BulletPoint("**Venues** — each stadium and arena with its home teams; select one for its details. Not for soccer or CFL")
                     Text("For NFL and NCAA Football, the date bar shows a week number and moves by week.")
 

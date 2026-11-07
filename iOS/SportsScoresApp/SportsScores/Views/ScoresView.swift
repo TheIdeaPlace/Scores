@@ -19,7 +19,7 @@ struct ScoresView: View {
     @State private var selectedTab = ScoresTab.scores
     @State private var showDatePicker = false
     @State private var hasLoadedInitialData = false
-    @State private var viewMode: ViewMode = .quickList
+    @State private var viewMode: ViewMode = .savedDefault()
     @EnvironmentObject private var appSettings: AppSettings
 
     init(sport: Sport, initialDate: Date? = nil) {

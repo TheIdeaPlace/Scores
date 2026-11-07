@@ -336,6 +336,9 @@ class KeyHost(Host):
 
     _handle_plays_audio_key = scores.GameDetailsView._handle_plays_audio_key
     _is_pitch_item = scores.GameDetailsView._is_pitch_item
+    _is_at_bat_item = scores.GameDetailsView._is_at_bat_item
+    _is_mlb_plays = scores.GameDetailsView._is_mlb_plays
+    audio_mapper = None
 
     def __init__(self, league):
         super().__init__(league)
@@ -352,7 +355,7 @@ ALT = Qt.KeyboardModifier.AltModifier
 
 
 class TestKeyRouting:
-    """Alt+P and Alt+S must reach play audio before the word-matching pitch check."""
+    """Alt+P and Alt+S on basketball and hockey reach play audio, never the pitch path."""
 
     @pytest.mark.parametrize("text", ["Jump Ball", "Personal Foul", "Shooting Foul"])
     def test_alt_p_on_a_basketball_play_is_not_a_pitch(self, qapp, text):

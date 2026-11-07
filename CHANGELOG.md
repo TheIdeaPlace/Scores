@@ -19,6 +19,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     Live Scores, a Listen to the Game menu on a game's details, a radio button in Team Hub, and
     **Game Radio** in The Bench.
   - Both apps read the same list, `radio_links.json`, and the nightly data check opens every link in it.
+- **Every college football poll, on both apps.** Polls for NCAAF shows all six that ESPN publishes, in
+  ESPN's order: the College Football Playoff committee's rankings, the AP Poll, the AFCA Coaches Poll, the
+  FCS Coaches Poll, and the AFCA Division II and Division III polls. Both apps already passed on whatever
+  ESPN sent; they are now tested against all six, and the user guides name them. The committee doesn't
+  vote, so its rankings have no points.
+  - Windows: a tab for each poll, as before.
+  - iPhone: with this many polls, a **Poll** menu chooses one, since six segments would cut their names
+    short. Basketball's two polls and hockey's one keep the segmented control.
 
 ### Changed
 - **Windows: monitoring is a section at the top of Live Scores.** Alt+M on a game adds it to Monitoring,
@@ -26,16 +34,40 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   Alt+M also works on today's games on a sport's page. Alt+M on a Monitoring row takes it off and moves you
   to the next one. Monitoring lasts until you quit. Scores no longer reads out score changes on its own.
   The iPhone is to follow (#185).
+- **iPhone builds: the TestFlight build number can't repeat.** It is now one more than the highest build
+  App Store Connect already has, or the commit count if that is higher. The commit count alone could land
+  on a number Apple had already seen after a squash merge, and the upload was rejected (#112).
 
 ### Fixed
 - **Windows: Live Scores no longer reads the row you're on again when other games come and go.** Each
   time a game kicked off or finished, the list was rebuilt and the row you were on read out, so on a busy
   day a finished game you were resting on was read once a minute.
+- **Windows: a poll's cells say which team they're for.** Moving across or down a Polls table read the
+  rank as the row's context, "2, Previous, NR"; it now reads the team, "Georgia Bulldogs, Previous, NR".
+  A poll with no votes, the playoff committee's or college hockey's, has no Points column any more, so
+  the Quick List no longer reads blanks such as "3, Utah Utes, 8-0, , NR". From the NVDA college
+  football bug bash.
+- **iPhone: a golf tournament in progress stays on Live Scores when a refresh fails.** It used to vanish
+  with nothing said. Now, as on Windows, the tournament last shown stays and the note under the list
+  names the tour ESPN didn't answer for. A tournament in progress also no longer hides behind "No games
+  scheduled today" when there are no team games, and pulling to refresh announces a golf failure too.
 - **Windows: Enter on an upcoming or finished game in Live Scores opens it.** It did nothing before.
 - **Windows: a context menu is announced as soon as it opens.** Shift+F10, the Applications key and
   Alt+L used to open a menu that JAWS and NVDA said nothing about until an arrow key was pressed. The app's own menus (a
   game's options, Listen to the Game, play and pitch audio, the Pitch Explorer's) now open on their
   first item. The standard Cut, Copy and Paste menu in a text field is still silent until an arrow key.
+- **Windows: MLB pitch audio on an at-bat.** Alt+S on an at-bat plays that at-bat's pitches; it used to
+  walk the half-inning and play nothing. A new Alt+S replaces a sequence still playing, and closing
+  the plays stops it. Alt+P on an at-bat or an inning, and Alt+S on an inning, say what to select; a
+  pitch with no location says so instead of staying silent. Which rows count as pitches is now
+  decided when the tree is built, not guessed from words like "ball" and "foul" in the row's text.
+- **iPhone: every table opens in your Default view.** The setting in Settings used to reach only a few
+  screens; scores, Live Scores, standings, box scores, statistics, polls, schedules, Team Hub's stats,
+  golf, racing and the fantasy cheatsheet all opened in Quick List whatever it said. Each screen now
+  starts in the chosen view, and the view menu still changes it for that screen.
+- **iPhone: VoiceOver reads a standings row's Full List in full.** A wild card row's Record and an NHL
+  row's Last 10 were shown but not spoken. Each Full List row is now spoken as it reads. An NHL row
+  also reads "Overtime losses" rather than "OT Losses", and starts with the team's rank when ESPN sends one.
 
 ### In Progress
 - **Game Wrap Up Feature**: ESPN text processing and game story extraction (under construction)

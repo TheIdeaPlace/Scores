@@ -15,7 +15,7 @@ import SwiftUI
 
 struct FantasyCheatsheetView: View {
     @StateObject private var viewModel = FantasyCheatsheetViewModel()
-    @State private var viewMode: ViewMode = .quickList
+    @State private var viewMode: ViewMode = .savedDefault()
     @State private var showingSettings = false
     @State private var selectedPlayer: CheatsheetPlayer?
 
