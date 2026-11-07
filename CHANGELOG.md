@@ -53,9 +53,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   playoffs. Windows now reads those names from the same place as the iPhone, ESPN's Core API: Hall of
   Fame Weekend and Preseason Week 1, then Wild Card, Divisional Round, Conference Championship and Super
   Bowl, or Bowls for college. The week arrows go from preseason to the regular season to the postseason
-  in those seasons too. This also covers the current season when its calendar can't be loaded. The
-  name is fetched with the games, never while you wait on a key press; if it can't be had, the week is
-  "Week N", as on the iPhone, and the games still say if they failed (#192).
+  in those seasons too. The name is fetched with the games, never while you wait on a key press; if it
+  can't be had, the week is "Week N", as on the iPhone, and the games still say if they failed (#192).
 
 ### Changed
 - **iPhone builds: the TestFlight build number can't repeat.** It is now one more than the highest build

@@ -357,12 +357,23 @@ class TestPastSeasonWeekNames:
         # The scoreboard was asked once, and then known not to describe 2024.
         assert len([u for u in espn.urls if "/scoreboard" in u]) == 1
 
-    def test_without_the_calendar_the_core_api_still_names_the_week(self):
-        """If the scoreboard fails, the week shown is named from the Core API
-        rather than left as a number."""
+    def test_without_the_calendar_nothing_more_is_asked(self):
+        """A failed calendar is the current season with the network down, not a
+        past season: piling Core API requests on top would only keep the games
+        waiting, each up to its timeout."""
         fake = FakeEspn(calendar=False)
         with patch.object(fc.requests, "get", fake.get):
-            assert visit("NFL", 2024, 3, 5) == "Super Bowl"
+            assert visit("NFL", 2024, 3, 5) == "Week 5"
+        assert fake.core_urls() == []
+
+    def test_a_later_season_than_the_one_served_asks_the_scoreboard_again(self, espn):
+        """ESPN moves its calendar to the new season in late July; a view opened
+        after that must find it, not keep the season it learned earlier."""
+        fc._SERVED_SEASON["NFL"] = 2025
+        assert visit("NFL", 2026, 3, 1) == "Wild Card"
+        assert len([u for u in espn.urls if "/scoreboard" in u]) == 1
+        assert espn.core_urls() == []
+        assert fc._SERVED_SEASON["NFL"] == 2026
 
     def test_the_dates_come_with_the_name(self, espn):
         visit("NFL", 2024, 3, 5)
@@ -386,9 +397,20 @@ class TestPastSeasonWeekNameFailures:
         del espn.fail["/types/3/weeks/1"]
         assert visit("NFL", 2024, 3, 1) == "Wild Card"
 
-    def test_a_week_with_no_text_is_week_n(self, espn):
+    def test_a_week_with_no_text_is_week_n_and_not_asked_again(self, espn):
         espn.core["nfl"]["seasons/2024/types/3/weeks/1"] = {"number": 1, "text": "  "}
         assert visit("NFL", 2024, 3, 1) == "Week 1"
+        assert visit("NFL", 2024, 3, 1) == "Week 1"
+        assert len([u for u in espn.core_urls() if u.endswith("/types/3/weeks/1")]) == 1
+
+    def test_a_season_type_list_that_404s_is_asked_again(self, espn):
+        espn.fail["/types/1/weeks?limit=100"] = 404
+        fc.prepare_week("NFL", 2024, 2, 1)
+        assert ("NFL", 2024) not in fc._CORE_SEASON_CACHE
+        assert fc.step_week("NFL", 2024, 2, 1, -1) == (2, 1)   # the preseason isn't known yet
+        del espn.fail["/types/1/weeks?limit=100"]
+        fc.prepare_week("NFL", 2024, 2, 1)
+        assert fc.step_week("NFL", 2024, 2, 1, -1) == (1, 4)
 
     def test_an_answer_that_is_not_an_object_is_week_n(self, espn):
         espn.core["nfl"]["seasons/2024/types/3/weeks/1"] = ["not", "a", "week"]

@@ -124,11 +124,11 @@ def get_season_weeks(league_key, season=None):
     cache_key = (league_key, season)
     if cache_key in _SEASON_WEEKS_CACHE:
         return _SEASON_WEEKS_CACHE[cache_key]
-    if season is not None and _SERVED_SEASON.get(league_key, season) != season:
-        # ESPN has already said which season its calendar is for, and it isn't this
-        # one. Asking again would only fetch the same calendar to learn that twice.
-        # Opening a league view asks afresh (get_current_season_week_and_type), so
-        # ESPN moving on to a new season in late July is still noticed.
+    if season is not None and season < _SERVED_SEASON.get(league_key, season):
+        # ESPN has already said its calendar is for a later season than this one,
+        # and it never goes back. Asking again would only fetch the same calendar
+        # to learn that twice. A season *after* the served one is still asked
+        # about, so ESPN moving on to a new season in late July is noticed.
         return []
 
     try:
@@ -251,8 +251,9 @@ def _fetch_core_week(league_key, season, season_type, week):
         return None
     key = (league_key, season, season_type, week)
     text = data.get("text")
-    if isinstance(text, str) and text.strip():
-        _CORE_WEEK_TEXT_CACHE[key] = text.strip()
+    # An answer with no name is still an answer: cached as "", which reads as
+    # "Week N", so a refresh doesn't ask again.
+    _CORE_WEEK_TEXT_CACHE[key] = text.strip() if isinstance(text, str) else ""
     try:
         start, end = _bound_dates(data.get("startDate") or "", data.get("endDate") or "")
         _WEEK_DATE_CACHE[key] = (start.strftime("%Y%m%d"), end.strftime("%Y%m%d"))
@@ -264,13 +265,11 @@ def _fetch_core_week(league_key, season, season_type, week):
 def _core_type_weeks(league_key, season, season_type):
     """The week numbers of one season type from the Core API's `weeks` list.
 
-    Returns a list, [] when ESPN says the type has no weeks (a 404, or an empty
-    list), or None when the request failed, so the caller knows not to cache.
+    Returns a list, [] when ESPN answers that the type has no weeks, or None when
+    the request failed (a 404 included), so the caller knows not to cache.
     """
     try:
         resp = requests.get(f"{_core_week_url(league_key, season, season_type)}?limit=100", timeout=20)
-        if resp.status_code == 404:
-            return []
         if resp.status_code != 200:
             return None
         data = resp.json()
@@ -323,16 +322,21 @@ def prepare_week(league_key, season, season_type, week):
     off the UI thread (LeagueScoresLoader does), then `get_week_label` and
     `step_week` answer from the caches.
 
-    The season the scoreboard calendar describes needs nothing more. Any other
-    season, a past one, is read from the Core API as the iPhone reads it: the
-    season's weeks once, and this week's name. Nothing here raises: a week whose
-    name can't be had is called "Week N", as on the iPhone, and the games, which
-    come from their own request, still say if they fail.
+    The season the scoreboard calendar describes needs nothing more. A season
+    ESPN has said its calendar isn't for, a past one, is read from the Core API
+    as the iPhone reads it: the season's weeks once, and this week's name. When
+    the calendar couldn't be had at all, nothing more is asked: that is the
+    current season with the network down, not a past one. Nothing here raises: a
+    week whose name can't be had is called "Week N", as on the iPhone, and the
+    games, which come from their own request, say if they fail.
     """
     if league_key not in _LEAGUE_PATHS or season is None or week is None:
         return
     try:
         if get_season_weeks(league_key, season):
+            return
+        served = _SERVED_SEASON.get(league_key)
+        if served is None or served == season:
             return
         _fetch_core_season(league_key, season)
         if (league_key, season, season_type, week) not in _CORE_WEEK_TEXT_CACHE:
