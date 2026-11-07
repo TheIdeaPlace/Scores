@@ -33,7 +33,7 @@ struct TeamHubDetailView: View {
 
     @StateObject private var viewModel: TeamHubViewModel
     @State private var selectedTab: TeamHubTab
-    @State private var teamStatsViewMode: ViewMode = .quickList
+    @State private var teamStatsViewMode: ViewMode = .savedDefault()
     @EnvironmentObject private var appSettings: AppSettings
 
     init(team: TransactionTeam, sport: Sport, initialTab: TeamHubTab = .info) {

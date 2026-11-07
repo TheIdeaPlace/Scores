@@ -1,11 +1,69 @@
 {
  "rankings": [
   {
+   "id": "21",
+   "name": "Playoff Committee Rankings",
+   "shortName": "CFP Rankings",
+   "type": "cfp",
+   "headline": "2026 NCAA Football Rankings - CFP Rankings Week 10",
+   "shortHeadline": "2026 CFP Rankings: Week 10",
+   "lastUpdated": "2026-11-04T03:21Z",
+   "ranks": [
+    {
+     "current": 1,
+     "previous": 0,
+     "points": 0.0,
+     "firstPlaceVotes": 0,
+     "trend": "+25",
+     "recordSummary": "8-0",
+     "team": {
+      "id": "2390",
+      "location": "Miami",
+      "name": "Hurricanes",
+      "nickname": "Miami",
+      "abbreviation": "MIA"
+     }
+    },
+    {
+     "current": 2,
+     "previous": 0,
+     "points": 0.0,
+     "firstPlaceVotes": 0,
+     "trend": "+24",
+     "recordSummary": "7-1",
+     "team": {
+      "id": "61",
+      "location": "Georgia",
+      "name": "Bulldogs",
+      "nickname": "Georgia",
+      "abbreviation": "UGA"
+     }
+    },
+    {
+     "current": 3,
+     "previous": 0,
+     "points": 0.0,
+     "firstPlaceVotes": 0,
+     "trend": "+23",
+     "recordSummary": "8-0",
+     "team": {
+      "id": "254",
+      "location": "Utah",
+      "name": "Utes",
+      "nickname": "Utah",
+      "abbreviation": "UTAH"
+     }
+    }
+   ]
+  },
+  {
+   "id": "1",
    "name": "AP Top 25",
    "shortName": "AP Poll",
    "type": "ap",
    "headline": "2026 NCAA Football Rankings - AP Poll Week 10",
    "shortHeadline": "2026 AP Poll: Week 10",
+   "lastUpdated": "2026-11-01T22:08Z",
    "ranks": [
     {
      "current": 1,
@@ -55,11 +113,13 @@
    ]
   },
   {
+   "id": "2",
    "name": "AFCA Coaches Poll",
    "shortName": "AFCA Coaches Poll",
    "type": "usa",
    "headline": "2026 NCAA Football Rankings - AFCA Coaches Poll Week 10",
    "shortHeadline": "2026 AFCA Coaches Poll: Week 10",
+   "lastUpdated": "2026-11-01T20:56Z",
    "ranks": [
     {
      "current": 1,
@@ -104,6 +164,174 @@
       "name": "Hoosiers",
       "nickname": "Indiana",
       "abbreviation": "IU"
+     }
+    }
+   ]
+  },
+  {
+   "id": "20",
+   "name": "FCS Coaches Poll",
+   "shortName": "FCS Coaches Poll",
+   "type": "fcs",
+   "headline": "2026 NCAA Football Rankings - FCS Coaches Poll Week 10",
+   "shortHeadline": "2026 FCS Coaches Poll: Week 10",
+   "lastUpdated": "2026-11-02T19:47Z",
+   "ranks": [
+    {
+     "current": 1,
+     "previous": 1,
+     "points": 645.0,
+     "firstPlaceVotes": 23,
+     "trend": "-",
+     "recordSummary": "9-0",
+     "team": {
+      "id": "2627",
+      "location": "Tarleton State",
+      "name": "Texans",
+      "nickname": "Tarleton St",
+      "abbreviation": "TAR"
+     }
+    },
+    {
+     "current": 2,
+     "previous": 2,
+     "points": 623.0,
+     "firstPlaceVotes": 3,
+     "trend": "-",
+     "recordSummary": "9-0",
+     "team": {
+      "id": "2617",
+      "location": "Stephen F. Austin",
+      "name": "Lumberjacks",
+      "nickname": "SF Austin",
+      "abbreviation": "SFA"
+     }
+    },
+    {
+     "current": 3,
+     "previous": 3,
+     "points": 593.0,
+     "firstPlaceVotes": 0,
+     "trend": "-",
+     "recordSummary": "8-1",
+     "team": {
+      "id": "147",
+      "location": "Montana State",
+      "name": "Bobcats",
+      "nickname": "Montana St",
+      "abbreviation": "MTST"
+     }
+    }
+   ]
+  },
+  {
+   "id": "11",
+   "name": "AFCA Division II Coaches Poll",
+   "shortName": "AFCA Div II",
+   "type": "afca",
+   "headline": "2026 NCAA Football Rankings - AFCA Div II Week 10",
+   "shortHeadline": "2026 AFCA Div II: Week 10",
+   "lastUpdated": "2026-11-02T21:09Z",
+   "ranks": [
+    {
+     "current": 1,
+     "previous": 1,
+     "points": 749.0,
+     "firstPlaceVotes": 29,
+     "trend": "-",
+     "recordSummary": "9-0",
+     "team": {
+      "id": "2222",
+      "location": "Ferris State",
+      "name": "Bulldogs",
+      "nickname": "Ferris St",
+      "abbreviation": "FRST"
+     }
+    },
+    {
+     "current": 2,
+     "previous": 2,
+     "points": 719.0,
+     "firstPlaceVotes": 0,
+     "trend": "-",
+     "recordSummary": "9-0",
+     "team": {
+      "id": "2264",
+      "location": "Harding",
+      "name": "Bisons",
+      "nickname": "Harding",
+      "abbreviation": "HARD"
+     }
+    },
+    {
+     "current": 3,
+     "previous": 4,
+     "points": 676.0,
+     "firstPlaceVotes": 0,
+     "trend": "+1",
+     "recordSummary": "9-0",
+     "team": {
+      "id": "2570",
+      "location": "CSU Pueblo",
+      "name": "ThunderWolves",
+      "nickname": "CSU Pueblo",
+      "abbreviation": "CSUP"
+     }
+    }
+   ]
+  },
+  {
+   "id": "12",
+   "name": "AFCA Division III Coaches Poll",
+   "shortName": "AFCA Div III",
+   "type": "afca",
+   "headline": "2026 NCAA Football Rankings - AFCA Div III Week 10",
+   "shortHeadline": "2026 AFCA Div III: Week 10",
+   "lastUpdated": "2026-11-02T23:39Z",
+   "ranks": [
+    {
+     "current": 1,
+     "previous": 1,
+     "points": 1300.0,
+     "firstPlaceVotes": 36,
+     "trend": "-",
+     "recordSummary": "8-0",
+     "team": {
+      "id": "396",
+      "location": "Wheaton (IL)",
+      "name": "Thunder",
+      "nickname": "Wheaton (IL)",
+      "abbreviation": "WCIL"
+     }
+    },
+    {
+     "current": 2,
+     "previous": 2,
+     "points": 1281.0,
+     "firstPlaceVotes": 16,
+     "trend": "-",
+     "recordSummary": "8-0",
+     "team": {
+      "id": "272",
+      "location": "Wisconsin Platteville",
+      "name": "Pioneers",
+      "nickname": "UW-Platteville",
+      "abbreviation": "UWP"
+     }
+    },
+    {
+     "current": 3,
+     "previous": 3,
+     "points": 1196.0,
+     "firstPlaceVotes": 0,
+     "trend": "-",
+     "recordSummary": "8-0",
+     "team": {
+      "id": "2600",
+      "location": "Saint John's (MN)",
+      "name": "Johnnies",
+      "nickname": "St Johns (MN)",
+      "abbreviation": "STJM"
      }
     }
    ]

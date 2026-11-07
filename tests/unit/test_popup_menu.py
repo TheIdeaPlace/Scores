@@ -16,17 +16,27 @@ pytest.importorskip("PyQt6")
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 
-def _selected_on_open(menu, exec_):
-    """The menu's selected item a moment after it opens, before any key is pressed."""
-    from PyQt6.QtCore import QPoint, QTimer
+def _selected_on_open(menu, exec_, wait_ms=2000):
+    """The item selected after the menu opens, with no key pressed: the first one that
+    turns up within `wait_ms`, or None if nothing is selected by then.
+
+    Watched rather than read once at a fixed moment: the first menu in a fresh process can
+    take a while to show on a cold CI runner, and a single early look then sees nothing."""
+    from PyQt6.QtCore import QElapsedTimer, QPoint, QTimer
 
     seen = []
+    clock = QElapsedTimer()
+    clock.start()
+    poll = QTimer(menu)
 
     def look():
-        seen.append(menu.activeAction())
-        menu.close()
+        if menu.isVisible() and (menu.activeAction() is not None or clock.elapsed() >= wait_ms):
+            poll.stop()
+            seen.append(menu.activeAction())
+            menu.close()
 
-    QTimer.singleShot(150, look)
+    poll.timeout.connect(look)
+    poll.start(20)
     exec_(menu, QPoint(20, 20))
     return seen
 
@@ -56,7 +66,7 @@ def run_checks():
     menu = QMenu()
     menu.addAction("Game Details")
     results["a plain menu opens with nothing selected"] = (
-        _selected_on_open(menu, lambda m, p: m.exec(p)) == [None])
+        _selected_on_open(menu, lambda m, p: m.exec(p), wait_ms=500) == [None])
 
     # A submenu first is selected, not opened.
     menu = QMenu()
@@ -68,14 +78,20 @@ def run_checks():
 
     # The first item is already selected, so one Down reaches the second.
     menu = QMenu()
-    menu.addAction("Game Details")
+    first = menu.addAction("Game Details")
     second = menu.addAction("Listen to the Game")
+    poll = QTimer(menu)
 
     def choose():
-        QTest.keyClick(menu, Qt.Key.Key_Down)
-        QTest.keyClick(menu, Qt.Key.Key_Return)
+        # Once the helper has selected the first item, as someone would hear it.
+        if menu.activeAction() is first:
+            poll.stop()
+            QTest.keyClick(menu, Qt.Key.Key_Down)
+            QTest.keyClick(menu, Qt.Key.Key_Return)
 
-    QTimer.singleShot(150, choose)
+    poll.timeout.connect(choose)
+    poll.start(20)
+    QTimer.singleShot(3000, menu.close)  # never hang the run if nothing gets selected
     results["Down then Enter chooses the second item"] = exec_menu(menu, QPoint(20, 20)) is second
     return results
 

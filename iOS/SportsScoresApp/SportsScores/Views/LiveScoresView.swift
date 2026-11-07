@@ -56,7 +56,7 @@ struct LiveFailureView: View {
 
 struct LiveScoresView: View {
     @StateObject private var viewModel = LiveScoresViewModel()
-    @State private var viewMode: ViewMode = .quickList
+    @State private var viewMode: ViewMode = .savedDefault()
     @EnvironmentObject private var appSettings: AppSettings
 
     var body: some View {

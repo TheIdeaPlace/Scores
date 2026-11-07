@@ -24,7 +24,7 @@ private enum StorageKeys {
     static let racingHubEnabled = "racingHubEnabled"
     static let worldCupHubEnabled = "worldCupHubEnabled"
     static let worldCupWomensHubEnabled = "worldCupWomensHubEnabled"
-    static let defaultTableViewMode = "defaultTableViewMode"
+    static let defaultTableViewMode = ViewMode.defaultsKey
     static let favoriteTeams = "favoriteTeams"
     static let ncaafCoverage = "ncaafCoverage"
 }
@@ -197,8 +197,7 @@ final class AppSettings: ObservableObject {
         let raw = UserDefaults.standard.string(forKey: StorageKeys.teamNamePreference) ?? ""
         teamNamePreference = TeamNamePreference(rawValue: raw) ?? .full
 
-        let rawViewMode = UserDefaults.standard.string(forKey: StorageKeys.defaultTableViewMode) ?? ""
-        defaultTableViewMode = ViewMode(rawValue: rawViewMode) ?? .quickList
+        defaultTableViewMode = ViewMode.savedDefault()
 
         let rawCoverage = UserDefaults.standard.string(forKey: StorageKeys.ncaafCoverage) ?? ""
         ncaafCoverage = NCAAFCoverage(rawValue: rawCoverage) ?? .allDivisionI

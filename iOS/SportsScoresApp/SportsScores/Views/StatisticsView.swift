@@ -17,7 +17,7 @@ private enum StatsTab: String, CaseIterable {
 struct StatisticsView: View {
     let sport: Sport
     @StateObject private var viewModel = StatisticsViewModel()
-    @State private var viewMode: ViewMode = .quickList
+    @State private var viewMode: ViewMode = .savedDefault()
     @State private var statsTab: StatsTab = .players
 
     var body: some View {

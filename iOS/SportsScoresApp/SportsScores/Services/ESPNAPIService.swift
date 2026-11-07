@@ -164,6 +164,50 @@ class ESPNAPIService {
         return try apiResponse.events.map { try Game(from: $0, seasonType: seasonType) }
     }
 
+    // MARK: - Postseason (Bowls & Playoffs)
+
+    /// The URL for every game of the current postseason: the request the Windows app's
+    /// Bowls & Playoffs makes, `seasontype=3` with the coverage `groups=` and `limit=`.
+    func postseasonURLString(for sport: Sport, ncaafCoverage: NCAAFCoverage? = nil) -> String {
+        let params = ["seasontype=3"] + collegeScoreboardParams(for: sport, coverage: ncaafCoverage)
+        return "\(baseURL)/\(sport.apiPath)/scoreboard?" + params.joined(separator: "&")
+    }
+
+    /// Every bowl and playoff game in one list, with each game's name and round.
+    ///
+    /// `seasontype=3&groups=90` is always empty (see `ncaafFBSRetry`), so with All Division I
+    /// coverage the FBS request that follows is the one that brings the games. Unlike
+    /// `ncaafFBSRetry`, a failure of that second request throws: it's the real answer here,
+    /// and a failure mustn't read as no bowl games.
+    func fetchPostseasonGames(for sport: Sport,
+                              ncaafCoverage: NCAAFCoverage? = nil) async throws -> [PostseasonGame] {
+        let urlString = postseasonURLString(for: sport, ncaafCoverage: ncaafCoverage)
+        var response = try await postseasonScoreboard(urlString)
+        if response.events.isEmpty, sport == .ncaaf,
+           (ncaafCoverage ?? NCAAFCoverage.stored) != .fbs {
+            let fbs = urlString.replacingOccurrences(
+                of: "groups=\(NCAAFCoverage.allDivisionI.espnGroupsID)",
+                with: "groups=\(NCAAFCoverage.fbs.espnGroupsID)")
+            response = try await postseasonScoreboard(fbs)
+        }
+        return try PostseasonList.games(from: response)
+    }
+
+    /// One postseason scoreboard. A 400 or 404 is ESPN saying it has nothing, as in
+    /// `fetchGames`; anything else that isn't a 200 throws.
+    private func postseasonScoreboard(_ urlString: String) async throws -> ScoreboardResponse {
+        guard let url = URL(string: urlString) else { throw APIError.invalidURL }
+        let (data, response) = try await session.data(from: url)
+        guard let http = response as? HTTPURLResponse else { throw APIError.invalidResponse }
+        if http.statusCode == 400 || http.statusCode == 404 {
+            return ScoreboardResponse(events: [], week: nil, season: nil, leagues: nil)
+        }
+        guard http.statusCode == 200 else { throw APIError.unexpectedStatus(http.statusCode) }
+        let decoder = JSONDecoder()
+        decoder.dateDecodingStrategy = .iso8601
+        return try decoder.decode(ScoreboardResponse.self, from: data)
+    }
+
     // MARK: - Fetch Football Games (week-based navigation)
 
     struct FootballScoreboardResult {

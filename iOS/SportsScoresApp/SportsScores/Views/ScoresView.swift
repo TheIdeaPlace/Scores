@@ -19,7 +19,7 @@ struct ScoresView: View {
     @State private var selectedTab = ScoresTab.scores
     @State private var showDatePicker = false
     @State private var hasLoadedInitialData = false
-    @State private var viewMode: ViewMode = .quickList
+    @State private var viewMode: ViewMode = .savedDefault()
     @EnvironmentObject private var appSettings: AppSettings
 
     init(sport: Sport, initialDate: Date? = nil) {
@@ -39,6 +39,20 @@ struct ScoresView: View {
                     .padding(.horizontal)
                     .padding(.top, 8)
                     .padding(.bottom, 6)
+
+                // Every bowl and playoff game in one list, as Windows has it. Here rather
+                // than among the tabs below, which have no room for a seventh, and above the
+                // games so it's there whatever the week and view mode.
+                if sport == .ncaaf {
+                    NavigationLink(destination: BowlsView(sport: sport)) {
+                        Label("Bowls & Playoffs", systemImage: "trophy")
+                            .font(.subheadline)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                    }
+                    .accessibilityHint("Every bowl and playoff game in one list")
+                    .padding(.horizontal)
+                    .padding(.bottom, 6)
+                }
             }
 
             // ── Content ───────────────────────────────────────────────────
