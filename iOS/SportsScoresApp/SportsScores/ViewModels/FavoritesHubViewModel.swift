@@ -45,7 +45,7 @@ final class FavoritesHubViewModel: ObservableObject {
             scheduleMap[fav.id] = sched
             // If a game is currently in progress, fetch its summary so we have live scores.
             // The schedule endpoint returns nil scores for live games.
-            if let liveGame = sched.first(where: { $0.isInProgress }),
+            if let liveGame = FavoriteCardGames(schedule: sched, now: Date()).live,
                let details = try? await apiService.fetchGameDetails(for: liveGame.id, sport: fav.sport) {
                 liveDetailsMap[fav.id] = details
             }

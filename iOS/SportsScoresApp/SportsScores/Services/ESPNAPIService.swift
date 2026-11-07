@@ -783,6 +783,8 @@ class ESPNAPIService {
         var lists: [[ScheduleGame]] = []
         var failure: Error?
         var anyFailure: Error?
+        /// A failure that isn't ESPN saying it has nothing there: a timeout, a 5xx.
+        var realFailure: Error?
         await withTaskGroup(of: (Int, Result<[ScheduleGame], Error>).self) { group in
             for seasonType in TeamScheduleQueries.seasonTypes {
                 group.addTask { [self] in
@@ -801,6 +803,7 @@ class ESPNAPIService {
                     lists.append(games)
                 case .failure(let error):
                     anyFailure = anyFailure ?? error
+                    if !error.isNothingThere { realFailure = realFailure ?? error }
                     let mayLeaveOut = seasonType != 2 && error.isNothingThere
                     if !mayLeaveOut && failure == nil { failure = error }
                 }
@@ -808,6 +811,9 @@ class ESPNAPIService {
         }
         if lenient {
             if lists.isEmpty, let anyFailure { throw anyFailure }
+            // With no games anywhere, an empty part may only be the failure, and must not
+            // read as a season not yet published. espn_api does the same.
+            if lists.allSatisfy(\.isEmpty), let realFailure { throw realFailure }
         } else if let failure {
             throw failure
         }
@@ -819,11 +825,15 @@ class ESPNAPIService {
     /// throws, because a schedule with its games to come missing would look complete.
     private func fetchSoccerTeamSchedule(teamId: String, sport: Sport, season: Int,
                                          lenient: Bool) async throws -> [ScheduleGame] {
+        var listFailure: Error?
         func games(_ query: String) async throws -> [ScheduleGame] {
             do {
                 let page = try await fetchTeamSchedulePage(teamId: teamId, sport: sport, query: query)
                 return page.events.compactMap { $0.toScheduleGame() }
-            } catch let error where error.isNothingThere || (lenient && !error.isCancellation) {
+            } catch let error where error.isNothingThere {
+                return []
+            } catch let error where lenient && !error.isCancellation {
+                listFailure = listFailure ?? error
                 return []
             }
         }
@@ -848,7 +858,8 @@ class ESPNAPIService {
         if next.fixtures {
             lists.append(try await games(TeamScheduleQueries.soccerFixtures))
         }
-        if let resultsFailure, lists.allSatisfy(\.isEmpty) { throw resultsFailure }
+        // A list failed and none had games: say so rather than read as no season yet.
+        if let failure = resultsFailure ?? listFailure, lists.allSatisfy(\.isEmpty) { throw failure }
         return TeamScheduleQueries.merged(lists)
     }
 

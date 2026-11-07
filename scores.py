@@ -12,7 +12,7 @@ import csv
 import sys
 import webbrowser
 import time
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from functools import partial
 from typing import Dict, List, Any, Optional, Union
 # Add project root to sys.path if running as script
@@ -61,6 +61,7 @@ from services.api_service import ApiService
 from services.venue_service import venue_service, venue_summary
 from models.game import GameData
 from models.news import NewsData
+import favorite_card
 import live_play_format
 import radio_links
 from popup_menu import exec_menu as _exec_menu
@@ -817,7 +818,10 @@ class HomeView(BaseView):
             self.parent_app.update_window_title()
     
     def refresh(self):
-        """Refresh the league list and favorites section."""
+        """Refresh the league list and favorites section. F5 on a favorite's card stays on it,
+        so a card that said ESPN wasn't answering can be tried again where it's read."""
+        on_card = self.favorites_list.hasFocus()
+        card_row = self.favorites_list.currentRow()
         self._rebuild_favorites()
 
         self.league_list.clear()
@@ -840,7 +844,11 @@ class HomeView(BaseView):
 
         self._append_footer_items()
 
-        self.set_focus_and_select_first(self.league_list)
+        if on_card and self.favorites_list.count():
+            self.favorites_list.setCurrentRow(min(max(card_row, 0), self.favorites_list.count() - 1))
+            self.set_focus_with_delay(self.favorites_list)
+        else:
+            self.set_focus_and_select_first(self.league_list)
 
     def _append_footer_items(self):
         """Add the non-league entries that close the home list.
@@ -910,24 +918,19 @@ class HomeView(BaseView):
             item = QListWidgetItem(f"★ {fav['team_name']}  [{fav['league']}]")
             item.setData(Qt.ItemDataRole.UserRole, fav)
             self.favorites_list.addItem(item)
-            loader = FavoriteCardLoader(
-                fav['team_id'], fav['team_name'],
-                fav['league'], fav.get('abbreviation', ''))
+            loader = FavoriteCardLoader(fav['team_id'], fav['league'])
             loader.card_ready.connect(self._on_card_ready)
             self._fav_loaders.append(loader)
             # Rebuilds and leaving Home drop _fav_loaders while cards still load.
             _start_detached_thread(loader)
 
-    def _on_card_ready(self, team_id, league, summary, news_lines):
+    def _on_card_ready(self, team_id, league, card_lines):
         for i in range(self.favorites_list.count()):
             item = self.favorites_list.item(i)
             fav = item.data(Qt.ItemDataRole.UserRole)
             if fav and fav.get('team_id') == team_id and fav.get('league') == league:
                 lines = [f"★ {fav['team_name']}  [{league}]"]
-                if summary:
-                    lines.append(f"  {summary}")
-                for h in news_lines:
-                    lines.append(f"  {h}")
+                lines.extend(f"  {line}" for line in card_lines)
                 item.setText("\n".join(lines))
                 break
 
@@ -8887,63 +8890,46 @@ class TeamScheduleLoader(QThread):
 
 
 class FavoriteCardLoader(QThread):
-    """Fetches today's game, next game, and news for one favorite team."""
-    card_ready = pyqtSignal(str, str, str, list)  # team_id, league, summary, news_headlines
+    """One favorite team's card: the game being played or the last one, the next one, and two
+    headlines. The games come from the team's schedule and, while it plays, that game's
+    /summary, as on the iPhone (favorite_card.py). A request that fails says so on the card."""
+    card_ready = pyqtSignal(str, str, list)  # team_id, league, lines under the team's name
 
-    def __init__(self, team_id: str, team_name: str, league: str, abbreviation: str = ''):
+    def __init__(self, team_id: str, league: str):
         super().__init__()
         self.team_id = team_id
-        self.team_name = team_name
         self.league = league
-        self.abbreviation = abbreviation
+
+    def _game_lines(self):
+        try:
+            games = ApiService.get_favorite_card_schedule(self.league, self.team_id)
+        except Exception as e:
+            return [_said(e)]
+        if not games:
+            return ["No games on the schedule."]
+        picked = favorite_card.pick(games, datetime.now(timezone.utc))
+        lines = []
+        if picked.live:
+            try:
+                summary = ApiService.get_game_details(self.league, picked.live['id'])
+                lines.append(favorite_card.live_line(picked.live, self.team_id, summary))
+            except Exception as e:
+                lines.append(f"{favorite_card.live_line(picked.live, self.team_id)}. {_said(e)}")
+        elif picked.last:
+            lines.append(favorite_card.result_line(picked.last, self.team_id))
+        if picked.next:
+            lines.append(favorite_card.next_line(picked.next, self.team_id))
+        return lines
+
+    def _news_lines(self):
+        try:
+            articles = ApiService.get_team_news(self.league, self.team_id, limit=2)
+        except Exception as e:
+            return [_said(e)]
+        return [a.get('headline', '') for a in articles[:2] if a.get('headline')]
 
     def run(self):
-        import espn_api
-        summary = ''
-        try:
-            today = datetime.now().date()
-            scores = espn_api.get_scores(self.league, today)
-            for game in scores:
-                teams = game.get('teams', [])
-                abbrevs = {t.get('abbreviation', '') for t in teams}
-                names = {t.get('name', '') for t in teams}
-                if (self.abbreviation and self.abbreviation in abbrevs) or self.team_name in names:
-                    status = game.get('status', '')
-                    t0, t1 = (teams + [{}, {}])[:2]
-                    s0, s1 = t0.get('score', ''), t1.get('score', '')
-                    n0, n1 = t0.get('name', ''), t1.get('name', '')
-                    if s0 and s1:
-                        summary = f"{n0} {s0} — {n1} {s1}  ({status})"
-                    else:
-                        summary = f"vs {n1 if n0 == self.team_name else n0}  ({status})"
-                    break
-        except Exception:
-            pass
-
-        if not summary:
-            try:
-                info = espn_api.get_team_info(self.league, self.team_id, home_venue=False)
-                rec = info.get('record_overall', '')
-                opp = info.get('next_game_opponent', '')
-                ha = info.get('next_game_home_away', '')
-                date = info.get('next_game_date', '')
-                parts = []
-                if rec:
-                    parts.append(f"({rec})")
-                if opp and date:
-                    parts.append(f"Next: {ha} {opp} — {date}")
-                summary = '  '.join(parts)
-            except Exception:
-                pass
-
-        news_lines = []
-        try:
-            articles = espn_api.get_team_news(self.league, self.team_id, limit=2)
-            news_lines = [a.get('headline', '') for a in articles[:2] if a.get('headline')]
-        except Exception:
-            pass
-
-        self.card_ready.emit(self.team_id, self.league, summary, news_lines)
+        self.card_ready.emit(self.team_id, self.league, self._game_lines() + self._news_lines())
 
 
 class LeagueTransactionsLoader(QThread):

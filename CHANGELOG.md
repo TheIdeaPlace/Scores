@@ -53,6 +53,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **iPhone builds: the TestFlight build number can't repeat.** It is now one more than the highest build
   App Store Connect already has, or the commit count if that is higher. The commit count alone could land
   on a number Apple had already seen after a squash merge, and the upload was rejected (#112).
+- **Windows: a favorite team's card on Home reads like the iPhone's.** It comes from the team's schedule
+  now, not today's scoreboard, so it shows the last game's result even the morning after, and the next
+  game, for example "Last: W vs LAD 2-1, Doubleheader - Game 2" and "Next: @ VAN, 11/14/26, 11:45 AM".
+  While the team plays, the game's line is live: "Live: Alabama Crimson Tide 10 @ LSU Tigers 12, 2:44 - 3rd
+  Quarter", and in baseball the pitcher, batter, runners, count and outs. A doubleheader no longer shows
+  the wrong game, and a postponed game is never the last or the next. If ESPN doesn't answer, the card
+  says so instead of going quiet. The card no longer shows the team's record. Both apps decide which game
+  is live, last and next by one rule, tested against the same cases (#191).
 
 ### In Progress
 - **Game Wrap Up Feature**: ESPN text processing and game story extraction (under construction)

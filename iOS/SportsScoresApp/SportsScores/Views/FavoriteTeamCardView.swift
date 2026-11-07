@@ -43,22 +43,21 @@ struct FavoriteTeamCardView: View {
 
     // MARK: - Derived game data
 
-    private var liveGame: ScheduleGame? {
-        schedule.first { $0.isInProgress }
+    /// Live, last and next, by the rule Windows shares (FavoriteCardGames).
+    private var cardGames: FavoriteCardGames {
+        FavoriteCardGames(schedule: schedule, now: Date())
     }
 
-    private var lastGame: ScheduleGame? {
-        schedule.filter { $0.isCompleted }.last
-    }
+    private var liveGame: ScheduleGame? { cardGames.live }
 
-    private var nextGame: ScheduleGame? {
-        schedule.nextToPlay(after: Date())
-    }
+    private var lastGame: ScheduleGame? { cardGames.last }
+
+    private var nextGame: ScheduleGame? { cardGames.next }
 
     private func gameLabel(for game: ScheduleGame, prefix: String) -> String {
         let isHome = game.homeTeam.id == favorite.id
-        let opp = isHome ? game.awayTeam : game.homeTeam
-        let loc = isHome || game.isNeutralSite ? "vs" : "@"
+        let opp = FavoriteCardGames.opponent(in: game, forTeamId: favorite.id)
+        let loc = FavoriteCardGames.location(of: game, forTeamId: favorite.id)
         if game.isInProgress {
             // Build a scoreboard-style label: "Away name score @ Home name score, Status detail, Situation"
             // Uses live details from the summary endpoint for accurate scores, status, and
@@ -90,15 +89,10 @@ struct FavoriteTeamCardView: View {
             }
             return "\(prefix): \(loc) \(opp.abbreviation)"
         }
-        let myScore = isHome ? game.homeTeam.score : game.awayTeam.score
-        let oppScore = isHome ? game.awayTeam.score : game.homeTeam.score
-        let gameLabel = game.label.map { ", \($0)" } ?? ""
         if game.isCompleted {
-            let my = myScore ?? 0
-            let op = oppScore ?? 0
-            let result = my > op ? "W" : my < op ? "L" : "T"
-            return "\(prefix): \(result) \(loc) \(opp.abbreviation) \(my)-\(op)\(gameLabel)"
+            return FavoriteCardGames.resultLine(for: game, teamId: favorite.id, prefix: prefix)
         }
+        let gameLabel = game.label.map { ", \($0)" } ?? ""
         return "\(prefix): \(loc) \(opp.abbreviation), \((game.timeIsKnown ? Self.gameDateFormatter.string(from: game.date) : DateFormatter.localizedString(from: game.date, dateStyle: .short, timeStyle: .none)))\(gameLabel)"
     }
 
