@@ -461,6 +461,35 @@ struct APIGame: Codable {
         let situation: APISituation?
         let timeValid: Bool?
         let neutralSite: Bool?
+        /// A postseason game's name, such as "Cricket Celebration Bowl", is the first
+        /// note's headline. See `PostseasonList`.
+        let notes: [APINote]?
+        /// ESPN's competition type: 33 a championship, 35 a semifinal, 40 a major bowl.
+        let type: APICompetitionType?
+
+        struct APINote: Codable {
+            let headline: String?
+        }
+
+        struct APICompetitionType: Codable {
+            /// A string in ESPN's scoreboard ("33"), read as a number here either way.
+            let id: Int?
+
+            private enum CodingKeys: String, CodingKey { case id }
+
+            init(id: Int?) { self.id = id }
+
+            init(from decoder: Decoder) throws {
+                let container = try decoder.container(keyedBy: CodingKeys.self)
+                if let number = try? container.decodeIfPresent(Int.self, forKey: .id) {
+                    id = number
+                } else if let text = try? container.decodeIfPresent(String.self, forKey: .id) {
+                    id = Int(text)
+                } else {
+                    id = nil
+                }
+            }
+        }
 
         struct APICompetitor: Codable {
             let homeAway: String

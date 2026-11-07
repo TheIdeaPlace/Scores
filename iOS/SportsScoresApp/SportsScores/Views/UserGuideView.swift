@@ -60,6 +60,7 @@ struct UserGuideView: View {
                     BulletPoint("**Polls** — every poll ESPN publishes, in ESPN's order; college sports only, when available. College football has six: the College Football Playoff committee's rankings, AP, AFCA Coaches, FCS Coaches, and AFCA Division II and III, chosen from the **Poll** menu. Basketball has AP and Coaches, and hockey USCHO")
                     BulletPoint("**Venues** — each stadium and arena with its home teams; select one for its details. Not for soccer or CFL")
                     Text("For NFL and NCAA Football, the date bar shows a week number and moves by week.")
+                    BulletPoint("**Bowls & Playoffs** — on College Football, just below the week bar on the Scores tab. Every bowl and College Football Playoff game in one list: the playoff first, round by round, then the bowls by date. Each game reads its name first, such as \"Cricket Celebration Bowl\", then the teams and the kickoff or score. The headings are VoiceOver headings, so the Headings rotor jumps between rounds. Select a game for its details. Before ESPN lists any postseason games, the screen says so")
 
                     Text("**Auto-Refresh**")
                         .fontWeight(.semibold)

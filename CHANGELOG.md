@@ -27,6 +27,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Windows: a tab for each poll, as before.
   - iPhone: with this many polls, a **Poll** menu chooses one, since six segments would cut their names
     short. Basketball's two polls and hockey's one keep the segmented control.
+- **iPhone: Bowls & Playoffs.** College football's Scores tab has a **Bowls & Playoffs** link below the
+  week bar: every bowl and College Football Playoff game in one list, from the same ESPN request the
+  Windows list makes, instead of stepping through the postseason weeks. The playoff comes first, round by
+  round (first-round games included, which ESPN marks as ordinary games), then the bowls by date. Each
+  game reads its name first, then the teams and the kickoff or score, and opens its details; the round
+  headings are VoiceOver headings. Before ESPN lists any postseason games, the screen says so. (#197)
 
 ### Fixed
 - **Windows: a poll's cells say which team they're for.** Moving across or down a Polls table read the
