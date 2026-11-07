@@ -51,6 +51,17 @@ enum ViewMode: String, CaseIterable {
         let nextIndex = (currentIndex + 1) % all.count
         return all[nextIndex]
     }
+
+    /// Where AppSettings keeps the "Default view" setting.
+    static let defaultsKey = "defaultTableViewMode"
+
+    /// The mode every table screen starts in: the "Default view" setting, else Quick List.
+    /// A screen declares `@State private var viewMode: ViewMode = .savedDefault()`, so it is
+    /// in that mode from its first frame and VoiceOver never lands on a Quick List that is
+    /// about to become a table.
+    static func savedDefault(in defaults: UserDefaults = .standard) -> ViewMode {
+        ViewMode(rawValue: defaults.string(forKey: defaultsKey) ?? "") ?? .quickList
+    }
 }
 
 // MARK: - View Mode Menu Button

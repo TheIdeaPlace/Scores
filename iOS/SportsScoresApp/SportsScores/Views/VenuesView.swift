@@ -13,8 +13,7 @@ import UIKit
 struct VenuesView: View {
     let sport: Sport
     @StateObject private var viewModel = VenuesViewModel()
-    @State private var viewMode: ViewMode = .quickList
-    @State private var viewModeInitialized = false
+    @State private var viewMode: ViewMode = .savedDefault()
     /// The venue opened from a cell of Table View, which VoiceOver reaches through
     /// `AccessibleDataTable` rather than the row's link.
     @State private var openedFromTable: LeagueVenue?
@@ -44,11 +43,6 @@ struct VenuesView: View {
             }
             .onChange(of: viewModel.refreshFailed) { _, failed in
                 if failed { UIAccessibility.post(notification: .announcement, argument: Self.refreshFailedText) }
-            }
-            .onAppear {
-                guard !viewModeInitialized else { return }
-                viewMode = appSettings.defaultTableViewMode
-                viewModeInitialized = true
             }
     }
 

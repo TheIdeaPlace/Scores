@@ -55,6 +55,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   Bowl, or Bowls for college. The week arrows go from preseason to the regular season to the postseason
   in those seasons too. The name is fetched with the games, never while you wait on a key press; if it
   can't be had, the week is "Week N", as on the iPhone, and the games still say if they failed (#192).
+- **iPhone: every table opens in your Default view.** The setting in Settings used to reach only a few
+  screens; scores, Live Scores, standings, box scores, statistics, polls, schedules, Team Hub's stats,
+  golf, racing and the fantasy cheatsheet all opened in Quick List whatever it said. Each screen now
+  starts in the chosen view, and the view menu still changes it for that screen.
+- **iPhone: VoiceOver reads a standings row's Full List in full.** A wild card row's Record and an NHL
+  row's Last 10 were shown but not spoken. Each Full List row is now spoken as it reads. An NHL row
+  also reads "Overtime losses" rather than "OT Losses", and starts with the team's rank when ESPN sends one.
 
 ### Changed
 - **iPhone builds: the TestFlight build number can't repeat.** It is now one more than the highest build
