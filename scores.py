@@ -9390,8 +9390,11 @@ class StandingsDialog(WildCardTabsMixin, QDialog):
 
 
 class PollsTable(AccessibleTable):
-    """Specialized table for displaying poll rankings"""
-    
+    """One poll: rank, team, record, points and the week before. The team says whose row it is,
+    "Miami Hurricanes, Previous, NR", where the rank would say only "1, Previous, NR"."""
+
+    ROW_CONTEXT_COLUMN = 1
+
     def __init__(self, parent=None, poll_name: str = "Poll", is_hockey: bool = False):
         super().__init__(
             parent=parent,
@@ -9400,15 +9403,12 @@ class PollsTable(AccessibleTable):
         )
         self.poll_name = poll_name
         self.is_hockey = is_hockey
-        
-        # Setup columns
-        if is_hockey:
-            headers = ["Rank", "Team", "Record (W-L-T)", "Points", "Previous"]
-        else:
-            headers = ["Rank", "Team", "Record", "Points", "Previous"]
-        
-        self.setup_columns(headers, stretch_column=1)  # Team name stretches
-    
+        self.setup_columns(self._headers_for(has_points=True), stretch_column=self.ROW_CONTEXT_COLUMN)
+
+    def _headers_for(self, has_points: bool) -> List[str]:
+        record = "Record (W-L-T)" if self.is_hockey else "Record"
+        return ["Rank", "Team", record] + (["Points"] if has_points else []) + ["Previous"]
+
     def populate_poll(self, ranks: List[Dict], set_focus: bool = True):
         """
         Populate table with poll ranking data.
@@ -9421,14 +9421,20 @@ class PollsTable(AccessibleTable):
             self.table_widget.setRowCount(0)
             return
         
+        # The playoff committee and the college hockey polls have no votes: ESPN sends 0.0 for
+        # everyone. A column of nothing would read as blanks, ", , NR" in the Quick List, so it
+        # goes, as it does on the iPhone.
+        has_points = any((rank_data.get('points') or 0) > 0 for rank_data in ranks)
+        self.setup_columns(self._headers_for(has_points), stretch_column=self.ROW_CONTEXT_COLUMN)
+
         rows = []
         for rank_data in ranks:
-            current_rank = rank_data.get('current', 0)
-            previous_rank = rank_data.get('previous', 0)
-            points = rank_data.get('points', 0)
-            record = rank_data.get('recordSummary', 'N/A')
+            current_rank = rank_data.get('current') or 0
+            previous_rank = rank_data.get('previous') or 0
+            points = rank_data.get('points') or 0
+            record = rank_data.get('recordSummary') or 'N/A'
             
-            team_info = rank_data.get('team', {})
+            team_info = rank_data.get('team') or {}
             # Construct team name from location and name/nickname
             location = team_info.get('location', '')
             name = team_info.get('name', team_info.get('nickname', ''))
@@ -9450,7 +9456,7 @@ class PollsTable(AccessibleTable):
             else:
                 prev_str = f"{previous_rank} —"
             
-            row = [str(current_rank), team_name, record, points_str, prev_str]
+            row = [str(current_rank), team_name, record] + ([points_str] if has_points else []) + [prev_str]
             rows.append(row)
         
         self.populate_data(rows, set_focus)

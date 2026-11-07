@@ -680,7 +680,8 @@ final class CollegeHockeyPollsTests: XCTestCase {
     }
 
     func testFootballKeepsItsPoints() throws {
-        let poll = try XCTUnwrap(try polls("rankings_NCAAF.json").first)
+        // The first is the playoff committee's, which has no points either: CollegePollsTests.
+        let poll = try XCTUnwrap(try polls("rankings_NCAAF.json").first { $0.name == "AP Top 25" })
         XCTAssertTrue(poll.ranks.contains { ($0.points ?? 0) > 0 })
     }
 

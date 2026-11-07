@@ -16,6 +16,14 @@ class PollsViewModel: ObservableObject {
 
     private let apiService = ESPNAPIService.shared
 
+    /// Segments for up to this many polls, a menu past it. Basketball's two and hockey's one stay
+    /// segments; college football's six would cut their names short.
+    nonisolated static let maxSegmentedPolls = 3
+
+    nonisolated static func usesMenu(pollCount: Int) -> Bool {
+        pollCount > maxSegmentedPolls
+    }
+
     var selectedPoll: RankingsPoll? {
         guard selectedPollIndex < polls.count else { return nil }
         return polls[selectedPollIndex]
