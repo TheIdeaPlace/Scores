@@ -34,7 +34,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   game reads its name first, then the teams and the kickoff or score, and opens its details; the round
   headings are VoiceOver headings. Before ESPN lists any postseason games, the screen says so. (#197)
 
+### Changed
+- **Windows: monitoring is a section at the top of Live Scores.** Alt+M on a game adds it to Monitoring,
+  where its row reads as it does below with the sport after it, and the game stays in its own section too.
+  Alt+M also works on today's games on a sport's page. Alt+M on a Monitoring row takes it off and moves you
+  to the next one. Monitoring lasts until you quit. Scores no longer reads out score changes on its own.
+  The iPhone is to follow (#185).
+- **iPhone builds: the TestFlight build number can't repeat.** It is now one more than the highest build
+  App Store Connect already has, or the commit count if that is higher. The commit count alone could land
+  on a number Apple had already seen after a squash merge, and the upload was rejected (#112).
+
 ### Fixed
+- **Windows: Live Scores no longer reads the row you're on again when other games come and go.** Each
+  time a game kicked off or finished, the list was rebuilt and the row you were on read out, so on a busy
+  day a finished game you were resting on was read once a minute.
 - **Windows: a poll's cells say which team they're for.** Moving across or down a Polls table read the
   rank as the row's context, "2, Previous, NR"; it now reads the team, "Georgia Bulldogs, Previous, NR".
   A poll with no votes, the playoff committee's or college hockey's, has no Points column any more, so
@@ -61,11 +74,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **iPhone: VoiceOver reads a standings row's Full List in full.** A wild card row's Record and an NHL
   row's Last 10 were shown but not spoken. Each Full List row is now spoken as it reads. An NHL row
   also reads "Overtime losses" rather than "OT Losses", and starts with the team's rank when ESPN sends one.
-
-### Changed
-- **iPhone builds: the TestFlight build number can't repeat.** It is now one more than the highest build
-  App Store Connect already has, or the commit count if that is higher. The commit count alone could land
-  on a number Apple had already seen after a squash merge, and the upload was rejected (#112).
 
 ### In Progress
 - **Game Wrap Up Feature**: ESPN text processing and game story extraction (under construction)
