@@ -8335,6 +8335,9 @@ class StatisticsLoader(QThread):
     """Loads a league's team or player statistics for StatisticsViewDialog."""
     data_loaded = pyqtSignal(dict)
     error_occurred = pyqtSignal(str)
+    # The player leaders' definitions (Alt+D), after the leaders, so they never wait for them: a
+    # dict, or None if they couldn't be had. Team statistics carry their own.
+    glossary_loaded = pyqtSignal(object)
 
     def __init__(self, league: str, stat_type: str):
         super().__init__()
@@ -8345,17 +8348,18 @@ class StatisticsLoader(QThread):
         try:
             if self.stat_type == "player":
                 data = ApiService.get_player_statistics(self.league) or {}
-                if data.get("player_stats"):
-                    # The definitions (Alt+D). Team statistics carry their own.
-                    try:
-                        data["glossary"] = ApiService.get_stat_glossary(self.league)
-                    except ApiError:
-                        data["glossary"] = None  # The definitions say they couldn't be had.
             else:
                 data = ApiService.get_team_statistics(self.league)
             self.data_loaded.emit(data or {})
         except Exception as e:
             self.error_occurred.emit(_said(e))
+            return
+        if self.stat_type == "player" and data.get("player_stats"):
+            try:
+                glossary = ApiService.get_stat_glossary(self.league)
+            except ApiError:
+                glossary = None  # The definitions say they couldn't be had.
+            self.glossary_loaded.emit(glossary)
 
 
 class StandingsLoader(QThread):
@@ -11539,6 +11543,9 @@ class StatisticsViewDialog(QDialog):
         self.statistics_data = None
         self.stat_pages = None
         self._stat_infos = []
+        # Until the statistics, and for players their definitions, have come or failed.
+        self._statistics_pending = True
+        self._glossary_pending = False
         print(f"DEBUG: About to call setup_ui")
         self.setup_ui()
         print(f"DEBUG: setup_ui completed")
@@ -11565,6 +11572,7 @@ class StatisticsViewDialog(QDialog):
         loader = StatisticsLoader(self.league, self.stat_type)
         loader.data_loaded.connect(self._on_statistics_loaded)
         loader.error_occurred.connect(self._on_statistics_error)
+        loader.glossary_loaded.connect(self._on_glossary_loaded)
         self._statistics_loader = loader
         _start_detached_thread(loader)
 
@@ -11591,11 +11599,16 @@ class StatisticsViewDialog(QDialog):
         self.stats_list.setFocus()
 
     def _on_statistics_error(self, message: str):
+        self._statistics_pending = False
         self._clear_loading_row()
         self._show_statistics_message(self._content_layout, f"Unable to load statistics: {message}")
         self._focus_stats_list()
 
     def _on_statistics_loaded(self, statistics_data: dict):
+        self._statistics_pending = False
+        # The loader asks for the leaders' definitions next, and says when it has them.
+        self._glossary_pending = self.stat_type == "player" and bool((statistics_data or {}).get("player_stats")) \
+            and "glossary" not in (statistics_data or {})
         self._clear_loading_row()
         season = (statistics_data or {}).get("season")
         if season:
@@ -11746,25 +11759,34 @@ class StatisticsViewDialog(QDialog):
         print(f"DEBUG: Total available stats: {len(available_stats)}")
         return available_stats
     
+    def _on_glossary_loaded(self, glossary):
+        """The player leaders' definitions, a dict, or None if they couldn't be had."""
+        self._glossary_pending = False
+        if isinstance(self.statistics_data, dict):
+            self.statistics_data["glossary"] = glossary
+
     def _show_stat_definitions(self):
-        """ESPN's definitions of the statistics on screen."""
+        """ESPN's definitions of the statistics on screen, on the one the list is on."""
         lines = stat_glossary.definition_lines(
-            self._stat_infos, (self.statistics_data or {}).get("glossary"), league_sport(self.league))
-        definitions_dialog = StatDefinitionsDialog(self.league, self.stat_type, lines, self)
+            self._stat_infos, (self.statistics_data or {}).get("glossary"), league_sport(self.league),
+            still_loading=self._statistics_pending or self._glossary_pending)
+        current = self.stat_pages.tabBar().currentRow() if self.stat_pages is not None else 0
+        definitions_dialog = StatDefinitionsDialog(self.league, self.stat_type, lines, self,
+                                                   current_row=current if len(lines) == len(self._stat_infos) else 0)
         definitions_dialog.exec()
 
 class StatDefinitionsDialog(QDialog):
     """ESPN's definitions of the statistics a Statistics dialog shows, one line each."""
 
-    def __init__(self, league, stat_type, lines, parent=None):
+    def __init__(self, league, stat_type, lines, parent=None, current_row=0):
         super().__init__(parent)
         self.league = league
         self.heading = f"{league} {stat_type.title()} Statistics Definitions"
         self.setWindowTitle(self.heading)
         self.resize(600, 500)
-        self.setup_ui(lines)
+        self.setup_ui(lines, current_row)
 
-    def setup_ui(self, lines):
+    def setup_ui(self, lines, current_row=0):
         layout = QVBoxLayout()
 
         # Title
@@ -11782,8 +11804,8 @@ class StatDefinitionsDialog(QDialog):
         self.definitions_list.setWordWrap(True)
         for line in lines:
             self.definitions_list.addItem(QListWidgetItem(line))
-        # So the first line is read as the list takes focus, rather than an empty list.
-        self.definitions_list.setCurrentRow(0)
+        # The statistic the list was on is read as the list takes focus, rather than an empty list.
+        self.definitions_list.setCurrentRow(current_row if 0 <= current_row < len(lines) else 0)
 
         layout.addWidget(self.definitions_list)
 

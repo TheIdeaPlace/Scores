@@ -103,9 +103,39 @@ def test_definitions_that_couldnt_be_had_say_so(open_dialog):
     assert definitions_of(view)[1] == [stat_glossary.NOT_LOADED]
 
 
-def test_before_anything_has_loaded_there_is_nothing_to_define(open_dialog):
+def test_before_anything_has_loaded_it_says_so(open_dialog):
     view = open_dialog("MLB", "player", None)
+    assert definitions_of(view)[1] == [stat_glossary.STILL_LOADING]
+
+
+def test_statistics_that_failed_have_nothing_to_define(open_dialog):
+    view = open_dialog("MLB", "player", None)
+    view._on_statistics_error("ESPN isn't providing these right now. Try again in a minute.")
     assert definitions_of(view)[1] == [stat_glossary.NOTHING_SHOWN]
+
+
+def test_the_leaders_show_before_their_definitions_come(open_dialog):
+    view = open_dialog("MLB", "player", mlb_leaders())
+    assert view._stat_infos
+    assert definitions_of(view)[1] == [stat_glossary.STILL_LOADING]
+    view._on_glossary_loaded(MLB_GLOSSARY)
+    assert "Strikeouts: The number of times the pitcher struck out a batter." in definitions_of(view)[1]
+
+
+def test_the_definitions_open_on_the_statistic_the_list_is_on(open_dialog):
+    view = open_dialog("MLB", "player", {**mlb_leaders(), "glossary": MLB_GLOSSARY})
+    row = next(i for i, info in enumerate(view._stat_infos) if info["key"] == "strikeouts")
+    view.stat_pages.tabBar().setCurrentRow(row)
+    dialog, items = definitions_of(view)
+    assert dialog.definitions_list.currentRow() == row
+    assert dialog.definitions_list.currentItem().text().startswith("Strikeouts: ")
+
+
+def test_a_single_message_opens_on_it(open_dialog):
+    view = open_dialog("MLB", "player", {**mlb_leaders(), "glossary": None})
+    view.stat_pages.tabBar().setCurrentRow(3)
+    dialog, items = definitions_of(view)
+    assert items == [stat_glossary.NOT_LOADED] and dialog.definitions_list.currentRow() == 0
 
 
 def test_soccer_says_espn_has_none_for_each(open_dialog):
@@ -119,27 +149,45 @@ class TestTheLoader:
     def run(self, app, stat_type, **services):
         loader = scores.StatisticsLoader("MLB", stat_type)
         got = []
-        loader.data_loaded.connect(got.append)
+        loader.data_loaded.connect(lambda data: got.append(("data", data)))
+        loader.glossary_loaded.connect(lambda glossary: got.append(("glossary", glossary)))
         loader.error_occurred.connect(lambda message: got.append(("error", message)))
         with patch.multiple(scores.ApiService, **services):
             loader.run()
         return got
 
-    def test_player_leaders_come_with_the_glossary(self, app):
+    def test_the_leaders_come_first_and_then_their_glossary(self, app):
         got = self.run(app, "player", get_player_statistics=lambda league: mlb_leaders(),
                        get_stat_glossary=lambda league: MLB_GLOSSARY)
-        assert got[0]["glossary"] == MLB_GLOSSARY
-        assert got[0]["player_stats"]
+        assert [kind for kind, _ in got] == ["data", "glossary"]
+        assert got[0][1]["player_stats"] and "glossary" not in got[0][1]
+        assert got[1][1] == MLB_GLOSSARY
 
     def test_the_glossary_failing_leaves_the_leaders(self, app):
         def fail(league):
             raise ApiError("ESPN isn't providing these right now. Try again in a minute.")
 
         got = self.run(app, "player", get_player_statistics=lambda league: mlb_leaders(), get_stat_glossary=fail)
-        assert got[0]["player_stats"] and got[0]["glossary"] is None
+        assert got[0][0] == "data" and got[0][1]["player_stats"]
+        assert got[1] == ("glossary", None)
 
     def test_no_leaders_asks_for_no_glossary(self, app):
         asked = []
         got = self.run(app, "player", get_player_statistics=lambda league: {"player_stats": [], "team_stats": []},
                        get_stat_glossary=lambda league: asked.append(league) or {})
-        assert asked == [] and "glossary" not in got[0]
+        assert asked == [] and [kind for kind, _ in got] == ["data"]
+
+    def test_leaders_failing_asks_for_no_glossary(self, app):
+        def fail(league):
+            raise ApiError("ESPN isn't providing these right now. Try again in a minute.")
+
+        asked = []
+        got = self.run(app, "player", get_player_statistics=fail,
+                       get_stat_glossary=lambda league: asked.append(league) or {})
+        assert asked == [] and [kind for kind, _ in got] == ["error"]
+
+    def test_team_statistics_ask_for_no_glossary(self, app):
+        asked = []
+        got = self.run(app, "team", get_team_statistics=lambda league: {"team_stats": [{}], "glossary": {}},
+                       get_stat_glossary=lambda league: asked.append(league) or {})
+        assert asked == [] and [kind for kind, _ in got] == ["data"]

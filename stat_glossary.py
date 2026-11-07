@@ -152,15 +152,19 @@ def definition(found, sport, key, team):
 NO_DEFINITION = "No definition from ESPN."
 NOT_LOADED = "ESPN's definitions couldn't be loaded. Close the statistics and open them again to try again."
 NOTHING_SHOWN = "No statistics are showing, so there are no definitions to show."
+STILL_LOADING = "The statistics and their definitions are still loading. Press Alt+D again in a moment."
 # ESPN's text defines the stat itself, which reads backwards under an opponents' list. The iPhone
 # says the same before it.
 OPPONENT_NOTE = "This ranks teams by what their opponents did against them. ESPN defines the statistic as: "
 
 
-def definition_lines(stats, found, sport):
+def definition_lines(stats, found, sport, still_loading=False):
     """One line per statistic on screen, "Name: definition", in the order they're listed. `stats`
     are the dialog's: {name, key, type}, type "team" or "player". `found` is the glossary, or None
-    if it couldn't be had, which is one line saying so rather than a "no definition" for each."""
+    if it couldn't be had, which is one line saying so rather than a "no definition" for each.
+    `still_loading` is the statistics or their definitions not there yet, which isn't "none"."""
+    if still_loading:
+        return [STILL_LOADING]
     if not stats:
         return [NOTHING_SHOWN]
     if found is None:

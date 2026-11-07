@@ -213,6 +213,12 @@ def test_the_mlb_team_lists_tell_the_two_strikeouts_apart():
     assert "pitcher" not in sg.definition(found, "baseball", batting["key"], team=True)
 
 
+def test_still_loading_says_so_before_anything_else():
+    stats = [{"name": "Strikeouts", "key": "strikeouts", "type": "player"}]
+    assert sg.definition_lines(stats, None, "baseball", still_loading=True) == [sg.STILL_LOADING]
+    assert sg.definition_lines([], None, "baseball", still_loading=True) == [sg.STILL_LOADING]
+
+
 def test_nothing_on_screen_says_so():
     assert sg.definition_lines([], {"a.b": "c"}, "baseball") == [sg.NOTHING_SHOWN]
 
