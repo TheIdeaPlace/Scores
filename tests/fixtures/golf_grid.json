@@ -1,0 +1,119 @@
+{
+ "about": "The golf scoreboard rules both apps follow: an event's state, which event to show, and a finished event's winner. golf.py on Windows is held to it by tests/unit/test_golf_grid.py, and the iPhone's GolfRules.swift (through its lenient GolfAPIModels decoding) by GolfGridTests.swift. Change both together. A winner is given as the text both apps show, \"\" for none.",
+ "state_cases": [
+  {"name": "the event's own status", "event": {"id": "1", "status": {"type": {"state": "post"}}}, "expected": "post"},
+  {"name": "between rounds: the event is in, its competition post", "event": {"id": "1", "status": {"type": {"state": "in"}}, "competitions": [{"status": {"type": {"state": "post"}}}]}, "expected": "in"},
+  {"name": "the event's status wins over its competition's", "event": {"id": "1", "status": {"type": {"state": "post"}}, "competitions": [{"status": {"type": {"state": "in"}}}]}, "expected": "post"},
+  {"name": "no status of its own: the competition's", "event": {"id": "1", "competitions": [{"status": {"type": {"state": "in"}}}]}, "expected": "in"},
+  {"name": "a blank state is no state", "event": {"id": "1", "status": {"type": {"state": " "}}, "competitions": [{"status": {"type": {"state": "pre"}}}]}, "expected": "pre"},
+  {"name": "a state that isn't text is no state", "event": {"id": "1", "status": {"type": {"state": 2}}}, "expected": ""},
+  {"name": "no status anywhere", "event": {"id": "1", "competitions": []}, "expected": ""}
+ ],
+ "pick_cases": [
+  {"name": "no events", "events": [], "event_id": null, "expected_id": null},
+  {"name": "the first in progress", "events": [
+    {"id": "1", "status": {"type": {"state": "post"}}},
+    {"id": "2", "status": {"type": {"state": "in"}}},
+    {"id": "3", "status": {"type": {"state": "in"}}}], "event_id": null, "expected_id": "2"},
+  {"name": "none in progress: the first", "events": [
+    {"id": "1", "status": {"type": {"state": "post"}}},
+    {"id": "2", "status": {"type": {"state": "pre"}}}], "event_id": null, "expected_id": "1"},
+  {"name": "the one asked for, though another is in progress", "events": [
+    {"id": "1", "status": {"type": {"state": "in"}}},
+    {"id": "2", "status": {"type": {"state": "post"}}}], "event_id": "2", "expected_id": "2"},
+  {"name": "the one asked for isn't there: the first in progress", "events": [
+    {"id": "1", "status": {"type": {"state": "post"}}},
+    {"id": "2", "status": {"type": {"state": "in"}}}], "event_id": "9", "expected_id": "2"},
+  {"name": "a blank id asked for is none asked for", "events": [
+    {"id": "", "status": {"type": {"state": "post"}}},
+    {"id": "2", "status": {"type": {"state": "in"}}}], "event_id": "", "expected_id": "2"},
+  {"name": "in progress by its competition's status", "events": [
+    {"id": "1", "competitions": [{"status": {"type": {"state": "pre"}}}]},
+    {"id": "2", "competitions": [{"status": {"type": {"state": "in"}}}]}], "event_id": null, "expected_id": "2"},
+  {"name": "between rounds counts as in progress", "events": [
+    {"id": "1", "status": {"type": {"state": "pre"}}},
+    {"id": "2", "status": {"type": {"state": "in"}}, "competitions": [{"status": {"type": {"state": "post"}}}]}], "event_id": null, "expected_id": "2"},
+  {"name": "entries that aren't objects are passed over", "events": [
+    "not an event", null, 7,
+    {"id": "4", "status": {"type": {"state": "pre"}}}], "event_id": null, "expected_id": "4"}
+ ],
+ "winner_cases": [
+  {"name": "a final: the lowest order", "event": {"id": "1", "status": {"type": {"state": "post"}}, "competitions": [{"competitors": [
+    {"order": 2, "score": "-14", "athlete": {"displayName": "Ryan Gerard"}},
+    {"order": 1, "score": "-16", "athlete": {"displayName": "Chris Gotterup"}}]}]}, "expected": "Chris Gotterup (-16)"},
+  {"name": "not finished: none", "event": {"id": "1", "status": {"type": {"state": "in"}}, "competitions": [{"competitors": [
+    {"order": 1, "score": "-20", "athlete": {"displayName": "Ben James"}}]}]}, "expected": ""},
+  {"name": "no state: none", "event": {"id": "1", "competitions": [{"competitors": [
+    {"order": 1, "score": "-20", "athlete": {"displayName": "Ben James"}}]}]}, "expected": ""},
+  {"name": "cancelled, with nobody in it: none", "event": {"id": "1", "status": {"type": {"state": "post", "description": "Canceled"}}, "competitions": [{"competitors": []}]}, "expected": ""},
+  {"name": "no competitions: none", "event": {"id": "1", "status": {"type": {"state": "post"}}}, "expected": ""},
+  {"name": "finished by its competition's status", "event": {"id": "1", "competitions": [{"status": {"type": {"state": "post"}}, "competitors": [
+    {"order": 1, "score": "-9", "athlete": {"displayName": "Aaron Rai"}}]}]}, "expected": "Aaron Rai (-9)"},
+  {"name": "marked winner beats order", "event": {"id": "1", "status": {"type": {"state": "post"}}, "competitions": [{"competitors": [
+    {"order": 1, "score": "13", "team": {"displayName": "INTL"}},
+    {"order": 2, "score": "17", "winner": true, "team": {"displayName": "USA"}}]}]}, "expected": "USA (17)"},
+  {"name": "winner false is no mark", "event": {"id": "1", "status": {"type": {"state": "post"}}, "competitions": [{"competitors": [
+    {"order": 2, "score": "13", "winner": false, "team": {"displayName": "INTL"}},
+    {"order": 1, "score": "17", "team": {"displayName": "USA"}}]}]}, "expected": "USA (17)"},
+  {"name": "a team event: the team's name", "event": {"id": "1", "status": {"type": {"state": "post"}}, "competitions": [{"competitors": [
+    {"order": 1, "score": "-30", "team": {"displayName": "Smalley/Springer", "name": "Smalley/Springer"}}]}]}, "expected": "Smalley/Springer (-30)"},
+  {"name": "a team with only a name", "event": {"id": "1", "status": {"type": {"state": "post"}}, "competitions": [{"competitors": [
+    {"order": 1, "score": "-30", "team": {"name": "Reitan/Ventura"}}]}]}, "expected": "Reitan/Ventura (-30)"},
+  {"name": "a tie at the top: order 1 won the playoff", "event": {"id": "1", "status": {"type": {"state": "post"}}, "competitions": [{"competitors": [
+    {"order": 2, "score": "-30", "team": {"displayName": "Reitan/Ventura"}},
+    {"order": 1, "score": "-30", "team": {"displayName": "Smalley/Springer"}}]}]}, "expected": "Smalley/Springer (-30)"},
+  {"name": "no order goes last", "event": {"id": "1", "status": {"type": {"state": "post"}}, "competitions": [{"competitors": [
+    {"score": "-20", "athlete": {"displayName": "No Order"}},
+    {"order": 3, "score": "-10", "athlete": {"displayName": "Third"}}]}]}, "expected": "Third (-10)"},
+  {"name": "an order that isn't a whole number is no order", "event": {"id": "1", "status": {"type": {"state": "post"}}, "competitions": [{"competitors": [
+    {"order": "1", "score": "-20", "athlete": {"displayName": "Text Order"}},
+    {"order": 5, "score": "-10", "athlete": {"displayName": "Fifth"}}]}]}, "expected": "Fifth (-10)"},
+  {"name": "nobody with an order: the first listed", "event": {"id": "1", "status": {"type": {"state": "post"}}, "competitions": [{"competitors": [
+    {"score": "-12", "athlete": {"displayName": "Listed First"}},
+    {"score": "-15", "athlete": {"displayName": "Listed Second"}}]}]}, "expected": "Listed First (-12)"},
+  {"name": "a tied order keeps ESPN's listed order", "event": {"id": "1", "status": {"type": {"state": "post"}}, "competitions": [{"competitors": [
+    {"order": 1, "score": "-8", "athlete": {"displayName": "Listed First"}},
+    {"order": 1, "score": "-8", "athlete": {"displayName": "Listed Second"}}]}]}, "expected": "Listed First (-8)"},
+  {"name": "full name when there's no display name", "event": {"id": "1", "status": {"type": {"state": "post"}}, "competitions": [{"competitors": [
+    {"order": 1, "score": "-12", "athlete": {"fullName": "Rory McIlroy"}}]}]}, "expected": "Rory McIlroy (-12)"},
+  {"name": "a blank display name is none", "event": {"id": "1", "status": {"type": {"state": "post"}}, "competitions": [{"competitors": [
+    {"order": 1, "score": "-12", "athlete": {"displayName": "  ", "fullName": "Rory McIlroy"}}]}]}, "expected": "Rory McIlroy (-12)"},
+  {"name": "no name at all: none", "event": {"id": "1", "status": {"type": {"state": "post"}}, "competitions": [{"competitors": [
+    {"order": 1, "score": "-12", "athlete": {}},
+    {"order": 2, "score": "-11", "athlete": {"displayName": "Second"}}]}]}, "expected": ""},
+  {"name": "no score: just the name", "event": {"id": "1", "status": {"type": {"state": "post"}}, "competitions": [{"competitors": [
+    {"order": 1, "athlete": {"displayName": "Akshay Bhatia"}}]}]}, "expected": "Akshay Bhatia"},
+  {"name": "a score that isn't text is no score", "event": {"id": "1", "status": {"type": {"state": "post"}}, "competitions": [{"competitors": [
+    {"order": 1, "score": -15, "athlete": {"displayName": "Akshay Bhatia"}}]}]}, "expected": "Akshay Bhatia"},
+  {"name": "names and scores are trimmed", "event": {"id": "1", "status": {"type": {"state": "post"}}, "competitions": [{"competitors": [
+    {"order": 1, "score": " -15 ", "athlete": {"displayName": " Akshay Bhatia "}}]}]}, "expected": "Akshay Bhatia (-15)"},
+  {"name": "a competitor that isn't an object is passed over", "event": {"id": "1", "status": {"type": {"state": "post"}}, "competitions": [{"competitors": [
+    "junk", null,
+    {"order": 1, "score": "-17", "athlete": {"displayName": "Gary Woodland"}}]}]}, "expected": "Gary Woodland (-17)"}
+ ],
+ "fixture_cases": [
+  {"file": "espn/golf_schedule_PGA_2026.json", "event_id": null, "expected_pick": "401850979",
+   "event_count": 49, "winner_count": 43,
+   "winners": {
+    "401811927": "",
+    "401811928": "Chris Gotterup (-16)",
+    "401811941": "Rory McIlroy (-12)",
+    "401811943": "Smalley/Springer (-30)",
+    "401824815": "USA (17)",
+    "401850978": "Andrew Novak (-25)",
+    "401850979": "",
+    "401850980": ""
+   }},
+  {"file": "espn/golf_scoreboard_LPGA_between_rounds.json", "event_id": null, "expected_pick": "401835175",
+   "event_count": 1, "winner_count": 0, "winners": {"401835175": ""}},
+  {"file": "espn/golf_scoreboard_PGA_20260305.json", "event_id": null, "expected_pick": "401811935",
+   "event_count": 2, "winner_count": 2,
+   "winners": {"401811935": "Akshay Bhatia (-15)", "401811936": "Ricky Castillo (-17)"}},
+  {"file": "espn/golf_scoreboard_PGA_20260305.json", "event_id": "401811936", "expected_pick": "401811936",
+   "event_count": 2, "winner_count": 2, "winners": {}},
+  {"file": "espn/golf_scoreboard_PGA_20260423.json", "event_id": "401811943", "expected_pick": "401811943",
+   "event_count": 1, "winner_count": 1, "winners": {"401811943": "Smalley/Springer (-30)"}},
+  {"file": "espn/golf_scoreboard_PGA.json", "event_id": null, "expected_pick": "401850979",
+   "event_count": 1, "winner_count": 0, "winners": {"401850979": ""}}
+ ]
+}

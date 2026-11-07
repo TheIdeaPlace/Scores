@@ -312,3 +312,29 @@ def game_standings_tables(standings: Any) -> List[Dict[str, Any]]:
             "rows": rows,
         })
     return tables
+
+
+def _count(value: Any) -> Optional[int]:
+    if value is None or value == "" or isinstance(value, bool):
+        return None
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        return None
+
+
+def team_record_text(wins: Any, losses: Any, ties: Any = 0) -> str:
+    """A team's record for the Team Hub header: "8-0", "0-9", "10-4-1"; "" when there is none.
+
+    0 is a real count: an unbeaten team's 0 losses and a winless team's 0 wins are part
+    of its record (#203). There is no record when a count is missing (a team opened
+    from Favorites, which loads it later) or before the team has played. Ties show
+    wherever there are any: the NFL, and college hockey.
+    """
+    won, lost = _count(wins), _count(losses)
+    tied = _count(ties) or 0
+    if won is None or lost is None or won < 0 or lost < 0 or tied < 0:
+        return ""
+    if won + lost + tied == 0:
+        return ""
+    return f"{won}-{lost}-{tied}" if tied else f"{won}-{lost}"

@@ -1,0 +1,705 @@
+{
+ "seasons/2024/types/1/weeks": {
+  "count": 4,
+  "pageIndex": 1,
+  "pageSize": 100,
+  "pageCount": 1,
+  "items": [
+   {
+    "$ref": "http://sports.core.api.espn.com/v2/sports/football/leagues/nfl/seasons/2024/types/1/weeks/1?lang=en&region=us"
+   },
+   {
+    "$ref": "http://sports.core.api.espn.com/v2/sports/football/leagues/nfl/seasons/2024/types/1/weeks/2?lang=en&region=us"
+   },
+   {
+    "$ref": "http://sports.core.api.espn.com/v2/sports/football/leagues/nfl/seasons/2024/types/1/weeks/3?lang=en&region=us"
+   },
+   {
+    "$ref": "http://sports.core.api.espn.com/v2/sports/football/leagues/nfl/seasons/2024/types/1/weeks/4?lang=en&region=us"
+   }
+  ]
+ },
+ "seasons/2024/types/1/weeks/1": {
+  "$ref": "http://sports.core.api.espn.com/v2/sports/football/leagues/nfl/seasons/2024/types/1/weeks/1?lang=en&region=us",
+  "number": 1,
+  "startDate": "2024-08-01T07:00Z",
+  "endDate": "2024-08-08T06:59Z",
+  "text": "Hall of Fame Weekend",
+  "rankings": {
+   "$ref": "http://sports.core.api.espn.com/v2/sports/football/leagues/nfl/seasons/2024/types/1/weeks/1/rankings?lang=en&region=us"
+  },
+  "events": {
+   "$ref": "http://sports.core.api.espn.com/v2/sports/football/leagues/nfl/seasons/2024/types/1/weeks/1/events?lang=en&region=us"
+  }
+ },
+ "seasons/2024/types/1/weeks/2": {
+  "$ref": "http://sports.core.api.espn.com/v2/sports/football/leagues/nfl/seasons/2024/types/1/weeks/2?lang=en&region=us",
+  "number": 2,
+  "startDate": "2024-08-08T07:00Z",
+  "endDate": "2024-08-15T06:59Z",
+  "text": "Preseason Week 1",
+  "rankings": {
+   "$ref": "http://sports.core.api.espn.com/v2/sports/football/leagues/nfl/seasons/2024/types/1/weeks/2/rankings?lang=en&region=us"
+  },
+  "events": {
+   "$ref": "http://sports.core.api.espn.com/v2/sports/football/leagues/nfl/seasons/2024/types/1/weeks/2/events?lang=en&region=us"
+  }
+ },
+ "seasons/2024/types/1/weeks/3": {
+  "$ref": "http://sports.core.api.espn.com/v2/sports/football/leagues/nfl/seasons/2024/types/1/weeks/3?lang=en&region=us",
+  "number": 3,
+  "startDate": "2024-08-15T07:00Z",
+  "endDate": "2024-08-22T06:59Z",
+  "text": "Preseason Week 2",
+  "rankings": {
+   "$ref": "http://sports.core.api.espn.com/v2/sports/football/leagues/nfl/seasons/2024/types/1/weeks/3/rankings?lang=en&region=us"
+  },
+  "events": {
+   "$ref": "http://sports.core.api.espn.com/v2/sports/football/leagues/nfl/seasons/2024/types/1/weeks/3/events?lang=en&region=us"
+  }
+ },
+ "seasons/2024/types/1/weeks/4": {
+  "$ref": "http://sports.core.api.espn.com/v2/sports/football/leagues/nfl/seasons/2024/types/1/weeks/4?lang=en&region=us",
+  "number": 4,
+  "startDate": "2024-08-22T07:00Z",
+  "endDate": "2024-09-05T06:59Z",
+  "text": "Preseason Week 3",
+  "rankings": {
+   "$ref": "http://sports.core.api.espn.com/v2/sports/football/leagues/nfl/seasons/2024/types/1/weeks/4/rankings?lang=en&region=us"
+  },
+  "events": {
+   "$ref": "http://sports.core.api.espn.com/v2/sports/football/leagues/nfl/seasons/2024/types/1/weeks/4/events?lang=en&region=us"
+  }
+ },
+ "seasons/2024/types/2/weeks": {
+  "count": 18,
+  "pageIndex": 1,
+  "pageSize": 100,
+  "pageCount": 1,
+  "items": [
+   {
+    "$ref": "http://sports.core.api.espn.com/v2/sports/football/leagues/nfl/seasons/2024/types/2/weeks/1?lang=en&region=us"
+   },
+   {
+    "$ref": "http://sports.core.api.espn.com/v2/sports/football/leagues/nfl/seasons/2024/types/2/weeks/2?lang=en&region=us"
+   },
+   {
+    "$ref": "http://sports.core.api.espn.com/v2/sports/football/leagues/nfl/seasons/2024/types/2/weeks/3?lang=en&region=us"
+   },
+   {
+    "$ref": "http://sports.core.api.espn.com/v2/sports/football/leagues/nfl/seasons/2024/types/2/weeks/4?lang=en&region=us"
+   },
+   {
+    "$ref": "http://sports.core.api.espn.com/v2/sports/football/leagues/nfl/seasons/2024/types/2/weeks/5?lang=en&region=us"
+   },
+   {
+    "$ref": "http://sports.core.api.espn.com/v2/sports/football/leagues/nfl/seasons/2024/types/2/weeks/6?lang=en&region=us"
+   },
+   {
+    "$ref": "http://sports.core.api.espn.com/v2/sports/football/leagues/nfl/seasons/2024/types/2/weeks/7?lang=en&region=us"
+   },
+   {
+    "$ref": "http://sports.core.api.espn.com/v2/sports/football/leagues/nfl/seasons/2024/types/2/weeks/8?lang=en&region=us"
+   },
+   {
+    "$ref": "http://sports.core.api.espn.com/v2/sports/football/leagues/nfl/seasons/2024/types/2/weeks/9?lang=en&region=us"
+   },
+   {
+    "$ref": "http://sports.core.api.espn.com/v2/sports/football/leagues/nfl/seasons/2024/types/2/weeks/10?lang=en&region=us"
+   },
+   {
+    "$ref": "http://sports.core.api.espn.com/v2/sports/football/leagues/nfl/seasons/2024/types/2/weeks/11?lang=en&region=us"
+   },
+   {
+    "$ref": "http://sports.core.api.espn.com/v2/sports/football/leagues/nfl/seasons/2024/types/2/weeks/12?lang=en&region=us"
+   },
+   {
+    "$ref": "http://sports.core.api.espn.com/v2/sports/football/leagues/nfl/seasons/2024/types/2/weeks/13?lang=en&region=us"
+   },
+   {
+    "$ref": "http://sports.core.api.espn.com/v2/sports/football/leagues/nfl/seasons/2024/types/2/weeks/14?lang=en&region=us"
+   },
+   {
+    "$ref": "http://sports.core.api.espn.com/v2/sports/football/leagues/nfl/seasons/2024/types/2/weeks/15?lang=en&region=us"
+   },
+   {
+    "$ref": "http://sports.core.api.espn.com/v2/sports/football/leagues/nfl/seasons/2024/types/2/weeks/16?lang=en&region=us"
+   },
+   {
+    "$ref": "http://sports.core.api.espn.com/v2/sports/football/leagues/nfl/seasons/2024/types/2/weeks/17?lang=en&region=us"
+   },
+   {
+    "$ref": "http://sports.core.api.espn.com/v2/sports/football/leagues/nfl/seasons/2024/types/2/weeks/18?lang=en&region=us"
+   }
+  ]
+ },
+ "seasons/2024/types/2/weeks/1": {
+  "$ref": "http://sports.core.api.espn.com/v2/sports/football/leagues/nfl/seasons/2024/types/2/weeks/1?lang=en&region=us",
+  "number": 1,
+  "startDate": "2024-09-05T07:00Z",
+  "endDate": "2024-09-11T06:59Z",
+  "text": "Week 1",
+  "rankings": {
+   "$ref": "http://sports.core.api.espn.com/v2/sports/football/leagues/nfl/seasons/2024/types/2/weeks/1/rankings?lang=en&region=us"
+  },
+  "events": {
+   "$ref": "http://sports.core.api.espn.com/v2/sports/football/leagues/nfl/seasons/2024/types/2/weeks/1/events?lang=en&region=us"
+  },
+  "talentpicks": {
+   "$ref": "http://sports.core.api.espn.com/v2/sports/football/leagues/nfl/seasons/2024/types/2/weeks/1/talentpicks?lang=en&region=us"
+  },
+  "qbr": {
+   "$ref": "http://sports.core.api.espn.com/v2/sports/football/leagues/nfl/seasons/2024/types/2/weeks/1/qbr/10000?lang=en&region=us"
+  }
+ },
+ "seasons/2024/types/2/weeks/2": {
+  "$ref": "http://sports.core.api.espn.com/v2/sports/football/leagues/nfl/seasons/2024/types/2/weeks/2?lang=en&region=us",
+  "number": 2,
+  "startDate": "2024-09-11T07:00Z",
+  "endDate": "2024-09-18T06:59Z",
+  "text": "Week 2",
+  "rankings": {
+   "$ref": "http://sports.core.api.espn.com/v2/sports/football/leagues/nfl/seasons/2024/types/2/weeks/2/rankings?lang=en&region=us"
+  },
+  "events": {
+   "$ref": "http://sports.core.api.espn.com/v2/sports/football/leagues/nfl/seasons/2024/types/2/weeks/2/events?lang=en&region=us"
+  },
+  "talentpicks": {
+   "$ref": "http://sports.core.api.espn.com/v2/sports/football/leagues/nfl/seasons/2024/types/2/weeks/2/talentpicks?lang=en&region=us"
+  },
+  "qbr": {
+   "$ref": "http://sports.core.api.espn.com/v2/sports/football/leagues/nfl/seasons/2024/types/2/weeks/2/qbr/10000?lang=en&region=us"
+  }
+ },
+ "seasons/2024/types/2/weeks/3": {
+  "$ref": "http://sports.core.api.espn.com/v2/sports/football/leagues/nfl/seasons/2024/types/2/weeks/3?lang=en&region=us",
+  "number": 3,
+  "startDate": "2024-09-18T07:00Z",
+  "endDate": "2024-09-25T06:59Z",
+  "text": "Week 3",
+  "rankings": {
+   "$ref": "http://sports.core.api.espn.com/v2/sports/football/leagues/nfl/seasons/2024/types/2/weeks/3/rankings?lang=en&region=us"
+  },
+  "events": {
+   "$ref": "http://sports.core.api.espn.com/v2/sports/football/leagues/nfl/seasons/2024/types/2/weeks/3/events?lang=en&region=us"
+  },
+  "talentpicks": {
+   "$ref": "http://sports.core.api.espn.com/v2/sports/football/leagues/nfl/seasons/2024/types/2/weeks/3/talentpicks?lang=en&region=us"
+  },
+  "qbr": {
+   "$ref": "http://sports.core.api.espn.com/v2/sports/football/leagues/nfl/seasons/2024/types/2/weeks/3/qbr/10000?lang=en&region=us"
+  }
+ },
+ "seasons/2024/types/2/weeks/4": {
+  "$ref": "http://sports.core.api.espn.com/v2/sports/football/leagues/nfl/seasons/2024/types/2/weeks/4?lang=en&region=us",
+  "number": 4,
+  "startDate": "2024-09-25T07:00Z",
+  "endDate": "2024-10-02T06:59Z",
+  "text": "Week 4",
+  "rankings": {
+   "$ref": "http://sports.core.api.espn.com/v2/sports/football/leagues/nfl/seasons/2024/types/2/weeks/4/rankings?lang=en&region=us"
+  },
+  "events": {
+   "$ref": "http://sports.core.api.espn.com/v2/sports/football/leagues/nfl/seasons/2024/types/2/weeks/4/events?lang=en&region=us"
+  },
+  "talentpicks": {
+   "$ref": "http://sports.core.api.espn.com/v2/sports/football/leagues/nfl/seasons/2024/types/2/weeks/4/talentpicks?lang=en&region=us"
+  },
+  "qbr": {
+   "$ref": "http://sports.core.api.espn.com/v2/sports/football/leagues/nfl/seasons/2024/types/2/weeks/4/qbr/10000?lang=en&region=us"
+  }
+ },
+ "seasons/2024/types/2/weeks/5": {
+  "$ref": "http://sports.core.api.espn.com/v2/sports/football/leagues/nfl/seasons/2024/types/2/weeks/5?lang=en&region=us",
+  "number": 5,
+  "startDate": "2024-10-02T07:00Z",
+  "endDate": "2024-10-09T06:59Z",
+  "text": "Week 5",
+  "teamsOnBye": [
+   {
+    "$ref": "http://sports.core.api.espn.com/v2/sports/football/leagues/nfl/seasons/2024/teams/8?lang=en&region=us"
+   },
+   {
+    "$ref": "http://sports.core.api.espn.com/v2/sports/football/leagues/nfl/seasons/2024/teams/10?lang=en&region=us"
+   },
+   {
+    "$ref": "http://sports.core.api.espn.com/v2/sports/football/leagues/nfl/seasons/2024/teams/21?lang=en&region=us"
+   },
+   {
+    "$ref": "http://sports.core.api.espn.com/v2/sports/football/leagues/nfl/seasons/2024/teams/24?lang=en&region=us"
+   }
+  ],
+  "rankings": {
+   "$ref": "http://sports.core.api.espn.com/v2/sports/football/leagues/nfl/seasons/2024/types/2/weeks/5/rankings?lang=en&region=us"
+  },
+  "events": {
+   "$ref": "http://sports.core.api.espn.com/v2/sports/football/leagues/nfl/seasons/2024/types/2/weeks/5/events?lang=en&region=us"
+  },
+  "talentpicks": {
+   "$ref": "http://sports.core.api.espn.com/v2/sports/football/leagues/nfl/seasons/2024/types/2/weeks/5/talentpicks?lang=en&region=us"
+  },
+  "qbr": {
+   "$ref": "http://sports.core.api.espn.com/v2/sports/football/leagues/nfl/seasons/2024/types/2/weeks/5/qbr/10000?lang=en&region=us"
+  }
+ },
+ "seasons/2024/types/2/weeks/6": {
+  "$ref": "http://sports.core.api.espn.com/v2/sports/football/leagues/nfl/seasons/2024/types/2/weeks/6?lang=en&region=us",
+  "number": 6,
+  "startDate": "2024-10-09T07:00Z",
+  "endDate": "2024-10-16T06:59Z",
+  "text": "Week 6",
+  "teamsOnBye": [
+   {
+    "$ref": "http://sports.core.api.espn.com/v2/sports/football/leagues/nfl/seasons/2024/teams/12?lang=en&region=us"
+   },
+   {
+    "$ref": "http://sports.core.api.espn.com/v2/sports/football/leagues/nfl/seasons/2024/teams/14?lang=en&region=us"
+   },
+   {
+    "$ref": "http://sports.core.api.espn.com/v2/sports/football/leagues/nfl/seasons/2024/teams/15?lang=en&region=us"
+   },
+   {
+    "$ref": "http://sports.core.api.espn.com/v2/sports/football/leagues/nfl/seasons/2024/teams/16?lang=en&region=us"
+   }
+  ],
+  "rankings": {
+   "$ref": "http://sports.core.api.espn.com/v2/sports/football/leagues/nfl/seasons/2024/types/2/weeks/6/rankings?lang=en&region=us"
+  },
+  "events": {
+   "$ref": "http://sports.core.api.espn.com/v2/sports/football/leagues/nfl/seasons/2024/types/2/weeks/6/events?lang=en&region=us"
+  },
+  "talentpicks": {
+   "$ref": "http://sports.core.api.espn.com/v2/sports/football/leagues/nfl/seasons/2024/types/2/weeks/6/talentpicks?lang=en&region=us"
+  },
+  "qbr": {
+   "$ref": "http://sports.core.api.espn.com/v2/sports/football/leagues/nfl/seasons/2024/types/2/weeks/6/qbr/10000?lang=en&region=us"
+  }
+ },
+ "seasons/2024/types/2/weeks/7": {
+  "$ref": "http://sports.core.api.espn.com/v2/sports/football/leagues/nfl/seasons/2024/types/2/weeks/7?lang=en&region=us",
+  "number": 7,
+  "startDate": "2024-10-16T07:00Z",
+  "endDate": "2024-10-23T06:59Z",
+  "text": "Week 7",
+  "teamsOnBye": [
+   {
+    "$ref": "http://sports.core.api.espn.com/v2/sports/football/leagues/nfl/seasons/2024/teams/3?lang=en&region=us"
+   },
+   {
+    "$ref": "http://sports.core.api.espn.com/v2/sports/football/leagues/nfl/seasons/2024/teams/6?lang=en&region=us"
+   }
+  ],
+  "rankings": {
+   "$ref": "http://sports.core.api.espn.com/v2/sports/football/leagues/nfl/seasons/2024/types/2/weeks/7/rankings?lang=en&region=us"
+  },
+  "events": {
+   "$ref": "http://sports.core.api.espn.com/v2/sports/football/leagues/nfl/seasons/2024/types/2/weeks/7/events?lang=en&region=us"
+  },
+  "talentpicks": {
+   "$ref": "http://sports.core.api.espn.com/v2/sports/football/leagues/nfl/seasons/2024/types/2/weeks/7/talentpicks?lang=en&region=us"
+  },
+  "qbr": {
+   "$ref": "http://sports.core.api.espn.com/v2/sports/football/leagues/nfl/seasons/2024/types/2/weeks/7/qbr/10000?lang=en&region=us"
+  }
+ },
+ "seasons/2024/types/2/weeks/8": {
+  "$ref": "http://sports.core.api.espn.com/v2/sports/football/leagues/nfl/seasons/2024/types/2/weeks/8?lang=en&region=us",
+  "number": 8,
+  "startDate": "2024-10-23T07:00Z",
+  "endDate": "2024-10-30T06:59Z",
+  "text": "Week 8",
+  "rankings": {
+   "$ref": "http://sports.core.api.espn.com/v2/sports/football/leagues/nfl/seasons/2024/types/2/weeks/8/rankings?lang=en&region=us"
+  },
+  "events": {
+   "$ref": "http://sports.core.api.espn.com/v2/sports/football/leagues/nfl/seasons/2024/types/2/weeks/8/events?lang=en&region=us"
+  },
+  "talentpicks": {
+   "$ref": "http://sports.core.api.espn.com/v2/sports/football/leagues/nfl/seasons/2024/types/2/weeks/8/talentpicks?lang=en&region=us"
+  },
+  "qbr": {
+   "$ref": "http://sports.core.api.espn.com/v2/sports/football/leagues/nfl/seasons/2024/types/2/weeks/8/qbr/10000?lang=en&region=us"
+  }
+ },
+ "seasons/2024/types/2/weeks/9": {
+  "$ref": "http://sports.core.api.espn.com/v2/sports/football/leagues/nfl/seasons/2024/types/2/weeks/9?lang=en&region=us",
+  "number": 9,
+  "startDate": "2024-10-30T07:00Z",
+  "endDate": "2024-11-06T07:59Z",
+  "text": "Week 9",
+  "teamsOnBye": [
+   {
+    "$ref": "http://sports.core.api.espn.com/v2/sports/football/leagues/nfl/seasons/2024/teams/23?lang=en&region=us"
+   },
+   {
+    "$ref": "http://sports.core.api.espn.com/v2/sports/football/leagues/nfl/seasons/2024/teams/25?lang=en&region=us"
+   }
+  ],
+  "rankings": {
+   "$ref": "http://sports.core.api.espn.com/v2/sports/football/leagues/nfl/seasons/2024/types/2/weeks/9/rankings?lang=en&region=us"
+  },
+  "events": {
+   "$ref": "http://sports.core.api.espn.com/v2/sports/football/leagues/nfl/seasons/2024/types/2/weeks/9/events?lang=en&region=us"
+  },
+  "talentpicks": {
+   "$ref": "http://sports.core.api.espn.com/v2/sports/football/leagues/nfl/seasons/2024/types/2/weeks/9/talentpicks?lang=en&region=us"
+  },
+  "qbr": {
+   "$ref": "http://sports.core.api.espn.com/v2/sports/football/leagues/nfl/seasons/2024/types/2/weeks/9/qbr/10000?lang=en&region=us"
+  }
+ },
+ "seasons/2024/types/2/weeks/10": {
+  "$ref": "http://sports.core.api.espn.com/v2/sports/football/leagues/nfl/seasons/2024/types/2/weeks/10?lang=en&region=us",
+  "number": 10,
+  "startDate": "2024-11-06T08:00Z",
+  "endDate": "2024-11-13T07:59Z",
+  "text": "Week 10",
+  "teamsOnBye": [
+   {
+    "$ref": "http://sports.core.api.espn.com/v2/sports/football/leagues/nfl/seasons/2024/teams/5?lang=en&region=us"
+   },
+   {
+    "$ref": "http://sports.core.api.espn.com/v2/sports/football/leagues/nfl/seasons/2024/teams/9?lang=en&region=us"
+   },
+   {
+    "$ref": "http://sports.core.api.espn.com/v2/sports/football/leagues/nfl/seasons/2024/teams/13?lang=en&region=us"
+   },
+   {
+    "$ref": "http://sports.core.api.espn.com/v2/sports/football/leagues/nfl/seasons/2024/teams/26?lang=en&region=us"
+   }
+  ],
+  "rankings": {
+   "$ref": "http://sports.core.api.espn.com/v2/sports/football/leagues/nfl/seasons/2024/types/2/weeks/10/rankings?lang=en&region=us"
+  },
+  "events": {
+   "$ref": "http://sports.core.api.espn.com/v2/sports/football/leagues/nfl/seasons/2024/types/2/weeks/10/events?lang=en&region=us"
+  },
+  "talentpicks": {
+   "$ref": "http://sports.core.api.espn.com/v2/sports/football/leagues/nfl/seasons/2024/types/2/weeks/10/talentpicks?lang=en&region=us"
+  },
+  "qbr": {
+   "$ref": "http://sports.core.api.espn.com/v2/sports/football/leagues/nfl/seasons/2024/types/2/weeks/10/qbr/10000?lang=en&region=us"
+  }
+ },
+ "seasons/2024/types/2/weeks/11": {
+  "$ref": "http://sports.core.api.espn.com/v2/sports/football/leagues/nfl/seasons/2024/types/2/weeks/11?lang=en&region=us",
+  "number": 11,
+  "startDate": "2024-11-13T08:00Z",
+  "endDate": "2024-11-20T07:59Z",
+  "text": "Week 11",
+  "teamsOnBye": [
+   {
+    "$ref": "http://sports.core.api.espn.com/v2/sports/football/leagues/nfl/seasons/2024/teams/19?lang=en&region=us"
+   },
+   {
+    "$ref": "http://sports.core.api.espn.com/v2/sports/football/leagues/nfl/seasons/2024/teams/22?lang=en&region=us"
+   },
+   {
+    "$ref": "http://sports.core.api.espn.com/v2/sports/football/leagues/nfl/seasons/2024/teams/27?lang=en&region=us"
+   },
+   {
+    "$ref": "http://sports.core.api.espn.com/v2/sports/football/leagues/nfl/seasons/2024/teams/29?lang=en&region=us"
+   }
+  ],
+  "rankings": {
+   "$ref": "http://sports.core.api.espn.com/v2/sports/football/leagues/nfl/seasons/2024/types/2/weeks/11/rankings?lang=en&region=us"
+  },
+  "events": {
+   "$ref": "http://sports.core.api.espn.com/v2/sports/football/leagues/nfl/seasons/2024/types/2/weeks/11/events?lang=en&region=us"
+  },
+  "talentpicks": {
+   "$ref": "http://sports.core.api.espn.com/v2/sports/football/leagues/nfl/seasons/2024/types/2/weeks/11/talentpicks?lang=en&region=us"
+  },
+  "qbr": {
+   "$ref": "http://sports.core.api.espn.com/v2/sports/football/leagues/nfl/seasons/2024/types/2/weeks/11/qbr/10000?lang=en&region=us"
+  }
+ },
+ "seasons/2024/types/2/weeks/12": {
+  "$ref": "http://sports.core.api.espn.com/v2/sports/football/leagues/nfl/seasons/2024/types/2/weeks/12?lang=en&region=us",
+  "number": 12,
+  "startDate": "2024-11-20T08:00Z",
+  "endDate": "2024-11-27T07:59Z",
+  "text": "Week 12",
+  "teamsOnBye": [
+   {
+    "$ref": "http://sports.core.api.espn.com/v2/sports/football/leagues/nfl/seasons/2024/teams/1?lang=en&region=us"
+   },
+   {
+    "$ref": "http://sports.core.api.espn.com/v2/sports/football/leagues/nfl/seasons/2024/teams/2?lang=en&region=us"
+   },
+   {
+    "$ref": "http://sports.core.api.espn.com/v2/sports/football/leagues/nfl/seasons/2024/teams/4?lang=en&region=us"
+   },
+   {
+    "$ref": "http://sports.core.api.espn.com/v2/sports/football/leagues/nfl/seasons/2024/teams/18?lang=en&region=us"
+   },
+   {
+    "$ref": "http://sports.core.api.espn.com/v2/sports/football/leagues/nfl/seasons/2024/teams/20?lang=en&region=us"
+   },
+   {
+    "$ref": "http://sports.core.api.espn.com/v2/sports/football/leagues/nfl/seasons/2024/teams/30?lang=en&region=us"
+   }
+  ],
+  "rankings": {
+   "$ref": "http://sports.core.api.espn.com/v2/sports/football/leagues/nfl/seasons/2024/types/2/weeks/12/rankings?lang=en&region=us"
+  },
+  "events": {
+   "$ref": "http://sports.core.api.espn.com/v2/sports/football/leagues/nfl/seasons/2024/types/2/weeks/12/events?lang=en&region=us"
+  },
+  "talentpicks": {
+   "$ref": "http://sports.core.api.espn.com/v2/sports/football/leagues/nfl/seasons/2024/types/2/weeks/12/talentpicks?lang=en&region=us"
+  },
+  "qbr": {
+   "$ref": "http://sports.core.api.espn.com/v2/sports/football/leagues/nfl/seasons/2024/types/2/weeks/12/qbr/10000?lang=en&region=us"
+  }
+ },
+ "seasons/2024/types/2/weeks/13": {
+  "$ref": "http://sports.core.api.espn.com/v2/sports/football/leagues/nfl/seasons/2024/types/2/weeks/13?lang=en&region=us",
+  "number": 13,
+  "startDate": "2024-11-27T08:00Z",
+  "endDate": "2024-12-04T07:59Z",
+  "text": "Week 13",
+  "rankings": {
+   "$ref": "http://sports.core.api.espn.com/v2/sports/football/leagues/nfl/seasons/2024/types/2/weeks/13/rankings?lang=en&region=us"
+  },
+  "events": {
+   "$ref": "http://sports.core.api.espn.com/v2/sports/football/leagues/nfl/seasons/2024/types/2/weeks/13/events?lang=en&region=us"
+  },
+  "talentpicks": {
+   "$ref": "http://sports.core.api.espn.com/v2/sports/football/leagues/nfl/seasons/2024/types/2/weeks/13/talentpicks?lang=en&region=us"
+  },
+  "qbr": {
+   "$ref": "http://sports.core.api.espn.com/v2/sports/football/leagues/nfl/seasons/2024/types/2/weeks/13/qbr/10000?lang=en&region=us"
+  }
+ },
+ "seasons/2024/types/2/weeks/14": {
+  "$ref": "http://sports.core.api.espn.com/v2/sports/football/leagues/nfl/seasons/2024/types/2/weeks/14?lang=en&region=us",
+  "number": 14,
+  "startDate": "2024-12-04T08:00Z",
+  "endDate": "2024-12-11T07:59Z",
+  "text": "Week 14",
+  "teamsOnBye": [
+   {
+    "$ref": "http://sports.core.api.espn.com/v2/sports/football/leagues/nfl/seasons/2024/teams/7?lang=en&region=us"
+   },
+   {
+    "$ref": "http://sports.core.api.espn.com/v2/sports/football/leagues/nfl/seasons/2024/teams/11?lang=en&region=us"
+   },
+   {
+    "$ref": "http://sports.core.api.espn.com/v2/sports/football/leagues/nfl/seasons/2024/teams/17?lang=en&region=us"
+   },
+   {
+    "$ref": "http://sports.core.api.espn.com/v2/sports/football/leagues/nfl/seasons/2024/teams/28?lang=en&region=us"
+   },
+   {
+    "$ref": "http://sports.core.api.espn.com/v2/sports/football/leagues/nfl/seasons/2024/teams/33?lang=en&region=us"
+   },
+   {
+    "$ref": "http://sports.core.api.espn.com/v2/sports/football/leagues/nfl/seasons/2024/teams/34?lang=en&region=us"
+   }
+  ],
+  "rankings": {
+   "$ref": "http://sports.core.api.espn.com/v2/sports/football/leagues/nfl/seasons/2024/types/2/weeks/14/rankings?lang=en&region=us"
+  },
+  "events": {
+   "$ref": "http://sports.core.api.espn.com/v2/sports/football/leagues/nfl/seasons/2024/types/2/weeks/14/events?lang=en&region=us"
+  },
+  "talentpicks": {
+   "$ref": "http://sports.core.api.espn.com/v2/sports/football/leagues/nfl/seasons/2024/types/2/weeks/14/talentpicks?lang=en&region=us"
+  },
+  "qbr": {
+   "$ref": "http://sports.core.api.espn.com/v2/sports/football/leagues/nfl/seasons/2024/types/2/weeks/14/qbr/10000?lang=en&region=us"
+  }
+ },
+ "seasons/2024/types/2/weeks/15": {
+  "$ref": "http://sports.core.api.espn.com/v2/sports/football/leagues/nfl/seasons/2024/types/2/weeks/15?lang=en&region=us",
+  "number": 15,
+  "startDate": "2024-12-11T08:00Z",
+  "endDate": "2024-12-18T07:59Z",
+  "text": "Week 15",
+  "rankings": {
+   "$ref": "http://sports.core.api.espn.com/v2/sports/football/leagues/nfl/seasons/2024/types/2/weeks/15/rankings?lang=en&region=us"
+  },
+  "events": {
+   "$ref": "http://sports.core.api.espn.com/v2/sports/football/leagues/nfl/seasons/2024/types/2/weeks/15/events?lang=en&region=us"
+  },
+  "talentpicks": {
+   "$ref": "http://sports.core.api.espn.com/v2/sports/football/leagues/nfl/seasons/2024/types/2/weeks/15/talentpicks?lang=en&region=us"
+  },
+  "qbr": {
+   "$ref": "http://sports.core.api.espn.com/v2/sports/football/leagues/nfl/seasons/2024/types/2/weeks/15/qbr/10000?lang=en&region=us"
+  }
+ },
+ "seasons/2024/types/2/weeks/16": {
+  "$ref": "http://sports.core.api.espn.com/v2/sports/football/leagues/nfl/seasons/2024/types/2/weeks/16?lang=en&region=us",
+  "number": 16,
+  "startDate": "2024-12-18T08:00Z",
+  "endDate": "2024-12-25T07:59Z",
+  "text": "Week 16",
+  "rankings": {
+   "$ref": "http://sports.core.api.espn.com/v2/sports/football/leagues/nfl/seasons/2024/types/2/weeks/16/rankings?lang=en&region=us"
+  },
+  "events": {
+   "$ref": "http://sports.core.api.espn.com/v2/sports/football/leagues/nfl/seasons/2024/types/2/weeks/16/events?lang=en&region=us"
+  },
+  "talentpicks": {
+   "$ref": "http://sports.core.api.espn.com/v2/sports/football/leagues/nfl/seasons/2024/types/2/weeks/16/talentpicks?lang=en&region=us"
+  },
+  "qbr": {
+   "$ref": "http://sports.core.api.espn.com/v2/sports/football/leagues/nfl/seasons/2024/types/2/weeks/16/qbr/10000?lang=en&region=us"
+  }
+ },
+ "seasons/2024/types/2/weeks/17": {
+  "$ref": "http://sports.core.api.espn.com/v2/sports/football/leagues/nfl/seasons/2024/types/2/weeks/17?lang=en&region=us",
+  "number": 17,
+  "startDate": "2024-12-25T08:00Z",
+  "endDate": "2025-01-01T07:59Z",
+  "text": "Week 17",
+  "rankings": {
+   "$ref": "http://sports.core.api.espn.com/v2/sports/football/leagues/nfl/seasons/2024/types/2/weeks/17/rankings?lang=en&region=us"
+  },
+  "events": {
+   "$ref": "http://sports.core.api.espn.com/v2/sports/football/leagues/nfl/seasons/2024/types/2/weeks/17/events?lang=en&region=us"
+  },
+  "talentpicks": {
+   "$ref": "http://sports.core.api.espn.com/v2/sports/football/leagues/nfl/seasons/2024/types/2/weeks/17/talentpicks?lang=en&region=us"
+  },
+  "qbr": {
+   "$ref": "http://sports.core.api.espn.com/v2/sports/football/leagues/nfl/seasons/2024/types/2/weeks/17/qbr/10000?lang=en&region=us"
+  }
+ },
+ "seasons/2024/types/2/weeks/18": {
+  "$ref": "http://sports.core.api.espn.com/v2/sports/football/leagues/nfl/seasons/2024/types/2/weeks/18?lang=en&region=us",
+  "number": 18,
+  "startDate": "2025-01-01T08:00Z",
+  "endDate": "2025-01-08T07:59Z",
+  "text": "Week 18",
+  "rankings": {
+   "$ref": "http://sports.core.api.espn.com/v2/sports/football/leagues/nfl/seasons/2024/types/2/weeks/18/rankings?lang=en&region=us"
+  },
+  "events": {
+   "$ref": "http://sports.core.api.espn.com/v2/sports/football/leagues/nfl/seasons/2024/types/2/weeks/18/events?lang=en&region=us"
+  },
+  "talentpicks": {
+   "$ref": "http://sports.core.api.espn.com/v2/sports/football/leagues/nfl/seasons/2024/types/2/weeks/18/talentpicks?lang=en&region=us"
+  },
+  "qbr": {
+   "$ref": "http://sports.core.api.espn.com/v2/sports/football/leagues/nfl/seasons/2024/types/2/weeks/18/qbr/10000?lang=en&region=us"
+  }
+ },
+ "seasons/2024/types/3/weeks": {
+  "count": 5,
+  "pageIndex": 1,
+  "pageSize": 100,
+  "pageCount": 1,
+  "items": [
+   {
+    "$ref": "http://sports.core.api.espn.com/v2/sports/football/leagues/nfl/seasons/2024/types/3/weeks/1?lang=en&region=us"
+   },
+   {
+    "$ref": "http://sports.core.api.espn.com/v2/sports/football/leagues/nfl/seasons/2024/types/3/weeks/2?lang=en&region=us"
+   },
+   {
+    "$ref": "http://sports.core.api.espn.com/v2/sports/football/leagues/nfl/seasons/2024/types/3/weeks/3?lang=en&region=us"
+   },
+   {
+    "$ref": "http://sports.core.api.espn.com/v2/sports/football/leagues/nfl/seasons/2024/types/3/weeks/4?lang=en&region=us"
+   },
+   {
+    "$ref": "http://sports.core.api.espn.com/v2/sports/football/leagues/nfl/seasons/2024/types/3/weeks/5?lang=en&region=us"
+   }
+  ]
+ },
+ "seasons/2024/types/3/weeks/1": {
+  "$ref": "http://sports.core.api.espn.com/v2/sports/football/leagues/nfl/seasons/2024/types/3/weeks/1?lang=en&region=us",
+  "number": 1,
+  "startDate": "2025-01-08T08:00Z",
+  "endDate": "2025-01-16T07:59Z",
+  "text": "Wild Card",
+  "rankings": {
+   "$ref": "http://sports.core.api.espn.com/v2/sports/football/leagues/nfl/seasons/2024/types/3/weeks/1/rankings?lang=en&region=us"
+  },
+  "events": {
+   "$ref": "http://sports.core.api.espn.com/v2/sports/football/leagues/nfl/seasons/2024/types/3/weeks/1/events?lang=en&region=us"
+  },
+  "talentpicks": {
+   "$ref": "http://sports.core.api.espn.com/v2/sports/football/leagues/nfl/seasons/2024/types/3/weeks/1/talentpicks?lang=en&region=us"
+  },
+  "qbr": {
+   "$ref": "http://sports.core.api.espn.com/v2/sports/football/leagues/nfl/seasons/2024/types/3/weeks/1/qbr/10000?lang=en&region=us"
+  }
+ },
+ "seasons/2024/types/3/weeks/2": {
+  "$ref": "http://sports.core.api.espn.com/v2/sports/football/leagues/nfl/seasons/2024/types/3/weeks/2?lang=en&region=us",
+  "number": 2,
+  "startDate": "2025-01-16T08:00Z",
+  "endDate": "2025-01-23T07:59Z",
+  "text": "Divisional Round",
+  "rankings": {
+   "$ref": "http://sports.core.api.espn.com/v2/sports/football/leagues/nfl/seasons/2024/types/3/weeks/2/rankings?lang=en&region=us"
+  },
+  "events": {
+   "$ref": "http://sports.core.api.espn.com/v2/sports/football/leagues/nfl/seasons/2024/types/3/weeks/2/events?lang=en&region=us"
+  },
+  "talentpicks": {
+   "$ref": "http://sports.core.api.espn.com/v2/sports/football/leagues/nfl/seasons/2024/types/3/weeks/2/talentpicks?lang=en&region=us"
+  },
+  "qbr": {
+   "$ref": "http://sports.core.api.espn.com/v2/sports/football/leagues/nfl/seasons/2024/types/3/weeks/2/qbr/10000?lang=en&region=us"
+  }
+ },
+ "seasons/2024/types/3/weeks/3": {
+  "$ref": "http://sports.core.api.espn.com/v2/sports/football/leagues/nfl/seasons/2024/types/3/weeks/3?lang=en&region=us",
+  "number": 3,
+  "startDate": "2025-01-23T08:00Z",
+  "endDate": "2025-01-30T07:59Z",
+  "text": "Conference Championship",
+  "rankings": {
+   "$ref": "http://sports.core.api.espn.com/v2/sports/football/leagues/nfl/seasons/2024/types/3/weeks/3/rankings?lang=en&region=us"
+  },
+  "events": {
+   "$ref": "http://sports.core.api.espn.com/v2/sports/football/leagues/nfl/seasons/2024/types/3/weeks/3/events?lang=en&region=us"
+  },
+  "talentpicks": {
+   "$ref": "http://sports.core.api.espn.com/v2/sports/football/leagues/nfl/seasons/2024/types/3/weeks/3/talentpicks?lang=en&region=us"
+  },
+  "qbr": {
+   "$ref": "http://sports.core.api.espn.com/v2/sports/football/leagues/nfl/seasons/2024/types/3/weeks/3/qbr/10000?lang=en&region=us"
+  }
+ },
+ "seasons/2024/types/3/weeks/4": {
+  "$ref": "http://sports.core.api.espn.com/v2/sports/football/leagues/nfl/seasons/2024/types/3/weeks/4?lang=en&region=us",
+  "number": 4,
+  "startDate": "2025-01-30T08:00Z",
+  "endDate": "2025-02-06T07:59Z",
+  "text": "Pro Bowl",
+  "rankings": {
+   "$ref": "http://sports.core.api.espn.com/v2/sports/football/leagues/nfl/seasons/2024/types/3/weeks/4/rankings?lang=en&region=us"
+  },
+  "events": {
+   "$ref": "http://sports.core.api.espn.com/v2/sports/football/leagues/nfl/seasons/2024/types/3/weeks/4/events?lang=en&region=us"
+  },
+  "talentpicks": {
+   "$ref": "http://sports.core.api.espn.com/v2/sports/football/leagues/nfl/seasons/2024/types/3/weeks/4/talentpicks?lang=en&region=us"
+  }
+ },
+ "seasons/2024/types/3/weeks/5": {
+  "$ref": "http://sports.core.api.espn.com/v2/sports/football/leagues/nfl/seasons/2024/types/3/weeks/5?lang=en&region=us",
+  "number": 5,
+  "startDate": "2025-02-06T08:00Z",
+  "endDate": "2025-02-14T07:59Z",
+  "text": "Super Bowl",
+  "rankings": {
+   "$ref": "http://sports.core.api.espn.com/v2/sports/football/leagues/nfl/seasons/2024/types/3/weeks/5/rankings?lang=en&region=us"
+  },
+  "events": {
+   "$ref": "http://sports.core.api.espn.com/v2/sports/football/leagues/nfl/seasons/2024/types/3/weeks/5/events?lang=en&region=us"
+  },
+  "talentpicks": {
+   "$ref": "http://sports.core.api.espn.com/v2/sports/football/leagues/nfl/seasons/2024/types/3/weeks/5/talentpicks?lang=en&region=us"
+  },
+  "qbr": {
+   "$ref": "http://sports.core.api.espn.com/v2/sports/football/leagues/nfl/seasons/2024/types/3/weeks/5/qbr/10000?lang=en&region=us"
+  }
+ }
+}

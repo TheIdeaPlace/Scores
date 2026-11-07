@@ -19,6 +19,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     Live Scores, a Listen to the Game menu on a game's details, a radio button in Team Hub, and
     **Game Radio** in The Bench.
   - Both apps read the same list, `radio_links.json`, and the nightly data check opens every link in it.
+- **Golf: past leaderboards on Windows, winners on the iPhone (#189).** Each app had half of this.
+  - Windows: press Enter on any tournament in the golf dialog's Schedule to open its leaderboard. The
+    window title and the line above the tabs name the tournament shown, and F5 retries it if it fails.
+    A cancelled tournament now says Canceled in the schedule.
+  - iPhone: the golf Schedule shows each finished tournament's winner and score in all three view modes
+    (a cancelled one says Canceled), and Table view's rows open the tournament with VoiceOver. If the winners can't be loaded, the schedule
+    says so and a pull to refresh tries again.
+  - Both apps ask ESPN the same two ways (the season for the winners, a tournament's date for its
+    leaderboard) and follow the same rules for which tournament to show and who won, held to one shared
+    test grid. In a week with two tournaments, the one you picked is the one that opens. Team events
+    (the Zurich Classic, the Presidents Cup) name the team.
 - **Every college football poll, on both apps.** Polls for NCAAF shows all six that ESPN publishes, in
   ESPN's order: the College Football Playoff committee's rankings, the AP Poll, the AFCA Coaches Poll, the
   FCS Coaches Poll, and the AFCA Division II and Division III polls. Both apps already passed on whatever
@@ -62,6 +73,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   A poll with no votes, the playoff committee's or college hockey's, has no Points column any more, so
   the Quick List no longer reads blanks such as "3, Utah Utes, 8-0, , NR". From the NVDA college
   football bug bash.
+- **iPhone: one odd entry from ESPN no longer loses a whole golf tour (#206).** A calendar entry,
+  golfer or field ESPN sends incomplete is skipped instead, so the Golf hub and Live Scores show what's
+  there. Team events, whose players are teams, used to fail outright and now show.
+- **Golf: the tournament being played is the one shown (#206).** In a week with two PGA events, the
+  iPhone took whichever ESPN listed first, and the Windows leaderboard did the same. Both now show the
+  one in progress. Between rounds, overnight, Windows' Live Scores now keeps showing a tournament that's
+  still on, as the iPhone always has.
 - **iPhone: a golf tournament in progress stays on Live Scores when a refresh fails.** It used to vanish
   with nothing said. Now, as on Windows, the tournament last shown stays and the note under the list
   names the tour ESPN didn't answer for. A tournament in progress also no longer hides behind "No games
@@ -76,6 +94,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   the plays stops it. Alt+P on an at-bat or an inning, and Alt+S on an inning, say what to select; a
   pitch with no location says so instead of staying silent. Which rows count as pitches is now
   decided when the tree is built, not guessed from words like "ball" and "foul" in the row's text.
+- **Windows: football weeks outside the current season have ESPN's names.** ESPN's scoreboard calendar
+  only covers the current season, so any other season's weeks read "Week 1", "Week 2" through the
+  playoffs. Windows now reads those names from the same place as the iPhone, ESPN's Core API: Hall of
+  Fame Weekend and Preseason Week 1, then Wild Card, Divisional Round, Conference Championship and Super
+  Bowl, or Bowls for college. The week arrows go from preseason to the regular season to the postseason
+  in those seasons too. The name is fetched with the games, never while you wait on a key press; if it
+  can't be had, the week is "Week N", as on the iPhone, and the games still say if they failed (#192).
 - **iPhone: every table opens in your Default view.** The setting in Settings used to reach only a few
   screens; scores, Live Scores, standings, box scores, statistics, polls, schedules, Team Hub's stats,
   golf, racing and the fantasy cheatsheet all opened in Quick List whatever it said. Each screen now
@@ -83,6 +108,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **iPhone: VoiceOver reads a standings row's Full List in full.** A wild card row's Record and an NHL
   row's Last 10 were shown but not spoken. Each Full List row is now spoken as it reads. An NHL row
   also reads "Overtime losses" rather than "OT Losses", and starts with the team's rank when ESPN sends one.
+- **Drives: a return touchdown is credited to the team that scored, with the points actually scored.**
+  ESPN marks a missed field goal or a kickoff run back for a touchdown on the kicking team's drive, so
+  Windows read "[TD 7pts] NC State Wolfpack" for Duke's 100-yard return. That drive now reads
+  "[Duke Blue Devils return TD 7pts] NC State Wolfpack", and a kickoff returned for a touchdown says so
+  on its Kickoff row. Every touchdown was "TD 7pts"; the badge now gives the points from the score: 6
+  with no extra point or a walk-off in overtime, 8 with a two-point conversion, and a blocked try run
+  back for two is named too. The iPhone's drive chart gets the same rule: it showed ESPN's "TD" on the
+  kicking team's drive.
+- **Windows: Team Hub shows an unbeaten or winless team's record.** Miami at 8-0 had no record in the
+  header, and a winless team lost its record the same way. Ties show for any league that has them.
+- **Windows: Bowls & Playoffs headings can be reached.** Each heading is a row you land on, read by its
+  name and game count ("Playoff Quarterfinals, 4 games"), the list is named "Bowls & Playoffs", and the
+  first row is selected when it opens. The College Football Playoff's first-round games, which ESPN
+  sends as plain games, have their own heading instead of sitting among the bowls. The headings and
+  their order (first round, quarterfinals, semifinals, championship, then the bowls, each by kickoff)
+  match the iPhone's Bowls & Playoffs list.
 
 ### In Progress
 - **Game Wrap Up Feature**: ESPN text processing and game story extraction (under construction)

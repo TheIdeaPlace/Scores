@@ -72,7 +72,12 @@ from tab_keys import group_noun
 from box_score import build_box_tables
 from soccer import SOCCER_LEAGUES, TEAM_NAME_ONLY_HEADERS, no_table_message, soccer_teams_table
 from team_stats import RANKING_HEADERS, ranking_rows, team_stat_lists
-from game_labels import scoreboard_today, on_todays_scoreboard, basketball_period_label, football_period_label, football_period_sort_key, game_standings_tables, schedule_row_text, schedule_start_row
+from drive_results import (
+    FG as DRIVE_FG, TD as DRIVE_TD,
+    chronological_drives, drive_badge, drive_results, summary_teams,
+)
+from postseason import PLAYOFF_ROUNDS, game_headline, heading_text, postseason_sections
+from game_labels import scoreboard_today, on_todays_scoreboard, basketball_period_label, football_period_label, football_period_sort_key, game_standings_tables, schedule_row_text, schedule_start_row, team_record_text
 
 # Text processing utilities
 try:
@@ -179,13 +184,6 @@ def get_pitch_location(horizontal: int, vertical: int, batter_side: str = None) 
         return location  # Already includes height
     else:
         return f"{height_desc} {location}"
-
-def _int_or_none(value):
-    try:
-        return int(value)
-    except (TypeError, ValueError):
-        return None
-
 
 def _focus_once_active(dialog, set_focus):
     """Run `set_focus` once, after the dialog has opened and taken its first focus, so it
@@ -2702,6 +2700,10 @@ class LeagueView(BaseView):
         preseason game apart from the September opener. Prefixed like the
         non-football "Date: …" label so a screen reader hearing the window
         knows what the value refers to.
+
+        Read from the cache, never the network: the loader's prepare_week
+        fetched the name, from the Core API for a past season, as the iPhone
+        does. Until then, or if that failed, it is "Week N".
         """
         try:
             from services.football_calendar import get_week_label
@@ -3798,22 +3800,73 @@ class GameDetailsView(BaseView):
     def _add_drives_list_to_layout(self, layout, drives_data):
         """Add NFL/NCAAF drives data to layout (Football-specific method)"""
         
+        teams = summary_teams(getattr(self, "current_raw_details", None))
+        away_team = teams.get("away", {})
+        home_team = teams.get("home", {})
+        team_names = {"away": away_team.get("name", ""), "home": home_team.get("name", "")}
+        scored = {}
+        # Without both teams the scorer can't be told from the side with the ball, so
+        # the badges fall back to ESPN's result, without points.
+        if away_team.get("id") and home_team.get("id"):
+            played = chronological_drives(drives_data)
+            scored = dict(zip(
+                (id(d) for d in played),
+                drive_results(played, away_team["id"], home_team["id"]),
+            ))
+
         def get_drive_result_info(drive):
             """Get scoring drive information with accessibility-compliant colors"""
-            result = drive.get('result', '').upper()
-            
+            result = (drive.get('result') or '').upper()
+
+            # Who scored and how many points, from the plays' scores: ESPN marks a
+            # return touchdown on the drive of the team that gave it up (#204).
+            score = scored.get(id(drive))
+            if score is not None and score.kind is not None:
+                other = "home" if score.scorer == "away" else "away"
+                badge = drive_badge(score, team_names.get(score.scorer, ""), team_names.get(other, ""))
+                if score.by_opponent:
+                    # The other team scored: a turnover for the team with the ball.
+                    scorer = team_names.get(score.scorer) or "The other team"
+                    return {
+                        'icon': '🔄',
+                        'badge': badge,
+                        'color': QColor(255, 140, 0, 60),
+                        'accessible_text': f"{scorer} scored on this drive",
+                    }
+                if score.kind == DRIVE_TD:
+                    return {
+                        'icon': '🏈',
+                        'badge': badge,
+                        'color': QColor(0, 100, 0, 80),
+                        'accessible_text': 'Touchdown scoring drive',
+                    }
+                if score.kind == DRIVE_FG:
+                    return {
+                        'icon': '🥅',
+                        'badge': badge,
+                        'color': QColor(0, 0, 139, 60),
+                        'accessible_text': 'Field goal scoring drive',
+                    }
+                return {
+                    'icon': '🛡️',
+                    'badge': badge,
+                    'color': QColor(128, 0, 128, 60),
+                    'accessible_text': 'Scoring drive',
+                }
+
             # WCAG AA compliant colors (4.5:1 contrast ratio minimum)
             if result == 'TD':
+                # ESPN says touchdown but the plays carry no score change.
                 return {
-                    'icon': '🏈', 
-                    'badge': 'TD 7pts', 
+                    'icon': '🏈',
+                    'badge': 'TD',
                     'color': QColor(0, 100, 0, 80),      # Dark green background
                     'accessible_text': 'Touchdown scoring drive'
                 }
             elif result == 'FG':
                 return {
-                    'icon': '🥅', 
-                    'badge': 'FG 3pts', 
+                    'icon': '🥅',
+                    'badge': 'FG',
                     'color': QColor(0, 0, 139, 60),      # Dark blue background
                     'accessible_text': 'Field goal scoring drive'
                 }
@@ -3854,8 +3907,8 @@ class GameDetailsView(BaseView):
                 }
             elif result == 'SAFETY':
                 return {
-                    'icon': '🛡️', 
-                    'badge': 'SAFETY 2pts', 
+                    'icon': '🛡️',
+                    'badge': 'SAFETY',
                     'color': QColor(128, 0, 128, 60),    # Purple background
                     'accessible_text': 'Safety scoring drive'
                 }
@@ -3955,16 +4008,31 @@ class GameDetailsView(BaseView):
             # Group by quarter
             if quarter not in quarter_groups:
                 quarter_groups[quarter] = []
-            
+
+            # Taken from the whole drive, before its kickoffs are split off.
+            result_info = get_drive_result_info(drive)
+            # A drive that is only a kickoff shows as the kickoff alone, so a kickoff
+            # run back for a touchdown says so there.
+            kickoff_label = "Kickoff"
+            score = scored.get(id(drive))
+            if not drive_plays and score is not None and score.kind is not None:
+                badge = result_info['badge']
+                # Kickoff rows carry no team, so name the scorer whichever drive ESPN
+                # filed the return on.
+                scorer = team_names.get(score.scorer, "")
+                if not score.by_opponent and scorer:
+                    badge = f"{scorer} {badge}"
+                kickoff_label = f"[{badge}] Kickoff"
+
             # Add kickoffs as separate entries
             for kickoff in kickoff_plays:
-                quarter_groups[quarter].append(("Kickoff", {"plays": [kickoff]}, "Special Teams", "Kickoff", True))
-            
+                quarter_groups[quarter].append((kickoff_label, {"plays": [kickoff]}, "Special Teams", "Kickoff", True, None))
+
             # Add regular drive if it has non-kickoff plays
             if drive_plays:
                 modified_drive = drive.copy()
                 modified_drive["plays"] = drive_plays
-                quarter_groups[quarter].append((drive_label, modified_drive, team_name, description, False))
+                quarter_groups[quarter].append((drive_label, modified_drive, team_name, description, False, result_info))
         
         # Build tree structure by quarter
         for quarter in sorted(quarter_groups.keys(), key=football_period_sort_key):
@@ -3973,10 +4041,10 @@ class GameDetailsView(BaseView):
             drives_tree.addTopLevelItem(quarter_item)
             
             drives_in_quarter = quarter_groups[quarter]
-            for drive_label, drive, team_name, description, is_kickoff in drives_in_quarter:
+            for drive_label, drive, team_name, description, is_kickoff, result_info in drives_in_quarter:
                 if is_kickoff:
                     # Create kickoff item directly under quarter
-                    kickoff_item = QTreeWidgetItem(["Kickoff"])
+                    kickoff_item = QTreeWidgetItem([drive_label])
                     kickoff_item.setBackground(0, QColor(240, 240, 255))  # Light blue
                     kickoff_item.setExpanded(False)
                     quarter_item.addChild(kickoff_item)
@@ -3996,9 +4064,6 @@ class GameDetailsView(BaseView):
                         play_item = QTreeWidgetItem([play_text])
                         kickoff_item.addChild(play_item)
                 else:
-                    # Create enhanced drive summary node with scoring information
-                    result_info = get_drive_result_info(drive)
-                    
                     # Build enhanced drive summary with scoring indicators
                     enhanced_summary = f"[{result_info['badge']}] {team_name}: {description}"
                     
@@ -8324,6 +8389,13 @@ class LeagueScoresLoader(QThread):
             scores = ApiService.get_scores(self.league, **self.request) or []
             if self.request.get("week") is not None:
                 scores = ApiService.freshen_live_games(self.league, scores)
+                # The week's name and the season's weeks, for the label and the
+                # week arrows, which read them from the cache on the UI thread.
+                # A past season's come from the Core API. After the games, so a
+                # failed games request isn't kept waiting on it. Never raises.
+                from services.football_calendar import prepare_week
+                prepare_week(self.league, self.request.get("season"),
+                             self.request.get("seasontype"), self.request["week"])
             try:
                 news = ApiService.get_news(self.league) or []
             except Exception:
@@ -8541,20 +8613,18 @@ class TeamHubDialog(QDialog):
         name_lbl.setAccessibleName(f"Team: {self.team_name}")
         header_layout.addWidget(name_lbl)
 
-        wins = self.team_data.get('wins', '')
-        losses = self.team_data.get('losses', '')
-        ties = self.team_data.get('ties', 0)
         rec_text = ""
         if self.league in SOCCER_LEAGUES:
             # Wins, draws, losses, as a soccer record reads everywhere else. A team with no
             # losses yet still has one. A cup's team list has none, and a game can say N/A.
             if self.team_data.get('record') not in (None, "", "N/A"):
                 rec_text = f"({self.team_data['record']})"
-        elif wins and losses:
-            if self.league == "NFL" and ties and int(ties) > 0:
-                rec_text = f"({wins}-{losses}-{ties})"
-            else:
-                rec_text = f"({wins}-{losses})"
+        else:
+            # 8-0 and 0-9 are records too (#203).
+            record = team_record_text(self.team_data.get('wins'), self.team_data.get('losses'),
+                                      self.team_data.get('ties'))
+            if record:
+                rec_text = f"({record})"
         if rec_text:
             rec_lbl = QLabel(rec_text)
             rec_lbl.setFont(font)
@@ -9053,16 +9123,20 @@ class FantasyCheatsheetLoader(QThread):
 
 
 class GolfLeaderboardLoader(QThread):
+    """A tournament's leaderboard: the tour's current one, or with `date` and `event_id`
+    one chosen from the schedule (scoreboard?dates=YYYYMMDD, as the iPhone asks)."""
     data_loaded = pyqtSignal(dict)
     error_occurred = pyqtSignal(str)
 
-    def __init__(self, tour: str):
+    def __init__(self, tour: str, date: str = None, event_id: str = None):
         super().__init__()
         self.tour = tour
+        self.date = date
+        self.event_id = event_id
 
     def run(self):
         try:
-            self.data_loaded.emit(ApiService.get_golf_leaderboard(self.tour) or {})
+            self.data_loaded.emit(ApiService.get_golf_leaderboard(self.tour, self.date, self.event_id) or {})
         except Exception as e:
             self.error_occurred.emit(_said(e))
 
@@ -10729,19 +10803,28 @@ class FantasyPlayerDialog(QDialog):
 
 
 class GolfTournamentDialog(QDialog):
-    """Golf tournament viewer: current leaderboard + full season schedule."""
+    """Golf tournament viewer: a leaderboard + the full season schedule.
+
+    The leaderboard opens on the tour's current tournament. Enter on a schedule row opens
+    that tournament's leaderboard in its place (scoreboard?dates=YYYYMMDD, picked by id,
+    the way the iPhone opens a past tournament).
+    """
 
     _TOUR_NAMES = {"PGA": "PGA Tour", "LPGA": "LPGA Tour"}
 
     def __init__(self, tour: str, parent=None):
         super().__init__(parent)
         self.tour = tour
-        tour_name = self._TOUR_NAMES.get(tour, tour)
-        self.setWindowTitle(f"{tour_name} — Sports Scores")
+        self.tour_name = self._TOUR_NAMES.get(tour, tour)
+        self.setWindowTitle(f"{self.tour_name} — Sports Scores")
         self.setMinimumSize(700, 500)
         self.resize(950, 680)
         self._loaders = []
         self._failed_lists = set()
+        # The schedule event the leaderboard shows, or None for the tour's current one.
+        self._chosen = None
+        # Counts leaderboard requests, so only the newest one's answer is shown.
+        self._leaderboard_request = 0
         self._setup_ui()
         self._load_leaderboard()
         self._load_schedule()
@@ -10755,7 +10838,7 @@ class GolfTournamentDialog(QDialog):
         layout.addWidget(header)
 
         self.tournament_label = QLabel("Loading current tournament…")
-        self.tournament_label.setAccessibleName("Current tournament")
+        self.tournament_label.setAccessibleName("Tournament")
         layout.addWidget(self.tournament_label)
 
         self.tab_widget = make_tab_area(2, f"{tour_name} sections")
@@ -10763,21 +10846,24 @@ class GolfTournamentDialog(QDialog):
         self.leaderboard_list = QListWidget()
         self.leaderboard_list.setAccessibleName(f"{tour_name} Leaderboard")
         self.leaderboard_list.setAccessibleDescription(
-            "Current tournament leaderboard. Each entry shows position, player name, total score, and round scores.")
+            "Tournament leaderboard. Each entry shows position, player name, total score, and round scores.")
         self.leaderboard_list.addItem("Loading leaderboard…")
         self.tab_widget.addTab(self.leaderboard_list, "Leaderboard")
 
         self.schedule_list = QListWidget()
         self.schedule_list.setAccessibleName(f"{tour_name} Schedule")
         self.schedule_list.setAccessibleDescription(
-            "Season schedule. Completed events show winner and score. Upcoming events show dates.")
+            "Season schedule. Completed events show winner and score. "
+            "Press Enter on a tournament to open its leaderboard.")
         self.schedule_list.addItem("Loading schedule…")
+        self.schedule_list.itemActivated.connect(self._open_tournament)
         self.tab_widget.addTab(self.schedule_list, "Schedule")
 
         layout.addWidget(self.tab_widget)
 
         btn_row = QHBoxLayout()
         btn_row.addStretch()
+        # Stays auto-default so Enter on it closes; Enter in a list is kept from it in keyPressEvent.
         close_btn = QPushButton("&Close")
         close_btn.clicked.connect(self.accept)
         btn_row.addWidget(close_btn)
@@ -10786,11 +10872,33 @@ class GolfTournamentDialog(QDialog):
         self.setLayout(layout)
 
     def _load_leaderboard(self):
-        loader = GolfLeaderboardLoader(self.tour)
-        loader.data_loaded.connect(self._on_leaderboard_loaded)
-        loader.error_occurred.connect(lambda e: self._list_error(self.leaderboard_list, e))
+        self._leaderboard_request += 1
+        request = self._leaderboard_request
+        chosen = self._chosen or {}
+        loader = GolfLeaderboardLoader(self.tour, chosen.get("start_date"), chosen.get("id"))
+        # Only the newest request's answer: an older one can arrive after it.
+        loader.data_loaded.connect(
+            lambda data: request == self._leaderboard_request and self._on_leaderboard_loaded(data))
+        loader.error_occurred.connect(
+            lambda e: request == self._leaderboard_request and self._list_error(self.leaderboard_list, e))
         self._loaders.append(loader)
         loader.start()
+
+    def _open_tournament(self, item):
+        """Enter on a schedule row: that tournament's leaderboard, on the Leaderboard tab."""
+        event = item.data(Qt.ItemDataRole.UserRole) if item is not None else None
+        if not isinstance(event, dict) or not event.get("start_date"):
+            return  # "Loading schedule…", an error or "No schedule available."
+        self._chosen = event
+        self._failed_lists.discard(self.leaderboard_list)
+        name = event.get("name") or "the tournament"
+        self.tournament_label.setText(f"Loading {name}…")
+        self.leaderboard_list.clear()
+        self.leaderboard_list.addItem(f"Loading {name}…")
+        self.leaderboard_list.setCurrentRow(0)
+        self.tab_widget.setCurrentIndex(0)
+        self.leaderboard_list.setFocus()
+        self._load_leaderboard()
 
     def _load_schedule(self):
         loader = GolfScheduleLoader(self.tour)
@@ -10811,10 +10919,25 @@ class GolfTournamentDialog(QDialog):
         except Exception:
             return f"{start}–{end}" if end else start
 
+    def _title_for(self, tournament):
+        """The window title names the tournament shown, or just the tour when there's none."""
+        if tournament:
+            self.setWindowTitle(f"{tournament} — {self.tour_name} — Sports Scores")
+        else:
+            self.setWindowTitle(f"{self.tour_name} — Sports Scores")
+
     def _on_leaderboard_loaded(self, data: dict):
         self.leaderboard_list.clear()
         if not data:
-            self.leaderboard_list.addItem("No current tournament data available.")
+            if self._chosen:
+                name = self._chosen.get("name") or "this tournament"
+                self.tournament_label.setText(name)
+                self.leaderboard_list.addItem(f"No leaderboard available for {name}.")
+            else:
+                self.tournament_label.clear()  # It says it's loading the tournament.
+                self.leaderboard_list.addItem("No current tournament data available.")
+            self._title_for(self._chosen and self._chosen.get("name"))
+            self.leaderboard_list.setCurrentRow(0)
             return
 
         name = data.get('name', '')
@@ -10824,10 +10947,12 @@ class GolfTournamentDialog(QDialog):
         date_range = self._fmt_date_range(start, end) if start else ''
         header_parts = [p for p in [name, status_detail, date_range] if p]
         self.tournament_label.setText("  |  ".join(header_parts))
+        self._title_for(name or (self._chosen and self._chosen.get("name")))
 
         players = data.get('players', [])
         if not players:
             self.leaderboard_list.addItem("No leaderboard data available.")
+            self.leaderboard_list.setCurrentRow(0)
             return
 
         # Detect ties: group players by total_score, record first position for each score
@@ -10879,17 +11004,23 @@ class GolfTournamentDialog(QDialog):
 
             if state == 'post' and winner:
                 line = f"[Final]  {name}  —  {date_str}  —  {winner}"
+            elif state == 'post':
+                # Finished with no winner: ESPN's word for it, such as Canceled.
+                line = f"[{event.get('status') or 'Final'}]  {name}  —  {date_str}"
             elif state == 'in':
                 line = f"[Live]   {name}  —  {date_str}"
             else:
                 line = f"         {name}  —  {date_str}"
 
-            self.schedule_list.addItem(line)
+            item = QListWidgetItem(line)
+            item.setData(Qt.ItemDataRole.UserRole, event)
+            self.schedule_list.addItem(item)
 
     def _list_error(self, lw: QListWidget, error: str):
         self._failed_lists.add(lw)
         if lw is self.leaderboard_list:
             self.tournament_label.clear()  # It says it's loading the tournament.
+            self._title_for(self._chosen and self._chosen.get("name"))
         lw.clear()
         lw.addItem(error)
         lw.setCurrentRow(0)
@@ -10899,6 +11030,10 @@ class GolfTournamentDialog(QDialog):
     def keyPressEvent(self, event):
         if event.key() == Qt.Key.Key_Escape:
             self.accept()
+        elif event.key() in (Qt.Key.Key_Return, Qt.Key.Key_Enter) and \
+                self.focusWidget() in (self.leaderboard_list, self.schedule_list):
+            # The list has acted on it (a schedule row opens); it mustn't press Close too.
+            event.accept()
         elif event.key() == Qt.Key.Key_F5:
             # Only what failed: what loaded stays as it is.
             failed, self._failed_lists = self._failed_lists, set()
@@ -12555,6 +12690,7 @@ class BowlsAndPlayoffsDialog(QDialog):
         
         # List of bowl games
         self.bowl_list = QListWidget()
+        self.bowl_list.setAccessibleName("Bowls & Playoffs")
         self.bowl_list.itemActivated.connect(self.on_bowl_game_selected)
         layout.addWidget(self.bowl_list)
         
@@ -12605,82 +12741,45 @@ class BowlsAndPlayoffsDialog(QDialog):
                 self.bowl_list.addItem("No bowl games or playoff games found.")
                 return
             
-            # Categorize games by competition type
-            categories = {
-                'Championship': [],  # type 33
-                'Semifinals': [],     # type 35
-                'Quarterfinals': [],  # type 40 (Major Bowl)
-                'First Round': [],    # type 42 (Bowl Game) - early playoff games
-                'Other Bowls': []     # Other bowl games
-            }
-            
-            for game in games_data:
-                comp_type = _int_or_none(game.get('competitions', [{}])[0].get('type', {}).get('id'))
-                comp_name = game.get('competitions', [{}])[0].get('type', {}).get('text', '')
-                
-                if comp_type == 33:  # Championship
-                    categories['Championship'].append(game)
-                elif comp_type == 35:  # Semifinal
-                    categories['Semifinals'].append(game)
-                elif comp_type == 40:  # Major Bowl (Quarterfinals)
-                    categories['Quarterfinals'].append(game)
-                elif comp_type == 42:  # Bowl Game
-                    # Check if it's part of CFP or regular bowl
-                    notes = game.get('competitions', [{}])[0].get('notes', [])
-                    if notes and 'first round' in notes[0].get('headline', '').lower():
-                        categories['First Round'].append(game)
-                    else:
-                        categories['Other Bowls'].append(game)
-                else:
-                    categories['Other Bowls'].append(game)
-            
-            # Display categories in order
-            for category_name in ['Championship', 'Semifinals', 'Quarterfinals', 'First Round', 'Other Bowls']:
-                games = categories[category_name]
-                if games:
-                    # Add category header
-                    header_item = QListWidgetItem(f"=== {category_name} ===")
-                    header_item.setFlags(Qt.ItemFlag.NoItemFlags)  # Not selectable
-                    font = header_item.font()
-                    font.setBold(True)
-                    header_item.setFont(font)
-                    self.bowl_list.addItem(header_item)
-                    
-                    # Add games in this category
-                    for game in games:
-                        self._add_game_item(game)
-                    
-        
+            # The playoff in the order it's played, then the bowls, as on the iPhone.
+            for round_name, games in postseason_sections(games_data):
+                # A heading is a row you land on, read by its name and count, so
+                # Down doesn't run one round's games into the last (#202).
+                header_item = QListWidgetItem(heading_text(round_name, len(games)))
+                header_item.setFlags(Qt.ItemFlag.ItemIsSelectable | Qt.ItemFlag.ItemIsEnabled)
+                font = header_item.font()
+                font.setBold(True)
+                header_item.setFont(font)
+                self.bowl_list.addItem(header_item)
+
+                for game in games:
+                    self._add_game_item(game, playoff=round_name in PLAYOFF_ROUNDS)
+
         except Exception as e:
             from PyQt6.QtWidgets import QMessageBox
             QMessageBox.critical(self, "Error", f"Failed to load bowl games: {_said(e)}")
     
-    def _add_game_item(self, game):
+    def _add_game_item(self, game, playoff=False):
         """Add a game item to the list"""
         from models.game import GameData
 
         # Get bowl/playoff information
-        comp = game.get('competitions', [{}])[0]
-        notes = comp.get('notes', [])
-        comp_type = comp.get('type', {})
+        comp = (game.get('competitions') or [{}])[0]
+        comp_type = comp.get('type') or {}
         comp_type_text = comp_type.get('text', '')
-        
+
         # Get bowl name from notes or use competition type
-        bowl_name = ''
-        if notes and notes[0].get('headline'):
-            bowl_name = notes[0].get('headline', '')
-        elif comp_type_text and comp_type_text != 'Standard':
+        bowl_name = game_headline(game)
+        if not bowl_name and comp_type_text and comp_type_text != 'Standard':
             bowl_name = comp_type_text
-        
+
         # Create game data object for display
         game_obj = GameData(game, self.league)
         item_text = game_obj.get_display_text()
-        
+
         # Format with bowl/playoff name prominently at the start
         if bowl_name:
-            # Check if it's a playoff game
-            comp_type_id = _int_or_none(comp_type.get('id'))
-            if comp_type_id in [33, 35, 40]:  # Championship, Semifinal, Major Bowl (Quarterfinals)
+            if playoff:
                 item_text = f"[{bowl_name}] {item_text}"
             else:
                 item_text = f"{bowl_name} - {item_text}"

@@ -28,6 +28,8 @@ plays_NBA_401909906.json	47 KB	sentinel coordinates; real shot coordinates
 plays_NHL_401892616_SO.json	67 KB	shootout: scoreValue on every converted attempt; linescore counts 1
 plays_MLB_401817091.json	109 KB	summary header, plays of innings 2 and 8 only: atBatId and summaryType A/P/N/S/C/I, pitchCoordinate on every pitch, a pinch hitter and relief changes
 drives_NCAAF_2OT.json	43 KB	OT drives: Quarter 5, Quarter 6 in the app
+drives_NCAAF_401858286.json	102 KB	Duke 41 at NC State 3, header teams and drives only: NC State's drive 40185828616 is marked TD for Duke's 100-yard missed field goal return
+drives_NCAAF_401866682_2OT.json	117 KB	Towson 43 at Sacred Heart 40 (2OT), header teams and drives only: a kickoff-only Sacred Heart drive marked TD for Towson's return, a blocked try run back for 2, a walk-off TD of 6
 details_NFL_pieces.json	32 KB	TV in media.shortName, odds in pickcenter, injuries by team, officials under gameInfo
 details_NCAAH_pieces.json	9 KB	attendance 0, no plays
 roster_NFL_9.json	14 KB	height and weight are floats: 6.0'5.0"
@@ -48,6 +50,10 @@ rankings_NCAAF.json	7 KB	week 10 of 2026: all six polls in ESPN's order (CFP, AP
 draft_site_NFL_2026.json	11 KB	/draft season=2026, cut to 6 picks and their teams: position only as an id, college on the athlete; 2nd-round pick 33 was traded; round 3's Georgia State is Georgia St as a short name
 golf_schedule_PGA.json	5 KB	dates=2026: a cancelled event with no competitors, a final, a scheduled one
 golf_scoreboard_PGA.json	2 KB	current scoreboard, tournament not started, 3 golfers
+golf_schedule_PGA_2026.json	207 KB	dates=2026 captured Nov 7 2026, all 49 events with the season calendar, top 2 by order, no hole scores: The Sentry cancelled (post, no field); the Zurich Classic's teams have no athlete, two at -30 (order 1 won the playoff); the Presidents Cup's 2 teams with winner true and points 17; one event in progress; 4 scheduled with no field. Event status says completed false even on a Final
+golf_scoreboard_LPGA_between_rounds.json	10 KB	current scoreboard Nov 7 2026, TOTO Japan Classic between rounds: the event's status is in, its competition's post ("Round 3 - Play Complete"); 4 golfers, no hole scores
+golf_scoreboard_PGA_20260305.json	15 KB	dates=20260305: two events that week, the Arnold Palmer Invitational and the opposite-field Puerto Rico Open, both final; 3 golfers each
+golf_scoreboard_PGA_20260423.json	11 KB	dates=20260423: the Zurich Classic, a team event: competitors are teams ("Smalley/Springer") with no athlete; 3 teams
 worldcup_standings_WC2026.json	10 KB	2 groups of 4; note.description is the advancement text; a stat with value null
 worldcup_scoreboard_20260620.json	3 KB	2 group games, STATUS_FULL_TIME
 scoreboard_NWSL.json	3 KB	2 games from dates=202610, used by the month-by-month schedule path
@@ -153,3 +159,5 @@ summary_final_NFL_401873036.json	84 KB	Bears at Seahawks, final; root keys heade
 summary_pre_NFL_401873037.json	45 KB	Jaguars at Ravens, not started; root keys header, gameInfo, pickcenter, odds, article, news (2 articles): weather with a temperature and no displayValue, no attendance, a Preview article
 summary_final_EPL_401879251.json	89 KB	Leeds at Bournemouth, full time; root keys header, gameInfo, pickcenter, odds, article, standings: a line in both odds and pickcenter, story in <p> and <photo> markup, 20-team table, 8 columns
 summary_final_NCAAF_401757313_2OT.json	24 KB	Kennesaw State at Liberty, the game of drives_NCAAF_2OT; root keys header, scoringPlays only: overtime scores are periods 5 and 6
+core_weeks_NFL_2024.json	31 KB	core seasons/2024/types/{1,2,3}/weeks?limit=100 and every weeks/{n} they list, keyed by the path after leagues/nfl/: text Hall of Fame Weekend, Preseason Week 1 to 3, Week 1 to 18, Wild Card, Divisional Round, Conference Championship, Pro Bowl, Super Bowl
+core_weeks_NCAAF_2024.json	14 KB	the same for leagues/college-football/: preseason week 1 is text Week 1, regular Week 1 to 16, postseason week 1 Bowls
