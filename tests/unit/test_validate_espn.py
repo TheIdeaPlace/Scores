@@ -2340,6 +2340,43 @@ class TestRemainingChecks:
         v.check_golf(FakeHttp(), report)
         assert FAIL_IN(report, "App: golf leaderboard")
 
+    def racing(self, monkeypatch, event=None, season=2026, races=(), groups=(), news=()):
+        import espn_api
+        monkeypatch.setattr(espn_api, "get_race_event", lambda k: {"event": event, "season": season})
+        monkeypatch.setattr(espn_api, "get_racing_schedule", lambda k, y: list(races))
+        monkeypatch.setattr(espn_api, "get_racing_standings", lambda k: list(groups))
+        monkeypatch.setattr(espn_api, "get_news", lambda k, n: list(news))
+        report = v.Report()
+        v.check_racing(FakeHttp(), report)
+        return report
+
+    def test_racing_on_real_answers_passes(self, monkeypatch):
+        import racing
+        f1 = racing.parse_race_event(json.load(open(os.path.join(
+            ROOT, "tests", "fixtures", "espn", "racing_scoreboard_f1.json"), encoding="utf-8")))
+        groups = [{"name": "Driver Standings", "constructors": False, "entries": [{}]},
+                  {"name": "Constructor Standings", "constructors": True, "entries": [{}]}]
+        report = self.racing(monkeypatch, event=f1, races=[{"winner": "A"}], groups=groups, news=[{}])
+        assert not report.failed
+        assert v.PASS in statuses(report, "App: race")
+
+    def test_a_season_with_no_races_fails_and_no_race_is_the_off_season(self, monkeypatch):
+        report = self.racing(monkeypatch)
+        assert FAIL_IN(report, "App: racing schedule")
+        assert v.WARN in statuses(report, "App: race")
+        assert v.WARN in statuses(report, "App: racing news")
+
+    def test_formula_1_with_no_race_session_or_constructors_fails(self, monkeypatch):
+        event = {"name": "GP", "date": "2026-11-08T17:00:00Z", "state": "pre", "status": "", "competitors": [],
+                 "sessions": [{"name": "Practice 1"}]}
+        report = self.racing(monkeypatch, event=event, races=[{"winner": ""}],
+                             groups=[{"name": "Driver Standings", "constructors": False, "entries": []}])
+        assert FAIL_IN(report, "App: race")
+        assert FAIL_IN(report, "App: racing standings")
+
+    def test_no_season_year_fails(self, monkeypatch):
+        assert FAIL_IN(self.racing(monkeypatch, season=None), "App: racing schedule")
+
     @pytest.mark.parametrize("board", [{"players": []}, {"players": [{"name": ""}]}, None])
     def test_a_fantasy_board_with_no_real_players_fails(self, monkeypatch, board):
         import espn_api

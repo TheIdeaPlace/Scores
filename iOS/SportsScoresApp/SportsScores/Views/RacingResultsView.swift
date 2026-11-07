@@ -19,10 +19,15 @@ struct RacingResultsView: View {
     let isLoading: Bool
     let viewMode: ViewMode
 
-    // Table column definitions
-    private let tableHeaders = ["Pos", "Driver", "Nat"]
+    // Table column definitions. An entry list, before the race, has no positions to show.
+    private func tableHeaders(_ event: RaceEvent) -> [String] {
+        event.kind == "Entry List" ? ["Driver", "Nat"] : ["Pos", "Driver", "Nat"]
+    }
     private func tableRow(_ c: RaceCompetitor) -> [String] {
-        [String(c.position), c.driverName, c.nationality]
+        if let position = c.position {
+            return [String(position), c.driverName, c.nationality]
+        }
+        return [c.driverName, c.nationality]
     }
 
     var body: some View {
@@ -76,6 +81,11 @@ struct RacingResultsView: View {
                         .font(.caption.bold())
                         .foregroundColor(.secondary)
                         .accessibilityHidden(true)
+                } else if event.isCanceled {
+                    Text(event.statusDescription.uppercased())
+                        .font(.caption.bold())
+                        .foregroundColor(.secondary)
+                        .accessibilityHidden(true)
                 }
             }
             HStack(spacing: 16) {
@@ -103,7 +113,7 @@ struct RacingResultsView: View {
     private func tableContent(_ event: RaceEvent) -> some View {
         VStack(spacing: 0) {
             // Section heading
-            Text(event.isInProgress ? "Current Running Order" : "Results")
+            Text(event.kind)
                 .font(.caption.bold())
                 .foregroundColor(.secondary)
                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -114,8 +124,10 @@ struct RacingResultsView: View {
 
             // Column header row
             HStack(spacing: 0) {
-                Text("Pos")
-                    .frame(width: 36, alignment: .trailing)
+                if event.kind != "Entry List" {
+                    Text("Pos")
+                        .frame(width: 36, alignment: .trailing)
+                }
                 Text("Driver")
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(.leading, 12)
@@ -142,7 +154,7 @@ struct RacingResultsView: View {
             .accessibilityHidden(true)
             .overlay(
                 AccessibleDataTable(
-                    headers: tableHeaders,
+                    headers: tableHeaders(event),
                     rows: event.competitors.map { tableRow($0) }
                 )
                 .allowsHitTesting(false)
@@ -152,10 +164,12 @@ struct RacingResultsView: View {
 
     private func tableRow(_ comp: RaceCompetitor, isWinner: Bool, idx: Int) -> some View {
         HStack(spacing: 0) {
-            Text(String(comp.position))
-                .font(.system(.body, design: .monospaced).bold())
-                .foregroundColor(podiumColor(comp.position))
-                .frame(width: 36, alignment: .trailing)
+            if let position = comp.position {
+                Text(String(position))
+                    .font(.system(.body, design: .monospaced).bold())
+                    .foregroundColor(podiumColor(position))
+                    .frame(width: 36, alignment: .trailing)
+            }
 
             HStack(spacing: 4) {
                 if isWinner {
@@ -183,7 +197,7 @@ struct RacingResultsView: View {
 
     private func listContent(_ event: RaceEvent, fullLabels: Bool) -> some View {
         VStack(spacing: 0) {
-            Text(event.isInProgress ? "Current Running Order" : "Results")
+            Text(event.kind)
                 .font(.caption.bold())
                 .foregroundColor(.secondary)
                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -207,10 +221,12 @@ struct RacingResultsView: View {
 
     private func competitorListRow(_ comp: RaceCompetitor, isWinner: Bool, fullLabels: Bool) -> some View {
         HStack(spacing: 12) {
-            Text(String(comp.position))
-                .font(.system(.subheadline, design: .monospaced).bold())
-                .foregroundColor(podiumColor(comp.position))
-                .frame(width: 28, alignment: .trailing)
+            if let position = comp.position {
+                Text(String(position))
+                    .font(.system(.subheadline, design: .monospaced).bold())
+                    .foregroundColor(podiumColor(position))
+                    .frame(width: 28, alignment: .trailing)
+            }
 
             if isWinner {
                 Image(systemName: "trophy.fill")
@@ -243,15 +259,16 @@ struct RacingResultsView: View {
     // MARK: - Accessibility labels
 
     private func quickListLabel(_ comp: RaceCompetitor) -> String {
-        // Terse: "P1 — Max Verstappen"
-        var label = "P\(comp.position) — \(comp.driverName)"
+        // Terse: "P1 — Max Verstappen", or the name alone in an entry list
+        var label = comp.position.map { "P\($0) — \(comp.driverName)" } ?? comp.driverName
         if !comp.nationality.isEmpty { label += " · \(comp.nationality)" }
         return label
     }
 
     private func fullListLabel(_ comp: RaceCompetitor) -> String {
         // Verbose: "Position: 1, Driver: Max Verstappen, Nationality: Dutch"
-        var parts = ["Position: \(comp.position)", "Driver: \(comp.driverName)"]
+        var parts = comp.position.map { ["Position: \($0)"] } ?? []
+        parts.append("Driver: \(comp.driverName)")
         if !comp.nationality.isEmpty { parts.append("Nationality: \(comp.nationality)") }
         return parts.joined(separator: ", ")
     }
@@ -260,6 +277,7 @@ struct RacingResultsView: View {
         var parts = [event.name]
         if event.isInProgress      { parts.append("Live") }
         else if event.isCompleted  { parts.append("Final") }
+        else if event.isCanceled   { parts.append(event.statusDescription) }
         else { parts.append(event.date.formatted(date: .long, time: .shortened)) }
         if !event.broadcastText.isEmpty { parts.append("on \(event.broadcastText)") }
         return parts.joined(separator: ". ")

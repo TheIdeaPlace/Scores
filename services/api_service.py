@@ -135,6 +135,18 @@ class ApiService:
         return ApiService._call(espn_api.get_golf_schedule, tour)
 
     @staticmethod
+    def get_race_event(series: str) -> Dict:
+        return ApiService._call(espn_api.get_race_event, series)
+
+    @staticmethod
+    def get_racing_schedule(series: str, year) -> List[Dict]:
+        return ApiService._call(espn_api.get_racing_schedule, series, year)
+
+    @staticmethod
+    def get_racing_standings(series: str) -> List[Dict]:
+        return ApiService._call(espn_api.get_racing_standings, series)
+
+    @staticmethod
     def get_world_cup_standings(league: str) -> List[Dict]:
         return ApiService._call(espn_api.get_world_cup_standings, league)
 

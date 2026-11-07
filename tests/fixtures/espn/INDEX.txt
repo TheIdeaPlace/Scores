@@ -153,3 +153,14 @@ summary_final_NFL_401873036.json	84 KB	Bears at Seahawks, final; root keys heade
 summary_pre_NFL_401873037.json	45 KB	Jaguars at Ravens, not started; root keys header, gameInfo, pickcenter, odds, article, news (2 articles): weather with a temperature and no displayValue, no attendance, a Preview article
 summary_final_EPL_401879251.json	89 KB	Leeds at Bournemouth, full time; root keys header, gameInfo, pickcenter, odds, article, standings: a line in both odds and pickcenter, story in <p> and <photo> markup, 20-team table, 8 columns
 summary_final_NCAAF_401757313_2OT.json	24 KB	Kennesaw State at Liberty, the game of drives_NCAAF_2OT; root keys header, scoringPlays only: overtime scores are periods 5 and 6
+racing_scoreboard_f1.json	41 KB	Sao Paulo GP weekend, Nov 7 2026, less highlights: FP1-FP3 and Qual final, Race scheduled with 22 entrants and no order at all; the event's own status says Final; circuit set
+racing_scoreboard_irl.json	13 KB	IndyCar's last race, Monterey, final: one untyped competition, order and winner on all 25; no circuit
+racing_scoreboard_nascar-premier.json	11 KB	NASCAR at Miami, scheduled: one competition, no competitors before race day; two broadcasts
+racing_season_f1_2026.json	91 KB	dates=2026, trimmed: every event, each race's top 3 by order, other sessions' fields dropped; Bahrain and Saudi Arabia canceled (post, completed false, no field), sprint weekends SS/SR, Sao Paulo's race still to come
+racing_season_irl_2026.json	31 KB	dates=2026, trimmed the same: 18 races, Mid-Ohio's winner without winner: true, three venues named
+racing_season_nascar-premier_2026.json	67 KB	dates=2026, trimmed the same: 40 events with the Clash, Duels and All-Star Race; no circuits
+racing_standings_f1.json	47 KB	apis/v2 standings: Driver Standings (athlete, championshipPts) and Constructor Standings (team, points); per-race columns named by country, trimmed to two
+racing_standings_irl.json	38 KB	one Standings group, championshipPts; per-race columns unnamed, trimmed to two
+racing_standings_nascar-premier.json	44 KB	one Standings group, championshipPts; per-race columns unnamed, trimmed to two
+racing_news_f1.json	9 KB	news limit=25, trimmed to 3 articles
+racing_news_nascar-premier.json	1 KB	news: articles empty, as ESPN has had it since at least November 2026

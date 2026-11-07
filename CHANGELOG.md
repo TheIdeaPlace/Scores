@@ -33,8 +33,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   round (first-round games included, which ESPN marks as ordinary games), then the bowls by date. Each
   game reads its name first, then the teams and the kickoff or score, and opens its details; the round
   headings are VoiceOver headings. Before ESPN lists any postseason games, the screen says so. (#197)
+- **Windows: racing.** Formula 1, the IndyCar Series and the NASCAR Cup Series, from the same ESPN feeds
+  the iPhone reads. **Racing - F1, IndyCar, NASCAR** on the home screen lists the three; each opens with
+  tabs for the race weekend on now or next (the entry list, running order or results), Formula 1's
+  sessions with their start times, the season's schedule with every winner, the drivers' standings
+  (and Formula 1's constructors'), and news. Every table has the three views, and a request ESPN doesn't
+  answer says so, with Enter to try again. The nightly data check covers all four requests. (Part of #195)
 
 ### Fixed
+- **iPhone: Formula 1's race loads during a race weekend.** Until the race started, ESPN lists its field
+  with no finishing order, which failed the whole request, so Racing said it couldn't load the race. It
+  also showed the first practice session's date and the weekend's own status, which can say Final the
+  day before the race. It now shows the race itself: its start time (read as the UTC time it is), its
+  status, and before it starts, the entry list without positions. A canceled race says Canceled rather
+  than Final, and nobody is named the winner of a race still being run.
 - **Windows: a poll's cells say which team they're for.** Moving across or down a Polls table read the
   rank as the row's context, "2, Previous, NR"; it now reads the team, "Georgia Bulldogs, Previous, NR".
   A poll with no votes, the playoff committee's or college hockey's, has no Points column any more, so

@@ -1849,6 +1849,69 @@ def check_golf(http, report):
             report.ok(tour, "App: golf leaderboard", f"{board['name']}, {len(board.get('players') or [])} players")
 
 
+def check_racing(http, report):
+    """Formula 1, IndyCar and NASCAR Cup through the app's own racing requests: the race weekend,
+    the season's races, the standings and the news. The scoreboard itself is checked with every
+    other league path."""
+    import espn_api
+    import racing
+
+    for key in racing.RACING_SERIES:
+        name = racing.series_name(key)
+        try:
+            answer = espn_api.get_race_event(key)
+        except Exception as e:
+            report.fail(name, "App: race", f"raised {type(e).__name__}: {e}")
+            continue
+        event, season = answer.get("event"), answer.get("season")
+        if event is None:
+            report.warn(name, "App: race", "no race on the scoreboard, fine in the off-season")
+        elif not event.get("name") or not event.get("date"):
+            report.fail(name, "App: race", "a race with no name or date")
+        elif racing.has_sessions(key) and "Race" not in [s["name"] for s in event.get("sessions") or []]:
+            # The app finds the race among the sessions by this type; without it, it takes the last.
+            report.fail(name, "App: race", "no session typed Race among the weekend's")
+        else:
+            report.ok(name, "App: race", f"{event['name']}, {event['status'] or event['state']}, "
+                                         f"{len(event['competitors'])} drivers")
+        if not season:
+            report.fail(name, "App: racing schedule", "no season year on the scoreboard, which the schedule asks for")
+        else:
+            try:
+                races = espn_api.get_racing_schedule(key, season)
+            except Exception as e:
+                report.fail(name, "App: racing schedule", f"raised {type(e).__name__}: {e}")
+            else:
+                if races:
+                    won = sum(1 for r in races if r["winner"])
+                    report.ok(name, "App: racing schedule", f"{len(races)} races in {season}, {won} with a winner")
+                else:
+                    report.fail(name, "App: racing schedule", f"no races for {season}, and a season always has some")
+        try:
+            groups = espn_api.get_racing_standings(key)
+        except Exception as e:
+            report.fail(name, "App: racing standings", f"raised {type(e).__name__}: {e}")
+        else:
+            constructors = any(g["constructors"] for g in groups)
+            if not groups:
+                report.warn(name, "App: racing standings", "none, which can be just before a season")
+            elif racing.has_constructors(key) and not constructors:
+                report.fail(name, "App: racing standings", "no constructors' standings")
+            else:
+                report.ok(name, "App: racing standings",
+                          ", ".join(f"{g['name']}: {len(g['entries'])}" for g in groups))
+        try:
+            news = espn_api.get_news(key, 25)
+        except Exception as e:
+            report.fail(name, "App: racing news", f"raised {type(e).__name__}: {e}")
+        else:
+            if news:
+                report.ok(name, "App: racing news", f"{len(news)} stories")
+            else:
+                # NASCAR's has been empty since at least November 2026, on both apps.
+                report.warn(name, "App: racing news", "no stories")
+
+
 def check_mlb_extras(http, report, seasons):
     import espn_api
 
@@ -2054,7 +2117,7 @@ def check_others_twice(http, seasons):
 def check_others(http, seasons):
     report = Report()
     for check in (check_every_league_path, check_football_calendar, check_past_postseasons, check_soccer_schedules,
-                  check_soccer_tables, check_golf, check_draft, check_world_cup, check_cfl, check_fantasy,
+                  check_soccer_tables, check_golf, check_racing, check_draft, check_world_cup, check_cfl, check_fantasy,
                   check_radio_links):
         try:
             check(http, report)

@@ -19,6 +19,7 @@
 		7E57B0E1500000000000000D /* BowlsViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E57B0E1500000000000000C /* BowlsViewModel.swift */; };
 		7E57B0E1500000000000000F /* BowlsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E57B0E1500000000000000E /* BowlsView.swift */; };
 		7E57B0E15000000000000011 /* BowlsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E57B0E15000000000000010 /* BowlsTests.swift */; };
+		7E57CA0E100000000000000B /* RacingGridTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E57CA0E100000000000000A /* RacingGridTests.swift */; };
 		7E57A0000000000000000061 /* VenuesTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E57A0000000000000000060 /* VenuesTests.swift */; };
 		7E57A0000000000000000057 /* VenuesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E57A0000000000000000056 /* VenuesView.swift */; };
 		7E57A0000000000000000055 /* VenuesViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E57A0000000000000000054 /* VenuesViewModel.swift */; };
@@ -180,6 +181,7 @@
 		7E57B0E1500000000000000C /* BowlsViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BowlsViewModel.swift; sourceTree = "<group>"; };
 		7E57B0E1500000000000000E /* BowlsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BowlsView.swift; sourceTree = "<group>"; };
 		7E57B0E15000000000000010 /* BowlsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BowlsTests.swift; sourceTree = "<group>"; };
+		7E57CA0E100000000000000A /* RacingGridTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RacingGridTests.swift; sourceTree = "<group>"; };
 		7E57A0000000000000000060 /* VenuesTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VenuesTests.swift; sourceTree = "<group>"; };
 		7E57A0000000000000000056 /* VenuesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VenuesView.swift; sourceTree = "<group>"; };
 		7E57A0000000000000000054 /* VenuesViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VenuesViewModel.swift; sourceTree = "<group>"; };
@@ -553,6 +555,7 @@
 				7E57A00000000000000000C0 /* LiveScoresGolfTests.swift */,
 				7E57A00000000000000000E0 /* ViewModeDefaultTests.swift */,
 				7E57B0E15000000000000010 /* BowlsTests.swift */,
+				7E57CA0E100000000000000A /* RacingGridTests.swift */,
 			);
 			path = SportsScoresTests;
 			sourceTree = "<group>";
@@ -823,6 +826,7 @@
 				7E57A00000000000000000C1 /* LiveScoresGolfTests.swift in Sources */,
 				7E57A00000000000000000E1 /* ViewModeDefaultTests.swift in Sources */,
 				7E57B0E15000000000000011 /* BowlsTests.swift in Sources */,
+				7E57CA0E100000000000000B /* RacingGridTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
