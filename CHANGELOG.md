@@ -34,11 +34,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   A poll with no votes, the playoff committee's or college hockey's, has no Points column any more, so
   the Quick List no longer reads blanks such as "3, Utah Utes, 8-0, , NR". From the NVDA college
   football bug bash.
+- **iPhone: a golf tournament in progress stays on Live Scores when a refresh fails.** It used to vanish
+  with nothing said. Now, as on Windows, the tournament last shown stays and the note under the list
+  names the tour ESPN didn't answer for. A tournament in progress also no longer hides behind "No games
+  scheduled today" when there are no team games, and pulling to refresh announces a golf failure too.
 - **Windows: Enter on an upcoming or finished game in Live Scores opens it.** It did nothing before.
 - **Windows: a context menu is announced as soon as it opens.** Shift+F10, the Applications key and
   Alt+L used to open a menu that JAWS and NVDA said nothing about until an arrow key was pressed. The app's own menus (a
   game's options, Listen to the Game, play and pitch audio, the Pitch Explorer's) now open on their
   first item. The standard Cut, Copy and Paste menu in a text field is still silent until an arrow key.
+
+### Changed
+- **iPhone builds: the TestFlight build number can't repeat.** It is now one more than the highest build
+  App Store Connect already has, or the commit count if that is higher. The commit count alone could land
+  on a number Apple had already seen after a squash merge, and the upload was rejected (#112).
 
 ### In Progress
 - **Game Wrap Up Feature**: ESPN text processing and game story extraction (under construction)

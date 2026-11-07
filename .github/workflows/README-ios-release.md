@@ -57,8 +57,16 @@ gh workflow run ios-release.yml --ref main
 Pushing a `v<x.y.z>` tag runs this workflow alongside the Windows release, so the
 same tag that publishes `Scores.exe` uploads the iOS build. The marketing version
 comes from the `VERSION` file, and the run fails if the tag doesn't match it.
-The build number is the commit count (`git rev-list --count HEAD`). It only ever
-grows, so every release commit gets a new, higher build with nothing to bump.
+The build number is one more than the highest build App Store Connect already
+has for the app (across every marketing version), or the commit count
+(`git rev-list --count HEAD`) if that is higher. The commit count alone isn't
+enough: after a branch built to TestFlight is squash-merged, `main` can land on
+a count Apple has already seen, and the upload is rejected as a duplicate
+(issue #112). `iOS/SportsScoresApp/scripts/next_build_number.py` does the
+lookup. If App Store Connect can't be asked, the run prints a warning and uses
+the commit count rather than failing. Uploads run one at a time, but Apple can
+take a few minutes to list a new upload, so a run started right after another
+upload may still pick a taken number; rerun it with a **Build number** override.
 
 **Windows-only patch releases** use a four-part version (`v0.9.9.1`). This
 workflow still runs for that tag, but its `platforms` job skips every iOS step,
@@ -71,8 +79,9 @@ To upload without a release:
 
 1. **Actions** tab → **iOS TestFlight / App Store Release** → **Run workflow**.
 2. Set the branch to **`main`**.
-3. **Build number**: leave blank for the commit count. Set it only to re-upload a
-   commit that already has a build on App Store Connect.
+3. **Build number**: leave blank to have it chosen as above. A value here always
+   wins; it has to be higher than the last build of that version, or Apple
+   rejects the upload.
 4. **Marketing version**: leave blank to use `VERSION` (its first three parts).
 5. Run. On success the build appears in App Store Connect / TestFlight (Processing for
    ~5–15 min), after which you can add it to a TestFlight group or submit it for App
