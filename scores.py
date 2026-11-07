@@ -55,8 +55,9 @@ except ImportError:
 
 # New separated modules
 from exceptions import ApiError, DataModelError, plain_message
-from espn_api import (NCAAF_CONFERENCE_ORDER, TEAMS_UNAVAILABLE, live_scores_failure_text, standings_cache_key,
-                      stop_core_lookups, with_failed_leagues_kept)
+from espn_api import (NCAAF_CONFERENCE_ORDER, TEAMS_UNAVAILABLE, league_sport, live_scores_failure_text,
+                      standings_cache_key, stop_core_lookups, with_failed_leagues_kept)
+import stat_glossary
 from services.api_service import ApiService
 from services.venue_service import venue_service, venue_summary
 from models.game import GameData
@@ -8343,7 +8344,13 @@ class StatisticsLoader(QThread):
     def run(self):
         try:
             if self.stat_type == "player":
-                data = ApiService.get_player_statistics(self.league)
+                data = ApiService.get_player_statistics(self.league) or {}
+                if data.get("player_stats"):
+                    # The definitions (Alt+D). Team statistics carry their own.
+                    try:
+                        data["glossary"] = ApiService.get_stat_glossary(self.league)
+                    except ApiError:
+                        data["glossary"] = None  # The definitions say they couldn't be had.
             else:
                 data = ApiService.get_team_statistics(self.league)
             self.data_loaded.emit(data or {})
@@ -11727,6 +11734,7 @@ class StatisticsViewDialog(QDialog):
                         'name': display_name,
                         'category': category_name,
                         'stat_name': stat_name,
+                        'key': category.get("key"),  # ESPN's, for its definition
                         'data': stats,
                         'type': 'player'
                     })
@@ -11739,119 +11747,53 @@ class StatisticsViewDialog(QDialog):
         return available_stats
     
     def _show_stat_definitions(self):
-        """Show statistics definitions dialog"""
-        definitions_dialog = StatDefinitionsDialog(self.league, self)
+        """ESPN's definitions of the statistics on screen."""
+        lines = stat_glossary.definition_lines(
+            self._stat_infos, (self.statistics_data or {}).get("glossary"), league_sport(self.league))
+        definitions_dialog = StatDefinitionsDialog(self.league, self.stat_type, lines, self)
         definitions_dialog.exec()
 
 class StatDefinitionsDialog(QDialog):
-    """Dialog showing definitions of statistics for different leagues"""
-    
-    def __init__(self, league, parent=None):
+    """ESPN's definitions of the statistics a Statistics dialog shows, one line each."""
+
+    def __init__(self, league, stat_type, lines, parent=None):
         super().__init__(parent)
         self.league = league
-        self.setWindowTitle(f"{league} Statistics Definitions")
+        self.heading = f"{league} {stat_type.title()} Statistics Definitions"
+        self.setWindowTitle(self.heading)
         self.resize(600, 500)
-        self.setup_ui()
-    
-    def setup_ui(self):
+        self.setup_ui(lines)
+
+    def setup_ui(self, lines):
         layout = QVBoxLayout()
-        
+
         # Title
-        title = QLabel(f"{self.league} Statistics Definitions")
+        title = QLabel(self.heading)
         title.setStyleSheet("font-weight: bold; font-size: 14px;")
         layout.addWidget(title)
-        
+
         # Instructions
-        instructions = QLabel("Browse definitions for statistical categories:")
+        instructions = QLabel("ESPN's definitions of the statistics on this screen:")
         layout.addWidget(instructions)
-        
+
         # Definitions list
         self.definitions_list = QListWidget()
         self.definitions_list.setAccessibleName("Statistics Definitions")
-        
-        # Populate definitions
-        definitions = self._get_stat_definitions()
-        for stat_name, definition in definitions.items():
-            item_text = f"{stat_name}: {definition}"
-            item = QListWidgetItem(item_text)
-            self.definitions_list.addItem(item)
-        
+        self.definitions_list.setWordWrap(True)
+        for line in lines:
+            self.definitions_list.addItem(QListWidgetItem(line))
+        # So the first line is read as the list takes focus, rather than an empty list.
+        self.definitions_list.setCurrentRow(0)
+
         layout.addWidget(self.definitions_list)
-        
+
         # Close button
         close_btn = QPushButton("Close")
         close_btn.clicked.connect(self.accept)
         layout.addWidget(close_btn)
-        
+
         self.setLayout(layout)
-    
-    def _get_stat_definitions(self):
-        """Get statistics definitions for the current league"""
-        if self.league.upper() == "MLB":
-            return {
-                "AVG (Batting Average)": "Hits divided by at bats. Measures how often a batter gets a hit.",
-                "HR (Home Runs)": "Number of hits that allow the batter to circle all bases and score.",
-                "RBI (Runs Batted In)": "Number of runs that scored as a result of the batter's action.",
-                "R (Runs)": "Number of times a player crosses home plate to score.",
-                "H (Hits)": "Number of times a batter safely reaches base via a hit.",
-                "SB (Stolen Bases)": "Number of bases stolen by advancing while the ball is in play.",
-                "ERA (Earned Run Average)": "Average number of earned runs allowed per 9 innings pitched.",
-                "W (Wins)": "Number of games won by a pitcher (must be pitcher of record).",
-                "K/SO (Strikeouts)": "Number of batters struck out by a pitcher.",
-                "WHIP": "Walks plus hits divided by innings pitched. Lower is better.",
-                "SV (Saves)": "Number of times a relief pitcher preserved a lead for the win.",
-                "IP (Innings Pitched)": "Number of complete innings pitched (outs divided by 3).",
-                "OBP (On-Base %)": "Percentage of plate appearances reaching base safely.",
-                "SLG (Slugging %)": "Total bases divided by at bats. Measures power hitting.",
-                "OPS": "On-base percentage plus slugging percentage. Overall offensive measure."
-            }
-        elif self.league.upper() in ("NFL", "NCAAF"):
-            return {
-                "Passing Yards": "Total yards gained through forward passes.",
-                "Passing TDs": "Number of touchdown passes thrown by a quarterback.",
-                "Rushing Yards": "Total yards gained by running with the football.",
-                "Rushing TDs": "Number of touchdowns scored by running the ball.",
-                "Receiving Yards": "Total yards gained from catching passes.",
-                "Receiving TDs": "Number of touchdowns scored by catching passes.",
-                "Tackles": "Number of times a defensive player brings down the ball carrier.",
-                "Sacks": "Number of times the quarterback is tackled behind the line.",
-                "Interceptions": "Number of passes caught by the opposing defense.",
-                "Completion %": "Percentage of pass attempts that were completed.",
-                "QBR (Quarterback Rating)": "Composite statistic measuring quarterback performance.",
-                "Total Yards": "Combined offensive yards (passing + rushing).",
-                "Points For": "Total points scored by a team.",
-                "Points Against": "Total points allowed by a team's defense.",
-                "Turnovers": "Number of times possession was lost (fumbles + interceptions).",
-                "3rd Down %": "Percentage of third down attempts converted for first downs."
-            }
-        elif self.league.upper() in ("NBA", "WNBA", "NCAAM", "NCAAWB"):
-            return {
-                "PPG (Points Per Game)": "Average number of points scored per game.",
-                "FG% (Field Goal %)": "Percentage of field goal attempts made.",
-                "3P% (Three Point %)": "Percentage of three-point attempts made.",
-                "FT% (Free Throw %)": "Percentage of free throw attempts made.",
-                "RPG (Rebounds Per Game)": "Average number of rebounds per game.",
-                "APG (Assists Per Game)": "Average number of assists per game.",
-                "SPG (Steals Per Game)": "Average number of steals per game.",
-                "BPG (Blocks Per Game)": "Average number of blocks per game.",
-                "TOV (Turnovers)": "Number of times possession was lost.",
-                "MPG (Minutes Per Game)": "Average playing time per game.",
-                "PER (Player Efficiency Rating)": "Overall player productivity rating.",
-                "TS% (True Shooting %)": "Shooting efficiency including free throws and 3-pointers.",
-                "USG% (Usage Rate)": "Percentage of team plays used by a player.",
-                "ORtg (Offensive Rating)": "Points produced per 100 possessions.",
-                "DRtg (Defensive Rating)": "Points allowed per 100 possessions."
-            }
-        else:
-            return {
-                "Points": "Total points scored by team or individual player.",
-                "Wins": "Number of games or matches won.",
-                "Goals": "Number of goals scored (varies by sport).",
-                "Assists": "Number of assists made to help teammates score.",
-                "Games": "Number of games or matches played.",
-                "Average": "Mean value across all games or attempts."
-            }
-    
+
     def keyPressEvent(self, event):
         """Handle Escape key to close dialog"""
         if event.key() == Qt.Key.Key_Escape:

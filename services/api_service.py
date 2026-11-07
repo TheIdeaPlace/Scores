@@ -93,6 +93,11 @@ class ApiService:
         return ApiService._call(espn_api.get_team_statistics, league)
     
     @staticmethod
+    def get_stat_glossary(league: str) -> Dict:
+        """ESPN's definitions of a league's statistics. A failed request raises ApiError."""
+        return ApiService._call(espn_api.get_stat_glossary, league)
+
+    @staticmethod
     def get_rankings(league: str) -> Dict:
         """Get poll/ranking data for a league"""
         return ApiService._call(espn_api.get_rankings, league)

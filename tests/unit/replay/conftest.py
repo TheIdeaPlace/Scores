@@ -27,6 +27,7 @@ def isolated(monkeypatch, tmp_path):
     monkeypatch.setattr(espn_api, "_DRAFT_CACHE", {})
     monkeypatch.setattr(espn_api, "_CORE_SEASON_CACHE", {})
     monkeypatch.setattr(espn_api, "_CORE_REF_CACHE", {})
+    monkeypatch.setattr(espn_api, "_GLOSSARY_CACHE", {})
     monkeypatch.setattr(football_calendar, "_WEEK_DATE_CACHE", {})
     monkeypatch.setattr(football_calendar, "_SEASON_WEEKS_CACHE", {})
 

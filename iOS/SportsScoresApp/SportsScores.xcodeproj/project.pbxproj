@@ -13,6 +13,8 @@
 		7E57A00000000000000000B7 /* radio_links.json in Resources */ = {isa = PBXBuildFile; fileRef = 7E57A00000000000000000B6 /* radio_links.json */; };
 		7E57A00000000000000000B9 /* RadioLinksGridTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E57A00000000000000000B8 /* RadioLinksGridTests.swift */; };
 		7E57A00000000000000000C1 /* LiveScoresGolfTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E57A00000000000000000C0 /* LiveScoresGolfTests.swift */; };
+		7E57A0000000000000001931 /* StatGlossary.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E57A0000000000000001930 /* StatGlossary.swift */; };
+		7E57A0000000000000001933 /* StatGlossaryGridTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E57A0000000000000001932 /* StatGlossaryGridTests.swift */; };
 		7E57A0000000000000000061 /* VenuesTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E57A0000000000000000060 /* VenuesTests.swift */; };
 		7E57A0000000000000000057 /* VenuesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E57A0000000000000000056 /* VenuesView.swift */; };
 		7E57A0000000000000000055 /* VenuesViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E57A0000000000000000054 /* VenuesViewModel.swift */; };
@@ -168,6 +170,8 @@
 		7E57A00000000000000000B6 /* radio_links.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = radio_links.json; sourceTree = "<group>"; };
 		7E57A00000000000000000B8 /* RadioLinksGridTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RadioLinksGridTests.swift; sourceTree = "<group>"; };
 		7E57A00000000000000000C0 /* LiveScoresGolfTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveScoresGolfTests.swift; sourceTree = "<group>"; };
+		7E57A0000000000000001930 /* StatGlossary.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatGlossary.swift; sourceTree = "<group>"; };
+		7E57A0000000000000001932 /* StatGlossaryGridTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatGlossaryGridTests.swift; sourceTree = "<group>"; };
 		7E57A0000000000000000060 /* VenuesTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VenuesTests.swift; sourceTree = "<group>"; };
 		7E57A0000000000000000056 /* VenuesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VenuesView.swift; sourceTree = "<group>"; };
 		7E57A0000000000000000054 /* VenuesViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VenuesViewModel.swift; sourceTree = "<group>"; };
@@ -515,6 +519,7 @@
 				2F730ED25EF184C36C9EEC13 /* Standings.swift */,
 				B24C7FC69C8CFAB2F651990B /* TeamHubModels.swift */,
 				7F7442D4B0FEAEC59978A844 /* TeamStatCatalog.swift */,
+				7E57A0000000000000001930 /* StatGlossary.swift */,
 				7E57A0000000000000000050 /* LeagueVenues.swift */,
 				7E57A00000000000000000B0 /* RadioLinks.swift */,
 				5F7BC9D746343F8C08C38ADE /* Transaction.swift */,
@@ -535,6 +540,7 @@
 				7E57A00000000000000000A0 /* GameSummaryTests.swift */,
 				7E57A00000000000000000B8 /* RadioLinksGridTests.swift */,
 				7E57A00000000000000000C0 /* LiveScoresGolfTests.swift */,
+				7E57A0000000000000001932 /* StatGlossaryGridTests.swift */,
 			);
 			path = SportsScoresTests;
 			sourceTree = "<group>";
@@ -760,6 +766,7 @@
 				3B583CE5901CF86D24E84764 /* TeamScheduleView.swift in Sources */,
 				32A6FF663F55FDB3009D64C7 /* TeamScheduleViewModel.swift in Sources */,
 				48411DCF26B1305F61766CD1 /* TeamStatCatalog.swift in Sources */,
+				7E57A0000000000000001931 /* StatGlossary.swift in Sources */,
 				992972130E103060B4FFB794 /* TeamStatsStore.swift in Sources */,
 				C995418E06A9086A5F63BAD7 /* TeamStatsTabView.swift in Sources */,
 				D6D4DE994975F6640BCD8CF6 /* TeamStatsViewModel.swift in Sources */,
@@ -799,6 +806,7 @@
 				7E57A00000000000000000A1 /* GameSummaryTests.swift in Sources */,
 				7E57A00000000000000000B9 /* RadioLinksGridTests.swift in Sources */,
 				7E57A00000000000000000C1 /* LiveScoresGolfTests.swift in Sources */,
+				7E57A0000000000000001933 /* StatGlossaryGridTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

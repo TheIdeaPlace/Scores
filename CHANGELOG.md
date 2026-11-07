@@ -21,6 +21,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Both apps read the same list, `radio_links.json`, and the nightly data check opens every link in it.
 
 ### Fixed
+- **Statistic definitions come from ESPN on both apps, and each is the right one.** On the iPhone, the
+  definition on the MLB Strikeouts leaders was the batter's ("the number of times a player strikes out")
+  on a list of pitchers, and the NFL's interception leaders had the definition of interceptions thrown.
+  ESPN's glossary is now looked up by category and name, so pitching's strikeouts and batting's each get
+  their own, as do the NFL's interceptions thrown and made and punt returns made and allowed (#193).
+  - Windows: Alt+D in Player or Team Statistics used to show a hand-written list for the league. It now
+    lists the statistics on the screen with ESPN's definition of each, the same wording as the iPhone, and
+    says "No definition from ESPN" where ESPN has none, such as Wins Above Replacement.
+  - A leader with no definition of its own in ESPN's glossary, such as the NFL's sack leaders, now has
+    none rather than another category's.
 - **iPhone: a golf tournament in progress stays on Live Scores when a refresh fails.** It used to vanish
   with nothing said. Now, as on Windows, the tournament last shown stays and the note under the list
   names the tour ESPN didn't answer for. A tournament in progress also no longer hides behind "No games

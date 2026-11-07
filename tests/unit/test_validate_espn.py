@@ -1417,6 +1417,13 @@ class TestLeadersFeed:
         v.check_leaders(self.http(("/site/v3/", (500, None))), report, league("NFL"))
         assert statuses(report, "Leaders") == [v.FAIL]
 
+    def test_the_definitions_are_checked_with_the_leaders(self):
+        report = v.Report()
+        http = self.http(("/statistics/byteam", (200, load("byteam_NFL.json"))))
+        v.check_leaders(http, report, league("NFL"))
+        assert statuses(report, "Stat definitions") == [v.PASS]
+        assert any(u.endswith("/football/nfl/statistics/byteam?region=us&lang=en&limit=1") for u in http.urls)
+
     def test_a_changed_shape_fails(self):
         report = v.Report()
         v.check_leaders(self.http(("/site/v3/", (200, {"leaders": {"categories": [{"name": "x"}]}}))), report, league("NFL"))
@@ -1432,6 +1439,36 @@ class TestLeadersFeed:
         report = v.Report()
         v.check_leaders(FakeHttp(), report, league("NFL"))
         assert statuses(report, "Core API: season") == [v.FAIL]
+
+
+class TestStatGlossaryCheck:
+    """check_stat_glossary: ESPN's definitions, and a leader category the table doesn't know (#193)."""
+
+    LEADERS = {"leaders": {"categories": [{"name": "strikeouts"}, {"name": "ERA"}, {"name": "opponentAvg"}]}}
+
+    def check(self, answer, leaders=None):
+        report = v.Report()
+        v.check_stat_glossary(FakeHttp([("/statistics/byteam", answer)]), report, league("MLB"),
+                              leaders or self.LEADERS)
+        return report
+
+    def test_real_definitions_and_known_leaders_pass(self):
+        report = self.check((200, load("byteam_MLB.json")))
+        assert statuses(report, "Stat definitions") == [v.PASS]
+
+    def test_a_leader_the_table_doesnt_know_is_worth_a_look(self):
+        leaders = {"leaders": {"categories": [{"name": "strikeouts"}, {"name": "brandNewStat"}]}}
+        report = self.check((200, load("byteam_MLB.json")), leaders)
+        assert statuses(report, "Stat definitions") == [v.WARN]
+        assert "brandNewStat" in detail(report, "Stat definitions")
+
+    def test_no_descriptions_is_worth_a_look(self):
+        report = self.check((200, {"categories": [{"name": "batting", "names": ["avg"]}]}))
+        assert statuses(report, "Stat definitions") == [v.WARN]
+
+    @pytest.mark.parametrize("answer", [(500, None), (404, None), (200, [])])
+    def test_a_failed_request_fails(self, answer):
+        assert statuses(self.check(answer), "Stat definitions") == [v.FAIL]
 
 
 class TestNoLeaders:

@@ -1288,42 +1288,20 @@ class ESPNAPIService {
 
     // MARK: - Stat Definitions
 
-    /// Plain-English definition of a stat, or nil when ESPN publishes none.
+    /// ESPN's definition of a list's stat, or nil when ESPN publishes none.
     ///
     /// ESPN ships its own glossary text alongside the team statistics payload —
     /// a `descriptions` array parallel to each category's stat names — so both
     /// the Players and Teams tabs read definitions from the same document
-    /// rather than from hand-written copy that would drift.
-    func statDefinition(for statKey: String, sport: Sport) async -> String? {
+    /// rather than from hand-written copy that would drift. Windows reads the
+    /// same one. It's keyed by category and stat (StatGlossary), so the
+    /// pitchers' strikeout leaders get the pitcher's definition, not the batter's.
+    func statDefinition(for category: LeagueLeaderCategory, sport: Sport) async -> String? {
         guard !TeamStatCatalog.specs(for: sport).isEmpty else { return nil }
-        let definitions = await teamStatsStore.glossary(for: sport)
-        if let exact = definitions[statKey] { return exact }
-        return Self.playerStatAliases[statKey].flatMap { definitions[$0] }
+        let glossary = await teamStatsStore.glossary(for: sport)
+        let family = sport.apiPath.components(separatedBy: "/").first ?? ""
+        return StatGlossary.definition(in: glossary, sport: family, key: category.name, team: category.isTeamCategory)
     }
-
-    /// Player-leader categories and team statistics use different keys for the
-    /// same stat — basketball is the worst offender ("pointsPerGame" on the
-    /// leaders endpoint, "avgPoints" in the team payload). Map the ones that
-    /// differ so the Players tab gets definitions too. Keys with no team-level
-    /// equivalent at all (PER, plus/minus, tackles) are simply absent, and
-    /// those headings show no definition button.
-    private static let playerStatAliases: [String: String] = [
-        "pointsPerGame":        "avgPoints",
-        "assistsPerGame":       "avgAssists",
-        "reboundsPerGame":      "avgRebounds",
-        "stealsPerGame":        "avgSteals",
-        "blocksPerGame":        "avgBlocks",
-        "turnoversPerGame":     "avgTurnovers",
-        "foulsPerGame":         "avgFouls",
-        "fieldGoalPercentage":  "fieldGoalPct",
-        "FreeThrowPct":         "freeThrowPct",
-        "3PointPct":            "threePointFieldGoalPct",
-        "3PointsMadePerGame":   "avgThreePointFieldGoalsMade",
-        "3PointMadePerGame":    "avgThreePointFieldGoalsMade",
-        "defensiveReboundsPerGame": "avgDefensiveRebounds",
-        "offensiveReboundsPerGame": "avgOffensiveRebounds",
-        "quarterbackRating":    "QBRating",
-    ]
 
     private func buildTeamLeaderCategories(
         from league: LeagueTeamStats,
