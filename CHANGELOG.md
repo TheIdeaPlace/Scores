@@ -20,7 +20,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     **Game Radio** in The Bench.
   - Both apps read the same list, `radio_links.json`, and the nightly data check opens every link in it.
 
+### Changed
+- **Windows: monitoring is a section at the top of Live Scores.** Alt+M on a game adds it to Monitoring,
+  where its row reads as it does below with the sport after it, and the game stays in its own section too.
+  Alt+M also works on today's games on a sport's page. Alt+M on a Monitoring row takes it off and moves you
+  to the next one. Monitoring lasts until you quit. Scores no longer reads out score changes on its own.
+  The iPhone is to follow (#185).
+
 ### Fixed
+- **Windows: Live Scores no longer reads the row you're on again at every refresh when nothing about it
+  changed.** A finished game you were resting on was read once a minute.
 - **Windows: Enter on an upcoming or finished game in Live Scores opens it.** It did nothing before.
 - **Windows: a context menu is announced as soon as it opens.** Shift+F10, the Applications key and
   Alt+L used to open a menu that JAWS and NVDA said nothing about until an arrow key was pressed. The app's own menus (a

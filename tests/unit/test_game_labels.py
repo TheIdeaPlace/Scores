@@ -10,7 +10,8 @@ from game_labels import (basketball_period_label, best_odds, broadcast_names,
                          football_period_label, football_period_sort_key, format_height,
                          format_weight, game_standings_tables, injured_player_count,
                          leader_display_value, local_schedule_datetime, schedule_game_is_over,
-                         schedule_game_label, schedule_row_text, schedule_start_row, scoreboard_today)
+                         schedule_game_label, schedule_row_text, schedule_start_row, scoreboard_today,
+                         on_todays_scoreboard)
 
 FIXTURES = os.path.join(os.path.dirname(__file__), "..", "fixtures", "espn")
 
@@ -345,3 +346,29 @@ def test_wnba_standings_are_the_regular_season_not_the_playoffs(monkeypatch):
     assert espn_api._games_back(half) == "2.5"
     assert espn_api._games_back({}) == "—"
     assert espn_api._games_back({"value": "-"}) == "—"
+
+
+class TestOnTodaysScoreboard:
+    """Only today's games can be monitored, since Live Scores shows today."""
+
+    @staticmethod
+    def espn_date(local):
+        return local.astimezone(timezone.utc).strftime("%Y-%m-%dT%H:%MZ")
+
+    def test_a_game_this_evening_is_today(self):
+        start = self.espn_date(datetime(2026, 11, 7, 18, 30))
+        assert on_todays_scoreboard(start, now=datetime(2026, 11, 7, 12, 0))
+        assert on_todays_scoreboard(start, now=datetime(2026, 11, 7, 23, 0))
+
+    def test_until_5_am_last_nights_game_is_still_today(self):
+        start = self.espn_date(datetime(2026, 11, 7, 21, 30))
+        assert on_todays_scoreboard(start, now=datetime(2026, 11, 8, 4, 59))
+        assert not on_todays_scoreboard(start, now=datetime(2026, 11, 8, 5, 0))
+
+    def test_tomorrows_game_is_not(self):
+        start = self.espn_date(datetime(2026, 11, 8, 13, 0))
+        assert not on_todays_scoreboard(start, now=datetime(2026, 11, 7, 20, 0))
+
+    @pytest.mark.parametrize("date_str", [None, "", "not a date", 5])
+    def test_no_date_is_not_today(self, date_str):
+        assert not on_todays_scoreboard(date_str, now=datetime(2026, 11, 7, 12, 0))

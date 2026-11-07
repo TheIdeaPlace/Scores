@@ -487,25 +487,14 @@ class TestAFailureInLiveScores(FailureViews):
         assert self.said.call_count == 2
         assert self.said.call_args.args[0].startswith("Some leagues' scores may be missing")
 
-    def test_a_monitored_game_hears_it_once_until_it_answers_again(self, view):
+    def test_a_monitored_games_league_failing_on_the_timer_is_quiet_too(self, view):
+        """Monitoring doesn't speak on its own any more: the row at the end says so."""
         live = {"id": "1", "league": "NBA", "name": "A at B", "status": "Q1", "teams": []}
-        view.monitored_games.add("1")
+        view.monitored_games["1"] = "NBA"
         view._on_live_scores_loaded([live], [], [], [])
         for _ in range(3):
             view._on_live_scores_loaded([], [], [], ["NBA"])
-        assert self.said.call_count == 1
-        view._on_live_scores_loaded([live], [], [], [])
-        view._on_live_scores_loaded([], [], [], ["NBA"])
-        assert self.said.call_count == 2
-
-    def test_a_monitored_league_is_still_heard_after_another_failed_quietly(self, view):
-        live = {"id": "1", "league": "NBA", "name": "A at B", "status": "Q1", "teams": []}
-        view.monitored_games.add("1")
-        view._on_live_scores_loaded([live], [], [], [])
-        view._on_live_scores_loaded([live], [], [], ["NHL"])
         self.said.assert_not_called()
-        view._on_live_scores_loaded([], [], [], ["NHL", "NBA"])
-        self.said.assert_called_once()
 
     def test_a_retry_that_works_lands_on_a_row(self, view):
         self.load(view, [self.today_game("1", "NHL")], ["NBA"])
@@ -623,7 +612,7 @@ class TestAFailureInLiveScores(FailureViews):
 
     def test_a_league_nobody_is_monitoring_stays_quiet(self, view):
         live = {"id": "1", "league": "NBA", "name": "A at B", "status": "Q1", "teams": []}
-        view.monitored_games.add("1")
+        view.monitored_games["1"] = "NBA"
         view._on_live_scores_loaded([live], [], [], [])
         view._on_live_scores_loaded([live], [], [], ["NHL"])
         self.said.assert_not_called()
@@ -933,3 +922,242 @@ class TestAFailureInADialog(FailureViews):
         with patch.object(self.scores.ApiService, "get_team_news", side_effect=self.scores.ApiError(FAILED)):
             loader.run()
         assert got == [FAILED]
+
+
+class TestMonitoring(FailureViews):
+    """Live Scores' Monitoring section: Alt+M copies a game to the top, with its sport, and
+    nothing is read out on its own."""
+
+    @staticmethod
+    def finished(game_id, league, name=None):
+        name = name or f"{league} game {game_id}"
+        return {"game_id": game_id, "league": league, "state": "completed", "start_time": "",
+                "display_text": name, "raw_data": {"id": game_id, "league": league, "name": name}}
+
+    @staticmethod
+    def live(game_id, league, score="7"):
+        return {"id": game_id, "league": league, "name": f"Away {game_id} at Home {game_id}",
+                "status": "Q2", "teams": [{"name": "Home", "score": score, "home_away": "home"},
+                                         {"name": "Away", "score": "3", "home_away": "away"}]}
+
+    @pytest.fixture
+    def view(self):
+        view = self.scores.LiveScoresView(None)
+        view.refresh_timer.stop()
+        return view
+
+    def keys(self, view):
+        lst = view.live_scores_list
+        return [self.scores._row_key(lst.item(i).data(self.role)) for i in range(lst.count())]
+
+    def go_to(self, view, key):
+        view.live_scores_list.setCurrentRow(self.keys(view).index(key))
+
+    def current_key(self, view):
+        return self.scores._row_key(view.live_scores_list.currentItem().data(self.role))
+
+    def load(self, view, today=(), live=(), failed=()):
+        view._on_live_scores_loaded(list(live), list(today), [], list(failed))
+
+    def test_the_section_is_first_and_says_how_to_add_a_game(self, view):
+        self.load(view, [self.finished("1", "NHL")])
+        rows = self.rows(view.live_scores_list)
+        assert rows[0] == self.scores.MONITORING_EMPTY
+        assert self.keys(view)[0] == self.scores.MONITORING_HEADER
+
+    def test_no_games_today_has_no_section(self, view):
+        self.load(view)
+        rows = self.rows(view.live_scores_list)
+        assert len(rows) == 1 and rows[0].startswith("No games on")
+
+    def test_alt_m_copies_the_game_to_the_top_with_its_sport_and_keeps_its_own_row(self, view):
+        self.load(view, [self.finished("1", "NHL"), self.finished("2", "NBA")])
+        self.go_to(view, "2")
+        view._toggle_monitoring()
+        rows = self.rows(view.live_scores_list)
+        assert rows[0] == self.scores.MONITORING_HEADER
+        assert rows[1] == "NBA game 2 | NBA"
+        assert "NBA game 2 - monitoring" in rows
+        assert "NHL game 1" in rows
+        assert self.current_key(view) == "2"  # still on the game's own row
+        self.said.assert_called_once_with("NBA game 2 added to monitoring")
+        assert view.monitored_games == {"2": "NBA"}
+
+    def test_a_live_football_row_reads_as_it_does_below_with_the_sport_after_it(self, view):
+        self.load(view, live=[self.live("9", "NCAAF")])
+        self.go_to(view, "9")
+        own = view.live_scores_list.currentItem().text()
+        view._toggle_monitoring()
+        rows = self.rows(view.live_scores_list)
+        assert rows[1] == f"{own} | NCAAF"
+        assert f"{own} - monitoring" in rows
+
+    def test_monitored_games_are_in_the_order_added(self, view):
+        games = [self.finished(str(i), "NHL") for i in (1, 2, 3)]
+        self.load(view, games)
+        for game_id in ("3", "1"):
+            self.go_to(view, game_id)
+            view._toggle_monitoring()
+        assert self.keys(view)[:3] == [self.scores.MONITORING_HEADER, ("monitoring", "3"), ("monitoring", "1")]
+
+    def test_alt_m_on_a_monitoring_row_takes_it_off_and_lands_on_the_next(self, view):
+        games = [self.finished(str(i), "NHL") for i in (1, 2, 3)]
+        self.load(view, games)
+        for game_id in ("1", "2", "3"):
+            self.go_to(view, game_id)
+            view._toggle_monitoring()
+        self.go_to(view, ("monitoring", "2"))
+        self.said.reset_mock()
+        view._toggle_monitoring()
+        assert self.current_key(view) == ("monitoring", "3")
+        assert ("monitoring", "2") not in self.keys(view)
+        assert "NHL game 2 - monitoring" not in self.rows(view.live_scores_list)
+        self.said.assert_called_once_with("NHL game 2 removed from monitoring")
+
+    def test_taking_off_the_last_monitoring_row_lands_on_the_header(self, view):
+        self.load(view, [self.finished("1", "NHL"), self.finished("2", "NHL")])
+        for game_id in ("1", "2"):
+            self.go_to(view, game_id)
+            view._toggle_monitoring()
+        self.go_to(view, ("monitoring", "2"))
+        view._toggle_monitoring()
+        assert self.current_key(view) == self.scores.MONITORING_HEADER
+        self.go_to(view, ("monitoring", "1"))
+        view._toggle_monitoring()
+        assert self.current_key(view) == self.scores.MONITORING_HEADER
+        assert self.rows(view.live_scores_list)[0] == self.scores.MONITORING_EMPTY
+
+    def test_alt_m_on_the_games_own_row_again_takes_it_off_and_stays(self, view):
+        self.load(view, [self.finished("1", "NHL"), self.finished("2", "NHL")])
+        self.go_to(view, "2")
+        view._toggle_monitoring()
+        view._toggle_monitoring()
+        assert self.current_key(view) == "2"
+        assert view.monitored_games == {}
+        assert not any(row.endswith(" - monitoring") for row in self.rows(view.live_scores_list))
+
+    def test_alt_m_on_a_heading_asks_for_a_game(self, view):
+        self.load(view, [self.finished("1", "NHL")])
+        view.live_scores_list.setCurrentRow(0)
+        view._toggle_monitoring()
+        self.said.assert_called_once_with("Choose a game to monitor")
+        assert view.monitored_games == {}
+
+    def test_enter_on_a_monitoring_row_opens_the_game(self, view):
+        self.load(view, [self.finished("1", "NHL")])
+        self.go_to(view, "1")
+        view._toggle_monitoring()
+        view.parent_app = SimpleNamespace(open_game_details=lambda *a, **k: opened.append((a, k)),
+                                          current_league=None)
+        opened = []
+        self.go_to(view, ("monitoring", "1"))
+        view._on_game_selected(view.live_scores_list.currentItem())
+        assert opened == [(("1",), {"from_live_scores": True})]
+
+    def test_a_score_change_is_not_read_out(self, view):
+        self.load(view, live=[self.live("9", "NCAAF", score="7")])
+        self.go_to(view, "9")
+        view._toggle_monitoring()
+        self.said.reset_mock()
+        self.load(view, live=[self.live("9", "NCAAF", score="14")])
+        self.said.assert_not_called()
+        assert "14" in self.rows(view.live_scores_list)[1]
+
+    def test_a_refresh_keeps_your_monitoring_row(self, view):
+        self.load(view, [self.finished("1", "NHL"), self.finished("2", "NHL")])
+        self.go_to(view, "2")
+        view._toggle_monitoring()
+        self.go_to(view, ("monitoring", "2"))
+        self.load(view, [self.finished("1", "NHL"), self.finished("2", "NHL"), self.finished("3", "NHL")])
+        assert self.current_key(view) == ("monitoring", "2")
+
+    def test_an_unchanged_refresh_changes_no_row(self, view):
+        """Setting a row's data, even to the same, tells a screen reader the row changed,
+        and it read the focused row again at every refresh."""
+        games = [self.finished("1", "NHL"), self.finished("2", "NHL")]
+        self.load(view, games)
+        self.go_to(view, "2")
+        view._toggle_monitoring()
+        changed = []
+        view.live_scores_list.itemChanged.connect(changed.append)
+        self.load(view, [self.finished("1", "NHL"), self.finished("2", "NHL")])
+        assert changed == []
+
+    def test_a_game_no_longer_on_todays_list_is_not_shown(self, view):
+        self.load(view, [self.finished("1", "NHL")])
+        view.monitored_games["gone"] = "NHL"
+        self.load(view, [self.finished("1", "NHL")])
+        assert self.rows(view.live_scores_list)[0] == self.scores.MONITORING_EMPTY
+
+    def test_coming_back_from_a_game_lands_on_the_monitoring_row(self, view):
+        self.load(view, [self.finished("1", "NHL")])
+        self.go_to(view, "1")
+        view._toggle_monitoring()
+        self.go_to(view, ("monitoring", "1"))
+        state = view.capture_state()
+        again = self.scores.LiveScoresView(None)
+        again.refresh_timer.stop()
+        again.monitored_games = view.monitored_games
+        again._restore_state = state
+        self.load(again, [self.finished("1", "NHL")])
+        assert self.current_key(again) == ("monitoring", "1")
+
+
+class TestMonitoringFromALeague(FailureViews):
+    @pytest.fixture
+    def view(self):
+        view = self.scores.LeagueView(None, "NBA")
+        view.parent_app = SimpleNamespace(monitored_games={}, update_window_title=lambda items: None)
+        return view
+
+    def land(self, view, games):
+        view._on_scores_loaded(view._scores_generation, None, games, [])
+        self.said.reset_mock()  # the date the list now shows
+
+    def go_to(self, view, game_id):
+        lst = view.scores_list
+        lst.setCurrentRow(next(i for i in range(lst.count()) if lst.item(i).data(self.role) == game_id))
+
+    def todays(self, game_id):
+        start = datetime.now().replace(hour=12, minute=0, second=0, microsecond=0)
+        start = start.astimezone(timezone.utc).strftime("%Y-%m-%dT%H:%MZ")
+        g = game(game_id, "pre", start=start)
+        g["name"] = f"Away {game_id} at Home {game_id}"
+        return g
+
+    def test_todays_game_is_added_for_live_scores(self, view):
+        self.land(view, [self.todays("5")])
+        self.go_to(view, "5")
+        view._toggle_monitoring()
+        assert view.parent_app.monitored_games == {"5": "NBA"}
+        self.said.assert_called_once_with("Away 5 at Home 5 added to monitoring, at the top of Live Scores")
+
+    def test_alt_m_again_takes_it_off(self, view):
+        self.land(view, [self.todays("5")])
+        self.go_to(view, "5")
+        view._toggle_monitoring()
+        view._toggle_monitoring()
+        assert view.parent_app.monitored_games == {}
+        assert self.said.call_args.args[0] == "Away 5 at Home 5 removed from monitoring"
+
+    def test_another_days_game_is_not(self, view):
+        other = game("6", "pre", start="2020-01-04T18:00Z")
+        other["name"] = "Old at Game"
+        self.land(view, [other])
+        self.go_to(view, "6")
+        view._toggle_monitoring()
+        assert view.parent_app.monitored_games == {}
+        self.said.assert_called_once_with("Only today's games can be monitored")
+
+    def test_a_row_that_is_not_a_game_asks_for_one(self, view):
+        self.land(view, [self.todays("5")])
+        view.scores_list.setCurrentRow(0)  # the section header
+        view._toggle_monitoring()
+        self.said.assert_called_once_with("Choose a game to monitor")
+
+    def test_alt_m_reaches_it(self, view):
+        from PyQt6.QtCore import QEvent, Qt
+        from PyQt6.QtGui import QKeyEvent
+        with patch.object(view, "_toggle_monitoring") as toggle:
+            view.keyPressEvent(QKeyEvent(QEvent.Type.KeyPress, Qt.Key.Key_M, Qt.KeyboardModifier.AltModifier))
+        toggle.assert_called_once()

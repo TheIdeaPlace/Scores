@@ -55,6 +55,19 @@ def scoreboard_today(now: Optional[datetime] = None):
     return (now - timedelta(hours=5)).date()
 
 
+def on_todays_scoreboard(date_str: Optional[str], time_valid: bool = True,
+                         now: Optional[datetime] = None) -> bool:
+    """Whether a game, by its ESPN date, is on today's scoreboard: its local date is
+    `scoreboard_today`, so a game that started last night is still today until 5 AM.
+    Live Scores holds only these, so only these can be monitored."""
+    if not isinstance(date_str, str) or not date_str:
+        return False
+    try:
+        return local_schedule_datetime(date_str, time_valid).date() == scoreboard_today(now)
+    except (TypeError, ValueError):
+        return False
+
+
 def _overtime_label(number: int) -> str:
     return "OT" if number <= 1 else f"{number}OT"
 
