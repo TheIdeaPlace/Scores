@@ -610,7 +610,7 @@ class TestAFailureInLiveScores(FailureViews):
         self.said.assert_called_once_with(FAILED)
         assert view._refresh_asked_for is False
 
-    def test_a_league_nobody_is_monitoring_stays_quiet(self, view):
+    def test_another_league_failing_with_a_game_monitored_stays_quiet(self, view):
         live = {"id": "1", "league": "NBA", "name": "A at B", "status": "Q1", "teams": []}
         view.monitored_games["1"] = "NBA"
         view._on_live_scores_loaded([live], [], [], [])
@@ -980,17 +980,21 @@ class TestMonitoring(FailureViews):
         assert "NBA game 2 - monitoring" in rows
         assert "NHL game 1" in rows
         assert self.current_key(view) == "2"  # still on the game's own row
-        self.said.assert_called_once_with("NBA game 2 added to monitoring")
+        self.said.assert_called_once_with("Added to monitoring")
         assert view.monitored_games == {"2": "NBA"}
 
     def test_a_live_football_row_reads_as_it_does_below_with_the_sport_after_it(self, view):
-        self.load(view, live=[self.live("9", "NCAAF")])
+        game = self.live("9", "NCAAF")
+        game["recent_play"] = "Shotgun J.Smith pass complete short right for 12 yards"
+        game["status"] = "10:58 - 3rd"
+        self.load(view, live=[game])
         self.go_to(view, "9")
         own = view.live_scores_list.currentItem().text()
         view._toggle_monitoring()
         rows = self.rows(view.live_scores_list)
         assert rows[1] == f"{own} | NCAAF"
         assert f"{own} - monitoring" in rows
+        assert "12 yards" in rows[1]  # all the detail, then the sport
 
     def test_monitored_games_are_in_the_order_added(self, view):
         games = [self.finished(str(i), "NHL") for i in (1, 2, 3)]
@@ -1083,6 +1087,46 @@ class TestMonitoring(FailureViews):
         self.load(view, [self.finished("1", "NHL"), self.finished("2", "NHL")])
         assert changed == []
 
+    def test_taking_one_off_skips_a_monitored_game_that_is_not_shown(self, view):
+        self.load(view, [self.finished("1", "NHL")])
+        self.go_to(view, "1")
+        view._toggle_monitoring()
+        view.monitored_games["gone"] = "NHL"  # added after it left today's list
+        self.load(view, [self.finished("1", "NHL")])
+        self.go_to(view, ("monitoring", "1"))
+        view._toggle_monitoring()
+        assert self.current_key(view) == self.scores.MONITORING_HEADER
+
+    def test_arriving_with_nothing_monitored_starts_after_the_heading(self, view):
+        view.live_scores_list.setCurrentRow(0)  # "Loading live scores...", as on_show leaves it
+        self.load(view, [self.finished("1", "NHL")])
+        assert view.live_scores_list.currentRow() == 1
+
+    def test_games_coming_and_going_keep_the_row_you_are_on(self, view):
+        """A game kicking off or finishing rebuilt the list, and the screen reader read the
+        row you were on again: once a minute on a busy day."""
+        self.load(view, [self.finished("1", "NHL"), self.finished("2", "NHL")])
+        self.go_to(view, "2")
+        view._toggle_monitoring()
+        self.go_to(view, ("monitoring", "2"))
+        lst = view.live_scores_list
+        kept = lst.currentItem()
+        moved = []
+        lst.currentItemChanged.connect(lambda *a: moved.append(a))
+        self.load(view, [self.finished("3", "NBA"), self.finished("1", "NHL"), self.finished("2", "NHL")])
+        assert lst.currentItem() is kept
+        assert moved == []
+        assert "NBA game 3" in self.rows(lst)
+        assert self.current_key(view) == ("monitoring", "2")
+        assert view._rows_rebuilt is False
+
+    def test_a_row_that_is_gone_is_left_for_the_nearest(self, view):
+        self.load(view, [self.finished("1", "NHL"), self.finished("2", "NHL")])
+        self.go_to(view, "2")
+        self.load(view, [self.finished("1", "NHL")])
+        assert view._rows_rebuilt is True
+        assert view.live_scores_list.currentItem() is not None
+
     def test_a_game_no_longer_on_todays_list_is_not_shown(self, view):
         self.load(view, [self.finished("1", "NHL")])
         view.monitored_games["gone"] = "NHL"
@@ -1119,8 +1163,8 @@ class TestMonitoringFromALeague(FailureViews):
         lst.setCurrentRow(next(i for i in range(lst.count()) if lst.item(i).data(self.role) == game_id))
 
     def todays(self, game_id):
-        start = datetime.now().replace(hour=12, minute=0, second=0, microsecond=0)
-        start = start.astimezone(timezone.utc).strftime("%Y-%m-%dT%H:%MZ")
+        # Noon Eastern on today's scoreboard, which is still yesterday's until 5 AM.
+        start = f"{self.scores.scoreboard_today().isoformat()}T17:00Z"
         g = game(game_id, "pre", start=start)
         g["name"] = f"Away {game_id} at Home {game_id}"
         return g
@@ -1130,7 +1174,7 @@ class TestMonitoringFromALeague(FailureViews):
         self.go_to(view, "5")
         view._toggle_monitoring()
         assert view.parent_app.monitored_games == {"5": "NBA"}
-        self.said.assert_called_once_with("Away 5 at Home 5 added to monitoring, at the top of Live Scores")
+        self.said.assert_called_once_with("Added to monitoring, at the top of Live Scores")
 
     def test_alt_m_again_takes_it_off(self, view):
         self.land(view, [self.todays("5")])
@@ -1138,7 +1182,7 @@ class TestMonitoringFromALeague(FailureViews):
         view._toggle_monitoring()
         view._toggle_monitoring()
         assert view.parent_app.monitored_games == {}
-        assert self.said.call_args.args[0] == "Away 5 at Home 5 removed from monitoring"
+        assert self.said.call_args.args[0] == "Removed from monitoring"
 
     def test_another_days_game_is_not(self, view):
         other = game("6", "pre", start="2020-01-04T18:00Z")
@@ -1148,6 +1192,14 @@ class TestMonitoringFromALeague(FailureViews):
         view._toggle_monitoring()
         assert view.parent_app.monitored_games == {}
         self.said.assert_called_once_with("Only today's games can be monitored")
+
+    def test_a_game_whose_time_is_not_set_goes_by_its_utc_date(self, view):
+        g = self.todays("7")
+        g["competitions"] = [{"timeValid": False}]
+        self.land(view, [g])
+        self.go_to(view, "7")
+        view._toggle_monitoring()
+        assert view.parent_app.monitored_games == {"7": "NBA"}
 
     def test_a_row_that_is_not_a_game_asks_for_one(self, view):
         self.land(view, [self.todays("5")])

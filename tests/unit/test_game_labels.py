@@ -349,25 +349,26 @@ def test_wnba_standings_are_the_regular_season_not_the_playoffs(monkeypatch):
 
 
 class TestOnTodaysScoreboard:
-    """Only today's games can be monitored, since Live Scores shows today."""
+    """Only today's games can be monitored, since Live Scores shows today's scoreboard, and
+    ESPN files a game under its Eastern date whatever the time zone."""
 
-    @staticmethod
-    def espn_date(local):
-        return local.astimezone(timezone.utc).strftime("%Y-%m-%dT%H:%MZ")
-
-    def test_a_game_this_evening_is_today(self):
-        start = self.espn_date(datetime(2026, 11, 7, 18, 30))
-        assert on_todays_scoreboard(start, now=datetime(2026, 11, 7, 12, 0))
-        assert on_todays_scoreboard(start, now=datetime(2026, 11, 7, 23, 0))
+    def test_an_evening_kickoff_is_that_days(self):
+        assert on_todays_scoreboard("2026-11-08T00:30Z", now=datetime(2026, 11, 7, 12, 0))  # 7:30 PM ET
+        assert on_todays_scoreboard("2026-11-08T03:30Z", now=datetime(2026, 11, 7, 23, 0))  # 10:30 PM ET
 
     def test_until_5_am_last_nights_game_is_still_today(self):
-        start = self.espn_date(datetime(2026, 11, 7, 21, 30))
-        assert on_todays_scoreboard(start, now=datetime(2026, 11, 8, 4, 59))
-        assert not on_todays_scoreboard(start, now=datetime(2026, 11, 8, 5, 0))
+        assert on_todays_scoreboard("2026-11-08T02:30Z", now=datetime(2026, 11, 8, 4, 59))
+        assert not on_todays_scoreboard("2026-11-08T02:30Z", now=datetime(2026, 11, 8, 5, 0))
+
+    def test_after_midnight_eastern_is_the_next_days(self):
+        assert not on_todays_scoreboard("2026-11-08T05:30Z", now=datetime(2026, 11, 7, 20, 0))  # 12:30 AM ET
+
+    def test_a_game_with_no_time_set_goes_by_its_utc_date(self):
+        assert on_todays_scoreboard("2026-11-08T05:00Z", time_valid=False, now=datetime(2026, 11, 8, 12, 0))
+        assert not on_todays_scoreboard("2026-11-08T05:00Z", time_valid=False, now=datetime(2026, 11, 7, 12, 0))
 
     def test_tomorrows_game_is_not(self):
-        start = self.espn_date(datetime(2026, 11, 8, 13, 0))
-        assert not on_todays_scoreboard(start, now=datetime(2026, 11, 7, 20, 0))
+        assert not on_todays_scoreboard("2026-11-08T18:00Z", now=datetime(2026, 11, 7, 20, 0))
 
     @pytest.mark.parametrize("date_str", [None, "", "not a date", 5])
     def test_no_date_is_not_today(self, date_str):

@@ -28,8 +28,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   The iPhone is to follow (#185).
 
 ### Fixed
-- **Windows: Live Scores no longer reads the row you're on again at every refresh when nothing about it
-  changed.** A finished game you were resting on was read once a minute.
+- **Windows: Live Scores no longer reads the row you're on again when other games come and go.** Each
+  time a game kicked off or finished, the list was rebuilt and the row you were on read out, so on a busy
+  day a finished game you were resting on was read once a minute.
 - **Windows: Enter on an upcoming or finished game in Live Scores opens it.** It did nothing before.
 - **Windows: a context menu is announced as soon as it opens.** Shift+F10, the Applications key and
   Alt+L used to open a menu that JAWS and NVDA said nothing about until an arrow key was pressed. The app's own menus (a

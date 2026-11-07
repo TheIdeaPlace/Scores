@@ -1030,6 +1030,7 @@ class LiveScoresView(BaseView):
         self._failed_leagues = []  # from the last load, for the row that says so
         self._failure_text = None  # that row's text
         self._rows_rebuilt = False  # the last load replaced the rows, so the focused one was read
+        self._focus_kept = False  # the last load kept the focused row through a rebuild
         self._refresh_asked_for = False  # someone asked for the load in flight
 
         self.setup_ui()
@@ -1132,19 +1133,22 @@ class LiveScoresView(BaseView):
             announce("Choose a game to monitor")
             return
         game_id = game["id"]
-        from_monitoring = bool(game.get(MONITOR_ROW))
+        lst = self.live_scores_list
         if game_id in self.monitored_games:
-            order = list(self.monitored_games)
             del self.monitored_games[game_id]
-            announce(f"{game.get('name') or 'Game'} removed from monitoring")
-            if from_monitoring:
-                after = order[order.index(game_id) + 1:]
-                target = _row_key({"id": after[0], MONITOR_ROW: True}) if after else MONITORING_HEADER
+            if game.get(MONITOR_ROW):
+                # You move to another row, which is read, so say which game went.
+                announce(f"{game.get('name') or 'Game'} removed from monitoring")
+                below = lst.item(lst.currentRow() + 1)
+                below_key = _row_key(below.data(Qt.ItemDataRole.UserRole)) if below else None
+                is_monitoring_row = isinstance(below_key, tuple)
+                target = below_key if is_monitoring_row else MONITORING_HEADER
             else:
+                announce("Removed from monitoring")
                 target = _row_key(game)
         else:
             self.monitored_games[game_id] = game["league"]
-            announce(f"{game.get('name') or 'Game'} added to monitoring")
+            announce("Added to monitoring")
             target = _row_key(game)
         if self._last_games is not None:
             self._show_loaded_live_scores(*self._last_games[1:], select=target)
@@ -1299,6 +1303,7 @@ class LiveScoresView(BaseView):
         same_rows = (rows == game_rows(scratch) and all(
             row_key(visible.item(i)) == row_key(scratch.item(i)) for i in range(rows)))
         if same_rows:
+            self._focus_kept = True
             for i in range(rows):
                 old, new = visible.item(i), scratch.item(i)
                 # Setting a row's data, even to the same, tells a screen reader the row
@@ -1310,9 +1315,33 @@ class LiveScoresView(BaseView):
                     old.setText(new.text())
             self._update_failure_row(visible, rows, scratch.item(rows) if scratch.count() > rows else None)
             return True
-        visible.clear()
-        while scratch.count():
-            visible.addItem(scratch.takeItem(0))
+        # Other rows came or went: a game kicked off or finished, which on a busy day is
+        # every refresh. Clearing the list gave focus a new row, and the screen reader read
+        # it out again. The row you're on stays the same row, with the others put round it.
+        current = visible.currentItem()
+        keys = [row_key(scratch.item(i)) for i in range(scratch.count())]
+        key = row_key(current) if current is not None else None
+        items = [scratch.takeItem(0) for _ in range(scratch.count())]
+        self._focus_kept = key is not None and not isinstance(key, str) or key == MONITORING_HEADER
+        self._focus_kept = self._focus_kept and keys.count(key) == 1
+        if not self._focus_kept:
+            visible.clear()
+            for item in items:
+                visible.addItem(item)
+            return False
+        at = keys.index(key)
+        for row in reversed(range(visible.count())):
+            if visible.item(row) is not current:
+                visible.takeItem(row)
+        fresh = items[at]
+        if current.data(Qt.ItemDataRole.UserRole) != fresh.data(Qt.ItemDataRole.UserRole):
+            current.setData(Qt.ItemDataRole.UserRole, fresh.data(Qt.ItemDataRole.UserRole))
+        if current.text() != fresh.text():
+            current.setText(fresh.text())
+        for row, item in enumerate(items[:at]):
+            visible.insertItem(row, item)
+        for item in items[at + 1:]:
+            visible.addItem(item)
         return False
 
     @staticmethod
@@ -1344,9 +1373,11 @@ class LiveScoresView(BaseView):
         if select is not None:
             selected_key = select
 
+        self._focus_kept = False
         in_place = self._refresh_rows_in_place(live_games, current_date_games, golf)
-        self._rows_rebuilt = not in_place
-        if in_place:
+        # Rebuilt under someone: the row they're on was read out. Not when it was kept.
+        self._rows_rebuilt = not self._focus_kept
+        if in_place or (self._focus_kept and select is None):
             return
 
         restored = False
@@ -1364,7 +1395,12 @@ class LiveScoresView(BaseView):
                 restored = True
         # The row can be past the end now: the failure row someone retried from is last, and gone.
         if not restored and selected_row >= 0 and self.live_scores_list.count():
-            self.live_scores_list.setCurrentRow(min(selected_row, self.live_scores_list.count() - 1))
+            row = min(selected_row, self.live_scores_list.count() - 1)
+            # Arriving, don't stop on an empty Monitoring section's heading every time.
+            if (row == 0 and self.live_scores_list.count() > 1
+                    and self.live_scores_list.item(0).text() == MONITORING_EMPTY):
+                row = 1
+            self.live_scores_list.setCurrentRow(row)
 
     def _render_live_scores(self, live_games, current_date_games, golf=()):
         """Fill the list from already-fetched games. No network access."""
@@ -1895,15 +1931,14 @@ class LeagueView(BaseView):
         if game is None:
             announce("Choose a game to monitor")
             return
-        name = game.get("name") or "Game"
         if game["id"] in monitored:
             del monitored[game["id"]]
-            announce(f"{name} removed from monitoring")
+            announce("Removed from monitoring")
         elif not on_todays_scoreboard(game.get("date"), _time_valid(game)):
             announce("Only today's games can be monitored")
         else:
             monitored[game["id"]] = self.league
-            announce(f"{name} added to monitoring, at the top of Live Scores")
+            announce("Added to monitoring, at the top of Live Scores")
 
     def _listen_to_current_game(self):
         game = self._current_game()
