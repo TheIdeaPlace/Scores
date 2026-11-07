@@ -26,6 +26,7 @@ plays_NCAAM_401845838_3OT.json	44 KB	halves as 1st/2nd Half, periods 3-5 OT/2OT/
 plays_NCAAWB_401911736.json	41 KB	(25,0) placeholder coordinates on substitutions and timeouts
 plays_NBA_401909906.json	47 KB	sentinel coordinates; real shot coordinates
 plays_NHL_401892616_SO.json	67 KB	shootout: scoreValue on every converted attempt; linescore counts 1
+plays_MLB_401817091.json	81 KB	summary plays only, innings 2 and 8: atBatId and summaryType A/P/N/S/C/I, pitchCoordinate on every pitch, a pinch hitter and relief changes
 drives_NCAAF_2OT.json	43 KB	OT drives: Quarter 5, Quarter 6 in the app
 details_NFL_pieces.json	32 KB	TV in media.shortName, odds in pickcenter, injuries by team, officials under gameInfo
 details_NCAAH_pieces.json	9 KB	attendance 0, no plays
