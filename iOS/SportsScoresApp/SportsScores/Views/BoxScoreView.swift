@@ -43,7 +43,7 @@ struct BoxScoreView: View {
     var isPreGame = false
     @State private var showingAllStats = false
     @State private var selectedPage: BoxScorePage?
-    @State private var viewMode: ViewMode = .quickList
+    @State private var viewMode: ViewMode = .savedDefault()
 
     // MARK: - Page List
 

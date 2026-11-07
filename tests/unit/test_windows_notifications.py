@@ -21,3 +21,11 @@ def test_no_message_or_no_window_is_quiet(monkeypatch):
     monkeypatch.setattr(wn, "_notifier", None)
     assert wn._raise_uia_notification("") is False
     assert wn._raise_uia_notification("Hello") is False
+
+
+def test_nothing_is_printed_in_place_of_speech(monkeypatch, capsys):
+    """print is invisible in the windowed build, so it must never stand in for a notification."""
+    monkeypatch.setattr(wn, "_notifier", None)
+    wn.WindowsNotificationHelper().announce("Hello")
+    wn.announce("Hello")
+    assert capsys.readouterr() == ("", "")

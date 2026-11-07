@@ -12,10 +12,8 @@ import SwiftUI
 struct DataTableView: View {
     let headers: [String]
     let rows: [[String]]
-    @State private var viewMode: ViewMode = .quickList
-    @State private var viewModeInitialized = false
-    @EnvironmentObject private var appSettings: AppSettings
-    
+    @State private var viewMode: ViewMode = .savedDefault()
+
     var body: some View {
         VStack(spacing: 0) {
             // Content based on view mode
@@ -34,11 +32,6 @@ struct DataTableView: View {
             ToolbarItem(placement: .navigationBarTrailing) {
                 ViewModeMenuButton(currentMode: $viewMode)
             }
-        }
-        .onAppear {
-            guard !viewModeInitialized else { return }
-            viewMode = appSettings.defaultTableViewMode
-            viewModeInitialized = true
         }
     }
     
@@ -155,7 +148,7 @@ struct StandingsTableView: View {
     /// Wild card groups swap GB for wild-card GB and add the Status column that
     /// carries the playoff cut line.
     var isWildCard: Bool = false
-    @State private var viewMode: ViewMode = .quickList
+    @State private var viewMode: ViewMode = .savedDefault()
     @State private var showExpanded = false
     @EnvironmentObject private var appSettings: AppSettings
     /// A soccer table's fixed widths grow with the text size, so nothing is cut off.
@@ -291,27 +284,14 @@ struct StandingsTableView: View {
         return label
     }
 
-    /// Accessibility label for full list mode: field names prefix each value, preference-aware team name.
+    /// Accessibility label for full list mode: the row's own text, so VoiceOver hears every
+    /// field it shows, with the preference-aware team name.
     private func fullListAccessibilityLabel(for entry: StandingsEntry) -> String {
         let teamName = entry.team.voiceOverName(for: appSettings.teamNamePreference)
         if let soccer = entry.soccer {
             return soccer.fullText(team: teamName)
         }
-        let s = entry.stats
-        if let wc = entry.wildCard, isWildCard {
-            return "Position: \(wc.positionText); Team: \(teamName); Wins: \(s.wins); "
-                + "Losses: \(s.losses); Win%: \(s.displayWinPercent); "
-                + "Wild card games back: \(wc.gamesBack); Streak: \(s.streak); "
-                + "Status: \(wc.spokenStatus)"
-        }
-        // ESPN sends no rank stat in most leagues, so don't read "Rank: 0".
-        let rank = entry.rank > 0 ? "Rank: \(entry.rank); " : ""
-        if sport == .nhl {
-            return "\(rank)Team: \(teamName); Wins: \(s.wins); Losses: \(s.losses); Overtime losses: \(s.otLosses ?? 0); Points: \(s.nhlPoints ?? 0); Streak: \(s.streak)"
-        }
-        var label = "\(rank)Team: \(teamName); Wins: \(s.wins); Losses: \(s.losses); Win%: \(s.displayWinPercent); Games Back: \(s.gamesBack); Streak: \(s.streak); Record: \(s.record)"
-        if let l10 = s.lastTenRecord { label += "; Last 10: \(l10)" }
-        return label
+        return sport == .nhl ? entry.nhlFullListText(team: teamName) : entry.fullListText(team: teamName)
     }
 
     /// Convert a standings TeamInfo into the Game.Team type that TeamScheduleView expects.

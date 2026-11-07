@@ -12,7 +12,7 @@ import UIKit
 struct PollsView: View {
     let sport: Sport
     @StateObject private var viewModel = PollsViewModel()
-    @State private var viewMode: ViewMode = .quickList
+    @State private var viewMode: ViewMode = .savedDefault()
 
     var body: some View {
         Group {
