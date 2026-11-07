@@ -58,6 +58,19 @@ struct LiveScoresView: View {
     @StateObject private var viewModel = LiveScoresViewModel()
     @State private var viewMode: ViewMode = .savedDefault()
     @EnvironmentObject private var appSettings: AppSettings
+    @EnvironmentObject private var monitoring: MonitoringStore
+
+    /// Where VoiceOver goes after Stop Monitoring on a Monitoring row: the next one there,
+    /// or the section's header when there's none after it.
+    private enum MonitoringFocus: Hashable {
+        case header
+        case row(String)
+    }
+    @AccessibilityFocusState private var monitoringFocus: MonitoringFocus?
+
+    /// Shown under Monitoring with nothing monitored.
+    static let monitoringEmptyText =
+        "No games monitored. To add one, choose Monitor in a game's actions, or touch and hold the game."
 
     var body: some View {
         Group {
@@ -134,6 +147,9 @@ struct LiveScoresView: View {
         VStack(spacing: 0) {
             ScrollView {
                 VStack(alignment: .leading, spacing: 24) {
+                // Monitoring, always first: the games someone chose to keep up with.
+                monitoringSection
+
                 // Golf Live Now section (shown first when a tournament is in progress)
                 if appSettings.golfHubEnabled && !viewModel.activeTournaments.isEmpty {
                     VStack(alignment: .leading, spacing: 12) {
@@ -251,22 +267,147 @@ struct LiveScoresView: View {
             // Games List
             switch viewMode {
             case .table:
-                liveTableSection(games: sportGames.games, sport: sportGames.sport)
+                liveTableSection(sportGames.games.map { GameInSport(game: $0, sport: sportGames.sport) }, showsSport: false)
             case .quickList:
-                liveQuickSection(games: sportGames.games, sport: sportGames.sport, isLive: isLive)
+                VStack(alignment: .leading, spacing: 4) {
+                    ForEach(sportGames.games) { game in
+                        liveQuickRow(game, sport: sportGames.sport, monitoringRow: false)
+                    }
+                }
             case .fullList:
                 ForEach(sportGames.games) { game in
-                    NavigationLink(destination: GameDetailView(game: game, sport: sportGames.sport)) {
-                        CompactGameRow(game: game, isLive: isLive, sport: sportGames.sport)
-                    }
-                    .buttonStyle(.plain)
-                    .listenToGame(game, sport: sportGames.sport)
+                    liveFullRow(game, sport: sportGames.sport, isLive: isLive, monitoringRow: false)
                 }
             }
         }
         .padding(.vertical, 4)
     }
-    
+
+    // MARK: - Monitoring (#185)
+
+    /// The monitored games on today's list, in the order added, each with its sport.
+    private var monitoredRows: [GameInSport] {
+        let sections = (viewModel.liveGames + viewModel.upcomingGames + viewModel.completedGames)
+            .map { (sport: $0.sport, games: $0.games) }
+        return monitoring.shown(in: sections)
+    }
+
+    /// Always there, at the top. Each row reads as the game's own row does below, with its
+    /// sport after it; the game stays in its own section too.
+    private var monitoringSection: some View {
+        let rows = monitoredRows
+        let shownIDs = rows.map(\.id)
+        return VStack(alignment: .leading, spacing: 12) {
+            sectionHeader(title: "MONITORING", count: rows.count)
+                .accessibilityFocused($monitoringFocus, equals: .header)
+            if rows.isEmpty {
+                Text(Self.monitoringEmptyText)
+                    .font(.subheadline)
+                    .foregroundColor(.secondary)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            } else {
+                switch viewMode {
+                case .table:
+                    // Table rows have no actions yet, so no Stop Monitoring here (#208).
+                    liveTableSection(rows, showsSport: true)
+                case .quickList:
+                    VStack(alignment: .leading, spacing: 4) {
+                        ForEach(rows) { row in
+                            liveQuickRow(row.game, sport: row.sport, monitoringRow: true, shownIDs: shownIDs)
+                        }
+                    }
+                case .fullList:
+                    ForEach(rows) { row in
+                        liveFullRow(row.game, sport: row.sport, isLive: Self.isLiveRow(row.game),
+                                    monitoringRow: true, shownIDs: shownIDs)
+                    }
+                }
+            }
+        }
+        .padding(.horizontal)
+    }
+
+    /// Whether a game's row is drawn as a live one: the Live section has suspended games too.
+    private static func isLiveRow(_ game: Game) -> Bool {
+        game.status.isLive || game.status.isSuspended
+    }
+
+    /// What follows a row's own text: the sport on a Monitoring row, as on Windows
+    /// (" | NFL Football"), and " - monitoring" on a monitored game's own row.
+    private func rowSuffix(_ game: Game, sport: Sport, monitoringRow: Bool) -> String {
+        if monitoringRow { return " | \(sport.displayName)" }
+        return monitoring.isMonitored(game.id) ? " - monitoring" : ""
+    }
+
+    /// On a game's own row, Monitor, or Stop Monitoring once it is; focus stays there. On a
+    /// Monitoring row, Stop Monitoring, which moves focus to the next one.
+    private func monitorAction(_ game: Game, monitoringRow: Bool, shownIDs: [String]) -> MonitorAction {
+        if monitoringRow {
+            return MonitorAction(name: MonitoringStore.ActionName.stop) {
+                stopMonitoring(game, shownIDs: shownIDs)
+            }
+        }
+        return MonitorAction(name: monitoring.actionName(for: game.id)) {
+            announceMonitoring(monitoring.toggleFromLiveScores(game))
+        }
+    }
+
+    /// The row VoiceOver was on goes, so it lands on the next Monitoring row, or the
+    /// section's header, once the list has redrawn. Then it says which game went, after
+    /// the row it landed on, since moving focus would cut off anything said before.
+    private func stopMonitoring(_ game: Game, shownIDs: [String]) {
+        let result = monitoring.stopFromMonitoringRow(game, shown: shownIDs)
+        Task { @MainActor in
+            try? await Task.sleep(for: .milliseconds(150))
+            monitoringFocus = result.next.map { .row($0) } ?? .header
+            try? await Task.sleep(for: .milliseconds(350))
+            announceMonitoring(result.said, queued: true)
+        }
+    }
+
+    /// A Monitoring row is where focus goes after Stop Monitoring on the one above it.
+    @ViewBuilder
+    private func focusTarget<Row: View>(_ row: Row, monitoringRow: Bool, gameID: String) -> some View {
+        if monitoringRow {
+            row.accessibilityFocused($monitoringFocus, equals: .row(gameID))
+        } else {
+            row
+        }
+    }
+
+    private func liveFullRow(_ game: Game, sport: Sport, isLive: Bool, monitoringRow: Bool,
+                             shownIDs: [String] = []) -> some View {
+        focusTarget(
+            NavigationLink(destination: GameDetailView(game: game, sport: sport)) {
+                CompactGameRow(game: game, isLive: isLive, sport: sport,
+                               suffix: rowSuffix(game, sport: sport, monitoringRow: monitoringRow),
+                               saysFinal: monitoringRow)
+            }
+            .buttonStyle(.plain)
+            .listenToGame(game, sport: sport,
+                          monitor: monitorAction(game, monitoringRow: monitoringRow, shownIDs: shownIDs)),
+            monitoringRow: monitoringRow, gameID: game.id)
+    }
+
+    private func liveQuickRow(_ game: Game, sport: Sport, monitoringRow: Bool,
+                              shownIDs: [String] = []) -> some View {
+        let suffix = rowSuffix(game, sport: sport, monitoringRow: monitoringRow)
+        return focusTarget(
+            NavigationLink(destination: GameDetailView(game: game, sport: sport)) {
+                Text(liveQuickText(game) + suffix)
+                    .font(.subheadline)
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 6)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel(liveQuickAccessibilityText(game) + suffix)
+            .accessibilityHint("Opens game details")
+            .listenToGame(game, sport: sport,
+                          monitor: monitorAction(game, monitoringRow: monitoringRow, shownIDs: shownIDs)),
+            monitoringRow: monitoringRow, gameID: game.id)
+    }
+
     private func liveGameRow(_ game: Game) -> [String] {
         let away = game.awayTeam.rankedAbbreviation + (game.awayTeam.score.map { " \($0)" } ?? "")
         let home = game.homeTeam.rankedAbbreviation + (game.homeTeam.score.map { " \($0)" } ?? "")
@@ -291,9 +432,17 @@ struct LiveScoresView: View {
         return [away, home, statusParts.joined(separator: ", ")]
     }
 
-    private func liveTableSection(games: [Game], sport: Sport) -> some View {
-        let headers = ["Away", "Home", "Status"]
-        let rows = games.map { liveAccessibleGameRow($0) }
+    /// A section's games as a table. In Monitoring (`showsSport`) a Sport column follows; in a
+    /// sport's own section a monitored game's status says so.
+    private func liveTableSection(_ items: [GameInSport], showsSport: Bool) -> some View {
+        let headers = ["Away", "Home", "Status"] + (showsSport ? ["Sport"] : [])
+        func cells(_ row: [String], _ item: GameInSport) -> [String] {
+            if showsSport { return row + [item.sport.displayName] }
+            guard monitoring.isMonitored(item.game.id), let status = row.last else { return row }
+            return Array(row.dropLast()) + [status + " - monitoring"]
+        }
+        let rows = items.map { cells(liveAccessibleGameRow($0.game), $0) }
+        let shownRows = items.map { cells(liveGameRow($0.game), $0) }
         return VStack(spacing: 0) {
             HStack(spacing: 0) {
                 ForEach(headers, id: \.self) { h in
@@ -306,10 +455,10 @@ struct LiveScoresView: View {
                 }
             }
             .accessibilityHidden(true)
-            ForEach(Array(games.enumerated()), id: \.element.id) { idx, game in
-                NavigationLink(destination: GameDetailView(game: game, sport: sport)) {
+            ForEach(Array(items.enumerated()), id: \.element.id) { idx, item in
+                NavigationLink(destination: GameDetailView(game: item.game, sport: item.sport)) {
                     HStack(spacing: 0) {
-                        ForEach(Array(liveGameRow(game).enumerated()), id: \.offset) { _, val in
+                        ForEach(Array(shownRows[idx].enumerated()), id: \.offset) { _, val in
                             Text(val)
                                 .font(.subheadline)
                                 .frame(maxWidth: .infinity)
@@ -320,7 +469,7 @@ struct LiveScoresView: View {
                 }
                 .buttonStyle(.plain)
                 .accessibilityHidden(true)
-                if idx < games.count - 1 { Divider() }
+                if idx < items.count - 1 { Divider() }
             }
         }
         .background(Color.secondary.opacity(0.04))
@@ -330,24 +479,6 @@ struct LiveScoresView: View {
             AccessibleDataTable(headers: headers, rows: rows)
                 .allowsHitTesting(false)
         )
-    }
-
-    private func liveQuickSection(games: [Game], sport: Sport, isLive: Bool) -> some View {
-        VStack(alignment: .leading, spacing: 4) {
-            ForEach(games) { game in
-                NavigationLink(destination: GameDetailView(game: game, sport: sport)) {
-                    Text(liveQuickText(game))
-                        .font(.subheadline)
-                        .padding(.horizontal, 12)
-                        .padding(.vertical, 6)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                }
-                .buttonStyle(.plain)
-                .accessibilityLabel(liveQuickAccessibilityText(game))
-                .accessibilityHint("Opens game details")
-                .listenToGame(game, sport: sport)
-            }
-        }
     }
 
     private func liveQuickText(_ game: Game) -> String {
@@ -432,9 +563,15 @@ struct CompactGameRow: View {
     let game: Game
     let isLive: Bool
     let sport: Sport
+    /// Said and shown after the rest: the sport on a Monitoring row, " - monitoring" on a
+    /// monitored game's own row.
+    var suffix: String = ""
+    /// Says Final on a finished game. A row in Live Scores' Completed section leaves it to
+    /// the heading; a Monitoring row has no such heading.
+    var saysFinal: Bool = false
 
     @EnvironmentObject private var appSettings: AppSettings
-    
+
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             // Teams and Scores FIRST
@@ -539,6 +676,13 @@ struct CompactGameRow: View {
                     .foregroundColor(.secondary)
                     .lineLimit(1)
             }
+
+            // The sport on a Monitoring row, or that the game is monitored.
+            if !suffix.isEmpty {
+                Text(suffix.trimmingCharacters(in: CharacterSet(charactersIn: " |-")))
+                    .font(.caption.weight(.semibold))
+                    .foregroundColor(.blue)
+            }
         }
         .padding(12)
         .background(Color.secondary.opacity(0.05))
@@ -575,6 +719,9 @@ struct CompactGameRow: View {
             let detail = game.status.detail.trimmingCharacters(in: .whitespacesAndNewlines)
             statusParts.append(detail.isEmpty ? "Suspended" : detail)
         }
+        if saysFinal && game.status.isCompleted && !game.status.isSuspended {
+            statusParts.append("Final")
+        }
         if isLive {
             // For live games: inning first for baseball, then situation.
             // For all other sports, situation leads and period/clock follows.
@@ -608,7 +755,7 @@ struct CompactGameRow: View {
             parts.append("on \(broadcast)")
         }
 
-        return parts.joined(separator: ", ")
+        return parts.joined(separator: ", ") + suffix
     }
 
     private func debugLogAccessibilityLabelIfNeeded() {
@@ -625,4 +772,5 @@ struct CompactGameRow: View {
         LiveScoresView()
     }
     .environmentObject(AppSettings())
+    .environmentObject(MonitoringStore())
 }

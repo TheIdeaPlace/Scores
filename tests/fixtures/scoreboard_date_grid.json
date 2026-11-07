@@ -1,0 +1,18 @@
+{
+  "about": "Which games are on today's scoreboard, the only ones that can be monitored (#185). game_labels.on_todays_scoreboard on Windows and ScoreboardDay.isOnTodaysScoreboard on the iPhone are both held to it. 'date' is ESPN's UTC start; 'now' is the wall clock where the person is, in 'zone' (Python's naive now needs no zone; the iPhone builds the moment from it). Times stay clear of daylight saving changes, where wall-clock and elapsed hours differ.",
+  "cases": [
+    {"name": "a 7:30 PM Eastern kickoff, at noon in Chicago", "date": "2026-11-08T00:30Z", "time_valid": true, "now": "2026-11-07T12:00", "zone": "America/Chicago", "today": true},
+    {"name": "the same kickoff in Tokyo, where it's the next morning", "date": "2026-11-08T00:30Z", "time_valid": true, "now": "2026-11-07T12:00", "zone": "Asia/Tokyo", "today": true},
+    {"name": "a 10:30 PM Eastern game, late evening in Los Angeles", "date": "2026-11-08T03:30Z", "time_valid": true, "now": "2026-11-07T23:00", "zone": "America/Los_Angeles", "today": true},
+    {"name": "until 5 AM last night's game is still today's", "date": "2026-11-08T02:30Z", "time_valid": true, "now": "2026-11-08T04:59", "zone": "America/New_York", "today": true},
+    {"name": "at 5 AM it's yesterday's", "date": "2026-11-08T02:30Z", "time_valid": true, "now": "2026-11-08T05:00", "zone": "America/New_York", "today": false},
+    {"name": "12:30 AM Eastern is the next day's", "date": "2026-11-08T05:30Z", "time_valid": true, "now": "2026-11-07T20:00", "zone": "America/New_York", "today": false},
+    {"name": "and is the next day's in Los Angeles too, where it's still the evening before", "date": "2026-11-08T05:30Z", "time_valid": true, "now": "2026-11-07T20:00", "zone": "America/Los_Angeles", "today": false},
+    {"name": "a 2 PM Eastern game, at 1 AM the next day in London", "date": "2026-11-07T19:00Z", "time_valid": true, "now": "2026-11-08T01:00", "zone": "Europe/London", "today": true},
+    {"name": "tomorrow afternoon's game", "date": "2026-11-08T18:00Z", "time_valid": true, "now": "2026-11-07T20:00", "zone": "America/Chicago", "today": false},
+    {"name": "no time set: its UTC date, on that day", "date": "2026-11-08T05:00Z", "time_valid": false, "now": "2026-11-08T12:00", "zone": "America/Chicago", "today": true},
+    {"name": "no time set: its UTC date, the day before", "date": "2026-11-08T05:00Z", "time_valid": false, "now": "2026-11-07T12:00", "zone": "America/Chicago", "today": false},
+    {"name": "no time set: its UTC date, in Los Angeles", "date": "2026-11-08T05:00Z", "time_valid": false, "now": "2026-11-08T09:00", "zone": "America/Los_Angeles", "today": true},
+    {"name": "no time set: its UTC date, in Tokyo", "date": "2026-11-08T00:00Z", "time_valid": false, "now": "2026-11-08T21:00", "zone": "Asia/Tokyo", "today": true}
+  ]
+}
