@@ -15,8 +15,7 @@ import SwiftUI
 struct WorldCupTeamView: View {
 
     @StateObject private var viewModel: WorldCupTeamViewModel
-    @State private var viewMode: ViewMode = .quickList
-    @State private var viewModeInitialized = false
+    @State private var viewMode: ViewMode = .savedDefault()
     @EnvironmentObject private var appSettings: AppSettings
 
     let sport: Sport
@@ -62,11 +61,6 @@ struct WorldCupTeamView: View {
         }
         .task { await viewModel.load() }
         .refreshable { await viewModel.refresh() }
-        .onAppear {
-            guard !viewModeInitialized else { return }
-            viewMode = appSettings.defaultTableViewMode
-            viewModeInitialized = true
-        }
     }
 
     // MARK: - Group standing card

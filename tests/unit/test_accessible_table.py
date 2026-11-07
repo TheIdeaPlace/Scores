@@ -247,6 +247,64 @@ def cell_speech(table, row):
             for col in range(table.columnCount())]
 
 
+def three_views(table, row):
+    """What each view holds for one row: the table's cells, the Quick List's line, the Full List's."""
+    cells = [table.table_widget.item(row, col).text() for col in range(table.columnCount())]
+    return cells, table.quick_list.item(row).text(), table.full_list.item(row).text()
+
+
+@pytest.fixture
+def nhl_rows(monkeypatch):
+    """The NHL's real standings, through the app's own parser."""
+    import espn_api
+    from tests.unit.replay.support import FakeEspn, load
+    fake = FakeEspn().on("/nhl/standings", load("standings_NHL.json"))
+    monkeypatch.setattr(espn_api, "_http_get", fake)
+    return espn_api.get_standings("NHL")
+
+
+@pytest.mark.parametrize("expanded", [False, True], ids=["basic", "expanded"])
+def test_nhl_standings_from_espn_line_up_in_every_view(app, nhl_rows, expanded):
+    """Issue 90: from column 4 on, the expanded headers once said the wrong thing ("OTL: .550")."""
+    bruins = [r for r in nhl_rows if r["team_name"] == "Boston Bruins"]
+    table = StandingsTable(division_name="Atlantic", league="NHL", expanded=expanded)
+    table.populate_standings(bruins, set_focus=False)
+    cells, quick, full = three_views(table, 0)
+    headers = table._headers
+    assert len(cells) == len(headers)
+    by_header = dict(zip(headers, cells))
+    assert (by_header["Team"], by_header["W"], by_header["L"], by_header["OTL"], by_header["Pts"]) == (
+        "Boston Bruins", "10", "4", "1", "21")
+    assert by_header["PCT"] == "0.700" and by_header["Streak"] == "W1"
+    if expanded:
+        assert (by_header["GF"], by_header["GA"], by_header["Diff"], by_header["Seed"]) == ("55", "36", "+19", "2")
+    assert quick == ", ".join(cells)
+    assert full == "; ".join(f"{h}: {v}" for h, v in zip(headers, cells))
+    assert "OTL: 1" in full and "Pts: 21" in full and "PCT: 0.700" in full
+    assert cell_speech(table, 0)[headers.index("OTL")] == "Boston Bruins, OTL, 1"
+
+
+def test_an_injury_cell_says_whose_injury_it_is_in_every_view(app):
+    """Issue 90: the injury table's own accessibility method called one QTableWidgetItem lacks.
+    It's gone; the shared row context says the player, as every table's cells do."""
+    from tests.unit.replay.support import load
+    from scores import INJURY_HEADERS
+    injuries = load("summary_final_NFL_401873036.json")["injuries"]
+    table = accessible_table.InjuryTable(title="Injury Report")
+    table.setColumnCount(len(INJURY_HEADERS))
+    table.setHorizontalHeaderLabels(INJURY_HEADERS)
+    table.populate_injury_data(injuries, set_focus=False)
+    assert not hasattr(table, "enhance_cell_accessibility")
+    cells, quick, full = three_views(table, 0)
+    assert cells[:4] == ["Rashid Shaheed", "WR", "Seattle Seahawks (SEA)", "Questionable"]
+    assert quick.startswith("Rashid Shaheed, WR, Seattle Seahawks (SEA), Questionable, Knee")
+    assert full.startswith("Player: Rashid Shaheed; Position: WR; Team: Seattle Seahawks (SEA); Status: Questionable")
+    speech = cell_speech(table, 0)
+    assert speech[0] == "Player, Rashid Shaheed"
+    assert speech[3] == "Rashid Shaheed, Status, Questionable"
+    assert speech[6] == "Rashid Shaheed, Return Date, 2026-11-08"
+
+
 def test_a_cell_says_whose_row_it_is_from_the_first_column(app):
     assert cell_speech(make_table(app), 0) == ["Player, A", "A, Pos, G", "A, PTS, 10"]
 

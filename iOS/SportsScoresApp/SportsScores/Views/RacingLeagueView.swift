@@ -19,7 +19,7 @@ struct RacingLeagueView: View {
     let series: Sport
     @StateObject private var viewModel = RacingViewModel()
     @State private var selectedTab: RacingTab = .results
-    @State private var viewMode: ViewMode = .quickList
+    @State private var viewMode: ViewMode = .savedDefault()
 
     var body: some View {
         VStack(spacing: 0) {

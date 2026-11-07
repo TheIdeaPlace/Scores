@@ -1727,6 +1727,18 @@ def check_football_calendar(http, report):
         else:
             report.ok(key, "Core API: weeks (iPhone)", f"{data.get('count')} weeks", url)
 
+        # A past season's week names, which both apps read from here: the
+        # scoreboard calendar only describes the current season.
+        url = f"{CORE}/{league.core_path}/seasons/{season - 1}/types/3/weeks/1"
+        status, data = http.get(url)
+        text = data.get("text") if isinstance(data, dict) else None
+        if status != 200 or not isinstance(data, dict):
+            report.fail(key, "Core API: past week name", f"got {status}, so last season's weeks would be numbers", url)
+        elif not isinstance(text, str) or not text.strip():
+            report.fail(key, "Core API: past week name", f"{season - 1} postseason week 1 has no text", url)
+        else:
+            report.ok(key, "Core API: past week name", f"{season - 1} postseason week 1: {text}", url)
+
 
 def _event_label_words(event):
     """The words the apps could label a game with: ESPN's notes and its week."""
@@ -1847,6 +1859,33 @@ def check_golf(http, report):
             report.fail(tour, "App: golf leaderboard", "a tournament with no name")
         else:
             report.ok(tour, "App: golf leaderboard", f"{board['name']}, {len(board.get('players') or [])} players")
+        check_past_golf_leaderboard(report, tour, schedule)
+
+
+def check_past_golf_leaderboard(report, tour, schedule):
+    """Both apps open a past tournament from the schedule by its date and id
+    (scoreboard?dates=YYYYMMDD), and show each finished one's winner."""
+    import espn_api
+
+    won = [e for e in schedule if e.get("state") == "post" and e.get("winner")]
+    if not won:
+        if any(e.get("state") == "post" for e in schedule):
+            report.fail(tour, "App: golf winners", "finished tournaments, none with a winner")
+        return
+    last = won[-1]
+    try:
+        board = espn_api.get_golf_leaderboard(tour, last.get("start_date"), last.get("id"))
+    except Exception as e:
+        report.fail(tour, "App: past golf leaderboard", f"raised {type(e).__name__}: {e}")
+        return
+    if not board or board.get("id") != last.get("id"):
+        report.fail(tour, "App: past golf leaderboard",
+                    f"{last.get('name')} on {last.get('start_date')} answered with {(board or {}).get('name')!r}")
+    elif not board.get("players"):
+        report.fail(tour, "App: past golf leaderboard", f"{last.get('name')} has no players")
+    else:
+        report.ok(tour, "App: past golf leaderboard",
+                  f"{last['name']}: won by {last['winner']}, {len(board['players'])} players")
 
 
 def check_mlb_extras(http, report, seasons):

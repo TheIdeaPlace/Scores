@@ -47,6 +47,8 @@ The Soccer hub mirrors the main home screen but scoped to soccer leagues. It has
 
 The Golf hub shows PGA Tour and LPGA Tour. Each tour leads to a leaderboard view for the current or most recent tournament.
 
+The **Schedule** tab lists every tournament this season. A finished one shows who won and their score, such as "won by Chris Gotterup (-16)", and a cancelled one says Canceled, in every view mode. Double tap any tournament to open its leaderboard. If the winners can't be loaded, the schedule still shows and says so at the top; pull down to try again.
+
 ---
 
 ### Sport Screen

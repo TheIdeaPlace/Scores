@@ -48,6 +48,10 @@ rankings_NCAAF.json	7 KB	week 10 of 2026: all six polls in ESPN's order (CFP, AP
 draft_site_NFL_2026.json	11 KB	/draft season=2026, cut to 6 picks and their teams: position only as an id, college on the athlete; 2nd-round pick 33 was traded; round 3's Georgia State is Georgia St as a short name
 golf_schedule_PGA.json	5 KB	dates=2026: a cancelled event with no competitors, a final, a scheduled one
 golf_scoreboard_PGA.json	2 KB	current scoreboard, tournament not started, 3 golfers
+golf_schedule_PGA_2026.json	207 KB	dates=2026 captured Nov 7 2026, all 49 events with the season calendar, top 2 by order, no hole scores: The Sentry cancelled (post, no field); the Zurich Classic's teams have no athlete, two at -30 (order 1 won the playoff); the Presidents Cup's 2 teams with winner true and points 17; one event in progress; 4 scheduled with no field. Event status says completed false even on a Final
+golf_scoreboard_LPGA_between_rounds.json	10 KB	current scoreboard Nov 7 2026, TOTO Japan Classic between rounds: the event's status is in, its competition's post ("Round 3 - Play Complete"); 4 golfers, no hole scores
+golf_scoreboard_PGA_20260305.json	15 KB	dates=20260305: two events that week, the Arnold Palmer Invitational and the opposite-field Puerto Rico Open, both final; 3 golfers each
+golf_scoreboard_PGA_20260423.json	11 KB	dates=20260423: the Zurich Classic, a team event: competitors are teams ("Smalley/Springer") with no athlete; 3 teams
 worldcup_standings_WC2026.json	10 KB	2 groups of 4; note.description is the advancement text; a stat with value null
 worldcup_scoreboard_20260620.json	3 KB	2 group games, STATUS_FULL_TIME
 scoreboard_NWSL.json	3 KB	2 games from dates=202610, used by the month-by-month schedule path
@@ -157,3 +161,5 @@ schedule_MLB_10_2026_dh.json	63 KB	Yankees season=2026&seasontype=2, 4 of 165, J
 schedule_MLB_10_2026_post.json	90 KB	Yankees season=2026&seasontype=3 in November, whole: 5 finals, ALWC and ALDS notes, the last on Oct 8; their season over, nothing to come
 schedule_NCAAF_333_live.json	99 KB	Alabama season=2026&seasontype=2, 3 of 12, captured during the LSU game: a final, the game in progress (STATUS_IN_PROGRESS, state in, no scores on either side), the next one with a note EARLY: Noon - 1pm ET start
 summary_live_NCAAF_401856740.json	12 KB	Alabama at LSU in the 3rd quarter, the game of schedule_NCAAF_333_live; root keys header only, the rest cut: scores 10 and 12 as text, detail 2:44 - 3rd Quarter, no situation
+core_weeks_NFL_2024.json	31 KB	core seasons/2024/types/{1,2,3}/weeks?limit=100 and every weeks/{n} they list, keyed by the path after leagues/nfl/: text Hall of Fame Weekend, Preseason Week 1 to 3, Week 1 to 18, Wild Card, Divisional Round, Conference Championship, Pro Bowl, Super Bowl
+core_weeks_NCAAF_2024.json	14 KB	the same for leagues/college-football/: preseason week 1 is text Week 1, regular Week 1 to 16, postseason week 1 Bowls

@@ -11,7 +11,7 @@ import UIKit
 
 struct SoccerLiveView: View {
     @StateObject private var viewModel = SoccerLiveViewModel()
-    @State private var viewMode: ViewMode = .quickList
+    @State private var viewMode: ViewMode = .savedDefault()
     @EnvironmentObject private var appSettings: AppSettings
 
     var body: some View {
