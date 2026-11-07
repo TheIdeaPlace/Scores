@@ -1,0 +1,119 @@
+{
+ "sports": [
+  {
+   "name": "Ice Hockey",
+   "leagues": [
+    {
+     "name": "NCAA Men's Ice Hockey",
+     "teams": [
+      {
+       "team": {
+        "id": "2005",
+        "abbreviation": "AF",
+        "displayName": "Air Force Falcons",
+        "shortDisplayName": "Air Force",
+        "name": "Falcons",
+        "location": "Air Force",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/ncaa/500/2005.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "349",
+        "abbreviation": "ARMY",
+        "displayName": "Army Black Knights",
+        "shortDisplayName": "Army",
+        "name": "Black Knights",
+        "location": "Army",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/ncaa/500/349.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "2060",
+        "abbreviation": "BENT",
+        "displayName": "Bentley Falcons",
+        "shortDisplayName": "Bentley",
+        "name": "Falcons",
+        "location": "Bentley",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/ncaa/500/2060.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "127",
+        "abbreviation": "MSU",
+        "displayName": "Michigan State Spartans",
+        "shortDisplayName": "Michigan State",
+        "name": "Spartans",
+        "location": "Michigan State",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/ncaa/500/127.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "87",
+        "abbreviation": "ND",
+        "displayName": "Notre Dame Fighting Irish",
+        "shortDisplayName": "Notre Dame",
+        "name": "Fighting Irish",
+        "location": "Notre Dame",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/ncaa/500/87.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "2731",
+        "abbreviation": "WLM",
+        "displayName": "Williams Ephs",
+        "shortDisplayName": "Williams",
+        "name": "Ephs",
+        "location": "Williams",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/ncaa/500/2731.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "275",
+        "abbreviation": "WIS",
+        "displayName": "Wisconsin Badgers",
+        "shortDisplayName": "Wisconsin",
+        "name": "Badgers",
+        "location": "Wisconsin",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/ncaa/500/275.png"
+         }
+        ]
+       }
+      }
+     ]
+    }
+   ]
+  }
+ ]
+}

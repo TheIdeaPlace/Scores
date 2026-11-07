@@ -27,6 +27,20 @@ def load(pattern):
         return json.load(f)
 
 
+@pytest.fixture(autouse=True)
+def no_network(monkeypatch):
+    """Nothing reaches ESPN. The app's Teams list, which the standings checks also ask for, is
+    whatever its standings are in the test, unless a test says otherwise."""
+    import requests
+    import espn_api
+
+    def blocked(self, request, **kwargs):
+        raise AssertionError(f"A validator test reached the network: {request.url}")
+
+    monkeypatch.setattr(requests.sessions.Session, "send", blocked)
+    monkeypatch.setattr(espn_api, "get_teams", lambda key: espn_api.get_standings(key))
+
+
 def box(league):
     return load(f"box_{league}_*.json")["boxscore"]
 
@@ -1096,12 +1110,12 @@ class TestSoccerTables:
     def teams_say(self, monkeypatch, answer):
         import espn_api
 
-        def get_soccer_teams(key):
+        def get_teams(key):
             if isinstance(answer, Exception):
                 raise answer
             return answer
 
-        monkeypatch.setattr(espn_api, "get_soccer_teams", get_soccer_teams)
+        monkeypatch.setattr(espn_api, "get_teams", get_teams)
 
     def test_a_knockout_competition_with_no_table_is_as_expected(self, monkeypatch):
         self.only(monkeypatch, CONCACAF=False)
@@ -2407,6 +2421,63 @@ class TestRemainingChecks:
         assert v.check_team_list(FakeHttp(default=answer), report, league("NBA")) == set()
         assert FAIL_IN(report, "Teams")
 
+    @staticmethod
+    def a_team_list_of(count):
+        return {"sports": [{"leagues": [{"teams": [{"team": {"id": str(i)}} for i in range(count)]}]}]}
+
+    @pytest.mark.parametrize("key,expected", [("NCAAWB", v.FAIL), ("NCAAM", v.WARN)])
+    def test_a_team_list_cut_off_at_the_limit(self, key, expected):
+        """Men's college basketball's Teams come from its standings, so its list being cut is news.
+        A league whose Teams come from the list is missing teams."""
+        report = v.Report()
+        v.check_team_list(FakeHttp(default=(200, self.a_team_list_of(v.TEAM_LIST_LIMIT))), report, league(key))
+        assert statuses(report, "Teams") == [expected]
+        assert "cut off" in detail(report, "Teams")
+
+    def test_a_team_list_under_the_limit_is_whole(self):
+        report = v.Report()
+        v.check_team_list(FakeHttp(default=(200, self.a_team_list_of(363))), report, league("NCAAWB"))
+        assert statuses(report, "Teams") == [v.PASS]
+
+
+class TestAppTeams:
+    """Teams and the Transactions filter against ESPN's standings."""
+
+    entries = [{"team": {"id": "1", "displayName": "A"}}, {"team": {"id": "2", "displayName": "B"}}]
+
+    def teams_say(self, monkeypatch, answer):
+        import espn_api
+
+        def get_teams(key):
+            if isinstance(answer, Exception):
+                raise answer
+            return answer
+
+        monkeypatch.setattr(espn_api, "get_teams", get_teams)
+
+    def check(self):
+        report = v.Report()
+        v.check_app_teams(report, "MLB", self.entries)
+        return report
+
+    def test_every_standings_team_and_more(self, monkeypatch):
+        self.teams_say(monkeypatch, [{"team_id": "1"}, {"team_id": "2"}, {"team_id": "3"}])
+        report = self.check()
+        assert statuses(report, "App: teams") == [v.PASS]
+        assert "1 not in the standings" in detail(report, "App: teams")
+
+    @pytest.mark.parametrize("answer,words", [
+        ([{"team_id": "1"}], "missing: B"),
+        ([{"team_id": "1"}, {"team_id": "2"}, {"team_id": "2"}], "twice: 2"),
+        ([{"team_id": "1", "records_unavailable": True}, {"team_id": "2", "records_unavailable": True}], "no records"),
+        (ValueError("bad"), "raised ValueError"),
+    ], ids=["missing", "twice", "no_records", "raised"])
+    def test_what_fails(self, monkeypatch, answer, words):
+        self.teams_say(monkeypatch, answer)
+        report = self.check()
+        assert FAIL_IN(report, "App: teams")
+        assert words in detail(report, "App: teams")
+
     def test_app_rankings_with_a_nameless_team(self, monkeypatch):
         import espn_api
         monkeypatch.setattr(espn_api, "get_rankings", lambda k: {"polls": [{"name": "AP", "ranks": [
@@ -2500,7 +2571,9 @@ class TestRemainingChecks:
         report = v.Report()
         v.check_standings(FakeHttp(default=(200, data)), report, self.college_football(), True)
         assert statuses(report, "App: standings") == [v.PASS], detail(report, "App: standings")
-        assert calls == [f"{v.STANDINGS}/football/college-football/standings?group=90"]
+        # Teams is college football's standings too, so one request each for Teams and Standings.
+        assert statuses(report, "App: teams") == [v.PASS], detail(report, "App: teams")
+        assert calls == [f"{v.STANDINGS}/football/college-football/standings?group=90"] * 2
 
     def test_app_standings_lose_a_team_or_a_division(self, monkeypatch):
         import espn_api

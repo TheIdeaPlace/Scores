@@ -737,8 +737,12 @@ def find_recent_finals(http, league, team_ids=None, today=None):
 
 # ---------------------------------------------------------------- per league
 
+# The limit= both apps ask the team list for, and the most ESPN gives.
+TEAM_LIST_LIMIT = 1000
+
+
 def check_team_list(http, report, league):
-    url = f"{SITE}/{league.path}/teams?limit=1000"
+    url = f"{SITE}/{league.path}/teams?limit={TEAM_LIST_LIMIT}"
     status, data = http.get(url)
     if status != 200 or not isinstance(data, dict):
         report.fail(league.key, "Teams", f"got {status}", url)
@@ -751,7 +755,17 @@ def check_team_list(http, report, league):
     if not teams:
         report.fail(league.key, "Teams", "no teams", url)
         return set()
-    report.ok(league.key, "Teams", f"{len(teams)} teams", url)
+    if len(teams) >= TEAM_LIST_LIMIT:
+        # Cut off, so teams past the limit are missing. Men's college basketball's has been,
+        # every division at once, which is why its Teams come from the standings.
+        import team_list
+        cut = f"{len(teams)} teams, cut off at the limit, so some are missing"
+        if team_list.source(league.path) == team_list.TEAM_LIST:
+            report.fail(league.key, "Teams", f"{cut}, and Teams lists from it", url)
+        else:
+            report.warn(league.key, "Teams", f"{cut}. Teams lists from the standings", url)
+    else:
+        report.ok(league.key, "Teams", f"{len(teams)} teams", url)
     return {str((t.get("team") or {}).get("id")) for t in teams}
 
 
@@ -974,6 +988,7 @@ def check_standings(http, report, league, in_season):
     report.ok(league.key, "Standings", f"{len(entries)} teams", url)
     http.save("standings", league.key, data)
 
+    check_app_teams(report, league.key, entries)
     if league.family == SOCCER:
         check_app_soccer_table(report, league.key, entries)
         return
@@ -1036,12 +1051,38 @@ def check_app_soccer_table(report, key, entries):
         report.ok(key, "App: standings", f"{len(rows)} teams, every record matches ESPN's")
 
 
+def check_app_teams(report, key, entries):
+    """Teams and the Transactions filter list every team in the standings, and any the team
+    list adds, with no team twice."""
+    import espn_api
+
+    try:
+        teams = espn_api.get_teams(key)
+    except Exception as e:
+        report.fail(key, "App: teams", f"get_teams raised {type(e).__name__}: {e}")
+        return
+    ids = [str(team.get("team_id")) for team in teams]
+    listed = set(ids)
+    missing = [(entry.get("team") or {}).get("displayName") for entry in entries
+               if str((entry.get("team") or {}).get("id")) not in listed]
+    twice = sorted({i for i in ids if ids.count(i) > 1})
+    if missing:
+        report.fail(key, "App: teams", f"{len(missing)} teams in the standings missing: {first_problems(missing)}")
+    elif twice:
+        report.fail(key, "App: teams", f"teams listed twice: {first_problems(twice)}")
+    elif any(team.get("records_unavailable") for team in teams):
+        report.fail(key, "App: teams", "the standings worked here and not for the app, so it has no records")
+    else:
+        extra = len(teams) - len(entries)
+        report.ok(key, "App: teams", f"{len(teams)} teams" + (f", {extra} not in the standings" if extra > 0 else ""))
+
+
 def check_app_soccer_team_list(report, key):
     """A competition with no table gets its Teams from /teams, so that's all there is to reach one."""
     import espn_api
 
     try:
-        teams = espn_api.get_soccer_teams(key)
+        teams = espn_api.get_teams(key)
     except Exception as e:
         report.fail(key, "App: teams", f"raised {type(e).__name__}: {e}")
         return
@@ -1070,6 +1111,7 @@ def check_soccer_tables(http, report):
         entries = standings_entries(data)
         if entries:
             check_app_soccer_table(report, key, entries)
+            check_app_teams(report, key, entries)
             if not has_table:
                 report.warn(key, "Standings", "ESPN has a table here now, and the app shows it", url)
         elif has_table:

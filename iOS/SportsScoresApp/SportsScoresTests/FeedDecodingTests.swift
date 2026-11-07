@@ -1472,19 +1472,51 @@ final class TeamListRequestTests: XCTestCase {
 
     func testOtherSportsAskTheTeamListForEveryTeam() async throws {
         let service = StubbedESPN.service([try everyTeam()])
-        let teams = try await service.fetchTeamsForSport(sport: .ncaam)
+        let teams = try await service.fetchTeamsForSport(sport: .ncaawb)
         XCTAssertEqual(teams.count, 3)
         XCTAssertEqual(StubbedESPN.requested.count, 1)
-        XCTAssertTrue(StubbedESPN.requested[0].hasSuffix("/basketball/mens-college-basketball/teams?limit=1000"),
+        XCTAssertTrue(StubbedESPN.requested[0].hasSuffix("/basketball/womens-college-basketball/teams?limit=1000"),
                       StubbedESPN.requested[0])
+    }
+
+    /// Men's college basketball's team list is every division, cut off at 1,000 teams
+    /// (`teams_NCAAM_all.json` is five of them, Williams of Division III among them).
+    func testMensCollegeBasketballAsksItsStandingsNotTheCutOffList() async throws {
+        let service = StubbedESPN.service([("/standings", 500, Data()),
+                                           ("/teams", 200, try Fixtures.data("teams_NCAAM_all.json"))])
+        do {
+            let teams = try await service.fetchTeamsForSport(sport: .ncaam)
+            XCTFail("Expected an error, got \(teams.map(\.displayName))")
+        } catch {
+            XCTAssertEqual(StubbedESPN.requested.count, 1, "\(StubbedESPN.requested)")
+            XCTAssertTrue(StubbedESPN.requested[0].hasSuffix("/basketball/mens-college-basketball/standings"),
+                          StubbedESPN.requested[0])
+        }
     }
 
     func testAFailedTeamListIsAnError() async throws {
         let service = StubbedESPN.service([("/teams", 500, Data())])
         do {
-            _ = try await service.fetchTeamsForSport(sport: .ncaam)
+            _ = try await service.fetchTeamsForSport(sport: .ncaawb)
             XCTFail("Expected an error")
         } catch {}
+    }
+
+    /// tests/fixtures/team_list_sources.json, which team_list.py on Windows is held to.
+    func testWhichLeaguesListTheirTeamsFromTheStandings() throws {
+        struct Grid: Decodable {
+            let standings: [String]
+            let teamList: [String]
+        }
+        let url = Fixtures.repoRoot.appendingPathComponent("tests/fixtures/team_list_sources.json")
+        let grid = try JSONDecoder().decode(Grid.self, from: Data(contentsOf: url))
+        for (paths, fromStandings) in [(grid.standings, true), (grid.teamList, false)] {
+            for path in paths {
+                let sport = try XCTUnwrap(Sport.allCases.first { $0.apiPath == path }, path)
+                XCTAssertEqual(sport.teamListFromStandings, fromStandings, path)
+            }
+        }
+        XCTAssertEqual(Set(Sport.allCases.filter(\.teamListFromStandings).map(\.apiPath)), Set(grid.standings))
     }
 }
 

@@ -59,6 +59,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Windows: Live Scores no longer reads the row you're on again when other games come and go.** Each
   time a game kicked off or finished, the list was rebuilt and the row you were on read out, so on a busy
   day a finished game you were resting on was read once a minute.
+- **Every team in Teams and the Transactions team filter, on both apps.** Windows built both lists
+  from the standings, so a team the standings left out was missing, as in a preseason or for a college
+  hockey team with no conference table, and if the standings failed there was no list at all. Both now
+  come from ESPN's list of the league's teams, as on the iPhone (#190).
+  - Windows: Teams keeps its divisions and conferences and each team's record. A team the standings
+    don't have comes last, under **Other teams**, with its name only rather than a 0-0 record. If the
+    standings can't be had, Teams still lists every team, and its title says records are unavailable.
+  - College football's teams still come from its standings, so Teams follows the coverage setting
+    (FBS only, or all of Division I). Men's college basketball's do too, on both apps: ESPN's list for
+    it is now every division, over 1,000 teams and cut off at 1,000 before some of Division I. On the
+    iPhone, Transactions for men's college basketball listed those 1,000; it now lists Division I.
 - **Windows: a poll's cells say which team they're for.** Moving across or down a Polls table read the
   rank as the row's context, "2, Previous, NR"; it now reads the team, "Georgia Bulldogs, Previous, NR".
   A poll with no votes, the playoff committee's or college hockey's, has no Points column any more, so
