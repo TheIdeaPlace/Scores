@@ -2469,9 +2469,10 @@ class TestAppTeams:
     @pytest.mark.parametrize("answer,words", [
         ([{"team_id": "1"}], "missing: B"),
         ([{"team_id": "1"}, {"team_id": "2"}, {"team_id": "2"}], "twice: 2"),
+        ([{"team_id": "1", "team_name": "A"}, {"team_id": "2"}, {"team_id": "9", "team_name": "A"}], "twice: A"),
         ([{"team_id": "1", "records_unavailable": True}, {"team_id": "2", "records_unavailable": True}], "no records"),
         (ValueError("bad"), "raised ValueError"),
-    ], ids=["missing", "twice", "no_records", "raised"])
+    ], ids=["missing", "twice", "twice_by_name", "no_records", "raised"])
     def test_what_fails(self, monkeypatch, answer, words):
         self.teams_say(monkeypatch, answer)
         report = self.check()

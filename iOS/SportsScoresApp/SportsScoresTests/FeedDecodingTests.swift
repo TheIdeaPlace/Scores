@@ -1494,6 +1494,21 @@ final class TeamListRequestTests: XCTestCase {
         }
     }
 
+    /// The success path. The NCAAM standings fixture has 6 teams, under the 20 that
+    /// fetchConferencesWithTeams trusts, so this serves the real 26-team group=90 standings
+    /// answer, which has the same shape, at men's college basketball's address.
+    func testMensCollegeBasketballListsTheTeamsInItsStandings() async throws {
+        let body = try Fixtures.data("standings_NCAAF_group90.json")
+        let service = StubbedESPN.service([("/mens-college-basketball/standings", 200, body),
+                                           ("/teams", 200, try Fixtures.data("teams_NCAAM_all.json"))])
+        let teams = try await service.fetchTeamsForSport(sport: .ncaam)
+        XCTAssertEqual(teams.count, 26)
+        XCTAssertFalse(teams.contains { $0.displayName == "Williams Ephs" })
+        XCTAssertEqual(StubbedESPN.requested.count, 1, "\(StubbedESPN.requested)")
+        XCTAssertTrue(StubbedESPN.requested[0].hasSuffix("/basketball/mens-college-basketball/standings"),
+                      StubbedESPN.requested[0])
+    }
+
     func testAFailedTeamListIsAnError() async throws {
         let service = StubbedESPN.service([("/teams", 500, Data())])
         do {

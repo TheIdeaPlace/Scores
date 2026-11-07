@@ -71,7 +71,7 @@ from accessible_table import AccessibleTable, StandingsTable, WildCardTable, Lea
 from tab_keys import group_noun
 from box_score import build_box_tables
 from soccer import SOCCER_LEAGUES, TEAM_NAME_ONLY_HEADERS, no_table_message, soccer_teams_table
-from team_list import RECORDS_UNAVAILABLE, TEAMS_WITH_NO_GROUP, has_records
+from team_list import OTHER_TEAMS, RECORDS_UNAVAILABLE, TEAMS_WITH_NO_GROUP, has_records
 from team_stats import RANKING_HEADERS, ranking_rows, team_stat_lists
 from game_labels import scoreboard_today, on_todays_scoreboard, basketball_period_label, football_period_label, football_period_sort_key, game_standings_tables, schedule_row_text, schedule_start_row
 
@@ -12366,14 +12366,16 @@ class SimpleTeamsDialog(QDialog):
         it's the only one, has no name worth saying."""
         headers, ordered, rows = soccer_teams_table(teams)
         if headers == TEAM_NAME_ONLY_HEADERS:
-            if division_name == TEAMS_WITH_NO_GROUP:
+            if division_name == OTHER_TEAMS:
+                teams_table.update_accessible_name(f"{self.league} {OTHER_TEAMS}")
+                said = "Teams not in the standings, with no record to show. Press Enter on one to open it"
+            elif self.records_unavailable:
                 teams_table.update_accessible_name(f"{self.league} Teams")
-                where = self.league
+                said = f"Teams in {self.league}. {RECORDS_UNAVAILABLE} Press Enter on one to open it"
             else:
-                where = division_name
-            if self.records_unavailable:
-                said = f"Teams in {where}. {RECORDS_UNAVAILABLE} Press Enter on one to open it"
-            else:
+                if division_name == TEAMS_WITH_NO_GROUP:
+                    teams_table.update_accessible_name(f"{self.league} Teams")
+                where = self.league if division_name == TEAMS_WITH_NO_GROUP else division_name
                 said = f"Teams in {where}, with no record to show. Press Enter on one to open it"
             teams_table.update_accessible_description(said)
         else:

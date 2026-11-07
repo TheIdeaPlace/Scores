@@ -1065,7 +1065,9 @@ def check_app_teams(report, key, entries):
     listed = set(ids)
     missing = [(entry.get("team") or {}).get("displayName") for entry in entries
                if str((entry.get("team") or {}).get("id")) not in listed]
-    twice = sorted({i for i in ids if ids.count(i) > 1})
+    # By name too: ESPN has given one school two ids, and it would read twice in the list.
+    names = [team.get("team_name") for team in teams if team.get("team_name")]
+    twice = sorted({i for i in ids if ids.count(i) > 1} | {n for n in names if names.count(n) > 1})
     if missing:
         report.fail(key, "App: teams", f"{len(missing)} teams in the standings missing: {first_problems(missing)}")
     elif twice:

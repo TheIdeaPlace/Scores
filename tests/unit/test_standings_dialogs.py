@@ -309,8 +309,8 @@ class TestTeamsFromTheTeamList:
         other = dialog.tab_widget.widget(dialog.tab_widget.count() - 1).teams_table
         assert other.columnCount() == 1
         assert [other.item(row, 0).text() for row in range(other.rowCount())] == ["Colorado Rockies", "Miami Marlins"]
-        assert other.table_widget.accessibleName() == "Other teams Teams Table"
-        assert "no record to show" in other.accessible_description
+        assert other.table_widget.accessibleName() == "MLB Other teams"
+        assert other.accessible_description.startswith("Teams not in the standings, with no record to show.")
         assert other.item(0, 0).data(Qt.ItemDataRole.UserRole)["team_id"]
 
     def test_a_division_keeps_its_records(self, app):

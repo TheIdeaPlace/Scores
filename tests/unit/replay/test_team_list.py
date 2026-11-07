@@ -171,7 +171,8 @@ class TestGetTeams:
         espn.on("/mens-college-basketball/standings", load("standings_NCAAM.json"))
         espn.on("/mens-college-basketball/teams", load("teams_NCAAM_all.json"))
         teams = ApiService.get_teams("NCAAM")
-        assert teams
+        assert teams == espn_api.parse_college_standings(load("standings_NCAAM.json"))
+        assert len(teams) == 6
         assert not espn.urls("/teams")
         assert not any(team["team_name"] == "Williams Ephs" for team in teams)
 

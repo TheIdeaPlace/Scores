@@ -60,9 +60,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   time a game kicked off or finished, the list was rebuilt and the row you were on read out, so on a busy
   day a finished game you were resting on was read once a minute.
 - **Every team in Teams and the Transactions team filter, on both apps.** Windows built both lists
-  from the standings, so a team the standings left out was missing, as in a preseason or for a college
-  hockey team with no conference table, and if the standings failed there was no list at all. Both now
-  come from ESPN's list of the league's teams, as on the iPhone (#190).
+  from the standings, so a team the standings left out was missing, as in a preseason, and if the
+  standings failed there was no list at all. Both now come from ESPN's list of the league's teams, as on
+  the iPhone (#190). For college hockey that list has every school ESPN covers, Division III ones
+  included, so those now appear on Windows as they already did on the iPhone.
   - Windows: Teams keeps its divisions and conferences and each team's record. A team the standings
     don't have comes last, under **Other teams**, with its name only rather than a 0-0 record. If the
     standings can't be had, Teams still lists every team, and its title says records are unavailable.
