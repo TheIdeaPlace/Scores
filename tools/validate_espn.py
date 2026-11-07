@@ -1502,6 +1502,7 @@ def check_leaders(http, report, league, in_season=True):
                                      f"{len(data['leaders']['categories'])} categories", url)
     http.save("leaders", league.key, data)
     check_leaders_for_a_team(http, report, league, data, season_year)
+    check_stat_glossary(http, report, league, data)
     wrong_way = leaders_direction_problems(data, espn_api.LOW_IS_GOOD_LEADERS)
     if wrong_way:
         report.warn(league.key, "Leaders",
@@ -1523,6 +1524,35 @@ def check_leaders(http, report, league, in_season=True):
         report.ok(league.key, "Leaders aren't the preseason", f"checked {len(can_tell)} categories", url)
     else:
         report.ok(league.key, "Leaders aren't the preseason", "ESPN has no preseason leaders to mix up", url)
+
+
+def check_stat_glossary(http, report, league, leaders):
+    """ESPN's definitions, from one team's byteam as both apps ask for the leaders' (#193), and
+    that stat_glossary.LEADER_STATS knows every leader category on the list: one it doesn't
+    know reads "No definition from ESPN" on both apps."""
+    import espn_api
+    import stat_glossary
+
+    url = f"{WEB}/{league.path}/statistics/byteam?region=us&lang=en&limit=1"
+    status, data = http.get(url)
+    if status != 200 or not isinstance(data, dict):
+        report.fail(league.key, "Stat definitions", f"got {status}, so the definitions say they couldn't be loaded", url)
+        return
+    found = stat_glossary.glossary(data)
+    if not found:
+        report.warn(league.key, "Stat definitions",
+                    "byteam has no descriptions, so every statistic reads \"No definition from ESPN\"", url)
+        return
+    table = stat_glossary.LEADER_STATS.get(league.path.split("/")[0], {})
+    keys = [c.get("name") for c in (leaders.get("leaders") or {}).get("categories") or [] if isinstance(c, dict)]
+    unknown = [key for key in keys if key and key not in table and key not in espn_api.LEADERS_NOT_SHOWN]
+    if unknown:
+        report.warn(league.key, "Stat definitions",
+                    f"leader categories stat_glossary.LEADER_STATS doesn't have, which show no definition: "
+                    f"{first_problems(unknown)}. tools/stat_categories.py says which category each is in", url)
+    else:
+        report.ok(league.key, "Stat definitions",
+                  f"{len(found)} definitions, and every leader category is in stat_glossary.LEADER_STATS", url)
 
 
 def check_app_leaders(report, league, in_season):
