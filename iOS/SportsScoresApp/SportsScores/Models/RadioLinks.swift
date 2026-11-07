@@ -70,7 +70,7 @@ struct RadioLinks {
     }()
 
     private func table(_ league: String) -> Table? {
-        leagueTables[league].flatMap { tables[$0] }
+        Self.leagueTables[league].flatMap { tables[$0] }
     }
 
     private static func usable(_ links: [Link]?) -> [ListenOption] {
