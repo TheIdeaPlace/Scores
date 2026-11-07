@@ -1525,13 +1525,15 @@ final class TeamListRequestTests: XCTestCase {
         }
         let url = Fixtures.repoRoot.appendingPathComponent("tests/fixtures/team_list_sources.json")
         let grid = try JSONDecoder().decode(Grid.self, from: Data(contentsOf: url))
+        // allCases leaves soccer out: it has its own hub.
+        let sports = Sport.allCases + Sport.soccerLeagues
         for (paths, fromStandings) in [(grid.standings, true), (grid.teamList, false)] {
             for path in paths {
-                let sport = try XCTUnwrap(Sport.allCases.first { $0.apiPath == path }, path)
+                let sport = try XCTUnwrap(sports.first { $0.apiPath == path }, path)
                 XCTAssertEqual(sport.teamListFromStandings, fromStandings, path)
             }
         }
-        XCTAssertEqual(Set(Sport.allCases.filter(\.teamListFromStandings).map(\.apiPath)), Set(grid.standings))
+        XCTAssertEqual(Set(sports.filter(\.teamListFromStandings).map(\.apiPath)), Set(grid.standings))
     }
 }
 
