@@ -68,9 +68,12 @@ struct LiveScoresView: View {
     }
     @AccessibilityFocusState private var monitoringFocus: MonitoringFocus?
 
-    /// Shown under Monitoring with nothing monitored.
-    static let monitoringEmptyText =
-        "No games monitored. To add one, choose Monitor in a game's actions, or touch and hold the game."
+    /// Shown under Monitoring with nothing monitored. Table rows have no actions yet (#208).
+    private var monitoringEmptyText: String {
+        viewMode == .table
+            ? "No games monitored. To add one, switch to Quick List or Full List and choose Monitor in a game's actions."
+            : "No games monitored. To add one, choose Monitor in a game's actions, or press and hold the game."
+    }
 
     var body: some View {
         Group {
@@ -301,7 +304,7 @@ struct LiveScoresView: View {
             sectionHeader(title: "MONITORING", count: rows.count)
                 .accessibilityFocused($monitoringFocus, equals: .header)
             if rows.isEmpty {
-                Text(Self.monitoringEmptyText)
+                Text(monitoringEmptyText)
                     .font(.subheadline)
                     .foregroundColor(.secondary)
                     .frame(maxWidth: .infinity, alignment: .leading)

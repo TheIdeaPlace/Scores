@@ -66,6 +66,9 @@ enum Sport: String, CaseIterable, Identifiable, Codable {
          .soccerSerieA, .soccerLigue1, .soccerUCL, .soccerUEL, .soccerLigaMX, .soccerCONCACAF]
     }
 
+    /// The leagues whose games Live Scores lists, and so the only ones that can be monitored.
+    static var liveScoresLeagues: [Sport] { allCases + soccerLeagues }
+
     /// All golf tour cases. Feed these to the Golf hub.
     static var golfTours: [Sport] { [.pga, .lpga] }
 

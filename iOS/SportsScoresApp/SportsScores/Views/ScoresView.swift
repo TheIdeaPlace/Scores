@@ -704,9 +704,11 @@ struct ScoresView: View {
     }
 
     /// Monitor adds one of today's games to Live Scores' Monitoring section, the only place
-    /// it shows (#185); another day's says it can't be. Stop Monitoring takes it off.
-    private func monitorAction(_ game: Game) -> MonitorAction {
-        MonitorAction(name: monitoring.actionName(for: game.id)) {
+    /// it shows (#185); another day's says it can't be. Stop Monitoring takes it off. None
+    /// for a league Live Scores doesn't list, such as the CFL, where it would never show.
+    private func monitorAction(_ game: Game) -> MonitorAction? {
+        guard Sport.liveScoresLeagues.contains(sport) else { return nil }
+        return MonitorAction(name: monitoring.actionName(for: game.id)) {
             announceMonitoring(monitoring.toggleFromSportPage(game))
         }
     }

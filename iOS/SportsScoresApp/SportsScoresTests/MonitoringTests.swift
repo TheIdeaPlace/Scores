@@ -91,6 +91,14 @@ final class MonitoringStoreTests: XCTestCase {
         XCTAssertEqual(MonitoringStore.ActionName.stop, "Stop Monitoring")
     }
 
+    /// A sport page offers Monitor only for leagues Live Scores lists: a CFL game would never show.
+    func testOnlyLiveScoresLeaguesCanBeMonitored() {
+        XCTAssertTrue(Sport.liveScoresLeagues.contains(.nfl))
+        XCTAssertTrue(Sport.liveScoresLeagues.contains(.soccerEPL))
+        XCTAssertFalse(Sport.liveScoresLeagues.contains(.cfl))
+        XCTAssertFalse(Sport.liveScoresLeagues.contains(.pga))
+    }
+
     func testLiveScoresTogglesAndKeepsTheOrderAdded() {
         let store = MonitoringStore()
         XCTAssertEqual(store.actionName(for: "1"), "Monitor")

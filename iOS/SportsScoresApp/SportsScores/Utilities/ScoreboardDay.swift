@@ -91,8 +91,4 @@ enum ScoreboardDay {
                                  in: localTimeZone)
         return scoreboardDate(of: date, timeValid: timeValid, localTimeZone: localTimeZone) == today
     }
-
-    static func isOnTodaysScoreboard(_ game: Game, now: Date = Date()) -> Bool {
-        isOnTodaysScoreboard(game.date, timeValid: game.timeValid, now: now)
-    }
 }
