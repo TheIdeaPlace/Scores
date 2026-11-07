@@ -78,6 +78,8 @@ struct PollsView: View {
             }
         }
         .accessibilityLabel("Select poll")
+        // The menu shows "Poll" beside it; Voice Control should answer to either.
+        .accessibilityInputLabels(["Poll", "Select poll"])
         if PollsViewModel.usesMenu(pollCount: viewModel.polls.count) {
             HStack {
                 Text("Poll")

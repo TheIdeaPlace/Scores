@@ -154,10 +154,10 @@ it needs an id→name resolve. Reads naturally as an awards-race view.
   scoreboard for a single followed game.
 - **`statisticslog`** — `.../leagues/{league}/athletes/{id}/statisticslog?season=2026`,
   season-by-season career totals.
-- **Extra college football polls** — `rankings` also returns the AFCA Coaches
-  Poll, FCS Coaches Poll and AFCA Division II and III polls, not just AP Top 25.
-  Both apps were in fact showing every poll ESPN sends; only the trimmed fixture
-  had two. The fixture now has all six and both apps are tested on them (#104).
+- **Extra college football polls: not a gap after all.** The survey thought
+  only the AP Top 25 was shown, but both apps show every poll `rankings` returns
+  (CFP, AP, AFCA Coaches, FCS Coaches, AFCA Division II and III); only the
+  trimmed fixture had two. It now has all six and both apps are tested on them (#104).
 - **`againstTheSpread`** — on most summaries. Only `KitchenSinkDialog` reads it,
   and that's never opened, so neither app shows it.
 
