@@ -29,6 +29,7 @@
 		001A36C29D93596852E890C3 /* PlayAudioGeometry.swift in Sources */ = {isa = PBXBuildFile; fileRef = E30E82D0413A6836A6E34312 /* PlayAudioGeometry.swift */; };
 		D21FE50000000000000000B1 /* DriveResults.swift in Sources */ = {isa = PBXBuildFile; fileRef = D21FE50000000000000000A1 /* DriveResults.swift */; };
 		D21FE50000000000000000B2 /* DriveResultsGridTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D21FE50000000000000000A2 /* DriveResultsGridTests.swift */; };
+		D21FE50000000000000000B3 /* PostseasonGridTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D21FE50000000000000000A3 /* PostseasonGridTests.swift */; };
 		02204E507D7434022AB59839 /* RacingHubView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5527896BC8638A1E72DE5823 /* RacingHubView.swift */; };
 		0628508F6916E0005D37835D /* CheatsheetPlayerDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 17E2EBBAD69446226C28DA4A /* CheatsheetPlayerDetailView.swift */; };
 		11745FDAA05A67412D2D514B /* TeamHubModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = B24C7FC69C8CFAB2F651990B /* TeamHubModels.swift */; };
@@ -308,6 +309,7 @@
 		E30E82D0413A6836A6E34312 /* PlayAudioGeometry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlayAudioGeometry.swift; sourceTree = "<group>"; };
 		D21FE50000000000000000A1 /* DriveResults.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DriveResults.swift; sourceTree = "<group>"; };
 		D21FE50000000000000000A2 /* DriveResultsGridTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DriveResultsGridTests.swift; sourceTree = "<group>"; };
+		D21FE50000000000000000A3 /* PostseasonGridTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PostseasonGridTests.swift; sourceTree = "<group>"; };
 		E5A708A7622868D80A976423 /* NewsViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NewsViewModel.swift; sourceTree = "<group>"; };
 		E79BB9E6383BF4BCD75D2452 /* TransactionTeamPickerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TransactionTeamPickerView.swift; sourceTree = "<group>"; };
 		E83EC93DC3EF01BEBDB5C228 /* SoccerHubViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SoccerHubViewModel.swift; sourceTree = "<group>"; };
@@ -555,6 +557,7 @@
 				7E57A0000000000000000007 /* FeedDecodingTests.swift */,
 				7E57A0000000000000000008 /* PlayAudioGeometryGridTests.swift */,
 				D21FE50000000000000000A2 /* DriveResultsGridTests.swift */,
+				D21FE50000000000000000A3 /* PostseasonGridTests.swift */,
 				7E57A0000000000000000030 /* LeagueLeadersTests.swift */,
 				7E57A0000000000000000040 /* TeamStatsTests.swift */,
 				7E57A0000000000000000060 /* VenuesTests.swift */,
@@ -829,6 +832,7 @@
 				7E57A0000000000000000009 /* FeedDecodingTests.swift in Sources */,
 				7E57A000000000000000000A /* PlayAudioGeometryGridTests.swift in Sources */,
 				D21FE50000000000000000B2 /* DriveResultsGridTests.swift in Sources */,
+				D21FE50000000000000000B3 /* PostseasonGridTests.swift in Sources */,
 				7E57A0000000000000000031 /* LeagueLeadersTests.swift in Sources */,
 				7E57A0000000000000000041 /* TeamStatsTests.swift in Sources */,
 				7E57A0000000000000000061 /* VenuesTests.swift in Sources */,

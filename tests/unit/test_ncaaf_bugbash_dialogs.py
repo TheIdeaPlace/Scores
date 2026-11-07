@@ -87,10 +87,22 @@ class TestBowls:
         assert bowls_dialog.bowl_list.currentRow() == 0
         assert bowls_dialog.bowl_list.currentItem().isSelected()
 
-    def test_enter_on_a_heading_does_nothing(self, bowls_dialog):
-        heading = bowls_dialog.bowl_list.item(0)
-        bowls_dialog.on_bowl_game_selected(heading)
-        assert bowls_dialog.isVisible() is False and bowls_dialog.result() == 0
+    def test_enter_opens_a_game_but_not_a_heading(self, bowls_dialog):
+        opened = []
+
+        class App:
+            def open_game_details(self, game_id):
+                opened.append(game_id)
+
+        class Parent:
+            parent_app = App()
+
+        bowls_dialog.parent_app = Parent()
+        bowls_dialog.on_bowl_game_selected(bowls_dialog.bowl_list.item(0))
+        assert opened == []
+        game = bowls_dialog.bowl_list.item(1)
+        bowls_dialog.on_bowl_game_selected(game)
+        assert opened == [game.data(Qt.ItemDataRole.UserRole)]
 
 
 # ----------------------------------------------------------- Team Hub (#203)

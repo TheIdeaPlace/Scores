@@ -1,7 +1,8 @@
 """postseason.py: the Bowls & Playoffs list's headings (#202).
 
 The rule matches the iPhone's Models/Postseason.swift: the round from ESPN's note
-headline, the type id only when there's no headline.
+headline, the type id only when there's no headline. tests/fixtures/postseason_grid.json
+holds both apps to it.
 """
 
 import json
@@ -15,6 +16,17 @@ from postseason import (
 )
 
 FIXTURE = Path(__file__).resolve().parents[1] / "fixtures" / "espn" / "bowls_NCAAF.json"
+GRID = json.loads((Path(__file__).resolve().parents[1] / "fixtures" / "postseason_grid.json").read_text(encoding="utf-8"))
+
+
+@pytest.mark.parametrize("case", GRID["round_cases"], ids=lambda c: f"{c['headline']}|{c['type_id']}")
+def test_grid_round(case):
+    """The iPhone's PostseasonGridTests.swift reads the same cases."""
+    assert postseason_round(case["headline"], case["type_id"]) == case["expected"]
+
+
+def test_grid_heading_order():
+    assert list(ROUNDS) == GRID["headings"]
 
 
 def bowls():

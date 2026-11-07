@@ -1050,7 +1050,8 @@ struct NFLDrivesView: View {
                     Image(systemName: isOpen ? "chevron.down" : "chevron.right")
                         .foregroundColor(.secondary).frame(width: 14)
 
-                    Text(drive.resultEmoji)
+                    // A score by the other team is a turnover for this one, whatever ESPN's result says.
+                    Text(scoring[drive.id]?.byOpponent == true ? "🔄" : drive.resultEmoji)
                         .font(.title3)
 
                     VStack(alignment: .leading, spacing: 2) {

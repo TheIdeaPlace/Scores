@@ -9,8 +9,8 @@
 //  run back for a touchdown, a kickoff returned for one, a pick six and a safety are all
 //  marked on the drive of the team that gave the points up. And it gives no points, so
 //  a touchdown with no extra point, or with a two-point conversion, reads like any other.
-//  Every play carries the score after it, so this reads the score instead: the side whose
-//  score went up first in the drive scored, with every point that side added in it.
+//  Every play carries the score after it, so this reads the score instead: in a drive with
+//  a scoring play, the side whose score went up first scored, with every point it added.
 //
 //  The Windows twin is drive_results.py. The two must agree:
 //  tests/fixtures/drive_results_grid.json holds both, with DriveResultsGridTests.swift
@@ -47,11 +47,11 @@ struct DriveResult: Equatable {
     var otherPoints: Int = 0
 }
 
-/// What the rule needs of a drive: who had the ball, and the score after each play
-/// (nil for a play without one).
+/// What the rule needs of a drive: who had the ball, the score after each play (nil for
+/// a play without one), and whether ESPN marks the play as scoring.
 struct DriveScoreInput {
     let teamID: String?
-    let plays: [(away: Int?, home: Int?)]
+    let plays: [(away: Int?, home: Int?, scoring: Bool)]
 }
 
 enum DriveResults {
@@ -66,22 +66,25 @@ enum DriveResults {
         return .score
     }
 
-    /// One result per drive, for drives in the order they were played from the start of
-    /// the game: the score before a drive is the last score seen before it. A play
-    /// without a score is skipped; a score that goes down is taken as the new score
-    /// without counting anything.
+    /// One result per drive, for drives in the order they were played. The score before
+    /// a play is the last score seen. Points count only in a drive with a play ESPN marks
+    /// scoring, so a rise with no scoring play behind it (a drive missing from the list,
+    /// a score that dips and comes back) is nobody's. The whole drive counts: ESPN's
+    /// score can move a play early, and the try can be a play of its own. A play without
+    /// a score is skipped.
     static func results(_ drives: [DriveScoreInput], awayID: String?, homeID: String?) -> [DriveResult] {
         var running = (away: 0, home: 0)
         return drives.map { drive in
             var added = (away: 0, home: 0)
             var first: DriveSide?
+            let scoring = drive.plays.contains { $0.scoring }
             for play in drive.plays {
                 guard let away = play.away, let home = play.home else { continue }
-                if away > running.away {
+                if scoring && away > running.away {
                     added.away += away - running.away
                     first = first ?? .away
                 }
-                if home > running.home {
+                if scoring && home > running.home {
                     added.home += home - running.home
                     first = first ?? .home
                 }
@@ -129,6 +132,8 @@ enum DriveResults {
 extension GameDetails.Drive {
     var scoreInput: DriveScoreInput {
         DriveScoreInput(teamID: team?.id,
-                        plays: (plays ?? []).map { (away: $0.awayScore, home: $0.homeScore) })
+                        plays: (plays ?? []).map {
+                            (away: $0.awayScore, home: $0.homeScore, scoring: $0.scoringPlay == true)
+                        })
     }
 }

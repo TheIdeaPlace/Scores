@@ -18,6 +18,7 @@ private struct DriveGrid: Decodable {
     struct Drive: Decodable {
         let team_id: String?
         let plays: [[Int?]]
+        let scoring_plays: [Int]
     }
     struct Expected: Decodable, Equatable {
         let kind: String?
@@ -89,7 +90,11 @@ final class DriveResultsGridTests: XCTestCase {
         for item in grid.cases {
             let inputs = item.drives.map { drive in
                 DriveScoreInput(teamID: drive.team_id,
-                                plays: drive.plays.map { (away: $0.first ?? nil, home: $0.count > 1 ? $0[1] : nil) })
+                                plays: drive.plays.enumerated().map { index, play in
+                                    (away: play.first ?? nil,
+                                     home: play.count > 1 ? play[1] : nil,
+                                     scoring: drive.scoring_plays.contains(index))
+                                })
             }
             let results = DriveResults.results(inputs, awayID: item.away.id, homeID: item.home.id)
             XCTAssertEqual(results.map { shown($0, away: item.away.name, home: item.home.name) },
@@ -121,5 +126,6 @@ final class DriveResultsGridTests: XCTestCase {
         let plays = drives.flatMap { $0.plays ?? [] }
         XCTAssertFalse(plays.isEmpty)
         XCTAssertTrue(plays.allSatisfy { $0.awayScore != nil && $0.homeScore != nil })
+        XCTAssertEqual(plays.filter { $0.scoringPlay == true }.count, 8)
     }
 }

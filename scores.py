@@ -73,7 +73,7 @@ from box_score import build_box_tables
 from soccer import SOCCER_LEAGUES, TEAM_NAME_ONLY_HEADERS, no_table_message, soccer_teams_table
 from team_stats import RANKING_HEADERS, ranking_rows, team_stat_lists
 from drive_results import (
-    FG as DRIVE_FG, RETURN_TD as DRIVE_RETURN_TD, TD as DRIVE_TD,
+    FG as DRIVE_FG, TD as DRIVE_TD,
     chronological_drives, drive_badge, drive_results, summary_teams,
 )
 from postseason import PLAYOFF_ROUNDS, game_headline, heading_text, postseason_sections
@@ -184,13 +184,6 @@ def get_pitch_location(horizontal: int, vertical: int, batter_side: str = None) 
         return location  # Already includes height
     else:
         return f"{height_desc} {location}"
-
-def _int_or_none(value):
-    try:
-        return int(value)
-    except (TypeError, ValueError):
-        return None
-
 
 def _focus_once_active(dialog, set_focus):
     """Run `set_focus` once, after the dialog has opened and taken its first focus, so it
@@ -3831,7 +3824,16 @@ class GameDetailsView(BaseView):
             if score is not None and score.kind is not None:
                 other = "home" if score.scorer == "away" else "away"
                 badge = drive_badge(score, team_names.get(score.scorer, ""), team_names.get(other, ""))
-                if score.kind in (DRIVE_TD, DRIVE_RETURN_TD):
+                if score.by_opponent:
+                    # The other team scored: a turnover for the team with the ball.
+                    scorer = team_names.get(score.scorer) or "The other team"
+                    return {
+                        'icon': '🔄',
+                        'badge': badge,
+                        'color': QColor(255, 140, 0, 60),
+                        'accessible_text': f"{scorer} scored on this drive",
+                    }
+                if score.kind == DRIVE_TD:
                     return {
                         'icon': '🏈',
                         'badge': badge,
@@ -4014,7 +4016,13 @@ class GameDetailsView(BaseView):
             kickoff_label = "Kickoff"
             score = scored.get(id(drive))
             if not drive_plays and score is not None and score.kind is not None:
-                kickoff_label = f"[{result_info['badge']}] Kickoff"
+                badge = result_info['badge']
+                # Kickoff rows carry no team, so name the scorer whichever drive ESPN
+                # filed the return on.
+                scorer = team_names.get(score.scorer, "")
+                if not score.by_opponent and scorer:
+                    badge = f"{scorer} {badge}"
+                kickoff_label = f"[{badge}] Kickoff"
 
             # Add kickoffs as separate entries
             for kickoff in kickoff_plays:

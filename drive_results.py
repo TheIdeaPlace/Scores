@@ -9,8 +9,8 @@ overtime, where no try is run) or with a two-point conversion can't be told apar
 by its result.
 
 Every play carries the score after it (``awayScore``, ``homeScore``), so the rule
-here reads the score instead: the side whose score went up first in the drive
-scored, with every point that side added in the drive. The kind of score follows
+here reads the score instead: in a drive with a scoring play, the side whose score
+went up first scored, with every point that side added in the drive. The kind of score follows
 from the points (6 to 8 a touchdown, 3 a field goal, 2 given up a safety).
 
 The iPhone's twin is ``Services/DriveResults.swift``. The two must agree:
@@ -20,6 +20,7 @@ The iPhone's twin is ``Services/DriveResults.swift``. The two must agree:
 
 from __future__ import annotations
 
+import math
 from dataclasses import dataclass
 from typing import Optional
 
@@ -46,12 +47,19 @@ class DriveResult:
 
 
 def _score(value) -> Optional[int]:
-    if value is None or value == "" or isinstance(value, bool):
+    """A score as ESPN may send it: an int, a float or text such as "7" or "1,000".
+
+    The same values the iPhone's lenientNumber reads.
+    """
+    if value is None or isinstance(value, bool):
         return None
+    if isinstance(value, str):
+        value = value.replace(",", "").strip()
     try:
-        return int(value)
+        number = float(value)
     except (TypeError, ValueError):
         return None
+    return int(number) if math.isfinite(number) else None
 
 
 def _side(team_id, away_id, home_id) -> Optional[str]:
@@ -82,10 +90,14 @@ def _kind(points: int, by_opponent: bool) -> str:
 def drive_results(drives, away_id, home_id) -> list[DriveResult]:
     """One result per drive, for ESPN drives in the order they were played.
 
-    The score before a drive is the last score seen in the drives before it, so the
-    drives must be in order and complete from the start of the game, as ESPN's
-    ``previous`` list is. A play without a score is skipped; a score that goes down
-    (ESPN correcting itself) is taken as the new score without counting anything.
+    The score before a play is the last score seen, in this drive or the ones before
+    it, as ESPN's ``previous`` list gives them. Points count only in a drive with a
+    play ESPN marks ``scoringPlay``, so a rise in the score with no scoring play behind
+    it isn't anybody's points: a drive missing from the list, or a score that dips and
+    comes back. The whole drive counts, not just from the scoring play on: ESPN's
+    score can move a play early (on the timeout before Duke's return in 401858286),
+    and the try after a touchdown can be a play of its own. A play without a score
+    is skipped.
     """
     results = []
     running = (0, 0)
@@ -95,16 +107,17 @@ def drive_results(drives, away_id, home_id) -> list[DriveResult]:
             continue
         added = {"away": 0, "home": 0}
         first = None
-        for play in drive.get("plays") or []:
-            if not isinstance(play, dict):
-                continue
+        plays = [p for p in drive.get("plays") or [] if isinstance(p, dict)]
+        scoring = any(p.get("scoringPlay") is True for p in plays)
+        for play in plays:
             away, home = _score(play.get("awayScore")), _score(play.get("homeScore"))
             if away is None or home is None:
                 continue
-            for side, now, before in (("away", away, running[0]), ("home", home, running[1])):
-                if now > before:
-                    added[side] += now - before
-                    first = first or side
+            if scoring:
+                for side, now, before in (("away", away, running[0]), ("home", home, running[1])):
+                    if now > before:
+                        added[side] += now - before
+                        first = first or side
             running = (away, home)
         if first is None:
             results.append(DriveResult())

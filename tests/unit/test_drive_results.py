@@ -21,7 +21,8 @@ GRID = json.loads((FIXTURES / "drive_results_grid.json").read_text(encoding="utf
 def _drives(case):
     return [{
         "team": {"id": d["team_id"]} if d["team_id"] is not None else {},
-        "plays": [{"awayScore": a, "homeScore": h} for a, h in d["plays"]],
+        "plays": [{"awayScore": a, "homeScore": h, "scoringPlay": i in d["scoring_plays"]}
+                  for i, (a, h) in enumerate(d["plays"])],
     } for d in case["drives"]]
 
 
@@ -71,7 +72,8 @@ def test_the_return_touchdown_is_credited_to_the_team_that_scored():
 
 
 def test_points_add_up_to_the_final_score():
-    for name in ("drives_NCAAF_401858286.json", "drives_NCAAF_401866682_2OT.json", "drives_NCAAF_2OT.json"):
+    # drives_NCAAF_2OT.json is left out: it keeps only the overtime drives.
+    for name in ("drives_NCAAF_401858286.json", "drives_NCAAF_401866682_2OT.json"):
         summary = json.loads((FIXTURES / "espn" / name).read_text(encoding="utf-8"))
         teams = summary_teams(summary)
         drives = chronological_drives(summary["drives"])
@@ -85,6 +87,15 @@ def test_points_add_up_to_the_final_score():
         final = {c["homeAway"]: int(c["score"]) for c in competitors if c.get("score") not in (None, "")}
         if final:
             assert totals == final, name
+
+
+def test_drives_missing_before_the_first_one_kept_are_nobodys_points():
+    """drives_NCAAF_2OT.json starts at overtime: the score it opens with isn't the first OT drive's."""
+    summary = json.loads((FIXTURES / "espn" / "drives_NCAAF_2OT.json").read_text(encoding="utf-8"))
+    teams = summary_teams(summary)
+    drives = chronological_drives(summary["drives"])
+    results = drive_results(drives, teams["away"]["id"], teams["home"]["id"])
+    assert all(r.points <= 8 for r in results)
 
 
 def test_live_current_drive_is_added_once():
@@ -103,8 +114,25 @@ def test_bad_data_reads_as_no_score():
 
 def test_string_scores_count():
     results = drive_results([{"team": {"id": 1}, "plays": [{"awayScore": "0", "homeScore": "0"},
-                                                          {"awayScore": "7", "homeScore": "0"}]}], 1, 2)
+                                                          {"awayScore": "7", "homeScore": "0", "scoringPlay": True}]}], 1, 2)
     assert results[0].kind == "TD" and results[0].points == 7 and not results[0].by_opponent
+
+
+@pytest.mark.parametrize("value,expected", [
+    (7, 7), ("7", 7), (7.0, 7), ("7.0", 7), ("1,000", 1000), (" 3 ", 3),
+    (None, None), ("", None), ("x", None), (True, None), (float("nan"), None),
+])
+def test_scores_read_as_the_iphone_reads_them(value, expected):
+    """The iPhone's lenientNumber takes the same values."""
+    from drive_results import _score
+    assert _score(value) == expected
+
+
+def test_without_scoring_play_marks_nothing_is_credited():
+    """A feed with no scoringPlay flags gives no scorer, so the badge falls back to ESPN's result."""
+    results = drive_results([{"team": {"id": "1"}, "plays": [{"awayScore": 0, "homeScore": 0},
+                                                            {"awayScore": 7, "homeScore": 0}]}], "1", "2")
+    assert results == [DriveResult()]
 
 
 def test_summary_teams_without_a_header():

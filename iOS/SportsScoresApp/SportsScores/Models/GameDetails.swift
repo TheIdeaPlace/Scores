@@ -903,9 +903,11 @@ struct GameDetails: Codable {
             /// The score after the play, which says who scored on the drive (DriveResults).
             let awayScore: Int?
             let homeScore: Int?
+            /// ESPN's mark on a play that scored.
+            let scoringPlay: Bool?
 
             enum CodingKeys: String, CodingKey {
-                case id, text, statYardage, type, clock, period, awayScore, homeScore
+                case id, text, statYardage, type, clock, period, awayScore, homeScore, scoringPlay
             }
 
             init(from decoder: Decoder) throws {
@@ -919,6 +921,7 @@ struct GameDetails: Codable {
                 // An odd score costs the score, not the play.
                 awayScore = container.lenientNumber(forKey: .awayScore).map { Int($0) }
                 homeScore = container.lenientNumber(forKey: .homeScore).map { Int($0) }
+                scoringPlay = try? container.decodeIfPresent(Bool.self, forKey: .scoringPlay)
             }
 
             struct PlayType: Codable {
