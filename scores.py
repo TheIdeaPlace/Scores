@@ -66,6 +66,7 @@ import favorite_card
 import live_play_format
 import on_ice
 import racing
+import cfl
 import radio_links
 import season_series
 import win_probability
@@ -887,6 +888,14 @@ class HomeView(BaseView):
                 self.parent_app.update_window_title()
             return
 
+        if user_data == "__cfl__":
+            if self.parent_app:
+                self.parent_app.update_window_title(["CFL"])
+            CFLDialog(self).exec()
+            if self.parent_app:
+                self.parent_app.update_window_title()
+            return
+
         # Golf tours open a dedicated tournament dialog instead of a standard league view
         if league in ("PGA", "LPGA"):
             tour_name = "PGA Tour" if league == "PGA" else "LPGA Tour"
@@ -989,6 +998,10 @@ class HomeView(BaseView):
 
         Called from both setup_ui and refresh so the two paths cannot drift.
         """
+        cfl_item = QListWidgetItem("CFL - Canadian Football League")
+        cfl_item.setData(Qt.ItemDataRole.UserRole, "__cfl__")
+        self.league_list.addItem(cfl_item)
+
         racing_item = QListWidgetItem("Racing - F1, IndyCar, NASCAR")
         racing_item.setData(Qt.ItemDataRole.UserRole, "__racing__")
         self.league_list.addItem(racing_item)
@@ -11251,11 +11264,11 @@ class _RacingPage(QWidget):
             self._retry()
 
     def show_table(self, headers, rows, context_column: int, name: str, description: str = "",
-                   start_row: int = 0):
+                   start_row: int = 0, keep_place: bool = True):
         """A refresh of the same table keeps the row and column someone was on; a new one starts
-        on `start_row`."""
+        on `start_row`, as does one with `keep_place` False, such as another week's games."""
         old = self.content
-        same = isinstance(old, RacingTable) and old._headers == list(headers)
+        same = keep_place and isinstance(old, RacingTable) and old._headers == list(headers)
         table = RacingTable(name, description, context_column)
         table.setup_columns(headers, stretch_column=context_column)
         table.populate_data(rows, set_focus=False)
@@ -11562,6 +11575,355 @@ class RacingSeriesDialog(QDialog):
             self.accept()
         elif event.key() == Qt.Key.Key_F5:
             self._load_all()
+        else:
+            super().keyPressEvent(event)
+
+
+# ─────────────────────────── CFL ─────────────────────────────────────────────
+# The Canadian Football League, reached from CFL on the home list. Its data is the CFL's own
+# scoreboard feed, not ESPN's, as on the iPhone; cfl.py reads it and these only show it. The pages
+# and tables are the racing ones, which have nothing racing-specific in them.
+
+def _cfl_failure(message: str, what: str) -> str:
+    """The feed's failure in the words for the page it's on: the CFL isn't providing standings.
+    Anything else, a bug, keeps its own plain words."""
+    return cfl.unavailable(what) if message == cfl.unavailable("scores") else message
+
+
+class _CFLFeedLoads:
+    """Loading the CFL's feed, with only the latest request's answer shown: F5 twice, or a retry
+    while a refresh is out, could otherwise have an older answer land last."""
+
+    def _fetch_feed(self, loaded, failed):
+        loader = CallLoader(ApiService.get_cfl_feed)
+        self._latest_loader = loader
+        loader.data_loaded.connect(partial(self._deliver_feed, loader, loaded))
+        loader.error_occurred.connect(partial(self._deliver_feed, loader, failed))
+        _start_detached_thread(loader)
+
+    def _deliver_feed(self, loader, slot, value):
+        if getattr(self, "_latest_loader", None) is loader:
+            slot(value)
+
+    def _page_failed(self, page, message: str):
+        """What's on show stays when a refresh fails, and that's said once for the refresh, unless
+        the dialog has closed since. With nothing on show, the page says so, and Enter tries again."""
+        if page.has_data:
+            if not self._said_refresh_failed and self.isVisible():
+                self._said_refresh_failed = True
+                announce(message)
+        else:
+            page.show_message(message, failed=True)
+
+
+def _cfl_buttons(dialog, layout, refresh, extra=()):
+    """Refresh and Close, after any `extra` (label, slot) buttons. None is a default button: Enter
+    in a table or list opens the row, and mustn't press one too."""
+    row = QHBoxLayout()
+    buttons = []
+    for text, slot in list(extra) + [("&Refresh", refresh), ("&Close", dialog.accept)]:
+        button = QPushButton(text)
+        button.setAutoDefault(False)
+        button.clicked.connect(slot)
+        if text == "&Refresh":
+            button.setToolTip("F5")
+        row.addWidget(button)
+        buttons.append(button)
+    row.insertStretch(len(extra))
+    layout.addLayout(row)
+    return buttons
+
+
+class CFLDialog(_CFLFeedLoads, QDialog):
+    """CFL on the home list: a week's games, the standings and the teams. The iPhone's CFL scores,
+    standings and Team Hub teams. Alt+P and Alt+N step a week, as football's scores do; F5 or
+    Refresh loads it all again, staying on the week."""
+
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setWindowTitle("CFL - Sports Scores")
+        self.resize(DIALOG_WIDTH, DIALOG_HEIGHT)
+        self._feed = None
+        self._week_index = None  # None until the first load picks the current week
+        self._week_count = 0
+        self._week_games = []
+        self._standings_ids = []
+        self._teams = []
+        self._said_refresh_failed = False
+        self._setup_ui()
+        self._load()
+        _focus_once_active(self, self._focus_current_page)
+
+    def _setup_ui(self):
+        layout = QVBoxLayout(self)
+        header = QLabel("Canadian Football League")
+        font = header.font()
+        font.setBold(True)
+        header.setFont(font)
+        layout.addWidget(header)
+        self.week_label = QLabel("Loading the week…")
+        self.week_label.setWordWrap(True)
+        layout.addWidget(self.week_label)
+
+        self.scores_page = _RacingPage("CFL Scores", self._load)
+        self.standings_page = _RacingPage("CFL Standings", self._load)
+        self.teams_page = _RacingPage("CFL Teams", self._load)
+        pages = [(self.scores_page, "Scores"), (self.standings_page, "Standings"), (self.teams_page, "Teams")]
+        self.tab_widget = make_tab_area(len(pages), "CFL sections")
+        for page, label in pages:
+            self.tab_widget.addTab(page, label)
+            page.tab_area = self.tab_widget
+        layout.addWidget(self.tab_widget)
+
+        self.prev_btn, self.next_btn, _, _ = _cfl_buttons(
+            self, layout, self._load,
+            extra=[("&Previous Week", lambda: self._step_week(-1)), ("&Next Week", lambda: self._step_week(1))])
+        self.prev_btn.setToolTip("Alt+P")
+        self.next_btn.setToolTip("Alt+N")
+
+    def _pages(self):
+        return [self.scores_page, self.standings_page, self.teams_page]
+
+    def _focus_current_page(self):
+        page = self.tab_widget.currentWidget()
+        if isinstance(page, _RacingPage):
+            page.focus()
+
+    # ── loading ──
+
+    def _load(self):
+        self._said_refresh_failed = False
+        self._fetch_feed(self._on_loaded, self._on_failed)
+
+    def _on_loaded(self, feed):
+        feed = feed if isinstance(feed, dict) else {}
+        self._feed = feed
+        self._show_week(keep_place=True)
+        self._show_standings()
+        self._show_teams()
+
+    def _on_failed(self, message: str):
+        if not self.scores_page.has_data:
+            self.week_label.setText(_cfl_failure(message, "scores"))
+        for page, what in ((self.scores_page, "scores"), (self.standings_page, "standings"),
+                           (self.teams_page, "teams")):
+            self._page_failed(page, _cfl_failure(message, what))
+
+    # ── scores ──
+
+    def _show_week(self, keep_place: bool):
+        week = cfl.parse_round(self._feed.get("rounds"), self._feed.get("squads"), self._week_index)
+        self._week_count = week["count"]
+        self._week_games = week["games"]
+        if not week["count"]:
+            text = "No CFL games listed. Check back during the season."
+            self.week_label.setText(text)
+            self.scores_page.show_message(text)
+            return
+        self._week_index = week["index"]
+        summary = cfl.week_summary(week)
+        self.week_label.setText(f"{summary}.")
+        if not week["games"]:
+            self.scores_page.show_message(f"{summary}.")
+            return
+        self.scores_page.show_table(
+            cfl.SCORE_HEADERS, cfl.score_rows(week["games"]), context_column=0,
+            # The week is in the name, which every screen reader says on arriving: JAWS may not read
+            # a table's description, and the label above can't take focus.
+            name=f"CFL {summary}", description="Press Enter on a game to open it.",
+            keep_place=keep_place)
+        self.scores_page.content.itemActivated.connect(self._open_game)
+
+    def _step_week(self, delta: int):
+        if self._feed is None:
+            announce("The CFL's weeks haven't loaded yet.")
+            return
+        if not self._week_count:
+            announce("No CFL weeks listed. Check back during the season.")
+            return
+        target = self._week_index + delta
+        if target < 0:
+            announce("This is the first week of the season.")
+            return
+        if target >= self._week_count:
+            announce("This is the last week of the season.")
+            return
+        self._week_index = target
+        self.tab_widget.setCurrentWidget(self.scores_page)
+        self._show_week(keep_place=False)
+        # Onto the week's games, whose name says which week it is, wherever the key was pressed.
+        self.scores_page.focus()
+
+    def _open_game(self, item):
+        row = item.row() if item is not None else -1
+        if 0 <= row < len(self._week_games):
+            CFLGameDialog(self._week_games[row], self).exec()
+            self.scores_page.focus()
+
+    # ── standings and teams ──
+
+    def _show_standings(self):
+        groups = cfl.standings(self._feed.get("squads"))
+        self._standings_ids = cfl.standings_team_ids(groups)
+        if not groups:
+            self.standings_page.show_message("No CFL standings right now.")
+            return
+        self.standings_page.show_table(
+            cfl.standings_headers(groups), cfl.standings_rows(groups), context_column=1,
+            name="CFL Standings", description="East Division, then West. Press Enter on a team to open its season.")
+        self.standings_page.content.itemActivated.connect(
+            lambda item: self._open_team(self._standings_ids, item))
+
+    def _show_teams(self):
+        self._teams = cfl.teams(self._feed.get("squads"))
+        if not self._teams:
+            self.teams_page.show_message("No CFL teams listed right now.")
+            return
+        self.teams_page.show_table(
+            cfl.TEAM_HEADERS, cfl.team_rows(self._teams), context_column=0,
+            name="CFL Teams", description="Press Enter on a team to open its season.")
+        self.teams_page.content.itemActivated.connect(
+            lambda item: self._open_team([t["id"] for t in self._teams], item))
+
+    def _open_team(self, ids, item):
+        row = item.row() if item is not None else -1
+        if 0 <= row < len(ids):
+            page = self.tab_widget.currentWidget()
+            CFLTeamDialog(ids[row], self._feed, self).exec()
+            if isinstance(page, _RacingPage):
+                page.focus()
+
+    def keyPressEvent(self, event):
+        if event.key() == Qt.Key.Key_Escape:
+            self.accept()
+        elif event.key() == Qt.Key.Key_F5:
+            self._load()
+        else:
+            super().keyPressEvent(event)
+
+
+class CFLGameDialog(_CFLFeedLoads, QDialog):
+    """One CFL game: both teams, the score, their records, the status and kickoff. The feed has no
+    box score or play-by-play, which the iPhone's game page leaves out too. F5 brings the score up
+    to date."""
+
+    def __init__(self, game: dict, parent=None):
+        super().__init__(parent)
+        self._game = game
+        self._said_refresh_failed = False
+        self.setWindowTitle(f"{game['name']} - CFL - Sports Scores")
+        self.resize(DIALOG_WIDTH, 300)
+        layout = QVBoxLayout(self)
+        self.summary_label = QLabel()
+        self.summary_label.setWordWrap(True)
+        layout.addWidget(self.summary_label)
+        self.page = _RacingPage("Game", self._load)
+        layout.addWidget(self.page)
+        layout.addWidget(QLabel("The CFL's feed has no box score or play-by-play."))
+        _cfl_buttons(self, layout, self._load)
+        self._show(game)
+        _focus_once_active(self, self.page.focus)
+
+    def _show(self, game):
+        self._game = game
+        summary = cfl.game_summary(game)
+        self.summary_label.setText(summary)
+        self.page.show_table(cfl.GAME_HEADERS, cfl.game_rows(game), context_column=0,
+                             name=f"{game['name']}: {summary}",
+                             description="The CFL's feed has no box score or play-by-play.")
+
+    def _load(self):
+        self._said_refresh_failed = False
+        self._fetch_feed(self._on_loaded,
+                         lambda message: self._page_failed(self.page, _cfl_failure(message, "this game")))
+
+    def _on_loaded(self, feed):
+        feed = feed if isinstance(feed, dict) else {}
+        game = cfl.find_game(feed.get("rounds"), feed.get("squads"), self._game["id"])
+        if game is None:
+            announce("The CFL's feed no longer lists this game.")
+            return
+        self._show(game)
+
+    def keyPressEvent(self, event):
+        if event.key() == Qt.Key.Key_Escape:
+            self.accept()
+        elif event.key() == Qt.Key.Key_F5:
+            self._load()
+        else:
+            super().keyPressEvent(event)
+
+
+class CFLTeamDialog(_CFLFeedLoads, QDialog):
+    """One CFL team's season: its record, where it stands, its next game and every game, the
+    iPhone's Team Hub Info and Schedule for the CFL. Enter on a game opens it."""
+
+    def __init__(self, team_id: str, feed: dict, parent=None):
+        super().__init__(parent)
+        self.team_id = team_id
+        self._feed = feed or {}
+        self._games = []
+        self._said_refresh_failed = False
+        info = cfl.team_info(self._feed.get("rounds"), self._feed.get("squads"), team_id)
+        self.team_name = info["name"] if info else "CFL team"
+        self.setWindowTitle(f"{self.team_name} - CFL - Sports Scores")
+        self.resize(DIALOG_WIDTH, DIALOG_HEIGHT)
+        layout = QVBoxLayout(self)
+        header = QLabel(self.team_name)
+        font = header.font()
+        font.setBold(True)
+        header.setFont(font)
+        layout.addWidget(header)
+        self.summary_label = QLabel()
+        self.summary_label.setWordWrap(True)
+        layout.addWidget(self.summary_label)
+        self.page = _RacingPage(f"{self.team_name} schedule", self._load)
+        layout.addWidget(self.page)
+        _cfl_buttons(self, layout, self._load)
+        self._show(keep_place=False)
+        _focus_once_active(self, self.page.focus)
+
+    def _show(self, keep_place: bool):
+        rounds, squads = self._feed.get("rounds"), self._feed.get("squads")
+        info = cfl.team_info(rounds, squads, self.team_id)
+        if info is None:
+            text = "The CFL's feed doesn't list this team right now."
+            self.summary_label.setText(text)
+            self.page.show_message(text)
+            return
+        summary = cfl.team_summary(info)
+        self.summary_label.setText(summary)
+        self._games = cfl.team_schedule(rounds, self.team_id, squads)
+        if not self._games:
+            self.page.show_message(f"{summary} No games listed this season.")
+            return
+        self.page.show_table(
+            cfl.SCHEDULE_HEADERS, cfl.schedule_rows(self._games, self.team_id), context_column=0,
+            name=f"{self.team_name} schedule: {summary}",
+            description="Every game this season. Press Enter on a game to open it.",
+            start_row=cfl.schedule_start_row(self._games), keep_place=keep_place)
+        self.page.content.itemActivated.connect(self._open_game)
+
+    def _open_game(self, item):
+        row = item.row() if item is not None else -1
+        if 0 <= row < len(self._games):
+            CFLGameDialog(self._games[row], self).exec()
+            self.page.focus()
+
+    def _load(self):
+        self._said_refresh_failed = False
+        self._fetch_feed(self._on_loaded,
+                         lambda message: self._page_failed(self.page, _cfl_failure(message, "this team")))
+
+    def _on_loaded(self, feed):
+        self._feed = feed if isinstance(feed, dict) else {}
+        self._show(keep_place=True)
+
+    def keyPressEvent(self, event):
+        if event.key() == Qt.Key.Key_Escape:
+            self.accept()
+        elif event.key() == Qt.Key.Key_F5:
+            self._load()
         else:
             super().keyPressEvent(event)
 

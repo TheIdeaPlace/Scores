@@ -1,0 +1,1233 @@
+{
+ "about": "tests/unit/test_cfl.py and CFLGridTests.swift hold cfl.py and CFLAPIService.swift to this. The feed is the CFL's own (cflscoreboard.cfl.ca), read from rounds and squads.",
+ "rounds": "cfl_rounds_2026_halftime.json",
+ "squads": "cfl_squads_2026.json",
+ "statuses": [
+  {
+   "case": "scheduled, with the 0-0 the feed sends before kickoff",
+   "game": {
+    "id": 1,
+    "date": "2026-07-03T23:30:00+00:00",
+    "status": "scheduled",
+    "homeSquad": {
+     "id": 83579,
+     "name": "Hamilton Tiger-Cats",
+     "shortName": "HAM",
+     "score": 0
+    },
+    "awaySquad": {
+     "id": 93775,
+     "name": "BC Lions",
+     "shortName": "BC",
+     "score": 0
+    },
+    "activePeriod": null,
+    "clock": null,
+    "winner": null,
+    "isHidden": false
+   },
+   "state": "pre",
+   "detail": "Scheduled",
+   "away_score": null,
+   "home_score": null
+  },
+  {
+   "case": "complete",
+   "game": {
+    "id": 1,
+    "date": "2026-07-03T23:30:00+00:00",
+    "status": "complete",
+    "homeSquad": {
+     "id": 83579,
+     "name": "Hamilton Tiger-Cats",
+     "shortName": "HAM",
+     "score": 41
+    },
+    "awaySquad": {
+     "id": 93775,
+     "name": "BC Lions",
+     "shortName": "BC",
+     "score": 27
+    },
+    "activePeriod": null,
+    "clock": null,
+    "winner": null,
+    "isHidden": false
+   },
+   "state": "post",
+   "detail": "Final",
+   "away_score": 27,
+   "home_score": 41
+  },
+  {
+   "case": "halftime, with the clock set for the third quarter",
+   "game": {
+    "id": 1,
+    "date": "2026-07-03T23:30:00+00:00",
+    "status": "half_time",
+    "homeSquad": {
+     "id": 83579,
+     "name": "Hamilton Tiger-Cats",
+     "shortName": "HAM",
+     "score": 6
+    },
+    "awaySquad": {
+     "id": 93775,
+     "name": "BC Lions",
+     "shortName": "BC",
+     "score": 9
+    },
+    "activePeriod": null,
+    "clock": "15:00",
+    "winner": null,
+    "isHidden": false
+   },
+   "state": "in",
+   "detail": "Halftime",
+   "away_score": 9,
+   "home_score": 6
+  },
+  {
+   "case": "the third quarter as the feed sent it, the clock not yet running",
+   "game": {
+    "id": 1,
+    "date": "2026-07-03T23:30:00+00:00",
+    "status": "third_quarter",
+    "homeSquad": {
+     "id": 83579,
+     "name": "Hamilton Tiger-Cats",
+     "shortName": "HAM",
+     "score": 6
+    },
+    "awaySquad": {
+     "id": 93775,
+     "name": "BC Lions",
+     "shortName": "BC",
+     "score": 9
+    },
+    "activePeriod": 3,
+    "clock": "15:00",
+    "winner": null,
+    "isHidden": false
+   },
+   "state": "in",
+   "detail": "Q3 15:00",
+   "away_score": 9,
+   "home_score": 6
+  },
+  {
+   "case": "the first quarter, with a clock",
+   "game": {
+    "id": 1,
+    "date": "2026-07-03T23:30:00+00:00",
+    "status": "first_quarter",
+    "homeSquad": {
+     "id": 83579,
+     "name": "Hamilton Tiger-Cats",
+     "shortName": "HAM",
+     "score": 7
+    },
+    "awaySquad": {
+     "id": 93775,
+     "name": "BC Lions",
+     "shortName": "BC",
+     "score": 0
+    },
+    "activePeriod": 1,
+    "clock": "4:12",
+    "winner": null,
+    "isHidden": false
+   },
+   "state": "in",
+   "detail": "Q1 4:12",
+   "away_score": 0,
+   "home_score": 7
+  },
+  {
+   "case": "the second quarter",
+   "game": {
+    "id": 1,
+    "date": "2026-07-03T23:30:00+00:00",
+    "status": "second_quarter",
+    "homeSquad": {
+     "id": 83579,
+     "name": "Hamilton Tiger-Cats",
+     "shortName": "HAM",
+     "score": 10
+    },
+    "awaySquad": {
+     "id": 93775,
+     "name": "BC Lions",
+     "shortName": "BC",
+     "score": 3
+    },
+    "activePeriod": 2,
+    "clock": "0:35",
+    "winner": null,
+    "isHidden": false
+   },
+   "state": "in",
+   "detail": "Q2 0:35",
+   "away_score": 3,
+   "home_score": 10
+  },
+  {
+   "case": "the fourth quarter",
+   "game": {
+    "id": 1,
+    "date": "2026-07-03T23:30:00+00:00",
+    "status": "fourth_quarter",
+    "homeSquad": {
+     "id": 83579,
+     "name": "Hamilton Tiger-Cats",
+     "shortName": "HAM",
+     "score": 17
+    },
+    "awaySquad": {
+     "id": 93775,
+     "name": "BC Lions",
+     "shortName": "BC",
+     "score": 10
+    },
+    "activePeriod": 4,
+    "clock": "1:02",
+    "winner": null,
+    "isHidden": false
+   },
+   "state": "in",
+   "detail": "Q4 1:02",
+   "away_score": 10,
+   "home_score": 17
+  },
+  {
+   "case": "overtime, no clock",
+   "game": {
+    "id": 1,
+    "date": "2026-07-03T23:30:00+00:00",
+    "status": "overtime",
+    "homeSquad": {
+     "id": 83579,
+     "name": "Hamilton Tiger-Cats",
+     "shortName": "HAM",
+     "score": 30
+    },
+    "awaySquad": {
+     "id": 93775,
+     "name": "BC Lions",
+     "shortName": "BC",
+     "score": 30
+    },
+    "activePeriod": 5,
+    "clock": "",
+    "winner": null,
+    "isHidden": false
+   },
+   "state": "in",
+   "detail": "OT",
+   "away_score": 30,
+   "home_score": 30
+  },
+  {
+   "case": "playing, a clock and no period",
+   "game": {
+    "id": 1,
+    "date": "2026-07-03T23:30:00+00:00",
+    "status": "playing",
+    "homeSquad": {
+     "id": 83579,
+     "name": "Hamilton Tiger-Cats",
+     "shortName": "HAM",
+     "score": 3
+    },
+    "awaySquad": {
+     "id": 93775,
+     "name": "BC Lions",
+     "shortName": "BC",
+     "score": 0
+    },
+    "activePeriod": null,
+    "clock": "9:58",
+    "winner": null,
+    "isHidden": false
+   },
+   "state": "in",
+   "detail": "9:58",
+   "away_score": 0,
+   "home_score": 3
+  },
+  {
+   "case": "playing, nothing else",
+   "game": {
+    "id": 1,
+    "date": "2026-07-03T23:30:00+00:00",
+    "status": "playing",
+    "homeSquad": {
+     "id": 83579,
+     "name": "Hamilton Tiger-Cats",
+     "shortName": "HAM",
+     "score": 3
+    },
+    "awaySquad": {
+     "id": 93775,
+     "name": "BC Lions",
+     "shortName": "BC",
+     "score": 0
+    },
+    "activePeriod": null,
+    "clock": null,
+    "winner": null,
+    "isHidden": false
+   },
+   "state": "in",
+   "detail": "In Progress",
+   "away_score": 0,
+   "home_score": 3
+  },
+  {
+   "case": "a status never seen, with no clock",
+   "game": {
+    "id": 1,
+    "date": "2026-07-03T23:30:00+00:00",
+    "status": "postponed",
+    "homeSquad": {
+     "id": 83579,
+     "name": "Hamilton Tiger-Cats",
+     "shortName": "HAM",
+     "score": 0
+    },
+    "awaySquad": {
+     "id": 93775,
+     "name": "BC Lions",
+     "shortName": "BC",
+     "score": 0
+    },
+    "activePeriod": null,
+    "clock": null,
+    "winner": null,
+    "isHidden": false
+   },
+   "state": "pre",
+   "detail": "Postponed",
+   "away_score": null,
+   "home_score": null
+  },
+  {
+   "case": "a status never seen, with a period",
+   "game": {
+    "id": 1,
+    "date": "2026-07-03T23:30:00+00:00",
+    "status": "end_of_period",
+    "homeSquad": {
+     "id": 83579,
+     "name": "Hamilton Tiger-Cats",
+     "shortName": "HAM",
+     "score": 7
+    },
+    "awaySquad": {
+     "id": 93775,
+     "name": "BC Lions",
+     "shortName": "BC",
+     "score": 7
+    },
+    "activePeriod": 2,
+    "clock": "0:00",
+    "winner": null,
+    "isHidden": false
+   },
+   "state": "in",
+   "detail": "End of period",
+   "away_score": 7,
+   "home_score": 7
+  }
+ ],
+ "weeks": [
+  {
+   "case": "the game at halftime keeps its week current after the week's end",
+   "rounds": "cfl_rounds_2026_halftime.json",
+   "now": "2026-11-08T00:53:00Z",
+   "index": null,
+   "expect_index": 25,
+   "label": "Conference Finals",
+   "count": 27,
+   "is_current": true,
+   "games": [
+    {
+     "id": "13463064",
+     "date": "2026-11-07T20:00:00Z",
+     "name": "Winnipeg Blue Bombers at Montreal Alouettes",
+     "away": [
+      "110380",
+      "WPG",
+      23,
+      "9-9"
+     ],
+     "home": [
+      "86680",
+      "MTL",
+      33,
+      "14-4"
+     ],
+     "state": "post",
+     "detail": "Final",
+     "season_type": 3
+    },
+    {
+     "id": "13463065",
+     "date": "2026-11-07T23:30:00Z",
+     "name": "BC Lions at Edmonton Elks",
+     "away": [
+      "93775",
+      "BC",
+      9,
+      "10-8"
+     ],
+     "home": [
+      "114347",
+      "EDM",
+      6,
+      "13-5"
+     ],
+     "state": "in",
+     "detail": "Halftime",
+     "season_type": 3
+    }
+   ]
+  },
+  {
+   "case": "the game in the third quarter, the same",
+   "rounds": "cfl_rounds_2026_third_quarter.json",
+   "now": "2026-11-08T01:01:00Z",
+   "index": null,
+   "expect_index": 25,
+   "label": "Conference Finals",
+   "count": 27,
+   "is_current": true,
+   "games": [
+    {
+     "id": "13463064",
+     "date": "2026-11-07T20:00:00Z",
+     "name": "Winnipeg Blue Bombers at Montreal Alouettes",
+     "away": [
+      "110380",
+      "WPG",
+      23,
+      "9-9"
+     ],
+     "home": [
+      "86680",
+      "MTL",
+      33,
+      "14-4"
+     ],
+     "state": "post",
+     "detail": "Final",
+     "season_type": 3
+    },
+    {
+     "id": "13463065",
+     "date": "2026-11-07T23:30:00Z",
+     "name": "BC Lions at Edmonton Elks",
+     "away": [
+      "93775",
+      "BC",
+      9,
+      "10-8"
+     ],
+     "home": [
+      "114347",
+      "EDM",
+      6,
+      "13-5"
+     ],
+     "state": "in",
+     "detail": "Q3 15:00",
+     "season_type": 3
+    }
+   ]
+  },
+  {
+   "case": "the morning of the conference finals",
+   "rounds": "cfl_rounds_2026_halftime.json",
+   "now": "2026-11-07T12:00:00Z",
+   "index": null,
+   "expect_index": 25,
+   "label": "Conference Finals",
+   "count": 27,
+   "is_current": true,
+   "games": [
+    {
+     "id": "13463064",
+     "date": "2026-11-07T20:00:00Z",
+     "name": "Winnipeg Blue Bombers at Montreal Alouettes",
+     "away": [
+      "110380",
+      "WPG",
+      23,
+      "9-9"
+     ],
+     "home": [
+      "86680",
+      "MTL",
+      33,
+      "14-4"
+     ],
+     "state": "post",
+     "detail": "Final",
+     "season_type": 3
+    },
+    {
+     "id": "13463065",
+     "date": "2026-11-07T23:30:00Z",
+     "name": "BC Lions at Edmonton Elks",
+     "away": [
+      "93775",
+      "BC",
+      9,
+      "10-8"
+     ],
+     "home": [
+      "114347",
+      "EDM",
+      6,
+      "13-5"
+     ],
+     "state": "in",
+     "detail": "Halftime",
+     "season_type": 3
+    }
+   ]
+  },
+  {
+   "case": "before the season",
+   "rounds": "cfl_rounds_2026_halftime.json",
+   "now": "2026-05-01T12:00:00Z",
+   "index": null,
+   "expect_index": 0,
+   "label": "Preseason Week 1",
+   "count": 27,
+   "is_current": true,
+   "games": [
+    {
+     "id": "13419665",
+     "date": "2026-05-18T19:00:00Z",
+     "name": "Saskatchewan Roughriders at Calgary Stampeders",
+     "away": [
+      "106752",
+      "SSK",
+      15,
+      "10-8"
+     ],
+     "home": [
+      "112939",
+      "CGY",
+      20,
+      "9-9"
+     ],
+     "state": "post",
+     "detail": "Final",
+     "season_type": 1
+    }
+   ]
+  },
+  {
+   "case": "the Grey Cup, its home team not yet known",
+   "rounds": "cfl_rounds_2026_halftime.json",
+   "now": "2026-11-08T00:53:00Z",
+   "index": 26,
+   "expect_index": 26,
+   "label": "113th Grey Cup",
+   "count": 27,
+   "is_current": false,
+   "games": [
+    {
+     "id": "13463068",
+     "date": "2026-11-15T23:00:00Z",
+     "name": "Montreal Alouettes at TBD",
+     "away": [
+      "86680",
+      "MTL",
+      null,
+      "14-4"
+     ],
+     "home": [
+      "0",
+      "TBD",
+      null,
+      null
+     ],
+     "state": "pre",
+     "detail": "Scheduled",
+     "season_type": 3
+    }
+   ]
+  },
+  {
+   "case": "Week 1",
+   "rounds": "cfl_rounds_2026_halftime.json",
+   "now": "2026-11-08T00:53:00Z",
+   "index": 3,
+   "expect_index": 3,
+   "label": "Week 1",
+   "count": 27,
+   "is_current": false,
+   "games": [
+    {
+     "id": "13419674",
+     "date": "2026-06-04T23:30:00Z",
+     "name": "Montreal Alouettes at Hamilton Tiger-Cats",
+     "away": [
+      "86680",
+      "MTL",
+      30,
+      "14-4"
+     ],
+     "home": [
+      "83579",
+      "HAM",
+      27,
+      "6-12"
+     ],
+     "state": "post",
+     "detail": "Final",
+     "season_type": 2
+    },
+    {
+     "id": "13419675",
+     "date": "2026-06-06T01:00:00Z",
+     "name": "Winnipeg Blue Bombers at Calgary Stampeders",
+     "away": [
+      "110380",
+      "WPG",
+      30,
+      "9-9"
+     ],
+     "home": [
+      "112939",
+      "CGY",
+      28,
+      "9-9"
+     ],
+     "state": "post",
+     "detail": "Final",
+     "season_type": 2
+    },
+    {
+     "id": "13419676",
+     "date": "2026-06-06T23:00:00Z",
+     "name": "Edmonton Elks at Ottawa RedBlacks",
+     "away": [
+      "114347",
+      "EDM",
+      29,
+      "13-5"
+     ],
+     "home": [
+      "88019",
+      "OTT",
+      21,
+      "1-17"
+     ],
+     "state": "post",
+     "detail": "Final",
+     "season_type": 2
+    }
+   ]
+  },
+  {
+   "case": "past the last week is the last",
+   "rounds": "cfl_rounds_2026_halftime.json",
+   "now": "2026-11-08T00:53:00Z",
+   "index": 99,
+   "expect_index": 26,
+   "label": "113th Grey Cup",
+   "count": 27,
+   "is_current": false,
+   "games": [
+    {
+     "id": "13463068",
+     "date": "2026-11-15T23:00:00Z",
+     "name": "Montreal Alouettes at TBD",
+     "away": [
+      "86680",
+      "MTL",
+      null,
+      "14-4"
+     ],
+     "home": [
+      "0",
+      "TBD",
+      null,
+      null
+     ],
+     "state": "pre",
+     "detail": "Scheduled",
+     "season_type": 3
+    }
+   ]
+  },
+  {
+   "case": "before the first is the first",
+   "rounds": "cfl_rounds_2026_halftime.json",
+   "now": "2026-11-08T00:53:00Z",
+   "index": -5,
+   "expect_index": 0,
+   "label": "Preseason Week 1",
+   "count": 27,
+   "is_current": false,
+   "games": [
+    {
+     "id": "13419665",
+     "date": "2026-05-18T19:00:00Z",
+     "name": "Saskatchewan Roughriders at Calgary Stampeders",
+     "away": [
+      "106752",
+      "SSK",
+      15,
+      "10-8"
+     ],
+     "home": [
+      "112939",
+      "CGY",
+      20,
+      "9-9"
+     ],
+     "state": "post",
+     "detail": "Final",
+     "season_type": 1
+    }
+   ]
+  }
+ ],
+ "standings": [
+  {
+   "name": "East Division",
+   "entries": [
+    [
+     1,
+     "86680",
+     "MTL",
+     "14-4"
+    ],
+    [
+     2,
+     "122345",
+     "TOR",
+     "9-9"
+    ],
+    [
+     3,
+     "83579",
+     "HAM",
+     "6-12"
+    ],
+    [
+     4,
+     "88019",
+     "OTT",
+     "1-17"
+    ]
+   ]
+  },
+  {
+   "name": "West Division",
+   "entries": [
+    [
+     1,
+     "114347",
+     "EDM",
+     "13-5"
+    ],
+    [
+     2,
+     "93775",
+     "BC",
+     "10-8"
+    ],
+    [
+     3,
+     "106752",
+     "SSK",
+     "10-8"
+    ],
+    [
+     4,
+     "112939",
+     "CGY",
+     "9-9"
+    ],
+    [
+     5,
+     "110380",
+     "WPG",
+     "9-9"
+    ]
+   ]
+  }
+ ],
+ "standings_with_draws": {
+  "squads": [
+   {
+    "id": 0,
+    "name": "TBD",
+    "abbreviation": "TBD",
+    "wins": 0,
+    "draw": 0,
+    "loss": 0
+   },
+   {
+    "id": 1,
+    "name": "Toronto Argonauts",
+    "abbreviation": "TOR",
+    "wins": 5,
+    "draw": 1,
+    "loss": 4
+   },
+   {
+    "id": 2,
+    "name": "Hamilton Tiger-Cats",
+    "abbreviation": "HAM",
+    "wins": 5,
+    "draw": 1,
+    "loss": 4
+   },
+   {
+    "id": 3,
+    "name": "Montreal Alouettes",
+    "abbreviation": "MTL",
+    "wins": 5,
+    "draw": 0,
+    "loss": 5
+   },
+   {
+    "id": 4,
+    "name": "BC Lions",
+    "abbreviation": "BC",
+    "wins": 0,
+    "draw": 0,
+    "loss": 0
+   }
+  ],
+  "groups": [
+   {
+    "name": "East Division",
+    "entries": [
+     [
+      1,
+      "2",
+      "HAM",
+      "5-4-1"
+     ],
+     [
+      2,
+      "1",
+      "TOR",
+      "5-4-1"
+     ],
+     [
+      3,
+      "3",
+      "MTL",
+      "5-5"
+     ]
+    ]
+   },
+   {
+    "name": "West Division",
+    "entries": [
+     [
+      1,
+      "4",
+      "BC",
+      "0-0"
+     ]
+    ]
+   }
+  ]
+ },
+ "teams": [
+  [
+   "93775",
+   "BC Lions",
+   "BC"
+  ],
+  [
+   "112939",
+   "Calgary Stampeders",
+   "CGY"
+  ],
+  [
+   "114347",
+   "Edmonton Elks",
+   "EDM"
+  ],
+  [
+   "83579",
+   "Hamilton Tiger-Cats",
+   "HAM"
+  ],
+  [
+   "86680",
+   "Montreal Alouettes",
+   "MTL"
+  ],
+  [
+   "88019",
+   "Ottawa RedBlacks",
+   "OTT"
+  ],
+  [
+   "106752",
+   "Saskatchewan Roughriders",
+   "SSK"
+  ],
+  [
+   "122345",
+   "Toronto Argonauts",
+   "TOR"
+  ],
+  [
+   "110380",
+   "Winnipeg Blue Bombers",
+   "WPG"
+  ]
+ ],
+ "schedules": [
+  {
+   "team_id": "114347",
+   "games": [
+    [
+     "13419668",
+     "post",
+     "Final",
+     34,
+     16
+    ],
+    [
+     "13419673",
+     "post",
+     "Final",
+     21,
+     18
+    ],
+    [
+     "13419676",
+     "post",
+     "Final",
+     29,
+     21
+    ],
+    [
+     "13419682",
+     "post",
+     "Final",
+     29,
+     32
+    ],
+    [
+     "13419684",
+     "post",
+     "Final",
+     23,
+     18
+    ],
+    [
+     "13419690",
+     "post",
+     "Final",
+     24,
+     36
+    ],
+    [
+     "13419692",
+     "post",
+     "Final",
+     17,
+     40
+    ],
+    [
+     "13419696",
+     "post",
+     "Final",
+     17,
+     19
+    ],
+    [
+     "13419700",
+     "post",
+     "Final",
+     36,
+     34
+    ],
+    [
+     "13419707",
+     "post",
+     "Final",
+     28,
+     26
+    ],
+    [
+     "13419710",
+     "post",
+     "Final",
+     30,
+     48
+    ],
+    [
+     "13419714",
+     "post",
+     "Final",
+     12,
+     42
+    ],
+    [
+     "13419717",
+     "post",
+     "Final",
+     19,
+     22
+    ],
+    [
+     "13419727",
+     "post",
+     "Final",
+     38,
+     28
+    ],
+    [
+     "13419730",
+     "post",
+     "Final",
+     16,
+     53
+    ],
+    [
+     "13419733",
+     "post",
+     "Final",
+     19,
+     24
+    ],
+    [
+     "13419738",
+     "post",
+     "Final",
+     35,
+     37
+    ],
+    [
+     "13419743",
+     "post",
+     "Final",
+     27,
+     12
+    ],
+    [
+     "13419748",
+     "post",
+     "Final",
+     27,
+     35
+    ],
+    [
+     "13419754",
+     "post",
+     "Final",
+     9,
+     16
+    ],
+    [
+     "13463065",
+     "in",
+     "Halftime",
+     9,
+     6
+    ]
+   ]
+  },
+  {
+   "team_id": "88019",
+   "games": [
+    [
+     "13419666",
+     "post",
+     "Final",
+     27,
+     12
+    ],
+    [
+     "13419670",
+     "post",
+     "Final",
+     3,
+     27
+    ],
+    [
+     "13419676",
+     "post",
+     "Final",
+     29,
+     21
+    ],
+    [
+     "13419681",
+     "post",
+     "Final",
+     44,
+     24
+    ],
+    [
+     "13419687",
+     "post",
+     "Final",
+     35,
+     37
+    ],
+    [
+     "13419689",
+     "post",
+     "Final",
+     27,
+     22
+    ],
+    [
+     "13419692",
+     "post",
+     "Final",
+     17,
+     40
+    ],
+    [
+     "13419699",
+     "post",
+     "Final",
+     36,
+     34
+    ],
+    [
+     "13419705",
+     "post",
+     "Final",
+     34,
+     13
+    ],
+    [
+     "13419709",
+     "post",
+     "Final",
+     20,
+     42
+    ],
+    [
+     "13419713",
+     "post",
+     "Final",
+     21,
+     33
+    ],
+    [
+     "13419716",
+     "post",
+     "Final",
+     16,
+     46
+    ],
+    [
+     "13419723",
+     "post",
+     "Final",
+     45,
+     24
+    ],
+    [
+     "13419728",
+     "post",
+     "Final",
+     23,
+     26
+    ],
+    [
+     "13419734",
+     "post",
+     "Final",
+     38,
+     40
+    ],
+    [
+     "13419737",
+     "post",
+     "Final",
+     45,
+     31
+    ],
+    [
+     "13419739",
+     "post",
+     "Final",
+     34,
+     16
+    ],
+    [
+     "13419744",
+     "post",
+     "Final",
+     20,
+     41
+    ],
+    [
+     "13419747",
+     "post",
+     "Final",
+     39,
+     40
+    ],
+    [
+     "13419753",
+     "post",
+     "Final",
+     22,
+     35
+    ]
+   ]
+  }
+ ],
+ "team_info": [
+  {
+   "team_id": "114347",
+   "now": "2026-11-08T00:53:00Z",
+   "name": "Edmonton Elks",
+   "record": "13-5",
+   "standing": "1st in West Division",
+   "next_game": null
+  },
+  {
+   "team_id": "86680",
+   "now": "2026-11-08T00:53:00Z",
+   "name": "Montreal Alouettes",
+   "record": "14-4",
+   "standing": "1st in East Division",
+   "next_game": "13463068"
+  },
+  {
+   "team_id": "88019",
+   "now": "2026-11-08T00:53:00Z",
+   "name": "Ottawa RedBlacks",
+   "record": "1-17",
+   "standing": "4th in East Division",
+   "next_game": null
+  },
+  {
+   "team_id": "86680",
+   "now": "2026-11-16T00:00:00Z",
+   "name": "Montreal Alouettes",
+   "record": "14-4",
+   "standing": "1st in East Division",
+   "next_game": null
+  }
+ ],
+ "failed": {
+  "scores": "The CFL isn't providing scores right now. Try again in a minute.",
+  "standings": "The CFL isn't providing standings right now. Try again in a minute.",
+  "this team": "The CFL isn't providing this team right now. Try again in a minute.",
+  "the schedule": "The CFL isn't providing the schedule right now. Try again in a minute."
+ }
+}

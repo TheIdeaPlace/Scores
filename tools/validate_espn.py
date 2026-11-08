@@ -2315,6 +2315,57 @@ def check_cfl(http, report):
             report.warn("CFL (iPhone)", name, "empty, possibly the off-season", url)
         else:
             report.ok("CFL (iPhone)", name, "as expected", url)
+    check_cfl_app(report)
+
+
+def check_cfl_app(report):
+    """The CFL as both apps read it, through Windows's own request and cfl.py, which the iPhone's
+    CFLFeed matches: the current week, every game's status, and the teams' divisions."""
+    import cfl
+    import espn_api
+
+    try:
+        feed = espn_api.get_cfl_feed()
+    except Exception as e:
+        report.fail("CFL", "App: CFL feed", f"raised {type(e).__name__}: {e}")
+        return
+    rounds, squads = feed["rounds"], feed["squads"]
+    if not rounds:
+        report.warn("CFL", "App: CFL week", "no weeks listed, possibly the off-season", cfl.ROUNDS_URL)
+    else:
+        unreadable = [str(r.get("name")) for r in rounds if isinstance(r, dict) and cfl.parse_date(r.get("endDate")) is None]
+        week = cfl.parse_round(rounds, squads)
+        if unreadable:
+            # Which week is current goes by each week's end.
+            report.fail("CFL", "App: CFL week", f"weeks with no end date to read: {', '.join(unreadable[:5])}",
+                        cfl.ROUNDS_URL)
+        elif not week["label"]:
+            report.fail("CFL", "App: CFL week", "the current week has no name", cfl.ROUNDS_URL)
+        else:
+            report.ok("CFL", "App: CFL week", f"{cfl.week_summary(week)}, of {week['count']} weeks", cfl.ROUNDS_URL)
+        games = cfl.all_games(rounds, squads)
+        seen = {g.get("status") for r in rounds if isinstance(r, dict)
+                for g in (r.get("tournaments") or []) if isinstance(g, dict) and isinstance(g.get("status"), str)}
+        new = sorted(str(s) for s in seen - cfl.KNOWN_STATUSES)
+        if new:
+            # Read by whether it has a period or a clock; worth adding to cfl.game_status and the iPhone's.
+            report.warn("CFL", "App: CFL game status", f"statuses never seen before: {', '.join(new)}", cfl.ROUNDS_URL)
+        elif not games:
+            report.warn("CFL", "App: CFL game status", "no games listed", cfl.ROUNDS_URL)
+        else:
+            report.ok("CFL", "App: CFL game status", f"{len(games)} games, statuses {', '.join(sorted(seen))}",
+                      cfl.ROUNDS_URL)
+    teams = cfl.teams(squads)
+    unknown = sorted(t["abbreviation"] for t in teams if t["abbreviation"] not in cfl.EAST_TEAMS | cfl.WEST_TEAMS)
+    if not teams:
+        report.warn("CFL", "App: CFL teams", "no teams listed, possibly the off-season", cfl.SQUADS_URL)
+    elif unknown:
+        # A team that isn't known to be West is put in the East, on both apps.
+        report.fail("CFL", "App: CFL teams", f"teams in no known division: {', '.join(unknown)}", cfl.SQUADS_URL)
+    else:
+        groups = cfl.standings(squads)
+        report.ok("CFL", "App: CFL teams",
+                  ", ".join(f"{g['name']}: {len(g['entries'])}" for g in groups), cfl.SQUADS_URL)
 
 
 # How many home teams the Venues list should find: a little under what one month of each

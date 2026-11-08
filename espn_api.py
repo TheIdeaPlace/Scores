@@ -6,6 +6,7 @@ from datetime import datetime, timezone
 from exceptions import ApiError
 from itertools import islice
 import racing
+import cfl
 import favorite_card
 from game_labels import (best_odds, broadcast_names, format_height, format_weight,
                          injured_player_count, leader_display_value, local_schedule_datetime,
@@ -3835,6 +3836,32 @@ def get_racing_standings(series_key):
         return []
     _listed(answer, "children", STANDINGS_UNAVAILABLE)
     return racing.parse_standings(answer)
+
+
+# ─────────────────────────── CFL ─────────────────────────────────────────────
+# Not ESPN: its CFL scoreboard stopped at 2022. The CFL's own scoreboard feed, the same two files
+# the iPhone's CFLAPIService reads. cfl.py reads them; this only fetches them.
+
+def _cfl_list(url):
+    try:
+        # The feed serves browser-like clients reliably, as the iPhone found.
+        resp = _http_get(url, headers={"User-Agent": "Mozilla/5.0"})
+        answer = resp.json() if resp.status_code == 200 else None
+    except (requests.RequestException, ValueError) as e:
+        print(f"{url}: {e}")
+        raise ApiError(cfl.unavailable("scores")) from e
+    if not isinstance(answer, list):
+        # A file that's gone (403 or 404 from its storage) is the feed moving, not the CFL
+        # having nothing: an empty list is that.
+        print(f"{url}: {resp.status_code}, not an answer")
+        raise ApiError(cfl.unavailable("scores"))
+    return answer
+
+
+def get_cfl_feed():
+    """The season's weeks and games (rounds.json) and the teams' records (squads.json), as
+    {"rounds": [...], "squads": [...]}. Either failing raises ApiError."""
+    return {"rounds": _cfl_list(cfl.ROUNDS_URL), "squads": _cfl_list(cfl.SQUADS_URL)}
 
 
 # ─────────────────────────── World Cup ───────────────────────────────────────

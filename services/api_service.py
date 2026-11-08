@@ -172,6 +172,10 @@ class ApiService:
         return ApiService._call(espn_api.get_racing_standings, series)
 
     @staticmethod
+    def get_cfl_feed() -> Dict:
+        return ApiService._call(espn_api.get_cfl_feed)
+
+    @staticmethod
     def get_world_cup_standings(league: str) -> List[Dict]:
         return ApiService._call(espn_api.get_world_cup_standings, league)
 

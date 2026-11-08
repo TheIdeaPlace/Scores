@@ -87,6 +87,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   sessions with their start times, the season's schedule with every winner, the drivers' standings
   (and Formula 1's constructors'), and news. Every table has the three views, and a request ESPN doesn't
   answer says so, with Enter to try again. The nightly data check covers all four requests. (Part of #195)
+- **Windows: the CFL.** From the CFL's own scoreboard feed, which the iPhone reads, since ESPN's CFL
+  scoreboard stopped in 2022. **CFL - Canadian Football League** on the home screen opens with tabs for the
+  week's games (the current week, with Alt+P and Alt+N for the week before and after), the East and West
+  standings, and the teams. Enter on a game opens it: both teams, the score, their records, the status and
+  the kickoff; the feed has no box score or play-by-play. Enter on a team opens its season, with its record,
+  its place in its division, its next game and every game it plays. Every table has the three views, and a
+  request the CFL doesn't answer says so, with Enter to try again. The nightly data check now reads the
+  feed as the apps do: the current week, every game's status, and each team's division. (Fixes #195)
 - **iPhone: a Monitoring section at the top of Live Scores, as on Windows.** A **Monitor** VoiceOver action
   (and context menu item) on a game in Live Scores adds it. Its row under Monitoring reads as it does below,
   with the sport after it, and the game stays in its own section, which says it's monitored. Rows are in the
@@ -141,6 +149,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   since ESPN won't send them 20. If ESPN doesn't answer, the screen says so (#198).
 
 ### Fixed
+- **iPhone: a CFL game being played.** It said Scheduled, with no score, all game long, and its team's
+  schedule did too: the feed names the quarter ("third_quarter") or halftime, never "playing", which was
+  all the app knew. It now says the quarter and clock ("Q3 4:12") or Halftime, with the score, in the
+  scores and on a team's schedule.
+- **iPhone: the CFL's current week during the week's last game.** A week ends at 23:59 UTC on its last
+  day, but its last game kicks off as late as 23:30 UTC, so all evening in North America the scores showed
+  next week's games. A week with a game under way is now the current one. A Grey Cup opponent not yet
+  known (TBD) no longer shows a 0-0 record either.
 - **Liga MX leaders follow the torneo being played.** From January, Statistics shows the Torneo Clausura's
   leaders rather than the Apertura's, and the season line names the torneo, for example "2026-27 Liga BBVA
   MX Torneo Apertura". Until anyone has played in the Clausura, it shows the Apertura. Both apps choose
