@@ -149,6 +149,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   since ESPN won't send them 20. If ESPN doesn't answer, the screen says so (#198).
 
 ### Fixed
+- **Windows: Live Scores headings say how many games they hold,** as the iPhone's do: "=== LIVE GAMES, 5 ===",
+  "--- NHL, 3 ---", "=== MONITORING, 2 ===". You stay on a heading when a refresh changes its count.
 - **iPhone: a CFL game being played.** It said Scheduled, with no score, all game long, and its team's
   schedule did too: the feed names the quarter ("third_quarter") or halftime, never "playing", which was
   all the app knew. It now says the quarter and clock ("Q3 4:12") or Halftime, with the score, in the
