@@ -6,7 +6,8 @@ its flagship station's stream. Everything is a web page the browser opens; the
 person signs in there if the service asks. Nothing is streamed or embedded here.
 
 The file is keyed by ESPN team id within a table. College teams share one table,
-since a school's radio network carries its football and its basketball.
+since a school's radio network carries its football and its basketball. A team's
+"note" is for whoever keeps the file (blackouts, station changes) and isn't read here.
 
 The iPhone reads the same file (a copy, held equal by
 tests/unit/test_radio_links_data.py) through `RadioLinks.swift`, and both are held
