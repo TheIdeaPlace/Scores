@@ -266,14 +266,30 @@ MONITORING_HEADER = "=== MONITORING ==="
 MONITORING_EMPTY = "=== MONITORING: none. Alt+M on a game adds it here ==="
 
 
+LIVE_HEADER = "live_header"  # a Live Scores heading's data: which heading, not its count
+
+
 def _row_key(data):
     """What a Live Scores row is, to find it again after the list is rebuilt: a game's id,
-    with a Monitoring row told apart from the game's own; the section header; or None."""
+    with a Monitoring row told apart from the game's own; the Monitoring header; another
+    heading, by which one it is, since its text carries a count that changes; or None."""
     if data == MONITORING_HEADER:
         return MONITORING_HEADER
+    if isinstance(data, dict) and data.get(LIVE_HEADER):
+        return (LIVE_HEADER, data[LIVE_HEADER])
     if isinstance(data, dict) and data.get("id"):
         return ("monitoring", data["id"]) if data.get(MONITOR_ROW) else data["id"]
     return None
+
+
+def _live_heading(text, count, key, color, marker="==="):
+    """A Live Scores heading with its count after it, as the iPhone has: "=== LIVE GAMES, 5 ===",
+    "--- NHL, 3 ---". The count tells someone in one arrow whether a section is worth entering.
+    Its data says which heading it is, so a refresh finds it again when the count changes."""
+    item = QListWidgetItem(f"{marker} {text}, {count} {marker}")
+    item.setData(Qt.ItemDataRole.UserRole, {LIVE_HEADER: key})
+    item.setBackground(color)
+    return item
 
 
 def _time_valid(game):
@@ -1274,7 +1290,8 @@ class LiveScoresView(BaseView):
                 announce(f"{game.get('name') or 'Game'} removed from monitoring")
                 below = lst.item(lst.currentRow() + 1)
                 below_key = _row_key(below.data(Qt.ItemDataRole.UserRole)) if below else None
-                is_monitoring_row = isinstance(below_key, tuple)
+                # A Monitoring row's key is ("monitoring", id); a heading's is (LIVE_HEADER, ...).
+                is_monitoring_row = isinstance(below_key, tuple) and below_key[0] == "monitoring"
                 target = below_key if is_monitoring_row else MONITORING_HEADER
             else:
                 announce("Removed from monitoring")
@@ -1424,8 +1441,10 @@ class LiveScoresView(BaseView):
             self.live_scores_list = visible
 
         def row_key(item):
-            data = item.data(Qt.ItemDataRole.UserRole)
-            return _row_key(data) if isinstance(data, dict) else item.text()
+            # A row's own key when it has one (games, headings, the Monitoring header, whose
+            # text carries a count); otherwise its text.
+            key = _row_key(item.data(Qt.ItemDataRole.UserRole))
+            return key if key is not None else item.text()
 
         def game_rows(lst):
             last = lst.count() - 1
@@ -1565,9 +1584,8 @@ class LiveScoresView(BaseView):
             upcoming_games.sort(key=lambda g: g.get('start_time', ''))
             
             if golf:
-                section_header = QListWidgetItem("=== GOLF LIVE ===")
-                section_header.setBackground(QColor(200, 255, 200))
-                self.live_scores_list.addItem(section_header)
+                self.live_scores_list.addItem(
+                    _live_heading("GOLF LIVE", len(golf), "golf", QColor(200, 255, 200)))
                 for t in golf:
                     leaders = "; ".join(f"{pos}. {name}, {score}" for pos, name, score in t["leaders"])
                     text = f"{t['tour_name']}: {t['name']}, {t['status']}"
@@ -1592,9 +1610,8 @@ class LiveScoresView(BaseView):
 
             # Section 1: Live Games
             if live_games:
-                section_header = QListWidgetItem("=== LIVE GAMES ===")
-                section_header.setBackground(QColor(200, 255, 200))  # Light green background
-                self.live_scores_list.addItem(section_header)
+                self.live_scores_list.addItem(
+                    _live_heading("LIVE GAMES", len(live_games), "live", QColor(200, 255, 200)))
                 
                 # Group live games by league for better organization
                 games_by_league = {}
@@ -1605,10 +1622,9 @@ class LiveScoresView(BaseView):
                     games_by_league[league].append(game)
                 
                 for league in sorted(games_by_league.keys()):
-                    # Add league header
-                    league_item = QListWidgetItem(f"--- {league} ---")
-                    league_item.setBackground(QColor(240, 240, 240))
-                    self.live_scores_list.addItem(league_item)
+                    self.live_scores_list.addItem(_live_heading(
+                        league, len(games_by_league[league]), f"live:{league}",
+                        QColor(240, 240, 240), marker="---"))
                     
                     for game in games_by_league[league]:
                         game_id = game.get("id", "")
@@ -1650,9 +1666,8 @@ class LiveScoresView(BaseView):
 
             # Section 2: Upcoming Games
             if upcoming_games:
-                section_header = QListWidgetItem("=== UPCOMING GAMES ===")
-                section_header.setBackground(QColor(255, 255, 200))  # Light yellow background
-                self.live_scores_list.addItem(section_header)
+                self.live_scores_list.addItem(
+                    _live_heading("UPCOMING GAMES", len(upcoming_games), "upcoming", QColor(255, 255, 200)))
                 
                 # Group upcoming games by league
                 upcoming_by_league = {}
@@ -1663,9 +1678,9 @@ class LiveScoresView(BaseView):
                     upcoming_by_league[league].append(game)
                 
                 for league in sorted(upcoming_by_league.keys()):
-                    league_item = QListWidgetItem(f"--- {league} ---")
-                    league_item.setBackground(QColor(240, 240, 240))
-                    self.live_scores_list.addItem(league_item)
+                    self.live_scores_list.addItem(_live_heading(
+                        league, len(upcoming_by_league[league]), f"upcoming:{league}",
+                        QColor(240, 240, 240), marker="---"))
                     
                     for game in upcoming_by_league[league]:
                         display_text = self._format_game_display(game)
@@ -1679,9 +1694,8 @@ class LiveScoresView(BaseView):
 
             # Section 3: Completed Games
             if completed_games:
-                section_header = QListWidgetItem("=== COMPLETED GAMES ===")
-                section_header.setBackground(QColor(220, 220, 220))  # Light gray background
-                self.live_scores_list.addItem(section_header)
+                self.live_scores_list.addItem(
+                    _live_heading("COMPLETED GAMES", len(completed_games), "completed", QColor(220, 220, 220)))
                 
                 # Group completed games by league
                 completed_by_league = {}
@@ -1692,9 +1706,9 @@ class LiveScoresView(BaseView):
                     completed_by_league[league].append(game)
                 
                 for league in sorted(completed_by_league.keys()):
-                    league_item = QListWidgetItem(f"--- {league} ---")
-                    league_item.setBackground(QColor(240, 240, 240))
-                    self.live_scores_list.addItem(league_item)
+                    self.live_scores_list.addItem(_live_heading(
+                        league, len(completed_by_league[league]), f"completed:{league}",
+                        QColor(240, 240, 240), marker="---"))
                     
                     for game in completed_by_league[league]:
                         display_text = self._format_game_display(game)
@@ -1731,7 +1745,8 @@ class LiveScoresView(BaseView):
                 monitor_data = dict(data)
                 monitor_data[MONITOR_ROW] = True
                 rows.append((f"{text} | {_WC_DISPLAY_NAMES.get(data['league'], data['league'])}", monitor_data))
-        header = QListWidgetItem(MONITORING_HEADER if rows else MONITORING_EMPTY)
+        # The count, as the other headings have it; the data stays MONITORING_HEADER.
+        header = QListWidgetItem(f"=== MONITORING, {len(rows)} ===" if rows else MONITORING_EMPTY)
         header.setData(Qt.ItemDataRole.UserRole, MONITORING_HEADER)
         header.setBackground(QColor(200, 220, 255))
         lst.insertItem(0, header)
