@@ -262,11 +262,26 @@ RETRY_ROW = "__retry__"
 
 
 MONITOR_ROW = "monitor_row"  # in a Monitoring row's data, which is otherwise the game's
-MONITORING_HEADER = "=== MONITORING ==="
-MONITORING_EMPTY = "=== MONITORING: none. Alt+M on a game adds it here ==="
+# The Monitoring heading's data, which finds it again after a rebuild; never shown.
+MONITORING_HEADER = "__monitoring_header__"
+# Its text when nothing is monitored. A heading says only words: no "===" or "---" around
+# it, which a screen reader reads aloud as "equals equals equals". Bold sets it apart.
+MONITORING_EMPTY = "Monitoring: none. Alt+M on a game adds it here"
 
 
 LIVE_HEADER = "live_header"  # a Live Scores heading's data: which heading, not its count
+
+# What a scoring play's row starts with, in Plays. Words, never an emoji or a symbol.
+SCORING_PLAY_PREFIX = "Scoring play: "
+
+
+def _bold(item):
+    """Make a list row bold, the way a heading or section row is set apart from the rows
+    around it. Never with characters like "---", which a screen reader speaks."""
+    font = item.font()
+    font.setBold(True)
+    item.setFont(font)
+    return item
 
 
 def _row_key(data):
@@ -282,11 +297,13 @@ def _row_key(data):
     return None
 
 
-def _live_heading(text, count, key, color, marker="==="):
-    """A Live Scores heading with its count after it, as the iPhone has: "=== LIVE GAMES, 5 ===",
-    "--- NHL, 3 ---". The count tells someone in one arrow whether a section is worth entering.
-    Its data says which heading it is, so a refresh finds it again when the count changes."""
-    item = QListWidgetItem(f"{marker} {text}, {count} {marker}")
+def _live_heading(text, count, key, color):
+    """A Live Scores heading with its count after it, as the iPhone has: "Live games, 5",
+    "NHL, 3". The count tells someone in one arrow whether a section is worth entering.
+    Bold and its background set it apart; nothing decorative is in the text, since a screen
+    reader would read it. Its data says which heading it is, so a refresh finds it again
+    when the count changes."""
+    item = _bold(QListWidgetItem(f"{text}, {count}"))
     item.setData(Qt.ItemDataRole.UserRole, {LIVE_HEADER: key})
     item.setBackground(color)
     return item
@@ -853,12 +870,8 @@ class HomeView(BaseView):
         live_scores_item = QListWidgetItem("Live Scores - All Sports")
         live_scores_item.setData(Qt.ItemDataRole.UserRole, "__live_scores__")
         self.league_list.addItem(live_scores_item)
-        
-        # Add separator
-        separator_item = QListWidgetItem("─" * 30)
-        separator_item.setFlags(Qt.ItemFlag.NoItemFlags)  # Make it non-selectable
-        self.league_list.addItem(separator_item)
-        
+        # No separator row: a screen reader counted it ("2 of 24") and read it in a list read.
+
         # Load leagues with error handling
         leagues = ApiService.get_leagues()
         if not leagues:
@@ -989,10 +1002,6 @@ class HomeView(BaseView):
         live_scores_item.setData(Qt.ItemDataRole.UserRole, "__live_scores__")
         self.league_list.addItem(live_scores_item)
 
-        separator_item = QListWidgetItem("─" * 30)
-        separator_item.setFlags(Qt.ItemFlag.NoItemFlags)
-        self.league_list.addItem(separator_item)
-
         leagues = ApiService.get_leagues()
         if not leagues:
             self._show_api_error("Failed to load leagues")
@@ -1021,10 +1030,6 @@ class HomeView(BaseView):
         racing_item = QListWidgetItem("Racing - F1, IndyCar, NASCAR")
         racing_item.setData(Qt.ItemDataRole.UserRole, "__racing__")
         self.league_list.addItem(racing_item)
-
-        footer_sep = QListWidgetItem("─" * 30)
-        footer_sep.setFlags(Qt.ItemFlag.NoItemFlags)
-        self.league_list.addItem(footer_sep)
 
         guide_item = QListWidgetItem("User Guide")
         guide_item.setData(Qt.ItemDataRole.UserRole, "__user_guide__")
@@ -1082,7 +1087,8 @@ class HomeView(BaseView):
         self._fav_loaders = []
 
         for fav in favorites:
-            item = QListWidgetItem(f"★ {fav['team_name']}  [{fav['league']}]")
+            # No star in front: the list is Favorite Teams, and a screen reader says "star".
+            item = QListWidgetItem(f"{fav['team_name']}  [{fav['league']}]")
             item.setData(Qt.ItemDataRole.UserRole, fav)
             self.favorites_list.addItem(item)
             loader = FavoriteCardLoader(fav['team_id'], fav['league'])
@@ -1096,7 +1102,7 @@ class HomeView(BaseView):
             item = self.favorites_list.item(i)
             fav = item.data(Qt.ItemDataRole.UserRole)
             if fav and fav.get('team_id') == team_id and fav.get('league') == league:
-                lines = [f"★ {fav['team_name']}  [{league}]"]
+                lines = [f"{fav['team_name']}  [{league}]"]
                 lines.extend(f"  {line}" for line in card_lines)
                 item.setText("\n".join(lines))
                 break
@@ -1585,7 +1591,7 @@ class LiveScoresView(BaseView):
             
             if golf:
                 self.live_scores_list.addItem(
-                    _live_heading("GOLF LIVE", len(golf), "golf", QColor(200, 255, 200)))
+                    _live_heading("Golf live", len(golf), "golf", QColor(200, 255, 200)))
                 for t in golf:
                     leaders = "; ".join(f"{pos}. {name}, {score}" for pos, name, score in t["leaders"])
                     text = f"{t['tour_name']}: {t['name']}, {t['status']}"
@@ -1611,7 +1617,7 @@ class LiveScoresView(BaseView):
             # Section 1: Live Games
             if live_games:
                 self.live_scores_list.addItem(
-                    _live_heading("LIVE GAMES", len(live_games), "live", QColor(200, 255, 200)))
+                    _live_heading("Live games", len(live_games), "live", QColor(200, 255, 200)))
                 
                 # Group live games by league for better organization
                 games_by_league = {}
@@ -1624,7 +1630,7 @@ class LiveScoresView(BaseView):
                 for league in sorted(games_by_league.keys()):
                     self.live_scores_list.addItem(_live_heading(
                         league, len(games_by_league[league]), f"live:{league}",
-                        QColor(240, 240, 240), marker="---"))
+                        QColor(240, 240, 240)))
                     
                     for game in games_by_league[league]:
                         game_id = game.get("id", "")
@@ -1667,7 +1673,7 @@ class LiveScoresView(BaseView):
             # Section 2: Upcoming Games
             if upcoming_games:
                 self.live_scores_list.addItem(
-                    _live_heading("UPCOMING GAMES", len(upcoming_games), "upcoming", QColor(255, 255, 200)))
+                    _live_heading("Upcoming games", len(upcoming_games), "upcoming", QColor(255, 255, 200)))
                 
                 # Group upcoming games by league
                 upcoming_by_league = {}
@@ -1680,7 +1686,7 @@ class LiveScoresView(BaseView):
                 for league in sorted(upcoming_by_league.keys()):
                     self.live_scores_list.addItem(_live_heading(
                         league, len(upcoming_by_league[league]), f"upcoming:{league}",
-                        QColor(240, 240, 240), marker="---"))
+                        QColor(240, 240, 240)))
                     
                     for game in upcoming_by_league[league]:
                         display_text = self._format_game_display(game)
@@ -1695,7 +1701,7 @@ class LiveScoresView(BaseView):
             # Section 3: Completed Games
             if completed_games:
                 self.live_scores_list.addItem(
-                    _live_heading("COMPLETED GAMES", len(completed_games), "completed", QColor(220, 220, 220)))
+                    _live_heading("Completed games", len(completed_games), "completed", QColor(220, 220, 220)))
                 
                 # Group completed games by league
                 completed_by_league = {}
@@ -1708,7 +1714,7 @@ class LiveScoresView(BaseView):
                 for league in sorted(completed_by_league.keys()):
                     self.live_scores_list.addItem(_live_heading(
                         league, len(completed_by_league[league]), f"completed:{league}",
-                        QColor(240, 240, 240), marker="---"))
+                        QColor(240, 240, 240)))
                     
                     for game in completed_by_league[league]:
                         display_text = self._format_game_display(game)
@@ -1746,7 +1752,7 @@ class LiveScoresView(BaseView):
                 monitor_data[MONITOR_ROW] = True
                 rows.append((f"{text} | {_WC_DISPLAY_NAMES.get(data['league'], data['league'])}", monitor_data))
         # The count, as the other headings have it; the data stays MONITORING_HEADER.
-        header = QListWidgetItem(f"=== MONITORING, {len(rows)} ===" if rows else MONITORING_EMPTY)
+        header = _bold(QListWidgetItem(f"Monitoring, {len(rows)}" if rows else MONITORING_EMPTY))
         header.setData(Qt.ItemDataRole.UserRole, MONITORING_HEADER)
         header.setBackground(QColor(200, 220, 255))
         lst.insertItem(0, header)
@@ -2235,10 +2241,16 @@ class LeagueView(BaseView):
         else:
             self._say_date_shown()
 
+    def _add_section_row(self, title, role):
+        """A row below the games that opens a section (News Headlines, Standings...). Its
+        text is only the name: bold sets it apart, since "--- Standings ---" was read aloud
+        as "dash dash dash". Enter dispatches on its data, never on its text."""
+        item = _bold(QListWidgetItem(title))
+        item.setData(Qt.ItemDataRole.UserRole, role)
+        self.scores_list.addItem(item)
+
     def _add_news_row(self):
-        self.scores_list.addItem("--- News Headlines ---")
-        news_item = self.scores_list.item(self.scores_list.count()-1)
-        news_item.setData(Qt.ItemDataRole.UserRole, "__news__")
+        self._add_section_row("News Headlines", "__news__")
 
     def _on_scores_loaded(self, generation: int, calendar, scores_data: list, news: list):
         if generation != self._scores_generation:
@@ -2348,51 +2360,30 @@ class LeagueView(BaseView):
         if self.league in SOCCER_LEAGUES:
             # What the iPhone has for soccer, plus Teams, which is how a team's page is reached here.
             for title, role in (("Standings", "__standings__"), ("Statistics", "__statistics__"), ("Teams", "__teams__")):
-                self.scores_list.addItem(f"--- {title} ---")
-                self.scores_list.item(self.scores_list.count() - 1).setData(Qt.ItemDataRole.UserRole, role)
+                self._add_section_row(title, role)
             return
         if self.league in ["MLB", "NFL", "NBA", "WNBA", "NHL", "NCAAF", "NCAAM", "NCAAWB", "NCAAH", "NCAAWH"]:
-            self.scores_list.addItem("--- Standings ---")
-            standings_item = self.scores_list.item(self.scores_list.count()-1)
-            standings_item.setData(Qt.ItemDataRole.UserRole, "__standings__")
-            
+            self._add_section_row("Standings", "__standings__")
+
             # Add Polls for NCAA sports (have ranking data)
             if self.league in ["NCAAF", "NCAAM", "NCAAWB", "NCAAH", "NCAAWH"]:
-                self.scores_list.addItem("--- Polls ---")
-                polls_item = self.scores_list.item(self.scores_list.count()-1)
-                polls_item.setData(Qt.ItemDataRole.UserRole, "__polls__")
-            
-            self.scores_list.addItem("--- Statistics ---")
-            statistics_item = self.scores_list.item(self.scores_list.count()-1)
-            statistics_item.setData(Qt.ItemDataRole.UserRole, "__statistics__")
-            self.scores_list.addItem("--- Teams ---")
-            teams_item = self.scores_list.item(self.scores_list.count()-1)
-            teams_item.setData(Qt.ItemDataRole.UserRole, "__teams__")
-            self.scores_list.addItem("--- Transactions ---")
-            transactions_item = self.scores_list.item(self.scores_list.count()-1)
-            transactions_item.setData(Qt.ItemDataRole.UserRole, "__transactions__")
-            self.scores_list.addItem("--- Venues ---")
-            venues_item = self.scores_list.item(self.scores_list.count()-1)
-            venues_item.setData(Qt.ItemDataRole.UserRole, "__venues__")
+                self._add_section_row("Polls", "__polls__")
+
+            self._add_section_row("Statistics", "__statistics__")
+            self._add_section_row("Teams", "__teams__")
+            self._add_section_row("Transactions", "__transactions__")
+            self._add_section_row("Venues", "__venues__")
 
             if radio_links.covers(_radio_data(), self.league):
-                self.scores_list.addItem("--- Game Radio ---")
-                self.scores_list.item(self.scores_list.count() - 1).setData(Qt.ItemDataRole.UserRole, "__radio__")
+                self._add_section_row("Game Radio", "__radio__")
 
             if self.league == "NFL":
-                self.scores_list.addItem("--- NFL Draft ---")
-                draft_item = self.scores_list.item(self.scores_list.count()-1)
-                draft_item.setData(Qt.ItemDataRole.UserRole, "__draft__")
-
-                self.scores_list.addItem("--- Fantasy Cheatsheet ---")
-                cheatsheet_item = self.scores_list.item(self.scores_list.count()-1)
-                cheatsheet_item.setData(Qt.ItemDataRole.UserRole, "__fantasy__")
+                self._add_section_row("NFL Draft", "__draft__")
+                self._add_section_row("Fantasy Cheatsheet", "__fantasy__")
 
             # Add Bowls & Playoffs for NCAAF
             if self.league == "NCAAF":
-                self.scores_list.addItem("--- Bowls & Playoffs ---")
-                bowls_item = self.scores_list.item(self.scores_list.count()-1)
-                bowls_item.setData(Qt.ItemDataRole.UserRole, "__bowls__")
+                self._add_section_row("Bowls & Playoffs", "__bowls__")
 
     def _show_news_dialog(self):
         """Show news dialog"""
@@ -3622,7 +3613,7 @@ class GameDetailsView(BaseView):
             all_available_fields.append("plays")
         
         if all_available_fields:
-            self.details_list.addItem("--- Additional Details ---")
+            self.details_list.addItem(_bold(QListWidgetItem("Additional Details")))
             for field in all_available_fields:
                 value = raw_details.get(field)
                 if value:
@@ -4050,27 +4041,23 @@ class GameDetailsView(BaseView):
                     # The other team scored: a turnover for the team with the ball.
                     scorer = team_names.get(score.scorer) or "The other team"
                     return {
-                        'icon': '🔄',
                         'badge': badge,
                         'color': QColor(255, 140, 0, 60),
                         'accessible_text': f"{scorer} scored on this drive",
                     }
                 if score.kind == DRIVE_TD:
                     return {
-                        'icon': '🏈',
                         'badge': badge,
                         'color': QColor(0, 100, 0, 80),
                         'accessible_text': 'Touchdown scoring drive',
                     }
                 if score.kind == DRIVE_FG:
                     return {
-                        'icon': '🥅',
                         'badge': badge,
                         'color': QColor(0, 0, 139, 60),
                         'accessible_text': 'Field goal scoring drive',
                     }
                 return {
-                    'icon': '🛡️',
                     'badge': badge,
                     'color': QColor(128, 0, 128, 60),
                     'accessible_text': 'Scoring drive',
@@ -4080,63 +4067,54 @@ class GameDetailsView(BaseView):
             if result == 'TD':
                 # ESPN says touchdown but the plays carry no score change.
                 return {
-                    'icon': '🏈',
                     'badge': 'TD',
                     'color': QColor(0, 100, 0, 80),      # Dark green background
                     'accessible_text': 'Touchdown scoring drive'
                 }
             elif result == 'FG':
                 return {
-                    'icon': '🥅',
                     'badge': 'FG',
                     'color': QColor(0, 0, 139, 60),      # Dark blue background
                     'accessible_text': 'Field goal scoring drive'
                 }
             elif result == 'MISSED FG':
                 return {
-                    'icon': '❌', 
                     'badge': 'MISSED FG', 
                     'color': QColor(139, 0, 0, 60),      # Dark red background
                     'accessible_text': 'Missed field goal attempt'
                 }
             elif result in ['FUMBLE', 'INT', 'INTERCEPTION', 'TURNOVER']:
                 return {
-                    'icon': '🔄', 
                     'badge': 'TURNOVER', 
                     'color': QColor(255, 140, 0, 60),    # Dark orange background
                     'accessible_text': 'Turnover drive'
                 }
             elif result == 'DOWNS':
                 return {
-                    'icon': '🛑', 
                     'badge': '4TH DOWN', 
                     'color': QColor(255, 140, 0, 60),    # Dark orange background
                     'accessible_text': 'Turnover on downs'
                 }
             elif result == 'PUNT':
                 return {
-                    'icon': '⚡', 
                     'badge': 'PUNT', 
                     'color': QColor(128, 128, 128, 40),  # Light gray background
                     'accessible_text': 'Punt drive'
                 }
             elif result in ['END OF HALF', 'END OF GAME']:
                 return {
-                    'icon': '⏰', 
                     'badge': 'CLOCK', 
                     'color': QColor(128, 128, 128, 40),  # Light gray background
                     'accessible_text': 'Clock expiration drive'
                 }
             elif result == 'SAFETY':
                 return {
-                    'icon': '🛡️',
                     'badge': 'SAFETY',
                     'color': QColor(128, 0, 128, 60),    # Purple background
                     'accessible_text': 'Safety scoring drive'
                 }
             else:
                 return {
-                    'icon': '📌', 
                     'badge': result if result else 'DRIVE', 
                     'color': QColor(255, 255, 255, 0),   # No background
                     'accessible_text': 'Non-scoring drive'
@@ -4993,7 +4971,10 @@ class GameDetailsView(BaseView):
             for cp in change_plays:
                 text = cp.get("text", "").strip()
                 if text:
-                    chg_item = QTreeWidgetItem([f">> {text}"])
+                    # ESPN's own words ("Pinch hitter ... replaces ..."); a ">>" in front was
+                    # decoration a screen reader can read as "greater greater".
+                    chg_item = QTreeWidgetItem([text])
+                    chg_item.setData(0, Qt.ItemDataRole.UserRole, {"is_substitution": True})
                     chg_item.setBackground(0, QColor(255, 235, 200))  # light orange
                     parent_item.addChild(chg_item)
 
@@ -5037,8 +5018,9 @@ class GameDetailsView(BaseView):
                 if away is not None and home is not None:
                     score_suffix = f"  ({away_label} {away} - {home_label} {home})"
 
-            # Compose: "⚾ Header: Result  (score)  [Np xB yK zF]"
-            prefix = "⚾ " if is_scoring else ""
+            # Compose: "Scoring play: Header: Result  (score)  [Np xB yK zF]". In words,
+            # since a screen reader read the baseball emoji this used as "baseball".
+            prefix = SCORING_PLAY_PREFIX if is_scoring else ""
             if result_text and result_text != header_text:
                 main_text = f"{prefix}{header_text}: {result_text}{score_suffix}"
             else:
@@ -5123,7 +5105,7 @@ class GameDetailsView(BaseView):
             result_text = at_bat.get("result", "")
 
             if at_bat["scoring"]:
-                main_text = f"⚾ {header}: {result_text} {at_bat.get('score', '')}"
+                main_text = f"{SCORING_PLAY_PREFIX}{header}: {result_text} {at_bat.get('score', '')}"
             elif result_text and result_text != header:
                 main_text = f"{header}: {result_text}"
             else:
@@ -5673,7 +5655,7 @@ class GameDetailsView(BaseView):
                 return
 
             # Get batter name for feedback
-            batter_info = at_bat_item.text(0)
+            batter_info = at_bat_item.text(0).removeprefix(SCORING_PLAY_PREFIX)
             batter_name = batter_info.split(':')[0] if ':' in batter_info else "Batter"
             
             self._on_audio_feedback(f"Playing pitch sequence for {batter_name} ({len(pitch_items)} pitches)")
@@ -6332,7 +6314,7 @@ class GameDetailsView(BaseView):
             </div>
         </div>
         <div class="game-info">
-            {self._format_game_date(game_date)} • {venue.get('fullName', '')}
+            {self._format_game_date(game_date)}, {venue.get('fullName', '')}
             <br>{status.get('type', {}).get('description', 'Final')}
         </div>
     </div>
@@ -6347,7 +6329,7 @@ class GameDetailsView(BaseView):
             
             html_content += f"""
     <div class="content-section">
-        <h2 class="section-title">📰 Game Story</h2>
+        <h2 class="section-title">Game Story</h2>
         <h1 class="article-headline">{article.get('headline', '')}</h1>
         <p class="article-description">{description}</p>
         <div class="article-content">
@@ -6360,7 +6342,7 @@ class GameDetailsView(BaseView):
         if leaders:
             html_content += f"""
     <div class="content-section">
-        <h2 class="section-title">⭐ Key Performers</h2>
+        <h2 class="section-title">Key Performers</h2>
         <div class="leaders-grid">
             {self._format_leaders_html(leaders)}
         </div>
@@ -6371,7 +6353,7 @@ class GameDetailsView(BaseView):
         if scoring_plays:
             html_content += f"""
     <div class="content-section">
-        <h2 class="section-title">🎯 Scoring Summary</h2>
+        <h2 class="section-title">Scoring Summary</h2>
         <div class="scoring-plays">
             {self._format_scoring_plays_html(scoring_plays)}
         </div>
@@ -6382,7 +6364,7 @@ class GameDetailsView(BaseView):
         if boxscore and boxscore.get('teams'):
             html_content += f"""
     <div class="content-section">
-        <h2 class="section-title">📊 Team Statistics</h2>
+        <h2 class="section-title">Team Statistics</h2>
         {self._format_boxscore_html(boxscore)}
     </div>
 """
@@ -6391,7 +6373,7 @@ class GameDetailsView(BaseView):
         if drives and (drives.get('current') or drives.get('previous')):
             html_content += f"""
     <div class="content-section">
-        <h2 class="section-title">🏈 Drive Summary</h2>
+        <h2 class="section-title">Drive Summary</h2>
         {self._format_drives_html(drives)}
     </div>
 """
@@ -7280,7 +7262,7 @@ class GameDetailsView(BaseView):
                     if play.get("scoringPlay", False):
                         away_score = play.get("awayScore", 0)
                         home_score = play.get("homeScore", 0)
-                        play_text = f"🏈 {play_text} ({away_score}-{home_score})"
+                        play_text = f"{SCORING_PLAY_PREFIX}{play_text} ({away_score}-{home_score})"
                     
                     css_class = f"play-item {scoring_class}".strip()
                     html += f'<li class="{css_class}">{play_text}</li>'
@@ -7377,7 +7359,7 @@ class GameDetailsView(BaseView):
                 
                 # Handle kickoffs differently
                 if drive_info.get("is_kickoff", False):
-                    html += f'<h3 class="drive-header kickoff-header">⚡ Kickoff</h3>'
+                    html += f'<h3 class="drive-header kickoff-header">Kickoff</h3>'
                 else:
                     html += f'<h3 class="drive-header">{drive_info["team"]}: {drive_info["description"]}</h3>'
                 
@@ -7731,7 +7713,7 @@ class GameDetailsView(BaseView):
             
             # Add indicator for game-specific article (first item if it came from 'article' field)
             if i == 0 and isinstance(data, dict) and "article" in data and "news" in data:
-                headline = f"🎯 {headline}"  # Game-specific indicator
+                headline = f"Game story: {headline}"  # in words: an emoji here was read as "direct hit"
             
             item = QListWidgetItem(headline)
             item.setData(Qt.ItemDataRole.UserRole, news_data)
@@ -7754,7 +7736,7 @@ class GameDetailsView(BaseView):
         news_list.itemActivated.connect(open_news_item)
         news_list.itemDoubleClicked.connect(open_news_item)
         
-        layout.addWidget(QLabel("News Headlines (🎯 = Game-specific, Enter or double-click to open in browser):"))
+        layout.addWidget(QLabel("News Headlines (Enter or double-click opens in the browser):"))
         layout.addWidget(news_list)
 
     def keyPressEvent(self, event):
@@ -8881,12 +8863,13 @@ class TeamHubDialog(QDialog):
 
     def _refresh_fav_button(self):
         if settings.is_favorite(self.team_id, self.league):
-            self.fav_btn.setText("★ Favorited")
+            # The words the iPhone says, with no star a screen reader would read.
+            self.fav_btn.setText("Remove from Favorites")
             self.fav_btn.setAccessibleName("Remove from Favorites")
             self.fav_btn.setAccessibleDescription(
                 f"Remove {self.team_name} from your favorite teams")
         else:
-            self.fav_btn.setText("☆ Add to Favorites")
+            self.fav_btn.setText("Add to Favorites")
             self.fav_btn.setAccessibleName("Add to Favorites")
             self.fav_btn.setAccessibleDescription(
                 f"Add {self.team_name} to your favorite teams")
@@ -9508,15 +9491,16 @@ class PollsTable(AccessibleTable):
             # Points display
             points_str = f"{points:.0f}" if points > 0 else ""
             
-            # Previous rank with movement indicator
+            # Previous rank with its movement in words, as the iPhone says it ("Up 3"). The
+            # arrows this had were read as "up arrow", and an unchanged rank's dash not at all.
             if previous_rank == 0:
                 prev_str = "NR"  # Not Ranked
             elif previous_rank > current_rank:
-                prev_str = f"{previous_rank} ↑"
+                prev_str = f"{previous_rank} (up {previous_rank - current_rank})"
             elif previous_rank < current_rank:
-                prev_str = f"{previous_rank} ↓"
+                prev_str = f"{previous_rank} (down {current_rank - previous_rank})"
             else:
-                prev_str = f"{previous_rank} —"
+                prev_str = f"{previous_rank} (same)"
             
             row = [str(current_rank), team_name, record] + ([points_str] if has_points else []) + [prev_str]
             rows.append(row)
@@ -12117,7 +12101,7 @@ class WorldCupDialog(QDialog):
 
         # Date navigation bar
         nav = QHBoxLayout()
-        self.scores_prev_btn = QPushButton("◀ Previous Day (Alt+P)")
+        self.scores_prev_btn = QPushButton("Previous Day (Alt+P)")
         self.scores_prev_btn.setAccessibleName("Previous Day")
         self.scores_prev_btn.setShortcut("Alt+P")
         self.scores_prev_btn.clicked.connect(self._scores_prev_day)
@@ -12128,7 +12112,7 @@ class WorldCupDialog(QDialog):
         self.scores_date_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         nav.addWidget(self.scores_date_label, 1)
 
-        self.scores_next_btn = QPushButton("Next Day ▶ (Alt+N)")
+        self.scores_next_btn = QPushButton("Next Day (Alt+N)")
         self.scores_next_btn.setAccessibleName("Next Day")
         self.scores_next_btn.setShortcut("Alt+N")
         self.scores_next_btn.clicked.connect(self._scores_next_day)
@@ -12357,7 +12341,9 @@ class WorldCupDialog(QDialog):
             for t in group["teams"]:
                 abbr = t["abbreviation"]
                 if t.get("advancement_note"):
-                    abbr += " ✓"
+                    # ESPN's words ("Advance to Round of 32"), as the iPhone says them. A check
+                    # mark was read as "check" and didn't say what it meant.
+                    abbr += f" ({t['advancement_note']})"
                 gd = t["goal_difference"]
                 gd_str = f"+{gd}" if gd > 0 else str(gd)
                 rows.append([
@@ -13708,10 +13694,11 @@ class VenueDetailsDialog(QDialog):
 
         # Venue name header
         venue_name = basic_info.get('name', 'Unknown Venue')
-        self.details_list.addItem(QListWidgetItem(f"=== {venue_name} ==="))
+        # Headings are bold words: "===", "---" and bullets are read aloud by a screen reader.
+        self.details_list.addItem(_bold(QListWidgetItem(venue_name)))
         
         # Basic Information Section
-        self.details_list.addItem(QListWidgetItem("--- Basic Information ---"))
+        self.details_list.addItem(_bold(QListWidgetItem("Basic Information")))
         if basic_info.get('location'):
             self.details_list.addItem(QListWidgetItem(f"Location: {basic_info['location']}"))
         if basic_info.get('league'):
@@ -13719,13 +13706,13 @@ class VenueDetailsDialog(QDialog):
 
         # Characteristics Section
         if characteristics.get('indoor') is not None:
-            self.details_list.addItem(QListWidgetItem("--- Stadium Characteristics ---"))
+            self.details_list.addItem(_bold(QListWidgetItem("Stadium Characteristics")))
             venue_type = "Indoor stadium" if characteristics['indoor'] else "Outdoor stadium"
             self.details_list.addItem(QListWidgetItem(f"Type: {venue_type}"))
 
         # Home Teams Section
         if home_teams:
-            self.details_list.addItem(QListWidgetItem("--- Home Teams ---"))
+            self.details_list.addItem(_bold(QListWidgetItem("Home Teams")))
             for team in home_teams:
                 team_name = team.get('name', 'Unknown Team')
                 team_abbrev = team.get('abbreviation', '')
@@ -13736,9 +13723,9 @@ class VenueDetailsDialog(QDialog):
         
         # Interesting Facts Section
         if interesting_facts:
-            self.details_list.addItem(QListWidgetItem("--- Interesting Facts ---"))
+            self.details_list.addItem(_bold(QListWidgetItem("Interesting Facts")))
             for fact in interesting_facts:
-                self.details_list.addItem(QListWidgetItem(f"• {fact}"))
+                self.details_list.addItem(QListWidgetItem(fact))
 
         self.details_list.setCurrentRow(0)
         _focus_once_active(self, self.details_list.setFocus)

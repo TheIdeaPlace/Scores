@@ -149,8 +149,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   since ESPN won't send them 20. If ESPN doesn't answer, the screen says so (#198).
 
 ### Fixed
-- **Windows: Live Scores headings say how many games they hold,** as the iPhone's do: "=== LIVE GAMES, 5 ===",
-  "--- NHL, 3 ---", "=== MONITORING, 2 ===". You stay on a heading when a refresh changes its count.
+- **Windows: screen readers no longer read out decoration.** NVDA said "dash dash dash" around rows like
+  "--- News Headlines ---", and read emoji by name. Everything spoken is now words:
+  - A sport's section rows are just their names (News Headlines, Standings, Polls, Statistics, Teams,
+    Transactions, Venues, Game Radio, NFL Draft, Fantasy Cheatsheet, Bowls & Playoffs), in bold. So are
+    a game's Additional Details heading and Venue details' headings; a venue's facts lose their bullets.
+  - Live Scores' headings read "Live games, 5", "NHL, 3", "Monitoring, 2", bold, with their colours kept.
+  - Home's favorite teams lose the star in front; Team Hub's button says Add to Favorites or Remove from
+    Favorites, as the iPhone does.
+  - An MLB scoring play starts "Scoring play:" instead of a baseball emoji; a game's own story in its
+    News starts "Game story:" instead of a target. The World Cup's day buttons lose their arrows, and a
+    group table says ESPN's words, such as "(Advance to Round of 32)", instead of a check mark.
+  - A poll's Previous column says "5 (up 3)", "7 (down 1)" or "4 (same)" instead of arrows.
+  - Game details' news, odds and box score lines lose their bullets; the Game Wrap Up page's headings
+    lose their emoji. MLB substitutions lose the ">>" in front, and Home loses the line-drawing separator
+    rows, which screen readers counted as items.
+- **iPhone: VoiceOver no longer reads emoji names in Live Scores' headings,** such as the golf flag or a
+  sport's icon. They still show.
+- **Windows: Live Scores headings say how many games they hold,** as the iPhone's do: "Live games, 5",
+  "NHL, 3", "Monitoring, 2". You stay on a heading when a refresh changes its count.
 - **iPhone: a CFL game being played.** It said Scheduled, with no score, all game long, and its team's
   schedule did too: the feed names the quarter ("third_quarter") or halftime, never "playing", which was
   all the app knew. It now says the quarter and clock ("Q3 4:12") or Halftime, with the score, in the

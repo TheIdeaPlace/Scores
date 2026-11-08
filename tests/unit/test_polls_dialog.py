@@ -96,7 +96,8 @@ def test_a_cell_says_the_team_rather_than_the_rank(football):
                               "Georgia Bulldogs, Record, 7-1", "Georgia Bulldogs, Previous, NR"]
     ap = football.tab_widget.widget(1).table
     assert speech(ap, 0)[3] == "Miami Hurricanes, Points, 1740"
-    assert list_rows(ap.quick_list)[0] == "1, Miami Hurricanes, 8-0, 1740, 1 —"
+    # The movement in words, as the iPhone has it; arrows were read as "up arrow".
+    assert list_rows(ap.quick_list)[0] == "1, Miami Hurricanes, 8-0, 1740, 1 (same)"
 
 
 @pytest.mark.parametrize("fixture,league,top", [
@@ -118,3 +119,11 @@ def test_a_rank_with_nothing_but_its_number(app):
     assert cells(table, 1) == ["Unknown"]
     assert headers(table) == ["Rank", "Team", "Record", "Previous"]
     assert cells(table, 3) == ["NR"]
+
+
+def test_a_rank_that_moved_says_which_way_in_words(app):
+    table = scores.PollsTable(poll_name="Poll")
+    table.populate_poll([{"current": 2, "previous": 5, "points": None, "team": None},
+                         {"current": 6, "previous": 3, "points": None, "team": None},
+                         {"current": 7, "previous": 7, "points": None, "team": None}], set_focus=False)
+    assert cells(table, 3) == ["5 (up 3)", "3 (down 3)", "7 (same)"]
