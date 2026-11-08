@@ -657,13 +657,64 @@ class DatePickerDialog(QDialog):
         except ValueError:
             # Invalid date, return current date
             return self.selected_date
-    
+
     def keyPressEvent(self, event):
         """Handle Escape key to close dialog"""
         if event.key() == Qt.Key.Key_Escape:
             self.reject()
         else:
             super().keyPressEvent(event)
+
+
+class SeasonPickerDialog(QDialog):
+    """Ctrl+G in an NFL or NCAAF league list: choose the season to look at.
+
+    A list in a dialog rather than a combo box beside the week buttons: arrowing
+    through a closed combo box changes its value on every key, which would load
+    a season's scoreboard (several MB on a college Saturday) and announce its
+    week at each one. Here nothing loads until Enter. It opens on the season
+    shown; the season under way is first and says so, so Home and Enter go back
+    to the current week.
+    """
+
+    def __init__(self, league, seasons, live_season, shown_season, parent=None):
+        super().__init__(parent)
+        self.setWindowTitle(f"Go to Season - {league}")
+        self.setModal(True)
+        layout = QVBoxLayout(self)
+        label = QLabel("&Season:")
+        layout.addWidget(label)
+        self.season_list = QListWidget()
+        self.season_list.setAccessibleName("Season")
+        self.season_list.setAccessibleDescription(
+            "Opens on regular season Week 1. The current season returns to the current week.")
+        label.setBuddy(self.season_list)
+        for season in seasons:
+            text = f"{season}, current season" if season == live_season else str(season)
+            item = QListWidgetItem(text)
+            item.setData(Qt.ItemDataRole.UserRole, season)
+            self.season_list.addItem(item)
+        row = seasons.index(shown_season) if shown_season in seasons else 0
+        self.season_list.setCurrentRow(row)
+        self.season_list.itemActivated.connect(lambda _item: self.accept())
+        layout.addWidget(self.season_list)
+
+        buttons = QHBoxLayout()
+        go_btn = QPushButton("Go to Season")
+        go_btn.setDefault(True)
+        go_btn.clicked.connect(self.accept)
+        buttons.addWidget(go_btn)
+        cancel_btn = QPushButton("Cancel")
+        cancel_btn.clicked.connect(self.reject)
+        buttons.addWidget(cancel_btn)
+        layout.addLayout(buttons)
+        _focus_once_active(self, self.season_list.setFocus)
+        self.season_list.setFocus()
+
+    def selected_season(self):
+        item = self.season_list.currentItem()
+        return item.data(Qt.ItemDataRole.UserRole) if item else None
+
 
 class BaseView(QWidget):
     def __init__(self, parent=None):
@@ -1853,6 +1904,9 @@ class LeagueView(BaseView):
         # For football leagues, the season (and, unless one was asked for, the
         # week) comes from ESPN's calendar. That is a network request, so the
         # first load fetches it on its thread; until then these are placeholders.
+        # The football season ESPN's calendar serves now, once known: a season
+        # chosen with Ctrl+G that isn't this one is named in the week's label.
+        self._live_season = None
         if self.is_football_league():
             self._calendar_pending = True
             self._requested_week = week
@@ -1874,6 +1928,7 @@ class LeagueView(BaseView):
                 self.current_season = state["season"]
                 self.current_week = state["week"]
                 self.current_season_type = state["season_type"]
+                self._live_season = state.get("live_season")
             else:
                 self.current_date = state["date"]
 
@@ -1951,7 +2006,7 @@ class LeagueView(BaseView):
     def capture_state(self):
         item = self.scores_list.currentItem()
         return {'date': self.current_date, 'week': self.current_week, 'season': self.current_season,
-                'season_type': self.current_season_type,
+                'season_type': self.current_season_type, 'live_season': self._live_season,
                 'selected': item.data(Qt.ItemDataRole.UserRole) if item else None,
                 'row': self.scores_list.currentRow()}
 
@@ -2076,6 +2131,9 @@ class LeagueView(BaseView):
             self.scores_list.setFocus()
         if self._calendar_pending:
             self.date_label.clear()  # "Finding the current week..." isn't going on any more.
+            if self.parent_app and self.league:
+                # Nothing is showing for the week the title named (a past season's, say).
+                self.parent_app.update_window_title(self._title_items())
         else:
             self._say_date_shown()
 
@@ -2097,6 +2155,10 @@ class LeagueView(BaseView):
     def _show_loaded_scores(self, calendar, scores_data, news):
         if calendar is not None:
             self.current_season, self.current_season_type, self.current_week = calendar
+            # ESPN's season, not the calendar-year guess used when its calendar failed.
+            from services.football_calendar import served_season
+            served = served_season(self.league)
+            self._live_season = served if served is not None else self.current_season
             self._calendar_pending = False
         if self.is_football_league():
             self.date_label.setText(self._week_label())
@@ -2671,6 +2733,11 @@ class LeagueView(BaseView):
             next_week_btn.clicked.connect(self.next_week)
             btn_layout.addWidget(next_week_btn)
 
+            go_to_season_btn = QPushButton("Go to Season (Ctrl+G)")
+            go_to_season_btn.setShortcut("Ctrl+G")
+            go_to_season_btn.clicked.connect(self.go_to_season)
+            btn_layout.addWidget(go_to_season_btn)
+
         else:
             prev_btn = QPushButton("Previous Day (Alt+P)")
             prev_btn.setShortcut("Alt+P")
@@ -2716,6 +2783,10 @@ class LeagueView(BaseView):
         # what they are, "Hall of Fame Weekend" and "Wild Card" do not.
         if "week" not in label.lower():
             label = f"Week: {label}"
+        # A season chosen with Ctrl+G is named, so "Week 1" isn't taken for this
+        # season's, and choosing it from the same week elsewhere is still heard.
+        if self._live_season is not None and self.current_season != self._live_season:
+            label = f"{label}, {self.current_season} season"
         return f"{label}{suffix}"
 
     def _step_week(self, delta: int):
@@ -2749,7 +2820,47 @@ class LeagueView(BaseView):
     def next_week(self):
         if self.current_week and not self._calendar_pending:
             self._step_week(+1)
-    
+
+    def go_to_season(self):
+        """Ctrl+G in NFL and NCAAF: choose a season, as the iPhone's season menu does."""
+        if not self.is_football_league():
+            return
+        if self._calendar_pending and self._live_season is None:
+            # The season under way isn't known until the calendar has loaded.
+            announce("Seasons can be chosen once the current week has loaded")
+            return
+        from services.football_calendar import season_choices, get_football_season_year
+        live = self._live_season
+        if live is None:
+            live = get_football_season_year(self.league)
+        seasons = season_choices(self.league, live)
+        dialog = SeasonPickerDialog(self.league, seasons, live, self.current_season, self)
+        if dialog.exec() == QDialog.DialogCode.Accepted and dialog.selected_season() is not None:
+            self.show_season(dialog.selected_season(), live)
+
+    def show_season(self, season, live_season):
+        """Show a season's regular season Week 1, or, for the season under way, its
+        current week. The games, the week's name and the season's weeks load on
+        the LeagueScoresLoader thread; the week's label is announced when they land."""
+        from services.football_calendar import season_start
+        start = season_start(season, live_season)
+        if start is None:
+            # Back to now: the calendar picks the week, as when the league opened.
+            self._calendar_pending = True
+            self._requested_week = None
+            self._requested_season_type = None
+            # A failure here isn't a refresh of the season shown, so it says so in
+            # the list rather than keeping that season's games under this label.
+            self._last_loaded = None
+        else:
+            self.current_season, self.current_season_type, self.current_week = start
+            # A failed return to now leaves the calendar pending; this week is chosen.
+            self._calendar_pending = False
+        # Said even when it's the week already shown, so the choice is heard to land.
+        self._spoken_date_label = None
+        self.load_scores()
+        self.set_focus_and_select_first(self.scores_list)
+
     def keyPressEvent(self, event):
         """Handle key press events for league view"""
         if event.key() == Qt.Key.Key_G and event.modifiers() == Qt.KeyboardModifier.ControlModifier:
