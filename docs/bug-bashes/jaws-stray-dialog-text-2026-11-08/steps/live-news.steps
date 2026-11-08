@@ -1,0 +1,41 @@
+# JAWS, Kelly's first path: Live Scores > a live game > News > Escape (closes the dialog) > Escape (back to
+# Live Scores) > Alt+Tab away and back > Escape to home > Alt+Tab away and back.
+# The stray text is the game News dialog's label "News Headlines (... = Game-specific, Enter or double-click
+# to open in browser):" (scores.py GameDetailsView._add_news_list_to_layout).
+w 0.5
+k {ENTER}
+w 25
+t Lazio
+w 4
+e Lazio
+k {ENTER}
+w 10
+k {END}
+w 3
+k {UP}
+w 3
+e News
+k {ENTER}
+w 6
+e News Headlines List
+k {ESC}
+w 6
+e! Game-specific
+k {ESC}
+w 9
+e! Game-specific
+k %{TAB}
+w 5
+e Notepad
+k %{TAB}
+w 7
+e Live Scores
+e! Game-specific
+k {ESC}
+w 7
+e! Game-specific
+k %{TAB}
+w 5
+k %{TAB}
+w 7
+e! Game-specific

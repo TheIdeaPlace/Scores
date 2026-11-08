@@ -1,0 +1,15 @@
+# Harness: a QMessageBox ("Item three"), OK with Enter, then Alt+Tab away and back.
+w 0.5
+k {DOWN}
+w 1
+k {DOWN}
+w 2
+k {ENTER}
+w 4
+k {ENTER}
+w 4
+k %{TAB}
+w 4
+k %{TAB}
+w 5
+e! HARNESS MESSAGE BOX TEXT

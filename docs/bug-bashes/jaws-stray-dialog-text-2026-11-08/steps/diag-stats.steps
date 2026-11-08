@@ -1,0 +1,40 @@
+# Diagnostics: where does JAWS get the closed dialog's text? Open and close the NBA Statistics choice dialog,
+# then ask JAWS (through its COM API) what it thinks the focus, its ancestors and the dialog text are, on the
+# League view, after Alt+Tab back, and again on the home screen.
+w 0.5
+t NBA
+w 3
+k {ENTER}
+w 14
+t ---
+w 4
+k {ENTER}
+w 6
+k {ESC}
+w 6
+j SayString("D1 focus-ancestors: 0=" + GetObjectName(0, 0) + " | 1=" + GetObjectName(0, 1) + " | 2=" + GetObjectName(0, 2) + " | 3=" + GetObjectName(0, 3) + " | 4=" + GetObjectName(0, 4) + " | 5=" + GetObjectName(0, 5))
+w 3
+j SayString("D2 dialogStaticText=" + GetDialogStaticText())
+w 3
+j SayString("D3 real=" + GetWindowName(GetRealWindow(GetFocus())) + " class=" + GetWindowClass(GetRealWindow(GetFocus())) + " top=" + GetWindowName(GetTopLevelWindow(GetFocus())) + " app=" + GetWindowName(GetAppMainWindow(GetFocus())) + " focusclass=" + GetWindowClass(GetFocus()))
+w 3
+s SayWindowPromptAndText
+w 4
+k %{TAB}
+w 5
+k %{TAB}
+w 7
+j SayString("D4 focus-ancestors: 0=" + GetObjectName(0, 0) + " | 1=" + GetObjectName(0, 1) + " | 2=" + GetObjectName(0, 2) + " | 3=" + GetObjectName(0, 3) + " | 4=" + GetObjectName(0, 4) + " | 5=" + GetObjectName(0, 5))
+w 3
+j SayString("D5 dialogStaticText=" + GetDialogStaticText())
+w 3
+k {ESC}
+w 7
+j SayString("D6 focus-ancestors: 0=" + GetObjectName(0, 0) + " | 1=" + GetObjectName(0, 1) + " | 2=" + GetObjectName(0, 2) + " | 3=" + GetObjectName(0, 3) + " | 4=" + GetObjectName(0, 4) + " | 5=" + GetObjectName(0, 5))
+w 3
+j SayString("D7 dialogStaticText=" + GetDialogStaticText())
+w 3
+j SayString("D8 real=" + GetWindowName(GetRealWindow(GetFocus())) + " class=" + GetWindowClass(GetRealWindow(GetFocus())) + " top=" + GetWindowName(GetTopLevelWindow(GetFocus())) + " focusclass=" + GetWindowClass(GetFocus()))
+w 3
+s SayWindowPromptAndText
+w 4

@@ -1,0 +1,32 @@
+# JAWS: Home > NBA > --- News Headlines --- > Enter (league NewsDialog) > Escape > Alt+Tab away and back >
+# Escape to home > Alt+Tab away and back. The stray text is the closed dialog's label,
+# "Press Enter or double-click a headline to open in your browser:" (scores.py NewsDialog).
+# Notepad is open behind the app, so Alt+Tab goes to it and back.
+w 0.5
+t NBA
+w 3
+k {ENTER}
+w 14
+t -
+w 4
+e News Headlines
+k {ENTER}
+w 6
+e News Headlines List
+k {ESC}
+w 6
+e! double-click a headline
+k %{TAB}
+w 5
+e Notepad
+k %{TAB}
+w 7
+e! double-click a headline
+k {ESC}
+w 7
+e! double-click a headline
+k %{TAB}
+w 5
+k %{TAB}
+w 7
+e! double-click a headline

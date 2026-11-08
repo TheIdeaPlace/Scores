@@ -1,0 +1,18 @@
+# Harness: open and close the label dialog, then open and close an empty dialog ("Item two"), then
+# Alt+Tab away and back. Does the empty dialog replace what JAWS repeats?
+w 0.5
+k {ENTER}
+w 4
+k {ESC}
+w 4
+k {DOWN}
+w 2
+k {ENTER}
+w 4
+k {ESC}
+w 4
+k %{TAB}
+w 4
+k %{TAB}
+w 5
+e! HARNESS DIALOG LABEL
