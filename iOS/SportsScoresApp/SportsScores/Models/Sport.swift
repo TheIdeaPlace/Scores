@@ -66,6 +66,9 @@ enum Sport: String, CaseIterable, Identifiable, Codable {
          .soccerSerieA, .soccerLigue1, .soccerUCL, .soccerUEL, .soccerLigaMX, .soccerCONCACAF]
     }
 
+    /// The leagues whose games Live Scores lists, and so the only ones that can be monitored.
+    static var liveScoresLeagues: [Sport] { allCases + soccerLeagues }
+
     /// All golf tour cases. Feed these to the Golf hub.
     static var golfTours: [Sport] { [.pga, .lpga] }
 
@@ -213,7 +216,9 @@ enum Sport: String, CaseIterable, Identifiable, Codable {
     }
 
     /// True for the leagues with ESPN's `/leaders`, with its qualifying minimums, which Windows
-    /// reads too (LEADER_LEAGUES in espn_api.py). It's a 404 for college hockey and soccer.
+    /// reads too (LEADER_LEAGUES in espn_api.py), asked for the regular season. It's a 404 for
+    /// college hockey. Soccer has `/leaders` too, but with season types of its own, so it goes
+    /// through `fetchSoccerLeaders` and isn't listed here: type 2 is a 404 for soccer.
     var hasSiteLeaders: Bool {
         switch self {
         case .nfl, .ncaaf, .nba, .wnba, .ncaam, .ncaawb, .nhl, .mlb: return true

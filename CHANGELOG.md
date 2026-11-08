@@ -8,12 +8,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+<<<<<<< HEAD
+- **MLB win probability and season series on Windows, as on the iPhone (#194).** An MLB game's details
+  have a **Win probability** row ("Win probability: Mets 70%") and a season series row ("Regular Season
+  Series: Mets lead 7-5"). Enter on the first opens the chances by inning, after every play, and the five
+  biggest swings, with who gained on each play; F5 updates it during a game. Enter on the second opens a
+  tab for each series (playoff round, regular season, current set, spring training) listing its games,
+  starting on the game you came from. Both apps count each series' record from its games, as of the game
+  you're looking at, so an old game doesn't give away how a series ended; ESPN's own sentence isn't read,
+  since it can be wrong (in one World Series game it gave the wrong team the lead). Both round win
+  percentages the same way: the iPhone's chart used to cut 69.8% to 69% and called a live game's chances
+  "Final". The unreachable Kitchen Sink dialog these came from is gone.
+=======
 - **Past football seasons on Windows (#192).** In the NFL and college football scores lists, Ctrl+G (or
   **Go to Season**) opens a list of seasons, back to 2001 for the NFL and 2005 for college football, as on
   the iPhone. A past season opens on its regular season Week 1, and the week and season are spoken and put
   in the window title ("Week 1, 2019 season"). Alt+P and Alt+N step through that season and say when they
   reach its first or last week. The current season is first in the list, and choosing it goes back to this
   week. Nothing is kept between launches.
+>>>>>>> origin/main
 - **Listen to the game.** For the NFL, NBA, NHL, and college football and basketball (the SEC, Big Ten,
   ACC, Big 12 and Notre Dame), Scores lists where to hear a game: each team's radio and the services that
   carry every game, such as SiriusXM. Each opens in your browser, or on the iPhone in the service's app;
@@ -60,6 +73,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   round (first-round games included, which ESPN marks as ordinary games), then the bowls by date. Each
   game reads its name first, then the teams and the kickoff or score, and opens its details; the round
   headings are VoiceOver headings. Before ESPN lists any postseason games, the screen says so. (#197)
+- **Windows: racing.** Formula 1, the IndyCar Series and the NASCAR Cup Series, from the same ESPN feeds
+  the iPhone reads. **Racing - F1, IndyCar, NASCAR** on the home screen lists the three; each opens with
+  tabs for the race weekend on now or next (the entry list, running order or results), Formula 1's
+  sessions with their start times, the season's schedule with every winner, the drivers' standings
+  (and Formula 1's constructors'), and news. Every table has the three views, and a request ESPN doesn't
+  answer says so, with Enter to try again. The nightly data check covers all four requests. (Part of #195)
+- **iPhone: a Monitoring section at the top of Live Scores, as on Windows.** A **Monitor** VoiceOver action
+  (and context menu item) on a game in Live Scores adds it. Its row under Monitoring reads as it does below,
+  with the sport after it, and the game stays in its own section, which says it's monitored. Rows are in the
+  order added and open the game. **Stop Monitoring** on a Monitoring row takes it off and moves VoiceOver to
+  the next one, or to the section's heading when there's none after it. A sport's scores page has Monitor
+  too, for today's games only, judged by the day ESPN's scoreboard files the game under, the same rule as
+  Windows, which both apps are now tested against with one shared grid. Monitoring lasts until the app
+  quits, and nothing is read out on its own: the only speech is each action's confirmation, in the same
+  words as Windows. In the Quick List and Full List views; table rows have no actions yet (#208). (#185)
 
 ### Changed
 - **Transactions: one list, newest first, and a jump to any month, on both apps (#188).** Windows had
@@ -85,7 +113,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   where its row reads as it does below with the sport after it, and the game stays in its own section too.
   Alt+M also works on today's games on a sport's page. Alt+M on a Monitoring row takes it off and moves you
   to the next one. Monitoring lasts until you quit. Scores no longer reads out score changes on its own.
-  The iPhone is to follow (#185).
+  The iPhone has the same section (see Added).
 - **iPhone builds: the TestFlight build number can't repeat.** It is now one more than the highest build
   App Store Connect already has, or the commit count if that is higher. The commit count alone could land
   on a number Apple had already seen after a squash merge, and the upload was rejected (#112).
@@ -98,8 +126,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   says so instead of going quiet, and F5 on a card tries again and stays on it. The card no longer shows
   the team's record. Both apps decide which game is live, last and next by one rule, tested against the
   same cases (#191).
+- **Soccer leaders open in about a second.** Both apps now get a league's leaders in one request, with
+  the names and teams inside, instead of looking up every player and team one by one: on Windows, about
+  140 to 180 requests and 7 seconds became 2 requests and 1 second. The lists, players and numbers are
+  the same as before. NWSL and the CONCACAF Champions Cup show 10 players a list for now rather than 20,
+  since ESPN won't send them 20. If ESPN doesn't answer, the screen says so (#198).
 
 ### Fixed
+- **Liga MX leaders follow the torneo being played.** From January, Statistics shows the Torneo Clausura's
+  leaders rather than the Apertura's, and the season line names the torneo, for example "2026-27 Liga BBVA
+  MX Torneo Apertura". Until anyone has played in the Clausura, it shows the Apertura. Both apps choose
+  the torneo by its dates, by one rule tested against the same cases (#178).
+- **iPhone: Formula 1's race loads during a race weekend.** Until the race started, ESPN lists its field
+  with no finishing order, which failed the whole request, so Racing said it couldn't load the race. It
+  also showed the first practice session's date and the weekend's own status, which can say Final the
+  day before the race. It now shows the race itself: its start time (read as the UTC time it is), its
+  status, and before it starts, the entry list without positions. A canceled race says Canceled rather
+  than Final, and nobody is named the winner of a race still being run.
 - **Statistic definitions come from ESPN on both apps, and each is the right one.** On the iPhone, the
   definition on the MLB Strikeouts leaders was the batter's ("the number of times a player strikes out")
   on a list of pitchers, and the NFL's interception leaders had the definition of interceptions thrown.

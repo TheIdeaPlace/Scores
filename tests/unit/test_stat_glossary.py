@@ -102,14 +102,16 @@ def test_the_names_shared_with_different_definitions_are_the_known_ones():
 
 # --- The leader table against what tools/stat_categories.py found ----------------------------------
 
-def leader_rows():
-    with open(os.path.join(ROOT, "docs", "stat-categories.csv"), encoding="utf-8-sig") as f:
-        return [row for row in csv.DictReader(f)
-                if row["kind"] == "player_leader" and row["source"].split("; ")[0] == "leaders"]
-
-
 SPORTS = {"MLB": "baseball", "NFL": "football", "NCAAF": "football", "NBA": "basketball", "WNBA": "basketball",
           "NCAAM": "basketball", "NCAAWB": "basketball", "NHL": "hockey"}
+
+
+def leader_rows():
+    """The leagues with definitions. Soccer reads /leaders too, but has no byteam, so no glossary."""
+    with open(os.path.join(ROOT, "docs", "stat-categories.csv"), encoding="utf-8-sig") as f:
+        return [row for row in csv.DictReader(f)
+                if row["kind"] == "player_leader" and row["source"].split("; ")[0] == "leaders"
+                and row["league"] in SPORTS]
 
 
 def test_every_leader_category_the_apps_read_is_in_the_table():

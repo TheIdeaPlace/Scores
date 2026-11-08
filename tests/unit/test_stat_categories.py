@@ -69,14 +69,26 @@ def test_mlb_leaders(offline, monkeypatch):
 
 
 def test_soccer_repeats_are_marked_hidden(offline, monkeypatch):
-    data = load("leaders_core_EPL.json")
-    monkeypatch.setattr(sc, "get_json", lambda url, params=None, tries=3: data if url.endswith("/leaders") else None)
+    data = load("leaders_v3_EPL.json")
+    asked = []
+    monkeypatch.setattr(espn_api, "_fetch_leaders", lambda path, year, season_type=2: asked.append(
+        (path, year, season_type)) or data)
     rows = sc.Rows()
-    sc.core_leaders_rows(rows, "EPL")
+    sc.soccer_leaders_rows(rows, "EPL")
+    assert asked == [("soccer/eng.1", 2026, 1)], "the season and type the apps ask for"
     found = by_key(rows)
     assert found["goalsLeaders"]["shown_windows"] and found["goalsLeaders"]["shown_iphone"]
     assert not found["goals"]["shown_windows"] and not found["goals"]["shown_iphone"]
     assert "repeats an earlier list" in found["goals"]["notes"][0]
+    assert all(row["sources"] == ["leaders"] for row in found.values())
+
+
+def test_soccer_leaders_not_answering_is_a_problem_to_report(offline, monkeypatch):
+    def failing(path, year, season_type=2):
+        raise espn_api.ApiError(espn_api.STATISTICS_UNAVAILABLE)
+
+    monkeypatch.setattr(espn_api, "_fetch_leaders", failing)
+    assert sc.soccer_leaders_rows(sc.Rows(), "EPL") == "EPL: /leaders didn't answer"
 
 
 def test_nfl_team_stats(offline, monkeypatch):

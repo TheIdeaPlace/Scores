@@ -96,6 +96,17 @@ struct UserGuideView: View {
                     Text("Each place opens in Safari, or in the service's app if you have it. Sign in or subscribe there if it asks; the app doesn't play the audio itself.")
                 }
 
+                // MARK: Monitoring Games
+                GuideSection(icon: "eye", title: "Monitoring Games", color: .blue) {
+                    Text("Live Scores starts with a **Monitoring** section, for the games you want to keep up with.")
+                    BulletPoint("On a game in Live Scores, use the **Monitor** VoiceOver action (swipe up or down), or press and hold the game and choose Monitor. The game stays in its own section, which says it's monitored, and a copy appears under Monitoring with its sport at the end")
+                    BulletPoint("Monitoring rows are in the order you added them, and opening one opens the game as anywhere else")
+                    BulletPoint("A sport's own scores page has **Monitor** too, for today's games. The game is added to Live Scores' Monitoring section, the only place it shows. Only today's games can be monitored, since Live Scores shows today")
+                    BulletPoint("To stop, use **Stop Monitoring** on the game, in either place. On a Monitoring row, VoiceOver moves to the next game there, or to the section's heading if there's none after it")
+                    BulletPoint("Monitor is in the Quick List and Full List views, not Table view")
+                    Text("Monitoring lasts until the app quits, wherever you go in the meantime. The app doesn't read out score changes: the Monitoring section is where to find them.")
+                }
+
                 // MARK: Golf
                 GuideSection(icon: "figure.golf", title: "Golf", color: .green) {
                     Text("PGA Tour and LPGA Tour each have four tabs: Leaderboard, Schedule, Stats and News. The leaderboard opens on the tournament being played, or this week's.")
