@@ -19,6 +19,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - The golf dialog has a **News** tab with ESPN's PGA Tour or LPGA Tour stories; Enter opens one in your
     browser, and F5 tries again if they couldn't be loaded.
   - A shared file, `tests/fixtures/team_hub_stats_grid.json`, holds both apps' Stats tabs to the same rows.
+- **MLB win probability and season series on Windows, as on the iPhone (#194).** An MLB game's details
+  have a **Win probability** row ("Win probability: Mets 70%") and a season series row ("Regular Season
+  Series: Mets lead 7-5"). Enter on the first opens the chances by inning, after every play, and the five
+  biggest swings, with who gained on each play; F5 updates it during a game. Enter on the second opens a
+  tab for each series (playoff round, regular season, current set, spring training) listing its games,
+  starting on the game you came from. Both apps count each series' record from its games, as of the game
+  you're looking at, so an old game doesn't give away how a series ended; ESPN's own sentence isn't read,
+  since it can be wrong (in one World Series game it gave the wrong team the lead). Both round win
+  percentages the same way: the iPhone's chart used to cut 69.8% to 69% and called a live game's chances
+  "Final". The unreachable Kitchen Sink dialog these came from is gone.
 - **Past football seasons on Windows (#192).** In the NFL and college football scores lists, Ctrl+G (or
   **Go to Season**) opens a list of seasons, back to 2001 for the NFL and 2005 for college football, as on
   the iPhone. A past season opens on its regular season Week 1, and the week and season are spoken and put
@@ -105,8 +115,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   says so instead of going quiet, and F5 on a card tries again and stays on it. The card no longer shows
   the team's record. Both apps decide which game is live, last and next by one rule, tested against the
   same cases (#191).
+- **Soccer leaders open in about a second.** Both apps now get a league's leaders in one request, with
+  the names and teams inside, instead of looking up every player and team one by one: on Windows, about
+  140 to 180 requests and 7 seconds became 2 requests and 1 second. The lists, players and numbers are
+  the same as before. NWSL and the CONCACAF Champions Cup show 10 players a list for now rather than 20,
+  since ESPN won't send them 20. If ESPN doesn't answer, the screen says so (#198).
 
 ### Fixed
+- **Liga MX leaders follow the torneo being played.** From January, Statistics shows the Torneo Clausura's
+  leaders rather than the Apertura's, and the season line names the torneo, for example "2026-27 Liga BBVA
+  MX Torneo Apertura". Until anyone has played in the Clausura, it shows the Apertura. Both apps choose
+  the torneo by its dates, by one rule tested against the same cases (#178).
 - **iPhone: Formula 1's race loads during a race weekend.** Until the race started, ESPN lists its field
   with no finishing order, which failed the whole request, so Racing said it couldn't load the race. It
   also showed the first practice session's date and the weekend's own status, which can say Final the

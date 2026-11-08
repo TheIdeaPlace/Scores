@@ -679,7 +679,7 @@ struct GameDetailView: View {
         }
     }
 
-    // MARK: - More tab (MLB KitchenSink: Win Probability + Season Series)
+    // MARK: - More tab (MLB: Win Probability + Season Series)
 
     private func moreTab(details: GameDetails) -> some View {
         ScrollView {
@@ -688,36 +688,33 @@ struct GameDetailView: View {
                 if let wp = details.winprobability, !wp.isEmpty {
                     winProbChart(
                         entries: wp,
-                        awayAbbr: game.awayTeam.abbreviation,
-                        homeAbbr: game.homeTeam.abbreviation
+                        homeAbbr: game.homeTeam.abbreviation,
+                        names: details.sideNames
                     )
                 }
 
-                // Season series
-                if let series = details.seasonseries, !series.isEmpty {
-                    let sorted = series.sorted { $0.displayOrder < $1.displayOrder }
+                // Season series: the record counted from the games, as of this one (SeasonSeries.swift).
+                let series = SeasonSeries.shown(details.seasonseries ?? [], names: details.teamNamesByID,
+                                                thisGame: game.id)
+                if !series.isEmpty {
                     sectionCard(title: "Season Series") {
-                        ForEach(Array(sorted.enumerated()), id: \.offset) { _, s in
+                        ForEach(Array(series.enumerated()), id: \.offset) { _, s in
                             HStack {
                                 VStack(alignment: .leading, spacing: 2) {
-                                    Text(s.title ?? "Series")
+                                    Text(s.label)
                                         .font(.subheadline.bold())
-                                    if let summary = s.summary {
-                                        Text(summary)
-                                            .font(.caption)
-                                            .foregroundColor(.secondary)
-                                    }
-                                }
-                                Spacer()
-                                if let total = s.totalCompetitions {
-                                    Text("\(total) games")
-                                        .font(.caption2)
+                                    Text(s.text)
+                                        .font(.caption)
                                         .foregroundColor(.secondary)
                                 }
+                                Spacer()
+                                Text("\(s.games) \(s.games == 1 ? "game" : "games")")
+                                    .font(.caption2)
+                                    .foregroundColor(.secondary)
                             }
                             .padding(.vertical, 3)
                             .accessibilityElement(children: .ignore)
-                            .accessibilityLabel("\(s.title ?? "Series"): \(s.summary ?? "")")
+                            .accessibilityLabel("\(s.label): \(s.text), \(s.games) \(s.games == 1 ? "game" : "games")")
                         }
                     }
                 }
@@ -727,7 +724,8 @@ struct GameDetailView: View {
     }
 
     @ViewBuilder
-    private func winProbChart(entries: [GameDetails.WinProbEntry], awayAbbr: String, homeAbbr: String) -> some View {
+    private func winProbChart(entries: [GameDetails.WinProbEntry], homeAbbr: String,
+                              names: (home: String, away: String)) -> some View {
         // Build (index, homeWinPct) data points
         let data = entries.enumerated().map { (i, e) in (i, e.homeWinPercentage) }
 
@@ -776,16 +774,17 @@ struct GameDetailView: View {
             }
             .chartXAxis(.hidden)
             .frame(height: 160)
-            .accessibilityLabel(winProbAccessibilityLabel(entries: entries, homeAbbr: homeAbbr, awayAbbr: awayAbbr))
+            .accessibilityLabel(winProbAccessibilityLabel(entries: entries, names: names))
             .accessibilityHidden(false)
         }
     }
 
-    private func winProbAccessibilityLabel(entries: [GameDetails.WinProbEntry], homeAbbr: String, awayAbbr: String) -> String {
+    /// "Win probability chart. Mets 70%." The same words as the Windows row, from
+    /// WinProbability.swift: rounded, not cut off, and not called final mid-game.
+    private func winProbAccessibilityLabel(entries: [GameDetails.WinProbEntry], names: (home: String, away: String)) -> String {
         guard let last = entries.last else { return "Win probability chart" }
-        let homePct = Int(last.homeWinPercentage * 100)
-        let awayPct = 100 - homePct
-        return "Win probability chart. Final: \(homeAbbr) \(homePct)%, \(awayAbbr) \(awayPct)%."
+        let leader = WinProbability.leaderText(homeFraction: last.homeWinPercentage, home: names.home, away: names.away)
+        return "Win probability chart. \(leader)."
     }
 
     // MARK: - Game News section

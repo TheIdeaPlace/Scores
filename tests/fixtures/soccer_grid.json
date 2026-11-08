@@ -1,5 +1,5 @@
 {
-  "note": "What a real soccer answer reads as, on both apps. tests/unit/replay/test_soccer.py checks Windows and SoccerGridTests in LeagueLeadersTests.swift the iPhone. A table's rows are its cells under headers, in the order of ESPN's rank. In the leaders, an athlete's reference answers with Athlete and its id and a team's with its id as its abbreviation, since only the references are in the fixture, and the season comes from season_EPL.json.",
+  "note": "What a real soccer answer reads as, on both apps. tests/unit/replay/test_soccer.py checks Windows and SoccerGridTests in LeagueLeadersTests.swift the iPhone. A table's rows are its cells under headers, in the order of ESPN's rank. The leaders are a real /leaders answer for that league and year, read as the lists shown, ranked best first with ties sharing a rank, and named for their season. seasonTypes are the season types each app asks /leaders for, most recent first, given the core API's season (its types inside) and the time now: type 1 for every league but Liga MX, whose torneos (the Apertura, type 1, and the type named Torneo Clausura) count once they've started.",
   "headers": ["Pos", "Team", "GP", "W", "D", "L", "GF", "GA", "GD", "Pts", "Status"],
   "tables": [
     {"fixture": "standings_EPL.json",
@@ -93,78 +93,125 @@
      "groups": []}
   ],
   "leaders": [
-    {"fixture": "leaders_core_EPL.json",
+    {"fixture": "leaders_v3_EPL.json", "league": "EPL", "year": 2026,
      "season": "2026-27 English Premier League",
      "lists": [
       {"title": "Goals",
        "rows": [
-        {"rank": 1, "player": "Athlete 253989", "team": "382", "value": "9"},
-        {"rank": 2, "player": "Athlete 235662", "team": "364", "value": "6"},
-        {"rank": 3, "player": "Athlete 265653", "team": "363", "value": "5"}
+        {"rank": 1, "player": "Erling Haaland", "team": "MNC", "value": "9"},
+        {"rank": 2, "player": "Thierno Barry", "team": "EVE", "value": "6"},
+        {"rank": 2, "player": "Alexander Isak", "team": "LIV", "value": "6"}
       ]},
       {"title": "Assists",
        "rows": [
-        {"rank": 1, "player": "Athlete 238262", "team": "359", "value": "5"},
-        {"rank": 2, "player": "Athlete 132659", "team": "331", "value": "4"},
-        {"rank": 2, "player": "Athlete 102368", "team": "349", "value": "4"}
+        {"rank": 1, "player": "Declan Rice", "team": "ARS", "value": "5"},
+        {"rank": 2, "player": "Pascal Gross", "team": "BHA", "value": "4"},
+        {"rank": 2, "player": "Evanilson", "team": "BOU", "value": "4"}
       ]},
       {"title": "Shots On Target",
        "rows": [
-        {"rank": 1, "player": "Athlete 253989", "team": "382", "value": "16"},
-        {"rank": 2, "player": "Athlete 301166", "team": "368", "value": "13"},
-        {"rank": 2, "player": "Athlete 243364", "team": "349", "value": "13"}
+        {"rank": 1, "player": "Erling Haaland", "team": "MNC", "value": "16"},
+        {"rank": 2, "player": "Thierno Barry", "team": "EVE", "value": "15"},
+        {"rank": 3, "player": "Marcus Tavernier", "team": "BOU", "value": "13"}
       ]},
       {"title": "Yellow Cards",
        "rows": [
-        {"rank": 1, "player": "Athlete 234698", "team": "362", "value": "5"},
-        {"rank": 1, "player": "Athlete 153613", "team": "306", "value": "5"},
-        {"rank": 3, "player": "Athlete 241317", "team": "357", "value": "4"}
+        {"rank": 1, "player": "Matty Cash", "team": "AVL", "value": "5"},
+        {"rank": 1, "player": "Matt Crooks", "team": "HUL", "value": "5"},
+        {"rank": 3, "player": "Ethan Ampadu", "team": "LEE", "value": "4"}
       ]},
       {"title": "Red Cards",
        "rows": [
-        {"rank": 1, "player": "Athlete 296395", "team": "363", "value": "1"},
-        {"rank": 1, "player": "Athlete 225564", "team": "337", "value": "1"},
-        {"rank": 1, "player": "Athlete 230081", "team": "366", "value": "1"}
+        {"rank": 1, "player": "Cole Palmer", "team": "CHE", "value": "1"},
+        {"rank": 1, "player": "Vitaly Janelt", "team": "BRE", "value": "1"},
+        {"rank": 1, "player": "Reinildo Mandava", "team": "SUN", "value": "1"}
       ]},
       {"title": "Fouls Committed",
        "rows": [
-        {"rank": 1, "player": "Athlete 250936", "team": "362", "value": "19"},
-        {"rank": 2, "player": "Athlete 241317", "team": "357", "value": "18"},
-        {"rank": 2, "player": "Athlete 197717", "team": "357", "value": "18"}
+        {"rank": 1, "player": "Caleb Yirenkyi", "team": "COV", "value": "19"},
+        {"rank": 1, "player": "Boubacar Kamara", "team": "AVL", "value": "19"},
+        {"rank": 3, "player": "Ethan Ampadu", "team": "LEE", "value": "18"}
       ]},
       {"title": "Fouls Suffered",
        "rows": [
-        {"rank": 1, "player": "Athlete 238472", "team": "382", "value": "28"},
-        {"rank": 2, "player": "Athlete 162843", "team": "362", "value": "22"},
-        {"rank": 3, "player": "Athlete 250936", "team": "362", "value": "21"}
+        {"rank": 1, "player": "Elliot Anderson", "team": "MNC", "value": "28"},
+        {"rank": 2, "player": "John McGinn", "team": "AVL", "value": "22"},
+        {"rank": 3, "player": "Boubacar Kamara", "team": "AVL", "value": "21"}
       ]},
       {"title": "Total Shots",
        "rows": [
-        {"rank": 1, "player": "Athlete 253989", "team": "382", "value": "34"},
-        {"rank": 2, "player": "Athlete 301166", "team": "368", "value": "30"},
-        {"rank": 3, "player": "Athlete 296395", "team": "363", "value": "28"}
+        {"rank": 1, "player": "Thierno Barry", "team": "EVE", "value": "36"},
+        {"rank": 2, "player": "Erling Haaland", "team": "MNC", "value": "34"},
+        {"rank": 3, "player": "Cole Palmer", "team": "CHE", "value": "28"}
       ]},
       {"title": "Accurate Passes",
        "rows": [
-        {"rank": 1, "player": "Athlete 234878", "team": "382", "value": "736"},
-        {"rank": 2, "player": "Athlete 282583", "team": "367", "value": "725"},
-        {"rank": 3, "player": "Athlete 238472", "team": "382", "value": "596"}
+        {"rank": 1, "player": "Rúben Dias", "team": "MNC", "value": "736"},
+        {"rank": 2, "player": "Jan Paul van Hecke", "team": "TOT", "value": "725"},
+        {"rank": 3, "player": "Elliot Anderson", "team": "MNC", "value": "596"}
       ]},
       {"title": "Saves",
        "rows": [
-        {"rank": 1, "player": "Athlete 307118", "team": "357", "value": "33"},
-        {"rank": 2, "player": "Athlete 284199", "team": "306", "value": "32"},
-        {"rank": 3, "player": "Athlete 319267", "team": "361", "value": "31"}
+        {"rank": 1, "player": "James Trafford", "team": "LEE", "value": "33"},
+        {"rank": 2, "player": "Konstantinos Tzolakis", "team": "HUL", "value": "32"},
+        {"rank": 3, "player": "Lukás Hornícek", "team": "NEW", "value": "31"}
       ]}
     ]},
-    {"fixture": "leaders_core_UEL_2024.json",
-     "season": "2026-27 English Premier League",
+    {"fixture": "leaders_v3_LigaMX.json", "league": "Liga MX", "year": 2026,
+     "season": "2026-27 Liga BBVA MX Torneo Apertura",
      "lists": [
       {"title": "Goals",
        "rows": [
-        {"rank": 1, "player": "Athlete 124091", "team": "360", "value": "7"},
-        {"rank": 1, "player": "Athlete 272624", "team": "2980", "value": "7"}
+        {"rank": 1, "player": "Salomón Rondón", "team": "PAC", "value": "15"},
+        {"rank": 2, "player": "Henry Martín", "team": "AME", "value": "10"},
+        {"rank": 3, "player": "Juninho", "team": "UNAM", "value": "9"}
+      ]},
+      {"title": "Assists",
+       "rows": [
+        {"rank": 1, "player": "Helinho", "team": "TOL", "value": "7"},
+        {"rank": 2, "player": "Ezequiel Bullaude", "team": "SAN", "value": "5"},
+        {"rank": 2, "player": "Carlos Rodríguez", "team": "CAZ", "value": "5"}
+      ]}
+    ]},
+    {"fixture": "leaders_v3_LigaMX_2025_clausura.json", "league": "Liga MX", "year": 2025,
+     "season": "2025-26 Liga BBVA MX Torneo Clausura",
+     "lists": [
+      {"title": "Goals",
+       "rows": [
+        {"rank": 1, "player": "João Pedro", "team": "ASL", "value": "14"},
+        {"rank": 2, "player": "Armando González", "team": "GDL", "value": "12"}
+      ]}
+    ]},
+    {"fixture": "leaders_v3_UEL_2024.json", "league": "UEL", "year": 2024,
+     "season": "2024-25 UEFA Europa League",
+     "lists": [
+      {"title": "Goals",
+       "rows": [
+        {"rank": 1, "player": "Bruno Fernandes", "team": "MAN", "value": "7"},
+        {"rank": 1, "player": "Kasper Høgh", "team": "BODO", "value": "7"}
       ]}
     ]}
+  ],
+  "seasonTypes": [
+    {"league": "EPL", "season": "season_EPL.json", "now": "2026-11-07T12:00:00Z", "types": [1],
+     "why": "a league files its whole season under type 1"},
+    {"league": "NWSL", "season": "season_NWSL.json", "now": "2026-11-07T12:00:00Z", "types": [1],
+     "why": "in its playoffs, which /season calls the current type, and its leaders are still type 1"},
+    {"league": "Liga MX", "season": "season_LigaMX.json", "now": "2026-05-31T12:00:00Z", "types": [],
+     "why": "before the season's Apertura starts: nothing, so the season before"},
+    {"league": "Liga MX", "season": "season_LigaMX.json", "now": "2026-11-07T12:00:00Z", "types": [1],
+     "why": "the Apertura"},
+    {"league": "Liga MX", "season": "season_LigaMX.json", "now": "2026-12-15T12:00:00Z", "types": [1],
+     "why": "the Apertura finals, while ESPN dates the Clausura's playoff rounds in November and December"},
+    {"league": "Liga MX", "season": "season_LigaMX.json", "now": "2027-01-01T04:59:00Z", "types": [1],
+     "why": "a minute before the Clausura starts"},
+    {"league": "Liga MX", "season": "season_LigaMX.json", "now": "2027-01-01T05:00:00Z", "types": [5, 1],
+     "why": "the Clausura, type 5 in 2026, and the Apertura before it"},
+    {"league": "Liga MX", "season": "season_LigaMX.json", "now": "2027-05-20T12:00:00Z", "types": [5, 1],
+     "why": "the Clausura's playoffs still mean the Clausura"},
+    {"league": "Liga MX", "season": "season_LigaMX_2025.json", "now": "2025-09-01T00:00:00Z", "types": [1],
+     "why": "2025's Apertura"},
+    {"league": "Liga MX", "season": "season_LigaMX_2025.json", "now": "2026-02-10T12:00:00Z", "types": [8, 1],
+     "why": "2025's Clausura is type 8, after its play-in rounds"}
   ]
 }

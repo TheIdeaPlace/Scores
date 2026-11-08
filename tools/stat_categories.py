@@ -8,15 +8,15 @@ categories they want, which isn't built yet. docs/stat-categories.md explains th
     python tools/stat_categories.py --out somewhere.csv
 
 It only reads, and opens no windows. It asks ESPN for the same season the apps would, and decides
-what's shown by running the apps' own rules: espn_api's leader parser, soccer.core_leader_lists,
+what's shown by running the apps' own rules: espn_api's leader parser, soccer.soccer_leader_lists,
 team_stats.parse_team_stats, the iPhone's catalog in tests/fixtures/team_stat_directions.json and
 the iPhone's lists of names it leaves out, read from ESPNAPIService.swift. Some of that depends on
 the season's numbers (a list where everyone is on nothing isn't shown), so a rerun early in a season
 can differ from one late in it.
 
 Sources, as the `source` column names them:
-    leaders           site.web.api.espn.com .../leaders, player leaders (8 leagues), both apps
-    core_leaders      the core API's seasons/{y}/types/{t}/leaders, soccer's player leaders
+    leaders           site.web.api.espn.com .../leaders, player leaders (8 leagues and soccer), both apps
+    core_leaders      the core API's seasons/{y}/types/{t}/leaders, college hockey's on the iPhone
     byathlete         site.web.api.espn.com .../statistics/byathlete, every player ranked by column
     core_athlete_stats  the core API's athletes/{id}/statistics, one player at a time
     mlb_statsapi      statsapi.mlb.com stats/leaders, Windows' MLB leaders until #166
@@ -34,6 +34,8 @@ import os
 import re
 import sys
 from concurrent.futures import ThreadPoolExecutor
+from datetime import datetime, timezone
+from itertools import islice
 
 import requests
 
@@ -44,7 +46,8 @@ if ROOT not in sys.path:
 import espn_api  # noqa: E402
 import team_stats  # noqa: E402
 from exceptions import ApiError  # noqa: E402
-from soccer import SOCCER_LEAGUES, core_leader_lists  # noqa: E402
+import soccer  # noqa: E402
+from soccer import SOCCER_LEAGUES, soccer_leader_lists  # noqa: E402
 
 CSV_PATH = os.path.join(ROOT, "docs", "stat-categories.csv")
 SWIFT_SERVICE = os.path.join(ROOT, "iOS", "SportsScoresApp", "SportsScores", "Services", "ESPNAPIService.swift")
@@ -64,7 +67,7 @@ CORE = espn_api.CORE_BASE_URL
 WEB = espn_api.TEAM_STATS_BASE_URL
 TIMEOUT = 20
 WORKERS = 8
-SOCCER_SEASON_TYPE = espn_api.SOCCER_LEADERS_SEASON_TYPE
+SOCCER_SEASON_TYPE = soccer.LEADERS_SEASON_TYPE
 
 # The MLB Stats API categories Windows showed until #166 moved its leaders to ESPN (#165), with the
 # ESPN stat each one is, where ESPN has it: (MLB Stats API name, its group, title, ESPN group, ESPN
@@ -369,20 +372,19 @@ def leaders_rows(rows, league, iphone_not_shown):
 
 
 def core_leaders_rows(rows, league):
-    """The core API's leaders: soccer's on both apps, and college hockey's on the iPhone."""
+    """The core API's leaders, which the iPhone reads for college hockey. ESPN has none there now,
+    so this finds nothing, but it says so if that changes."""
     league_path = espn_api.LEAGUES[league]
     sport, code = league_path.split("/", 1)
-    soccer = league in SOCCER_LEAGUES
     try:
         season = espn_api.core_season(league_path)
     except ApiError:
         return [], None
-    season_type = SOCCER_SEASON_TYPE if soccer else espn_api.REGULAR_SEASON
     data, used_year = None, None
     for year in range(season["year"], season["year"] - 3, -1):
-        answer = get_json(f"{CORE}/{sport}/leagues/{code}/seasons/{year}/types/{season_type}/leaders",
+        answer = get_json(f"{CORE}/{sport}/leagues/{code}/seasons/{year}/types/{espn_api.REGULAR_SEASON}/leaders",
                           {"limit": espn_api.LEADERS_LIMIT})
-        if answer and core_leader_lists(answer):
+        if dicts(as_dict(answer).get("categories")):
             data, used_year = answer, year
             break
     if not data:
@@ -396,14 +398,61 @@ def core_leaders_rows(rows, league):
     answers = fetch_all(stat_refs.values())
     every_answer = [answer for answer in answers.values() if answer]
 
+    for category in categories:
+        key = category.get("name") or ""
+        leaders = dicts(category.get("leaders"))
+        shown = any(leader.get("value") for leader in leaders)
+        first_value = leaders[0].get("value") if leaders else None
+        own = [a for a in [answers.get(stat_refs.get(key))] + every_answer if a]
+        group, stat = find_stat(own, key, first_value)
+        if stat is None and key in LEADER_ALIASES:
+            group, stat = find_stat(own, LEADER_ALIASES[key], first_value)
+        note = "" if shown else "hidden this season: nobody has a number in it"
+        note = "; ".join(n for n in (note, "Windows has no college hockey leaders") if n)
+        row = rows.add(league, PLAYER, key, key=key, group=group or "leaders",
+                       display_name=category.get("displayName") or key,
+                       abbreviation=category.get("abbreviation") or "",
+                       definition=as_dict(stat).get("description"), source="core_leaders", available=True,
+                       shown_windows=False, shown_iphone=shown, low_is_good=False, note=note)
+        if stat is not None and group:
+            row["_matches"] = {f"{group}.{stat.get('name')}".lower()}
+    return every_answer, used_year
+
+
+def soccer_leaders_rows(rows, league):
+    """Soccer's /leaders, which both apps read, for the season and type they'd ask for."""
+    league_path = espn_api.LEAGUES[league]
+    try:
+        season = espn_api.core_season(league_path)
+        tries = espn_api._soccer_seasons_to_try(league, league_path, season, datetime.now(timezone.utc))
+        data, used_year, season_type = None, None, SOCCER_SEASON_TYPE
+        for year, season_type in islice(tries, espn_api.SOCCER_LEADER_TRIES):
+            answer = espn_api._fetch_leaders(league_path, year, season_type)
+            if soccer_leader_lists(answer):
+                data, used_year = answer, year
+                break
+    except ApiError:
+        return f"{league}: /leaders didn't answer"
+    if not data:
+        return [], None
+    categories = dicts(as_dict(data.get("leaders")).get("categories"))
+    first_athletes = {}
+    for category in categories:
+        leaders = dicts(category.get("leaders"))
+        athlete_id = as_dict(leaders[0].get("athlete")).get("id") if leaders else None
+        if athlete_id:
+            first_athletes[category.get("name")] = athlete_stats_url(league_path, used_year, season_type, athlete_id)
+    answers = fetch_all(first_athletes.values())
+    every_answer = [answer for answer in answers.values() if answer]
+
     kept = 0
     for index, category in enumerate(categories):
         key = category.get("name") or ""
-        shown_now = len(core_leader_lists({"categories": categories[:index + 1]}))
+        shown_now = len(soccer_leader_lists({"leaders": {"categories": categories[:index + 1]}}))
         shown, kept = shown_now > kept, shown_now
         leaders = dicts(category.get("leaders"))
         first_value = leaders[0].get("value") if leaders else None
-        own = [a for a in [answers.get(stat_refs.get(key))] + every_answer if a]
+        own = [a for a in [answers.get(first_athletes.get(key))] + every_answer if a]
         group, stat = find_stat(own, key, first_value)
         if stat is None and key in LEADER_ALIASES:
             group, stat = find_stat(own, LEADER_ALIASES[key], first_value)
@@ -413,13 +462,11 @@ def core_leaders_rows(rows, league):
             note = "hidden this season: nobody has a number in it"
         else:
             note = "hidden: repeats an earlier list with the same name and the same players"
-        if not soccer:
-            note = "; ".join(n for n in (note, "Windows has no college hockey leaders") if n)
         row = rows.add(league, PLAYER, key, key=key, group=group or "leaders",
                        display_name=category.get("displayName") or key,
                        abbreviation=category.get("abbreviation") or "",
-                       definition=as_dict(stat).get("description"), source="core_leaders", available=True,
-                       shown_windows=shown and soccer, shown_iphone=shown, low_is_good=False, note=note)
+                       definition=as_dict(stat).get("description"), source="leaders", available=True,
+                       shown_windows=shown, shown_iphone=shown, low_is_good=False, note=note)
         if stat is not None and group:
             row["_matches"] = {f"{group}.{stat.get('name')}".lower()}
     return every_answer, used_year
@@ -708,6 +755,8 @@ def gather(leagues):
         year = season_year(league)
         if league in espn_api.LEADER_LEAGUES:
             result = leaders_rows(rows, league, iphone_not_shown)
+        elif league in SOCCER_LEAGUES:
+            result = soccer_leaders_rows(rows, league)
         else:
             result = core_leaders_rows(rows, league)
         answers, leaders_year = ([], None) if isinstance(result, str) else result

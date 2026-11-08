@@ -86,15 +86,63 @@ struct RosterPlayer: Identifiable {
 
 /// The season ESPN calls current, and what part of it the league is in. From ESPN rather than
 /// the calendar, so a preseason is known for what it is. Soccer's season types are numbers of
-/// their own, and it doesn't ask.
+/// their own, and it doesn't ask. The same shape answers for one season by its year
+/// (`seasons/{y}`), which Liga MX asks for to find an earlier season's torneos.
 struct CurrentSeasonResponse: Decodable {
     let year: Int
     /// "2026-27 English Premier League"
     let displayName: String?
     let type: SeasonType?
+    /// Every part of the season, with its dates. Liga MX's torneos are found here (#178).
+    let types: SeasonTypes?
 
     struct SeasonType: Decodable {
         let type: Int?
+    }
+
+    struct SeasonTypes: Decodable {
+        let items: [Item]?
+
+        enum CodingKeys: String, CodingKey { case items }
+
+        /// One odd entry shouldn't lose the rest.
+        init(from decoder: Decoder) throws {
+            items = try decoder.container(keyedBy: CodingKeys.self).lossyArray(forKey: .items)
+        }
+
+        struct Item: Decodable {
+            /// "1", the number /leaders takes as `seasontype`. ESPN writes it as text.
+            let id: Int?
+            /// "Torneo Clausura"
+            let name: String?
+            /// "2027-01-01T05:00Z"
+            let startDate: String?
+
+            enum CodingKeys: String, CodingKey { case id, name, startDate }
+
+            init(from decoder: Decoder) throws {
+                let container = try decoder.container(keyedBy: CodingKeys.self)
+                if let text = try? container.decodeIfPresent(String.self, forKey: .id) {
+                    id = Int(text)
+                } else {
+                    id = try? container.decodeIfPresent(Int.self, forKey: .id)
+                }
+                name = try? container.decodeIfPresent(String.self, forKey: .name)
+                startDate = try? container.decodeIfPresent(String.self, forKey: .startDate)
+            }
+        }
+    }
+
+    enum CodingKeys: String, CodingKey { case year, displayName, type, types }
+
+    /// Only the year is needed: an odd field elsewhere shouldn't lose the season, which most of
+    /// the app asks for.
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        year = try container.decode(Int.self, forKey: .year)
+        displayName = try? container.decodeIfPresent(String.self, forKey: .displayName)
+        type = try? container.decodeIfPresent(SeasonType.self, forKey: .type)
+        types = try? container.decodeIfPresent(SeasonTypes.self, forKey: .types)
     }
 
     var isRegularSeason: Bool { type?.type == 2 }
