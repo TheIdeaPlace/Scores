@@ -1332,42 +1332,20 @@ class ESPNAPIService {
 
     // MARK: - Stat Definitions
 
-    /// Plain-English definition of a stat, or nil when ESPN publishes none.
+    /// ESPN's definition of a list's stat, or nil when ESPN publishes none.
     ///
     /// ESPN ships its own glossary text alongside the team statistics payload —
     /// a `descriptions` array parallel to each category's stat names — so both
     /// the Players and Teams tabs read definitions from the same document
-    /// rather than from hand-written copy that would drift.
-    func statDefinition(for statKey: String, sport: Sport) async -> String? {
+    /// rather than from hand-written copy that would drift. Windows reads the
+    /// same one. It's keyed by category and stat (StatGlossary), so the
+    /// pitchers' strikeout leaders get the pitcher's definition, not the batter's.
+    func statDefinition(for category: LeagueLeaderCategory, sport: Sport) async -> String? {
         guard !TeamStatCatalog.specs(for: sport).isEmpty else { return nil }
-        let definitions = await teamStatsStore.glossary(for: sport)
-        if let exact = definitions[statKey] { return exact }
-        return Self.playerStatAliases[statKey].flatMap { definitions[$0] }
+        let glossary = await teamStatsStore.glossary(for: sport)
+        let family = sport.apiPath.components(separatedBy: "/").first ?? ""
+        return StatGlossary.definition(in: glossary, sport: family, key: category.name, team: category.isTeamCategory)
     }
-
-    /// Player-leader categories and team statistics use different keys for the
-    /// same stat — basketball is the worst offender ("pointsPerGame" on the
-    /// leaders endpoint, "avgPoints" in the team payload). Map the ones that
-    /// differ so the Players tab gets definitions too. Keys with no team-level
-    /// equivalent at all (PER, plus/minus, tackles) are simply absent, and
-    /// those headings show no definition button.
-    private static let playerStatAliases: [String: String] = [
-        "pointsPerGame":        "avgPoints",
-        "assistsPerGame":       "avgAssists",
-        "reboundsPerGame":      "avgRebounds",
-        "stealsPerGame":        "avgSteals",
-        "blocksPerGame":        "avgBlocks",
-        "turnoversPerGame":     "avgTurnovers",
-        "foulsPerGame":         "avgFouls",
-        "fieldGoalPercentage":  "fieldGoalPct",
-        "FreeThrowPct":         "freeThrowPct",
-        "3PointPct":            "threePointFieldGoalPct",
-        "3PointsMadePerGame":   "avgThreePointFieldGoalsMade",
-        "3PointMadePerGame":    "avgThreePointFieldGoalsMade",
-        "defensiveReboundsPerGame": "avgDefensiveRebounds",
-        "offensiveReboundsPerGame": "avgOffensiveRebounds",
-        "quarterbackRating":    "QBRating",
-    ]
 
     private func buildTeamLeaderCategories(
         from league: LeagueTeamStats,
@@ -1778,12 +1756,21 @@ class ESPNAPIService {
     /// - `startDate` provided → fetches the scoreboard for that date, which ESPN returns
     ///   the tournament active during that week.
     ///
+    /// The tournament is the one `eventID` names if it's there, else the first in progress,
+    /// else the first (`GolfRules.pickEvent`, the rule Windows follows): a week can have an
+    /// opposite-field event beside the main one.
+    ///
     /// Always returns the full season calendar from `leagues[0].calendar` regardless
     /// of whether a tournament is active.
-    func fetchGolfTournament(for sport: Sport, startDate: Date? = nil) async throws -> GolfTournamentResult {
+    func fetchGolfTournament(for sport: Sport, startDate: Date? = nil,
+                             eventID: String? = nil) async throws -> GolfTournamentResult {
         var urlString = "\(baseURL)/\(sport.apiPath)/scoreboard"
         if let date = startDate {
             let fmt = DateFormatter()
+            fmt.locale = Locale(identifier: "en_US_POSIX")
+            fmt.calendar = Calendar(identifier: .gregorian)
+            // The device's time zone on purpose: parseESPNDateString reads a calendar date's
+            // literal "Z" as local time, so formatting it back in local time gives ESPN's day.
             fmt.dateFormat = "yyyyMMdd"
             urlString += "?dates=\(fmt.string(from: date))"
         }
@@ -1797,9 +1784,9 @@ class ESPNAPIService {
         }
         guard http.statusCode == 200 else { throw APIError.invalidResponse }
 
-        let decoder = JSONDecoder()
+        // Lenient: an entry ESPN sends oddly is skipped rather than failing the tour.
         // Golf date strings omit seconds ("2026-04-09T04:00Z") — use lenient parser
-        let apiResponse = try decoder.decode(GolfScoreboardResponse.self, from: data)
+        let apiResponse = try JSONDecoder().decode(GolfScoreboardResponse.self, from: data)
 
         let calendar = apiResponse.leagues?.first?.calendar.compactMap { entry -> GolfCalendarEntry? in
             guard let start = parseESPNDateString(entry.startDate),
@@ -1807,11 +1794,25 @@ class ESPNAPIService {
             return GolfCalendarEntry(id: entry.id, name: entry.label, startDate: start, endDate: end)
         } ?? []
 
-        let tournament = apiResponse.events.first.map {
+        let tournament = GolfRules.pickEvent(apiResponse.events, id: eventID).map {
             GolfTournament(from: $0, parseDate: { [weak self] s in self?.parseESPNDateString(s) })
         }
 
         return GolfTournamentResult(tournament: tournament, calendar: calendar)
+    }
+
+    /// The season's events with their state and each finished one's winner, from
+    /// `scoreboard?dates=YEAR`, the request Windows' golf schedule makes. ESPN's 400/404
+    /// is nothing there; any other failure throws, so the schedule can say so.
+    func fetchGolfSeason(for sport: Sport, year: Int) async throws -> [GolfSeasonEvent] {
+        guard let url = URL(string: "\(baseURL)/\(sport.apiPath)/scoreboard?dates=\(year)") else {
+            throw APIError.invalidURL
+        }
+        let (data, response) = try await session.data(from: url)
+        guard let http = response as? HTTPURLResponse else { throw APIError.invalidResponse }
+        if http.statusCode == 400 || http.statusCode == 404 { return [] }
+        guard http.statusCode == 200 else { throw APIError.invalidResponse }
+        return try JSONDecoder().decode(GolfScoreboardResponse.self, from: data).events.map(GolfSeasonEvent.init(from:))
     }
 
     // MARK: - Racing (F1, IndyCar, NASCAR Cup)

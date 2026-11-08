@@ -215,7 +215,7 @@ class TestRealLeaders:
             {"value": 3, "displayValue": "3", "athlete": {"shortName": "A. Bee"}, "team": {"displayName": "Bees"}}]}]}}
         nba.on("/leaders", data)
         result = espn_api.get_player_statistics("NBA")
-        assert result["player_stats"] == [{"category": "Goals", "stats": [
+        assert result["player_stats"] == [{"category": "Goals", "key": "goals", "stats": [
             {"player_name": "A. Bee", "team": "Bees", "value": "3", "stat_name": "Goals"}]}]
         assert result["season"] == ""
 
@@ -654,3 +654,59 @@ class TestTeamStatistics:
         with pytest.raises(espn_api.ApiError) as caught:
             espn_api.get_team_statistics("NBA")
         assert str(caught.value) == espn_api.STATISTICS_UNAVAILABLE
+
+    # ESPN's definitions (#193)
+
+    def test_the_glossary_comes_with_the_team_statistics(self, espn):
+        espn.on("/season$", load("season_NFL.json")).on(self.BYTEAM, load("byteam_MLB.json"))
+        glossary = espn_api.get_team_statistics("MLB")["glossary"]
+        assert "pitcher" in glossary["pitching.strikeouts"]
+        assert glossary["batting.strikeouts"] == "The number of times a player strikes out."
+
+
+class TestStatGlossary:
+    """The player leaders' definitions: one team's byteam, as the iPhone asks for them."""
+
+    BYTEAM = "/statistics/byteam"
+
+    def test_one_small_request(self, espn):
+        espn.on(self.BYTEAM, load("byteam_MLB_default.json"))
+        glossary = espn_api.get_stat_glossary("MLB")
+        assert espn.calls == ["https://site.web.api.espn.com/apis/common/v3/sports/baseball/mlb/statistics/byteam"
+                              "?region=us&lang=en&limit=1"]
+        assert glossary["pitching.strikeouts"] == "The number of times the pitcher struck out a batter."
+
+    def test_it_is_asked_for_once_while_the_app_is_open(self, espn):
+        espn.on(self.BYTEAM, load("byteam_NBA.json"))
+        first = espn_api.get_stat_glossary("NBA")
+        assert espn_api.get_stat_glossary("nba") == first
+        assert len(espn.calls) == 1
+
+    def test_an_empty_answer_is_asked_for_again(self, espn):
+        espn.on(self.BYTEAM, {})
+        assert espn_api.get_stat_glossary("NBA") == {}
+        assert espn_api.get_stat_glossary("NBA") == {}
+        assert len(espn.calls) == 2
+
+    @pytest.mark.parametrize("key", ["EPL", "NCAAH", "PGA", "CRICKET"])
+    def test_a_league_with_no_byteam_has_none_without_asking(self, espn, key):
+        assert espn_api.get_stat_glossary(key) == {}
+        assert espn.calls == []
+
+    @pytest.mark.parametrize("failure", [HTTP_500, HTTP_404, TIMEOUT, NOT_JSON, [], requests.ConnectionError("x")],
+                             ids=["500", "404", "timeout", "not_json", "list", "connection"])
+    def test_a_failure_says_so_rather_than_no_definitions(self, espn, failure):
+        espn.on(self.BYTEAM, failure)
+        with pytest.raises(ApiError, match="Try again"):
+            espn_api.get_stat_glossary("NBA")
+
+    def test_a_failure_is_not_remembered(self, espn):
+        answers = [HTTP_500, load("byteam_NBA.json")]
+        espn.on(self.BYTEAM, lambda url: answers.pop(0))
+        with pytest.raises(ApiError):
+            espn_api.get_stat_glossary("NBA")
+        assert espn_api.get_stat_glossary("NBA")
+
+    def test_the_league_sport(self):
+        assert [espn_api.league_sport(key) for key in ("MLB", "nfl", "EPL", "CRICKET")] == \
+            ["baseball", "football", "soccer", ""]

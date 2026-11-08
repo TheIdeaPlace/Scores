@@ -8,8 +8,10 @@ import racing
 from game_labels import (best_odds, broadcast_names, format_height, format_weight,
                          injured_player_count, leader_display_value, local_schedule_datetime,
                          schedule_game_label)
+import golf
 from soccer import (NAME_UNAVAILABLE, SOCCER_LEAGUES, _stat_number, core_leader_lists, parse_soccer_standings,
                     parse_team_list)
+import stat_glossary
 from team_stats import needs_team_list, parse_team_stats
 from timezone_utils import convert_espn_time_to_local
 
@@ -987,22 +989,20 @@ def get_live_golf_tournament(tour_key, leaders=3):
     answer = _espn_answer(LEADERBOARD_UNAVAILABLE, f"{BASE_URL}/{league_path}/scoreboard")
     if answer is None:
         return None
-    for event in _listed(answer, "events", LEADERBOARD_UNAVAILABLE):
+    # The first event in progress, by the rule both apps share (golf.py): between rounds
+    # the event is still on though its competition says play is complete for the day.
+    event = golf.pick_event(_listed(answer, "events", LEADERBOARD_UNAVAILABLE))
+    if event is not None and golf.event_state(event) == "in":
         comp = (_dicts(event.get("competitions")) or [{}])[0]
         status = _as_dict(_as_dict(comp.get("status")).get("type"))
-        if status.get("state") != "in":
-            continue
-        players = sorted(_dicts(comp.get("competitors")), key=lambda c: c.get("order") or 999)
+        players = golf.by_order(comp.get("competitors"))
         scores = [golf_total_to_par(p) for p in players]
         top = []
         for i, player in enumerate(players[:leaders]):
             score = scores[i]
             first = scores.index(score) + 1
             tied = scores.count(score) > 1
-            athlete = _as_dict(player.get("athlete"))
-            top.append((f"T{first}" if tied else str(first),
-                        athlete.get("displayName") or athlete.get("fullName") or "",
-                        score))
+            top.append((f"T{first}" if tied else str(first), golf.competitor_name(player), score))
         return {
             "tour": tour_key,
             "tour_name": GOLF_TOUR_NAMES.get(tour_key, tour_key),
@@ -2738,7 +2738,8 @@ def _parse_leaders(data):
                     "stat_name": title,
                 })
         if stats:
-            categories.append({"category": title, "stats": stats})
+            # `key` is ESPN's name for the category, which stat_glossary finds its definition by.
+            categories.append({"category": title, "key": key, "stats": stats})
     if not categories:
         return _no_leaders()
     name = "Season" if season_type.get("type") == POSTSEASON else season_type.get("name")
@@ -3055,7 +3056,8 @@ def _parse_team_stats(key, league_path, data):
     count = _as_dict(data.get("pagination")).get("count")
     if isinstance(count, int) and count > len(_dicts(data.get("teams"))):
         season = f"{season}, {TEAMS_MISSING}"
-    return {"team_stats": team_stats, "player_stats": [], "season": season}
+    return {"team_stats": team_stats, "player_stats": [], "season": season,
+            "glossary": stat_glossary.glossary(data)}
 
 
 def get_team_statistics(league_key):
@@ -3088,6 +3090,44 @@ def get_team_statistics(league_key):
     if not any(answer is not None for answer in answers):
         raise ApiError(STATISTICS_UNAVAILABLE)
     return _no_team_stats()
+
+
+def league_sport(league_key):
+    """The first part of a league's path, "baseball" for MLB, which stat_glossary and team_stats
+    go by. "" for a league it doesn't know."""
+    key = league_key if league_key in LEAGUES else str(league_key).upper()
+    return LEAGUES.get(key, "").split("/")[0]
+
+
+_GLOSSARY_CACHE = {}  # league key: ESPN's definitions, which don't change while the app is open
+_GLOSSARY_CACHE_LOCK = threading.Lock()
+
+
+def get_stat_glossary(league_key):
+    """ESPN's definitions of a league's statistics, as stat_glossary.glossary has them, for the
+    player leaders: the team statistics carry their own. They come with byteam, and one team's
+    worth has them all, as the iPhone asks (TeamStatsStore.glossary). A league with no byteam has
+    no definitions, which is {}. A failed request raises ApiError, so the definitions can say they
+    couldn't be had rather than that ESPN has none."""
+    key = league_key if league_key in LEAGUES else league_key.upper()
+    if key not in TEAM_STAT_LEAGUES:
+        return {}
+    with _GLOSSARY_CACHE_LOCK:
+        if key in _GLOSSARY_CACHE:
+            return _GLOSSARY_CACHE[key]
+    params = {"region": "us", "lang": "en", "limit": 1}
+    try:
+        resp = _http_get(f"{TEAM_STATS_BASE_URL}/{LEAGUES[key]}/statistics/byteam", params=params, timeout=15)
+        answer = resp.json() if resp.status_code == 200 else None
+    except (requests.RequestException, ValueError) as e:
+        raise ApiError(STATISTICS_UNAVAILABLE) from e
+    if not isinstance(answer, dict):
+        raise ApiError(STATISTICS_UNAVAILABLE)
+    found = stat_glossary.glossary(answer)
+    if found:  # One that's empty is asked for again next time.
+        with _GLOSSARY_CACHE_LOCK:
+            _GLOSSARY_CACHE[key] = found
+    return found
 
 
 def most_used_home_venue(events, team_id):
@@ -3490,24 +3530,34 @@ def get_team_transactions(league_key, team_id, limit=25):
     return result
 
 
-def get_golf_leaderboard(tour_key):
-    """Return current tournament info and leaderboard for PGA or LPGA.
+def get_golf_leaderboard(tour_key, date=None, event_id=None):
+    """Return a tournament's info and leaderboard for PGA or LPGA.
 
-    Returns dict: {name, short_name, date, end_date, round_num, status_detail,
+    With no date, the tour's scoreboard now. With `date` ("YYYY-MM-DD" or "YYYYMMDD"),
+    the scoreboard for that day (`dates=YYYYMMDD`), which is how a past tournament this
+    season is opened from the schedule, as the iPhone does. The event shown is the one
+    `event_id` names if it's there, else the first in progress, else the first
+    (golf.pick_event, the rule both apps share): a week can have two events.
+
+    Returns dict: {id, name, short_name, date, end_date, state, round_num, status_detail,
                    players: [{position, name, country, total_score, rounds: [str]}]}
     or None if no event is available.
     """
-    from datetime import datetime
     league_path = LEAGUES.get(tour_key)
     if not league_path:
         return None
-    data = _espn_answer(LEADERBOARD_UNAVAILABLE, f"{BASE_URL}/{league_path}/scoreboard")
+    params = None
+    if date:
+        day = str(date).replace("-", "")[:8]
+        if not (len(day) == 8 and day.isdigit()):
+            return None
+        params = {"dates": day}
+    data = _espn_answer(LEADERBOARD_UNAVAILABLE, f"{BASE_URL}/{league_path}/scoreboard", params=params)
     if data is None:
         return None
-    events = _listed(data, "events", LEADERBOARD_UNAVAILABLE)
-    if not events:
+    event = golf.pick_event(_listed(data, "events", LEADERBOARD_UNAVAILABLE), event_id)
+    if event is None:
         return None
-    event = events[0]
     comps = _dicts(event.get("competitions"))
     if not comps:
         return None
@@ -3515,23 +3565,26 @@ def get_golf_leaderboard(tour_key):
     comp_status = _as_dict(comp.get("status"))
 
     players = []
-    for competitor in _dicts(comp.get("competitors")):
+    for index, competitor in enumerate(golf.by_order(comp.get("competitors"))):
         athlete = _as_dict(competitor.get("athlete"))
         rounds = [
             ls["displayValue"]
-            for ls in sorted(_dicts(competitor.get("linescores")), key=lambda x: x.get("period") or 0)
-            if "value" in ls and "displayValue" in ls
+            for ls in sorted(_dicts(competitor.get("linescores")),
+                             key=lambda x: x.get("period") if isinstance(x.get("period"), int) else 0)
+            if "value" in ls and isinstance(ls.get("displayValue"), str)
         ]
+        order = competitor.get("order")
         players.append({
-            "position": competitor.get("order") or 0,
-            "name": athlete.get("displayName") or athlete.get("fullName") or "",
+            "position": order if isinstance(order, int) and not isinstance(order, bool) else index + 1,
+            "name": golf.competitor_name(competitor),
             "country": _as_dict(athlete.get("flag")).get("alt") or "",
             "total_score": golf_total_to_par(competitor),
             "rounds": rounds,
         })
-    players.sort(key=lambda p: p["position"])
 
     return {
+        "id": str(event.get("id") or ""),
+        "state": golf.event_state(event),
         "name": event.get("name") or "",
         "short_name": event.get("shortName") or "",
         "date": (event.get("date") or "")[:10],
@@ -3545,9 +3598,9 @@ def get_golf_leaderboard(tour_key):
 def get_golf_schedule(tour_key):
     """Return this season's tournament schedule for PGA or LPGA.
 
-    Returns list of {name, start_date, end_date, status, state, winner}.
+    Returns list of {id, name, start_date, end_date, status, state, winner}. The winner,
+    "Chris Gotterup (-16)", is golf.winner's, the rule the iPhone's schedule follows too.
     """
-    from datetime import datetime
     league_path = LEAGUES.get(tour_key)
     if not league_path:
         return []
@@ -3564,26 +3617,14 @@ def get_golf_schedule(tour_key):
     result = []
     for event in _listed(answer, "events", SCHEDULE_UNAVAILABLE):
         status_type = _as_dict(_as_dict(event.get("status")).get("type"))
-        state = status_type.get("state") or "pre"
-
-        winner = ""
-        if state == "post":
-            comps = _dicts(event.get("competitions"))
-            if comps:
-                top = sorted(_dicts(comps[0].get("competitors")), key=lambda x: x.get("order") or 999)
-                if top:
-                    w = top[0]
-                    wname = _as_dict(w.get("athlete")).get("displayName") or ""
-                    wscore = w.get("score") or ""
-                    winner = f"{wname} ({wscore})" if wname and wscore else wname
-
         result.append({
+            "id": str(event.get("id") or ""),
             "name": event.get("name") or "",
             "start_date": (event.get("date") or "")[:10],
             "end_date": (event.get("endDate") or "")[:10],
             "status": status_type.get("description") or "Scheduled",
-            "state": state,
-            "winner": winner,
+            "state": golf.event_state(event) or "pre",
+            "winner": golf.winner_text(golf.winner(event)),
         })
     return result
 

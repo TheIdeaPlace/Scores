@@ -55,8 +55,9 @@ except ImportError:
 
 # New separated modules
 from exceptions import ApiError, DataModelError, plain_message
-from espn_api import (NCAAF_CONFERENCE_ORDER, SCHEDULE_UNAVAILABLE, TEAMS_UNAVAILABLE, live_scores_failure_text, standings_cache_key,
-                      stop_core_lookups, with_failed_leagues_kept)
+from espn_api import (NCAAF_CONFERENCE_ORDER, SCHEDULE_UNAVAILABLE, TEAMS_UNAVAILABLE, league_sport, live_scores_failure_text,
+                      standings_cache_key, stop_core_lookups, with_failed_leagues_kept)
+import stat_glossary
 from services.api_service import ApiService
 from services.venue_service import venue_service, venue_summary
 from models.game import GameData
@@ -73,7 +74,12 @@ from tab_keys import group_noun
 from box_score import build_box_tables
 from soccer import SOCCER_LEAGUES, TEAM_NAME_ONLY_HEADERS, no_table_message, soccer_teams_table
 from team_stats import RANKING_HEADERS, ranking_rows, team_stat_lists
-from game_labels import scoreboard_today, basketball_period_label, football_period_label, football_period_sort_key, game_standings_tables, schedule_row_text, schedule_start_row
+from drive_results import (
+    FG as DRIVE_FG, TD as DRIVE_TD,
+    chronological_drives, drive_badge, drive_results, summary_teams,
+)
+from postseason import PLAYOFF_ROUNDS, game_headline, heading_text, postseason_sections
+from game_labels import scoreboard_today, on_todays_scoreboard, basketball_period_label, football_period_label, football_period_sort_key, game_standings_tables, schedule_row_text, schedule_start_row, team_record_text
 
 # Text processing utilities
 try:
@@ -181,13 +187,6 @@ def get_pitch_location(horizontal: int, vertical: int, batter_side: str = None) 
     else:
         return f"{height_desc} {location}"
 
-def _int_or_none(value):
-    try:
-        return int(value)
-    except (TypeError, ValueError):
-        return None
-
-
 def _focus_once_active(dialog, set_focus):
     """Run `set_focus` once, after the dialog has opened and taken its first focus, so it
     wins. Windows hands focus to the dialog's first widget, the tab bar, as it activates.
@@ -252,6 +251,27 @@ def _message_row(text, name):
 
 # The data of a row saying a request failed. Enter on it tries again.
 RETRY_ROW = "__retry__"
+
+
+MONITOR_ROW = "monitor_row"  # in a Monitoring row's data, which is otherwise the game's
+MONITORING_HEADER = "=== MONITORING ==="
+MONITORING_EMPTY = "=== MONITORING: none. Alt+M on a game adds it here ==="
+
+
+def _row_key(data):
+    """What a Live Scores row is, to find it again after the list is rebuilt: a game's id,
+    with a Monitoring row told apart from the game's own; the section header; or None."""
+    if data == MONITORING_HEADER:
+        return MONITORING_HEADER
+    if isinstance(data, dict) and data.get("id"):
+        return ("monitoring", data["id"]) if data.get(MONITOR_ROW) else data["id"]
+    return None
+
+
+def _time_valid(game):
+    """False for a game whose start time ESPN hasn't set, whose stored hour is a placeholder."""
+    comp = ((game.get("competitions") or [{}])[0]) or {}
+    return not (isinstance(comp, dict) and comp.get("timeValid") is False)
 
 
 def _failure_row(text):
@@ -997,9 +1017,9 @@ class LiveScoresView(BaseView):
     
     def __init__(self, parent=None):
         super().__init__(parent)
-        # Games being monitored for notifications. Kept on the app, because this view
+        # The Monitoring section's games, id to league. Kept on the app, because this view
         # is rebuilt every time someone comes back to it from a game.
-        self.monitored_games = getattr(parent, 'monitored_games', set())
+        self.monitored_games = getattr(parent, 'monitored_games', {})
         self._restore_state = None  # where to land after coming back from a game
         self.game_data = {}  # Store complete game data for notifications
         self.current_time = None  # of the last load that got anything
@@ -1018,13 +1038,12 @@ class LiveScoresView(BaseView):
         self.current_refresh_interval = self.refresh_intervals.get(_saved_text, 60000)
 
         self._loader = None          # LiveScoresLoader while a load is running
-        self._pending_old_scores = {}  # monitored scores captured when a refresh began
         self._last_games = None  # (day, live, today's games, golf) as last shown
         self._failed_leagues = []  # from the last load, for the row that says so
         self._failure_text = None  # that row's text
         self._rows_rebuilt = False  # the last load replaced the rows, so the focused one was read
+        self._focus_kept = False  # the last load kept the focused row through a rebuild
         self._refresh_asked_for = False  # someone asked for the load in flight
-        self._said_failed_leagues = set()  # monitored ones, until they answer again
 
         self.setup_ui()
         
@@ -1063,7 +1082,8 @@ class LiveScoresView(BaseView):
         
         self.live_scores_list = QListWidget()
         self.live_scores_list.setAccessibleName("Live Scores List")
-        self.live_scores_list.setAccessibleDescription("List of currently live games from all sports. Press Alt+M to monitor a game for notifications, Alt+L to listen to it.")
+        self.live_scores_list.setAccessibleDescription("Live, upcoming and finished games from all sports, with the games you're monitoring first. "
+            "Alt+M adds a game to Monitoring or takes it off, Alt+L listens to it.")
         self.live_scores_list.itemActivated.connect(self._on_game_selected)
         self.layout.addWidget(self.live_scores_list)
         _add_listen_keys(self.live_scores_list, self._listen_to_current_game,
@@ -1117,46 +1137,33 @@ class LiveScoresView(BaseView):
                                _menu_position(self.live_scores_list, self.live_scores_list.currentItem()))
 
     def _toggle_monitoring(self):
-        """Toggle monitoring for the currently selected game"""
-        current_item = self.live_scores_list.currentItem()
-        if not current_item:
+        """Alt+M. On a game's own row, adds it to Monitoring or takes it off, and you stay on
+        that row. On a Monitoring row, takes it off and moves you to the next one there, or
+        to the section's header when there's none after it."""
+        game = self._current_game()
+        if game is None:
+            announce("Choose a game to monitor")
             return
-            
-        game_data = current_item.data(Qt.ItemDataRole.UserRole)
-        if not game_data or not isinstance(game_data, dict):
-            return
-            
-        game_id = game_data.get("id", "")
-        if not game_id:
-            return
-        
+        game_id = game["id"]
+        lst = self.live_scores_list
         if game_id in self.monitored_games:
-            self.monitored_games.remove(game_id)
-            # Update display to remove monitoring indicator
-            text = current_item.text()
-            if text.endswith(" - monitoring"):
-                current_item.setText(text[:-len(" - monitoring")])
-            self._announce_monitoring(False, game_data)
+            del self.monitored_games[game_id]
+            if game.get(MONITOR_ROW):
+                # You move to another row, which is read, so say which game went.
+                announce(f"{game.get('name') or 'Game'} removed from monitoring")
+                below = lst.item(lst.currentRow() + 1)
+                below_key = _row_key(below.data(Qt.ItemDataRole.UserRole)) if below else None
+                is_monitoring_row = isinstance(below_key, tuple)
+                target = below_key if is_monitoring_row else MONITORING_HEADER
+            else:
+                announce("Removed from monitoring")
+                target = _row_key(game)
         else:
-            self.monitored_games.add(game_id)
-            # Update display to show monitoring indicator
-            text = current_item.text()
-            if not text.endswith(" - monitoring"):
-                current_item.setText(text + " - monitoring")
-            self._announce_monitoring(True, game_data)
-    
-    def _announce_monitoring(self, monitoring: bool, game_data: dict):
-        """Announce monitoring status change for accessibility"""
-        game_name = game_data.get("name", "Selected game")
-        
-        # Use Windows UIA notifications for better accessibility
-        self.notification_helper.announce_monitoring_change(game_name, monitoring)
-        
-        # Also update the UI
-        status = "now monitoring" if monitoring else "no longer monitoring"
-        message = f"{status} {game_name} for score updates"
-        self.time_label.setText(f"Live Scores - {message}")
-        QTimer.singleShot(3000, self._update_time_label)  # Reset after 3 seconds
+            self.monitored_games[game_id] = game["league"]
+            announce("Added to monitoring")
+            target = _row_key(game)
+        if self._last_games is not None:
+            self._show_loaded_live_scores(*self._last_games[1:], select=target)
     
     def _update_time_label(self):
         """Update the time label with the time of the last load that got anything"""
@@ -1227,7 +1234,6 @@ class LiveScoresView(BaseView):
 
     def _on_live_scores_error(self, message: str):
         self._show_live_failure(message)
-        self._pending_old_scores = {}
 
     def _on_live_scores_loaded(self, live_games: list, current_date_games: list, golf: list, failed: list = ()):
         """Show freshly loaded games, keeping the user's place in the list."""
@@ -1237,7 +1243,6 @@ class LiveScoresView(BaseView):
             self._say_refresh_failed(failed)
         except Exception as e:
             self._show_live_failure(_said(e))
-        self._pending_old_scores = {}
 
     def _with_last_games_kept(self, live_games, current_date_games, golf, failed):
         """This load's games, and for a league that failed, the ones last shown: one not
@@ -1255,14 +1260,10 @@ class LiveScoresView(BaseView):
         return live_games, current_date_games, golf
 
     def _say_refresh_failed(self, failed):
-        """The row says so, and a refresh on the timer mustn't chatter. Only a refresh someone
-        asked for says it out loud, or the first to fail for a league with a game someone is
-        monitoring, who would otherwise take the silence to mean the score hasn't changed."""
+        """The row says so, and a refresh on the timer mustn't chatter: only a refresh someone
+        asked for says it out loud."""
         asked, self._refresh_asked_for = self._refresh_asked_for, False
-        monitored = set(failed) & {self.game_data.get(game_id, {}).get("league") for game_id in self.monitored_games}
-        newly_failed = monitored - self._said_failed_leagues
-        self._said_failed_leagues = (self._said_failed_leagues | monitored) & set(failed)
-        if not failed or not (asked or newly_failed):
+        if not failed or not asked:
             return
         # Someone on the row, with the list rebuilt under them, has just heard it read.
         current = self.live_scores_list.currentItem()
@@ -1301,15 +1302,9 @@ class LiveScoresView(BaseView):
         finally:
             self.live_scores_list = visible
 
-        for i in range(scratch.count()):
-            item = scratch.item(i)
-            data = item.data(Qt.ItemDataRole.UserRole)
-            if isinstance(data, dict) and data.get("id") in self.monitored_games:
-                item.setText(item.text() + " - monitoring")
-
         def row_key(item):
             data = item.data(Qt.ItemDataRole.UserRole)
-            return data.get("id") if isinstance(data, dict) else item.text()
+            return _row_key(data) if isinstance(data, dict) else item.text()
 
         def game_rows(lst):
             last = lst.count() - 1
@@ -1320,16 +1315,45 @@ class LiveScoresView(BaseView):
         same_rows = (rows == game_rows(scratch) and all(
             row_key(visible.item(i)) == row_key(scratch.item(i)) for i in range(rows)))
         if same_rows:
+            self._focus_kept = True
             for i in range(rows):
                 old, new = visible.item(i), scratch.item(i)
-                old.setData(Qt.ItemDataRole.UserRole, new.data(Qt.ItemDataRole.UserRole))
+                # Setting a row's data, even to the same, tells a screen reader the row
+                # changed, and it reads the focused one again: once a refresh, unchanged.
+                new_data = new.data(Qt.ItemDataRole.UserRole)
+                if old.data(Qt.ItemDataRole.UserRole) != new_data:
+                    old.setData(Qt.ItemDataRole.UserRole, new_data)
                 if old.text() != new.text():
                     old.setText(new.text())
             self._update_failure_row(visible, rows, scratch.item(rows) if scratch.count() > rows else None)
             return True
-        visible.clear()
-        while scratch.count():
-            visible.addItem(scratch.takeItem(0))
+        # Other rows came or went: a game kicked off or finished, which on a busy day is
+        # every refresh. Clearing the list gave focus a new row, and the screen reader read
+        # it out again. The row you're on stays the same row, with the others put round it.
+        current = visible.currentItem()
+        keys = [row_key(scratch.item(i)) for i in range(scratch.count())]
+        key = row_key(current) if current is not None else None
+        items = [scratch.takeItem(0) for _ in range(scratch.count())]
+        self._focus_kept = key is not None and not isinstance(key, str) or key == MONITORING_HEADER
+        self._focus_kept = self._focus_kept and keys.count(key) == 1
+        if not self._focus_kept:
+            visible.clear()
+            for item in items:
+                visible.addItem(item)
+            return False
+        at = keys.index(key)
+        for row in reversed(range(visible.count())):
+            if visible.item(row) is not current:
+                visible.takeItem(row)
+        fresh = items[at]
+        if current.data(Qt.ItemDataRole.UserRole) != fresh.data(Qt.ItemDataRole.UserRole):
+            current.setData(Qt.ItemDataRole.UserRole, fresh.data(Qt.ItemDataRole.UserRole))
+        if current.text() != fresh.text():
+            current.setText(fresh.text())
+        for row, item in enumerate(items[:at]):
+            visible.insertItem(row, item)
+        for item in items[at + 1:]:
+            visible.addItem(item)
         return False
 
     @staticmethod
@@ -1347,27 +1371,31 @@ class LiveScoresView(BaseView):
             if on_it and lst.count():
                 lst.setCurrentRow(lst.count() - 1)
 
-    def _show_loaded_live_scores(self, live_games, current_date_games, golf=()):
+    def _show_loaded_live_scores(self, live_games, current_date_games, golf=(), select=None):
+        """Show the games, staying on the row you were on. `select` is a row to land on
+        instead, by its key, after Alt+M."""
         current = self.live_scores_list.currentItem()
         current_data = current.data(Qt.ItemDataRole.UserRole) if current else None
-        selected_id = current_data.get("id") if isinstance(current_data, dict) else None
+        selected_key = _row_key(current_data)
         selected_row = self.live_scores_list.currentRow()
 
         state, self._restore_state = self._restore_state, None
         if state:
-            selected_id, selected_row = state.get("selected"), state.get("row", 0)
+            selected_key, selected_row = state.get("selected"), state.get("row", 0)
+        if select is not None:
+            selected_key = select
 
+        self._focus_kept = False
         in_place = self._refresh_rows_in_place(live_games, current_date_games, golf)
-        self._rows_rebuilt = not in_place
-        if in_place:
-            self._check_monitored_scores(self._pending_old_scores)
+        # Rebuilt under someone: the row they're on was read out. Not when it was kept.
+        self._rows_rebuilt = not self._focus_kept
+        if in_place or (self._focus_kept and select is None):
             return
 
         restored = False
-        if selected_id:
+        if selected_key is not None:
             for row in range(self.live_scores_list.count()):
-                data = self.live_scores_list.item(row).data(Qt.ItemDataRole.UserRole)
-                if isinstance(data, dict) and data.get("id") == selected_id:
+                if _row_key(self.live_scores_list.item(row).data(Qt.ItemDataRole.UserRole)) == selected_key:
                     self.live_scores_list.setCurrentRow(row)
                     restored = True
                     break
@@ -1379,9 +1407,12 @@ class LiveScoresView(BaseView):
                 restored = True
         # The row can be past the end now: the failure row someone retried from is last, and gone.
         if not restored and selected_row >= 0 and self.live_scores_list.count():
-            self.live_scores_list.setCurrentRow(min(selected_row, self.live_scores_list.count() - 1))
-
-        self._check_monitored_scores(self._pending_old_scores)
+            row = min(selected_row, self.live_scores_list.count() - 1)
+            # Arriving, don't stop on an empty Monitoring section's heading every time.
+            if (row == 0 and self.live_scores_list.count() > 1
+                    and self.live_scores_list.item(0).text() == MONITORING_EMPTY):
+                row = 1
+            self.live_scores_list.setCurrentRow(row)
 
     def _render_live_scores(self, live_games, current_date_games, golf=()):
         """Fill the list from already-fetched games. No network access."""
@@ -1552,31 +1583,46 @@ class LiveScoresView(BaseView):
                         item.setData(Qt.ItemDataRole.UserRole, game_data)
                         self.live_scores_list.addItem(item)
 
+            self._add_monitoring_section()
             # Last, so it doesn't move the rows someone is following when it comes and goes.
             if failure:
                 self._add_failure_row(failure)
 
         except Exception as e:
             self._add_failure_row(_said(e))
+
+    def _add_monitoring_section(self):
+        """The Monitoring section at the top: each monitored game's row as it reads below,
+        with its sport after it, in the order added. The game's own row stays where it is
+        and says it's monitored. A monitored game that isn't on today's list isn't shown."""
+        lst = self.live_scores_list
+        found = {}
+        for row in range(lst.count()):
+            item = lst.item(row)
+            data = item.data(Qt.ItemDataRole.UserRole)
+            if isinstance(data, dict) and data.get("id") in self.monitored_games and data.get("league"):
+                found.setdefault(data["id"], (item.text(), data))
+                item.setText(f"{item.text()} - monitoring")
+        rows = []
+        for game_id in self.monitored_games:
+            if game_id in found:
+                text, data = found[game_id]
+                monitor_data = dict(data)
+                monitor_data[MONITOR_ROW] = True
+                rows.append((f"{text} | {_WC_DISPLAY_NAMES.get(data['league'], data['league'])}", monitor_data))
+        header = QListWidgetItem(MONITORING_HEADER if rows else MONITORING_EMPTY)
+        header.setData(Qt.ItemDataRole.UserRole, MONITORING_HEADER)
+        header.setBackground(QColor(200, 220, 255))
+        lst.insertItem(0, header)
+        for at, (text, data) in enumerate(rows, start=1):
+            item = QListWidgetItem(text)
+            item.setData(Qt.ItemDataRole.UserRole, data)
+            lst.insertItem(at, item)
     
     def refresh_live_scores(self):
-        """Refresh live scores and check for changes in monitored games"""
-        old_scores = {}
-        
-        # Capture current scores for monitored games
-        for game_id in self.monitored_games:
-            if game_id in self.game_data:
-                game = self.game_data[game_id]
-                teams = game.get("teams", [])
-                if len(teams) >= 2:
-                    old_scores[game_id] = (
-                        teams[0].get("score", ""),
-                        teams[1].get("score", "")
-                    )
-        
+        """Refresh the list. Nothing is said about monitored games: their rows are at the top."""
         if self._loader is not None and self._loader.isRunning():
             return  # the load in flight will bring the latest scores
-        self._pending_old_scores = old_scores
         self.load_live_scores()
 
     def _refresh_on_request(self):
@@ -1584,39 +1630,6 @@ class LiveScoresView(BaseView):
         self._refresh_asked_for = True
         self.refresh_live_scores()
 
-    def _check_monitored_scores(self, old_scores):
-        """Announce score changes in monitored games since old_scores was taken."""
-        for game_id in self.monitored_games:
-            if game_id in self.game_data and game_id in old_scores:
-                game = self.game_data[game_id]
-                teams = game.get("teams", [])
-                if len(teams) >= 2:
-                    new_scores = (
-                        teams[0].get("score", ""),
-                        teams[1].get("score", "")
-                    )
-                    old_score = old_scores[game_id]
-                    
-                    if new_scores != old_score:
-                        self._notify_score_change(game, old_score, new_scores)
-    
-    def _notify_score_change(self, game, old_scores, new_scores):
-        """Notify about score changes in monitored games"""
-        game_name = game.get("name", "Game")
-        teams = game.get("teams", [])
-        
-        if len(teams) >= 2:
-            team1_name = teams[0].get("name", "Team 1") 
-            team2_name = teams[1].get("name", "Team 2")
-            score_text = f"{team1_name} {new_scores[0]} - {team2_name} {new_scores[1]}"
-            
-            # Use Windows UIA notifications for accessibility
-            announce(f"{game_name}: {score_text}")
-            
-            # Also update the UI
-            self.time_label.setText(f"SCORE UPDATE: {game_name} - {score_text}")
-            QTimer.singleShot(5000, self._update_time_label)  # Reset after 5 seconds
-    
     def _add_nav_buttons(self):
         """Add navigation buttons"""
         btn_layout = QHBoxLayout()
@@ -1634,8 +1647,7 @@ class LiveScoresView(BaseView):
     def capture_state(self):
         item = self.live_scores_list.currentItem()
         data = item.data(Qt.ItemDataRole.UserRole) if item else None
-        return {"selected": data.get("id") if isinstance(data, dict) else None,
-                "row": self.live_scores_list.currentRow()}
+        return {"selected": _row_key(data), "row": self.live_scores_list.currentRow()}
 
     def on_show(self):
         """Called when view is shown"""
@@ -1901,7 +1913,12 @@ class LeagueView(BaseView):
             _add_listen_keys(self.scores_list, self._listen_to_current_game,
                              self._open_current_game, lambda: self._current_game() is not None)
             self.scores_list.setAccessibleDescription(
-                "List of games and scores for the selected date or week. Alt+L to listen to a game.")
+                "List of games and scores for the selected date or week. Alt+M monitors one of "
+                "today's games in Live Scores, Alt+L listens to a game.")
+        else:
+            self.scores_list.setAccessibleDescription(
+                "List of games and scores for the selected date or week. Alt+M monitors one of "
+                "today's games in Live Scores.")
 
         self._add_nav_buttons()
         self.load_scores(reselect=(self._restore_state or {}).get('selected'))
@@ -1915,6 +1932,25 @@ class LeagueView(BaseView):
         item = self.scores_list.currentItem()
         if item:
             self._on_score_item_selected(item)
+
+    def _toggle_monitoring(self):
+        """Alt+M: add today's game to Live Scores' Monitoring section, or take it off. Only
+        Live Scores shows it, and Live Scores has only today's games."""
+        game = self._current_game()
+        monitored = getattr(self.parent_app, "monitored_games", None)
+        if monitored is None:
+            return
+        if game is None:
+            announce("Choose a game to monitor")
+            return
+        if game["id"] in monitored:
+            del monitored[game["id"]]
+            announce("Removed from monitoring")
+        elif not on_todays_scoreboard(game.get("date"), _time_valid(game)):
+            announce("Only today's games can be monitored")
+        else:
+            monitored[game["id"]] = self.league
+            announce("Added to monitoring, at the top of Live Scores")
 
     def _listen_to_current_game(self):
         game = self._current_game()
@@ -2678,6 +2714,10 @@ class LeagueView(BaseView):
         preseason game apart from the September opener. Prefixed like the
         non-football "Date: …" label so a screen reader hearing the window
         knows what the value refers to.
+
+        Read from the cache, never the network: the loader's prepare_week
+        fetched the name, from the Core API for a past season, as the iPhone
+        does. Until then, or if that failed, it is "Week N".
         """
         try:
             from services.football_calendar import get_week_label
@@ -2728,6 +2768,8 @@ class LeagueView(BaseView):
         if event.key() == Qt.Key.Key_G and event.modifiers() == Qt.KeyboardModifier.ControlModifier:
             if not self.is_football_league():
                 self.go_to_date()
+        elif event.key() == Qt.Key.Key_M and event.modifiers() == Qt.KeyboardModifier.AltModifier:
+            self._toggle_monitoring()
         else:
             # Call parent to handle F5, Escape, etc.
             super().keyPressEvent(event)
@@ -3772,22 +3814,73 @@ class GameDetailsView(BaseView):
     def _add_drives_list_to_layout(self, layout, drives_data):
         """Add NFL/NCAAF drives data to layout (Football-specific method)"""
         
+        teams = summary_teams(getattr(self, "current_raw_details", None))
+        away_team = teams.get("away", {})
+        home_team = teams.get("home", {})
+        team_names = {"away": away_team.get("name", ""), "home": home_team.get("name", "")}
+        scored = {}
+        # Without both teams the scorer can't be told from the side with the ball, so
+        # the badges fall back to ESPN's result, without points.
+        if away_team.get("id") and home_team.get("id"):
+            played = chronological_drives(drives_data)
+            scored = dict(zip(
+                (id(d) for d in played),
+                drive_results(played, away_team["id"], home_team["id"]),
+            ))
+
         def get_drive_result_info(drive):
             """Get scoring drive information with accessibility-compliant colors"""
-            result = drive.get('result', '').upper()
-            
+            result = (drive.get('result') or '').upper()
+
+            # Who scored and how many points, from the plays' scores: ESPN marks a
+            # return touchdown on the drive of the team that gave it up (#204).
+            score = scored.get(id(drive))
+            if score is not None and score.kind is not None:
+                other = "home" if score.scorer == "away" else "away"
+                badge = drive_badge(score, team_names.get(score.scorer, ""), team_names.get(other, ""))
+                if score.by_opponent:
+                    # The other team scored: a turnover for the team with the ball.
+                    scorer = team_names.get(score.scorer) or "The other team"
+                    return {
+                        'icon': '🔄',
+                        'badge': badge,
+                        'color': QColor(255, 140, 0, 60),
+                        'accessible_text': f"{scorer} scored on this drive",
+                    }
+                if score.kind == DRIVE_TD:
+                    return {
+                        'icon': '🏈',
+                        'badge': badge,
+                        'color': QColor(0, 100, 0, 80),
+                        'accessible_text': 'Touchdown scoring drive',
+                    }
+                if score.kind == DRIVE_FG:
+                    return {
+                        'icon': '🥅',
+                        'badge': badge,
+                        'color': QColor(0, 0, 139, 60),
+                        'accessible_text': 'Field goal scoring drive',
+                    }
+                return {
+                    'icon': '🛡️',
+                    'badge': badge,
+                    'color': QColor(128, 0, 128, 60),
+                    'accessible_text': 'Scoring drive',
+                }
+
             # WCAG AA compliant colors (4.5:1 contrast ratio minimum)
             if result == 'TD':
+                # ESPN says touchdown but the plays carry no score change.
                 return {
-                    'icon': '🏈', 
-                    'badge': 'TD 7pts', 
+                    'icon': '🏈',
+                    'badge': 'TD',
                     'color': QColor(0, 100, 0, 80),      # Dark green background
                     'accessible_text': 'Touchdown scoring drive'
                 }
             elif result == 'FG':
                 return {
-                    'icon': '🥅', 
-                    'badge': 'FG 3pts', 
+                    'icon': '🥅',
+                    'badge': 'FG',
                     'color': QColor(0, 0, 139, 60),      # Dark blue background
                     'accessible_text': 'Field goal scoring drive'
                 }
@@ -3828,8 +3921,8 @@ class GameDetailsView(BaseView):
                 }
             elif result == 'SAFETY':
                 return {
-                    'icon': '🛡️', 
-                    'badge': 'SAFETY 2pts', 
+                    'icon': '🛡️',
+                    'badge': 'SAFETY',
                     'color': QColor(128, 0, 128, 60),    # Purple background
                     'accessible_text': 'Safety scoring drive'
                 }
@@ -3929,16 +4022,31 @@ class GameDetailsView(BaseView):
             # Group by quarter
             if quarter not in quarter_groups:
                 quarter_groups[quarter] = []
-            
+
+            # Taken from the whole drive, before its kickoffs are split off.
+            result_info = get_drive_result_info(drive)
+            # A drive that is only a kickoff shows as the kickoff alone, so a kickoff
+            # run back for a touchdown says so there.
+            kickoff_label = "Kickoff"
+            score = scored.get(id(drive))
+            if not drive_plays and score is not None and score.kind is not None:
+                badge = result_info['badge']
+                # Kickoff rows carry no team, so name the scorer whichever drive ESPN
+                # filed the return on.
+                scorer = team_names.get(score.scorer, "")
+                if not score.by_opponent and scorer:
+                    badge = f"{scorer} {badge}"
+                kickoff_label = f"[{badge}] Kickoff"
+
             # Add kickoffs as separate entries
             for kickoff in kickoff_plays:
-                quarter_groups[quarter].append(("Kickoff", {"plays": [kickoff]}, "Special Teams", "Kickoff", True))
-            
+                quarter_groups[quarter].append((kickoff_label, {"plays": [kickoff]}, "Special Teams", "Kickoff", True, None))
+
             # Add regular drive if it has non-kickoff plays
             if drive_plays:
                 modified_drive = drive.copy()
                 modified_drive["plays"] = drive_plays
-                quarter_groups[quarter].append((drive_label, modified_drive, team_name, description, False))
+                quarter_groups[quarter].append((drive_label, modified_drive, team_name, description, False, result_info))
         
         # Build tree structure by quarter
         for quarter in sorted(quarter_groups.keys(), key=football_period_sort_key):
@@ -3947,10 +4055,10 @@ class GameDetailsView(BaseView):
             drives_tree.addTopLevelItem(quarter_item)
             
             drives_in_quarter = quarter_groups[quarter]
-            for drive_label, drive, team_name, description, is_kickoff in drives_in_quarter:
+            for drive_label, drive, team_name, description, is_kickoff, result_info in drives_in_quarter:
                 if is_kickoff:
                     # Create kickoff item directly under quarter
-                    kickoff_item = QTreeWidgetItem(["Kickoff"])
+                    kickoff_item = QTreeWidgetItem([drive_label])
                     kickoff_item.setBackground(0, QColor(240, 240, 255))  # Light blue
                     kickoff_item.setExpanded(False)
                     quarter_item.addChild(kickoff_item)
@@ -3970,9 +4078,6 @@ class GameDetailsView(BaseView):
                         play_item = QTreeWidgetItem([play_text])
                         kickoff_item.addChild(play_item)
                 else:
-                    # Create enhanced drive summary node with scoring information
-                    result_info = get_drive_result_info(drive)
-                    
                     # Build enhanced drive summary with scoring indicators
                     enhanced_summary = f"[{result_info['badge']}] {team_name}: {description}"
                     
@@ -8298,6 +8403,13 @@ class LeagueScoresLoader(QThread):
             scores = ApiService.get_scores(self.league, **self.request) or []
             if self.request.get("week") is not None:
                 scores = ApiService.freshen_live_games(self.league, scores)
+                # The week's name and the season's weeks, for the label and the
+                # week arrows, which read them from the cache on the UI thread.
+                # A past season's come from the Core API. After the games, so a
+                # failed games request isn't kept waiting on it. Never raises.
+                from services.football_calendar import prepare_week
+                prepare_week(self.league, self.request.get("season"),
+                             self.request.get("seasontype"), self.request["week"])
             try:
                 news = ApiService.get_news(self.league) or []
             except Exception:
@@ -8347,6 +8459,9 @@ class StatisticsLoader(QThread):
     """Loads a league's team or player statistics for StatisticsViewDialog."""
     data_loaded = pyqtSignal(dict)
     error_occurred = pyqtSignal(str)
+    # The player leaders' definitions (Alt+D), after the leaders, so they never wait for them: a
+    # dict, or None if they couldn't be had. Team statistics carry their own.
+    glossary_loaded = pyqtSignal(object)
 
     def __init__(self, league: str, stat_type: str):
         super().__init__()
@@ -8356,12 +8471,19 @@ class StatisticsLoader(QThread):
     def run(self):
         try:
             if self.stat_type == "player":
-                data = ApiService.get_player_statistics(self.league)
+                data = ApiService.get_player_statistics(self.league) or {}
             else:
                 data = ApiService.get_team_statistics(self.league)
             self.data_loaded.emit(data or {})
         except Exception as e:
             self.error_occurred.emit(_said(e))
+            return
+        if self.stat_type == "player" and data.get("player_stats"):
+            try:
+                glossary = ApiService.get_stat_glossary(self.league)
+            except ApiError:
+                glossary = None  # The definitions say they couldn't be had.
+            self.glossary_loaded.emit(glossary)
 
 
 class StandingsLoader(QThread):
@@ -8515,20 +8637,18 @@ class TeamHubDialog(QDialog):
         name_lbl.setAccessibleName(f"Team: {self.team_name}")
         header_layout.addWidget(name_lbl)
 
-        wins = self.team_data.get('wins', '')
-        losses = self.team_data.get('losses', '')
-        ties = self.team_data.get('ties', 0)
         rec_text = ""
         if self.league in SOCCER_LEAGUES:
             # Wins, draws, losses, as a soccer record reads everywhere else. A team with no
             # losses yet still has one. A cup's team list has none, and a game can say N/A.
             if self.team_data.get('record') not in (None, "", "N/A"):
                 rec_text = f"({self.team_data['record']})"
-        elif wins and losses:
-            if self.league == "NFL" and ties and int(ties) > 0:
-                rec_text = f"({wins}-{losses}-{ties})"
-            else:
-                rec_text = f"({wins}-{losses})"
+        else:
+            # 8-0 and 0-9 are records too (#203).
+            record = team_record_text(self.team_data.get('wins'), self.team_data.get('losses'),
+                                      self.team_data.get('ties'))
+            if record:
+                rec_text = f"({record})"
         if rec_text:
             rec_lbl = QLabel(rec_text)
             rec_lbl.setFont(font)
@@ -9027,16 +9147,20 @@ class FantasyCheatsheetLoader(QThread):
 
 
 class GolfLeaderboardLoader(QThread):
+    """A tournament's leaderboard: the tour's current one, or with `date` and `event_id`
+    one chosen from the schedule (scoreboard?dates=YYYYMMDD, as the iPhone asks)."""
     data_loaded = pyqtSignal(dict)
     error_occurred = pyqtSignal(str)
 
-    def __init__(self, tour: str):
+    def __init__(self, tour: str, date: str = None, event_id: str = None):
         super().__init__()
         self.tour = tour
+        self.date = date
+        self.event_id = event_id
 
     def run(self):
         try:
-            self.data_loaded.emit(ApiService.get_golf_leaderboard(self.tour) or {})
+            self.data_loaded.emit(ApiService.get_golf_leaderboard(self.tour, self.date, self.event_id) or {})
         except Exception as e:
             self.error_occurred.emit(_said(e))
 
@@ -10703,19 +10827,28 @@ class FantasyPlayerDialog(QDialog):
 
 
 class GolfTournamentDialog(QDialog):
-    """Golf tournament viewer: current leaderboard + full season schedule."""
+    """Golf tournament viewer: a leaderboard + the full season schedule.
+
+    The leaderboard opens on the tour's current tournament. Enter on a schedule row opens
+    that tournament's leaderboard in its place (scoreboard?dates=YYYYMMDD, picked by id,
+    the way the iPhone opens a past tournament).
+    """
 
     _TOUR_NAMES = {"PGA": "PGA Tour", "LPGA": "LPGA Tour"}
 
     def __init__(self, tour: str, parent=None):
         super().__init__(parent)
         self.tour = tour
-        tour_name = self._TOUR_NAMES.get(tour, tour)
-        self.setWindowTitle(f"{tour_name} — Sports Scores")
+        self.tour_name = self._TOUR_NAMES.get(tour, tour)
+        self.setWindowTitle(f"{self.tour_name} — Sports Scores")
         self.setMinimumSize(700, 500)
         self.resize(950, 680)
         self._loaders = []
         self._failed_lists = set()
+        # The schedule event the leaderboard shows, or None for the tour's current one.
+        self._chosen = None
+        # Counts leaderboard requests, so only the newest one's answer is shown.
+        self._leaderboard_request = 0
         self._setup_ui()
         self._load_leaderboard()
         self._load_schedule()
@@ -10729,7 +10862,7 @@ class GolfTournamentDialog(QDialog):
         layout.addWidget(header)
 
         self.tournament_label = QLabel("Loading current tournament…")
-        self.tournament_label.setAccessibleName("Current tournament")
+        self.tournament_label.setAccessibleName("Tournament")
         layout.addWidget(self.tournament_label)
 
         self.tab_widget = make_tab_area(2, f"{tour_name} sections")
@@ -10737,21 +10870,24 @@ class GolfTournamentDialog(QDialog):
         self.leaderboard_list = QListWidget()
         self.leaderboard_list.setAccessibleName(f"{tour_name} Leaderboard")
         self.leaderboard_list.setAccessibleDescription(
-            "Current tournament leaderboard. Each entry shows position, player name, total score, and round scores.")
+            "Tournament leaderboard. Each entry shows position, player name, total score, and round scores.")
         self.leaderboard_list.addItem("Loading leaderboard…")
         self.tab_widget.addTab(self.leaderboard_list, "Leaderboard")
 
         self.schedule_list = QListWidget()
         self.schedule_list.setAccessibleName(f"{tour_name} Schedule")
         self.schedule_list.setAccessibleDescription(
-            "Season schedule. Completed events show winner and score. Upcoming events show dates.")
+            "Season schedule. Completed events show winner and score. "
+            "Press Enter on a tournament to open its leaderboard.")
         self.schedule_list.addItem("Loading schedule…")
+        self.schedule_list.itemActivated.connect(self._open_tournament)
         self.tab_widget.addTab(self.schedule_list, "Schedule")
 
         layout.addWidget(self.tab_widget)
 
         btn_row = QHBoxLayout()
         btn_row.addStretch()
+        # Stays auto-default so Enter on it closes; Enter in a list is kept from it in keyPressEvent.
         close_btn = QPushButton("&Close")
         close_btn.clicked.connect(self.accept)
         btn_row.addWidget(close_btn)
@@ -10760,11 +10896,33 @@ class GolfTournamentDialog(QDialog):
         self.setLayout(layout)
 
     def _load_leaderboard(self):
-        loader = GolfLeaderboardLoader(self.tour)
-        loader.data_loaded.connect(self._on_leaderboard_loaded)
-        loader.error_occurred.connect(lambda e: self._list_error(self.leaderboard_list, e))
+        self._leaderboard_request += 1
+        request = self._leaderboard_request
+        chosen = self._chosen or {}
+        loader = GolfLeaderboardLoader(self.tour, chosen.get("start_date"), chosen.get("id"))
+        # Only the newest request's answer: an older one can arrive after it.
+        loader.data_loaded.connect(
+            lambda data: request == self._leaderboard_request and self._on_leaderboard_loaded(data))
+        loader.error_occurred.connect(
+            lambda e: request == self._leaderboard_request and self._list_error(self.leaderboard_list, e))
         self._loaders.append(loader)
         loader.start()
+
+    def _open_tournament(self, item):
+        """Enter on a schedule row: that tournament's leaderboard, on the Leaderboard tab."""
+        event = item.data(Qt.ItemDataRole.UserRole) if item is not None else None
+        if not isinstance(event, dict) or not event.get("start_date"):
+            return  # "Loading schedule…", an error or "No schedule available."
+        self._chosen = event
+        self._failed_lists.discard(self.leaderboard_list)
+        name = event.get("name") or "the tournament"
+        self.tournament_label.setText(f"Loading {name}…")
+        self.leaderboard_list.clear()
+        self.leaderboard_list.addItem(f"Loading {name}…")
+        self.leaderboard_list.setCurrentRow(0)
+        self.tab_widget.setCurrentIndex(0)
+        self.leaderboard_list.setFocus()
+        self._load_leaderboard()
 
     def _load_schedule(self):
         loader = GolfScheduleLoader(self.tour)
@@ -10785,10 +10943,25 @@ class GolfTournamentDialog(QDialog):
         except Exception:
             return f"{start}–{end}" if end else start
 
+    def _title_for(self, tournament):
+        """The window title names the tournament shown, or just the tour when there's none."""
+        if tournament:
+            self.setWindowTitle(f"{tournament} — {self.tour_name} — Sports Scores")
+        else:
+            self.setWindowTitle(f"{self.tour_name} — Sports Scores")
+
     def _on_leaderboard_loaded(self, data: dict):
         self.leaderboard_list.clear()
         if not data:
-            self.leaderboard_list.addItem("No current tournament data available.")
+            if self._chosen:
+                name = self._chosen.get("name") or "this tournament"
+                self.tournament_label.setText(name)
+                self.leaderboard_list.addItem(f"No leaderboard available for {name}.")
+            else:
+                self.tournament_label.clear()  # It says it's loading the tournament.
+                self.leaderboard_list.addItem("No current tournament data available.")
+            self._title_for(self._chosen and self._chosen.get("name"))
+            self.leaderboard_list.setCurrentRow(0)
             return
 
         name = data.get('name', '')
@@ -10798,10 +10971,12 @@ class GolfTournamentDialog(QDialog):
         date_range = self._fmt_date_range(start, end) if start else ''
         header_parts = [p for p in [name, status_detail, date_range] if p]
         self.tournament_label.setText("  |  ".join(header_parts))
+        self._title_for(name or (self._chosen and self._chosen.get("name")))
 
         players = data.get('players', [])
         if not players:
             self.leaderboard_list.addItem("No leaderboard data available.")
+            self.leaderboard_list.setCurrentRow(0)
             return
 
         # Detect ties: group players by total_score, record first position for each score
@@ -10853,17 +11028,23 @@ class GolfTournamentDialog(QDialog):
 
             if state == 'post' and winner:
                 line = f"[Final]  {name}  —  {date_str}  —  {winner}"
+            elif state == 'post':
+                # Finished with no winner: ESPN's word for it, such as Canceled.
+                line = f"[{event.get('status') or 'Final'}]  {name}  —  {date_str}"
             elif state == 'in':
                 line = f"[Live]   {name}  —  {date_str}"
             else:
                 line = f"         {name}  —  {date_str}"
 
-            self.schedule_list.addItem(line)
+            item = QListWidgetItem(line)
+            item.setData(Qt.ItemDataRole.UserRole, event)
+            self.schedule_list.addItem(item)
 
     def _list_error(self, lw: QListWidget, error: str):
         self._failed_lists.add(lw)
         if lw is self.leaderboard_list:
             self.tournament_label.clear()  # It says it's loading the tournament.
+            self._title_for(self._chosen and self._chosen.get("name"))
         lw.clear()
         lw.addItem(error)
         lw.setCurrentRow(0)
@@ -10873,6 +11054,10 @@ class GolfTournamentDialog(QDialog):
     def keyPressEvent(self, event):
         if event.key() == Qt.Key.Key_Escape:
             self.accept()
+        elif event.key() in (Qt.Key.Key_Return, Qt.Key.Key_Enter) and \
+                self.focusWidget() in (self.leaderboard_list, self.schedule_list):
+            # The list has acted on it (a schedule row opens); it mustn't press Close too.
+            event.accept()
         elif event.key() == Qt.Key.Key_F5:
             # Only what failed: what loaded stays as it is.
             failed, self._failed_lists = self._failed_lists, set()
@@ -11939,6 +12124,9 @@ class StatisticsViewDialog(QDialog):
         self.statistics_data = None
         self.stat_pages = None
         self._stat_infos = []
+        # Until the statistics, and for players their definitions, have come or failed.
+        self._statistics_pending = True
+        self._glossary_pending = False
         print(f"DEBUG: About to call setup_ui")
         self.setup_ui()
         print(f"DEBUG: setup_ui completed")
@@ -11965,6 +12153,7 @@ class StatisticsViewDialog(QDialog):
         loader = StatisticsLoader(self.league, self.stat_type)
         loader.data_loaded.connect(self._on_statistics_loaded)
         loader.error_occurred.connect(self._on_statistics_error)
+        loader.glossary_loaded.connect(self._on_glossary_loaded)
         self._statistics_loader = loader
         _start_detached_thread(loader)
 
@@ -11991,11 +12180,16 @@ class StatisticsViewDialog(QDialog):
         self.stats_list.setFocus()
 
     def _on_statistics_error(self, message: str):
+        self._statistics_pending = False
         self._clear_loading_row()
         self._show_statistics_message(self._content_layout, f"Unable to load statistics: {message}")
         self._focus_stats_list()
 
     def _on_statistics_loaded(self, statistics_data: dict):
+        self._statistics_pending = False
+        # The loader asks for the leaders' definitions next, and says when it has them.
+        self._glossary_pending = self.stat_type == "player" and bool((statistics_data or {}).get("player_stats")) \
+            and "glossary" not in (statistics_data or {})
         self._clear_loading_row()
         season = (statistics_data or {}).get("season")
         if season:
@@ -12134,6 +12328,7 @@ class StatisticsViewDialog(QDialog):
                         'name': display_name,
                         'category': category_name,
                         'stat_name': stat_name,
+                        'key': category.get("key"),  # ESPN's, for its definition
                         'data': stats,
                         'type': 'player'
                     })
@@ -12145,120 +12340,63 @@ class StatisticsViewDialog(QDialog):
         print(f"DEBUG: Total available stats: {len(available_stats)}")
         return available_stats
     
+    def _on_glossary_loaded(self, glossary):
+        """The player leaders' definitions, a dict, or None if they couldn't be had."""
+        self._glossary_pending = False
+        if isinstance(self.statistics_data, dict):
+            self.statistics_data["glossary"] = glossary
+
     def _show_stat_definitions(self):
-        """Show statistics definitions dialog"""
-        definitions_dialog = StatDefinitionsDialog(self.league, self)
+        """ESPN's definitions of the statistics on screen, on the one the list is on."""
+        lines = stat_glossary.definition_lines(
+            self._stat_infos, (self.statistics_data or {}).get("glossary"), league_sport(self.league),
+            still_loading=self._statistics_pending or self._glossary_pending)
+        current = self.stat_pages.tabBar().currentRow() if self.stat_pages is not None else 0
+        definitions_dialog = StatDefinitionsDialog(self.league, self.stat_type, lines, self,
+                                                   current_row=current if len(lines) == len(self._stat_infos) else 0)
         definitions_dialog.exec()
 
 class StatDefinitionsDialog(QDialog):
-    """Dialog showing definitions of statistics for different leagues"""
-    
-    def __init__(self, league, parent=None):
+    """ESPN's definitions of the statistics a Statistics dialog shows, one line each."""
+
+    def __init__(self, league, stat_type, lines, parent=None, current_row=0):
         super().__init__(parent)
         self.league = league
-        self.setWindowTitle(f"{league} Statistics Definitions")
+        self.heading = f"{league} {stat_type.title()} Statistics Definitions"
+        self.setWindowTitle(self.heading)
         self.resize(600, 500)
-        self.setup_ui()
-    
-    def setup_ui(self):
+        self.setup_ui(lines, current_row)
+
+    def setup_ui(self, lines, current_row=0):
         layout = QVBoxLayout()
-        
+
         # Title
-        title = QLabel(f"{self.league} Statistics Definitions")
+        title = QLabel(self.heading)
         title.setStyleSheet("font-weight: bold; font-size: 14px;")
         layout.addWidget(title)
-        
+
         # Instructions
-        instructions = QLabel("Browse definitions for statistical categories:")
+        instructions = QLabel("ESPN's definitions of the statistics on this screen:")
         layout.addWidget(instructions)
-        
+
         # Definitions list
         self.definitions_list = QListWidget()
         self.definitions_list.setAccessibleName("Statistics Definitions")
-        
-        # Populate definitions
-        definitions = self._get_stat_definitions()
-        for stat_name, definition in definitions.items():
-            item_text = f"{stat_name}: {definition}"
-            item = QListWidgetItem(item_text)
-            self.definitions_list.addItem(item)
-        
+        self.definitions_list.setWordWrap(True)
+        for line in lines:
+            self.definitions_list.addItem(QListWidgetItem(line))
+        # The statistic the list was on is read as the list takes focus, rather than an empty list.
+        self.definitions_list.setCurrentRow(current_row if 0 <= current_row < len(lines) else 0)
+
         layout.addWidget(self.definitions_list)
-        
+
         # Close button
         close_btn = QPushButton("Close")
         close_btn.clicked.connect(self.accept)
         layout.addWidget(close_btn)
-        
+
         self.setLayout(layout)
-    
-    def _get_stat_definitions(self):
-        """Get statistics definitions for the current league"""
-        if self.league.upper() == "MLB":
-            return {
-                "AVG (Batting Average)": "Hits divided by at bats. Measures how often a batter gets a hit.",
-                "HR (Home Runs)": "Number of hits that allow the batter to circle all bases and score.",
-                "RBI (Runs Batted In)": "Number of runs that scored as a result of the batter's action.",
-                "R (Runs)": "Number of times a player crosses home plate to score.",
-                "H (Hits)": "Number of times a batter safely reaches base via a hit.",
-                "SB (Stolen Bases)": "Number of bases stolen by advancing while the ball is in play.",
-                "ERA (Earned Run Average)": "Average number of earned runs allowed per 9 innings pitched.",
-                "W (Wins)": "Number of games won by a pitcher (must be pitcher of record).",
-                "K/SO (Strikeouts)": "Number of batters struck out by a pitcher.",
-                "WHIP": "Walks plus hits divided by innings pitched. Lower is better.",
-                "SV (Saves)": "Number of times a relief pitcher preserved a lead for the win.",
-                "IP (Innings Pitched)": "Number of complete innings pitched (outs divided by 3).",
-                "OBP (On-Base %)": "Percentage of plate appearances reaching base safely.",
-                "SLG (Slugging %)": "Total bases divided by at bats. Measures power hitting.",
-                "OPS": "On-base percentage plus slugging percentage. Overall offensive measure."
-            }
-        elif self.league.upper() in ("NFL", "NCAAF"):
-            return {
-                "Passing Yards": "Total yards gained through forward passes.",
-                "Passing TDs": "Number of touchdown passes thrown by a quarterback.",
-                "Rushing Yards": "Total yards gained by running with the football.",
-                "Rushing TDs": "Number of touchdowns scored by running the ball.",
-                "Receiving Yards": "Total yards gained from catching passes.",
-                "Receiving TDs": "Number of touchdowns scored by catching passes.",
-                "Tackles": "Number of times a defensive player brings down the ball carrier.",
-                "Sacks": "Number of times the quarterback is tackled behind the line.",
-                "Interceptions": "Number of passes caught by the opposing defense.",
-                "Completion %": "Percentage of pass attempts that were completed.",
-                "QBR (Quarterback Rating)": "Composite statistic measuring quarterback performance.",
-                "Total Yards": "Combined offensive yards (passing + rushing).",
-                "Points For": "Total points scored by a team.",
-                "Points Against": "Total points allowed by a team's defense.",
-                "Turnovers": "Number of times possession was lost (fumbles + interceptions).",
-                "3rd Down %": "Percentage of third down attempts converted for first downs."
-            }
-        elif self.league.upper() in ("NBA", "WNBA", "NCAAM", "NCAAWB"):
-            return {
-                "PPG (Points Per Game)": "Average number of points scored per game.",
-                "FG% (Field Goal %)": "Percentage of field goal attempts made.",
-                "3P% (Three Point %)": "Percentage of three-point attempts made.",
-                "FT% (Free Throw %)": "Percentage of free throw attempts made.",
-                "RPG (Rebounds Per Game)": "Average number of rebounds per game.",
-                "APG (Assists Per Game)": "Average number of assists per game.",
-                "SPG (Steals Per Game)": "Average number of steals per game.",
-                "BPG (Blocks Per Game)": "Average number of blocks per game.",
-                "TOV (Turnovers)": "Number of times possession was lost.",
-                "MPG (Minutes Per Game)": "Average playing time per game.",
-                "PER (Player Efficiency Rating)": "Overall player productivity rating.",
-                "TS% (True Shooting %)": "Shooting efficiency including free throws and 3-pointers.",
-                "USG% (Usage Rate)": "Percentage of team plays used by a player.",
-                "ORtg (Offensive Rating)": "Points produced per 100 possessions.",
-                "DRtg (Defensive Rating)": "Points allowed per 100 possessions."
-            }
-        else:
-            return {
-                "Points": "Total points scored by team or individual player.",
-                "Wins": "Number of games or matches won.",
-                "Goals": "Number of goals scored (varies by sport).",
-                "Assists": "Number of assists made to help teammates score.",
-                "Games": "Number of games or matches played.",
-                "Average": "Mean value across all games or attempts."
-            }
-    
+
     def keyPressEvent(self, event):
         """Handle Escape key to close dialog"""
         if event.key() == Qt.Key.Key_Escape:
@@ -12917,6 +13055,7 @@ class BowlsAndPlayoffsDialog(QDialog):
         
         # List of bowl games
         self.bowl_list = QListWidget()
+        self.bowl_list.setAccessibleName("Bowls & Playoffs")
         self.bowl_list.itemActivated.connect(self.on_bowl_game_selected)
         layout.addWidget(self.bowl_list)
         
@@ -12967,82 +13106,45 @@ class BowlsAndPlayoffsDialog(QDialog):
                 self.bowl_list.addItem("No bowl games or playoff games found.")
                 return
             
-            # Categorize games by competition type
-            categories = {
-                'Championship': [],  # type 33
-                'Semifinals': [],     # type 35
-                'Quarterfinals': [],  # type 40 (Major Bowl)
-                'First Round': [],    # type 42 (Bowl Game) - early playoff games
-                'Other Bowls': []     # Other bowl games
-            }
-            
-            for game in games_data:
-                comp_type = _int_or_none(game.get('competitions', [{}])[0].get('type', {}).get('id'))
-                comp_name = game.get('competitions', [{}])[0].get('type', {}).get('text', '')
-                
-                if comp_type == 33:  # Championship
-                    categories['Championship'].append(game)
-                elif comp_type == 35:  # Semifinal
-                    categories['Semifinals'].append(game)
-                elif comp_type == 40:  # Major Bowl (Quarterfinals)
-                    categories['Quarterfinals'].append(game)
-                elif comp_type == 42:  # Bowl Game
-                    # Check if it's part of CFP or regular bowl
-                    notes = game.get('competitions', [{}])[0].get('notes', [])
-                    if notes and 'first round' in notes[0].get('headline', '').lower():
-                        categories['First Round'].append(game)
-                    else:
-                        categories['Other Bowls'].append(game)
-                else:
-                    categories['Other Bowls'].append(game)
-            
-            # Display categories in order
-            for category_name in ['Championship', 'Semifinals', 'Quarterfinals', 'First Round', 'Other Bowls']:
-                games = categories[category_name]
-                if games:
-                    # Add category header
-                    header_item = QListWidgetItem(f"=== {category_name} ===")
-                    header_item.setFlags(Qt.ItemFlag.NoItemFlags)  # Not selectable
-                    font = header_item.font()
-                    font.setBold(True)
-                    header_item.setFont(font)
-                    self.bowl_list.addItem(header_item)
-                    
-                    # Add games in this category
-                    for game in games:
-                        self._add_game_item(game)
-                    
-        
+            # The playoff in the order it's played, then the bowls, as on the iPhone.
+            for round_name, games in postseason_sections(games_data):
+                # A heading is a row you land on, read by its name and count, so
+                # Down doesn't run one round's games into the last (#202).
+                header_item = QListWidgetItem(heading_text(round_name, len(games)))
+                header_item.setFlags(Qt.ItemFlag.ItemIsSelectable | Qt.ItemFlag.ItemIsEnabled)
+                font = header_item.font()
+                font.setBold(True)
+                header_item.setFont(font)
+                self.bowl_list.addItem(header_item)
+
+                for game in games:
+                    self._add_game_item(game, playoff=round_name in PLAYOFF_ROUNDS)
+
         except Exception as e:
             from PyQt6.QtWidgets import QMessageBox
             QMessageBox.critical(self, "Error", f"Failed to load bowl games: {_said(e)}")
     
-    def _add_game_item(self, game):
+    def _add_game_item(self, game, playoff=False):
         """Add a game item to the list"""
         from models.game import GameData
 
         # Get bowl/playoff information
-        comp = game.get('competitions', [{}])[0]
-        notes = comp.get('notes', [])
-        comp_type = comp.get('type', {})
+        comp = (game.get('competitions') or [{}])[0]
+        comp_type = comp.get('type') or {}
         comp_type_text = comp_type.get('text', '')
-        
+
         # Get bowl name from notes or use competition type
-        bowl_name = ''
-        if notes and notes[0].get('headline'):
-            bowl_name = notes[0].get('headline', '')
-        elif comp_type_text and comp_type_text != 'Standard':
+        bowl_name = game_headline(game)
+        if not bowl_name and comp_type_text and comp_type_text != 'Standard':
             bowl_name = comp_type_text
-        
+
         # Create game data object for display
         game_obj = GameData(game, self.league)
         item_text = game_obj.get_display_text()
-        
+
         # Format with bowl/playoff name prominently at the start
         if bowl_name:
-            # Check if it's a playoff game
-            comp_type_id = _int_or_none(comp_type.get('id'))
-            if comp_type_id in [33, 35, 40]:  # Championship, Semifinal, Major Bowl (Quarterfinals)
+            if playoff:
                 item_text = f"[{bowl_name}] {item_text}"
             else:
                 item_text = f"{bowl_name} - {item_text}"
@@ -13091,7 +13193,9 @@ class SportsScoresApp(QWidget):
         # Application state
         self.config = {}
         self.view_stack = []  # Stack for navigation history
-        self.monitored_games = set()  # live games with score alerts on, across views
+        # Games in Live Scores' Monitoring section: id to league, in the order added. For
+        # this session only, across views, so leaving Live Scores keeps them.
+        self.monitored_games = {}
         self._button_keys = ButtonKeys(self)
         QApplication.instance().installEventFilter(self._button_keys)
         # Without this, a native child makes its siblings native too, and those hold every view.

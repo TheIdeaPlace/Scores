@@ -49,10 +49,16 @@ struct GolfLeagueView: View {
             .padding(.bottom, 8)
         }
         .navigationTitle(sport.displayName)
-        .task { await viewModel.fetchCurrentTournament(for: sport) }
+        .task {
+            async let season: Void = viewModel.fetchSeason(for: sport)
+            await viewModel.fetchCurrentTournament(for: sport)
+            await season
+        }
         .refreshable {
             if selectedTab == .leaderboard {
                 await viewModel.refresh(for: sport)
+            } else if selectedTab == .schedule {
+                await viewModel.fetchSeason(for: sport)
             }
         }
     }
@@ -68,6 +74,8 @@ struct GolfLeagueView: View {
         case .schedule:
             GolfScheduleView(
                 calendar: viewModel.calendar,
+                seasonEvents: viewModel.seasonEvents,
+                seasonFailed: viewModel.seasonFailed,
                 selectedIndex: viewModel.selectedCalendarIndex,
                 onSelect: { idx in
                     selectedTab = .leaderboard

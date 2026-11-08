@@ -1502,6 +1502,7 @@ def check_leaders(http, report, league, in_season=True):
                                      f"{len(data['leaders']['categories'])} categories", url)
     http.save("leaders", league.key, data)
     check_leaders_for_a_team(http, report, league, data, season_year)
+    check_stat_glossary(http, report, league, data)
     wrong_way = leaders_direction_problems(data, espn_api.LOW_IS_GOOD_LEADERS)
     if wrong_way:
         report.warn(league.key, "Leaders",
@@ -1523,6 +1524,35 @@ def check_leaders(http, report, league, in_season=True):
         report.ok(league.key, "Leaders aren't the preseason", f"checked {len(can_tell)} categories", url)
     else:
         report.ok(league.key, "Leaders aren't the preseason", "ESPN has no preseason leaders to mix up", url)
+
+
+def check_stat_glossary(http, report, league, leaders):
+    """ESPN's definitions, from one team's byteam as both apps ask for the leaders' (#193), and
+    that stat_glossary.LEADER_STATS knows every leader category on the list: one it doesn't
+    know reads "No definition from ESPN" on both apps."""
+    import espn_api
+    import stat_glossary
+
+    url = f"{WEB}/{league.path}/statistics/byteam?region=us&lang=en&limit=1"
+    status, data = http.get(url)
+    if status != 200 or not isinstance(data, dict):
+        report.fail(league.key, "Stat definitions", f"got {status}, so the definitions say they couldn't be loaded", url)
+        return
+    found = stat_glossary.glossary(data)
+    if not found:
+        report.warn(league.key, "Stat definitions",
+                    "byteam has no descriptions, so every statistic reads \"No definition from ESPN\"", url)
+        return
+    table = stat_glossary.LEADER_STATS.get(league.path.split("/")[0], {})
+    keys = [c.get("name") for c in (leaders.get("leaders") or {}).get("categories") or [] if isinstance(c, dict)]
+    unknown = [key for key in keys if key and key not in table and key not in espn_api.LEADERS_NOT_SHOWN]
+    if unknown:
+        report.warn(league.key, "Stat definitions",
+                    f"leader categories stat_glossary.LEADER_STATS doesn't have, which show no definition: "
+                    f"{first_problems(unknown)}. tools/stat_categories.py says which category each is in", url)
+    else:
+        report.ok(league.key, "Stat definitions",
+                  f"{len(found)} definitions, and every leader category is in stat_glossary.LEADER_STATS", url)
 
 
 def check_app_leaders(report, league, in_season):
@@ -1727,6 +1757,18 @@ def check_football_calendar(http, report):
         else:
             report.ok(key, "Core API: weeks (iPhone)", f"{data.get('count')} weeks", url)
 
+        # A past season's week names, which both apps read from here: the
+        # scoreboard calendar only describes the current season.
+        url = f"{CORE}/{league.core_path}/seasons/{season - 1}/types/3/weeks/1"
+        status, data = http.get(url)
+        text = data.get("text") if isinstance(data, dict) else None
+        if status != 200 or not isinstance(data, dict):
+            report.fail(key, "Core API: past week name", f"got {status}, so last season's weeks would be numbers", url)
+        elif not isinstance(text, str) or not text.strip():
+            report.fail(key, "Core API: past week name", f"{season - 1} postseason week 1 has no text", url)
+        else:
+            report.ok(key, "Core API: past week name", f"{season - 1} postseason week 1: {text}", url)
+
 
 def _event_label_words(event):
     """The words the apps could label a game with: ESPN's notes and its week."""
@@ -1847,6 +1889,33 @@ def check_golf(http, report):
             report.fail(tour, "App: golf leaderboard", "a tournament with no name")
         else:
             report.ok(tour, "App: golf leaderboard", f"{board['name']}, {len(board.get('players') or [])} players")
+        check_past_golf_leaderboard(report, tour, schedule)
+
+
+def check_past_golf_leaderboard(report, tour, schedule):
+    """Both apps open a past tournament from the schedule by its date and id
+    (scoreboard?dates=YYYYMMDD), and show each finished one's winner."""
+    import espn_api
+
+    won = [e for e in schedule if e.get("state") == "post" and e.get("winner")]
+    if not won:
+        if any(e.get("state") == "post" for e in schedule):
+            report.fail(tour, "App: golf winners", "finished tournaments, none with a winner")
+        return
+    last = won[-1]
+    try:
+        board = espn_api.get_golf_leaderboard(tour, last.get("start_date"), last.get("id"))
+    except Exception as e:
+        report.fail(tour, "App: past golf leaderboard", f"raised {type(e).__name__}: {e}")
+        return
+    if not board or board.get("id") != last.get("id"):
+        report.fail(tour, "App: past golf leaderboard",
+                    f"{last.get('name')} on {last.get('start_date')} answered with {(board or {}).get('name')!r}")
+    elif not board.get("players"):
+        report.fail(tour, "App: past golf leaderboard", f"{last.get('name')} has no players")
+    else:
+        report.ok(tour, "App: past golf leaderboard",
+                  f"{last['name']}: won by {last['winner']}, {len(board['players'])} players")
 
 
 def check_racing(http, report):

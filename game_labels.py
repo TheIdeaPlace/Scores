@@ -55,6 +55,32 @@ def scoreboard_today(now: Optional[datetime] = None):
     return (now - timedelta(hours=5)).date()
 
 
+def scoreboard_date(date_str: str, time_valid: bool = True):
+    """The day whose scoreboard has this game. ESPN files a game under its US Eastern date,
+    whatever the time zone you're in, so a 7 PM Eastern kickoff is that day's even where
+    it's after midnight. A game whose time isn't set is at a placeholder hour, and its UTC
+    date is the true one."""
+    import pytz
+    parsed = datetime.fromisoformat(date_str.replace("Z", "+00:00"))
+    if parsed.tzinfo is None:
+        parsed = pytz.utc.localize(parsed)
+    if not time_valid:
+        return parsed.astimezone(pytz.utc).date()
+    return parsed.astimezone(pytz.timezone("US/Eastern")).date()
+
+
+def on_todays_scoreboard(date_str: Optional[str], time_valid: bool = True,
+                         now: Optional[datetime] = None) -> bool:
+    """Whether a game is on the scoreboard Live Scores shows, `scoreboard_today`'s, which
+    is last night's until 5 AM. Only those can be monitored."""
+    if not isinstance(date_str, str) or not date_str:
+        return False
+    try:
+        return scoreboard_date(date_str, time_valid) == scoreboard_today(now)
+    except (TypeError, ValueError):
+        return False
+
+
 def _overtime_label(number: int) -> str:
     return "OT" if number <= 1 else f"{number}OT"
 
@@ -286,3 +312,29 @@ def game_standings_tables(standings: Any) -> List[Dict[str, Any]]:
             "rows": rows,
         })
     return tables
+
+
+def _count(value: Any) -> Optional[int]:
+    if value is None or value == "" or isinstance(value, bool):
+        return None
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        return None
+
+
+def team_record_text(wins: Any, losses: Any, ties: Any = 0) -> str:
+    """A team's record for the Team Hub header: "8-0", "0-9", "10-4-1"; "" when there is none.
+
+    0 is a real count: an unbeaten team's 0 losses and a winless team's 0 wins are part
+    of its record (#203). There is no record when a count is missing (a team opened
+    from Favorites, which loads it later) or before the team has played. Ties show
+    wherever there are any: the NFL, and college hockey.
+    """
+    won, lost = _count(wins), _count(losses)
+    tied = _count(ties) or 0
+    if won is None or lost is None or won < 0 or lost < 0 or tied < 0:
+        return ""
+    if won + lost + tied == 0:
+        return ""
+    return f"{won}-{lost}-{tied}" if tied else f"{won}-{lost}"

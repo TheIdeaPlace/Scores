@@ -10,7 +10,8 @@ from game_labels import (basketball_period_label, best_odds, broadcast_names,
                          football_period_label, football_period_sort_key, format_height,
                          format_weight, game_standings_tables, injured_player_count,
                          leader_display_value, local_schedule_datetime, schedule_game_is_over,
-                         schedule_game_label, schedule_row_text, schedule_start_row, scoreboard_today)
+                         schedule_game_label, schedule_row_text, schedule_start_row, scoreboard_today,
+                         on_todays_scoreboard, team_record_text)
 
 FIXTURES = os.path.join(os.path.dirname(__file__), "..", "fixtures", "espn")
 
@@ -243,6 +244,34 @@ class TestCollegeStandings:
     def test_empty(self):
         assert espn_api.parse_college_standings({}) == []
 
+    def test_an_unbeaten_team_has_a_record(self):
+        """#203: the Team Hub dropped 8-0 and 0-9, treating 0 as no record."""
+        rows = espn_api.parse_college_standings(load("standings_NCAAF_group90.json"))
+        miami = next(r for r in rows if r["team_name"] == "Miami Hurricanes")
+        assert team_record_text(miami["wins"], miami["losses"], miami["ties"]) == "8-0"
+
+    def test_a_record_with_ties(self):
+        yale = self.team("NCAAWH", "Yale Bulldogs")
+        assert team_record_text(yale["wins"], yale["losses"], yale["ties"]) == "2-1-1"
+
+
+@pytest.mark.parametrize("wins,losses,ties,expected", [
+    (8, 0, 0, "8-0"),
+    (0, 9, 0, "0-9"),
+    (7, 2, None, "7-2"),
+    ("8", "0", "0", "8-0"),
+    (10, 6, 1, "10-6-1"),
+    (0, 0, 1, "0-0-1"),
+    (0, 0, 0, ""),        # hasn't played
+    ("", "", 0, ""),      # opened from Favorites: loaded later
+    (None, 3, 0, ""),
+    ("x", 3, 0, ""),
+    (True, 0, 0, ""),
+    (-1, 2, 0, ""),
+])
+def test_team_record_text(wins, losses, ties, expected):
+    assert team_record_text(wins, losses, ties) == expected
+
 
 def leader_display_cases():
     path = os.path.join(os.path.dirname(__file__), "..", "fixtures", "leader_display_grid.json")
@@ -345,3 +374,30 @@ def test_wnba_standings_are_the_regular_season_not_the_playoffs(monkeypatch):
     assert espn_api._games_back(half) == "2.5"
     assert espn_api._games_back({}) == "—"
     assert espn_api._games_back({"value": "-"}) == "—"
+
+
+class TestOnTodaysScoreboard:
+    """Only today's games can be monitored, since Live Scores shows today's scoreboard, and
+    ESPN files a game under its Eastern date whatever the time zone."""
+
+    def test_an_evening_kickoff_is_that_days(self):
+        assert on_todays_scoreboard("2026-11-08T00:30Z", now=datetime(2026, 11, 7, 12, 0))  # 7:30 PM ET
+        assert on_todays_scoreboard("2026-11-08T03:30Z", now=datetime(2026, 11, 7, 23, 0))  # 10:30 PM ET
+
+    def test_until_5_am_last_nights_game_is_still_today(self):
+        assert on_todays_scoreboard("2026-11-08T02:30Z", now=datetime(2026, 11, 8, 4, 59))
+        assert not on_todays_scoreboard("2026-11-08T02:30Z", now=datetime(2026, 11, 8, 5, 0))
+
+    def test_after_midnight_eastern_is_the_next_days(self):
+        assert not on_todays_scoreboard("2026-11-08T05:30Z", now=datetime(2026, 11, 7, 20, 0))  # 12:30 AM ET
+
+    def test_a_game_with_no_time_set_goes_by_its_utc_date(self):
+        assert on_todays_scoreboard("2026-11-08T05:00Z", time_valid=False, now=datetime(2026, 11, 8, 12, 0))
+        assert not on_todays_scoreboard("2026-11-08T05:00Z", time_valid=False, now=datetime(2026, 11, 7, 12, 0))
+
+    def test_tomorrows_game_is_not(self):
+        assert not on_todays_scoreboard("2026-11-08T18:00Z", now=datetime(2026, 11, 7, 20, 0))
+
+    @pytest.mark.parametrize("date_str", [None, "", "not a date", 5])
+    def test_no_date_is_not_today(self, date_str):
+        assert not on_todays_scoreboard(date_str, now=datetime(2026, 11, 7, 12, 0))

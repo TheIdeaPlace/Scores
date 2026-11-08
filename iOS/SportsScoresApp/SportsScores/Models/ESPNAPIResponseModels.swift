@@ -129,13 +129,6 @@ struct LeagueLeaderCategory: Identifiable {
                              isTeamCategory: isTeamCategory, seasonLabel: seasonLabel)
     }
 
-    /// The bare ESPN stat key, used to look up this category's definition.
-    /// Team categories are named "section.stat" (or "opponent.section.stat");
-    /// player categories are already a bare key like "homeRuns".
-    var statKey: String {
-        name.components(separatedBy: ".").last ?? name
-    }
-
     /// True when the category ranks teams by what their opponents did to them
     /// (yards allowed, opponent shooting percentage).
     var isOpponentCategory: Bool {

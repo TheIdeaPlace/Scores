@@ -903,12 +903,36 @@ struct GenericPlaysView: View {
 /// Quarter → Drive (collapsible) → individual plays.
 /// Uses the `drives` data from the ESPN summary API.
 struct NFLDrivesView: View {
+    /// In the order they were played, as `DrivesContainer.all` gives them.
     let drives: [GameDetails.Drive]
     let awayAbbr: String
     let homeAbbr: String
+    var awayID: String? = nil
+    var homeID: String? = nil
 
     @State private var expandedQuarters: Set<Int> = [1]
     @State private var expandedDrives: Set<String> = []
+
+    /// Who scored on each drive and how many points, by drive id. ESPN marks a return
+    /// touchdown on the drive of the team that gave it up, so the scorer comes from the
+    /// plays' scores. Empty without both team ids: then the scorer can't be told from
+    /// the side with the ball, and the rows keep ESPN's result.
+    private var scoring: [String: DriveResult] {
+        guard let awayID, let homeID, !awayID.isEmpty, !homeID.isEmpty else { return [:] }
+        let results = DriveResults.results(drives.map(\.scoreInput), awayID: awayID, homeID: homeID)
+        return Dictionary(zip(drives.map(\.id), results), uniquingKeysWith: { first, _ in first })
+    }
+
+    /// "TD 6pts", "DUKE return TD 7pts", or ESPN's result for a drive with no score.
+    private func resultText(_ drive: GameDetails.Drive, scoring: [String: DriveResult]) -> String {
+        if let result = scoring[drive.id], let scorer = result.scorer,
+           let badge = DriveResults.badge(result,
+                                          scorerName: scorer == .away ? awayAbbr : homeAbbr,
+                                          otherName: scorer == .away ? homeAbbr : awayAbbr) {
+            return badge
+        }
+        return drive.result ?? "Unknown"
+    }
 
     /// Organise drives into quarters, ignoring duplicates / bad data.
     private var quarterGroups: [(quarter: Int, label: String, drives: [GameDetails.Drive])] {
@@ -949,9 +973,10 @@ struct NFLDrivesView: View {
                 }
                 .padding(.top, 40)
             } else {
+                let scoring = self.scoring
                 LazyVStack(spacing: 6) {
                     ForEach(quarterGroups, id: \.quarter) { group in
-                        quarterSection(group)
+                        quarterSection(group, scoring: scoring)
                     }
                 }
                 .padding()
@@ -962,7 +987,8 @@ struct NFLDrivesView: View {
     // MARK: - Quarter section
 
     @ViewBuilder
-    private func quarterSection(_ group: (quarter: Int, label: String, drives: [GameDetails.Drive])) -> some View {
+    private func quarterSection(_ group: (quarter: Int, label: String, drives: [GameDetails.Drive]),
+                                scoring: [String: DriveResult]) -> some View {
         let isOpen = expandedQuarters.contains(group.quarter)
 
         VStack(spacing: 0) {
@@ -991,7 +1017,7 @@ struct NFLDrivesView: View {
                 Divider().padding(.horizontal)
                 VStack(spacing: 4) {
                     ForEach(group.drives) { drive in
-                        driveRow(drive)
+                        driveRow(drive, scoring: scoring)
                     }
                 }
                 .padding(.bottom, 4)
@@ -1004,11 +1030,12 @@ struct NFLDrivesView: View {
     // MARK: - Drive row
 
     @ViewBuilder
-    private func driveRow(_ drive: GameDetails.Drive) -> some View {
+    private func driveRow(_ drive: GameDetails.Drive, scoring: [String: DriveResult]) -> some View {
         let isOpen = expandedDrives.contains(drive.id)
         let plays  = drive.plays ?? []
         let teamAbbr = drive.team?.abbreviation ?? "?"
-        let result   = drive.result ?? "Unknown"
+        let result   = resultText(drive, scoring: scoring)
+        let scored   = scoring[drive.id]?.kind != nil || (scoring.isEmpty && drive.isScore == true)
         let yards    = drive.yards.map { "\($0) yds" } ?? ""
         let playCount = drive.offensivePlays.map { "\($0) plays" } ?? "\(plays.count) plays"
 
@@ -1023,13 +1050,14 @@ struct NFLDrivesView: View {
                     Image(systemName: isOpen ? "chevron.down" : "chevron.right")
                         .foregroundColor(.secondary).frame(width: 14)
 
-                    Text(drive.resultEmoji)
+                    // A score by the other team is a turnover for this one, whatever ESPN's result says.
+                    Text(scoring[drive.id]?.byOpponent == true ? "🔄" : drive.resultEmoji)
                         .font(.title3)
 
                     VStack(alignment: .leading, spacing: 2) {
                         HStack(spacing: 6) {
                             Text(teamAbbr).font(.subheadline.bold())
-                            Text(result).font(.subheadline).foregroundColor(drive.isScore == true ? .green : .primary)
+                            Text(result).font(.subheadline).foregroundColor(scored ? .green : .primary)
                         }
                         if let desc = drive.description, !desc.isEmpty {
                             Text(desc).font(.caption).foregroundColor(.secondary).lineLimit(1)
