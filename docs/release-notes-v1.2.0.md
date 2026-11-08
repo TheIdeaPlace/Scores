@@ -11,6 +11,8 @@ and the CFL. Both apps now read the same data in more places, and a lot of thing
   and others. Each opens in your browser, and you sign in there if it asks. It's in a league's scores list,
   Live Scores and game details, in Team Hub as Listen on the Radio, and each of those leagues ends with Game Radio,
   every team and its station.
+- The listen feature in Sports Scores is intended to give you likely options to stream a game. Direct linking to
+  the audio stream or in some cases a game-specific page is not supported at this time.
 
 **Monitoring**
 - Live Scores has a Monitoring section at the top. Alt+M adds a game to it, from Live Scores or from today's
@@ -64,7 +66,7 @@ and the CFL. Both apps now read the same data in more places, and a lot of thing
 
 ### iPhone
 
-- **Listen to the Game:** a VoiceOver action and press-and-hold item on games in Scores and Live Scores, a menu on a game's details, a radio button in Team Hub, and Game Radio in The Bench. Each place opens in Safari or its own app.
+- **Listen to the Game:** a VoiceOver action and press-and-hold item on games in Scores and Live Scores, a menu on a game's details, a radio button in Team Hub, and Game Radio in The Bench. Each place opens in Safari or its own app. The listen feature in Sports Scores is intended to give you likely options to stream a game. Direct linking to the audio stream or in some cases a game-specific page is not supported at this time.
 - **Monitoring:** a Monitoring section at the top of Live Scores. Use the Monitor action on a game to add it, and Stop Monitoring to take it off. Nothing is spoken when a score changes.
 - **Bowls & Playoffs:** every bowl and playoff game in one list, from a button on College Football's Scores tab, by round.
 - **NHL On the Ice:** a live game's Info tab shows who is on the ice for each team, with an Update button.
