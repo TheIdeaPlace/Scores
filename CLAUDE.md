@@ -91,6 +91,7 @@ Add a check here when the app starts relying on a new endpoint or field.
 - `accessible_table.py` (1,000+ lines) — Custom `QTableWidget` subclass powering every data table. Implements three view modes: **Table** (grid), **Quick List** (comma-separated), **Full List** (key: value pairs). Concrete subclasses: `StandingsTable`, `BoxscoreTable`, `InjuryTable`, `LeadersTable`.
 - `tab_keys.py` — Pure: which tab a key goes to, type-ahead find, and `MAX_TABS`.
 - `pitch_exploration_dialog.py` — Interactive dialog for exploring MLB pitch coordinates with audio feedback
+- `dialog_text.py` — `DialogTextOrder`, an app-wide filter that puts each dialog's text after its controls in the accessibility order (nothing moves on screen). JAWS keeps the text above a dialog's first control with the main window and repeated it after every title change once the dialog had closed.
 - `popup_menu.py` — `exec_menu`, which every context menu opens through: it selects the first item 50 ms after the menu shows, so JAWS and NVDA speak at once instead of waiting for an arrow key.
 - `windows_notifications.py` — `announce()`, the app's spoken messages. `uia_notifier.py` raises them from a hidden child window with its own UIA provider; a notification from `UiaHostProviderFromHwnd` never reaches a screen reader.
 

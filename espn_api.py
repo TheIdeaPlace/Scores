@@ -1590,7 +1590,7 @@ def format_complex_data(key, value):
                     if not headline:
                         headline = item.get("title", "")
                     if headline:
-                        headlines.append(f"• {headline}")
+                        headlines.append(headline)
             return "\n".join(headlines) if headlines else "No headlines available"
         elif isinstance(value, dict):
             if "articles" in value and isinstance(value["articles"], list):
@@ -1601,7 +1601,7 @@ def format_complex_data(key, value):
                     if isinstance(article, dict):
                         headline = article.get("headline", "")
                         if headline:
-                            headlines.append(f"• {headline}")
+                            headlines.append(headline)
                 return "\n".join(headlines) if headlines else "No headlines found"
             else:
                 return "News section available"
@@ -1654,7 +1654,7 @@ def format_complex_data(key, value):
                     provider = _as_dict(odd.get("provider")).get("name") or "Unknown"
                     details = odd.get("details") or "No details"
                     over_under = odd.get("overUnder") or ""
-                    info = f"• {provider}: {details}"
+                    info = f"{provider}: {details}"
                     if over_under:
                         info += f" (O/U: {over_under})"
                     odds_info.append(info)
@@ -1683,7 +1683,7 @@ def format_complex_data(key, value):
                                 if stat_name and stat_value:
                                     key_stats.append(f"{stat_name}: {stat_value}")
                         if key_stats:
-                            boxscore_info.append(f"• {name}: {', '.join(key_stats)}")
+                            boxscore_info.append(f"{name}: {', '.join(key_stats)}")
             return "\n".join(boxscore_info) if boxscore_info else "No boxscore data"
         return "No team stats available"
     

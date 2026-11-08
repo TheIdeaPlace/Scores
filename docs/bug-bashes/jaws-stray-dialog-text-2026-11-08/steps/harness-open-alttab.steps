@@ -1,0 +1,20 @@
+# Harness: with the dialog OPEN, Alt+Tab away and back (should land back in the dialog), then close it
+# and Alt+Tab away and back, then a title change.
+w 0.5
+k {ENTER}
+w 4
+k %{TAB}
+w 4
+k %{TAB}
+w 5
+e Dialog List
+k {ESC}
+w 4
+k %{TAB}
+w 4
+k %{TAB}
+w 5
+e! HARNESS DIALOG LABEL
+k {ESC}
+w 4
+e! HARNESS DIALOG LABEL

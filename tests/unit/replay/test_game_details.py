@@ -126,7 +126,7 @@ class TestFormatComplexData:
         assert espn_api.format_complex_data("gameInfo", value) == "Venue: Schottenstein Center"
 
     def test_real_odds(self):
-        assert self.fmt("odds", load("details_NFL_pieces.json")["pickcenter"]) == "• DraftKings: WSH -5.5 (O/U: 40.5)"
+        assert self.fmt("odds", load("details_NFL_pieces.json")["pickcenter"]) == "DraftKings: WSH -5.5 (O/U: 40.5)"
 
     def test_real_broadcasts(self):
         value = load("details_NFL_pieces.json")["header"]["competitions"][0]["broadcasts"]
@@ -144,9 +144,9 @@ class TestFormatComplexData:
         ("gameInfo", {"officials": [1]}, "No additional game info available"),
         ("x", {"header": "Only"}, "No content data available"),
         ("x", {"header": "H", "list": [1, 2]}, "List with 2 items: 1, 2"),
-        ("news", [{"headline": "A"}, {"title": "B"}, {"neither": 1}, {"headline": "late"}], "• A\n• B"),
+        ("news", [{"headline": "A"}, {"title": "B"}, {"neither": 1}, {"headline": "late"}], "A\nB"),
         ("news", [{"neither": 1}], "No headlines available"),
-        ("news", {"articles": [{"headline": "A"}, {"nope": 1}]}, "• A"),
+        ("news", {"articles": [{"headline": "A"}, {"nope": 1}]}, "A"),
         ("news", {"articles": [{"nope": 1}]}, "No headlines found"),
         ("news", {"other": 1}, "News section available"),
         ("news", "text", "News available"),
@@ -166,7 +166,7 @@ class TestFormatComplexData:
         ("boxscore", {"teams": [{"team": {"displayName": "A"},
                                  "statistics": [{"name": "yards", "displayValue": "300"}, {"name": "", "displayValue": "x"}]},
                                 {"team": {"displayName": "B"}, "statistics": []}, "text"]},
-         "• A: yards: 300"),
+         "A: yards: 300"),
         ("boxscore", {"teams": [{"team": {"displayName": "A"}, "statistics": []}]}, "No boxscore data"),
         ("boxscore", {"other": 1}, "No team stats available"),
         ("other", [1, 2, 3, 4], "List with 4 items: 1, 2, 3"),

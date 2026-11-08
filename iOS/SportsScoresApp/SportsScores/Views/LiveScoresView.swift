@@ -156,7 +156,7 @@ struct LiveScoresView: View {
                 // Golf Live Now section (shown first when a tournament is in progress)
                 if appSettings.golfHubEnabled && !viewModel.activeTournaments.isEmpty {
                     VStack(alignment: .leading, spacing: 12) {
-                        sectionHeader(title: "⛳ GOLF LIVE", count: viewModel.activeTournaments.count)
+                        sectionHeader(title: "GOLF LIVE", icon: "⛳", count: viewModel.activeTournaments.count)
                         ForEach(viewModel.activeTournaments, id: \.sport.rawValue) { item in
                             NavigationLink(destination: GolfLeagueView(sport: item.sport)) {
                                 golfTournamentRow(item.tournament, sport: item.sport)
@@ -228,11 +228,19 @@ struct LiveScoresView: View {
         }
     }
     
-    private func sectionHeader(title: String, count: Int) -> some View {
+    /// A section heading. `icon` is decoration, drawn before the title and hidden from
+    /// VoiceOver, which would otherwise read the emoji's name ("flag in hole").
+    private func sectionHeader(title: String, icon: String? = nil, count: Int) -> some View {
         HStack {
-            Text(title)
-                .font(.headline)
-                .fontWeight(.bold)
+            HStack(spacing: 4) {
+                if let icon {
+                    Text(icon)
+                        .accessibilityHidden(true)
+                }
+                Text(title)
+            }
+            .font(.headline)
+            .fontWeight(.bold)
             
             Text("\(count)")
                 .font(.caption)
@@ -250,8 +258,10 @@ struct LiveScoresView: View {
         VStack(alignment: .leading, spacing: 8) {
             // Sport Header
             HStack {
+                // Decoration: VoiceOver would read the emoji's name before the sport's.
                 Text(sportGames.sport.icon)
                     .font(.title3)
+                    .accessibilityHidden(true)
                 Text(sportGames.sport.displayName)
                     .font(.subheadline)
                     .fontWeight(.semibold)

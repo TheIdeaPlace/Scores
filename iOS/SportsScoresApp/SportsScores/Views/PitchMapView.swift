@@ -91,6 +91,8 @@ struct PitchMapView: View {
             Text("Tap a pitch row to hear its location · Tap ▶ to play sequence")
                 .font(.caption)
                 .foregroundColor(.secondary)
+                // In words: VoiceOver reads the triangle by its name, not as the Play button.
+                .accessibilityLabel("Tap a pitch row to hear its location. Tap Play to play the sequence.")
         }
         .padding()
         .background(Color.secondary.opacity(0.08))
