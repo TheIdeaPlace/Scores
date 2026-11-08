@@ -1,0 +1,79 @@
+name: Mac build (personal use)
+
+# A Mac build of the Windows app, for Kelly's own use on a Mac (#246). Not shipped: Qt6's
+# macOS accessibility isn't good enough for a release, and a real Mac app waits for a
+# wxPython or native port (#158). It lives only on the mac-build branch and runs when that
+# branch is pushed (a workflow that runs only by hand must also be on main to be started,
+# and main is kept free of it). To build again from current main: merge main into
+# mac-build and push. The result is an unsigned Scores.app in a zip artifact. Windows-only parts (winsound
+# audio, UIA announcements, the updater) are skipped on macOS by the code itself.
+
+on:
+  push:
+    branches: [mac-build]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: macos-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.13'
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run the tests on macOS
+        # The suite was written on Windows. A failure here is reported but doesn't stop the
+        # build, since the point is a usable app; read the log for what differs on a Mac.
+        continue-on-error: true
+        env:
+          QT_QPA_PLATFORM: offscreen
+        run: python -m pytest tests/unit/ tests/integration/test_play_audio_wiring.py -q -p no:cacheprovider
+
+      - name: Build Scores.app
+        run: |
+          set -euo pipefail
+          python -m PyInstaller --noconfirm --windowed --name Scores \
+            --osx-bundle-identifier net.theideaplace.scores \
+            --add-data "user_guide.html:." \
+            --add-data "radio_links.json:." \
+            --distpath dist --workpath build/mac --specpath build/mac \
+            main.py
+          ls -la dist
+          test -d dist/Scores.app
+
+      - name: Smoke test, start the app for 20 seconds
+        env:
+          QT_QPA_PLATFORM: offscreen
+        run: |
+          set -uo pipefail
+          ./dist/Scores.app/Contents/MacOS/Scores --nfl > smoke.log 2>&1 &
+          pid=$!
+          sleep 20
+          if kill -0 "$pid" 2>/dev/null; then
+            echo "Still running after 20 seconds: good."
+            kill "$pid"
+          else
+            echo "::error::Scores.app exited within 20 seconds."
+            cat smoke.log
+            exit 1
+          fi
+          tail -n 40 smoke.log || true
+
+      - name: Zip the app
+        # ditto keeps the bundle's symlinks and permissions, which a plain zip breaks.
+        run: |
+          VERSION="$(tr -d '[:space:]' < VERSION)"
+          ditto -c -k --keepParent dist/Scores.app "Scores-${VERSION}-mac-$(uname -m).zip"
+          ls -la *.zip
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: Scores-mac
+          path: Scores-*-mac-*.zip
+          retention-days: 14
