@@ -149,6 +149,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   since ESPN won't send them 20. If ESPN doesn't answer, the screen says so (#198).
 
 ### Fixed
+- **Windows: JAWS no longer repeats a dialog you've closed.** After a dialog closed, JAWS said its first
+  line of text again after the window title every time you came back to Scores or changed screens: for
+  example "Press Enter or double-click a headline to open in your browser:" from a league's News, heard on
+  Live Scores or the home screen. 1.1.1 did it too. JAWS reads a dialog's text above its first control as
+  the dialog opens and keeps it with the main window, so every dialog now gives that text after its
+  controls instead; nothing moves on screen. As a dialog opens, JAWS says its title and the control you're
+  on, and a message box's message as before; the line above the first control is no longer read by
+  itself.
 - **Windows: screen readers no longer read out decoration.** NVDA said "dash dash dash" around rows like
   "--- News Headlines ---", and read emoji by name. Everything spoken is now words:
   - A sport's section rows are just their names (News Headlines, Standings, Polls, Statistics, Teams,
