@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### In Progress
+- **Game Wrap Up Feature**: ESPN text processing and game story extraction (under construction)
+  - Core infrastructure implemented, text processing being refined
+  - Game story text placeholders currently under investigation
+
+## [1.2.0] - 2026-11-07
+
 ### Added
 - **MLB in Listen to the Game, on both apps.** Every MLB team's radio is listed, as the NFL's, NBA's and
   NHL's are: its 2026 flagship station's stream, the team's own radio page and its SiriusXM page, then the
@@ -287,11 +294,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   sends as plain games, have their own heading instead of sitting among the bowls. The headings and
   their order (first round, quarterfinals, semifinals, championship, then the bowls, each by kickoff)
   match the iPhone's Bowls & Playoffs list.
-
-### In Progress
-- **Game Wrap Up Feature**: ESPN text processing and game story extraction (under construction)
-  - Core infrastructure implemented, text processing being refined
-  - Game story text placeholders currently under investigation
 
 ## [1.1.1] - 2026-11-05
 
