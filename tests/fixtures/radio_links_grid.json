@@ -56,7 +56,7 @@
     {"label": "Wisconsin: Badgers radio", "url": "https://example.com/badgers"},
     {"label": "Varsity Network", "url": "https://example.com/varsity"}
    ]},
-  {"name": "a league with no table", "league": "MLB",
+  {"name": "a league with no table", "league": "WNBA",
    "away_id": "9", "away_name": "Packers", "home_id": "3", "home_name": "Bears",
    "expected": []}
  ],
@@ -83,6 +83,6 @@
   {"league": "NFL", "expected": true},
   {"league": "NCAAF", "expected": true},
   {"league": "NHL", "expected": false},
-  {"league": "MLB", "expected": false}
+  {"league": "WNBA", "expected": false}
  ]
 }

@@ -1,6 +1,6 @@
 {
- "about": "Where to listen to games. Read by radio_links.py on Windows and RadioLinks.swift on the iPhone, which keeps a byte-equal copy at iOS/SportsScoresApp/SportsScores/radio_links.json. Teams are keyed by ESPN team id. Every link opens a web page; none is a stream. tools/validate_espn.py opens them nightly.",
- "checked": "2026-11-07",
+ "about": "Where to listen to games. Read by radio_links.py on Windows and RadioLinks.swift on the iPhone, which keeps a byte-equal copy at iOS/SportsScoresApp/SportsScores/radio_links.json. Teams are keyed by ESPN team id. Every link opens a web page; none is a stream. tools/validate_espn.py opens them nightly. A team's \"note\" is for whoever keeps this file (blackouts, recent station changes); neither app shows it.",
+ "checked": "2026-11-08",
  "tables": {
   "NFL": {
    "links": [
@@ -1646,6 +1646,606 @@
       {
        "label": "Jets broadcast information",
        "url": "https://www.nhl.com/jets/multimedia/broadcast-information"
+      }
+     ]
+    }
+   }
+  },
+  "MLB": {
+   "links": [
+    {
+     "label": "MLB Media Center (MLB.TV audio of every game)",
+     "url": "https://www.mlb.com/mediacenter"
+    },
+    {
+     "label": "SiriusXM MLB play-by-play",
+     "url": "https://www.siriusxm.com/sports/mlb"
+    },
+    {
+     "label": "SiriusXM MLB Network Radio (channel 89)",
+     "url": "https://www.siriusxm.com/channels/mlb-network-radio"
+    },
+    {
+     "label": "MLB App",
+     "url": "https://www.mlb.com/apps/mlb-app"
+    }
+   ],
+   "teams": {
+    "29": {
+     "name": "Arizona Diamondbacks",
+     "station": "Arizona Sports 98.7 FM (KMVP-FM), Phoenix",
+     "note": "Station streams of MLB games are limited to the team's home area; elsewhere, use MLB.TV audio in the MLB app or SiriusXM.",
+     "links": [
+      {
+       "label": "Arizona Sports 98.7 live",
+       "url": "https://tuner.bonneville.com/live/KMVP-FM/"
+      },
+      {
+       "label": "D-backs radio affiliates",
+       "url": "https://www.mlb.com/dbacks/schedule/broadcast-affiliates"
+      },
+      {
+       "label": "SiriusXM: Arizona Diamondbacks",
+       "url": "https://www.siriusxm.com/sports/mlb/arizona-diamondbacks"
+      }
+     ]
+    },
+    "11": {
+     "name": "Athletics",
+     "station": "Talk 650 KSTE, Sacramento, and A's Cast on iHeartRadio",
+     "note": "A's Cast is iHeart's 24/7 A's stream, which the team says is free across Northern California. Station streams of MLB games are limited to the team's home area; elsewhere, use MLB.TV audio in the MLB app or SiriusXM.",
+     "links": [
+      {
+       "label": "A's Cast on iHeartRadio",
+       "url": "https://www.iheart.com/live/as-cast-8692/"
+      },
+      {
+       "label": "Talk 650 KSTE",
+       "url": "https://kste.iheart.com/"
+      },
+      {
+       "label": "A's TV and radio affiliates",
+       "url": "https://www.mlb.com/athletics/schedule/watch"
+      },
+      {
+       "label": "SiriusXM: Athletics",
+       "url": "https://www.siriusxm.com/sports/mlb/athletics"
+      }
+     ]
+    },
+    "15": {
+     "name": "Atlanta Braves",
+     "station": "680 The Fan (WCNN 680 AM, 93.7 FM), Atlanta",
+     "note": "Station streams of MLB games are limited to the team's home area; elsewhere, use MLB.TV audio in the MLB app or SiriusXM.",
+     "links": [
+      {
+       "label": "680 The Fan: listen",
+       "url": "https://680thefan.com/listen/"
+      },
+      {
+       "label": "Braves Radio Network",
+       "url": "https://www.mlb.com/braves/schedule/radio-affiliates"
+      },
+      {
+       "label": "SiriusXM: Atlanta Braves",
+       "url": "https://www.siriusxm.com/sports/mlb/atlanta-braves"
+      }
+     ]
+    },
+    "1": {
+     "name": "Baltimore Orioles",
+     "station": "WBAL NewsRadio 1090 AM / 101.5 FM and 98 Rock 97.9 FM, Baltimore",
+     "note": "The stations stream games only within their allowed area; the stations warn a phone's data provider can place you outside it.",
+     "links": [
+      {
+       "label": "WBAL NewsRadio: how to listen to Orioles games",
+       "url": "https://www.wbal.com/how-to-listen-to-baltimore-orioles-games-on-wbal-newsradio"
+      },
+      {
+       "label": "98 Rock: how to listen to Orioles games",
+       "url": "https://www.98online.com/how-to-listen-to-baltimore-orioles-games-on-98-rock"
+      },
+      {
+       "label": "Orioles: where to watch and listen",
+       "url": "https://www.mlb.com/orioles/schedule/watch"
+      },
+      {
+       "label": "SiriusXM: Baltimore Orioles",
+       "url": "https://www.siriusxm.com/sports/mlb/baltimore-orioles"
+      }
+     ]
+    },
+    "2": {
+     "name": "Boston Red Sox",
+     "station": "WEEI 93.7 FM, Boston",
+     "note": "Station streams of MLB games are limited to the team's home area; elsewhere, use MLB.TV audio in the MLB app or SiriusXM.",
+     "links": [
+      {
+       "label": "WEEI 93.7 on Audacy",
+       "url": "https://www.audacy.com/weei"
+      },
+      {
+       "label": "Red Sox radio affiliates",
+       "url": "https://www.mlb.com/redsox/schedule/radio-affiliates"
+      },
+      {
+       "label": "SiriusXM: Boston Red Sox",
+       "url": "https://www.siriusxm.com/sports/mlb/boston-red-sox"
+      }
+     ]
+    },
+    "16": {
+     "name": "Chicago Cubs",
+     "station": "104.3 The Score (WSCR 670 AM, 104.3 FM), Chicago",
+     "note": "670 The Score added the 104.3 FM simulcast and became 104.3 The Score on Feb 2, 2026. Audacy: local blackouts apply.",
+     "links": [
+      {
+       "label": "104.3 The Score: how to listen to Cubs games",
+       "url": "https://www.audacy.com/thescorechicago/sports/how-to-listen-to-cubs-games"
+      },
+      {
+       "label": "Cubs: where to watch and listen",
+       "url": "https://www.mlb.com/cubs/schedule/watch"
+      },
+      {
+       "label": "SiriusXM: Chicago Cubs",
+       "url": "https://www.siriusxm.com/sports/mlb/chicago-cubs"
+      }
+     ]
+    },
+    "4": {
+     "name": "Chicago White Sox",
+     "station": "ESPN 1000 (WMVP 1000 AM, 100.3 FM HD2), Chicago",
+     "note": "Station streams of MLB games are limited to the team's home area; elsewhere, use MLB.TV audio in the MLB app or SiriusXM.",
+     "links": [
+      {
+       "label": "ESPN 1000 on iHeartRadio",
+       "url": "https://www.iheart.com/live/espn-1000-7907/"
+      },
+      {
+       "label": "White Sox radio affiliates",
+       "url": "https://www.mlb.com/whitesox/schedule/radio-affiliates"
+      },
+      {
+       "label": "SiriusXM: Chicago White Sox",
+       "url": "https://www.siriusxm.com/sports/mlb/chicago-white-sox"
+      }
+     ]
+    },
+    "17": {
+     "name": "Cincinnati Reds",
+     "station": "700 WLW, Cincinnati",
+     "note": "Station streams of MLB games are limited to the team's home area; elsewhere, use MLB.TV audio in the MLB app or SiriusXM.",
+     "links": [
+      {
+       "label": "700 WLW on iHeartRadio",
+       "url": "https://www.iheart.com/live/newsradio-700-wlw-1713/"
+      },
+      {
+       "label": "Reds Radio Network",
+       "url": "https://www.mlb.com/reds/fans/radio/reds-radio-network"
+      },
+      {
+       "label": "SiriusXM: Cincinnati Reds",
+       "url": "https://www.siriusxm.com/sports/mlb/cincinnati-reds"
+      }
+     ]
+    },
+    "5": {
+     "name": "Cleveland Guardians",
+     "station": "WTAM 1100 AM and 106.9 FM, Cleveland",
+     "note": "Station streams of MLB games are limited to the team's home area; elsewhere, use MLB.TV audio in the MLB app or SiriusXM.",
+     "links": [
+      {
+       "label": "WTAM 1100 on iHeartRadio",
+       "url": "https://www.iheart.com/live/newsradio-wtam-1100-1749/"
+      },
+      {
+       "label": "Guardians radio affiliates",
+       "url": "https://www.mlb.com/guardians/fans/radio-affiliates"
+      },
+      {
+       "label": "SiriusXM: Cleveland Guardians",
+       "url": "https://www.siriusxm.com/sports/mlb/cleveland-guardians"
+      }
+     ]
+    },
+    "27": {
+     "name": "Colorado Rockies",
+     "station": "KOA 850 AM / 94.1 FM, Denver",
+     "note": "Station streams of MLB games are limited to the team's home area; elsewhere, use MLB.TV audio in the MLB app or SiriusXM.",
+     "links": [
+      {
+       "label": "KOA on iHeartRadio",
+       "url": "https://www.iheart.com/live/850-941-koa-389/"
+      },
+      {
+       "label": "Rockies radio affiliates",
+       "url": "https://www.mlb.com/rockies/schedule/radio-affiliates"
+      },
+      {
+       "label": "SiriusXM: Colorado Rockies",
+       "url": "https://www.siriusxm.com/sports/mlb/colorado-rockies"
+      }
+     ]
+    },
+    "6": {
+     "name": "Detroit Tigers",
+     "station": "97.1 The Ticket (WXYT-FM), Detroit",
+     "note": "Audacy: local blackouts apply.",
+     "links": [
+      {
+       "label": "97.1 The Ticket: how to listen to Tigers games",
+       "url": "https://www.audacy.com/971theticket/how-to-listen-to-tigers-games"
+      },
+      {
+       "label": "Tigers TV and radio affiliates",
+       "url": "https://www.mlb.com/tigers/schedule/affiliates"
+      },
+      {
+       "label": "SiriusXM: Detroit Tigers",
+       "url": "https://www.siriusxm.com/sports/mlb/detroit-tigers"
+      }
+     ]
+    },
+    "18": {
+     "name": "Houston Astros",
+     "station": "SportsTalk 790 (KBME 790 AM), Houston",
+     "note": "The team says to listen anywhere through the MLB App. Station streams of MLB games are limited to the team's home area; elsewhere, use MLB.TV audio in the MLB app or SiriusXM.",
+     "links": [
+      {
+       "label": "SportsTalk 790 on iHeartRadio",
+       "url": "https://www.iheart.com/live/sportstalk-790-2257/"
+      },
+      {
+       "label": "Astros Radio",
+       "url": "https://www.mlb.com/astros/fans/radio"
+      },
+      {
+       "label": "SiriusXM: Houston Astros",
+       "url": "https://www.siriusxm.com/sports/mlb/houston-astros"
+      }
+     ]
+    },
+    "7": {
+     "name": "Kansas City Royals",
+     "station": "96.5 The Fan (KFNZ-FM) and 610 AM, Kansas City",
+     "note": "Audacy: local blackouts apply.",
+     "links": [
+      {
+       "label": "96.5 The Fan: how to listen to Royals games",
+       "url": "https://www.audacy.com/965thefan/how-to-listen-to-royals-games"
+      },
+      {
+       "label": "Royals Radio Network",
+       "url": "https://www.mlb.com/royals/schedule/royals-radio-network"
+      },
+      {
+       "label": "SiriusXM: Kansas City Royals",
+       "url": "https://www.siriusxm.com/sports/mlb/kansas-city-royals"
+      }
+     ]
+    },
+    "3": {
+     "name": "Los Angeles Angels",
+     "station": "Angels Radio AM830 (KLAA), Orange County",
+     "note": "The team says the free AM830 app carries Angels games in English and Spanish anywhere in the world.",
+     "links": [
+      {
+       "label": "Angels Radio AM830",
+       "url": "https://www.am830.net/"
+      },
+      {
+       "label": "Angels: where to watch and listen",
+       "url": "https://www.mlb.com/angels/schedule/watch"
+      },
+      {
+       "label": "SiriusXM: Los Angeles Angels",
+       "url": "https://www.siriusxm.com/sports/mlb/los-angeles-angels"
+      }
+     ]
+    },
+    "19": {
+     "name": "Los Angeles Dodgers",
+     "station": "AM 570 LA Sports (KLAC), Los Angeles",
+     "note": "Station streams of MLB games are limited to the team's home area; elsewhere, use MLB.TV audio in the MLB app or SiriusXM.",
+     "links": [
+      {
+       "label": "AM 570 LA Sports on iHeartRadio",
+       "url": "https://www.iheart.com/live/570-klac-189/"
+      },
+      {
+       "label": "Dodgers Audio Network",
+       "url": "https://www.mlb.com/dodgers/schedule/radio-network"
+      },
+      {
+       "label": "SiriusXM: Los Angeles Dodgers",
+       "url": "https://www.siriusxm.com/sports/mlb/los-angeles-dodgers"
+      }
+     ]
+    },
+    "28": {
+     "name": "Miami Marlins",
+     "station": "WQAM 560 AM / 104.3 FM, Miami",
+     "note": "New for 2026: the Marlins moved from iHeart's 940 WINZ to Audacy's WQAM (announced March 26, 2026). Station streams of MLB games are limited to the team's home area; elsewhere, use MLB.TV audio in the MLB app or SiriusXM.",
+     "links": [
+      {
+       "label": "WQAM on Audacy",
+       "url": "https://www.audacy.com/wqam"
+      },
+      {
+       "label": "Marlins radio on WQAM",
+       "url": "https://www.mlb.com/news/miami-marlins-and-audacy-announce-multi-year-radio-broadcast-and-streaming-partnership-making-wqam-the-home-of-marlins-baseball"
+      },
+      {
+       "label": "SiriusXM: Miami Marlins",
+       "url": "https://www.siriusxm.com/sports/mlb/miami-marlins"
+      }
+     ]
+    },
+    "8": {
+     "name": "Milwaukee Brewers",
+     "station": "WTMJ 620 AM / 103.3 FM, Milwaukee",
+     "note": "Station streams of MLB games are limited to the team's home area; elsewhere, use MLB.TV audio in the MLB app or SiriusXM.",
+     "links": [
+      {
+       "label": "WTMJ: listen live",
+       "url": "https://wtmj.com/listen-live/"
+      },
+      {
+       "label": "Brewers Radio Network",
+       "url": "https://www.mlb.com/brewers/schedule/brewers-radio-network"
+      },
+      {
+       "label": "SiriusXM: Milwaukee Brewers",
+       "url": "https://www.siriusxm.com/sports/mlb/milwaukee-brewers"
+      }
+     ]
+    },
+    "9": {
+     "name": "Minnesota Twins",
+     "station": "830 WCCO and 102.9 FM (KMNB), Minneapolis",
+     "note": "Audacy streams Twins games free in Minnesota, North and South Dakota, western Wisconsin and northern Iowa; local blackouts apply.",
+     "links": [
+      {
+       "label": "830 WCCO: how to listen to Twins games",
+       "url": "https://www.audacy.com/wccoradio/how-to-listen-to-twins-games"
+      },
+      {
+       "label": "Treasure Island Baseball Network",
+       "url": "https://www.mlb.com/twins/fans/treasure-island-baseball-network"
+      },
+      {
+       "label": "SiriusXM: Minnesota Twins",
+       "url": "https://www.siriusxm.com/sports/mlb/minnesota-twins"
+      }
+     ]
+    },
+    "21": {
+     "name": "New York Mets",
+     "station": "880 AM (WHSQ), New York",
+     "note": "880 AM, formerly WCBS, is now WHSQ and carries ESPN New York; Audacy keeps the Mets and streams them as Mets Radio. Local blackouts apply.",
+     "links": [
+      {
+       "label": "Mets Radio: how to listen to Mets games",
+       "url": "https://www.audacy.com/metsradio/how-to-listen-to-mets-games"
+      },
+      {
+       "label": "Mets radio and TV coverage",
+       "url": "https://www.mlb.com/mets/schedule/watch"
+      },
+      {
+       "label": "SiriusXM: New York Mets",
+       "url": "https://www.siriusxm.com/sports/mlb/new-york-mets"
+      }
+     ]
+    },
+    "10": {
+     "name": "New York Yankees",
+     "station": "WFAN 660 AM / 101.9 FM, New York",
+     "note": "Audacy: local blackouts apply.",
+     "links": [
+      {
+       "label": "WFAN: how to listen to Yankees games",
+       "url": "https://www.audacy.com/wfan/how-to-listen-to-yankees-games"
+      },
+      {
+       "label": "Yankees Radio Network",
+       "url": "https://www.mlb.com/yankees/schedule/radio-network"
+      },
+      {
+       "label": "SiriusXM: New York Yankees",
+       "url": "https://www.siriusxm.com/sports/mlb/new-york-yankees"
+      }
+     ]
+    },
+    "22": {
+     "name": "Philadelphia Phillies",
+     "station": "94WIP (WIP-FM 94.1), Philadelphia",
+     "note": "Audacy: local blackouts apply.",
+     "links": [
+      {
+       "label": "94WIP: how to listen to Phillies games",
+       "url": "https://www.audacy.com/94wip/how-to-listen-to-phillies-games"
+      },
+      {
+       "label": "Phillies: where to watch and listen",
+       "url": "https://www.mlb.com/phillies/schedule/watch"
+      },
+      {
+       "label": "SiriusXM: Philadelphia Phillies",
+       "url": "https://www.siriusxm.com/sports/mlb/philadelphia-phillies"
+      }
+     ]
+    },
+    "23": {
+     "name": "Pittsburgh Pirates",
+     "station": "93.7 The Fan (KDKA-FM), with 100.1 FM and KDKA 1020 AM, Pittsburgh",
+     "note": "Audacy: local blackouts apply.",
+     "links": [
+      {
+       "label": "93.7 The Fan: how to listen to Pirates games",
+       "url": "https://www.audacy.com/937thefan/how-to-listen-to-pirates-games"
+      },
+      {
+       "label": "Pirates: where to watch and listen",
+       "url": "https://www.mlb.com/pirates/schedule/watch"
+      },
+      {
+       "label": "SiriusXM: Pittsburgh Pirates",
+       "url": "https://www.siriusxm.com/sports/mlb/pittsburgh-pirates"
+      }
+     ]
+    },
+    "25": {
+     "name": "San Diego Padres",
+     "station": "97.3 The Fan (KWFN-FM), San Diego",
+     "note": "The Padres say Audacy streams games in San Diego; local blackouts apply.",
+     "links": [
+      {
+       "label": "97.3 The Fan: how to listen to Padres games",
+       "url": "https://www.audacy.com/973thefansd/how-to-listen-to-padres-games"
+      },
+      {
+       "label": "Padres broadcast schedule",
+       "url": "https://www.mlb.com/press-release/padres-broadcast-schedule"
+      },
+      {
+       "label": "SiriusXM: San Diego Padres",
+       "url": "https://www.siriusxm.com/sports/mlb/san-diego-padres"
+      }
+     ]
+    },
+    "26": {
+     "name": "San Francisco Giants",
+     "station": "KNBR 680 AM / 104.5 FM, San Francisco",
+     "note": "The Giants say the MLB app streams their radio in and out of market. Station streams of MLB games are limited to the team's home area; elsewhere, use MLB.TV audio in the MLB app or SiriusXM.",
+     "links": [
+      {
+       "label": "KNBR on iHeartRadio",
+       "url": "https://www.iheart.com/live/680-1045-knbr-5530/"
+      },
+      {
+       "label": "Giants: how to watch and listen",
+       "url": "https://www.mlb.com/giants/schedule/tv"
+      },
+      {
+       "label": "SiriusXM: San Francisco Giants",
+       "url": "https://www.siriusxm.com/sports/mlb/san-francisco-giants"
+      }
+     ]
+    },
+    "12": {
+     "name": "Seattle Mariners",
+     "station": "Seattle Sports 710 AM (KIRO), Seattle",
+     "note": "The Mariners say fans in their broadcast territory can stream on the Seattle Sports app or site without blackouts.",
+     "links": [
+      {
+       "label": "Seattle Sports 710 live",
+       "url": "https://tuner.bonneville.com/live/KIRO-AM"
+      },
+      {
+       "label": "Mariners: how to tune in",
+       "url": "https://www.mlb.com/mariners/schedule/watch"
+      },
+      {
+       "label": "SiriusXM: Seattle Mariners",
+       "url": "https://www.siriusxm.com/sports/mlb/seattle-mariners"
+      }
+     ]
+    },
+    "24": {
+     "name": "St. Louis Cardinals",
+     "station": "KMOX 1120 AM / 104.1 FM, St. Louis",
+     "note": "Audacy: local blackouts apply.",
+     "links": [
+      {
+       "label": "KMOX: how to listen to Cardinals games",
+       "url": "https://www.audacy.com/kmox/how-to-listen-to-cardinals-games"
+      },
+      {
+       "label": "Cardinals Radio Network",
+       "url": "https://www.mlb.com/cardinals/schedule/radio-affiliates"
+      },
+      {
+       "label": "SiriusXM: St. Louis Cardinals",
+       "url": "https://www.siriusxm.com/sports/mlb/st-louis-cardinals"
+      }
+     ]
+    },
+    "30": {
+     "name": "Tampa Bay Rays",
+     "station": "95.7 WDAE and 620 AM, Tampa",
+     "note": "WDAE's FM signal is now 95.7 (it was 95.3); the Rays list 95.7 FM / 620 AM for 2026. Station streams of MLB games are limited to the team's home area; elsewhere, use MLB.TV audio in the MLB app or SiriusXM.",
+     "links": [
+      {
+       "label": "95.7 WDAE",
+       "url": "https://957wdae.iheart.com/"
+      },
+      {
+       "label": "Rays Radio",
+       "url": "https://www.mlb.com/rays/fans/radio"
+      },
+      {
+       "label": "SiriusXM: Tampa Bay Rays",
+       "url": "https://www.siriusxm.com/sports/mlb/tampa-bay-rays"
+      }
+     ]
+    },
+    "13": {
+     "name": "Texas Rangers",
+     "station": "105.3 The Fan (KRLD-FM), Dallas-Fort Worth",
+     "note": "Audacy: local blackouts apply.",
+     "links": [
+      {
+       "label": "105.3 The Fan: how to listen to Rangers games",
+       "url": "https://www.audacy.com/1053thefan/how-to-listen-to-rangers-games"
+      },
+      {
+       "label": "Rangers: where to watch and listen",
+       "url": "https://www.mlb.com/rangers/schedule/watch"
+      },
+      {
+       "label": "SiriusXM: Texas Rangers",
+       "url": "https://www.siriusxm.com/sports/mlb/texas-rangers"
+      }
+     ]
+    },
+    "14": {
+     "name": "Toronto Blue Jays",
+     "station": "Sportsnet 590 The FAN (CJCL), Toronto",
+     "note": "Station streams of MLB games are limited to the team's home area; elsewhere, use MLB.TV audio in the MLB app or SiriusXM.",
+     "links": [
+      {
+       "label": "Sportsnet 590 The FAN",
+       "url": "https://www.sportsnet.ca/590/"
+      },
+      {
+       "label": "Blue Jays Radio Network",
+       "url": "https://www.mlb.com/bluejays/schedule/blue-jays-radio-network"
+      },
+      {
+       "label": "SiriusXM: Toronto Blue Jays",
+       "url": "https://www.siriusxm.com/sports/mlb/toronto-blue-jays"
+      }
+     ]
+    },
+    "20": {
+     "name": "Washington Nationals",
+     "station": "106.7 The Fan (WJFK-FM), Washington",
+     "note": "Audacy: local blackouts apply.",
+     "links": [
+      {
+       "label": "106.7 The Fan: how to listen to Nationals games",
+       "url": "https://www.audacy.com/thefandc/how-to-listen-to-nationals-games"
+      },
+      {
+       "label": "Nationals broadcast affiliates",
+       "url": "https://www.mlb.com/nationals/team/broadcast-affiliates"
+      },
+      {
+       "label": "SiriusXM: Washington Nationals",
+       "url": "https://www.siriusxm.com/sports/mlb/washington-nationals"
       }
      ]
     }

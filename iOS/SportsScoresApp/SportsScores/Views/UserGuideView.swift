@@ -88,12 +88,13 @@ struct UserGuideView: View {
 
                 // MARK: Listen to the Game
                 GuideSection(icon: "radio", title: "Listen to the Game", color: .red) {
-                    Text("For the NFL, NBA, NHL, and college football and basketball, the app knows where to hear a game on the radio: each team's radio, then the services that carry every game, such as SiriusXM.")
+                    Text("For MLB, the NFL, NBA, NHL, and college football and basketball, the app knows where to hear a game on the radio: each team's radio, then the services that carry every game, such as SiriusXM or, for MLB, MLB.TV's audio in the MLB Media Center.")
                     BulletPoint("On a game in Scores or Live Scores, use the **Listen to the Game** VoiceOver action (swipe up or down), or press and hold the game for its menu. This is in the Quick List and Full List views, not Table view")
                     BulletPoint("A game's detail screen has a **Listen to the Game** menu under the TV listing")
                     BulletPoint("Team Hub has a radio button in the top-right corner")
                     BulletPoint("**Game Radio** in The Bench lists every team and its station")
                     Text("Each place opens in Safari, or in the service's app if you have it. Sign in or subscribe there if it asks; the app doesn't play the audio itself.")
+                    Text("A station's own stream of a baseball game usually plays only in the team's home area; away from it, MLB.TV audio or SiriusXM carries the game.")
                 }
 
                 // MARK: Monitoring Games

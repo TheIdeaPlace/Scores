@@ -46,7 +46,7 @@ struct RadioLinks {
 
     /// Which table each league reads. A league not here has no radio links yet.
     static let leagueTables: [String: String] = [
-        "NFL": "NFL", "NBA": "NBA", "NHL": "NHL",
+        "NFL": "NFL", "NBA": "NBA", "NHL": "NHL", "MLB": "MLB",
         "NCAAF": "NCAA", "NCAAM": "NCAA", "NCAAWB": "NCAA",
     ]
 
@@ -130,9 +130,9 @@ struct RadioLinks {
         .sorted { $0.name.lowercased() < $1.name.lowercased() }
     }
 
-    /// The leagues with links, in the order The Bench lists them.
+    /// The leagues with links, in the app's sport order (Sport.allCases), MLB first.
     static let directoryLeagues: [(league: String, title: String)] = [
-        ("NFL", "NFL"), ("NBA", "NBA"), ("NHL", "NHL"), ("NCAAF", "College"),
+        ("MLB", "MLB"), ("NFL", "NFL"), ("NBA", "NBA"), ("NHL", "NHL"), ("NCAAF", "College"),
     ]
 }
 

@@ -15,6 +15,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [1.2.0] - 2026-11-07
 
 ### Added
+- **MLB in Listen to the Game, on both apps.** Every MLB team's radio is listed, as the NFL's, NBA's and
+  NHL's are: its 2026 flagship station's stream, the team's own radio page and its SiriusXM page, then the
+  places that carry every game: the MLB Media Center (MLB.TV's audio of every game), SiriusXM's MLB
+  play-by-play, SiriusXM MLB Network Radio (channel 89) and the MLB App. On Windows that's Alt+L and the
+  context menu on MLB games, the Listen row and button in game details, Listen on the Radio in an MLB Team
+  Hub, and a Game Radio row in MLB's list. On the iPhone, the Listen to the Game action and menu on MLB
+  games and game details, Team Hub's radio button, and MLB first in The Bench's Game Radio, in the app's
+  usual sport order. A station's own stream of a game usually plays only in the team's home area; the
+  user guides say MLB.TV audio or SiriusXM carries it elsewhere. The nightly link check opens MLB's links too.
 - **Windows: a Stats tab in Team Hub, and golf news (#196).** Two things the iPhone had.
   - Team Hub's new **Stats** tab (Alt+A), after Roster as on the iPhone, has a **Show** box (Alt+W) with
     **Players**, the team's leaders in each category ranked within the team, and **Team**, where the team
