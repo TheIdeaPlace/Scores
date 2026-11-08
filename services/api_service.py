@@ -66,7 +66,12 @@ class ApiService:
         """(schedule, the season it is from), which isn't the one asked for when it falls back."""
         return ApiService._call(espn_api.get_team_schedule_and_season, league, team_id, season=season)
 
-    @staticmethod  
+    @staticmethod
+    def get_favorite_card_schedule(league: str, team_id: str) -> List[Dict]:
+        """A favorite team's games for its card on Home, as favorite_card.card_games."""
+        return ApiService._call(espn_api.get_favorite_card_schedule, league, team_id)
+
+    @staticmethod
     def get_available_seasons(league: str) -> List[tuple]:
         return ApiService._call(espn_api.get_available_seasons, league)
 
@@ -92,6 +97,11 @@ class ApiService:
         """Get only team statistics for a league (faster)"""
         return ApiService._call(espn_api.get_team_statistics, league)
     
+    @staticmethod
+    def get_stat_glossary(league: str) -> Dict:
+        """ESPN's definitions of a league's statistics. A failed request raises ApiError."""
+        return ApiService._call(espn_api.get_stat_glossary, league)
+
     @staticmethod
     def get_rankings(league: str) -> Dict:
         """Get poll/ranking data for a league"""

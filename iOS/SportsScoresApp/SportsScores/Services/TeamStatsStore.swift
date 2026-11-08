@@ -72,8 +72,8 @@ actor TeamStatsStore {
 
     // MARK: - Stat glossary
 
-    /// Stat key → ESPN's plain-English definition. Kept for the session;
-    /// glossary text does not change mid-season.
+    /// `category.stat` → ESPN's plain-English definition, as StatGlossary keys it.
+    /// Kept for the session; glossary text does not change mid-season.
     func glossary(for sport: Sport) async -> [String: String] {
         if let cached = glossaries[sport] { return cached }
         if let inFlight = glossaryTasks[sport] { return await inFlight.value }
@@ -91,17 +91,8 @@ actor TeamStatsStore {
                 let light = try? await Self.fetch(sport: sport, limit: 1, session: session, hosts: hosts)
                 categories = light?.categories ?? []
             }
-
-            var definitions: [String: String] = [:]
-            for category in categories {
-                guard let names = category.names, let descriptions = category.descriptions else { continue }
-                for (index, name) in names.enumerated() {
-                    guard let text = descriptions[safe: index], !text.isEmpty,
-                          definitions[name] == nil else { continue }
-                    definitions[name] = text
-                }
-            }
-            return definitions
+            // Keyed by category and stat, never the stat alone: see StatGlossary.
+            return StatGlossary.glossary(from: categories)
         }
         glossaryTasks[sport] = task
 

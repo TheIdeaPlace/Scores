@@ -1,0 +1,149 @@
+{
+  "about": "Which of a favorite team's games its card shows, and the line the last one reads as. favorite_card.py on Windows (tests/unit/test_favorite_card_grid.py) and FavoriteCardGames.swift on the iPhone (FavoriteCardGridTests.swift) are both held to it. A case has either real ESPN schedule events, from a file in tests/fixtures/espn, or games in short form: each becomes a minimal ESPN schedule event, with home and away as [team id, abbreviation, score or null], and 'state' and 'completed' left out of ESPN's status where the game leaves them out. 'now' is UTC, and a game with no time set is placed by the machine's local date, so 'now' for that case is chosen to be July 4 from UTC-8 to UTC+15 and still before the game anywhere west of that. 'last_line' is the result line for 'last'.",
+  "cases": [
+    {
+      "name": "doubleheader: game 1 over, game 2 later today",
+      "team_id": "10",
+      "now": "2026-07-19T20:00:00Z",
+      "games": [
+        {"id": "401816142", "date": "2026-07-17T23:05Z", "status": "STATUS_FINAL", "state": "post", "completed": true, "home": ["10", "NYY", 1], "away": ["19", "LAD", 2]},
+        {"id": "401897386", "date": "2026-07-19T16:35Z", "status": "STATUS_FINAL", "state": "post", "completed": true, "home": ["10", "NYY", 2], "away": ["19", "LAD", 8], "label": "Doubleheader - Game 1"},
+        {"id": "401816172", "date": "2026-07-19T23:20Z", "status": "STATUS_SCHEDULED", "state": "pre", "completed": false, "home": ["10", "NYY", null], "away": ["19", "LAD", null], "label": "Doubleheader - Game 2"}
+      ],
+      "expected": {"live": null, "last": "401897386", "next": "401816172", "last_line": "Last: L vs LAD 2-8, Doubleheader - Game 1"}
+    },
+    {
+      "name": "doubleheader: game 1 being played",
+      "team_id": "10",
+      "now": "2026-07-19T17:30:00Z",
+      "games": [
+        {"id": "401816142", "date": "2026-07-17T23:05Z", "status": "STATUS_FINAL", "state": "post", "completed": true, "home": ["10", "NYY", 1], "away": ["19", "LAD", 2]},
+        {"id": "401897386", "date": "2026-07-19T16:35Z", "status": "STATUS_IN_PROGRESS", "state": "in", "completed": false, "home": ["10", "NYY", null], "away": ["19", "LAD", null], "label": "Doubleheader - Game 1"},
+        {"id": "401816172", "date": "2026-07-19T23:20Z", "status": "STATUS_SCHEDULED", "state": "pre", "completed": false, "home": ["10", "NYY", null], "away": ["19", "LAD", null], "label": "Doubleheader - Game 2"}
+      ],
+      "expected": {"live": "401897386", "last": "401816142", "next": "401816172", "last_line": "Last: L vs LAD 1-2"}
+    },
+    {
+      "name": "doubleheader: both over, listed out of order, the later one is last",
+      "team_id": "10",
+      "now": "2026-07-20T12:00:00Z",
+      "games": [
+        {"id": "401816172", "date": "2026-07-19T23:20Z", "status": "STATUS_FINAL", "state": "post", "completed": true, "home": ["10", "NYY", 2], "away": ["19", "LAD", 1], "label": "Doubleheader - Game 2"},
+        {"id": "401897386", "date": "2026-07-19T16:35Z", "status": "STATUS_FINAL", "state": "post", "completed": true, "home": ["10", "NYY", 2], "away": ["19", "LAD", 8], "label": "Doubleheader - Game 1"},
+        {"id": "401816189", "date": "2026-07-20T23:05Z", "status": "STATUS_SCHEDULED", "state": "pre", "completed": false, "home": ["14", "TOR", null], "away": ["10", "NYY", null]}
+      ],
+      "expected": {"live": null, "last": "401816172", "next": "401816189", "last_line": "Last: W vs LAD 2-1, Doubleheader - Game 2"}
+    },
+    {
+      "name": "a postponed game still dated ahead isn't next",
+      "team_id": "10",
+      "now": "2026-07-18T20:00:00Z",
+      "games": [
+        {"id": "401816142", "date": "2026-07-17T23:05Z", "status": "STATUS_FINAL", "state": "post", "completed": true, "home": ["10", "NYY", 1], "away": ["19", "LAD", 2]},
+        {"id": "401816157", "date": "2026-07-19T00:08Z", "status": "STATUS_POSTPONED", "state": "post", "completed": false, "home": ["10", "NYY", 0], "away": ["19", "LAD", 0], "label": "Inclement Weather - Makeup date July 19"},
+        {"id": "401897386", "date": "2026-07-19T16:35Z", "status": "STATUS_SCHEDULED", "state": "pre", "completed": false, "home": ["10", "NYY", null], "away": ["19", "LAD", null], "label": "Doubleheader - Game 1"}
+      ],
+      "expected": {"live": null, "last": "401816142", "next": "401897386", "last_line": "Last: L vs LAD 1-2"}
+    },
+    {
+      "name": "a postponed game, 0-0, isn't the last game",
+      "team_id": "10",
+      "now": "2026-07-19T12:00:00Z",
+      "games": [
+        {"id": "401816142", "date": "2026-07-17T23:05Z", "status": "STATUS_FINAL", "state": "post", "completed": true, "home": ["10", "NYY", 1], "away": ["19", "LAD", 2]},
+        {"id": "401816157", "date": "2026-07-19T00:08Z", "status": "STATUS_POSTPONED", "state": "post", "completed": false, "home": ["10", "NYY", 0], "away": ["19", "LAD", 0], "label": "Inclement Weather - Makeup date July 19"},
+        {"id": "401897386", "date": "2026-07-19T16:35Z", "status": "STATUS_SCHEDULED", "state": "pre", "completed": false, "home": ["10", "NYY", null], "away": ["19", "LAD", null], "label": "Doubleheader - Game 1"}
+      ],
+      "expected": {"live": null, "last": "401816142", "next": "401897386", "last_line": "Last: L vs LAD 1-2"}
+    },
+    {
+      "name": "off-season: every game over and none to come",
+      "team_id": "10",
+      "now": "2026-11-07T12:00:00Z",
+      "games": [
+        {"id": "401907986", "date": "2026-10-06T00:00Z", "status": "STATUS_FINAL", "state": "post", "completed": true, "home": ["30", "TB", 5], "away": ["10", "NYY", 2], "label": "ALDS - Game 2"},
+        {"id": "401907987", "date": "2026-10-08T00:00Z", "status": "STATUS_FINAL", "state": "post", "completed": true, "home": ["10", "NYY", 3], "away": ["30", "TB", 4], "label": "ALDS - Game 3"}
+      ],
+      "expected": {"live": null, "last": "401907987", "next": null, "last_line": "Last: L vs TB 3-4, ALDS - Game 3"}
+    },
+    {
+      "name": "no games at all",
+      "team_id": "10",
+      "now": "2026-11-07T12:00:00Z",
+      "games": [],
+      "expected": {"live": null, "last": null, "next": null, "last_line": null}
+    },
+    {
+      "name": "a game with no time set, later today, is next",
+      "team_id": "10",
+      "now": "2026-07-04T08:00:00Z",
+      "games": [
+        {"id": "1", "date": "2026-07-03T23:05Z", "status": "STATUS_FINAL", "state": "post", "completed": true, "home": ["2", "BOS", 3], "away": ["10", "NYY", 5]},
+        {"id": "2", "date": "2026-07-04T04:00Z", "time_valid": false, "status": "STATUS_SCHEDULED", "state": "pre", "completed": false, "home": ["2", "BOS", null], "away": ["10", "NYY", null]}
+      ],
+      "expected": {"live": null, "last": "1", "next": "2", "last_line": "Last: W @ BOS 5-3"}
+    },
+    {
+      "name": "a game past its start that ESPN hasn't started isn't next",
+      "team_id": "10",
+      "now": "2026-07-04T23:30:00Z",
+      "games": [
+        {"id": "1", "date": "2026-07-04T23:05Z", "status": "STATUS_SCHEDULED", "state": "pre", "completed": false, "home": ["2", "BOS", null], "away": ["10", "NYY", null]},
+        {"id": "2", "date": "2026-07-05T17:35Z", "status": "STATUS_SCHEDULED", "state": "pre", "completed": false, "home": ["2", "BOS", null], "away": ["10", "NYY", null]}
+      ],
+      "expected": {"live": null, "last": null, "next": "2", "last_line": null}
+    },
+    {
+      "name": "halftime counts as being played",
+      "team_id": "26",
+      "now": "2026-11-08T22:30:00Z",
+      "games": [
+        {"id": "1", "date": "2026-11-01T21:25Z", "status": "STATUS_FINAL", "state": "post", "completed": true, "home": ["25", "SF", 17], "away": ["26", "SEA", 20]},
+        {"id": "2", "date": "2026-11-08T21:05Z", "status": "STATUS_HALFTIME", "state": "in", "completed": false, "home": ["26", "SEA", null], "away": ["14", "LAR", null]},
+        {"id": "3", "date": "2026-11-15T18:00Z", "status": "STATUS_SCHEDULED", "state": "pre", "completed": false, "home": ["22", "ARI", null], "away": ["26", "SEA", null]}
+      ],
+      "expected": {"live": "2", "last": "1", "next": "3", "last_line": "Last: W @ SF 20-17"}
+    },
+    {
+      "name": "no state or completed from ESPN: the status names decide",
+      "team_id": "26",
+      "now": "2026-11-08T22:30:00Z",
+      "games": [
+        {"id": "1", "date": "2026-11-01T21:25Z", "status": "STATUS_FULL_TIME", "home": ["26", "SEA", 1], "away": ["25", "SF", 1]},
+        {"id": "2", "date": "2026-11-08T21:05Z", "status": "STATUS_IN_PROGRESS", "home": ["14", "LAR", null], "away": ["26", "SEA", null]},
+        {"id": "3", "date": "2026-11-15T18:00Z", "status": "STATUS_SCHEDULED", "home": ["26", "SEA", null], "away": ["22", "ARI", null]}
+      ],
+      "expected": {"live": "2", "last": "1", "next": "3", "last_line": "Last: T vs SF 1-1"}
+    },
+    {
+      "name": "a tie at a neutral site, filed as away, reads vs",
+      "team_id": "26",
+      "now": "2026-11-08T12:00:00Z",
+      "games": [
+        {"id": "1", "date": "2026-11-01T14:30Z", "status": "STATUS_FINAL", "state": "post", "completed": true, "neutral": true, "home": ["12", "KC", 23], "away": ["26", "SEA", 23], "label": "International Series"}
+      ],
+      "expected": {"live": null, "last": "1", "next": null, "last_line": "Last: T vs KC 23-23, International Series"}
+    },
+    {
+      "name": "the Yankees' July 2026 doubleheader and the postponed game before it",
+      "fixture": "schedule_MLB_10_2026_dh.json",
+      "team_id": "10",
+      "now": "2026-07-20T12:00:00Z",
+      "expected": {"live": null, "last": "401816172", "next": null, "last_line": "Last: W vs LAD 2-1, Doubleheader - Game 2"}
+    },
+    {
+      "name": "the Yankees in November 2026: their season over",
+      "fixture": "schedule_MLB_10_2026_post.json",
+      "team_id": "10",
+      "now": "2026-11-07T12:00:00Z",
+      "expected": {"live": null, "last": "401907987", "next": null, "last_line": "Last: L vs TB 3-4, ALDS - Game 3"}
+    },
+    {
+      "name": "Alabama at LSU being played",
+      "fixture": "schedule_NCAAF_333_live.json",
+      "team_id": "333",
+      "now": "2026-11-07T23:00:00Z",
+      "expected": {"live": "401856740", "last": "401856727", "next": "401856889", "last_line": "Last: W vs TA&M 31-20"}
+    }
+  ]
+}

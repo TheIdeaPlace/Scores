@@ -63,8 +63,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **iPhone builds: the TestFlight build number can't repeat.** It is now one more than the highest build
   App Store Connect already has, or the commit count if that is higher. The commit count alone could land
   on a number Apple had already seen after a squash merge, and the upload was rejected (#112).
+- **Windows: a favorite team's card on Home reads like the iPhone's.** It comes from the team's schedule
+  now, not today's scoreboard, so it shows the last game's result even the morning after, and the next
+  game, for example "Last: W vs LAD 2-1, Doubleheader - Game 2" and "Next: @ VAN, 11/14/26, 11:45 AM".
+  While the team plays, the game's line is live: "Live: Alabama Crimson Tide 10 @ LSU Tigers 12, 2:44 - 3rd
+  Quarter", and in baseball the pitcher, batter, runners, count and outs. A doubleheader no longer shows
+  the wrong game, and a postponed game is never the last or the next. If ESPN doesn't answer, the card
+  says so instead of going quiet, and F5 on a card tries again and stays on it. The card no longer shows
+  the team's record. Both apps decide which game is live, last and next by one rule, tested against the
+  same cases (#191).
 
 ### Fixed
+- **Statistic definitions come from ESPN on both apps, and each is the right one.** On the iPhone, the
+  definition on the MLB Strikeouts leaders was the batter's ("the number of times a player strikes out")
+  on a list of pitchers, and the NFL's interception leaders had the definition of interceptions thrown.
+  ESPN's glossary is now looked up by category and name, so pitching's strikeouts and batting's each get
+  their own, as do the NFL's interceptions thrown and made and punt returns made and allowed (#193).
+  - Windows: Alt+D in Player or Team Statistics used to show a hand-written list for the league. It now
+    lists the statistics on the screen with ESPN's definition of each, the same wording as the iPhone, and
+    says "No definition from ESPN" where ESPN has none, such as Wins Above Replacement.
+  - A leader with no definition of its own in ESPN's glossary, such as the NFL's sack leaders, now has
+    none rather than another category's.
 - **Windows: Live Scores no longer reads the row you're on again when other games come and go.** Each
   time a game kicked off or finished, the list was rebuilt and the row you were on read out, so on a busy
   day a finished game you were resting on was read once a minute.

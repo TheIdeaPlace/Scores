@@ -827,6 +827,8 @@ class ESPNAPIService {
         var lists: [[ScheduleGame]] = []
         var failure: Error?
         var anyFailure: Error?
+        /// A failure that isn't ESPN saying it has nothing there: a timeout, a 5xx.
+        var realFailure: Error?
         await withTaskGroup(of: (Int, Result<[ScheduleGame], Error>).self) { group in
             for seasonType in TeamScheduleQueries.seasonTypes {
                 group.addTask { [self] in
@@ -845,6 +847,7 @@ class ESPNAPIService {
                     lists.append(games)
                 case .failure(let error):
                     anyFailure = anyFailure ?? error
+                    if !error.isNothingThere { realFailure = realFailure ?? error }
                     let mayLeaveOut = seasonType != 2 && error.isNothingThere
                     if !mayLeaveOut && failure == nil { failure = error }
                 }
@@ -852,6 +855,9 @@ class ESPNAPIService {
         }
         if lenient {
             if lists.isEmpty, let anyFailure { throw anyFailure }
+            // With no games anywhere, an empty part may only be the failure, and must not
+            // read as a season not yet published. espn_api does the same.
+            if lists.allSatisfy(\.isEmpty), let realFailure { throw realFailure }
         } else if let failure {
             throw failure
         }
@@ -863,11 +869,15 @@ class ESPNAPIService {
     /// throws, because a schedule with its games to come missing would look complete.
     private func fetchSoccerTeamSchedule(teamId: String, sport: Sport, season: Int,
                                          lenient: Bool) async throws -> [ScheduleGame] {
+        var listFailure: Error?
         func games(_ query: String) async throws -> [ScheduleGame] {
             do {
                 let page = try await fetchTeamSchedulePage(teamId: teamId, sport: sport, query: query)
                 return page.events.compactMap { $0.toScheduleGame() }
-            } catch let error where error.isNothingThere || (lenient && !error.isCancellation) {
+            } catch let error where error.isNothingThere {
+                return []
+            } catch let error where lenient && !error.isCancellation {
+                listFailure = listFailure ?? error
                 return []
             }
         }
@@ -892,7 +902,8 @@ class ESPNAPIService {
         if next.fixtures {
             lists.append(try await games(TeamScheduleQueries.soccerFixtures))
         }
-        if let resultsFailure, lists.allSatisfy(\.isEmpty) { throw resultsFailure }
+        // A list failed and none had games: say so rather than read as no season yet.
+        if let failure = resultsFailure ?? listFailure, lists.allSatisfy(\.isEmpty) { throw failure }
         return TeamScheduleQueries.merged(lists)
     }
 
@@ -1332,42 +1343,20 @@ class ESPNAPIService {
 
     // MARK: - Stat Definitions
 
-    /// Plain-English definition of a stat, or nil when ESPN publishes none.
+    /// ESPN's definition of a list's stat, or nil when ESPN publishes none.
     ///
     /// ESPN ships its own glossary text alongside the team statistics payload —
     /// a `descriptions` array parallel to each category's stat names — so both
     /// the Players and Teams tabs read definitions from the same document
-    /// rather than from hand-written copy that would drift.
-    func statDefinition(for statKey: String, sport: Sport) async -> String? {
+    /// rather than from hand-written copy that would drift. Windows reads the
+    /// same one. It's keyed by category and stat (StatGlossary), so the
+    /// pitchers' strikeout leaders get the pitcher's definition, not the batter's.
+    func statDefinition(for category: LeagueLeaderCategory, sport: Sport) async -> String? {
         guard !TeamStatCatalog.specs(for: sport).isEmpty else { return nil }
-        let definitions = await teamStatsStore.glossary(for: sport)
-        if let exact = definitions[statKey] { return exact }
-        return Self.playerStatAliases[statKey].flatMap { definitions[$0] }
+        let glossary = await teamStatsStore.glossary(for: sport)
+        let family = sport.apiPath.components(separatedBy: "/").first ?? ""
+        return StatGlossary.definition(in: glossary, sport: family, key: category.name, team: category.isTeamCategory)
     }
-
-    /// Player-leader categories and team statistics use different keys for the
-    /// same stat — basketball is the worst offender ("pointsPerGame" on the
-    /// leaders endpoint, "avgPoints" in the team payload). Map the ones that
-    /// differ so the Players tab gets definitions too. Keys with no team-level
-    /// equivalent at all (PER, plus/minus, tackles) are simply absent, and
-    /// those headings show no definition button.
-    private static let playerStatAliases: [String: String] = [
-        "pointsPerGame":        "avgPoints",
-        "assistsPerGame":       "avgAssists",
-        "reboundsPerGame":      "avgRebounds",
-        "stealsPerGame":        "avgSteals",
-        "blocksPerGame":        "avgBlocks",
-        "turnoversPerGame":     "avgTurnovers",
-        "foulsPerGame":         "avgFouls",
-        "fieldGoalPercentage":  "fieldGoalPct",
-        "FreeThrowPct":         "freeThrowPct",
-        "3PointPct":            "threePointFieldGoalPct",
-        "3PointsMadePerGame":   "avgThreePointFieldGoalsMade",
-        "3PointMadePerGame":    "avgThreePointFieldGoalsMade",
-        "defensiveReboundsPerGame": "avgDefensiveRebounds",
-        "offensiveReboundsPerGame": "avgOffensiveRebounds",
-        "quarterbackRating":    "QBRating",
-    ]
 
     private func buildTeamLeaderCategories(
         from league: LeagueTeamStats,

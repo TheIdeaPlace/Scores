@@ -12,7 +12,7 @@ import csv
 import sys
 import webbrowser
 import time
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from functools import partial
 from typing import Dict, List, Any, Optional, Union
 # Add project root to sys.path if running as script
@@ -55,12 +55,14 @@ except ImportError:
 
 # New separated modules
 from exceptions import ApiError, DataModelError, plain_message
-from espn_api import (NCAAF_CONFERENCE_ORDER, TEAMS_UNAVAILABLE, live_scores_failure_text, standings_cache_key,
-                      stop_core_lookups, with_failed_leagues_kept)
+from espn_api import (NCAAF_CONFERENCE_ORDER, TEAMS_UNAVAILABLE, league_sport, live_scores_failure_text,
+                      standings_cache_key, stop_core_lookups, with_failed_leagues_kept)
+import stat_glossary
 from services.api_service import ApiService
 from services.venue_service import venue_service, venue_summary
 from models.game import GameData
 from models.news import NewsData
+import favorite_card
 import live_play_format
 import radio_links
 from popup_menu import exec_menu as _exec_menu
@@ -836,7 +838,10 @@ class HomeView(BaseView):
             self.parent_app.update_window_title()
     
     def refresh(self):
-        """Refresh the league list and favorites section."""
+        """Refresh the league list and favorites section. F5 on a favorite's card stays on it,
+        so a card that said ESPN wasn't answering can be tried again where it's read."""
+        on_card = self.favorites_list.hasFocus()
+        card_row = self.favorites_list.currentRow()
         self._rebuild_favorites()
 
         self.league_list.clear()
@@ -859,7 +864,11 @@ class HomeView(BaseView):
 
         self._append_footer_items()
 
-        self.set_focus_and_select_first(self.league_list)
+        if on_card and self.favorites_list.count():
+            self.favorites_list.setCurrentRow(min(max(card_row, 0), self.favorites_list.count() - 1))
+            self.set_focus_with_delay(self.favorites_list)
+        else:
+            self.set_focus_and_select_first(self.league_list)
 
     def _append_footer_items(self):
         """Add the non-league entries that close the home list.
@@ -929,24 +938,19 @@ class HomeView(BaseView):
             item = QListWidgetItem(f"★ {fav['team_name']}  [{fav['league']}]")
             item.setData(Qt.ItemDataRole.UserRole, fav)
             self.favorites_list.addItem(item)
-            loader = FavoriteCardLoader(
-                fav['team_id'], fav['team_name'],
-                fav['league'], fav.get('abbreviation', ''))
+            loader = FavoriteCardLoader(fav['team_id'], fav['league'])
             loader.card_ready.connect(self._on_card_ready)
             self._fav_loaders.append(loader)
             # Rebuilds and leaving Home drop _fav_loaders while cards still load.
             _start_detached_thread(loader)
 
-    def _on_card_ready(self, team_id, league, summary, news_lines):
+    def _on_card_ready(self, team_id, league, card_lines):
         for i in range(self.favorites_list.count()):
             item = self.favorites_list.item(i)
             fav = item.data(Qt.ItemDataRole.UserRole)
             if fav and fav.get('team_id') == team_id and fav.get('league') == league:
                 lines = [f"★ {fav['team_name']}  [{league}]"]
-                if summary:
-                    lines.append(f"  {summary}")
-                for h in news_lines:
-                    lines.append(f"  {h}")
+                lines.extend(f"  {line}" for line in card_lines)
                 item.setText("\n".join(lines))
                 break
 
@@ -8445,6 +8449,9 @@ class StatisticsLoader(QThread):
     """Loads a league's team or player statistics for StatisticsViewDialog."""
     data_loaded = pyqtSignal(dict)
     error_occurred = pyqtSignal(str)
+    # The player leaders' definitions (Alt+D), after the leaders, so they never wait for them: a
+    # dict, or None if they couldn't be had. Team statistics carry their own.
+    glossary_loaded = pyqtSignal(object)
 
     def __init__(self, league: str, stat_type: str):
         super().__init__()
@@ -8454,12 +8461,19 @@ class StatisticsLoader(QThread):
     def run(self):
         try:
             if self.stat_type == "player":
-                data = ApiService.get_player_statistics(self.league)
+                data = ApiService.get_player_statistics(self.league) or {}
             else:
                 data = ApiService.get_team_statistics(self.league)
             self.data_loaded.emit(data or {})
         except Exception as e:
             self.error_occurred.emit(_said(e))
+            return
+        if self.stat_type == "player" and data.get("player_stats"):
+            try:
+                glossary = ApiService.get_stat_glossary(self.league)
+            except ApiError:
+                glossary = None  # The definitions say they couldn't be had.
+            self.glossary_loaded.emit(glossary)
 
 
 class StandingsLoader(QThread):
@@ -8996,63 +9010,46 @@ class TeamScheduleLoader(QThread):
 
 
 class FavoriteCardLoader(QThread):
-    """Fetches today's game, next game, and news for one favorite team."""
-    card_ready = pyqtSignal(str, str, str, list)  # team_id, league, summary, news_headlines
+    """One favorite team's card: the game being played or the last one, the next one, and two
+    headlines. The games come from the team's schedule and, while it plays, that game's
+    /summary, as on the iPhone (favorite_card.py). A request that fails says so on the card."""
+    card_ready = pyqtSignal(str, str, list)  # team_id, league, lines under the team's name
 
-    def __init__(self, team_id: str, team_name: str, league: str, abbreviation: str = ''):
+    def __init__(self, team_id: str, league: str):
         super().__init__()
         self.team_id = team_id
-        self.team_name = team_name
         self.league = league
-        self.abbreviation = abbreviation
+
+    def _game_lines(self):
+        try:
+            games = ApiService.get_favorite_card_schedule(self.league, self.team_id)
+        except Exception as e:
+            return [_said(e)]
+        if not games:
+            return ["No games on the schedule."]
+        picked = favorite_card.pick(games, datetime.now(timezone.utc))
+        lines = []
+        if picked.live:
+            try:
+                summary = ApiService.get_game_details(self.league, picked.live['id'])
+                lines.append(favorite_card.live_line(picked.live, self.team_id, summary))
+            except Exception as e:
+                lines.append(f"{favorite_card.live_line(picked.live, self.team_id)}. {_said(e)}")
+        elif picked.last:
+            lines.append(favorite_card.result_line(picked.last, self.team_id))
+        if picked.next:
+            lines.append(favorite_card.next_line(picked.next, self.team_id))
+        return lines
+
+    def _news_lines(self):
+        try:
+            articles = ApiService.get_team_news(self.league, self.team_id, limit=2)
+        except Exception as e:
+            return [_said(e)]
+        return [a.get('headline', '') for a in articles[:2] if a.get('headline')]
 
     def run(self):
-        import espn_api
-        summary = ''
-        try:
-            today = datetime.now().date()
-            scores = espn_api.get_scores(self.league, today)
-            for game in scores:
-                teams = game.get('teams', [])
-                abbrevs = {t.get('abbreviation', '') for t in teams}
-                names = {t.get('name', '') for t in teams}
-                if (self.abbreviation and self.abbreviation in abbrevs) or self.team_name in names:
-                    status = game.get('status', '')
-                    t0, t1 = (teams + [{}, {}])[:2]
-                    s0, s1 = t0.get('score', ''), t1.get('score', '')
-                    n0, n1 = t0.get('name', ''), t1.get('name', '')
-                    if s0 and s1:
-                        summary = f"{n0} {s0} — {n1} {s1}  ({status})"
-                    else:
-                        summary = f"vs {n1 if n0 == self.team_name else n0}  ({status})"
-                    break
-        except Exception:
-            pass
-
-        if not summary:
-            try:
-                info = espn_api.get_team_info(self.league, self.team_id, home_venue=False)
-                rec = info.get('record_overall', '')
-                opp = info.get('next_game_opponent', '')
-                ha = info.get('next_game_home_away', '')
-                date = info.get('next_game_date', '')
-                parts = []
-                if rec:
-                    parts.append(f"({rec})")
-                if opp and date:
-                    parts.append(f"Next: {ha} {opp} — {date}")
-                summary = '  '.join(parts)
-            except Exception:
-                pass
-
-        news_lines = []
-        try:
-            articles = espn_api.get_team_news(self.league, self.team_id, limit=2)
-            news_lines = [a.get('headline', '') for a in articles[:2] if a.get('headline')]
-        except Exception:
-            pass
-
-        self.card_ready.emit(self.team_id, self.league, summary, news_lines)
+        self.card_ready.emit(self.team_id, self.league, self._game_lines() + self._news_lines())
 
 
 class LeagueTransactionsLoader(QThread):
@@ -11712,6 +11709,9 @@ class StatisticsViewDialog(QDialog):
         self.statistics_data = None
         self.stat_pages = None
         self._stat_infos = []
+        # Until the statistics, and for players their definitions, have come or failed.
+        self._statistics_pending = True
+        self._glossary_pending = False
         print(f"DEBUG: About to call setup_ui")
         self.setup_ui()
         print(f"DEBUG: setup_ui completed")
@@ -11738,6 +11738,7 @@ class StatisticsViewDialog(QDialog):
         loader = StatisticsLoader(self.league, self.stat_type)
         loader.data_loaded.connect(self._on_statistics_loaded)
         loader.error_occurred.connect(self._on_statistics_error)
+        loader.glossary_loaded.connect(self._on_glossary_loaded)
         self._statistics_loader = loader
         _start_detached_thread(loader)
 
@@ -11764,11 +11765,16 @@ class StatisticsViewDialog(QDialog):
         self.stats_list.setFocus()
 
     def _on_statistics_error(self, message: str):
+        self._statistics_pending = False
         self._clear_loading_row()
         self._show_statistics_message(self._content_layout, f"Unable to load statistics: {message}")
         self._focus_stats_list()
 
     def _on_statistics_loaded(self, statistics_data: dict):
+        self._statistics_pending = False
+        # The loader asks for the leaders' definitions next, and says when it has them.
+        self._glossary_pending = self.stat_type == "player" and bool((statistics_data or {}).get("player_stats")) \
+            and "glossary" not in (statistics_data or {})
         self._clear_loading_row()
         season = (statistics_data or {}).get("season")
         if season:
@@ -11907,6 +11913,7 @@ class StatisticsViewDialog(QDialog):
                         'name': display_name,
                         'category': category_name,
                         'stat_name': stat_name,
+                        'key': category.get("key"),  # ESPN's, for its definition
                         'data': stats,
                         'type': 'player'
                     })
@@ -11918,120 +11925,63 @@ class StatisticsViewDialog(QDialog):
         print(f"DEBUG: Total available stats: {len(available_stats)}")
         return available_stats
     
+    def _on_glossary_loaded(self, glossary):
+        """The player leaders' definitions, a dict, or None if they couldn't be had."""
+        self._glossary_pending = False
+        if isinstance(self.statistics_data, dict):
+            self.statistics_data["glossary"] = glossary
+
     def _show_stat_definitions(self):
-        """Show statistics definitions dialog"""
-        definitions_dialog = StatDefinitionsDialog(self.league, self)
+        """ESPN's definitions of the statistics on screen, on the one the list is on."""
+        lines = stat_glossary.definition_lines(
+            self._stat_infos, (self.statistics_data or {}).get("glossary"), league_sport(self.league),
+            still_loading=self._statistics_pending or self._glossary_pending)
+        current = self.stat_pages.tabBar().currentRow() if self.stat_pages is not None else 0
+        definitions_dialog = StatDefinitionsDialog(self.league, self.stat_type, lines, self,
+                                                   current_row=current if len(lines) == len(self._stat_infos) else 0)
         definitions_dialog.exec()
 
 class StatDefinitionsDialog(QDialog):
-    """Dialog showing definitions of statistics for different leagues"""
-    
-    def __init__(self, league, parent=None):
+    """ESPN's definitions of the statistics a Statistics dialog shows, one line each."""
+
+    def __init__(self, league, stat_type, lines, parent=None, current_row=0):
         super().__init__(parent)
         self.league = league
-        self.setWindowTitle(f"{league} Statistics Definitions")
+        self.heading = f"{league} {stat_type.title()} Statistics Definitions"
+        self.setWindowTitle(self.heading)
         self.resize(600, 500)
-        self.setup_ui()
-    
-    def setup_ui(self):
+        self.setup_ui(lines, current_row)
+
+    def setup_ui(self, lines, current_row=0):
         layout = QVBoxLayout()
-        
+
         # Title
-        title = QLabel(f"{self.league} Statistics Definitions")
+        title = QLabel(self.heading)
         title.setStyleSheet("font-weight: bold; font-size: 14px;")
         layout.addWidget(title)
-        
+
         # Instructions
-        instructions = QLabel("Browse definitions for statistical categories:")
+        instructions = QLabel("ESPN's definitions of the statistics on this screen:")
         layout.addWidget(instructions)
-        
+
         # Definitions list
         self.definitions_list = QListWidget()
         self.definitions_list.setAccessibleName("Statistics Definitions")
-        
-        # Populate definitions
-        definitions = self._get_stat_definitions()
-        for stat_name, definition in definitions.items():
-            item_text = f"{stat_name}: {definition}"
-            item = QListWidgetItem(item_text)
-            self.definitions_list.addItem(item)
-        
+        self.definitions_list.setWordWrap(True)
+        for line in lines:
+            self.definitions_list.addItem(QListWidgetItem(line))
+        # The statistic the list was on is read as the list takes focus, rather than an empty list.
+        self.definitions_list.setCurrentRow(current_row if 0 <= current_row < len(lines) else 0)
+
         layout.addWidget(self.definitions_list)
-        
+
         # Close button
         close_btn = QPushButton("Close")
         close_btn.clicked.connect(self.accept)
         layout.addWidget(close_btn)
-        
+
         self.setLayout(layout)
-    
-    def _get_stat_definitions(self):
-        """Get statistics definitions for the current league"""
-        if self.league.upper() == "MLB":
-            return {
-                "AVG (Batting Average)": "Hits divided by at bats. Measures how often a batter gets a hit.",
-                "HR (Home Runs)": "Number of hits that allow the batter to circle all bases and score.",
-                "RBI (Runs Batted In)": "Number of runs that scored as a result of the batter's action.",
-                "R (Runs)": "Number of times a player crosses home plate to score.",
-                "H (Hits)": "Number of times a batter safely reaches base via a hit.",
-                "SB (Stolen Bases)": "Number of bases stolen by advancing while the ball is in play.",
-                "ERA (Earned Run Average)": "Average number of earned runs allowed per 9 innings pitched.",
-                "W (Wins)": "Number of games won by a pitcher (must be pitcher of record).",
-                "K/SO (Strikeouts)": "Number of batters struck out by a pitcher.",
-                "WHIP": "Walks plus hits divided by innings pitched. Lower is better.",
-                "SV (Saves)": "Number of times a relief pitcher preserved a lead for the win.",
-                "IP (Innings Pitched)": "Number of complete innings pitched (outs divided by 3).",
-                "OBP (On-Base %)": "Percentage of plate appearances reaching base safely.",
-                "SLG (Slugging %)": "Total bases divided by at bats. Measures power hitting.",
-                "OPS": "On-base percentage plus slugging percentage. Overall offensive measure."
-            }
-        elif self.league.upper() in ("NFL", "NCAAF"):
-            return {
-                "Passing Yards": "Total yards gained through forward passes.",
-                "Passing TDs": "Number of touchdown passes thrown by a quarterback.",
-                "Rushing Yards": "Total yards gained by running with the football.",
-                "Rushing TDs": "Number of touchdowns scored by running the ball.",
-                "Receiving Yards": "Total yards gained from catching passes.",
-                "Receiving TDs": "Number of touchdowns scored by catching passes.",
-                "Tackles": "Number of times a defensive player brings down the ball carrier.",
-                "Sacks": "Number of times the quarterback is tackled behind the line.",
-                "Interceptions": "Number of passes caught by the opposing defense.",
-                "Completion %": "Percentage of pass attempts that were completed.",
-                "QBR (Quarterback Rating)": "Composite statistic measuring quarterback performance.",
-                "Total Yards": "Combined offensive yards (passing + rushing).",
-                "Points For": "Total points scored by a team.",
-                "Points Against": "Total points allowed by a team's defense.",
-                "Turnovers": "Number of times possession was lost (fumbles + interceptions).",
-                "3rd Down %": "Percentage of third down attempts converted for first downs."
-            }
-        elif self.league.upper() in ("NBA", "WNBA", "NCAAM", "NCAAWB"):
-            return {
-                "PPG (Points Per Game)": "Average number of points scored per game.",
-                "FG% (Field Goal %)": "Percentage of field goal attempts made.",
-                "3P% (Three Point %)": "Percentage of three-point attempts made.",
-                "FT% (Free Throw %)": "Percentage of free throw attempts made.",
-                "RPG (Rebounds Per Game)": "Average number of rebounds per game.",
-                "APG (Assists Per Game)": "Average number of assists per game.",
-                "SPG (Steals Per Game)": "Average number of steals per game.",
-                "BPG (Blocks Per Game)": "Average number of blocks per game.",
-                "TOV (Turnovers)": "Number of times possession was lost.",
-                "MPG (Minutes Per Game)": "Average playing time per game.",
-                "PER (Player Efficiency Rating)": "Overall player productivity rating.",
-                "TS% (True Shooting %)": "Shooting efficiency including free throws and 3-pointers.",
-                "USG% (Usage Rate)": "Percentage of team plays used by a player.",
-                "ORtg (Offensive Rating)": "Points produced per 100 possessions.",
-                "DRtg (Defensive Rating)": "Points allowed per 100 possessions."
-            }
-        else:
-            return {
-                "Points": "Total points scored by team or individual player.",
-                "Wins": "Number of games or matches won.",
-                "Goals": "Number of goals scored (varies by sport).",
-                "Assists": "Number of assists made to help teammates score.",
-                "Games": "Number of games or matches played.",
-                "Average": "Mean value across all games or attempts."
-            }
-    
+
     def keyPressEvent(self, event):
         """Handle Escape key to close dialog"""
         if event.key() == Qt.Key.Key_Escape:

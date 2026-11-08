@@ -1,0 +1,1239 @@
+{
+ "about": "stat_glossary.py and StatGlossary.swift are both held to this. leader_stats is each app's table of which glossary category and stat a /leaders category is. glossaries is the whole glossary each app builds from these real byteam payloads in tests/fixtures/espn. cases are lookups and ESPN's answer, null where it has none.",
+ "leader_stats": {
+  "baseball": {
+   "avg": [
+    "batting",
+    "avg"
+   ],
+   "hits": [
+    "batting",
+    "hits"
+   ],
+   "homeRuns": [
+    "batting",
+    "homeRuns"
+   ],
+   "MLBRating": [
+    "batting",
+    "MLBRating"
+   ],
+   "onBasePct": [
+    "batting",
+    "onBasePct"
+   ],
+   "OPS": [
+    "batting",
+    "OPS"
+   ],
+   "runs": [
+    "batting",
+    "runs"
+   ],
+   "RBIs": [
+    "batting",
+    "RBIs"
+   ],
+   "slugAvg": [
+    "batting",
+    "slugAvg"
+   ],
+   "stolenBases": [
+    "batting",
+    "stolenBases"
+   ],
+   "WARBR": [
+    "batting",
+    "WARBR"
+   ],
+   "avgGameScore": [
+    "pitching",
+    "avgGameScore"
+   ],
+   "ERA": [
+    "pitching",
+    "ERA"
+   ],
+   "holds": [
+    "pitching",
+    "holds"
+   ],
+   "opponentAvg": [
+    "pitching",
+    "opponentAvg"
+   ],
+   "qualityStarts": [
+    "pitching",
+    "qualityStarts"
+   ],
+   "saves": [
+    "pitching",
+    "saves"
+   ],
+   "strikeouts": [
+    "pitching",
+    "strikeouts"
+   ],
+   "WHIP": [
+    "pitching",
+    "WHIP"
+   ],
+   "wins": [
+    "pitching",
+    "wins"
+   ]
+  },
+  "football": {
+   "passesDefended": [
+    "defensive",
+    "passesDefended"
+   ],
+   "sacks": [
+    "defensive",
+    "sacks"
+   ],
+   "totalTackles": [
+    "defensive",
+    "totalTackles"
+   ],
+   "interceptions": [
+    "defensiveInterceptions",
+    "interceptions"
+   ],
+   "interceptionYards": [
+    "defensiveInterceptions",
+    "interceptionYards"
+   ],
+   "kickoffYards": [
+    "kicking",
+    "kickoffYards"
+   ],
+   "passingTouchdowns": [
+    "passing",
+    "passingTouchdowns"
+   ],
+   "passingYards": [
+    "passing",
+    "passingYards"
+   ],
+   "quarterbackRating": [
+    "passing",
+    "QBRating"
+   ],
+   "totalTouchdowns": [
+    "passing",
+    "totalTouchdowns"
+   ],
+   "puntYards": [
+    "punting",
+    "puntYards"
+   ],
+   "receivingTouchdowns": [
+    "receiving",
+    "receivingTouchdowns"
+   ],
+   "receivingYards": [
+    "receiving",
+    "receivingYards"
+   ],
+   "receptions": [
+    "receiving",
+    "receptions"
+   ],
+   "rushingTouchdowns": [
+    "rushing",
+    "rushingTouchdowns"
+   ],
+   "rushingYards": [
+    "rushing",
+    "rushingYards"
+   ],
+   "totalPoints": [
+    "scoring",
+    "totalPoints"
+   ]
+  },
+  "basketball": {
+   "blocksPerGame": [
+    "defensive",
+    "avgBlocks"
+   ],
+   "stealsPerGame": [
+    "defensive",
+    "avgSteals"
+   ],
+   "defensiveReboundsPerGame": [
+    "defensive",
+    "avgDefensiveRebounds"
+   ],
+   "doubleDouble": [
+    "general",
+    "doubleDouble"
+   ],
+   "tripleDouble": [
+    "general",
+    "tripleDouble"
+   ],
+   "minutesPerGame": [
+    "general",
+    "avgMinutes"
+   ],
+   "foulsPerGame": [
+    "general",
+    "avgFouls"
+   ],
+   "PER": [
+    "general",
+    "PER"
+   ],
+   "NBARating": [
+    "general",
+    "NBARating"
+   ],
+   "reboundsPerGame": [
+    "general",
+    "avgRebounds"
+   ],
+   "3PointPct": [
+    "offensive",
+    "threePointFieldGoalPct"
+   ],
+   "assistsPerGame": [
+    "offensive",
+    "avgAssists"
+   ],
+   "3PointsMadePerGame": [
+    "offensive",
+    "avgThreePointFieldGoalsMade"
+   ],
+   "3PointMadePerGame": [
+    "offensive",
+    "avgThreePointFieldGoalsMade"
+   ],
+   "fieldGoalPercentage": [
+    "offensive",
+    "fieldGoalPct"
+   ],
+   "FreeThrowPct": [
+    "offensive",
+    "freeThrowPct"
+   ],
+   "offensiveReboundsPerGame": [
+    "offensive",
+    "avgOffensiveRebounds"
+   ],
+   "points": [
+    "offensive",
+    "points"
+   ],
+   "pointsPerGame": [
+    "offensive",
+    "avgPoints"
+   ],
+   "avgTurnovers": [
+    "offensive",
+    "avgTurnovers"
+   ],
+   "turnoversPerGame": [
+    "offensive",
+    "avgTurnovers"
+   ]
+  },
+  "hockey": {
+   "avgGoalsAgainst": [
+    "defensive",
+    "avgGoalsAgainst"
+   ],
+   "savePct": [
+    "defensive",
+    "savePct"
+   ],
+   "shutouts": [
+    "defensive",
+    "shutouts"
+   ],
+   "plusMinus": [
+    "general",
+    "plusMinus"
+   ],
+   "wins": [
+    "general",
+    "wins"
+   ],
+   "assists": [
+    "offensive",
+    "assists"
+   ],
+   "goals": [
+    "offensive",
+    "goals"
+   ],
+   "points": [
+    "offensive",
+    "points"
+   ],
+   "penaltyMinutes": [
+    "penalties",
+    "penaltyMinutes"
+   ]
+  }
+ },
+ "glossaries": {
+  "byteam_MLB.json": {
+   "batting.gamesPlayed": "Games Played",
+   "batting.atBats": "The number of times a batter comes up to bat not counting walks and sacrifices.",
+   "batting.runs": "The number of runs scored.",
+   "batting.hits": "The number of hits.",
+   "batting.doubles": "The number of times that a batter reaches second base as the result of a hit without an error being committed.",
+   "batting.triples": "The number of hits that result in the batter reaching 3rd base without the aid of an error.",
+   "batting.homeRuns": "The number of hits that allowed the batter to round the bases and score without the aid of an error of the defense.",
+   "batting.RBIs": "The number of runs scored by a batter's play.",
+   "batting.totalBases": "The number of bases calculated as 1 for a 1B, 2 for a 2B, 3 for a 3B and 4 for a HR.",
+   "batting.walks": "The number of times a batter reaches base on four balls",
+   "batting.strikeouts": "The number of times a player strikes out.",
+   "batting.stolenBases": "The number of bases stolen.",
+   "batting.avg": "The average number of times the batter reached successfully on base due to a hit: hits / atBats",
+   "batting.onBasePct": "The ratio of the number of times the batter reached base per plate appearnce: (hits + walks + hbp / plateAppearances)",
+   "batting.slugAvg": "Slugging percentage is a metric that is meant to measuring how many bases the hitter safely advances to after making contact with the ball: (totalBases / atBats)",
+   "batting.OPS": "The average calculated by adding up on-base percentage and slugging percentage.",
+   "pitching.gamesPlayed": "Games Played",
+   "pitching.wins": "The number of times the pitcher was attributed with a win",
+   "pitching.losses": "The number of losses for a pitcher.",
+   "pitching.ERA": "The average number of runs a pitcher yields per 9 innings thrown",
+   "pitching.saves": "The number of times a pitcher enters and finishes the game without surrendering the lead in a save opportunity.",
+   "pitching.completeGames": "The number of times that pitcher starts and finishes a game.",
+   "pitching.shutouts": "The number of times that a pitcher allows zero runs.",
+   "pitching.qualityStarts": "The number of quality starts for a pitcher.",
+   "pitching.innings": "The number of innings pitched.",
+   "pitching.hits": "The number of hits surrendered by a pitcher.",
+   "pitching.earnedRuns": "The number of earned runs surrendered by a pitcher.",
+   "pitching.homeRuns": "The number of times a pitcher has allowed a home run.",
+   "pitching.walks": "The number of times a pitcher surrenders a base on balls.",
+   "pitching.strikeouts": "The number of times the pitcher struck out a batter.",
+   "pitching.opponentAvg": "The opponent's batting average for a pitcher.",
+   "pitching.WHIP": "The number representing walks plus hits divided by innings pitched.",
+   "fielding.gamesPlayed": "Games Played",
+   "fielding.errors": "The number of times a fielder fails to make the play they are expected to make.",
+   "fielding.fieldingPct": "The percentage of plays made by a fielder given the total number of chances.",
+   "fielding.totalChances": "The number of chances a fielder has to make an out calculated by assists plus putouts plus errors.",
+   "fielding.putouts": "The number of times the fielder tags or forces the out of a baserunner.",
+   "fielding.assists": "The number of times a fielder is involved in an out when the fielder is not the putouter."
+  },
+  "byteam_MLB_default.json": {
+   "batting.gamesPlayed": "Games Played",
+   "batting.atBats": "The number of times a batter comes up to bat not counting walks and sacrifices.",
+   "batting.runs": "The number of runs scored.",
+   "batting.hits": "The number of hits.",
+   "batting.doubles": "The number of times that a batter reaches second base as the result of a hit without an error being committed.",
+   "batting.triples": "The number of hits that result in the batter reaching 3rd base without the aid of an error.",
+   "batting.homeRuns": "The number of hits that allowed the batter to round the bases and score without the aid of an error of the defense.",
+   "batting.RBIs": "The number of runs scored by a batter's play.",
+   "batting.totalBases": "The number of bases calculated as 1 for a 1B, 2 for a 2B, 3 for a 3B and 4 for a HR.",
+   "batting.walks": "The number of times a batter reaches base on four balls",
+   "batting.strikeouts": "The number of times a player strikes out.",
+   "batting.stolenBases": "The number of bases stolen.",
+   "batting.avg": "The average number of times the batter reached successfully on base due to a hit: hits / atBats",
+   "batting.onBasePct": "The ratio of the number of times the batter reached base per plate appearnce: (hits + walks + hbp / plateAppearances)",
+   "batting.slugAvg": "Slugging percentage is a metric that is meant to measuring how many bases the hitter safely advances to after making contact with the ball: (totalBases / atBats)",
+   "batting.OPS": "The average calculated by adding up on-base percentage and slugging percentage.",
+   "pitching.gamesPlayed": "Games Played",
+   "pitching.wins": "The number of times the pitcher was attributed with a win",
+   "pitching.losses": "The number of losses for a pitcher.",
+   "pitching.ERA": "The average number of runs a pitcher yields per 9 innings thrown",
+   "pitching.saves": "The number of times a pitcher enters and finishes the game without surrendering the lead in a save opportunity.",
+   "pitching.completeGames": "The number of times that pitcher starts and finishes a game.",
+   "pitching.shutouts": "The number of times that a pitcher allows zero runs.",
+   "pitching.qualityStarts": "The number of quality starts for a pitcher.",
+   "pitching.innings": "The number of innings pitched.",
+   "pitching.hits": "The number of hits surrendered by a pitcher.",
+   "pitching.earnedRuns": "The number of earned runs surrendered by a pitcher.",
+   "pitching.homeRuns": "The number of times a pitcher has allowed a home run.",
+   "pitching.walks": "The number of times a pitcher surrenders a base on balls.",
+   "pitching.strikeouts": "The number of times the pitcher struck out a batter.",
+   "pitching.opponentAvg": "The opponent's batting average for a pitcher.",
+   "pitching.WHIP": "The number representing walks plus hits divided by innings pitched.",
+   "fielding.gamesPlayed": "Games Played",
+   "fielding.errors": "The number of times a fielder fails to make the play they are expected to make.",
+   "fielding.fieldingPct": "The percentage of plays made by a fielder given the total number of chances.",
+   "fielding.totalChances": "The number of chances a fielder has to make an out calculated by assists plus putouts plus errors.",
+   "fielding.putouts": "The number of times the fielder tags or forces the out of a baserunner.",
+   "fielding.assists": "The number of times a fielder is involved in an out when the fielder is not the putouter."
+  },
+  "byteam_NBA.json": {
+   "general.totalRebounds": "The total number of rebounds for a team or player",
+   "general.avgRebounds": "The average rebounds per game.",
+   "general.teamAssistTurnoverRatio": "The number of assists per turnover for a team",
+   "general.technicalFouls": "The number of times an player or coach was called for a technical foul (unsportsmanlike conduct or violations).",
+   "general.rebounds": "The total number of rebounds (offensive and defensive).",
+   "general.assistTurnoverRatio": "The average number of assists a player or team records per turnover",
+   "general.gamesPlayed": "Games Played",
+   "general.avgFouls": "The average fouls committed per game.",
+   "general.fouls": "The number of times a player had illegal contact with the opponent.",
+   "defensive.defensiveRebounds": "The number of times when the defense obtains the possession of the ball after a missed shot by the offense.",
+   "defensive.avgDefensiveRebounds": "The average defensive rebounds per game.",
+   "defensive.avgSteals": "The average steals per game.",
+   "defensive.avgBlocks": "The average blocks per game.",
+   "defensive.blocks": "Short for blocked shot, number of times when a defensive player legally deflects a field goal attempt from an offensive player.",
+   "defensive.steals": "The number of times a defensive player forced a turnover by intercepting or deflecting a pass or a dribble of an offensive player.",
+   "offensive.avgPoints": "The average number of points scored per game.",
+   "offensive.fieldGoalPct": "The ratio of field goals made to field goals attempted: FGM / FGA",
+   "offensive.threePointFieldGoalPct": "The ratio of 3pt field goals made to 3pt field goals attempted: 3PM / 3PA.",
+   "offensive.freeThrowPct": "The ratio of free throws made to free throws attempted: FTM / FTA",
+   "offensive.avgTurnovers": "The average turnovers committed per game.",
+   "offensive.turnovers": "The number of times a player loses possession to the other team.",
+   "offensive.avgFieldGoalsMade": "The average field goals made per game.",
+   "offensive.avgFieldGoalsAttempted": "The average field goals attempted per game.",
+   "offensive.avgThreePointFieldGoalsMade": "The average three point field goals made per game.",
+   "offensive.avgThreePointFieldGoalsAttempted": "The average three point field goals attempted per game.",
+   "offensive.avgFreeThrowsMade": "The average free throw shots made per game.",
+   "offensive.avgFreeThrowsAttempted": "The average free throw shots attempted per game.",
+   "offensive.avgOffensiveRebounds": "The average offensive rebounds per game.",
+   "offensive.avgAssists": "The average assists per game.",
+   "offensive.points": "The number of points scored.",
+   "offensive.fieldGoalsMade": "The number of times a 2pt field goal was made.",
+   "offensive.fieldGoalsAttempted": "The number of times a 2pt field goal was attempted.",
+   "offensive.threePointFieldGoalsMade": "The number of times a 3pt field goal was made.",
+   "offensive.threePointFieldGoalsAttempted": "The number of times a 3pt field goal was attempted.",
+   "offensive.freeThrowsMade": "The number of times a free throw was made.",
+   "offensive.freeThrowsAttempted": "The number of times a free throw was attempted.",
+   "offensive.offensiveRebounds": "The number of times when the offense obtains the possession of the ball after a missed shot.",
+   "offensive.assists": "The number of times a player who passes the ball to a teammate in a way that leads to a score by field goal, meaning that he or she was \"assisting\" in the basket. There is some judgment involved in deciding whether a passer should be credited with an assist.",
+   "offensive.offensiveReboundPct": "The percentage of the number of times they obtain the possession of the ball after a missed shot.",
+   "offensive.scoringEfficiency": "The efficiency with which a team or player scores the basketball.",
+   "offensive.shootingEfficiency": "The efficiency with which a team or player shoots the basketball.",
+   "offensive.threePointPct": "The ratio of 3pt field goals made to 3pt field goals attempted: 3PM / 3PA.",
+   "differential.avgPointsDifferential": "The average number of points scored per game. Differential",
+   "differential.avgFieldGoalsMadeDifferential": "The average field goals made per game. Differential",
+   "differential.avgFieldGoalsAttemptedDifferential": "The average field goals attempted per game. Differential",
+   "differential.avgThreePointFieldGoalsMadeDifferential": "The average three point field goals made per game. Differential",
+   "differential.avgThreePointFieldGoalsAttemptedDifferential": "The average three point field goals attempted per game. Differential",
+   "differential.avgFreeThrowsMadeDifferential": "The average free throw shots made per game. Differential",
+   "differential.avgFreeThrowsAttemptedDifferential": "The average free throw shots attempted per game. Differential",
+   "differential.avgTurnoversDifferential": "The average turnovers committed per game. Differential",
+   "differential.avgReboundsDifferential": "The average rebounds per game. Differential",
+   "differential.pointsDifferential": "The number of points scored. Differential",
+   "differential.fieldGoalsMadeDifferential": "The number of times a 2pt field goal was made. Differential",
+   "differential.fieldGoalsAttemptedDifferential": "The number of times a 2pt field goal was attempted. Differential",
+   "differential.threePointFieldGoalsMadeDifferential": "The number of times a 3pt field goal was made. Differential",
+   "differential.threePointFieldGoalsAttemptedDifferential": "The number of times a 3pt field goal was attempted. Differential",
+   "differential.freeThrowsMadeDifferential": "The number of times a free throw was made. Differential",
+   "differential.freeThrowsAttemptedDifferential": "The number of times a free throw was attempted. Differential",
+   "differential.turnoversDifferential": "The number of times a player loses possession to the other team. Differential",
+   "differential.reboundsDifferential": "The total number of rebounds (offensive and defensive). Differential",
+   "differential.freeThrowPctDifferential": "The ratio of free throws made to free throws attempted: FTM / FTA Differential",
+   "differential.scoringEfficiencyDifferential": "The efficiency with which a team or player scores the basketball. Differential",
+   "differential.shootingEfficiencyDifferential": "The efficiency with which a team or player shoots the basketball. Differential",
+   "differential.fieldGoalPctDifferential": "The ratio of field goals made to field goals attempted: FGM / FGA Differential",
+   "differential.threePointFieldGoalPctDifferential": "The ratio of 3pt field goals made to 3pt field goals attempted: 3PM / 3PA. Differential",
+   "differential.avgOffensiveReboundsDifferential": "The average offensive rebounds per game. Differential",
+   "differential.avgDefensiveReboundsDifferential": "The average defensive rebounds per game. Differential",
+   "differential.avgAssistsDifferential": "The average assists per game. Differential",
+   "differential.avgStealsDifferential": "The average steals per game. Differential",
+   "differential.avgBlocksDifferential": "The average blocks per game. Differential",
+   "differential.avgFoulsDifferential": "The average fouls committed per game. Differential"
+  },
+  "byteam_NCAAF.json": {
+   "general.gamesPlayed": "Games Played",
+   "general.fumblesRecovered": "The number of fumbles recovered.",
+   "passing.yardsPerPassAttempt": "The average number yards per pass attempt.",
+   "passing.totalYards": "The number of yards accumulated in total.",
+   "passing.passingYards": "The total passing yards.",
+   "passing.passingYardsPerGame": "The number of passing yards per game.",
+   "passing.totalPoints": "The number of total points scored.",
+   "passing.totalPointsPerGame": "The number of points scored per game.",
+   "passing.completions": "The times a player completes a pass to another player who is eligible to catch a pass.",
+   "passing.passingAttempts": "The number of times a pass is attempted.",
+   "passing.completionPct": "The percentage of completed passes.",
+   "passing.longPassing": "The longest pass play completed in terms of yards.",
+   "passing.passingTouchdowns": "The total number of passing touchdowns.",
+   "passing.interceptions": "The number of passes thrown that were intercepted by the opposing team.",
+   "passing.sacks": "The total number of sacks.",
+   "passing.sackYardsLost": "The amount of yards lost due to sacks.",
+   "passing.QBRating": "Passer Rating",
+   "passing.yardsPerGame": "The average number of yards per game.",
+   "rushing.rushingYardsPerGame": "The average number of rushing yards per game.",
+   "rushing.rushingYards": "The total rushing yards.",
+   "rushing.yardsPerRushAttempt": "The average number of yards per rush attempt.",
+   "rushing.rushingAttempts": "The total number of attempted rushes.",
+   "rushing.longRushing": "The amount of yards for the longest run.",
+   "rushing.rushingFumbles": "The number of times there is a run and then the ball is fumbled.",
+   "rushing.rushingTouchdowns": "The total number of rushing touchdowns.",
+   "receiving.receptions": "The total number of receptions.",
+   "receiving.receivingYards": "The total receiving yards.",
+   "receiving.receivingYardsPerGame": "The average number of receiving yards per game.",
+   "receiving.yardsPerReception": "The average number of yards per reception.",
+   "receiving.longReception": "The amount of yards for the longest reception.",
+   "receiving.receivingTouchdowns": "The total number of receiving touchdowns.",
+   "kicking.fieldGoalAttempts": "The number of times a field goal is attempted.",
+   "kicking.fieldGoalsMade": "The number of times a field goal is made.",
+   "kicking.fieldGoalPct": "The percentage of field goals attempted that are made.",
+   "kicking.fieldGoalsMade1_19": "The number of field goals made from 1-19 yards.",
+   "kicking.fieldGoalsMade20_29": "The number of field goals made from 20-29 yards.",
+   "kicking.fieldGoalsMade30_39": "The number of field goals made from 30-39 yards.",
+   "kicking.fieldGoalsMade40_49": "The number of field goals made from 40-49 yards.",
+   "kicking.fieldGoalsMade50": "The number of field goals made from 50+ yards.",
+   "kicking.fieldGoalAttempts1_19": "The number of field goals attempted from 1-19 yards.",
+   "kicking.fieldGoalAttempts20_29": "The number of field goals attempted from 20-29 yards.",
+   "kicking.fieldGoalAttempts30_39": "The number of field goals attempted from 30-39 yards.",
+   "kicking.fieldGoalAttempts40_49": "The number of field goals attempted from 40-49 yards.",
+   "kicking.fieldGoalAttempts50": "The number of field goals attempted from 50+ yards.",
+   "kicking.extraPointsMade": "The number of extra point attempts made.",
+   "kicking.extraPointAttempts": "The number of extra point attempts.",
+   "kicking.extraPointPct": "The percentage of extra point attempts that are converted.",
+   "kicking.longFieldGoalMade": "The distance of the longest field goal made.",
+   "returning.kickReturns": "The number of kick returns.",
+   "returning.kickReturnYards": "The total yardage of kick returns.",
+   "returning.yardsPerKickReturn": "The average number of yards per kick return.",
+   "returning.longKickReturn": "The longest kick return in yards.",
+   "returning.kickReturnTouchdowns": "The number of kick return touchdowns.",
+   "returning.puntReturns": "The number of punt returns.",
+   "returning.puntReturnYards": "The total yardage of punt returns.",
+   "returning.yardsPerPuntReturn": "The average number of yards per punt return.",
+   "returning.longPuntReturn": "The longest punt return in yards.",
+   "returning.puntReturnTouchdowns": "The number of punt return touchdowns.",
+   "punting.punts": "The number of punts taken.",
+   "punting.puntYards": "The total amount of yardage of punts.",
+   "punting.longPunt": "The distance of the longest punt.",
+   "punting.grossAvgPuntYards": "The average gross number of yards per punt.",
+   "punting.netAvgPuntYards": "The average net number of yards per punt.",
+   "miscellaneous.thirdDownConvs": "The number of 3rd down conversions.",
+   "miscellaneous.thirdDownAttempts": "The number of 3rd down attempts.",
+   "miscellaneous.fourthDownConvs": "The number of times a fourth down is converted.",
+   "miscellaneous.fourthDownConvPct": "The percentage of fourth down attempts that are converted.",
+   "miscellaneous.totalPenalties": "The total number of total penalties.",
+   "miscellaneous.totalPenaltyYards": "The total number of penalty yards.",
+   "miscellaneous.fourthDownAttempts": "The number of attempts at getting a first down.",
+   "miscellaneous.thirdDownConvPct": "The percentage of 3rd downs that are converted.",
+   "miscellaneous.firstDowns": "The the number of first downs.",
+   "miscellaneous.firstDownsPenalty": "The number of times a penalty results in a first down.",
+   "miscellaneous.firstDownsRushing": "The number of times a rush results in a first down.",
+   "miscellaneous.firstDownsPassing": "The number of times a pass results in a first down."
+  },
+  "byteam_NCAAM.json": {
+   "general.totalRebounds": "The total number of rebounds for a team or player",
+   "general.avgRebounds": "The average rebounds per game.",
+   "general.teamAssistTurnoverRatio": "The number of assists per turnover for a team",
+   "general.technicalFouls": "The number of times an player or coach was called for a technical foul (unsportsmanlike conduct or violations).",
+   "general.rebounds": "The total number of rebounds (offensive and defensive).",
+   "general.assistTurnoverRatio": "The average number of assists a player or team records per turnover",
+   "general.gamesPlayed": "Games Played",
+   "general.avgFouls": "The average fouls committed per game.",
+   "general.fouls": "The number of times a player had illegal contact with the opponent.",
+   "defensive.defensiveRebounds": "The number of times when the defense obtains the possession of the ball after a missed shot by the offense.",
+   "defensive.avgDefensiveRebounds": "The average defensive rebounds per game.",
+   "defensive.avgSteals": "The average steals per game.",
+   "defensive.avgBlocks": "The average blocks per game.",
+   "defensive.blocks": "Short for blocked shot, number of times when a defensive player legally deflects a field goal attempt from an offensive player.",
+   "defensive.steals": "The number of times a defensive player forced a turnover by intercepting or deflecting a pass or a dribble of an offensive player.",
+   "offensive.avgPoints": "The average number of points scored per game.",
+   "offensive.fieldGoalPct": "The ratio of field goals made to field goals attempted: FGM / FGA",
+   "offensive.threePointFieldGoalPct": "The ratio of 3pt field goals made to 3pt field goals attempted: 3PM / 3PA.",
+   "offensive.freeThrowPct": "The ratio of free throws made to free throws attempted: FTM / FTA",
+   "offensive.avgTurnovers": "The average turnovers committed per game.",
+   "offensive.turnovers": "The number of times a player loses possession to the other team.",
+   "offensive.avgFieldGoalsMade": "The average field goals made per game.",
+   "offensive.avgFieldGoalsAttempted": "The average field goals attempted per game.",
+   "offensive.avgThreePointFieldGoalsMade": "The average three point field goals made per game.",
+   "offensive.avgThreePointFieldGoalsAttempted": "The average three point field goals attempted per game.",
+   "offensive.avgFreeThrowsMade": "The average free throw shots made per game.",
+   "offensive.avgFreeThrowsAttempted": "The average free throw shots attempted per game.",
+   "offensive.avgOffensiveRebounds": "The average offensive rebounds per game.",
+   "offensive.avgAssists": "The average assists per game.",
+   "offensive.points": "The number of points scored.",
+   "offensive.fieldGoalsMade": "The number of times a 2pt field goal was made.",
+   "offensive.fieldGoalsAttempted": "The number of times a 2pt field goal was attempted.",
+   "offensive.threePointFieldGoalsMade": "The number of times a 3pt field goal was made.",
+   "offensive.threePointFieldGoalsAttempted": "The number of times a 3pt field goal was attempted.",
+   "offensive.freeThrowsMade": "The number of times a free throw was made.",
+   "offensive.freeThrowsAttempted": "The number of times a free throw was attempted.",
+   "offensive.offensiveRebounds": "The number of times when the offense obtains the possession of the ball after a missed shot.",
+   "offensive.assists": "The number of times a player who passes the ball to a teammate in a way that leads to a score by field goal, meaning that he or she was \"assisting\" in the basket. There is some judgment involved in deciding whether a passer should be credited with an assist.",
+   "offensive.offensiveReboundPct": "The percentage of the number of times they obtain the possession of the ball after a missed shot.",
+   "offensive.scoringEfficiency": "The efficiency with which a team or player scores the basketball.",
+   "offensive.shootingEfficiency": "The efficiency with which a team or player shoots the basketball.",
+   "offensive.threePointPct": "The ratio of 3pt field goals made to 3pt field goals attempted: 3PM / 3PA.",
+   "differential.avgPointsDifferential": "The average number of points scored per game. Differential",
+   "differential.avgFieldGoalsMadeDifferential": "The average field goals made per game. Differential",
+   "differential.avgFieldGoalsAttemptedDifferential": "The average field goals attempted per game. Differential",
+   "differential.avgThreePointFieldGoalsMadeDifferential": "The average three point field goals made per game. Differential",
+   "differential.avgThreePointFieldGoalsAttemptedDifferential": "The average three point field goals attempted per game. Differential",
+   "differential.avgFreeThrowsMadeDifferential": "The average free throw shots made per game. Differential",
+   "differential.avgFreeThrowsAttemptedDifferential": "The average free throw shots attempted per game. Differential",
+   "differential.avgTurnoversDifferential": "The average turnovers committed per game. Differential",
+   "differential.avgReboundsDifferential": "The average rebounds per game. Differential",
+   "differential.pointsDifferential": "The number of points scored. Differential",
+   "differential.fieldGoalsMadeDifferential": "The number of times a 2pt field goal was made. Differential",
+   "differential.fieldGoalsAttemptedDifferential": "The number of times a 2pt field goal was attempted. Differential",
+   "differential.threePointFieldGoalsMadeDifferential": "The number of times a 3pt field goal was made. Differential",
+   "differential.threePointFieldGoalsAttemptedDifferential": "The number of times a 3pt field goal was attempted. Differential",
+   "differential.freeThrowsMadeDifferential": "The number of times a free throw was made. Differential",
+   "differential.freeThrowsAttemptedDifferential": "The number of times a free throw was attempted. Differential",
+   "differential.turnoversDifferential": "The number of times a player loses possession to the other team. Differential",
+   "differential.reboundsDifferential": "The total number of rebounds (offensive and defensive). Differential",
+   "differential.freeThrowPctDifferential": "The ratio of free throws made to free throws attempted: FTM / FTA Differential",
+   "differential.scoringEfficiencyDifferential": "The efficiency with which a team or player scores the basketball. Differential",
+   "differential.shootingEfficiencyDifferential": "The efficiency with which a team or player shoots the basketball. Differential",
+   "differential.fieldGoalPctDifferential": "The ratio of field goals made to field goals attempted: FGM / FGA Differential",
+   "differential.threePointFieldGoalPctDifferential": "The ratio of 3pt field goals made to 3pt field goals attempted: 3PM / 3PA. Differential",
+   "differential.avgOffensiveReboundsDifferential": "The average offensive rebounds per game. Differential",
+   "differential.avgDefensiveReboundsDifferential": "The average defensive rebounds per game. Differential",
+   "differential.avgAssistsDifferential": "The average assists per game. Differential",
+   "differential.avgStealsDifferential": "The average steals per game. Differential",
+   "differential.avgBlocksDifferential": "The average blocks per game. Differential",
+   "differential.avgFoulsDifferential": "The average fouls committed per game. Differential"
+  },
+  "byteam_NCAAWB.json": {
+   "general.totalRebounds": "The total number of rebounds for a team or player",
+   "general.avgRebounds": "The average rebounds per game.",
+   "general.teamAssistTurnoverRatio": "The number of assists per turnover for a team",
+   "general.technicalFouls": "The number of times an player or coach was called for a technical foul (unsportsmanlike conduct or violations).",
+   "general.rebounds": "The total number of rebounds (offensive and defensive).",
+   "general.assistTurnoverRatio": "The average number of assists a player or team records per turnover",
+   "general.gamesPlayed": "Games Played",
+   "general.avgFouls": "The average fouls committed per game.",
+   "general.fouls": "The number of times a player had illegal contact with the opponent.",
+   "defensive.defensiveRebounds": "The number of times when the defense obtains the possession of the ball after a missed shot by the offense.",
+   "defensive.avgDefensiveRebounds": "The average defensive rebounds per game.",
+   "defensive.avgSteals": "The average steals per game.",
+   "defensive.avgBlocks": "The average blocks per game.",
+   "defensive.blocks": "Short for blocked shot, number of times when a defensive player legally deflects a field goal attempt from an offensive player.",
+   "defensive.steals": "The number of times a defensive player forced a turnover by intercepting or deflecting a pass or a dribble of an offensive player.",
+   "offensive.avgPoints": "The average number of points scored per game.",
+   "offensive.fieldGoalPct": "The ratio of field goals made to field goals attempted: FGM / FGA",
+   "offensive.threePointFieldGoalPct": "The ratio of 3pt field goals made to 3pt field goals attempted: 3PM / 3PA.",
+   "offensive.freeThrowPct": "The ratio of free throws made to free throws attempted: FTM / FTA",
+   "offensive.avgTurnovers": "The average turnovers committed per game.",
+   "offensive.turnovers": "The number of times a player loses possession to the other team.",
+   "offensive.avgFieldGoalsMade": "The average field goals made per game.",
+   "offensive.avgFieldGoalsAttempted": "The average field goals attempted per game.",
+   "offensive.avgThreePointFieldGoalsMade": "The average three point field goals made per game.",
+   "offensive.avgThreePointFieldGoalsAttempted": "The average three point field goals attempted per game.",
+   "offensive.avgFreeThrowsMade": "The average free throw shots made per game.",
+   "offensive.avgFreeThrowsAttempted": "The average free throw shots attempted per game.",
+   "offensive.avgOffensiveRebounds": "The average offensive rebounds per game.",
+   "offensive.avgAssists": "The average assists per game.",
+   "offensive.points": "The number of points scored.",
+   "offensive.fieldGoalsMade": "The number of times a 2pt field goal was made.",
+   "offensive.fieldGoalsAttempted": "The number of times a 2pt field goal was attempted.",
+   "offensive.threePointFieldGoalsMade": "The number of times a 3pt field goal was made.",
+   "offensive.threePointFieldGoalsAttempted": "The number of times a 3pt field goal was attempted.",
+   "offensive.freeThrowsMade": "The number of times a free throw was made.",
+   "offensive.freeThrowsAttempted": "The number of times a free throw was attempted.",
+   "offensive.offensiveRebounds": "The number of times when the offense obtains the possession of the ball after a missed shot.",
+   "offensive.assists": "The number of times a player who passes the ball to a teammate in a way that leads to a score by field goal, meaning that he or she was \"assisting\" in the basket. There is some judgment involved in deciding whether a passer should be credited with an assist.",
+   "offensive.offensiveReboundPct": "The percentage of the number of times they obtain the possession of the ball after a missed shot.",
+   "offensive.scoringEfficiency": "The efficiency with which a team or player scores the basketball.",
+   "offensive.shootingEfficiency": "The efficiency with which a team or player shoots the basketball.",
+   "offensive.threePointPct": "The ratio of 3pt field goals made to 3pt field goals attempted: 3PM / 3PA.",
+   "differential.avgPointsDifferential": "The average number of points scored per game. Differential",
+   "differential.avgFieldGoalsMadeDifferential": "The average field goals made per game. Differential",
+   "differential.avgFieldGoalsAttemptedDifferential": "The average field goals attempted per game. Differential",
+   "differential.avgThreePointFieldGoalsMadeDifferential": "The average three point field goals made per game. Differential",
+   "differential.avgThreePointFieldGoalsAttemptedDifferential": "The average three point field goals attempted per game. Differential",
+   "differential.avgFreeThrowsMadeDifferential": "The average free throw shots made per game. Differential",
+   "differential.avgFreeThrowsAttemptedDifferential": "The average free throw shots attempted per game. Differential",
+   "differential.avgTurnoversDifferential": "The average turnovers committed per game. Differential",
+   "differential.avgReboundsDifferential": "The average rebounds per game. Differential",
+   "differential.pointsDifferential": "The number of points scored. Differential",
+   "differential.fieldGoalsMadeDifferential": "The number of times a 2pt field goal was made. Differential",
+   "differential.fieldGoalsAttemptedDifferential": "The number of times a 2pt field goal was attempted. Differential",
+   "differential.threePointFieldGoalsMadeDifferential": "The number of times a 3pt field goal was made. Differential",
+   "differential.threePointFieldGoalsAttemptedDifferential": "The number of times a 3pt field goal was attempted. Differential",
+   "differential.freeThrowsMadeDifferential": "The number of times a free throw was made. Differential",
+   "differential.freeThrowsAttemptedDifferential": "The number of times a free throw was attempted. Differential",
+   "differential.turnoversDifferential": "The number of times a player loses possession to the other team. Differential",
+   "differential.reboundsDifferential": "The total number of rebounds (offensive and defensive). Differential",
+   "differential.freeThrowPctDifferential": "The ratio of free throws made to free throws attempted: FTM / FTA Differential",
+   "differential.scoringEfficiencyDifferential": "The efficiency with which a team or player scores the basketball. Differential",
+   "differential.shootingEfficiencyDifferential": "The efficiency with which a team or player shoots the basketball. Differential",
+   "differential.fieldGoalPctDifferential": "The ratio of field goals made to field goals attempted: FGM / FGA Differential",
+   "differential.threePointFieldGoalPctDifferential": "The ratio of 3pt field goals made to 3pt field goals attempted: 3PM / 3PA. Differential",
+   "differential.avgOffensiveReboundsDifferential": "The average offensive rebounds per game. Differential",
+   "differential.avgDefensiveReboundsDifferential": "The average defensive rebounds per game. Differential",
+   "differential.avgAssistsDifferential": "The average assists per game. Differential",
+   "differential.avgStealsDifferential": "The average steals per game. Differential",
+   "differential.avgBlocksDifferential": "The average blocks per game. Differential",
+   "differential.avgFoulsDifferential": "The average fouls committed per game. Differential"
+  },
+  "byteam_NFL.json": {
+   "general.gamesPlayed": "Games Played",
+   "general.fumblesRecovered": "The number of fumbles recovered.",
+   "general.fumblesLost": "The number of times a fumble is recovered by the opposing team",
+   "passing.totalYards": "The number of yards accumulated in total.",
+   "passing.yardsPerGame": "The average number of yards per game.",
+   "passing.netPassingYards": "The amount of net passing yards.",
+   "passing.netPassingYardsPerGame": "The amount of net passing yards per game.",
+   "passing.totalPoints": "The number of total points scored.",
+   "passing.totalPointsPerGame": "The number of points scored per game.",
+   "passing.completions": "The times a player completes a pass to another player who is eligible to catch a pass.",
+   "passing.passingYards": "The total passing yards.",
+   "passing.passingYardsPerGame": "The number of passing yards per game.",
+   "passing.passingAttempts": "The number of times a pass is attempted.",
+   "passing.completionPct": "The percentage of completed passes.",
+   "passing.netTotalYards": "The amount of net total yards.",
+   "passing.netYardsPerGame": "The amount of net total yards per game.",
+   "passing.netYardsPerPassAttempt": "The average number net yards (taking sack yardage into account) per pass attempt.",
+   "passing.yardsPerPassAttempt": "The average number yards per pass attempt.",
+   "passing.longPassing": "The longest pass play completed in terms of yards.",
+   "passing.passingTouchdowns": "The total number of passing touchdowns.",
+   "passing.interceptions": "The number of passes thrown that were intercepted by the opposing team.",
+   "passing.sacks": "The total number of sacks.",
+   "passing.sackYardsLost": "The amount of yards lost due to sacks.",
+   "passing.QBRating": "Passer Rating",
+   "rushing.rushingYards": "The total rushing yards.",
+   "rushing.rushingYardsPerGame": "The average number of rushing yards per game.",
+   "rushing.rushingAttempts": "The total number of attempted rushes.",
+   "rushing.yardsPerRushAttempt": "The average number of yards per rush attempt.",
+   "rushing.longRushing": "The amount of yards for the longest run.",
+   "rushing.rushingTouchdowns": "The total number of rushing touchdowns.",
+   "rushing.rushingFumbles": "The number of times there is a run and then the ball is fumbled.",
+   "rushing.rushingFumblesLost": "The number of times there is a run and then the ball is fumbled.",
+   "receiving.receptions": "The total number of receptions.",
+   "receiving.receivingYards": "The total receiving yards.",
+   "receiving.yardsPerReception": "The average number of yards per reception.",
+   "receiving.yardsPerGame": "The average number of yards per game.",
+   "receiving.longReception": "The amount of yards for the longest reception.",
+   "receiving.receivingTouchdowns": "The total number of receiving touchdowns.",
+   "receiving.receivingFumbles": "The number of times a reception is made and then the ball is fumbled.",
+   "receiving.receivingFumblesLost": "The number of times a reception is made and the balled is fumbled and recovered by the opposing team.",
+   "receiving.receivingYardsPerGame": "The average number of receiving yards per game.",
+   "miscellaneous.firstDowns": "The the number of first downs.",
+   "miscellaneous.firstDownsRushing": "The number of times a rush results in a first down.",
+   "miscellaneous.firstDownsPassing": "The number of times a pass results in a first down.",
+   "miscellaneous.firstDownsPenalty": "The number of times a penalty results in a first down.",
+   "miscellaneous.thirdDownConvs": "The number of 3rd down conversions.",
+   "miscellaneous.thirdDownAttempts": "The number of 3rd down attempts.",
+   "miscellaneous.thirdDownConvPct": "The percentage of 3rd downs that are converted.",
+   "miscellaneous.fourthDownConvs": "The number of times a fourth down is converted.",
+   "miscellaneous.fourthDownAttempts": "The number of attempts at getting a first down.",
+   "miscellaneous.fourthDownConvPct": "The percentage of fourth down attempts that are converted.",
+   "miscellaneous.totalPenalties": "The total number of total penalties.",
+   "miscellaneous.totalPenaltyYards": "The total number of penalty yards.",
+   "miscellaneous.turnOverDifferential": "Difference between take-aways and give-aways",
+   "miscellaneous.totalTakeaways": "The total number of takeaways.",
+   "miscellaneous.totalGiveaways": "The total number of giveaways.",
+   "returning.kickReturns": "The number of kick returns.",
+   "returning.kickReturnYards": "The total yardage of kick returns.",
+   "returning.yardsPerKickReturn": "The average number of yards per kick return.",
+   "returning.longKickReturn": "The longest kick return in yards.",
+   "returning.kickReturnTouchdowns": "The number of kick return touchdowns.",
+   "returning.puntReturns": "The number of punt returns.",
+   "returning.puntReturnYards": "The total yardage of punt returns.",
+   "returning.yardsPerPuntReturn": "The average number of yards per punt return.",
+   "returning.longPuntReturn": "The longest punt return in yards.",
+   "returning.puntReturnTouchdowns": "The number of punt return touchdowns.",
+   "returning.puntReturnFairCatches": "The number of punt return fair catches.",
+   "kicking.fieldGoalsMade": "The number of times a field goal is made.",
+   "kicking.fieldGoalAttempts": "The number of times a field goal is attempted.",
+   "kicking.fieldGoalPct": "The percentage of field goals attempted that are made.",
+   "kicking.longFieldGoalMade": "The distance of the longest field goal made.",
+   "kicking.fieldGoalsMade1_19": "The number of field goals made from 1-19 yards.",
+   "kicking.fieldGoalsMade20_29": "The number of field goals made from 20-29 yards.",
+   "kicking.fieldGoalsMade30_39": "The number of field goals made from 30-39 yards.",
+   "kicking.fieldGoalsMade40_49": "The number of field goals made from 40-49 yards.",
+   "kicking.fieldGoalsMade50": "The number of field goals made from 50+ yards.",
+   "kicking.fieldGoalAttempts1_19": "The number of field goals attempted from 1-19 yards.",
+   "kicking.fieldGoalAttempts20_29": "The number of field goals attempted from 20-29 yards.",
+   "kicking.fieldGoalAttempts30_39": "The number of field goals attempted from 30-39 yards.",
+   "kicking.fieldGoalAttempts40_49": "The number of field goals attempted from 40-49 yards.",
+   "kicking.fieldGoalAttempts50": "The number of field goals attempted from 50+ yards.",
+   "kicking.extraPointsMade": "The number of extra point attempts made.",
+   "kicking.extraPointAttempts": "The number of extra point attempts.",
+   "kicking.extraPointPct": "The percentage of extra point attempts that are converted.",
+   "punting.punts": "The number of punts taken.",
+   "punting.puntYards": "The total amount of yardage of punts.",
+   "punting.longPunt": "The distance of the longest punt.",
+   "punting.grossAvgPuntYards": "The average gross number of yards per punt.",
+   "punting.netAvgPuntYards": "The average net number of yards per punt.",
+   "punting.puntsBlocked": "The number of times a punt was blocked.",
+   "punting.puntsInside20": "The number of times a punt is downed inside the 20.",
+   "punting.touchbacks": "The number of kickoffs that result in touchbacks.",
+   "punting.fairCatches": "The number of fair catches.",
+   "punting.puntReturns": "The number of times a punt was returned.",
+   "punting.puntReturnYards": "The total amount of yardage of punt returns.",
+   "punting.avgPuntReturnYards": "The average number of yards per punt return.",
+   "defensiveinterceptions.interceptions": "The total number of interceptions."
+  },
+  "byteam_NHL.json": {
+   "general.games": "Total games played.",
+   "general.wins": "Wins",
+   "general.losses": "Losses",
+   "offensive.avgGoals": "Average goals scored per game.",
+   "offensive.goals": "Total goals scored.",
+   "offensive.assists": "Total goal assists.",
+   "offensive.points": "Points",
+   "offensive.powerPlayGoals": "Total power play goals.",
+   "offensive.powerPlayOpportunities": "Total power play opportunities.",
+   "offensive.powerPlayPct": "Percentage of power play scored on.",
+   "offensive.shortHandedGoals": "Total short handed goals.",
+   "offensive.shotsTotal": "Total shots.",
+   "offensive.shootingPct": "Percentage of shots scored.",
+   "offensive.shootoutAttempts": "Total shootout attempts.",
+   "offensive.shootoutGoals": "Total shootout goals.",
+   "offensive.shootoutShotPct": "Percentage of shootout goals made.",
+   "defensive.penaltyKillPct": "Percentage of penalties killed.",
+   "defensive.avgGoalsAgainst": "Goals against average.",
+   "defensive.overtimeLosses": "Total games lost in overtime.",
+   "defensive.shotsAgainst": "Total shots against.",
+   "defensive.goalsAgainst": "Total goals against.",
+   "defensive.saves": "Total saves.",
+   "defensive.savePct": "Percentage of shots saved.",
+   "defensive.shootoutShotsAgainst": "Total shootout shots against.",
+   "defensive.shootoutSaves": "Total shootout saves.",
+   "defensive.shootoutSavePct": "Percentage of shootout shots saved.",
+   "defensive.shutouts": "Total shutouts.",
+   "penalties.penaltyMinutes": "Total penalty minutes."
+  },
+  "byteam_WNBA_default.json": {
+   "general.totalRebounds": "The total number of rebounds for a team or player",
+   "general.avgRebounds": "The average rebounds per game.",
+   "general.teamAssistTurnoverRatio": "The number of assists per turnover for a team",
+   "general.technicalFouls": "The number of times an player or coach was called for a technical foul (unsportsmanlike conduct or violations).",
+   "general.rebounds": "The total number of rebounds (offensive and defensive).",
+   "general.assistTurnoverRatio": "The average number of assists a player or team records per turnover",
+   "general.gamesPlayed": "Games Played",
+   "general.avgFouls": "The average fouls committed per game.",
+   "general.fouls": "The number of times a player had illegal contact with the opponent.",
+   "defensive.defensiveRebounds": "The number of times when the defense obtains the possession of the ball after a missed shot by the offense.",
+   "defensive.avgDefensiveRebounds": "The average defensive rebounds per game.",
+   "defensive.avgSteals": "The average steals per game.",
+   "defensive.avgBlocks": "The average blocks per game.",
+   "defensive.blocks": "Short for blocked shot, number of times when a defensive player legally deflects a field goal attempt from an offensive player.",
+   "defensive.steals": "The number of times a defensive player forced a turnover by intercepting or deflecting a pass or a dribble of an offensive player.",
+   "offensive.avgPoints": "The average number of points scored per game.",
+   "offensive.fieldGoalPct": "The ratio of field goals made to field goals attempted: FGM / FGA",
+   "offensive.threePointFieldGoalPct": "The ratio of 3pt field goals made to 3pt field goals attempted: 3PM / 3PA.",
+   "offensive.freeThrowPct": "The ratio of free throws made to free throws attempted: FTM / FTA",
+   "offensive.avgTurnovers": "The average turnovers committed per game.",
+   "offensive.turnovers": "The number of times a player loses possession to the other team.",
+   "offensive.avgFieldGoalsMade": "The average field goals made per game.",
+   "offensive.avgFieldGoalsAttempted": "The average field goals attempted per game.",
+   "offensive.avgThreePointFieldGoalsMade": "The average three point field goals made per game.",
+   "offensive.avgThreePointFieldGoalsAttempted": "The average three point field goals attempted per game.",
+   "offensive.avgFreeThrowsMade": "The average free throw shots made per game.",
+   "offensive.avgFreeThrowsAttempted": "The average free throw shots attempted per game.",
+   "offensive.avgOffensiveRebounds": "The average offensive rebounds per game.",
+   "offensive.avgAssists": "The average assists per game.",
+   "offensive.points": "The number of points scored.",
+   "offensive.fieldGoalsMade": "The number of times a 2pt field goal was made.",
+   "offensive.fieldGoalsAttempted": "The number of times a 2pt field goal was attempted.",
+   "offensive.threePointFieldGoalsMade": "The number of times a 3pt field goal was made.",
+   "offensive.threePointFieldGoalsAttempted": "The number of times a 3pt field goal was attempted.",
+   "offensive.freeThrowsMade": "The number of times a free throw was made.",
+   "offensive.freeThrowsAttempted": "The number of times a free throw was attempted.",
+   "offensive.offensiveRebounds": "The number of times when the offense obtains the possession of the ball after a missed shot.",
+   "offensive.assists": "The number of times a player who passes the ball to a teammate in a way that leads to a score by field goal, meaning that he or she was \"assisting\" in the basket. There is some judgment involved in deciding whether a passer should be credited with an assist.",
+   "offensive.offensiveReboundPct": "The percentage of the number of times they obtain the possession of the ball after a missed shot.",
+   "offensive.scoringEfficiency": "The efficiency with which a team or player scores the basketball.",
+   "offensive.shootingEfficiency": "The efficiency with which a team or player shoots the basketball.",
+   "offensive.threePointPct": "The ratio of 3pt field goals made to 3pt field goals attempted: 3PM / 3PA.",
+   "differential.avgPointsDifferential": "The average number of points scored per game. Differential",
+   "differential.avgFieldGoalsMadeDifferential": "The average field goals made per game. Differential",
+   "differential.avgFieldGoalsAttemptedDifferential": "The average field goals attempted per game. Differential",
+   "differential.avgThreePointFieldGoalsMadeDifferential": "The average three point field goals made per game. Differential",
+   "differential.avgThreePointFieldGoalsAttemptedDifferential": "The average three point field goals attempted per game. Differential",
+   "differential.avgFreeThrowsMadeDifferential": "The average free throw shots made per game. Differential",
+   "differential.avgFreeThrowsAttemptedDifferential": "The average free throw shots attempted per game. Differential",
+   "differential.avgTurnoversDifferential": "The average turnovers committed per game. Differential",
+   "differential.avgReboundsDifferential": "The average rebounds per game. Differential",
+   "differential.pointsDifferential": "The number of points scored. Differential",
+   "differential.fieldGoalsMadeDifferential": "The number of times a 2pt field goal was made. Differential",
+   "differential.fieldGoalsAttemptedDifferential": "The number of times a 2pt field goal was attempted. Differential",
+   "differential.threePointFieldGoalsMadeDifferential": "The number of times a 3pt field goal was made. Differential",
+   "differential.threePointFieldGoalsAttemptedDifferential": "The number of times a 3pt field goal was attempted. Differential",
+   "differential.freeThrowsMadeDifferential": "The number of times a free throw was made. Differential",
+   "differential.freeThrowsAttemptedDifferential": "The number of times a free throw was attempted. Differential",
+   "differential.turnoversDifferential": "The number of times a player loses possession to the other team. Differential",
+   "differential.reboundsDifferential": "The total number of rebounds (offensive and defensive). Differential",
+   "differential.freeThrowPctDifferential": "The ratio of free throws made to free throws attempted: FTM / FTA Differential",
+   "differential.scoringEfficiencyDifferential": "The efficiency with which a team or player scores the basketball. Differential",
+   "differential.shootingEfficiencyDifferential": "The efficiency with which a team or player shoots the basketball. Differential",
+   "differential.fieldGoalPctDifferential": "The ratio of field goals made to field goals attempted: FGM / FGA Differential",
+   "differential.threePointFieldGoalPctDifferential": "The ratio of 3pt field goals made to 3pt field goals attempted: 3PM / 3PA. Differential",
+   "differential.avgOffensiveReboundsDifferential": "The average offensive rebounds per game. Differential",
+   "differential.avgDefensiveReboundsDifferential": "The average defensive rebounds per game. Differential",
+   "differential.avgAssistsDifferential": "The average assists per game. Differential",
+   "differential.avgStealsDifferential": "The average steals per game. Differential",
+   "differential.avgBlocksDifferential": "The average blocks per game. Differential",
+   "differential.avgFoulsDifferential": "The average fouls committed per game. Differential"
+  }
+ },
+ "cases": [
+  {
+   "name": "pitchers' strikeout leaders get the pitcher's definition",
+   "fixture": "byteam_MLB.json",
+   "sport": "baseball",
+   "kind": "leader",
+   "key": "strikeouts",
+   "definition": "The number of times the pitcher struck out a batter."
+  },
+  {
+   "name": "batters' hits",
+   "fixture": "byteam_MLB.json",
+   "sport": "baseball",
+   "kind": "leader",
+   "key": "hits",
+   "definition": "The number of hits."
+  },
+  {
+   "name": "batters' home runs",
+   "fixture": "byteam_MLB.json",
+   "sport": "baseball",
+   "kind": "leader",
+   "key": "homeRuns",
+   "definition": "The number of hits that allowed the batter to round the bases and score without the aid of an error of the defense."
+  },
+  {
+   "name": "ERA",
+   "fixture": "byteam_MLB.json",
+   "sport": "baseball",
+   "kind": "leader",
+   "key": "ERA",
+   "definition": "The average number of runs a pitcher yields per 9 innings thrown"
+  },
+  {
+   "name": "WHIP",
+   "fixture": "byteam_MLB.json",
+   "sport": "baseball",
+   "kind": "leader",
+   "key": "WHIP",
+   "definition": "The number representing walks plus hits divided by innings pitched."
+  },
+  {
+   "name": "opponents' batting average, a pitcher's",
+   "fixture": "byteam_MLB.json",
+   "sport": "baseball",
+   "kind": "leader",
+   "key": "opponentAvg",
+   "definition": "The opponent's batting average for a pitcher."
+  },
+  {
+   "name": "ESPN has no definition of WAR",
+   "fixture": "byteam_MLB.json",
+   "sport": "baseball",
+   "kind": "leader",
+   "key": "WARBR",
+   "definition": null
+  },
+  {
+   "name": "holds aren't in the team glossary",
+   "fixture": "byteam_MLB.json",
+   "sport": "baseball",
+   "kind": "leader",
+   "key": "holds",
+   "definition": null
+  },
+  {
+   "name": "a leader the table doesn't know",
+   "fixture": "byteam_MLB.json",
+   "sport": "baseball",
+   "kind": "leader",
+   "key": "somethingNew",
+   "definition": null
+  },
+  {
+   "name": "team batting strikeouts",
+   "fixture": "byteam_MLB.json",
+   "sport": "baseball",
+   "kind": "team",
+   "key": "batting.strikeouts",
+   "definition": "The number of times a player strikes out."
+  },
+  {
+   "name": "team pitching strikeouts",
+   "fixture": "byteam_MLB.json",
+   "sport": "baseball",
+   "kind": "team",
+   "key": "pitching.strikeouts",
+   "definition": "The number of times the pitcher struck out a batter."
+  },
+  {
+   "name": "team batting walks",
+   "fixture": "byteam_MLB.json",
+   "sport": "baseball",
+   "kind": "team",
+   "key": "batting.walks",
+   "definition": "The number of times a batter reaches base on four balls"
+  },
+  {
+   "name": "team pitching walks",
+   "fixture": "byteam_MLB.json",
+   "sport": "baseball",
+   "kind": "team",
+   "key": "pitching.walks",
+   "definition": "The number of times a pitcher surrenders a base on balls."
+  },
+  {
+   "name": "team pitching hits",
+   "fixture": "byteam_MLB.json",
+   "sport": "baseball",
+   "kind": "team",
+   "key": "pitching.hits",
+   "definition": "The number of hits surrendered by a pitcher."
+  },
+  {
+   "name": "team pitching home runs",
+   "fixture": "byteam_MLB.json",
+   "sport": "baseball",
+   "kind": "team",
+   "key": "pitching.homeRuns",
+   "definition": "The number of times a pitcher has allowed a home run."
+  },
+  {
+   "name": "the default answer has the same glossary",
+   "fixture": "byteam_MLB_default.json",
+   "sport": "baseball",
+   "kind": "leader",
+   "key": "strikeouts",
+   "definition": "The number of times the pitcher struck out a batter."
+  },
+  {
+   "name": "interception leaders are a defense's, in a category byteam writes in lower case",
+   "fixture": "byteam_NFL.json",
+   "sport": "football",
+   "kind": "leader",
+   "key": "interceptions",
+   "definition": "The total number of interceptions."
+  },
+  {
+   "name": "interceptions thrown",
+   "fixture": "byteam_NFL.json",
+   "sport": "football",
+   "kind": "team",
+   "key": "passing.interceptions",
+   "definition": "The number of passes thrown that were intercepted by the opposing team."
+  },
+  {
+   "name": "sack leaders aren't the sacks a passer took",
+   "fixture": "byteam_NFL.json",
+   "sport": "football",
+   "kind": "leader",
+   "key": "sacks",
+   "definition": null
+  },
+  {
+   "name": "quarterback rating is QBRating in byteam",
+   "fixture": "byteam_NFL.json",
+   "sport": "football",
+   "kind": "leader",
+   "key": "quarterbackRating",
+   "definition": "Passer Rating"
+  },
+  {
+   "name": "a kicker's points aren't byteam's passing totalPoints",
+   "fixture": "byteam_NFL.json",
+   "sport": "football",
+   "kind": "leader",
+   "key": "totalPoints",
+   "definition": null
+  },
+  {
+   "name": "passing yards",
+   "fixture": "byteam_NFL.json",
+   "sport": "football",
+   "kind": "leader",
+   "key": "passingYards",
+   "definition": "The total passing yards."
+  },
+  {
+   "name": "punt returns allowed",
+   "fixture": "byteam_NFL.json",
+   "sport": "football",
+   "kind": "team",
+   "key": "punting.puntReturns",
+   "definition": "The number of times a punt was returned."
+  },
+  {
+   "name": "punt returns made",
+   "fixture": "byteam_NFL.json",
+   "sport": "football",
+   "kind": "team",
+   "key": "returning.puntReturns",
+   "definition": "The number of punt returns."
+  },
+  {
+   "name": "punt return yards allowed",
+   "fixture": "byteam_NFL.json",
+   "sport": "football",
+   "kind": "team",
+   "key": "punting.puntReturnYards",
+   "definition": "The total amount of yardage of punt returns."
+  },
+  {
+   "name": "punt return yards made",
+   "fixture": "byteam_NFL.json",
+   "sport": "football",
+   "kind": "team",
+   "key": "returning.puntReturnYards",
+   "definition": "The total yardage of punt returns."
+  },
+  {
+   "name": "an opponents' stat takes the stat's definition",
+   "fixture": "byteam_NFL.json",
+   "sport": "football",
+   "kind": "team",
+   "key": "opponent.passing.passingYards",
+   "definition": "The total passing yards."
+  },
+  {
+   "name": "college football interceptions thrown",
+   "fixture": "byteam_NCAAF.json",
+   "sport": "football",
+   "kind": "team",
+   "key": "passing.interceptions",
+   "definition": "The number of passes thrown that were intercepted by the opposing team."
+  },
+  {
+   "name": "college interception leaders: byteam has no defensive interceptions",
+   "fixture": "byteam_NCAAF.json",
+   "sport": "football",
+   "kind": "leader",
+   "key": "interceptions",
+   "definition": null
+  },
+  {
+   "name": "points per game is avgPoints",
+   "fixture": "byteam_NBA.json",
+   "sport": "basketball",
+   "kind": "leader",
+   "key": "pointsPerGame",
+   "definition": "The average number of points scored per game."
+  },
+  {
+   "name": "three-point percentage",
+   "fixture": "byteam_NBA.json",
+   "sport": "basketball",
+   "kind": "leader",
+   "key": "3PointPct",
+   "definition": "The ratio of 3pt field goals made to 3pt field goals attempted: 3PM / 3PA."
+  },
+  {
+   "name": "turnovers per game",
+   "fixture": "byteam_NBA.json",
+   "sport": "basketball",
+   "kind": "leader",
+   "key": "avgTurnovers",
+   "definition": "The average turnovers committed per game."
+  },
+  {
+   "name": "ESPN has no definition of PER",
+   "fixture": "byteam_NBA.json",
+   "sport": "basketball",
+   "kind": "leader",
+   "key": "PER",
+   "definition": null
+  },
+  {
+   "name": "opponents' points per game",
+   "fixture": "byteam_NBA.json",
+   "sport": "basketball",
+   "kind": "team",
+   "key": "opponent.offensive.avgPoints",
+   "definition": "The average number of points scored per game."
+  },
+  {
+   "name": "a differential",
+   "fixture": "byteam_NBA.json",
+   "sport": "basketball",
+   "kind": "team",
+   "key": "differential.avgPointsDifferential",
+   "definition": "The average number of points scored per game. Differential"
+  },
+  {
+   "name": "WNBA rebounds per game",
+   "fixture": "byteam_WNBA_default.json",
+   "sport": "basketball",
+   "kind": "leader",
+   "key": "reboundsPerGame",
+   "definition": "The average rebounds per game."
+  },
+  {
+   "name": "college basketball field goal percentage",
+   "fixture": "byteam_NCAAM.json",
+   "sport": "basketball",
+   "kind": "leader",
+   "key": "fieldGoalPercentage",
+   "definition": "The ratio of field goals made to field goals attempted: FGM / FGA"
+  },
+  {
+   "name": "college basketball blocks",
+   "fixture": "byteam_NCAAWB.json",
+   "sport": "basketball",
+   "kind": "leader",
+   "key": "blocksPerGame",
+   "definition": "The average blocks per game."
+  },
+  {
+   "name": "goals",
+   "fixture": "byteam_NHL.json",
+   "sport": "hockey",
+   "kind": "leader",
+   "key": "goals",
+   "definition": "Total goals scored."
+  },
+  {
+   "name": "goals against average",
+   "fixture": "byteam_NHL.json",
+   "sport": "hockey",
+   "kind": "leader",
+   "key": "avgGoalsAgainst",
+   "definition": "Goals against average."
+  },
+  {
+   "name": "ESPN has no definition of plus/minus",
+   "fixture": "byteam_NHL.json",
+   "sport": "hockey",
+   "kind": "leader",
+   "key": "plusMinus",
+   "definition": null
+  },
+  {
+   "name": "team penalty minutes",
+   "fixture": "byteam_NHL.json",
+   "sport": "hockey",
+   "kind": "team",
+   "key": "penalties.penaltyMinutes",
+   "definition": "Total penalty minutes."
+  },
+  {
+   "name": "soccer has no leader table",
+   "fixture": "byteam_NBA.json",
+   "sport": "soccer",
+   "kind": "leader",
+   "key": "goalsLeaders",
+   "definition": null
+  },
+  {
+   "name": "a team key with no stat",
+   "fixture": "byteam_MLB.json",
+   "sport": "baseball",
+   "kind": "team",
+   "key": "batting",
+   "definition": null
+  },
+  {
+   "name": "a team key with an empty part",
+   "fixture": "byteam_MLB.json",
+   "sport": "baseball",
+   "kind": "team",
+   "key": "batting.",
+   "definition": null
+  },
+  {
+   "name": "a team key with too many parts",
+   "fixture": "byteam_MLB.json",
+   "sport": "baseball",
+   "kind": "team",
+   "key": "a.batting.strikeouts",
+   "definition": null
+  },
+  {
+   "name": "a category that isn't there",
+   "fixture": "byteam_MLB.json",
+   "sport": "baseball",
+   "kind": "team",
+   "key": "scoring.strikeouts",
+   "definition": null
+  }
+ ]
+}

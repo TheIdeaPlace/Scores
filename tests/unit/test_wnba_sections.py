@@ -36,28 +36,6 @@ def method(name, **names):
     return namespace[name]
 
 
-def stat_definitions(league):
-    return method("_get_stat_definitions")(SimpleNamespace(league=league))
-
-
-@pytest.mark.parametrize("league", ["NBA", "WNBA", "NCAAM", "NCAAWB"])
-def test_basketball_stat_definitions_are_basketball(league):
-    definitions = stat_definitions(league)
-    assert "PPG (Points Per Game)" in definitions
-    assert "Goals" not in definitions
-
-
-@pytest.mark.parametrize("league", ["NFL", "NCAAF"])
-def test_football_stat_definitions_are_football(league):
-    definitions = stat_definitions(league)
-    assert "Passing Yards" in definitions
-    assert "Goals" not in definitions
-
-
-def test_another_league_keeps_the_general_list():
-    assert "Goals" in stat_definitions("NCAAH")
-
-
 def test_nothing_calls_a_conference_a_division():
     """A screen reader heard "Division Standings" and "Teams in Eastern Conference division"."""
     text = source("scores.py")

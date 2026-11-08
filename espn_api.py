@@ -4,12 +4,14 @@ import time
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
 from exceptions import ApiError
+import favorite_card
 from game_labels import (best_odds, broadcast_names, format_height, format_weight,
                          injured_player_count, leader_display_value, local_schedule_datetime,
                          schedule_game_label)
 import golf
 from soccer import (NAME_UNAVAILABLE, SOCCER_LEAGUES, _stat_number, core_leader_lists, parse_soccer_standings,
                     parse_team_list)
+import stat_glossary
 from team_stats import needs_team_list, parse_team_stats
 from timezone_utils import convert_espn_time_to_local
 
@@ -442,12 +444,38 @@ def _schedule_answer(url):
     return answer
 
 
-def _season_type_schedule_events(base_url, season_year):
+def _season_type_schedule_events(base_url, season_year, lenient=False):
     """Preseason, regular season and postseason, or None if ESPN has no regular season here.
 
     FCS playoffs are type 2, and a team that missed the postseason gets an empty list
     for type 3, not an error. The regular season comes first so a failure costs one request.
+
+    `lenient` is for a caller that can use whatever part loaded, a favorite's card. The three
+    are asked for at once, as on the iPhone. A part that fails is left out, but if no part
+    has any games and one failed, it raises: an empty answer then may only be the failure,
+    and mustn't read as a season not yet published. None means ESPN answered 400 or 404 for
+    all three. The iPhone throws then too (ESPNAPIService.fetchTeamSeasonSchedule), so its
+    card shows no games where this one falls back to last season.
     """
+    if lenient:
+        def ask(season_type):
+            try:
+                return _schedule_answer(f"{base_url}?season={season_year}&seasontype={season_type}"), None
+            except ApiError as e:
+                return None, e
+
+        with ThreadPoolExecutor(max_workers=3) as pool:
+            replies = list(pool.map(ask, (2, 1, 3)))  # in this order, so a repeat keeps the regular season's
+        events, answered = [], False
+        failure = next((error for _, error in replies if error is not None), None)
+        for answer, _ in replies:
+            if answer is not None:
+                answered = True
+                events.extend(_dicts(answer.get("events")))
+        if not events and failure is not None:
+            raise failure
+        return events if answered else None
+
     answer = _schedule_answer(f"{base_url}?season={season_year}&seasontype=2")
     if answer is None:
         return None
@@ -459,7 +487,7 @@ def _season_type_schedule_events(base_url, season_year):
     return events
 
 
-def _soccer_schedule_events(base_url, season_year, current_season):
+def _soccer_schedule_events(base_url, season_year, current_season, lenient=False):
     """Results, plus the games to come if this is the current season, or None if ESPN has
     no results here.
 
@@ -472,22 +500,41 @@ def _soccer_schedule_events(base_url, season_year, current_season):
     for the Premier League, whose 2026-27 season ESPN reports as `season.year` 2026.
     Its results are then the ones to show. Only the year before counts: the Women's
     World Cup's `season.year` stays at 2023 until the next one, and 2023 isn't current.
+
+    `lenient`, for a favorite's card, leaves out a list that fails, and raises when a list
+    failed and none had any games, so a failure can't read as a season not yet published.
+    The iPhone's does the same.
     """
-    answer = _schedule_answer(f"{base_url}?season={season_year}")
+    failure = None
+    try:
+        answer = _schedule_answer(f"{base_url}?season={season_year}")
+    except ApiError as e:
+        if not lenient:
+            raise
+        failure, answer = e, {}
     if answer is None:
         return None
     events = _dicts(answer.get("events"))
     espn_season = _as_dict(answer.get("season")).get("year")
     if season_year not in (current_season, espn_season):
+        if failure is not None:
+            raise failure
         return events
 
     queries = ["fixture=true"]
     if espn_season == season_year - 1:
         queries.insert(0, f"season={espn_season}")
     for query in queries:
-        answer = _schedule_answer(f"{base_url}?{query}")
+        try:
+            answer = _schedule_answer(f"{base_url}?{query}")
+        except ApiError as e:
+            if not lenient:
+                raise
+            failure, answer = failure or e, None
         if answer is not None:
             events.extend(_dicts(answer.get("events")))
+    if failure is not None and not events:
+        raise failure
     return events
 
 
@@ -679,6 +726,33 @@ def get_team_schedule_and_season(league_key, team_id, days_ahead=30, days_behind
     # Sort by date
     schedule.sort(key=lambda x: x['date'])
     return schedule, season_year
+
+
+def get_favorite_card_schedule(league_key, team_id):
+    """A favorite team's games for its card on Home, as favorite_card.card_games: the current
+    season, or the last one in the weeks before ESPN publishes the next. The same requests as
+    the iPhone's ESPNAPIService.fetchFavoriteCardSchedule, and as lenient: the card needs only
+    the last and next games, so a preseason that fails doesn't cost it the regular season.
+
+    Raises ApiError when nothing loaded, so the card can say so rather than look empty. A
+    league with no team schedule (golf) has no card games.
+    """
+    league_path = LEAGUES.get(league_key)
+    if not league_path or not team_id:
+        return []
+    current_season = get_current_season_year(league_key)
+    base_url = f"{BASE_URL}/{league_path}/teams/{team_id}/schedule"
+    for season_year in (current_season, current_season - 1):
+        if league_key in SEASON_TYPE_SCHEDULE_LEAGUES:
+            events = _season_type_schedule_events(base_url, season_year, lenient=True)
+        elif league_path.startswith("soccer/"):
+            events = _soccer_schedule_events(base_url, season_year, current_season, lenient=True)
+        else:
+            return []
+        if events:
+            return favorite_card.card_games(events)
+    return []
+
 
 def parse_schedule_from_api(url, team_id, today, season=None):
     """Parse schedule data from ESPN API response"""
@@ -2735,7 +2809,8 @@ def _parse_leaders(data):
                     "stat_name": title,
                 })
         if stats:
-            categories.append({"category": title, "stats": stats})
+            # `key` is ESPN's name for the category, which stat_glossary finds its definition by.
+            categories.append({"category": title, "key": key, "stats": stats})
     if not categories:
         return _no_leaders()
     name = "Season" if season_type.get("type") == POSTSEASON else season_type.get("name")
@@ -3052,7 +3127,8 @@ def _parse_team_stats(key, league_path, data):
     count = _as_dict(data.get("pagination")).get("count")
     if isinstance(count, int) and count > len(_dicts(data.get("teams"))):
         season = f"{season}, {TEAMS_MISSING}"
-    return {"team_stats": team_stats, "player_stats": [], "season": season}
+    return {"team_stats": team_stats, "player_stats": [], "season": season,
+            "glossary": stat_glossary.glossary(data)}
 
 
 def get_team_statistics(league_key):
@@ -3085,6 +3161,44 @@ def get_team_statistics(league_key):
     if not any(answer is not None for answer in answers):
         raise ApiError(STATISTICS_UNAVAILABLE)
     return _no_team_stats()
+
+
+def league_sport(league_key):
+    """The first part of a league's path, "baseball" for MLB, which stat_glossary and team_stats
+    go by. "" for a league it doesn't know."""
+    key = league_key if league_key in LEAGUES else str(league_key).upper()
+    return LEAGUES.get(key, "").split("/")[0]
+
+
+_GLOSSARY_CACHE = {}  # league key: ESPN's definitions, which don't change while the app is open
+_GLOSSARY_CACHE_LOCK = threading.Lock()
+
+
+def get_stat_glossary(league_key):
+    """ESPN's definitions of a league's statistics, as stat_glossary.glossary has them, for the
+    player leaders: the team statistics carry their own. They come with byteam, and one team's
+    worth has them all, as the iPhone asks (TeamStatsStore.glossary). A league with no byteam has
+    no definitions, which is {}. A failed request raises ApiError, so the definitions can say they
+    couldn't be had rather than that ESPN has none."""
+    key = league_key if league_key in LEAGUES else league_key.upper()
+    if key not in TEAM_STAT_LEAGUES:
+        return {}
+    with _GLOSSARY_CACHE_LOCK:
+        if key in _GLOSSARY_CACHE:
+            return _GLOSSARY_CACHE[key]
+    params = {"region": "us", "lang": "en", "limit": 1}
+    try:
+        resp = _http_get(f"{TEAM_STATS_BASE_URL}/{LEAGUES[key]}/statistics/byteam", params=params, timeout=15)
+        answer = resp.json() if resp.status_code == 200 else None
+    except (requests.RequestException, ValueError) as e:
+        raise ApiError(STATISTICS_UNAVAILABLE) from e
+    if not isinstance(answer, dict):
+        raise ApiError(STATISTICS_UNAVAILABLE)
+    found = stat_glossary.glossary(answer)
+    if found:  # One that's empty is asked for again next time.
+        with _GLOSSARY_CACHE_LOCK:
+            _GLOSSARY_CACHE[key] = found
+    return found
 
 
 def most_used_home_venue(events, team_id):
