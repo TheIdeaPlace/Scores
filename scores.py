@@ -72,6 +72,7 @@ import error_log
 from windows_notifications import announce, set_notifier_window
 from accessible_table import AccessibleTable, StandingsTable, WildCardTable, LeadersTable, RankingsTable, BoxscoreTable, InjuryTable, ListPages, is_tab_bar, keep_in_tab_order, make_tab_area, ButtonKeys
 from tab_keys import group_noun
+import transactions_paging
 from box_score import build_box_tables
 from soccer import SOCCER_LEAGUES, TEAM_NAME_ONLY_HEADERS, no_table_message, soccer_teams_table
 from team_list import OTHER_TEAMS, RECORDS_UNAVAILABLE, TEAMS_WITH_NO_GROUP, has_records
@@ -717,6 +718,54 @@ class SeasonPickerDialog(QDialog):
     def selected_season(self):
         item = self.season_list.currentItem()
         return item.data(Qt.ItemDataRole.UserRole) if item else None
+
+
+class MonthPickerDialog(QDialog):
+    """Ctrl+G in Transactions: the month to start the list at, back to January 2001.
+
+    A list, as Go to Season is, so nothing loads until Enter. Type a month's name, and its
+    year, to find it. The current month is first and says so; choosing it goes back to the
+    newest. It opens on the month the list starts at.
+    """
+
+    def __init__(self, subject, months, shown, parent=None):
+        super().__init__(parent)
+        self.setWindowTitle(f"Go to Month - {subject}")
+        self.setModal(True)
+        layout = QVBoxLayout(self)
+        label = QLabel("&Month:")
+        layout.addWidget(label)
+        self.month_list = QListWidget()
+        self.month_list.setAccessibleName("Month")
+        self.month_list.setAccessibleDescription(
+            "Shows that month's transactions, newest first, then older ones. "
+            "The current month goes back to the newest.")
+        label.setBuddy(self.month_list)
+        for index, (year, month) in enumerate(months):
+            text = transactions_paging.month_label(year, month)
+            item = QListWidgetItem(f"{text}, current month" if index == 0 else text)
+            item.setData(Qt.ItemDataRole.UserRole, (year, month))
+            self.month_list.addItem(item)
+        row = months.index(shown) if shown in months else 0
+        self.month_list.setCurrentRow(row)
+        self.month_list.itemActivated.connect(lambda _item: self.accept())
+        layout.addWidget(self.month_list)
+
+        buttons = QHBoxLayout()
+        go_btn = QPushButton("Go to Month")
+        go_btn.setDefault(True)
+        go_btn.clicked.connect(self.accept)
+        buttons.addWidget(go_btn)
+        cancel_btn = QPushButton("Cancel")
+        cancel_btn.clicked.connect(self.reject)
+        buttons.addWidget(cancel_btn)
+        layout.addLayout(buttons)
+        _focus_once_active(self, self.month_list.setFocus)
+        self.month_list.setFocus()
+
+    def selected_month(self):
+        item = self.month_list.currentItem()
+        return tuple(item.data(Qt.ItemDataRole.UserRole)) if item else None
 
 
 class BaseView(QWidget):
@@ -9162,20 +9211,19 @@ class FavoriteCardLoader(QThread):
 
 
 class LeagueTransactionsLoader(QThread):
-    data_loaded = pyqtSignal(list, bool)  # transactions, has_more
+    """One load of the Transactions running list from a cursor (transactions_paging)."""
+    data_loaded = pyqtSignal(dict)  # {"rows", "next", "oldest_year"}
     error_occurred = pyqtSignal(str)
 
-    def __init__(self, league: str, team_id=None, page: int = 1):
+    def __init__(self, league: str, cursor: dict, team_id=None):
         super().__init__()
         self.league = league
+        self.cursor = cursor
         self.team_id = team_id
-        self.page = page
 
     def run(self):
         try:
-            transactions, has_more = ApiService.get_transactions(
-                self.league, self.team_id, page=self.page)
-            self.data_loaded.emit(transactions, has_more)
+            self.data_loaded.emit(ApiService.get_transactions_from(self.league, self.cursor, self.team_id))
         except Exception as e:
             self.error_occurred.emit(_said(e))
 
@@ -9774,49 +9822,72 @@ class PollsDialog(QDialog):
 
 
 class TransactionsDialog(QDialog):
-    """League-wide transactions browser with team filter and pagination."""
+    """A league's transactions as one running list, newest first, with a team filter.
 
-    def __init__(self, league: str, parent=None):
+    Load More, or Down Arrow on the last row, loads older ones, back to January 2001.
+    Go to Month (Ctrl+G) starts the list at the end of any month and keeps going older from
+    there. How the list walks ESPN's /transactions is transactions_paging.py, the rule the
+    iPhone's TransactionPaging.swift shares.
+    """
+
+    def __init__(self, league: str, parent=None, today=None):
         super().__init__(parent)
         self.league = league
-        self.current_page = 1
         self.current_team_id = None
+        self._today = today  # (year, month) for tests; otherwise the date now
+        self._jump = None  # (year, month) the list starts at, or None for the newest
+        self._cursor = None  # where the next load starts; None when there is nothing older
+        self._first_load = True  # the list's first load hasn't arrived yet
+        self._loading = False
+        self._generation = 0  # a load from before a restart is dropped when it arrives
         self._loaders = []
         self._load_failed = False
         self._teams_failed = False
         self._teams_retried = False
 
-        self.setWindowTitle(f"Transactions — {league} — Sports Scores")
         self.setMinimumSize(700, 500)
         self.resize(850, 620)
 
         self._setup_ui()
         self._load_teams()
-        self._load_transactions(reset=True)
+        self._restart()
 
     def _setup_ui(self):
         layout = QVBoxLayout()
 
         filter_row = QHBoxLayout()
-        filter_row.addWidget(QLabel("Filter by team:"))
+        team_label = QLabel("Filter by &team:")
+        filter_row.addWidget(team_label)
         self.team_combo = QComboBox()
         self.team_combo.setAccessibleName("Team Filter")
         self.team_combo.setAccessibleDescription(
             "Select a team to filter transactions, or All Teams for league-wide results")
+        team_label.setBuddy(self.team_combo)
         self.team_combo.addItem("All Teams", None)
         self.team_combo.currentIndexChanged.connect(self._on_team_changed)
         filter_row.addWidget(self.team_combo)
+        self.go_to_month_btn = QPushButton("Go to Month (Ctrl+G)")
+        self.go_to_month_btn.setShortcut("Ctrl+G")
+        self.go_to_month_btn.setAccessibleDescription(
+            "Start the list at the end of any month back to January 2001")
+        self.go_to_month_btn.clicked.connect(self._go_to_month)
+        filter_row.addWidget(self.go_to_month_btn)
         filter_row.addStretch()
         layout.addLayout(filter_row)
 
+        self.position_label = QLabel()
+        layout.addWidget(self.position_label)
+
         self.trans_list = QListWidget()
-        self.trans_list.setAccessibleName(f"{self.league} Transactions")
         self.trans_list.setAccessibleDescription(
-            "Transaction list. Each item shows date, type, player name, and position.")
+            "Each item shows the date, the team and what happened. "
+            "Down Arrow on the last item loads older transactions.")
+        self.trans_list.installEventFilter(self)
         layout.addWidget(self.trans_list)
 
         btn_row = QHBoxLayout()
         self.load_more_btn = QPushButton("Load &More")
+        self.load_more_btn.setAccessibleDescription("Load older transactions")
         self.load_more_btn.setEnabled(False)
         self.load_more_btn.clicked.connect(self._load_more)
         btn_row.addWidget(self.load_more_btn)
@@ -9858,53 +9929,135 @@ class TransactionsDialog(QDialog):
 
     def _on_team_changed(self, _index):
         self.current_team_id = self.team_combo.currentData()
-        self._load_transactions(reset=True)
+        self._restart()
 
-    def _load_transactions(self, reset=False):
-        if reset:
-            self._load_failed = False
-            self.current_page = 1
-            self.trans_list.clear()
-            self.load_more_btn.setEnabled(False)
-        loading_item = QListWidgetItem("Loading transactions...")
+    # ------------------------------------------------------------ where the list is
+
+    def _now(self):
+        if self._today:
+            return self._today
+        today = datetime.now()
+        return today.year, today.month
+
+    def _team_name(self):
+        return self.team_combo.currentText() if self.current_team_id else None
+
+    def _show_position(self):
+        """The window title, the line above the list and the list's name say where it starts."""
+        start = f"from {transactions_paging.month_label(*self._jump)}" if self._jump else ""
+        self.position_label.setText(f"From {transactions_paging.month_label(*self._jump)}, newest first"
+                                    if self._jump else "Newest first")
+        self.trans_list.setAccessibleName(" ".join(p for p in [f"{self.league} Transactions", start] if p)
+                                          + ", newest first")
+        title = " ".join(p for p in ["Transactions", start] if p)
+        self.setWindowTitle(" — ".join(p for p in [title, self._team_name(), self.league, "Sports Scores"] if p))
+
+    # ------------------------------------------------------------ loading
+
+    def _restart(self):
+        """Start the list again, at the month jumped to or the newest."""
+        self._generation += 1
+        self._loading = False
+        self._load_failed = False
+        self._first_load = True
+        year, month = self._now()
+        self._cursor = transactions_paging.start_cursor(year, month, *(self._jump or (None, None)))
+        if self._cursor["month"] is None:
+            self._jump = None  # this month, or later, is the newest
+        self.trans_list.clear()
+        self._show_position()
+        self._load_next()
+
+    def _load_next(self):
+        if self._cursor is None or self._loading:
+            return
+        self._loading = True
+        self.load_more_btn.setEnabled(False)
+        loading_item = QListWidgetItem(
+            "Loading transactions..." if self._first_load else "Loading older transactions...")
         self.trans_list.addItem(loading_item)
-        loader = LeagueTransactionsLoader(self.league, self.current_team_id, self.current_page)
-        loader.data_loaded.connect(lambda data, more: self._on_loaded(data, more, loading_item))
-        loader.error_occurred.connect(lambda e: self._on_error(e, loading_item))
+        generation = self._generation
+        loader = LeagueTransactionsLoader(self.league, self._cursor, self.current_team_id)
+        loader.data_loaded.connect(lambda result: self._on_loaded(result, loading_item, generation))
+        loader.error_occurred.connect(lambda e: self._on_error(e, loading_item, generation))
         self._loaders.append(loader)
         loader.start()
 
     def _load_more(self):
-        self.current_page += 1
-        self._load_transactions(reset=False)
+        self._load_next()
 
-    def _on_loaded(self, transactions, has_more, loading_item):
+    def eventFilter(self, obj, event):
+        # Down Arrow, or Page Down, on the last row goes on into older transactions.
+        if (obj is self.trans_list and event.type() == QEvent.Type.KeyPress
+                and event.key() in (Qt.Key.Key_Down, Qt.Key.Key_PageDown)
+                and not event.modifiers()
+                and self.trans_list.currentRow() == self.trans_list.count() - 1
+                and self._cursor is not None and not self._loading and not self._first_load):
+            self._load_next()
+            announce("Loading older transactions.")
+            return True
+        return super().eventFilter(obj, event)
+
+    def _take_out(self, loading_item):
         row = self.trans_list.row(loading_item)
         if row >= 0:
             self.trans_list.takeItem(row)
-        if not transactions and self.trans_list.count() == 0:
-            team_label = self.team_combo.currentText()
-            self.trans_list.addItem(f"No transactions available for {team_label}.")
-            return
-        for t in transactions:
-            parts = [p for p in [
-                t.get('date'),
-                t.get('team'),
-                t.get('description') or t.get('player'),
-            ] if p]
+
+    def _on_loaded(self, result, loading_item, generation):
+        if generation != self._generation:
+            return  # from before the team or the month changed
+        self._loading = False
+        self._take_out(loading_item)
+        first, self._first_load = self._first_load, False
+        rows = result.get("rows") or []
+        self._cursor = result.get("next")
+        oldest_year = result.get("oldest_year") or self._now()[0]
+        team_name = self._team_name()
+        start = self.trans_list.count()
+
+        skipped = result.get("skipped") or []
+        above = [transactions_paging.skipped_text(s["year"], team_name) for s in skipped if not s.get("below")]
+        below = [transactions_paging.skipped_text(s["year"], team_name) for s in skipped if s.get("below")]
+        jump_skipped = bool(self._jump) and any(not s.get("below") and s["year"] == self._jump[0] for s in skipped)
+        if first and self._jump and rows and not jump_skipped:
+            # Not when ESPN couldn't give the month at all: that isn't the month having none.
+            notice = transactions_paging.jump_notice(*self._jump, [r.get("date") for r in rows], team_name)
+            if notice:
+                self.trans_list.addItem(notice)
+        for text in above:
+            self.trans_list.addItem(text)
+        if first and not rows and not skipped:
+            self.trans_list.addItem(transactions_paging.nothing_found(oldest_year, self._jump, team_name))
+        for t in rows:
+            parts = [p for p in [t.get('date'), t.get('team'), t.get('description') or t.get('player')] if p]
             self.trans_list.addItem(" — ".join(parts))
-        self.load_more_btn.setEnabled(has_more)
-        if self.current_page == 1 and self.trans_list.count() > 0:
+        for text in below:
+            self.trans_list.addItem(text)
+        if self._cursor is None and rows:
+            self.trans_list.addItem(transactions_paging.end_text(team_name))
+        self.load_more_btn.setEnabled(self._cursor is not None)
+
+        if first:
             self.trans_list.setCurrentRow(0)
             _take_focus_after_load(self.trans_list)
+            return
+        if not rows:
+            announce(" ".join(above + below) or transactions_paging.nothing_older(oldest_year, team_name))
+            return
+        # The first new row is current: read at once from Down Arrow, and where Shift+Tab
+        # lands from Load More.
+        on_list = self.trans_list.hasFocus()
+        self.trans_list.setCurrentRow(start)
+        if not on_list:
+            announce(f"{len(rows)} more transactions loaded.")
 
-    def _on_error(self, error, loading_item):
-        row = self.trans_list.row(loading_item)
-        if row >= 0:
-            self.trans_list.takeItem(row)
-        if self.current_page > 1:
-            # Load More failed. What's there stays, and pressing it again asks for the same page.
-            self.current_page -= 1
+    def _on_error(self, error, loading_item, generation):
+        if generation != self._generation:
+            return
+        self._loading = False
+        self._take_out(loading_item)
+        if not self._first_load:
+            # Loading more failed. What's there stays, and asking again asks for the same.
             self.load_more_btn.setEnabled(True)
             announce(error)
             return
@@ -9913,6 +10066,19 @@ class TransactionsDialog(QDialog):
         self.trans_list.addItem(error)
         self.trans_list.setCurrentRow(0)
         _take_focus_after_load(self.trans_list)
+
+    # ------------------------------------------------------------ Go to Month
+
+    def _go_to_month(self):
+        year, month = self._now()
+        months = transactions_paging.months_back(year, month)
+        dialog = MonthPickerDialog(f"{self.league} Transactions", months, self._jump or (year, month), self)
+        if dialog.exec() != QDialog.DialogCode.Accepted:
+            return
+        chosen = dialog.selected_month()
+        if chosen:
+            self._jump = None if chosen == (year, month) else chosen
+            self._restart()
 
     def keyPressEvent(self, event):
         if event.key() == Qt.Key.Key_Escape:
@@ -9925,7 +10091,7 @@ class TransactionsDialog(QDialog):
                 self._teams_retried = True
                 self._load_teams()
             if self._load_failed:
-                self._load_transactions(reset=True)
+                self._restart()
             return
         super().keyPressEvent(event)
 

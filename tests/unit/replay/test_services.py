@@ -49,6 +49,7 @@ class TestApiService:
         ("get_stat_glossary", "get_stat_glossary", ("NFL",)),
         ("get_rankings", "get_rankings", ("NCAAF",)),
         ("get_transactions", "get_transactions", ("NFL", "9", 5, 2)),
+        ("get_transactions_from", "get_transactions_from", ("NFL", {"year": 2025, "month": 9, "page": 1}, "9")),
         ("get_team_info", "get_team_info", ("NFL", "9")),
         ("get_team_roster", "get_team_roster", ("NFL", "9")),
         ("get_team_news", "get_team_news", ("NFL", "9", 5)),

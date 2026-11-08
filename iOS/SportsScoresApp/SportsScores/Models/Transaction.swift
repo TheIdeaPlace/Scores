@@ -7,33 +7,90 @@ import Foundation
 
 // MARK: - Transactions list response
 
-struct TransactionResponse: Codable {
-    let season: TransactionSeason?
+/// One /transactions answer. An empty one has no `transactions` at all, and a soccer team's is
+/// `{"in": [...], "out": [...]}`; both read here, as transactions_paging.transaction_items does.
+struct TransactionResponse: Decodable {
     let count: Int
-    let pageIndex: Int
-    let pageSize: Int
     let pageCount: Int
     let transactions: [TransactionItem]
+
+    enum CodingKeys: String, CodingKey { case count, pageCount, transactions }
+
+    private struct InAndOut: Decodable {
+        let items: [TransactionItem]
+        enum CodingKeys: String, CodingKey { case incoming = "in", outgoing = "out" }
+        init(from decoder: Decoder) throws {
+            let container = try decoder.container(keyedBy: CodingKeys.self)
+            items = (container.lossyArray(forKey: .incoming) ?? []) + (container.lossyArray(forKey: .outgoing) ?? [])
+        }
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        count = (try? container.decodeIfPresent(Int.self, forKey: .count)) ?? 0
+        pageCount = (try? container.decodeIfPresent(Int.self, forKey: .pageCount)) ?? 0
+        if container.contains(.transactions), try container.decodeNil(forKey: .transactions) {
+            // A null where the list belongs isn't an answer, as on Windows.
+            throw DecodingError.valueNotFound([TransactionItem].self, .init(
+                codingPath: [CodingKeys.transactions], debugDescription: "transactions is null"))
+        }
+        if let list: [TransactionItem] = container.lossyArray(forKey: .transactions) {
+            transactions = list
+        } else if let inAndOut = try? container.decodeIfPresent(InAndOut.self, forKey: .transactions) {
+            transactions = inAndOut.items
+        } else {
+            transactions = []
+        }
+    }
 }
 
-struct TransactionSeason: Codable {
-    let year: Int
-    let type: Int?
-    let displayName: String
-}
-
-struct TransactionItem: Codable, Identifiable {
+struct TransactionItem: Decodable, Identifiable {
     /// Synthetic stable id — team id + date + first 40 chars of description
     var id: String { "\(team.id)-\(dateString)-\(description.prefix(40))" }
 
     let dateString: String
+    /// ESPN's description, or for a soccer transfer, who moved where (TransactionPaging.describe).
     let description: String
+    /// A team-filtered list leaves the team off; then it has an empty id and abbreviation.
     let team: TransactionTeam
 
     enum CodingKeys: String, CodingKey {
         case dateString = "date"
-        case description
-        case team
+        case description, team, athlete, from, to, type, amount, currency
+    }
+
+    private struct Named: Decodable { let displayName: String? }
+    private struct Currency: Decodable { let code: String?; let sign: String? }
+
+    static let noTeam = TransactionTeam(id: "", location: nil, name: nil, abbreviation: "", displayName: "",
+                                        color: nil, logos: nil)
+
+    init(dateString: String, description: String, team: TransactionTeam) {
+        self.dateString = dateString
+        self.description = description
+        self.team = team
+    }
+
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        dateString = (try? c.decodeIfPresent(String.self, forKey: .dateString)) ?? ""
+        team = (try? c.decodeIfPresent(TransactionTeam.self, forKey: .team)) ?? Self.noTeam
+        let currency = try? c.decodeIfPresent(Currency.self, forKey: .currency)
+        description = TransactionPaging.describe(
+            description: try? c.decodeIfPresent(String.self, forKey: .description),
+            athlete: (try? c.decodeIfPresent(Named.self, forKey: .athlete))?.displayName,
+            from: (try? c.decodeIfPresent(Named.self, forKey: .from))?.displayName,
+            to: (try? c.decodeIfPresent(Named.self, forKey: .to))?.displayName,
+            type: try? c.decodeIfPresent(String.self, forKey: .type),
+            amount: c.lenientNumber(forKey: .amount),
+            currencyCode: currency?.code,
+            currencySign: currency?.sign)
+    }
+
+    /// The same transaction shown under a team that the list was filtered to.
+    func withTeam(_ filterTeam: TransactionTeam?) -> TransactionItem {
+        guard team.id.isEmpty, let filterTeam else { return self }
+        return TransactionItem(dateString: dateString, description: description, team: filterTeam)
     }
 }
 

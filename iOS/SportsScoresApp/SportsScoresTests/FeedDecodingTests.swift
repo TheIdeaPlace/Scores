@@ -2127,7 +2127,8 @@ final class RequestShapeTests: XCTestCase {
 
     /// ESPN's scoreboard answers `dates=START-END` with a 400 since September 2026. That
     /// broke the week arrows and the World Cup bracket, and nothing noticed until a bug
-    /// bash (#70). Transactions is a different endpoint and still takes a range.
+    /// bash (#70). Transactions is a different endpoint and still takes a range of up to a
+    /// year; its range is built in TransactionPaging (Models), held to the shared grid.
     func testNoScoreboardRequestUsesADateRange() throws {
         let services = Fixtures.repoRoot.appendingPathComponent("iOS/SportsScoresApp/SportsScores/Services")
         let files = try FileManager.default.contentsOfDirectory(at: services, includingPropertiesForKeys: nil)
@@ -2136,6 +2137,9 @@ final class RequestShapeTests: XCTestCase {
         // Only sees ranges written in the URL, such as dates=\(a)-\(fmt.string(from: b)). A
         // range built up in a variable first can't be caught by reading the source.
         let range = try NSRegularExpression(pattern: #"dates=\\\(.*\)-\\\("#)
+        let sample = #"urlString += "&dates=\(range.start)-\(range.end)""#
+        XCTAssertNotNil(range.firstMatch(in: sample, range: NSRange(sample.startIndex..., in: sample)),
+                        "the pattern should still find a range written in a URL, or it finds nothing")
         var ranges = 0
         for file in files {
             let lines = try String(contentsOf: file, encoding: .utf8).components(separatedBy: .newlines)
@@ -2146,7 +2150,7 @@ final class RequestShapeTests: XCTestCase {
                 XCTAssertTrue(context.contains("/transactions"), "\(file.lastPathComponent):\(index + 1): \(line)")
             }
         }
-        XCTAssertEqual(ranges, 1, "the pattern should still find the one in fetchTransactions, or it finds nothing")
+        XCTAssertEqual(ranges, 0)
     }
 }
 

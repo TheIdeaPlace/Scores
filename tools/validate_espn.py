@@ -1342,15 +1342,30 @@ def check_transactions(http, report, league):
     else:
         report.fail(league.key, "Transactions", "no transactions key", url)
     if league.key == "NFL":
-        # The iPhone filters these by date. Unlike the scoreboard, this still takes a range.
+        # Go to Month, on both apps, asks for January 1 to a month's end (transactions_paging).
+        # Unlike the scoreboard, this still takes a range.
         today = date.today()
         url = (f"{SITE}/{league.path}/transactions?limit=1&dates="
-               f"{(today - timedelta(days=30)).strftime('%Y%m%d')}-{today.strftime('%Y%m%d')}")
+               f"{today.year}0101-{today.strftime('%Y%m%d')}")
         status, _ = http.get(url)
         if status == 200:
-            report.ok(league.key, "Transactions by date (iPhone)", "takes a date range", url)
+            report.ok(league.key, "Transactions by month (Go to Month)", "takes a date range", url)
         else:
-            report.fail(league.key, "Transactions by date (iPhone)", f"got {status}, so the date filter is broken", url)
+            report.fail(league.key, "Transactions by month (Go to Month)",
+                        f"got {status}, so Go to Month is broken", url)
+        # The running list walks back a calendar year at a time with season=Y, newest first.
+        year = today.year - 1
+        url = f"{SITE}/{league.path}/transactions?limit=5&season={year}"
+        status, data = http.get(url)
+        items = data.get("transactions") if isinstance(data, dict) else None
+        dates = [item.get("date") or "" for item in items or [] if isinstance(item, dict)]
+        if status != 200 or not dates:
+            report.fail(league.key, "Transactions by year", f"got {status} with {len(dates)} items", url)
+        elif not all(d.startswith(str(year)) for d in dates) or dates != sorted(dates, reverse=True):
+            report.fail(league.key, "Transactions by year",
+                        f"season={year} isn't that calendar year newest first: {dates[0]} .. {dates[-1]}", url)
+        else:
+            report.ok(league.key, "Transactions by year", f"season={year} is that year, newest first", url)
 
 
 def check_statistics(http, report, league, event, in_season):

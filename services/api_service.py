@@ -113,6 +113,11 @@ class ApiService:
         return ApiService._call(espn_api.get_transactions, league, team_id, limit, page)
 
     @staticmethod
+    def get_transactions_from(league: str, cursor: Dict, team_id: str = None) -> Dict:
+        """One load of the Transactions screen: {"rows", "next", "oldest_year"}."""
+        return ApiService._call(espn_api.get_transactions_from, league, cursor, team_id)
+
+    @staticmethod
     def get_team_info(league: str, team_id: str) -> Dict:
         return ApiService._call(espn_api.get_team_info, league, team_id)
 

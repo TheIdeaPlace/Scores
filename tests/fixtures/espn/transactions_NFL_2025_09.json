@@ -1,0 +1,56 @@
+{
+ "timestamp": "2026-11-08T00:31:52Z",
+ "status": "success",
+ "season": {
+  "year": 2026,
+  "type": 2,
+  "name": "Regular Season",
+  "displayName": "2026"
+ },
+ "requestedYear": {
+  "year": 2025,
+  "displayName": "2025"
+ },
+ "count": 1825,
+ "pageIndex": 1,
+ "pageSize": 3,
+ "pageCount": 609,
+ "transactions": [
+  {
+   "date": "2025-09-30T07:00Z",
+   "description": "Signed P Mitch Wishnowsky to the active roster. Placed P Cameron Johnston on injured reserve.",
+   "team": {
+    "id": "2",
+    "location": "Buffalo",
+    "name": "Bills",
+    "abbreviation": "BUF",
+    "displayName": "Buffalo Bills",
+    "color": "00338d"
+   }
+  },
+  {
+   "date": "2025-09-30T07:00Z",
+   "description": "Signed WRs Malachi Corley and Gage Larvadain to the active roster from the practice squad. Placed WR Cedric Tillman on injured reserve. Waived CB Cameron Mitchell. Signed CB Ameer Speed to the practice squad.",
+   "team": {
+    "id": "5",
+    "location": "Cleveland",
+    "name": "Browns",
+    "abbreviation": "CLE",
+    "displayName": "Cleveland Browns",
+    "color": "472a08"
+   }
+  },
+  {
+   "date": "2025-09-30T07:00Z",
+   "description": "Signed WR Parris Campbell to the practice squad.",
+   "team": {
+    "id": "6",
+    "location": "Dallas",
+    "name": "Cowboys",
+    "abbreviation": "DAL",
+    "displayName": "Dallas Cowboys",
+    "color": "002a5c"
+   }
+  }
+ ]
+}

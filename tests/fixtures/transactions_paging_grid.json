@@ -1,0 +1,146 @@
+{
+  "about": "How the Transactions screen walks ESPN's /transactions. transactions_paging.py (tests/unit/test_transactions_paging_grid.py) and the iPhone's TransactionPaging.swift (TransactionPagingGridTests.swift) are both held to it. A cursor's month is null once the list has gone past the year jumped to.",
+  "earliest_year": 2001,
+  "page_size": 50,
+  "whole_year_page_size": 200,
+  "max_requests_per_load": 6,
+  "labels": [
+    {"year": 2003, "month": 3, "label": "March 2003"},
+    {"year": 2026, "month": 11, "label": "November 2026"},
+    {"year": 2001, "month": 1, "label": "January 2001"},
+    {"year": 2024, "month": 12, "label": "December 2024"}
+  ],
+  "months_back": [
+    {"today": [2026, 11], "count": 311, "first": [[2026, 11], [2026, 10], [2026, 9]], "last": [[2001, 2], [2001, 1]], "around_new_year": [[2026, 1], [2025, 12]]},
+    {"today": [2001, 1], "count": 1, "first": [[2001, 1]], "last": [[2001, 1]], "around_new_year": null},
+    {"today": [2027, 1], "count": 313, "first": [[2027, 1], [2026, 12]], "last": [[2001, 1]], "around_new_year": [[2027, 1], [2026, 12]]}
+  ],
+  "start": [
+    {"name": "no jump is now", "today": [2026, 11], "jump": null, "cursor": {"year": 2026, "month": null, "page": 1}},
+    {"name": "this month is now", "today": [2026, 11], "jump": [2026, 11], "cursor": {"year": 2026, "month": null, "page": 1}},
+    {"name": "a later month is now", "today": [2026, 11], "jump": [2027, 2], "cursor": {"year": 2026, "month": null, "page": 1}},
+    {"name": "earlier this year", "today": [2026, 11], "jump": [2026, 3], "cursor": {"year": 2026, "month": 3, "page": 1}},
+    {"name": "a past year", "today": [2026, 11], "jump": [2003, 3], "cursor": {"year": 2003, "month": 3, "page": 1}},
+    {"name": "the earliest month", "today": [2026, 11], "jump": [2001, 1], "cursor": {"year": 2001, "month": 1, "page": 1}},
+    {"name": "before 2001 is January 2001", "today": [2026, 11], "jump": [1998, 6], "cursor": {"year": 2001, "month": 1, "page": 1}}
+  ],
+  "requests": [
+    {"name": "now, league-wide", "league": "football/nfl", "team": null, "cursor": {"year": 2026, "month": null, "page": 1},
+     "params": {"limit": "50", "page": "1", "season": "2026"}},
+    {"name": "now, page 3", "league": "baseball/mlb", "team": null, "cursor": {"year": 2026, "month": null, "page": 3},
+     "params": {"limit": "50", "page": "3", "season": "2026"}},
+    {"name": "a jump asks from January to the month's end", "league": "football/nfl", "team": null, "cursor": {"year": 2025, "month": 9, "page": 1},
+     "params": {"limit": "50", "page": "1", "dates": "20250101-20250930"}},
+    {"name": "February in a leap year", "league": "basketball/nba", "team": null, "cursor": {"year": 2024, "month": 2, "page": 2},
+     "params": {"limit": "50", "page": "2", "dates": "20240101-20240229"}},
+    {"name": "February in another year", "league": "hockey/nhl", "team": null, "cursor": {"year": 2023, "month": 2, "page": 1},
+     "params": {"limit": "50", "page": "1", "dates": "20230101-20230228"}},
+    {"name": "a team ignores dates, so it asks for the year", "league": "football/nfl", "team": "9", "cursor": {"year": 2025, "month": 9, "page": 1},
+     "params": {"limit": "50", "page": "1", "season": "2025", "team": "9"}},
+    {"name": "a team, now", "league": "football/nfl", "team": "9", "cursor": {"year": 2026, "month": null, "page": 2},
+     "params": {"limit": "50", "page": "2", "season": "2026", "team": "9"}},
+    {"name": "soccer asks for its whole year", "league": "soccer/usa.1", "team": null, "cursor": {"year": 2025, "month": null, "page": 1},
+     "params": {"limit": "200", "page": "1", "season": "2025"}},
+    {"name": "soccer ignores dates, so a jump asks for the year", "league": "soccer/eng.1", "team": null, "cursor": {"year": 2024, "month": 3, "page": 1},
+     "params": {"limit": "200", "page": "1", "season": "2024"}},
+    {"name": "a soccer team", "league": "soccer/eng.1", "team": "359", "cursor": {"year": 2024, "month": null, "page": 1},
+     "params": {"limit": "200", "page": "1", "season": "2024", "team": "359"}}
+  ],
+  "keeps": [
+    {"name": "in the year", "cursor": {"year": 2026, "month": null, "page": 1}, "date": "2026-11-02T08:00Z", "keeps": true},
+    {"name": "the year before", "cursor": {"year": 2026, "month": null, "page": 1}, "date": "2025-12-31T08:00Z", "keeps": false},
+    {"name": "the year after", "cursor": {"year": 2025, "month": null, "page": 1}, "date": "2026-01-01T08:00Z", "keeps": false},
+    {"name": "the month's last day", "cursor": {"year": 2025, "month": 9, "page": 1}, "date": "2025-09-30T07:00Z", "keeps": true},
+    {"name": "the next month's first day, from a range's edge", "cursor": {"year": 2025, "month": 9, "page": 1}, "date": "2025-10-01T07:00Z", "keeps": false},
+    {"name": "earlier in the year jumped to", "cursor": {"year": 2025, "month": 9, "page": 1}, "date": "2025-01-01T08:00Z", "keeps": true},
+    {"name": "February 29", "cursor": {"year": 2024, "month": 2, "page": 1}, "date": "2024-02-29T08:00Z", "keeps": true},
+    {"name": "March 1 after a leap February", "cursor": {"year": 2024, "month": 2, "page": 1}, "date": "2024-03-01T08:00Z", "keeps": false},
+    {"name": "a plain date", "cursor": {"year": 2024, "month": null, "page": 1}, "date": "2024-06-01", "keeps": true},
+    {"name": "no date is kept", "cursor": {"year": 2024, "month": 2, "page": 1}, "date": "", "keeps": true},
+    {"name": "a date that can't be read is kept", "cursor": {"year": 2024, "month": 2, "page": 1}, "date": "bad-date-here", "keeps": true},
+    {"name": "a null date is kept", "cursor": {"year": 2024, "month": 2, "page": 1}, "date": null, "keeps": true}
+  ],
+  "newest_first": [
+    {"name": "already newest first", "dates": ["2026-11-07T08:00Z", "2026-11-06T08:00Z", "2026-11-02T08:00Z"], "order": [0, 1, 2]},
+    {"name": "soccer comes oldest first", "dates": ["2025-01-01T08:00Z", "2025-01-03T08:00Z", "2025-02-10T08:00Z"], "order": [2, 1, 0]},
+    {"name": "one day keeps ESPN's order", "dates": ["2025-01-01T08:00Z", "2025-01-03T08:00Z", "2025-01-03T08:00Z", "2025-01-01T08:00Z"], "order": [1, 2, 0, 3]},
+    {"name": "no date goes last", "dates": ["", "2025-01-03T08:00Z", null, "bad-date-here", "2025-01-04T08:00Z"], "order": [4, 1, 0, 2, 3]},
+    {"name": "nothing", "dates": [], "order": []}
+  ],
+  "next": [
+    {"name": "the next page", "cursor": {"year": 2026, "month": null, "page": 1}, "has_more": true, "next": {"year": 2026, "month": null, "page": 2}},
+    {"name": "a jump's next page stays in its month", "cursor": {"year": 2025, "month": 9, "page": 3}, "has_more": true, "next": {"year": 2025, "month": 9, "page": 4}},
+    {"name": "the year before, from its newest", "cursor": {"year": 2026, "month": null, "page": 42}, "has_more": false, "next": {"year": 2025, "month": null, "page": 1}},
+    {"name": "past a jump's year, whole years", "cursor": {"year": 2025, "month": 9, "page": 6}, "has_more": false, "next": {"year": 2024, "month": null, "page": 1}},
+    {"name": "2002 goes on to 2001", "cursor": {"year": 2002, "month": null, "page": 11}, "has_more": false, "next": {"year": 2001, "month": null, "page": 1}},
+    {"name": "nothing before 2001", "cursor": {"year": 2001, "month": null, "page": 11}, "has_more": false, "next": null},
+    {"name": "2001 still has pages", "cursor": {"year": 2001, "month": 3, "page": 1}, "has_more": true, "next": {"year": 2001, "month": 3, "page": 2}}
+  ],
+  "jump_notice": [
+    {"name": "the month has some", "jump": [2025, 9], "team": null, "dates": ["2025-09-30T07:00Z", "2025-09-29T07:00Z"], "text": null},
+    {"name": "the month has none", "jump": [2003, 3], "team": null, "dates": ["2003-02-27T08:00Z", "2003-02-20T08:00Z"], "text": "No transactions in March 2003. Older ones follow."},
+    {"name": "a team's month has none", "jump": [2003, 3], "team": "Chicago Bears", "dates": ["2002-12-27T08:00Z"], "text": "No Chicago Bears transactions in March 2003. Older ones follow."},
+    {"name": "only one in the month, further down", "jump": [2024, 7], "team": null, "dates": ["2024-08-01T07:00Z", "2024-07-31T07:00Z"], "text": null},
+    {"name": "nothing found is said another way", "jump": [2003, 3], "team": null, "dates": [], "text": null}
+  ],
+  "nothing_found": [
+    {"name": "now", "oldest_year": 2022, "jump": null, "team": null, "text": "No transactions since January 2022."},
+    {"name": "now, a team", "oldest_year": 2024, "jump": null, "team": "Chicago Bears", "text": "No Chicago Bears transactions since January 2024."},
+    {"name": "a jump, back several years", "oldest_year": 2001, "jump": [2003, 3], "team": null, "text": "No transactions from January 2001 to March 2003."},
+    {"name": "a jump within its year", "oldest_year": 2003, "jump": [2003, 3], "team": null, "text": "No transactions from January 2003 to March 2003."},
+    {"name": "January jumped to and nothing before", "oldest_year": 2001, "jump": [2001, 1], "team": "Chicago Bears", "text": "No Chicago Bears transactions in January 2001."}
+  ],
+  "after_no_answer": [
+    {"cursor": {"year": 2003, "month": null, "page": 11}, "next": {"year": 2002, "month": null, "page": 1}},
+    {"cursor": {"year": 2003, "month": 3, "page": 1}, "next": {"year": 2002, "month": null, "page": 1}},
+    {"cursor": {"year": 2001, "month": null, "page": 4}, "next": null}
+  ],
+  "skipped_text": [
+    {"year": 2003, "team": null, "text": "ESPN couldn't provide some of 2003's transactions, so the list goes on with 2002."},
+    {"year": 2010, "team": "Chicago Bears", "text": "ESPN couldn't provide some of 2010's Chicago Bears transactions, so the list goes on with 2009."},
+    {"year": 2001, "team": null, "text": "ESPN couldn't provide some of 2001's transactions."}
+  ],
+  "nothing_older": [
+    {"oldest_year": 2017, "team": null, "text": "No older transactions found back to January 2017."},
+    {"oldest_year": 2004, "team": "Arsenal", "text": "No older Arsenal transactions found back to January 2004."}
+  ],
+  "end_text": [
+    {"team": null, "text": "No older transactions. The list goes back to January 2001."},
+    {"team": "Chicago Bears", "text": "No older Chicago Bears transactions. The list goes back to January 2001."}
+  ],
+  "load_continues": [
+    {"name": "found some, done", "league": "football/nfl", "found": 50, "requests": 1, "cursor": {"year": 2026, "month": null, "page": 1}, "following": {"year": 2026, "month": null, "page": 2}, "continues": false},
+    {"name": "found none, ask again", "league": "football/nfl", "found": 0, "requests": 1, "cursor": {"year": 2025, "month": 9, "page": 1}, "following": {"year": 2025, "month": 9, "page": 2}, "continues": true},
+    {"name": "found none, on to the year before", "league": "football/college-football", "found": 0, "requests": 2, "cursor": {"year": 2025, "month": null, "page": 1}, "following": {"year": 2024, "month": null, "page": 1}, "continues": true},
+    {"name": "found none, but that's the limit", "league": "football/college-football", "found": 0, "requests": 6, "cursor": {"year": 2022, "month": null, "page": 1}, "following": {"year": 2021, "month": null, "page": 1}, "continues": false},
+    {"name": "found none, and nothing older", "league": "football/nfl", "found": 0, "requests": 1, "cursor": {"year": 2001, "month": null, "page": 1}, "following": null, "continues": false},
+    {"name": "soccer finishes its year", "league": "soccer/eng.1", "found": 200, "requests": 1, "cursor": {"year": 2025, "month": null, "page": 1}, "following": {"year": 2025, "month": null, "page": 2}, "continues": true},
+    {"name": "soccer's year is done", "league": "soccer/eng.1", "found": 611, "requests": 2, "cursor": {"year": 2025, "month": null, "page": 2}, "following": {"year": 2024, "month": null, "page": 1}, "continues": false},
+    {"name": "a skip after finding some stops, so its notice goes below them", "league": "football/nfl", "found": 450, "requests": 2, "cursor": {"year": 2003, "month": null, "page": 11}, "following": {"year": 2002, "month": null, "page": 1}, "continues": false},
+    {"name": "a soccer skip mid-year stops too", "league": "soccer/eng.1", "found": 200, "requests": 2, "cursor": {"year": 2025, "month": null, "page": 2}, "following": {"year": 2024, "month": null, "page": 1}, "continues": false},
+    {"name": "soccer stops at the limit too", "league": "soccer/eng.1", "found": 10, "requests": 6, "cursor": {"year": 2025, "month": null, "page": 5}, "following": {"year": 2025, "month": null, "page": 6}, "continues": false}
+  ],
+  "transaction_items": [
+    {"name": "a list", "listed": [{"description": "a"}, {"description": "b"}], "descriptions": ["a", "b"]},
+    {"name": "a soccer team's in, then out", "listed": {"in": [{"description": "in 1"}], "out": [{"description": "out 1"}, {"description": "out 2"}]}, "descriptions": ["in 1", "out 1", "out 2"]},
+    {"name": "a side missing", "listed": {"out": [{"description": "out 1"}]}, "descriptions": ["out 1"]},
+    {"name": "not items are left out", "listed": [{"description": "a"}, "text", null, 4], "descriptions": ["a"]},
+    {"name": "not a list or a team's in and out", "listed": "text", "descriptions": []}
+  ],
+  "describe": [
+    {"name": "a description", "item": {"description": "  Waived RB Audric Estime. ", "team": {"id": "5", "abbreviation": "CLE", "displayName": "Cleveland Browns"}}, "text": "Waived RB Audric Estime."},
+    {"name": "a transfer, fee undisclosed", "item": {"athlete": {"displayName": "Josh Robinson"}, "from": {"displayName": "Arsenal"}, "to": {"displayName": "Wigan Athletic"}, "type": "Undisclosed", "amount": 0.0, "displayAmount": "Undisclosed"}, "text": "Josh Robinson joins Wigan Athletic from Arsenal for an undisclosed fee."},
+    {"name": "a loan", "item": {"athlete": {"displayName": "Marquinhos"}, "from": {"displayName": "Arsenal"}, "to": {"displayName": "Cruzeiro"}, "type": "Loan", "amount": 0.0, "displayAmount": "Loan"}, "text": "Marquinhos joins Cruzeiro from Arsenal on loan."},
+    {"name": "a free transfer", "item": {"athlete": {"displayName": "Sergio Santos"}, "from": {"displayName": "Unattached"}, "to": {"displayName": "Houston Dynamo FC"}, "type": "Free", "amount": 0.0, "displayAmount": "Free"}, "text": "Sergio Santos joins Houston Dynamo FC from Unattached on a free transfer."},
+    {"name": "a fee in dollars", "item": {"athlete": {"displayName": "Someone"}, "from": {"displayName": "LA Galaxy"}, "to": {"displayName": "CF Montréal"}, "type": "Fee", "amount": 650000.0, "displayAmount": "650000", "currency": {"name": "United States Dollar", "sign": "$", "code": "USD"}}, "text": "Someone joins CF Montréal from LA Galaxy for 650,000 USD."},
+    {"name": "a fee with only a sign", "item": {"athlete": {"displayName": "Someone"}, "from": {"displayName": "A"}, "to": {"displayName": "B"}, "type": "Fee", "amount": 1250000, "currency": {"sign": "£"}}, "text": "Someone joins B from A for £1,250,000."},
+    {"name": "a fee of nothing", "item": {"athlete": {"displayName": "Someone"}, "from": {"displayName": "A"}, "to": {"displayName": "B"}, "type": "Fee", "amount": 0}, "text": "Someone joins B from A for a fee."},
+    {"name": "a swap", "item": {"athlete": {"displayName": "Someone"}, "from": {"displayName": "A"}, "to": {"displayName": "B"}, "type": "Swap"}, "text": "Someone joins B from A in a swap."},
+    {"name": "a type it doesn't know", "item": {"athlete": {"displayName": "Someone"}, "from": {"displayName": "A"}, "to": {"displayName": "B"}, "type": "Retired"}, "text": "Someone joins B from A."},
+    {"name": "only where they went", "item": {"athlete": {"displayName": "Someone"}, "to": {"displayName": "B"}}, "text": "Someone joins B."},
+    {"name": "only where they left", "item": {"athlete": {"displayName": "Someone"}, "from": {"displayName": "A"}, "type": "Loan"}, "text": "Someone leaves A on loan."},
+    {"name": "no name", "item": {"from": {"displayName": "A"}, "to": {"displayName": "B"}, "type": "Free"}, "text": "A player joins B from A on a free transfer."},
+    {"name": "an empty description falls through", "item": {"description": "", "athlete": {"displayName": "Someone"}, "to": {"displayName": "B"}}, "text": "Someone joins B."},
+    {"name": "nothing", "item": {"date": "2025-01-01T08:00Z"}, "text": ""}
+  ]
+}

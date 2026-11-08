@@ -1,0 +1,103 @@
+{
+ "timestamp": "2026-11-08T00:33:51Z",
+ "status": "success",
+ "season": {
+  "year": 2026,
+  "type": 14308,
+  "name": "2026-27 English Premier League",
+  "displayName": "2026-27 English Premier League"
+ },
+ "requestedYear": {
+  "year": 2025,
+  "displayName": "2025"
+ },
+ "team": {
+  "id": "359",
+  "abbreviation": "ARS",
+  "location": "Arsenal",
+  "name": "Arsenal",
+  "displayName": "Arsenal",
+  "color": "e20520",
+  "recordSummary": "9-0-1",
+  "seasonSummary": "2026-27",
+  "standingSummary": "1st in English Premier League",
+  "isNational": false
+ },
+ "count": 24,
+ "pageIndex": 1,
+ "pageSize": 3,
+ "pageCount": 8,
+ "transactions": {
+  "in": [],
+  "out": [
+   {
+    "date": "2025-01-01T08:00Z",
+    "athlete": {
+     "id": "354851",
+     "firstName": "Josh",
+     "lastName": "Robinson",
+     "displayName": "Josh Robinson",
+     "jersey": "47"
+    },
+    "from": {
+     "id": "359",
+     "abbreviation": "ARS",
+     "displayName": "Arsenal"
+    },
+    "to": {
+     "id": "350",
+     "abbreviation": "WGA",
+     "displayName": "Wigan Athletic"
+    },
+    "type": "Undisclosed",
+    "amount": 0.0,
+    "displayAmount": "Undisclosed"
+   },
+   {
+    "date": "2025-01-09T08:00Z",
+    "athlete": {
+     "id": "297070",
+     "firstName": "Marquinhos",
+     "displayName": "Marquinhos",
+     "jersey": "77"
+    },
+    "from": {
+     "id": "359",
+     "abbreviation": "ARS",
+     "displayName": "Arsenal"
+    },
+    "to": {
+     "id": "2022",
+     "abbreviation": "CRU",
+     "displayName": "Cruzeiro"
+    },
+    "type": "Loan",
+    "amount": 0.0,
+    "displayAmount": "Loan"
+   },
+   {
+    "date": "2025-02-01T08:00Z",
+    "athlete": {
+     "id": "356044",
+     "firstName": "Ayden",
+     "lastName": "Heaven",
+     "displayName": "Ayden Heaven",
+     "jersey": "26"
+    },
+    "from": {
+     "id": "359",
+     "abbreviation": "ARS",
+     "displayName": "Arsenal"
+    },
+    "to": {
+     "id": "360",
+     "abbreviation": "MAN",
+     "displayName": "Manchester United"
+    },
+    "type": "Undisclosed",
+    "amount": 0.0,
+    "displayAmount": "Undisclosed"
+   }
+  ]
+ }
+}

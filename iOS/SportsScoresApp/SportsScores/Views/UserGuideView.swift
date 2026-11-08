@@ -183,7 +183,8 @@ struct UserGuideView: View {
                     Text("**Transaction Hub**")
                         .fontWeight(.semibold)
                         .padding(.top, 8)
-                    Text("Browse player moves, signings, and releases by sport and team.")
+                    Text("Browse player moves, signings, and releases by sport and team, as one list, newest first. Older ones load as you scroll, back to January 2001, and the list says when there are no more. Soccer's are transfers, such as \"Marquinhos joins Cruzeiro from Arsenal on loan.\"")
+                    Text("**Jump to Month**, at the top, picks a month and year: the list then starts at the end of that month and keeps going older from there. If that month had none, the first line says so. **Newest** goes back to the latest. Where ESPN can't provide part of a year, the list says so and goes on with the year before.")
                 }
 
                 // MARK: Settings
