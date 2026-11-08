@@ -18,6 +18,7 @@ from exceptions import ApiError
 from models.standings import StandingsData
 from services.api_service import ApiService
 import soccer
+import team_list
 from team_stats import ranking_rows
 
 from .support import EMPTY_JSON, HTTP_404, HTTP_500, NOT_JSON, TIMEOUT, FakeResponse, load
@@ -176,20 +177,24 @@ class TestTableCells:
 
 
 class TestTeams:
-    def test_a_league_with_a_table_is_one_request_with_its_records(self, espn):
+    def test_a_league_with_a_table_has_its_records(self, espn):
         espn.on("/standings", load("standings_EPL.json"))
-        headers, ordered, rows = soccer.soccer_teams_table(ApiService.get_soccer_teams("EPL"))
+        espn.on("/eng.1/teams", load("teams_EPL.json"))
+        teams = ApiService.get_teams("EPL")
+        # The table is 4 of the 20 and the list 3 of them, Arsenal in both: the table's rows.
+        in_table = [team for team in teams if "table_rank" in team]
+        headers, ordered, rows = soccer.soccer_teams_table(in_table)
         assert headers == soccer.SOCCER_TEAM_HEADERS
         assert rows[0] == ["Arsenal", "9", "8", "0", "1", "24"]
         assert ordered[0]["team_id"] == "359"
-        assert len(espn.calls) == 1
+        assert sum(team["team_id"] == "359" for team in teams) == 1
 
     def test_a_cup_with_no_table_still_has_its_teams_by_name(self, espn):
         espn.on("/standings", load("standings_CONCACAF.json"))
         espn.on("/concacaf.champions/teams", load("teams_CONCACAF.json"))
-        teams = ApiService.get_soccer_teams("CONCACAF")
+        teams = ApiService.get_teams("CONCACAF")
         assert len(teams) == 3
-        assert {team["division"] for team in teams} == {soccer.TEAMS_WITH_NO_GROUP}
+        assert {team["division"] for team in teams} == {team_list.TEAMS_WITH_NO_GROUP}
         assert all(team["team_id"] for team in teams)
         headers, ordered, rows = soccer.soccer_teams_table(teams)
         assert headers == soccer.TEAM_NAME_ONLY_HEADERS
@@ -201,12 +206,12 @@ class TestTeams:
         espn.on("/standings", load("standings_CONCACAF.json"))
         espn.on("/teams", reply)
         with pytest.raises(ApiError, match="ESPN isn't providing teams right now"):
-            ApiService.get_soccer_teams("CONCACAF")
+            ApiService.get_teams("CONCACAF")
 
     def test_nothing_in_the_team_list_is_nothing(self, espn):
         espn.on("/standings", load("standings_CONCACAF.json"))
         espn.on("/teams", EMPTY_JSON)
-        assert ApiService.get_soccer_teams("CONCACAF") == []
+        assert ApiService.get_teams("CONCACAF") == []
 
 
 def test_a_competition_with_no_table_says_it_plainly():
@@ -542,8 +547,3 @@ class TestSharedGrid:
 def test_a_reference_that_is_not_text_is_no_reference():
     assert soccer._secure(None) == ""
     assert soccer._secure("https://espn.example/a") == "https://espn.example/a"
-
-
-def test_a_team_list_with_no_leagues_is_no_teams():
-    assert soccer.parse_team_list({}) == []
-    assert soccer.parse_team_list({"sports": [{"leagues": []}]}) == []

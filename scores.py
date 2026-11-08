@@ -74,6 +74,7 @@ from accessible_table import AccessibleTable, StandingsTable, WildCardTable, Lea
 from tab_keys import group_noun
 from box_score import build_box_tables
 from soccer import SOCCER_LEAGUES, TEAM_NAME_ONLY_HEADERS, no_table_message, soccer_teams_table
+from team_list import OTHER_TEAMS, RECORDS_UNAVAILABLE, TEAMS_WITH_NO_GROUP, has_records
 from team_stats import RANKING_HEADERS, ranking_rows, team_stat_lists
 from drive_results import (
     FG as DRIVE_FG, TD as DRIVE_TD,
@@ -2492,28 +2493,23 @@ class LeagueView(BaseView):
             if self.parent_app:
                 self.parent_app.update_window_title(["Teams", self.league])
             
-            fetch = ApiService.get_soccer_teams if self.league in SOCCER_LEAGUES else ApiService.get_standings
-            self._fetch_then("Teams", lambda: fetch(self.league), self._open_teams_dialog)
+            self._fetch_then("Teams", lambda: ApiService.get_teams(self.league), self._open_teams_dialog)
         except Exception as e:
             QMessageBox.critical(self, "Error", f"Failed to show teams: {_said(e)}")
             if self.parent_app:
                 self.parent_app.update_window_title(self._title_items())
 
-    def _open_teams_dialog(self, standings_data):
+    def _open_teams_dialog(self, teams):
         try:
-            if not standings_data:
-                QMessageBox.information(self, "Teams", 
+            if not teams:
+                QMessageBox.information(self, "Teams",
                                       f"No teams data available for {self.league}.")
                 # Restore original title
                 if self.parent_app:
                     self.parent_app.update_window_title(self._title_items())
                 return
-            
-            # Filter data by league to avoid MLB/NFL mixing
-            filtered_data = [team for team in standings_data 
-                           if self._is_team_for_league(team, self.league)]
-            
-            dialog = SimpleTeamsDialog(filtered_data, self.league, self)
+
+            dialog = SimpleTeamsDialog(teams, self.league, self)
             dialog.exec()
             
             # Restore original title when dialog closes
@@ -2668,17 +2664,6 @@ class LeagueView(BaseView):
         except Exception as e:
             QMessageBox.critical(self, "Error", f"Failed to show bowls & playoffs: {_said(e)}")
 
-    def _is_team_for_league(self, team_data: Dict, league: str) -> bool:
-        """Check if team belongs to the specified league"""
-        team_name = team_data.get('team_name', '')
-        logo_url = team_data.get('logo', '')
-        
-        if league == "MLB":
-            return '/mlb/' in logo_url
-        elif league == "NFL":
-            return '/nfl/' in logo_url
-        return True  # Default to include if uncertain
-    
     def previous_day(self):
         """Navigate to previous day"""
         self.current_date -= timedelta(days=1)
@@ -9844,8 +9829,7 @@ class TransactionsDialog(QDialog):
         self.setLayout(layout)
 
     def _load_teams(self):
-        # Not StandingsLoader, whose error signal also carries a league having no standings.
-        loader = CallLoader(lambda: ApiService.get_standings(self.league))
+        loader = CallLoader(lambda: ApiService.get_teams(self.league))
         loader.data_loaded.connect(self._on_teams_loaded)
         loader.error_occurred.connect(self._on_teams_failed)
         self._loaders.append(loader)
@@ -9857,10 +9841,10 @@ class TransactionsDialog(QDialog):
         self._teams_retried = False
         announce(TEAMS_UNAVAILABLE)
 
-    def _on_teams_loaded(self, standings_data):
+    def _on_teams_loaded(self, rows):
         teams = sorted(
             {(t.get('team_name', ''), t.get('team_id', ''))
-             for t in standings_data or [] if t.get('team_name') and t.get('team_id')},
+             for t in rows or [] if t.get('team_name') and t.get('team_id')},
             key=lambda x: x[0],
         )
         self.team_combo.blockSignals(True)
@@ -12332,7 +12316,10 @@ class SimpleTeamsDialog(QDialog):
         self.league = league
         # A soccer table can be last season's until the new one has teams, and these are its records.
         season = next((team.get("season") for team in teams_data if team.get("season")), None)
-        self.setWindowTitle(f"{league} Teams - {season}" if season else f"{league} Teams")
+        # The standings failed and the team list didn't: the teams, and a word on why no records.
+        self.records_unavailable = any(team.get("records_unavailable") for team in teams_data)
+        title = f"{league} Teams - {season}" if season else f"{league} Teams"
+        self.setWindowTitle(f"{title} - records unavailable" if self.records_unavailable else title)
         self.resize(800, 500)  # Room for a table with several columns.
         self.setup_ui()
         _focus_once_active(self, lambda: _focus_first_table(self))
@@ -12416,8 +12403,8 @@ class SimpleTeamsDialog(QDialog):
             accessible_description=f"Teams in {division_name} with wins, losses, and other statistics"
         )
 
-        if self.league in SOCCER_LEAGUES:
-            self._fill_soccer_teams(teams_table, teams, division_name)
+        if self.league in SOCCER_LEAGUES or not has_records(teams):
+            self._fill_by_table_or_name(teams_table, teams, division_name)
             layout.addWidget(teams_table)
             widget.setLayout(layout)
             widget.teams_table = teams_table
@@ -12504,14 +12491,26 @@ class SimpleTeamsDialog(QDialog):
         
         self.tab_widget.addTab(widget, division_name)
     
-    def _fill_soccer_teams(self, teams_table, teams, division_name):
-        """Draws and points rather than a win percentage, which leaves the draws out. Enter opens
-        the team from any cell of its row, and each cell says whose row it's on. A cup's team list
-        has only names, and its one group has no name worth saying."""
+    def _fill_by_table_or_name(self, teams_table, teams, division_name):
+        """A soccer table's draws and points rather than a win percentage, which leaves the draws
+        out. Enter opens the team from any cell of its row, and each cell says whose row it's on.
+        Teams from the team list alone, with no standings row, have only names: a cup with no
+        table, a league between seasons, or teams its standings leave out. Their one group, when
+        it's the only one, has no name worth saying."""
         headers, ordered, rows = soccer_teams_table(teams)
         if headers == TEAM_NAME_ONLY_HEADERS:
-            teams_table.update_accessible_name(f"{self.league} Teams")
-            teams_table.update_accessible_description(f"Teams in {self.league}. Press Enter on one to open it")
+            if division_name == OTHER_TEAMS:
+                teams_table.update_accessible_name(f"{self.league} {OTHER_TEAMS}")
+                said = "Teams not in the standings, with no record to show. Press Enter on one to open it"
+            elif self.records_unavailable:
+                teams_table.update_accessible_name(f"{self.league} Teams")
+                said = f"Teams in {self.league}. {RECORDS_UNAVAILABLE} Press Enter on one to open it"
+            else:
+                if division_name == TEAMS_WITH_NO_GROUP:
+                    teams_table.update_accessible_name(f"{self.league} Teams")
+                where = self.league if division_name == TEAMS_WITH_NO_GROUP else division_name
+                said = f"Teams in {where}, with no record to show. Press Enter on one to open it"
+            teams_table.update_accessible_description(said)
         else:
             teams_table.update_accessible_description(
                 f"Teams in {division_name} with games played, wins, draws, losses and points. Press Enter on one to open it")
@@ -13112,8 +13111,8 @@ class SportsScoresApp(QWidget):
         except Exception as e:
             QMessageBox.critical(self, "Error", f"Failed to open standings for {league}: {_said(e)}")
 
-    def _fetch_standings_then(self, league: str, title: str, show):
-        """Fetch standings on a thread, then show(data) here.
+    def _load_then(self, fetch, title: str, show):
+        """Fetch on a thread, then show(data) here.
 
         Used by the --<sport>-teams / --<sport>-standings startup actions, which
         fetched on the UI thread before their dialog appeared.
@@ -13123,36 +13122,32 @@ class SportsScoresApp(QWidget):
                 show(data)
             except Exception as e:
                 QMessageBox.critical(self, "Error", f"Failed to show {title}: {_said(e)}")
-        loader = CallLoader(lambda: ApiService.get_standings(league))
+        loader = CallLoader(fetch)
         loader.data_loaded.connect(loaded)
         loader.error_occurred.connect(lambda e: QMessageBox.warning(self, title.title(), e))
         _start_detached_thread(loader)
 
     def _show_teams_dialog_directly(self, league: str):
         """Show teams dialog directly without being in a league view"""
-        self._fetch_standings_then(
-            league, "teams", lambda data: self._open_teams_dialog_directly(league, data))
+        self._load_then(lambda: ApiService.get_teams(league), "teams",
+                         lambda data: self._open_teams_dialog_directly(league, data))
 
-    def _open_teams_dialog_directly(self, league: str, standings_data):
+    def _open_teams_dialog_directly(self, league: str, teams):
         try:
-            if not standings_data:
-                QMessageBox.information(self, "Teams", 
+            if not teams:
+                QMessageBox.information(self, "Teams",
                                       f"No teams data available for {league}.")
                 return
-            
-            # Filter data by league to avoid mixing
-            filtered_data = [team for team in standings_data 
-                           if self._is_team_for_league(team, league)]
-            
-            dialog = SimpleTeamsDialog(filtered_data, league, self)
+
+            dialog = SimpleTeamsDialog(teams, league, self)
             dialog.exec()
         except Exception as e:
             QMessageBox.critical(self, "Error", f"Failed to show teams: {_said(e)}")
 
     def _show_standings_dialog_directly(self, league: str):
         """Show standings dialog directly without being in a league view"""
-        self._fetch_standings_then(
-            league, "standings", lambda data: self._open_standings_dialog_directly(league, data))
+        self._load_then(lambda: ApiService.get_standings(league), "standings",
+                        lambda data: self._open_standings_dialog_directly(league, data))
 
     def _open_standings_dialog_directly(self, league: str, standings_data):
         try:
@@ -13165,26 +13160,6 @@ class SportsScoresApp(QWidget):
             dialog.exec()
         except Exception as e:
             QMessageBox.critical(self, "Error", f"Failed to show standings: {_said(e)}")
-
-    def _is_team_for_league(self, team_data: Dict, league: str) -> bool:
-        """Check if team belongs to the specified league"""
-        # This is a helper method that should already exist in LeagueView
-        # We'll implement a simple version here
-        try:
-            # Look for league indicators in team data
-            team_league = team_data.get('league', {}).get('abbreviation', '').upper()
-            if team_league == league:
-                return True
-            
-            # Fallback: check parent group info
-            parent = team_data.get('parent', {})
-            if parent:
-                parent_name = parent.get('name', '').upper()
-                return league in parent_name
-            
-            return True  # Default to include if we can't determine
-        except:
-            return True  # Default to include on error
 
     def update_window_title(self, context_items=None):
         """Update window title with breadcrumb-style context for accessibility

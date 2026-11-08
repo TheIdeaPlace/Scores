@@ -1412,8 +1412,13 @@ final class ConferenceListTests: XCTestCase {
         XCTAssertFalse(try groups("standings_NCAAM.json").isEmpty)
     }
 
-    func testEntriesAtTheRootAreLeftToTheFallback() throws {
-        XCTAssertEqual(try groups("standings_NCAAWH.json").count, 0)
+    /// Women's college hockey has no conferences, only entries at the root: one group, named
+    /// for the league, as Windows's Teams has it. Its team list has Division III schools and
+    /// programs that no longer play, so there's no falling back to that.
+    func testEntriesAtTheRootAreOneGroupNamedForTheLeague() throws {
+        let hockey = try groups("standings_NCAAWH.json")
+        XCTAssertEqual(hockey.map(\.name), ["NCAA Women's Hockey"])
+        XCTAssertEqual(hockey.first?.teams.count, 3)
     }
 
     func testOneBadTeamCostsOnlyThatTeam() throws {
@@ -1498,19 +1503,81 @@ final class TeamListRequestTests: XCTestCase {
 
     func testOtherSportsAskTheTeamListForEveryTeam() async throws {
         let service = StubbedESPN.service([try everyTeam()])
-        let teams = try await service.fetchTeamsForSport(sport: .ncaam)
+        let teams = try await service.fetchTeamsForSport(sport: .ncaawb)
         XCTAssertEqual(teams.count, 3)
         XCTAssertEqual(StubbedESPN.requested.count, 1)
-        XCTAssertTrue(StubbedESPN.requested[0].hasSuffix("/basketball/mens-college-basketball/teams?limit=1000"),
+        XCTAssertTrue(StubbedESPN.requested[0].hasSuffix("/basketball/womens-college-basketball/teams?limit=1000"),
                       StubbedESPN.requested[0])
+    }
+
+    /// Men's college basketball's team list is every division, cut off at 1,000 teams
+    /// (`teams_NCAAM_all.json` is five of them, Williams of Division III among them).
+    func testMensCollegeBasketballAsksItsStandingsNotTheCutOffList() async throws {
+        let service = StubbedESPN.service([("/standings", 500, Data()),
+                                           ("/teams", 200, try Fixtures.data("teams_NCAAM_all.json"))])
+        do {
+            let teams = try await service.fetchTeamsForSport(sport: .ncaam)
+            XCTFail("Expected an error, got \(teams.map(\.displayName))")
+        } catch {
+            XCTAssertEqual(StubbedESPN.requested.count, 1, "\(StubbedESPN.requested)")
+            XCTAssertTrue(StubbedESPN.requested[0].hasSuffix("/basketball/mens-college-basketball/standings"),
+                          StubbedESPN.requested[0])
+        }
+    }
+
+    /// The success path. The NCAAM standings fixture has 6 teams, under the 20 that
+    /// fetchConferencesWithTeams trusts, so this serves the real 26-team group=90 standings
+    /// answer, which has the same shape, at men's college basketball's address.
+    func testMensCollegeBasketballListsTheTeamsInItsStandings() async throws {
+        let body = try Fixtures.data("standings_NCAAF_group90.json")
+        let service = StubbedESPN.service([("/mens-college-basketball/standings", 200, body),
+                                           ("/teams", 200, try Fixtures.data("teams_NCAAM_all.json"))])
+        let teams = try await service.fetchTeamsForSport(sport: .ncaam)
+        XCTAssertEqual(teams.count, 26)
+        XCTAssertFalse(teams.contains { $0.displayName == "Williams Ephs" })
+        XCTAssertEqual(StubbedESPN.requested.count, 1, "\(StubbedESPN.requested)")
+        XCTAssertTrue(StubbedESPN.requested[0].hasSuffix("/basketball/mens-college-basketball/standings"),
+                      StubbedESPN.requested[0])
+    }
+
+    func testMensCollegeHockeyAsksItsStandingsNotTheListWithDivisionThree() async throws {
+        let service = StubbedESPN.service([("/standings", 500, Data()),
+                                           ("/teams", 200, try Fixtures.data("teams_NCAAH.json"))])
+        do {
+            let teams = try await service.fetchTeamsForSport(sport: .ncaah)
+            XCTFail("Expected an error, got \(teams.map(\.displayName))")
+        } catch {
+            XCTAssertEqual(StubbedESPN.requested.count, 1, "\(StubbedESPN.requested)")
+            XCTAssertTrue(StubbedESPN.requested[0].hasSuffix("/hockey/mens-college-hockey/standings"),
+                          StubbedESPN.requested[0])
+        }
     }
 
     func testAFailedTeamListIsAnError() async throws {
         let service = StubbedESPN.service([("/teams", 500, Data())])
         do {
-            _ = try await service.fetchTeamsForSport(sport: .ncaam)
+            _ = try await service.fetchTeamsForSport(sport: .ncaawb)
             XCTFail("Expected an error")
         } catch {}
+    }
+
+    /// tests/fixtures/team_list_sources.json, which team_list.py on Windows is held to.
+    func testWhichLeaguesListTheirTeamsFromTheStandings() throws {
+        struct Grid: Decodable {
+            let standings: [String]
+            let teamList: [String]
+        }
+        let url = Fixtures.repoRoot.appendingPathComponent("tests/fixtures/team_list_sources.json")
+        let grid = try JSONDecoder().decode(Grid.self, from: Data(contentsOf: url))
+        // allCases leaves soccer out: it has its own hub.
+        let sports = Sport.allCases + Sport.soccerLeagues
+        for (paths, fromStandings) in [(grid.standings, true), (grid.teamList, false)] {
+            for path in paths {
+                let sport = try XCTUnwrap(sports.first { $0.apiPath == path }, path)
+                XCTAssertEqual(sport.teamListFromStandings, fromStandings, path)
+            }
+        }
+        XCTAssertEqual(Set(sports.filter(\.teamListFromStandings).map(\.apiPath)), Set(grid.standings))
     }
 }
 

@@ -9,9 +9,10 @@ from game_labels import (best_odds, broadcast_names, format_height, format_weigh
                          injured_player_count, leader_display_value, local_schedule_datetime,
                          schedule_game_label)
 import golf
-from soccer import (NAME_UNAVAILABLE, SOCCER_LEAGUES, _stat_number, core_leader_lists, parse_soccer_standings,
-                    parse_team_list)
+from soccer import NAME_UNAVAILABLE, SOCCER_LEAGUES, _stat_number, core_leader_lists, parse_soccer_standings
 import stat_glossary
+from team_list import STANDINGS as TEAM_LIST_FROM_STANDINGS, parse_team_list, with_standings
+from team_list import source as team_list_source
 from team_stats import needs_team_list, parse_team_stats
 from timezone_utils import convert_espn_time_to_local
 
@@ -2431,12 +2432,9 @@ def _standings_or_nothing(league, path, query="", parse=parse_college_standings)
 TEAMS_UNAVAILABLE = "ESPN isn't providing teams right now. Try again in a minute."
 
 
-def get_soccer_teams(league_key):
-    """The rows for a soccer league's Teams section: its table's, with their records. A competition
-    with no table still has teams, from one request for the list of them."""
-    rows = get_standings(league_key)
-    if rows:
-        return rows
+def _team_list(league_key):
+    """A league's /teams?limit=1000 as rows, [] if ESPN answered with none. ESPN's list stops at
+    50 unless told otherwise, and college leagues run past that."""
     try:
         resp = _http_get(f"{BASE_URL}/{LEAGUES[league_key]}/teams", params={"limit": 1000}, timeout=20)
         if resp.status_code != 200:
@@ -2447,6 +2445,24 @@ def get_soccer_teams(league_key):
     except (requests.RequestException, ValueError) as e:
         print(f"Error in {league_key} teams: {e}")
         raise ApiError(TEAMS_UNAVAILABLE) from e
+
+
+def get_teams(league_key):
+    """Every team in a league, for the Teams screen and the Transactions team filter, as the
+    iPhone lists them: see team_list for where each league's come from.
+
+    A team in the standings is its standings row, with its division and record. The standings
+    failing doesn't lose the list: its teams come back with no group or record, each marked
+    `records_unavailable`, so the screen can say so rather than show them 0-0. The list failing,
+    or the standings where they are the list, raises ApiError."""
+    if team_list_source(LEAGUES[league_key]) == TEAM_LIST_FROM_STANDINGS:
+        return get_standings(league_key)
+    listed = _team_list(league_key)
+    try:
+        standings = get_standings(league_key)
+    except ApiError:
+        return [{**team, "records_unavailable": True} for team in listed]
+    return with_standings(listed, standings)
 
 
 def _get_ncaaf_standings_fast():

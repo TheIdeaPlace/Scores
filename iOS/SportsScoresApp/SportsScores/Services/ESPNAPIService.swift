@@ -1975,9 +1975,11 @@ class ESPNAPIService {
     /// College football's `/teams` is every team ESPN knows, 762 across all divisions, with
     /// nothing on a team to say which and no parameter to narrow it. Its standings are the one
     /// request that lists just the teams in the coverage setting, so if they fail this throws
-    /// rather than listing Division III to someone who chose FBS only.
+    /// rather than listing Division III to someone who chose FBS only. Men's college
+    /// basketball's `/teams` is every division too, cut off at 1,000 teams before some of
+    /// Division I, so it comes from its standings the same way: `Sport.teamListFromStandings`.
     func fetchTeamsForSport(sport: Sport) async throws -> [TransactionTeam] {
-        if sport == .ncaaf {
+        if sport.teamListFromStandings {
             let teams = try await fetchConferencesWithTeams(for: sport).flatMap(\.teams)
             guard !teams.isEmpty else { throw APIError.invalidResponse }
             return teams
