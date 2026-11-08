@@ -105,5 +105,9 @@ final class RadioLinksGridTests: XCTestCase {
         for entry in RadioLinks.directoryLeagues {
             XCTAssertTrue(bundled.covers(entry.league), entry.league)
         }
+        XCTAssertEqual(RadioLinks.directoryLeagues.first?.league, "MLB")
+        XCTAssertEqual(bundled.directory("MLB").count, 30)
+        let yankees = bundled.teamListenOptions("MLB", teamId: "10", teamName: "New York Yankees")
+        XCTAssertTrue(yankees.first?.label.hasPrefix("New York Yankees: ") ?? false)
     }
 }
