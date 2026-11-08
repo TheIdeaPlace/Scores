@@ -17,7 +17,7 @@ ROOT = os.path.join(os.path.dirname(__file__), "..", "..")
 # The files whose strings become rows, labels, buttons and announcements.
 SOURCES = ["scores.py", "espn_api.py", "game_labels.py", "accessible_table.py", "live_play_format.py"]
 
-MARKERS = re.compile(r"-{3,}|={3,}")
+MARKERS = re.compile(r"-{3,}|={3,}|>{2,}")
 # Emoji, pictographs, arrows, stars, check marks, triangles and bullets: all read by name.
 SYMBOLS = re.compile(
     "[\U0001F000-\U0001FFFF"   # emoji and pictographs
@@ -29,12 +29,11 @@ SYMBOLS = re.compile(
     "️]"                  # emoji presentation selector
 )
 
-# A disabled separator row on Home: drawn as a line, never focused or spoken by arrowing.
-BOX_RULE = "─"
-
 
 def _is_html(text):
-    """The wrap-up and exported game log are web pages, read in the browser, not the app."""
+    """The wrap-up and exported game log are web pages. A screen reader reads them in the
+    browser, so they're held to the symbols rule, but not to the markers one: CSS and
+    HTML comments are full of "---" that nobody hears."""
     return bool(re.search(r"<\s*/?\s*(div|h[1-6]|p|ul|li|span|br|html|body|style|table|tr|td)\b", text))
 
 
@@ -66,11 +65,7 @@ def _strings(path):
 def _problems(path):
     out = []
     for line, text in _strings(path):
-        if _is_html(text):
-            continue
-        if MARKERS.search(text):
-            out.append((line, text))
-        elif SYMBOLS.search(text.replace(BOX_RULE, "")):
+        if SYMBOLS.search(text) or (MARKERS.search(text) and not _is_html(text)):
             out.append((line, text))
     return out
 
@@ -86,7 +81,8 @@ def test_no_markers_or_emoji_in_spoken_strings(name):
 
 
 def test_the_check_finds_what_it_is_for(tmp_path):
-    """The guard itself: each of the old offenders is caught, and a web page isn't."""
+    """The guard itself: each of the old offenders is caught, emoji in a web page too, but
+    not a web page's comment dashes or plain words."""
     sample = tmp_path / "sample.py"
     sample.write_text(
         'a = "--- News Headlines ---"\n'
@@ -96,8 +92,9 @@ def test_the_check_finds_what_it_is_for(tmp_path):
         'e = "Next Day ▶"\n'
         'f = "• fact"\n'
         'g = "<h2 class=\\"t\\">\U0001f3af Scoring Summary</h2>"\n'
-        'h = "─" * 30\n'
-        'i = "Standings"\n',
+        'h = f">> {text}"\n'
+        'i = "Standings"\n'
+        'j = "<div><!-- ---- --></div>"\n',
         encoding="utf-8")
     lines = sorted({line for line, _ in _problems(str(sample))})
-    assert lines == [1, 2, 3, 4, 5, 6]
+    assert lines == [1, 2, 3, 4, 5, 6, 7, 8]

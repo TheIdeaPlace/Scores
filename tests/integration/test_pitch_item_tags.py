@@ -179,7 +179,10 @@ class TestMlbTreeTags:
         host = Host("MLB")
         tree = mlb_tree(host)
         rows = list(walk(tree))
-        substitutions = [item for item, _ in rows if item.text(0).startswith(">> ")]
+        # Told by their tag: their text is ESPN's own words, with no ">>" in front any more.
+        substitutions = [item for item, _ in rows
+                         if (item.data(0, Qt.ItemDataRole.UserRole) or {}).get("is_substitution")]
+        assert not any(item.text(0).startswith(">") for item in substitutions)
         # Inning 8 has a pinch hitter and a relief change.
         assert any("hit for" in item.text(0) for item in substitutions)
         assert any("relieved" in item.text(0) for item in substitutions)

@@ -870,12 +870,8 @@ class HomeView(BaseView):
         live_scores_item = QListWidgetItem("Live Scores - All Sports")
         live_scores_item.setData(Qt.ItemDataRole.UserRole, "__live_scores__")
         self.league_list.addItem(live_scores_item)
-        
-        # Add separator
-        separator_item = QListWidgetItem("─" * 30)
-        separator_item.setFlags(Qt.ItemFlag.NoItemFlags)  # Make it non-selectable
-        self.league_list.addItem(separator_item)
-        
+        # No separator row: a screen reader counted it ("2 of 24") and read it in a list read.
+
         # Load leagues with error handling
         leagues = ApiService.get_leagues()
         if not leagues:
@@ -1006,10 +1002,6 @@ class HomeView(BaseView):
         live_scores_item.setData(Qt.ItemDataRole.UserRole, "__live_scores__")
         self.league_list.addItem(live_scores_item)
 
-        separator_item = QListWidgetItem("─" * 30)
-        separator_item.setFlags(Qt.ItemFlag.NoItemFlags)
-        self.league_list.addItem(separator_item)
-
         leagues = ApiService.get_leagues()
         if not leagues:
             self._show_api_error("Failed to load leagues")
@@ -1038,10 +1030,6 @@ class HomeView(BaseView):
         racing_item = QListWidgetItem("Racing - F1, IndyCar, NASCAR")
         racing_item.setData(Qt.ItemDataRole.UserRole, "__racing__")
         self.league_list.addItem(racing_item)
-
-        footer_sep = QListWidgetItem("─" * 30)
-        footer_sep.setFlags(Qt.ItemFlag.NoItemFlags)
-        self.league_list.addItem(footer_sep)
 
         guide_item = QListWidgetItem("User Guide")
         guide_item.setData(Qt.ItemDataRole.UserRole, "__user_guide__")
@@ -4983,7 +4971,10 @@ class GameDetailsView(BaseView):
             for cp in change_plays:
                 text = cp.get("text", "").strip()
                 if text:
-                    chg_item = QTreeWidgetItem([f">> {text}"])
+                    # ESPN's own words ("Pinch hitter ... replaces ..."); a ">>" in front was
+                    # decoration a screen reader can read as "greater greater".
+                    chg_item = QTreeWidgetItem([text])
+                    chg_item.setData(0, Qt.ItemDataRole.UserRole, {"is_substitution": True})
                     chg_item.setBackground(0, QColor(255, 235, 200))  # light orange
                     parent_item.addChild(chg_item)
 
@@ -6323,7 +6314,7 @@ class GameDetailsView(BaseView):
             </div>
         </div>
         <div class="game-info">
-            {self._format_game_date(game_date)} • {venue.get('fullName', '')}
+            {self._format_game_date(game_date)}, {venue.get('fullName', '')}
             <br>{status.get('type', {}).get('description', 'Final')}
         </div>
     </div>
