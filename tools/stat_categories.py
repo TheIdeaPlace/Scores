@@ -134,8 +134,8 @@ WRITTEN_DEFINITIONS = {
                              "ice at even strength or shorthanded.",
 }
 
-# /leaders and the stat feeds name some stats differently. The iPhone has the basketball ones as
-# playerStatAliases in ESPNAPIService.swift, for its definitions.
+# /leaders and the stat feeds name some stats differently. Both apps' definitions go by
+# stat_glossary.LEADER_STATS (StatGlossary.swift on the iPhone), which has each leader's category too.
 LEADER_ALIASES = {
     "pointsPerGame": "avgPoints", "assistsPerGame": "avgAssists", "reboundsPerGame": "avgRebounds",
     "stealsPerGame": "avgSteals", "blocksPerGame": "avgBlocks", "turnoversPerGame": "avgTurnovers",

@@ -159,8 +159,9 @@ def _category_title(block, section):
 
 
 def parse_team_stats(data, sport, team_list=None):
-    """The categories of a byteam payload: {category, low_is_good, stats}, the team's own numbers
-    before its opponents'. Each of `stats` is a team: {team_name, team_id, stats, values}, with what
+    """The categories of a byteam payload: {category, low_is_good, keys, stats}, the team's own
+    numbers before its opponents'. `keys` has each stat title's `section.stat` (`opponent.section.stat`
+    for the opponents'), the key stat_glossary takes. Each of `stats` is a team: {team_name, team_id, stats, values}, with what
     to show and what to rank by, under the stat's name. A stat ESPN has no number for is left out,
     rather than ranking as a zero, unless it shows a zero: an NHL team that has yet to go to a
     shootout has "0" with a null. `team_list` is for college basketball: see qualified_teams."""
@@ -180,7 +181,7 @@ def parse_team_stats(data, sport, team_list=None):
             names, titles = columns.get(section, ((), ()))
             totals, values = _list(block.get("totals")), _list(block.get("values"))
             opponent = _is_opponent(block)
-            shown, numbers, directions = {}, {}, {}
+            shown, numbers, directions, keys = {}, {}, {}, {}
             # A few display names repeat within a section, and the later stat is the one to use:
             # NBA "Assist To Turnover Ratio" reads 27.4, then the real 1.8.
             for index, (name, title) in enumerate(zip(names, titles)):
@@ -192,13 +193,16 @@ def parse_team_stats(data, sport, team_list=None):
                     title = titles_for_sport.get(f"{section}.{name}", title)
                     shown[title], numbers[title] = str(total), value
                     directions[title] = low_is_good(sport, section, name, opponent)
+                    keys[title] = f"{'opponent.' if opponent else ''}{section}.{name}"
             if not shown:
                 continue
             categories = opponents if opponent else own
+            # `keys` is each title's stat as byteam names it, for stat_glossary's definitions.
             category = categories.setdefault(section, {"category": _category_title(block, section),
-                                                       "low_is_good": [], "stats": []})
+                                                       "low_is_good": [], "keys": {}, "stats": []})
             category["low_is_good"] += [title for title, low in directions.items()
                                         if low and title not in category["low_is_good"]]
+            category["keys"].update(keys)
             category["stats"].append({"team_name": team_name, "team_id": str(info.get("id") or ""),
                                       "stats": shown, "values": numbers})
     return list(own.values()) + list(opponents.values())
@@ -235,6 +239,7 @@ def team_stat_lists(team_stats):
                      "displayValue": team["stats"][title]}
                     for team in category.get("stats", []) if title in team.get("values", {})]
             lists.append({"name": f"{title} ({name})", "category": name, "stat_name": title,
+                          "key": category.get("keys", {}).get(title),
                           "data": rank_teams(rows, title in category.get("low_is_good", ())), "type": "team"})
     return lists
 

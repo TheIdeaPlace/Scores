@@ -4,20 +4,21 @@ Every league's teams come from ESPN's team list, `/teams?limit=1000`, as on the 
 where that list can't say which teams are the league's. College football's is every team ESPN
 knows, 762 across all divisions, with nothing on a team to tell them apart, and its standings are
 the one request that follows the coverage setting. Men's college basketball's is every division
-too, over 1,000 teams and cut off at 1,000, with Division I teams such as NJIT past the cut. Both
-come from their standings. Women's college basketball's list is Division I alone.
+too, over 1,000 teams and cut off at 1,000, with Division I teams such as NJIT past the cut. College
+hockey's, men's and women's, has Division III schools and programs that no longer play. All of these
+come from their standings, Division I alone. Women's college basketball's list is Division I alone.
 
 The standings still give the Teams screen its divisions and conferences and each team's record.
-A team on the list and not in the standings, such as in a preseason or for a college team with no
-conference table, is still listed, under OTHER_TEAMS, or under TEAMS_WITH_NO_GROUP if there are no
-standings at all. A team in the standings and not on the list stays too: college hockey's list
-has left out a team its standings have.
+A team on the list and not in the standings, such as in a preseason, is still listed, under
+OTHER_TEAMS, or under TEAMS_WITH_NO_GROUP if there are no standings at all. A team in the standings
+and not on the list stays too, and one school under two ids is listed once, by its name.
 
 tests/fixtures/team_list_sources.json holds both apps to which leagues come from where.
 """
 
 # ESPN league paths whose team list is their standings'.
-FROM_STANDINGS = frozenset({"football/college-football", "basketball/mens-college-basketball"})
+FROM_STANDINGS = frozenset({"football/college-football", "basketball/mens-college-basketball",
+                            "hockey/mens-college-hockey", "hockey/womens-college-hockey"})
 
 STANDINGS = "standings"
 TEAM_LIST = "teams"

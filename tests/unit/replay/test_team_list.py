@@ -140,13 +140,21 @@ class TestGetTeams:
             ApiService.get_teams("MLB")
         assert str(caught.value) == espn_api.TEAMS_UNAVAILABLE
 
-    def test_college_hockey_lists_the_teams_its_standings_leave_out(self, espn):
+    def test_mens_college_hockey_is_its_standings_not_the_list_with_division_three(self, espn):
         espn.on("/mens-college-hockey/standings", load("standings_NCAAH.json"))
         espn.on("/mens-college-hockey/teams", load("teams_NCAAH.json"))
         teams = ApiService.get_teams("NCAAH")
-        williams = next(team for team in teams if team["team_name"] == "Williams Ephs")
-        assert williams["division"] == team_list.OTHER_TEAMS
-        assert sum(team["team_name"] == "Michigan State Spartans" for team in teams) == 1
+        assert teams == espn_api.parse_college_standings(load("standings_NCAAH.json"))
+        assert len(teams) == 6
+        assert not any(team["team_name"] == "Williams Ephs" for team in teams)
+        assert not espn.urls("/teams")
+
+    def test_womens_college_hockey_is_its_standings_with_no_conferences(self, espn):
+        espn.on("/womens-college-hockey/standings", load("standings_NCAAWH.json"))
+        teams = ApiService.get_teams("NCAAWH")
+        assert len(teams) == 3
+        assert {team["division"] for team in teams} == {"NCAA Women's Hockey"}
+        assert not espn.urls("/teams")
 
     def test_womens_college_basketball_is_its_division_one_team_list(self, espn):
         espn.on("/womens-college-basketball/standings", load("standings_NCAAWB.json"))
@@ -176,7 +184,7 @@ class TestGetTeams:
         assert not espn.urls("/teams")
         assert not any(team["team_name"] == "Williams Ephs" for team in teams)
 
-    @pytest.mark.parametrize("league", ["NCAAF", "NCAAM"])
+    @pytest.mark.parametrize("league", ["NCAAF", "NCAAM", "NCAAH", "NCAAWH"])
     def test_standings_that_fail_where_they_are_the_list_say_so(self, espn, league):
         espn.on("/standings", HTTP_500)
         with pytest.raises(ApiError) as caught:

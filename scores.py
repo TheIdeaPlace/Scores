@@ -55,8 +55,9 @@ except ImportError:
 
 # New separated modules
 from exceptions import ApiError, DataModelError, plain_message
-from espn_api import (NCAAF_CONFERENCE_ORDER, TEAMS_UNAVAILABLE, live_scores_failure_text, standings_cache_key,
-                      stop_core_lookups, with_failed_leagues_kept)
+from espn_api import (NCAAF_CONFERENCE_ORDER, TEAMS_UNAVAILABLE, league_sport, live_scores_failure_text,
+                      standings_cache_key, stop_core_lookups, with_failed_leagues_kept)
+import stat_glossary
 from services.api_service import ApiService
 from services.venue_service import venue_service, venue_summary
 from models.game import GameData
@@ -73,7 +74,12 @@ from box_score import build_box_tables
 from soccer import SOCCER_LEAGUES, TEAM_NAME_ONLY_HEADERS, no_table_message, soccer_teams_table
 from team_list import OTHER_TEAMS, RECORDS_UNAVAILABLE, TEAMS_WITH_NO_GROUP, has_records
 from team_stats import RANKING_HEADERS, ranking_rows, team_stat_lists
-from game_labels import scoreboard_today, on_todays_scoreboard, basketball_period_label, football_period_label, football_period_sort_key, game_standings_tables, schedule_row_text, schedule_start_row
+from drive_results import (
+    FG as DRIVE_FG, TD as DRIVE_TD,
+    chronological_drives, drive_badge, drive_results, summary_teams,
+)
+from postseason import PLAYOFF_ROUNDS, game_headline, heading_text, postseason_sections
+from game_labels import scoreboard_today, on_todays_scoreboard, basketball_period_label, football_period_label, football_period_sort_key, game_standings_tables, schedule_row_text, schedule_start_row, team_record_text
 
 # Text processing utilities
 try:
@@ -180,13 +186,6 @@ def get_pitch_location(horizontal: int, vertical: int, batter_side: str = None) 
         return location  # Already includes height
     else:
         return f"{height_desc} {location}"
-
-def _int_or_none(value):
-    try:
-        return int(value)
-    except (TypeError, ValueError):
-        return None
-
 
 def _focus_once_active(dialog, set_focus):
     """Run `set_focus` once, after the dialog has opened and taken its first focus, so it
@@ -3787,22 +3786,73 @@ class GameDetailsView(BaseView):
     def _add_drives_list_to_layout(self, layout, drives_data):
         """Add NFL/NCAAF drives data to layout (Football-specific method)"""
         
+        teams = summary_teams(getattr(self, "current_raw_details", None))
+        away_team = teams.get("away", {})
+        home_team = teams.get("home", {})
+        team_names = {"away": away_team.get("name", ""), "home": home_team.get("name", "")}
+        scored = {}
+        # Without both teams the scorer can't be told from the side with the ball, so
+        # the badges fall back to ESPN's result, without points.
+        if away_team.get("id") and home_team.get("id"):
+            played = chronological_drives(drives_data)
+            scored = dict(zip(
+                (id(d) for d in played),
+                drive_results(played, away_team["id"], home_team["id"]),
+            ))
+
         def get_drive_result_info(drive):
             """Get scoring drive information with accessibility-compliant colors"""
-            result = drive.get('result', '').upper()
-            
+            result = (drive.get('result') or '').upper()
+
+            # Who scored and how many points, from the plays' scores: ESPN marks a
+            # return touchdown on the drive of the team that gave it up (#204).
+            score = scored.get(id(drive))
+            if score is not None and score.kind is not None:
+                other = "home" if score.scorer == "away" else "away"
+                badge = drive_badge(score, team_names.get(score.scorer, ""), team_names.get(other, ""))
+                if score.by_opponent:
+                    # The other team scored: a turnover for the team with the ball.
+                    scorer = team_names.get(score.scorer) or "The other team"
+                    return {
+                        'icon': '🔄',
+                        'badge': badge,
+                        'color': QColor(255, 140, 0, 60),
+                        'accessible_text': f"{scorer} scored on this drive",
+                    }
+                if score.kind == DRIVE_TD:
+                    return {
+                        'icon': '🏈',
+                        'badge': badge,
+                        'color': QColor(0, 100, 0, 80),
+                        'accessible_text': 'Touchdown scoring drive',
+                    }
+                if score.kind == DRIVE_FG:
+                    return {
+                        'icon': '🥅',
+                        'badge': badge,
+                        'color': QColor(0, 0, 139, 60),
+                        'accessible_text': 'Field goal scoring drive',
+                    }
+                return {
+                    'icon': '🛡️',
+                    'badge': badge,
+                    'color': QColor(128, 0, 128, 60),
+                    'accessible_text': 'Scoring drive',
+                }
+
             # WCAG AA compliant colors (4.5:1 contrast ratio minimum)
             if result == 'TD':
+                # ESPN says touchdown but the plays carry no score change.
                 return {
-                    'icon': '🏈', 
-                    'badge': 'TD 7pts', 
+                    'icon': '🏈',
+                    'badge': 'TD',
                     'color': QColor(0, 100, 0, 80),      # Dark green background
                     'accessible_text': 'Touchdown scoring drive'
                 }
             elif result == 'FG':
                 return {
-                    'icon': '🥅', 
-                    'badge': 'FG 3pts', 
+                    'icon': '🥅',
+                    'badge': 'FG',
                     'color': QColor(0, 0, 139, 60),      # Dark blue background
                     'accessible_text': 'Field goal scoring drive'
                 }
@@ -3843,8 +3893,8 @@ class GameDetailsView(BaseView):
                 }
             elif result == 'SAFETY':
                 return {
-                    'icon': '🛡️', 
-                    'badge': 'SAFETY 2pts', 
+                    'icon': '🛡️',
+                    'badge': 'SAFETY',
                     'color': QColor(128, 0, 128, 60),    # Purple background
                     'accessible_text': 'Safety scoring drive'
                 }
@@ -3944,16 +3994,31 @@ class GameDetailsView(BaseView):
             # Group by quarter
             if quarter not in quarter_groups:
                 quarter_groups[quarter] = []
-            
+
+            # Taken from the whole drive, before its kickoffs are split off.
+            result_info = get_drive_result_info(drive)
+            # A drive that is only a kickoff shows as the kickoff alone, so a kickoff
+            # run back for a touchdown says so there.
+            kickoff_label = "Kickoff"
+            score = scored.get(id(drive))
+            if not drive_plays and score is not None and score.kind is not None:
+                badge = result_info['badge']
+                # Kickoff rows carry no team, so name the scorer whichever drive ESPN
+                # filed the return on.
+                scorer = team_names.get(score.scorer, "")
+                if not score.by_opponent and scorer:
+                    badge = f"{scorer} {badge}"
+                kickoff_label = f"[{badge}] Kickoff"
+
             # Add kickoffs as separate entries
             for kickoff in kickoff_plays:
-                quarter_groups[quarter].append(("Kickoff", {"plays": [kickoff]}, "Special Teams", "Kickoff", True))
-            
+                quarter_groups[quarter].append((kickoff_label, {"plays": [kickoff]}, "Special Teams", "Kickoff", True, None))
+
             # Add regular drive if it has non-kickoff plays
             if drive_plays:
                 modified_drive = drive.copy()
                 modified_drive["plays"] = drive_plays
-                quarter_groups[quarter].append((drive_label, modified_drive, team_name, description, False))
+                quarter_groups[quarter].append((drive_label, modified_drive, team_name, description, False, result_info))
         
         # Build tree structure by quarter
         for quarter in sorted(quarter_groups.keys(), key=football_period_sort_key):
@@ -3962,10 +4027,10 @@ class GameDetailsView(BaseView):
             drives_tree.addTopLevelItem(quarter_item)
             
             drives_in_quarter = quarter_groups[quarter]
-            for drive_label, drive, team_name, description, is_kickoff in drives_in_quarter:
+            for drive_label, drive, team_name, description, is_kickoff, result_info in drives_in_quarter:
                 if is_kickoff:
                     # Create kickoff item directly under quarter
-                    kickoff_item = QTreeWidgetItem(["Kickoff"])
+                    kickoff_item = QTreeWidgetItem([drive_label])
                     kickoff_item.setBackground(0, QColor(240, 240, 255))  # Light blue
                     kickoff_item.setExpanded(False)
                     quarter_item.addChild(kickoff_item)
@@ -3985,9 +4050,6 @@ class GameDetailsView(BaseView):
                         play_item = QTreeWidgetItem([play_text])
                         kickoff_item.addChild(play_item)
                 else:
-                    # Create enhanced drive summary node with scoring information
-                    result_info = get_drive_result_info(drive)
-                    
                     # Build enhanced drive summary with scoring indicators
                     enhanced_summary = f"[{result_info['badge']}] {team_name}: {description}"
                     
@@ -8369,6 +8431,9 @@ class StatisticsLoader(QThread):
     """Loads a league's team or player statistics for StatisticsViewDialog."""
     data_loaded = pyqtSignal(dict)
     error_occurred = pyqtSignal(str)
+    # The player leaders' definitions (Alt+D), after the leaders, so they never wait for them: a
+    # dict, or None if they couldn't be had. Team statistics carry their own.
+    glossary_loaded = pyqtSignal(object)
 
     def __init__(self, league: str, stat_type: str):
         super().__init__()
@@ -8378,12 +8443,19 @@ class StatisticsLoader(QThread):
     def run(self):
         try:
             if self.stat_type == "player":
-                data = ApiService.get_player_statistics(self.league)
+                data = ApiService.get_player_statistics(self.league) or {}
             else:
                 data = ApiService.get_team_statistics(self.league)
             self.data_loaded.emit(data or {})
         except Exception as e:
             self.error_occurred.emit(_said(e))
+            return
+        if self.stat_type == "player" and data.get("player_stats"):
+            try:
+                glossary = ApiService.get_stat_glossary(self.league)
+            except ApiError:
+                glossary = None  # The definitions say they couldn't be had.
+            self.glossary_loaded.emit(glossary)
 
 
 class StandingsLoader(QThread):
@@ -8537,20 +8609,18 @@ class TeamHubDialog(QDialog):
         name_lbl.setAccessibleName(f"Team: {self.team_name}")
         header_layout.addWidget(name_lbl)
 
-        wins = self.team_data.get('wins', '')
-        losses = self.team_data.get('losses', '')
-        ties = self.team_data.get('ties', 0)
         rec_text = ""
         if self.league in SOCCER_LEAGUES:
             # Wins, draws, losses, as a soccer record reads everywhere else. A team with no
             # losses yet still has one. A cup's team list has none, and a game can say N/A.
             if self.team_data.get('record') not in (None, "", "N/A"):
                 rec_text = f"({self.team_data['record']})"
-        elif wins and losses:
-            if self.league == "NFL" and ties and int(ties) > 0:
-                rec_text = f"({wins}-{losses}-{ties})"
-            else:
-                rec_text = f"({wins}-{losses})"
+        else:
+            # 8-0 and 0-9 are records too (#203).
+            record = team_record_text(self.team_data.get('wins'), self.team_data.get('losses'),
+                                      self.team_data.get('ties'))
+            if record:
+                rec_text = f"({record})"
         if rec_text:
             rec_lbl = QLabel(rec_text)
             rec_lbl.setFont(font)
@@ -11637,6 +11707,9 @@ class StatisticsViewDialog(QDialog):
         self.statistics_data = None
         self.stat_pages = None
         self._stat_infos = []
+        # Until the statistics, and for players their definitions, have come or failed.
+        self._statistics_pending = True
+        self._glossary_pending = False
         print(f"DEBUG: About to call setup_ui")
         self.setup_ui()
         print(f"DEBUG: setup_ui completed")
@@ -11663,6 +11736,7 @@ class StatisticsViewDialog(QDialog):
         loader = StatisticsLoader(self.league, self.stat_type)
         loader.data_loaded.connect(self._on_statistics_loaded)
         loader.error_occurred.connect(self._on_statistics_error)
+        loader.glossary_loaded.connect(self._on_glossary_loaded)
         self._statistics_loader = loader
         _start_detached_thread(loader)
 
@@ -11689,11 +11763,16 @@ class StatisticsViewDialog(QDialog):
         self.stats_list.setFocus()
 
     def _on_statistics_error(self, message: str):
+        self._statistics_pending = False
         self._clear_loading_row()
         self._show_statistics_message(self._content_layout, f"Unable to load statistics: {message}")
         self._focus_stats_list()
 
     def _on_statistics_loaded(self, statistics_data: dict):
+        self._statistics_pending = False
+        # The loader asks for the leaders' definitions next, and says when it has them.
+        self._glossary_pending = self.stat_type == "player" and bool((statistics_data or {}).get("player_stats")) \
+            and "glossary" not in (statistics_data or {})
         self._clear_loading_row()
         season = (statistics_data or {}).get("season")
         if season:
@@ -11832,6 +11911,7 @@ class StatisticsViewDialog(QDialog):
                         'name': display_name,
                         'category': category_name,
                         'stat_name': stat_name,
+                        'key': category.get("key"),  # ESPN's, for its definition
                         'data': stats,
                         'type': 'player'
                     })
@@ -11843,120 +11923,63 @@ class StatisticsViewDialog(QDialog):
         print(f"DEBUG: Total available stats: {len(available_stats)}")
         return available_stats
     
+    def _on_glossary_loaded(self, glossary):
+        """The player leaders' definitions, a dict, or None if they couldn't be had."""
+        self._glossary_pending = False
+        if isinstance(self.statistics_data, dict):
+            self.statistics_data["glossary"] = glossary
+
     def _show_stat_definitions(self):
-        """Show statistics definitions dialog"""
-        definitions_dialog = StatDefinitionsDialog(self.league, self)
+        """ESPN's definitions of the statistics on screen, on the one the list is on."""
+        lines = stat_glossary.definition_lines(
+            self._stat_infos, (self.statistics_data or {}).get("glossary"), league_sport(self.league),
+            still_loading=self._statistics_pending or self._glossary_pending)
+        current = self.stat_pages.tabBar().currentRow() if self.stat_pages is not None else 0
+        definitions_dialog = StatDefinitionsDialog(self.league, self.stat_type, lines, self,
+                                                   current_row=current if len(lines) == len(self._stat_infos) else 0)
         definitions_dialog.exec()
 
 class StatDefinitionsDialog(QDialog):
-    """Dialog showing definitions of statistics for different leagues"""
-    
-    def __init__(self, league, parent=None):
+    """ESPN's definitions of the statistics a Statistics dialog shows, one line each."""
+
+    def __init__(self, league, stat_type, lines, parent=None, current_row=0):
         super().__init__(parent)
         self.league = league
-        self.setWindowTitle(f"{league} Statistics Definitions")
+        self.heading = f"{league} {stat_type.title()} Statistics Definitions"
+        self.setWindowTitle(self.heading)
         self.resize(600, 500)
-        self.setup_ui()
-    
-    def setup_ui(self):
+        self.setup_ui(lines, current_row)
+
+    def setup_ui(self, lines, current_row=0):
         layout = QVBoxLayout()
-        
+
         # Title
-        title = QLabel(f"{self.league} Statistics Definitions")
+        title = QLabel(self.heading)
         title.setStyleSheet("font-weight: bold; font-size: 14px;")
         layout.addWidget(title)
-        
+
         # Instructions
-        instructions = QLabel("Browse definitions for statistical categories:")
+        instructions = QLabel("ESPN's definitions of the statistics on this screen:")
         layout.addWidget(instructions)
-        
+
         # Definitions list
         self.definitions_list = QListWidget()
         self.definitions_list.setAccessibleName("Statistics Definitions")
-        
-        # Populate definitions
-        definitions = self._get_stat_definitions()
-        for stat_name, definition in definitions.items():
-            item_text = f"{stat_name}: {definition}"
-            item = QListWidgetItem(item_text)
-            self.definitions_list.addItem(item)
-        
+        self.definitions_list.setWordWrap(True)
+        for line in lines:
+            self.definitions_list.addItem(QListWidgetItem(line))
+        # The statistic the list was on is read as the list takes focus, rather than an empty list.
+        self.definitions_list.setCurrentRow(current_row if 0 <= current_row < len(lines) else 0)
+
         layout.addWidget(self.definitions_list)
-        
+
         # Close button
         close_btn = QPushButton("Close")
         close_btn.clicked.connect(self.accept)
         layout.addWidget(close_btn)
-        
+
         self.setLayout(layout)
-    
-    def _get_stat_definitions(self):
-        """Get statistics definitions for the current league"""
-        if self.league.upper() == "MLB":
-            return {
-                "AVG (Batting Average)": "Hits divided by at bats. Measures how often a batter gets a hit.",
-                "HR (Home Runs)": "Number of hits that allow the batter to circle all bases and score.",
-                "RBI (Runs Batted In)": "Number of runs that scored as a result of the batter's action.",
-                "R (Runs)": "Number of times a player crosses home plate to score.",
-                "H (Hits)": "Number of times a batter safely reaches base via a hit.",
-                "SB (Stolen Bases)": "Number of bases stolen by advancing while the ball is in play.",
-                "ERA (Earned Run Average)": "Average number of earned runs allowed per 9 innings pitched.",
-                "W (Wins)": "Number of games won by a pitcher (must be pitcher of record).",
-                "K/SO (Strikeouts)": "Number of batters struck out by a pitcher.",
-                "WHIP": "Walks plus hits divided by innings pitched. Lower is better.",
-                "SV (Saves)": "Number of times a relief pitcher preserved a lead for the win.",
-                "IP (Innings Pitched)": "Number of complete innings pitched (outs divided by 3).",
-                "OBP (On-Base %)": "Percentage of plate appearances reaching base safely.",
-                "SLG (Slugging %)": "Total bases divided by at bats. Measures power hitting.",
-                "OPS": "On-base percentage plus slugging percentage. Overall offensive measure."
-            }
-        elif self.league.upper() in ("NFL", "NCAAF"):
-            return {
-                "Passing Yards": "Total yards gained through forward passes.",
-                "Passing TDs": "Number of touchdown passes thrown by a quarterback.",
-                "Rushing Yards": "Total yards gained by running with the football.",
-                "Rushing TDs": "Number of touchdowns scored by running the ball.",
-                "Receiving Yards": "Total yards gained from catching passes.",
-                "Receiving TDs": "Number of touchdowns scored by catching passes.",
-                "Tackles": "Number of times a defensive player brings down the ball carrier.",
-                "Sacks": "Number of times the quarterback is tackled behind the line.",
-                "Interceptions": "Number of passes caught by the opposing defense.",
-                "Completion %": "Percentage of pass attempts that were completed.",
-                "QBR (Quarterback Rating)": "Composite statistic measuring quarterback performance.",
-                "Total Yards": "Combined offensive yards (passing + rushing).",
-                "Points For": "Total points scored by a team.",
-                "Points Against": "Total points allowed by a team's defense.",
-                "Turnovers": "Number of times possession was lost (fumbles + interceptions).",
-                "3rd Down %": "Percentage of third down attempts converted for first downs."
-            }
-        elif self.league.upper() in ("NBA", "WNBA", "NCAAM", "NCAAWB"):
-            return {
-                "PPG (Points Per Game)": "Average number of points scored per game.",
-                "FG% (Field Goal %)": "Percentage of field goal attempts made.",
-                "3P% (Three Point %)": "Percentage of three-point attempts made.",
-                "FT% (Free Throw %)": "Percentage of free throw attempts made.",
-                "RPG (Rebounds Per Game)": "Average number of rebounds per game.",
-                "APG (Assists Per Game)": "Average number of assists per game.",
-                "SPG (Steals Per Game)": "Average number of steals per game.",
-                "BPG (Blocks Per Game)": "Average number of blocks per game.",
-                "TOV (Turnovers)": "Number of times possession was lost.",
-                "MPG (Minutes Per Game)": "Average playing time per game.",
-                "PER (Player Efficiency Rating)": "Overall player productivity rating.",
-                "TS% (True Shooting %)": "Shooting efficiency including free throws and 3-pointers.",
-                "USG% (Usage Rate)": "Percentage of team plays used by a player.",
-                "ORtg (Offensive Rating)": "Points produced per 100 possessions.",
-                "DRtg (Defensive Rating)": "Points allowed per 100 possessions."
-            }
-        else:
-            return {
-                "Points": "Total points scored by team or individual player.",
-                "Wins": "Number of games or matches won.",
-                "Goals": "Number of goals scored (varies by sport).",
-                "Assists": "Number of assists made to help teammates score.",
-                "Games": "Number of games or matches played.",
-                "Average": "Mean value across all games or attempts."
-            }
-    
+
     def keyPressEvent(self, event):
         """Handle Escape key to close dialog"""
         if event.key() == Qt.Key.Key_Escape:
@@ -12630,6 +12653,7 @@ class BowlsAndPlayoffsDialog(QDialog):
         
         # List of bowl games
         self.bowl_list = QListWidget()
+        self.bowl_list.setAccessibleName("Bowls & Playoffs")
         self.bowl_list.itemActivated.connect(self.on_bowl_game_selected)
         layout.addWidget(self.bowl_list)
         
@@ -12680,82 +12704,45 @@ class BowlsAndPlayoffsDialog(QDialog):
                 self.bowl_list.addItem("No bowl games or playoff games found.")
                 return
             
-            # Categorize games by competition type
-            categories = {
-                'Championship': [],  # type 33
-                'Semifinals': [],     # type 35
-                'Quarterfinals': [],  # type 40 (Major Bowl)
-                'First Round': [],    # type 42 (Bowl Game) - early playoff games
-                'Other Bowls': []     # Other bowl games
-            }
-            
-            for game in games_data:
-                comp_type = _int_or_none(game.get('competitions', [{}])[0].get('type', {}).get('id'))
-                comp_name = game.get('competitions', [{}])[0].get('type', {}).get('text', '')
-                
-                if comp_type == 33:  # Championship
-                    categories['Championship'].append(game)
-                elif comp_type == 35:  # Semifinal
-                    categories['Semifinals'].append(game)
-                elif comp_type == 40:  # Major Bowl (Quarterfinals)
-                    categories['Quarterfinals'].append(game)
-                elif comp_type == 42:  # Bowl Game
-                    # Check if it's part of CFP or regular bowl
-                    notes = game.get('competitions', [{}])[0].get('notes', [])
-                    if notes and 'first round' in notes[0].get('headline', '').lower():
-                        categories['First Round'].append(game)
-                    else:
-                        categories['Other Bowls'].append(game)
-                else:
-                    categories['Other Bowls'].append(game)
-            
-            # Display categories in order
-            for category_name in ['Championship', 'Semifinals', 'Quarterfinals', 'First Round', 'Other Bowls']:
-                games = categories[category_name]
-                if games:
-                    # Add category header
-                    header_item = QListWidgetItem(f"=== {category_name} ===")
-                    header_item.setFlags(Qt.ItemFlag.NoItemFlags)  # Not selectable
-                    font = header_item.font()
-                    font.setBold(True)
-                    header_item.setFont(font)
-                    self.bowl_list.addItem(header_item)
-                    
-                    # Add games in this category
-                    for game in games:
-                        self._add_game_item(game)
-                    
-        
+            # The playoff in the order it's played, then the bowls, as on the iPhone.
+            for round_name, games in postseason_sections(games_data):
+                # A heading is a row you land on, read by its name and count, so
+                # Down doesn't run one round's games into the last (#202).
+                header_item = QListWidgetItem(heading_text(round_name, len(games)))
+                header_item.setFlags(Qt.ItemFlag.ItemIsSelectable | Qt.ItemFlag.ItemIsEnabled)
+                font = header_item.font()
+                font.setBold(True)
+                header_item.setFont(font)
+                self.bowl_list.addItem(header_item)
+
+                for game in games:
+                    self._add_game_item(game, playoff=round_name in PLAYOFF_ROUNDS)
+
         except Exception as e:
             from PyQt6.QtWidgets import QMessageBox
             QMessageBox.critical(self, "Error", f"Failed to load bowl games: {_said(e)}")
     
-    def _add_game_item(self, game):
+    def _add_game_item(self, game, playoff=False):
         """Add a game item to the list"""
         from models.game import GameData
 
         # Get bowl/playoff information
-        comp = game.get('competitions', [{}])[0]
-        notes = comp.get('notes', [])
-        comp_type = comp.get('type', {})
+        comp = (game.get('competitions') or [{}])[0]
+        comp_type = comp.get('type') or {}
         comp_type_text = comp_type.get('text', '')
-        
+
         # Get bowl name from notes or use competition type
-        bowl_name = ''
-        if notes and notes[0].get('headline'):
-            bowl_name = notes[0].get('headline', '')
-        elif comp_type_text and comp_type_text != 'Standard':
+        bowl_name = game_headline(game)
+        if not bowl_name and comp_type_text and comp_type_text != 'Standard':
             bowl_name = comp_type_text
-        
+
         # Create game data object for display
         game_obj = GameData(game, self.league)
         item_text = game_obj.get_display_text()
-        
+
         # Format with bowl/playoff name prominently at the start
         if bowl_name:
-            # Check if it's a playoff game
-            comp_type_id = _int_or_none(comp_type.get('id'))
-            if comp_type_id in [33, 35, 40]:  # Championship, Semifinal, Major Bowl (Quarterfinals)
+            if playoff:
                 item_text = f"[{bowl_name}] {item_text}"
             else:
                 item_text = f"{bowl_name} - {item_text}"

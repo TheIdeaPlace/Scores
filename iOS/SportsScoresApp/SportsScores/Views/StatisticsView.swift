@@ -211,9 +211,7 @@ struct LeaderCategorySection: View {
             }
         }
         .task {
-            definition = await ESPNAPIService.shared.statDefinition(
-                for: category.statKey, sport: sport
-            )
+            definition = await ESPNAPIService.shared.statDefinition(for: category, sport: sport)
         }
         // An alert rather than a sheet: UIKit gives an alert's cancel button
         // native Escape handling on iPad and Mac, which a sheet never got —

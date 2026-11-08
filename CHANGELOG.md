@@ -56,14 +56,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   on a number Apple had already seen after a squash merge, and the upload was rejected (#112).
 
 ### Fixed
+- **Statistic definitions come from ESPN on both apps, and each is the right one.** On the iPhone, the
+  definition on the MLB Strikeouts leaders was the batter's ("the number of times a player strikes out")
+  on a list of pitchers, and the NFL's interception leaders had the definition of interceptions thrown.
+  ESPN's glossary is now looked up by category and name, so pitching's strikeouts and batting's each get
+  their own, as do the NFL's interceptions thrown and made and punt returns made and allowed (#193).
+  - Windows: Alt+D in Player or Team Statistics used to show a hand-written list for the league. It now
+    lists the statistics on the screen with ESPN's definition of each, the same wording as the iPhone, and
+    says "No definition from ESPN" where ESPN has none, such as Wins Above Replacement.
+  - A leader with no definition of its own in ESPN's glossary, such as the NFL's sack leaders, now has
+    none rather than another category's.
 - **Windows: Live Scores no longer reads the row you're on again when other games come and go.** Each
   time a game kicked off or finished, the list was rebuilt and the row you were on read out, so on a busy
   day a finished game you were resting on was read once a minute.
 - **Every team in Teams and the Transactions team filter, on both apps.** Windows built both lists
   from the standings, so a team the standings left out was missing, as in a preseason, and if the
   standings failed there was no list at all. Both now come from ESPN's list of the league's teams, as on
-  the iPhone (#190). For college hockey that list has every school ESPN covers, Division III ones
-  included, so those now appear on Windows as they already did on the iPhone.
+  the iPhone (#190).
   - Windows: Teams keeps its divisions and conferences and each team's record. A team the standings
     don't have comes last, under **Other teams**, with its name only rather than a 0-0 record. If the
     standings can't be had, Teams still lists every team, and its title says records are unavailable.
@@ -71,6 +80,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     (FBS only, or all of Division I). Men's college basketball's do too, on both apps: ESPN's list for
     it is now every division, over 1,000 teams and cut off at 1,000 before some of Division I. On the
     iPhone, Transactions for men's college basketball listed those 1,000; it now lists Division I.
+  - College hockey's teams, men's and women's, come from their standings too, on both apps: Division I
+    alone. ESPN's list for it has Division III schools and programs that no longer play, which the
+    iPhone's Transactions listed, and its Team Hub for women's college hockey. Women's college hockey, which has no conferences, is
+    one group on the iPhone's Team Hub, named for the league.
 - **Windows: a poll's cells say which team they're for.** Moving across or down a Polls table read the
   rank as the row's context, "2, Previous, NR"; it now reads the team, "Georgia Bulldogs, Previous, NR".
   A poll with no votes, the playoff committee's or college hockey's, has no Points column any more, so
@@ -111,6 +124,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **iPhone: VoiceOver reads a standings row's Full List in full.** A wild card row's Record and an NHL
   row's Last 10 were shown but not spoken. Each Full List row is now spoken as it reads. An NHL row
   also reads "Overtime losses" rather than "OT Losses", and starts with the team's rank when ESPN sends one.
+- **Drives: a return touchdown is credited to the team that scored, with the points actually scored.**
+  ESPN marks a missed field goal or a kickoff run back for a touchdown on the kicking team's drive, so
+  Windows read "[TD 7pts] NC State Wolfpack" for Duke's 100-yard return. That drive now reads
+  "[Duke Blue Devils return TD 7pts] NC State Wolfpack", and a kickoff returned for a touchdown says so
+  on its Kickoff row. Every touchdown was "TD 7pts"; the badge now gives the points from the score: 6
+  with no extra point or a walk-off in overtime, 8 with a two-point conversion, and a blocked try run
+  back for two is named too. The iPhone's drive chart gets the same rule: it showed ESPN's "TD" on the
+  kicking team's drive.
+- **Windows: Team Hub shows an unbeaten or winless team's record.** Miami at 8-0 had no record in the
+  header, and a winless team lost its record the same way. Ties show for any league that has them.
+- **Windows: Bowls & Playoffs headings can be reached.** Each heading is a row you land on, read by its
+  name and game count ("Playoff Quarterfinals, 4 games"), the list is named "Bowls & Playoffs", and the
+  first row is selected when it opens. The College Football Playoff's first-round games, which ESPN
+  sends as plain games, have their own heading instead of sitting among the bowls. The headings and
+  their order (first round, quarterfinals, semifinals, championship, then the bowls, each by kickoff)
+  match the iPhone's Bowls & Playoffs list.
 
 ### In Progress
 - **Game Wrap Up Feature**: ESPN text processing and game story extraction (under construction)

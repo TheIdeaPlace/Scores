@@ -81,15 +81,24 @@ struct TeamsTeamWrapper: Codable {
 // MARK: - Conferences (standings) API response — used by fetchConferencesWithTeams
 
 struct ConferencesAPIResponse: Codable {
+    let name: String?
     let children: [APIConference]?
+    /// Women's college hockey has no conferences: its entries sit at the root.
+    let standings: APIConference.APIStandings?
 
-    /// One group per conference that has teams, in ESPN's order: FBS, then FCS.
+    /// One group per conference that has teams, in ESPN's order: FBS, then FCS. With no
+    /// conferences, the teams at the root are one group named for the league, as on Windows.
     var conferenceGroups: [ConferenceGroup] {
-        (children ?? []).flatMap(\.conferences).compactMap { conference in
+        let groups: [ConferenceGroup] = (children ?? []).flatMap(\.conferences).compactMap { conference in
             let teams = conference.allTeams.sorted { $0.displayName < $1.displayName }
             guard !teams.isEmpty else { return nil }
             return ConferenceGroup(id: conference.id ?? conference.name, name: conference.name, teams: teams)
         }
+        let rootTeams = (standings?.entries ?? []).map { $0.team.transactionTeam }
+        guard groups.isEmpty, !rootTeams.isEmpty else { return groups }
+        let rootName = name ?? "All Teams"
+        return [ConferenceGroup(id: rootName, name: rootName,
+                                teams: rootTeams.sorted { $0.displayName < $1.displayName })]
     }
 
     struct APIConference: Codable {

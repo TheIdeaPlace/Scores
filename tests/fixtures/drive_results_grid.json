@@ -1,0 +1,171 @@
+{
+  "description": "Who scored on a football drive and how many points, from the score after each play. drive_results.py (Windows) and Services/DriveResults.swift (iPhone) are both held to this file. Each play is [awayScore, homeScore] after the play; null is a play without a score. scoring_plays are the indexes of the plays ESPN marks scoringPlay: points count only in a drive with a scoring play, so a jump in the score from a drive that is missing, or a score that dips and comes back, isn't counted. The badge names the scorer and the other side with the away and home names given. fixture_cases run the rule on the real ESPN drives in tests/fixtures/espn and check every drive that scored, by drive id.",
+  "cases": [
+    {
+      "name": "touchdown with the extra point",
+      "away": {"id": "1", "name": "Away U"},
+      "home": {"id": "2", "name": "Home U"},
+      "drives": [{"team_id": "1", "plays": [[0, 0], [7, 0]], "scoring_plays": [1]}],
+      "expected": [{"kind": "TD", "points": 7, "scorer": "away", "by_opponent": false, "other_points": 0, "badge": "TD 7pts"}]
+    },
+    {
+      "name": "touchdown, extra point missed",
+      "away": {"id": "1", "name": "Away U"},
+      "home": {"id": "2", "name": "Home U"},
+      "drives": [{"team_id": "2", "plays": [[0, 0], [0, 6]], "scoring_plays": [1]}],
+      "expected": [{"kind": "TD", "points": 6, "scorer": "home", "by_opponent": false, "other_points": 0, "badge": "TD 6pts"}]
+    },
+    {
+      "name": "touchdown and a two-point conversion",
+      "away": {"id": "1", "name": "Away U"},
+      "home": {"id": "2", "name": "Home U"},
+      "drives": [{"team_id": "1", "plays": [[0, 0], [6, 0], [8, 0]], "scoring_plays": [1]}],
+      "expected": [{"kind": "TD", "points": 8, "scorer": "away", "by_opponent": false, "other_points": 0, "badge": "TD 8pts"}]
+    },
+    {
+      "name": "the extra point as its own play",
+      "away": {"id": "1", "name": "Away U"},
+      "home": {"id": "2", "name": "Home U"},
+      "drives": [{"team_id": "2", "plays": [[0, 0], [0, 6], [0, 7]], "scoring_plays": [1]}],
+      "expected": [{"kind": "TD", "points": 7, "scorer": "home", "by_opponent": false, "other_points": 0, "badge": "TD 7pts"}]
+    },
+    {
+      "name": "field goal",
+      "away": {"id": "1", "name": "Away U"},
+      "home": {"id": "2", "name": "Home U"},
+      "drives": [{"team_id": "1", "plays": [[0, 0], [3, 0]], "scoring_plays": [1]}],
+      "expected": [{"kind": "FG", "points": 3, "scorer": "away", "by_opponent": false, "other_points": 0, "badge": "FG 3pts"}]
+    },
+    {
+      "name": "missed field goal run back for a touchdown by the other team",
+      "away": {"id": "150", "name": "Duke Blue Devils"},
+      "home": {"id": "152", "name": "NC State Wolfpack"},
+      "drives": [{"team_id": "152", "plays": [[0, 0], [0, 0], [7, 0], [7, 0]], "scoring_plays": [2]}],
+      "expected": [{"kind": "RETURN TD", "points": 7, "scorer": "away", "by_opponent": true, "other_points": 0, "badge": "Duke Blue Devils return TD 7pts"}]
+    },
+    {
+      "name": "safety given up",
+      "away": {"id": "1", "name": "Away U"},
+      "home": {"id": "2", "name": "Home U"},
+      "drives": [{"team_id": "1", "plays": [[0, 0], [0, 2]], "scoring_plays": [1]}],
+      "expected": [{"kind": "SAFETY", "points": 2, "scorer": "home", "by_opponent": true, "other_points": 0, "badge": "Home U safety 2pts"}]
+    },
+    {
+      "name": "blocked extra point run back for two",
+      "away": {"id": "119", "name": "Towson Tigers"},
+      "home": {"id": "2529", "name": "Sacred Heart Pioneers"},
+      "drives": [{"team_id": "2529", "plays": [[0, 0], [0, 6], [2, 6]], "scoring_plays": [1]}],
+      "expected": [{"kind": "TD", "points": 6, "scorer": "home", "by_opponent": false, "other_points": 2, "badge": "TD 6pts, Towson Tigers 2pts"}]
+    },
+    {
+      "name": "no score",
+      "away": {"id": "1", "name": "Away U"},
+      "home": {"id": "2", "name": "Home U"},
+      "drives": [{"team_id": "1", "plays": [[0, 0], [0, 0]], "scoring_plays": []}],
+      "expected": [{"kind": null, "points": 0, "scorer": null, "by_opponent": false, "other_points": 0, "badge": null}]
+    },
+    {
+      "name": "a play without a score is skipped",
+      "away": {"id": "1", "name": "Away U"},
+      "home": {"id": "2", "name": "Home U"},
+      "drives": [{"team_id": "1", "plays": [[0, 0], [null, null], [7, 0]], "scoring_plays": [2]}],
+      "expected": [{"kind": "TD", "points": 7, "scorer": "away", "by_opponent": false, "other_points": 0, "badge": "TD 7pts"}]
+    },
+    {
+      "name": "the score carries over from the drive before",
+      "away": {"id": "1", "name": "Away U"},
+      "home": {"id": "2", "name": "Home U"},
+      "drives": [{"team_id": "1", "plays": [[0, 0], [7, 0]], "scoring_plays": [1]}, {"team_id": "2", "plays": [[7, 0], [7, 0]], "scoring_plays": []}, {"team_id": "1", "plays": [[7, 0], [10, 0]], "scoring_plays": [1]}],
+      "expected": [{"kind": "TD", "points": 7, "scorer": "away", "by_opponent": false, "other_points": 0, "badge": "TD 7pts"}, {"kind": null, "points": 0, "scorer": null, "by_opponent": false, "other_points": 0, "badge": null}, {"kind": "FG", "points": 3, "scorer": "away", "by_opponent": false, "other_points": 0, "badge": "FG 3pts"}]
+    },
+    {
+      "name": "a score that goes down is a correction, not points",
+      "away": {"id": "1", "name": "Away U"},
+      "home": {"id": "2", "name": "Home U"},
+      "drives": [{"team_id": "1", "plays": [[7, 0]], "scoring_plays": [0]}, {"team_id": "2", "plays": [[0, 0], [0, 0]], "scoring_plays": []}],
+      "expected": [{"kind": "TD", "points": 7, "scorer": "away", "by_opponent": false, "other_points": 0, "badge": "TD 7pts"}, {"kind": null, "points": 0, "scorer": null, "by_opponent": false, "other_points": 0, "badge": null}]
+    },
+    {
+      "name": "a drive with no team is never by the other team",
+      "away": {"id": "1", "name": "Away U"},
+      "home": {"id": "2", "name": "Home U"},
+      "drives": [{"team_id": null, "plays": [[0, 0], [0, 7]], "scoring_plays": [1]}],
+      "expected": [{"kind": "TD", "points": 7, "scorer": "home", "by_opponent": false, "other_points": 0, "badge": "TD 7pts"}]
+    },
+    {
+      "name": "a two-point try in overtime",
+      "away": {"id": "1", "name": "Away U"},
+      "home": {"id": "2", "name": "Home U"},
+      "drives": [{"team_id": "2", "plays": [[0, 0], [0, 2]], "scoring_plays": [1]}],
+      "expected": [{"kind": "SCORE", "points": 2, "scorer": "home", "by_opponent": false, "other_points": 0, "badge": "2pts"}]
+    },
+    {
+      "name": "a one-point safety on a try",
+      "away": {"id": "1", "name": "Away U"},
+      "home": {"id": "2", "name": "Home U"},
+      "drives": [{"team_id": "2", "plays": [[0, 0], [0, 6], [1, 6]], "scoring_plays": [1]}],
+      "expected": [{"kind": "TD", "points": 6, "scorer": "home", "by_opponent": false, "other_points": 1, "badge": "TD 6pts, Away U 1pt"}]
+    },
+    {
+      "name": "points from a drive that is missing are not this drive's",
+      "away": {"id": "1", "name": "Away U"},
+      "home": {"id": "2", "name": "Home U"},
+      "drives": [{"team_id": "2", "plays": [[7, 0], [7, 0]], "scoring_plays": []}],
+      "expected": [{"kind": null, "points": 0, "scorer": null, "by_opponent": false, "other_points": 0, "badge": null}]
+    },
+    {
+      "name": "a score that dips and comes back is counted once",
+      "away": {"id": "1", "name": "Away U"},
+      "home": {"id": "2", "name": "Home U"},
+      "drives": [{"team_id": "1", "plays": [[0, 0], [7, 0]], "scoring_plays": [1]}, {"team_id": "2", "plays": [[0, 0], [7, 0], [7, 0]], "scoring_plays": []}],
+      "expected": [{"kind": "TD", "points": 7, "scorer": "away", "by_opponent": false, "other_points": 0, "badge": "TD 7pts"}, {"kind": null, "points": 0, "scorer": null, "by_opponent": false, "other_points": 0, "badge": null}]
+    },
+    {
+      "name": "a scoring play with no change in the score",
+      "away": {"id": "1", "name": "Away U"},
+      "home": {"id": "2", "name": "Home U"},
+      "drives": [{"team_id": "1", "plays": [[0, 0], [0, 0]], "scoring_plays": [1]}],
+      "expected": [{"kind": null, "points": 0, "scorer": null, "by_opponent": false, "other_points": 0, "badge": null}]
+    },
+    {
+      "name": "the score can move a play before the scoring play",
+      "away": {"id": "1", "name": "Away U"},
+      "home": {"id": "2", "name": "Home U"},
+      "drives": [{"team_id": "1", "plays": [[0, 0], [7, 0], [7, 0]], "scoring_plays": [2]}],
+      "expected": [{"kind": "TD", "points": 7, "scorer": "away", "by_opponent": false, "other_points": 0, "badge": "TD 7pts"}]
+    }
+  ],
+  "fixture_cases": [
+    {
+      "fixture": "drives_NCAAF_401858286.json",
+      "expected": {
+        "4018582862": {"kind": "TD", "points": 7, "scorer": "away", "by_opponent": false, "other_points": 0, "badge": "TD 7pts"},
+        "4018582864": {"kind": "FG", "points": 3, "scorer": "home", "by_opponent": false, "other_points": 0, "badge": "FG 3pts"},
+        "4018582868": {"kind": "TD", "points": 7, "scorer": "away", "by_opponent": false, "other_points": 0, "badge": "TD 7pts"},
+        "40185828611": {"kind": "FG", "points": 3, "scorer": "away", "by_opponent": false, "other_points": 0, "badge": "FG 3pts"},
+        "40185828614": {"kind": "TD", "points": 7, "scorer": "away", "by_opponent": false, "other_points": 0, "badge": "TD 7pts"},
+        "40185828616": {"kind": "RETURN TD", "points": 7, "scorer": "away", "by_opponent": true, "other_points": 0, "badge": "Duke Blue Devils return TD 7pts"},
+        "40185828621": {"kind": "TD", "points": 7, "scorer": "away", "by_opponent": false, "other_points": 0, "badge": "TD 7pts"},
+        "40185828626": {"kind": "FG", "points": 3, "scorer": "away", "by_opponent": false, "other_points": 0, "badge": "FG 3pts"}
+      }
+    },
+    {
+      "fixture": "drives_NCAAF_401866682_2OT.json",
+      "expected": {
+        "4018666825": {"kind": "TD", "points": 7, "scorer": "home", "by_opponent": false, "other_points": 0, "badge": "TD 7pts"},
+        "4018666827": {"kind": "TD", "points": 7, "scorer": "away", "by_opponent": false, "other_points": 0, "badge": "TD 7pts"},
+        "4018666829": {"kind": "TD", "points": 7, "scorer": "home", "by_opponent": false, "other_points": 0, "badge": "TD 7pts"},
+        "40186668212": {"kind": "TD", "points": 7, "scorer": "home", "by_opponent": false, "other_points": 0, "badge": "TD 7pts"},
+        "40186668214": {"kind": "RETURN TD", "points": 7, "scorer": "away", "by_opponent": true, "other_points": 0, "badge": "Towson Tigers return TD 7pts"},
+        "40186668215": {"kind": "TD", "points": 6, "scorer": "home", "by_opponent": false, "other_points": 2, "badge": "TD 6pts, Towson Tigers 2pts"},
+        "40186668219": {"kind": "FG", "points": 3, "scorer": "home", "by_opponent": false, "other_points": 0, "badge": "FG 3pts"},
+        "40186668225": {"kind": "TD", "points": 7, "scorer": "away", "by_opponent": false, "other_points": 0, "badge": "TD 7pts"},
+        "40186668228": {"kind": "TD", "points": 7, "scorer": "away", "by_opponent": false, "other_points": 0, "badge": "TD 7pts"},
+        "40186668232": {"kind": "TD", "points": 7, "scorer": "away", "by_opponent": false, "other_points": 0, "badge": "TD 7pts"},
+        "40186668233": {"kind": "TD", "points": 7, "scorer": "home", "by_opponent": false, "other_points": 0, "badge": "TD 7pts"},
+        "40186668234": {"kind": "FG", "points": 3, "scorer": "home", "by_opponent": false, "other_points": 0, "badge": "FG 3pts"},
+        "40186668235": {"kind": "TD", "points": 6, "scorer": "away", "by_opponent": false, "other_points": 0, "badge": "TD 6pts"}
+      }
+    }
+  ]
+}

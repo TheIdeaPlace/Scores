@@ -1386,8 +1386,13 @@ final class ConferenceListTests: XCTestCase {
         XCTAssertFalse(try groups("standings_NCAAM.json").isEmpty)
     }
 
-    func testEntriesAtTheRootAreLeftToTheFallback() throws {
-        XCTAssertEqual(try groups("standings_NCAAWH.json").count, 0)
+    /// Women's college hockey has no conferences, only entries at the root: one group, named
+    /// for the league, as Windows's Teams has it. Its team list has Division III schools and
+    /// programs that no longer play, so there's no falling back to that.
+    func testEntriesAtTheRootAreOneGroupNamedForTheLeague() throws {
+        let hockey = try groups("standings_NCAAWH.json")
+        XCTAssertEqual(hockey.map(\.name), ["NCAA Women's Hockey"])
+        XCTAssertEqual(hockey.first?.teams.count, 3)
     }
 
     func testOneBadTeamCostsOnlyThatTeam() throws {
@@ -1507,6 +1512,19 @@ final class TeamListRequestTests: XCTestCase {
         XCTAssertEqual(StubbedESPN.requested.count, 1, "\(StubbedESPN.requested)")
         XCTAssertTrue(StubbedESPN.requested[0].hasSuffix("/basketball/mens-college-basketball/standings"),
                       StubbedESPN.requested[0])
+    }
+
+    func testMensCollegeHockeyAsksItsStandingsNotTheListWithDivisionThree() async throws {
+        let service = StubbedESPN.service([("/standings", 500, Data()),
+                                           ("/teams", 200, try Fixtures.data("teams_NCAAH.json"))])
+        do {
+            let teams = try await service.fetchTeamsForSport(sport: .ncaah)
+            XCTFail("Expected an error, got \(teams.map(\.displayName))")
+        } catch {
+            XCTAssertEqual(StubbedESPN.requested.count, 1, "\(StubbedESPN.requested)")
+            XCTAssertTrue(StubbedESPN.requested[0].hasSuffix("/hockey/mens-college-hockey/standings"),
+                          StubbedESPN.requested[0])
+        }
     }
 
     func testAFailedTeamListIsAnError() async throws {
