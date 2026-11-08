@@ -107,8 +107,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   says so instead of going quiet, and F5 on a card tries again and stays on it. The card no longer shows
   the team's record. Both apps decide which game is live, last and next by one rule, tested against the
   same cases (#191).
+- **Soccer leaders open in about a second.** Both apps now get a league's leaders in one request, with
+  the names and teams inside, instead of looking up every player and team one by one: on Windows, about
+  140 to 180 requests and 7 seconds became 2 requests and 1 second. The lists, players and numbers are
+  the same as before. NWSL and the CONCACAF Champions Cup show 10 players a list for now rather than 20,
+  since ESPN won't send them 20. If ESPN doesn't answer, the screen says so (#198).
 
 ### Fixed
+- **Liga MX leaders follow the torneo being played.** From January, Statistics shows the Torneo Clausura's
+  leaders rather than the Apertura's, and the season line names the torneo, for example "2026-27 Liga BBVA
+  MX Torneo Apertura". Until anyone has played in the Clausura, it shows the Apertura. Both apps choose
+  the torneo by its dates, by one rule tested against the same cases (#178).
 - **iPhone: Formula 1's race loads during a race weekend.** Until the race started, ESPN lists its field
   with no finishing order, which failed the whole request, so Racing said it couldn't load the race. It
   also showed the first practice session's date and the weekend's own status, which can say Final the

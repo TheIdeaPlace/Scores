@@ -56,7 +56,7 @@ except ImportError:
 # New separated modules
 from exceptions import ApiError, DataModelError, plain_message
 from espn_api import (NCAAF_CONFERENCE_ORDER, SCHEDULE_UNAVAILABLE, TEAMS_UNAVAILABLE, league_sport, live_scores_failure_text,
-                      standings_cache_key, stop_core_lookups, with_failed_leagues_kept)
+                      standings_cache_key, with_failed_leagues_kept)
 import stat_glossary
 from services.api_service import ApiService
 from services.venue_service import venue_service, venue_summary
@@ -13127,7 +13127,6 @@ class SportsScoresApp(QWidget):
     
     def __init__(self, startup_params=None):
         super().__init__()
-        QApplication.instance().aboutToQuit.connect(stop_core_lookups)
         self.setWindowTitle("Sports Scores")
         
         # Initialize window title tracking
