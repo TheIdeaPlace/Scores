@@ -27,6 +27,8 @@ enum TransactionPaging {
     static let wholeYearPageSize = 200
     /// One load asks again while it has found nothing, but no more than this many times.
     static let maxRequestsPerLoad = 6
+    /// And never more requests than this in one load, whatever they found.
+    static let maxPagesPerLoad = 30
 
     /// Where the next request starts. `month` is the month a jump starts at, and nil once the
     /// list has gone past that year.
@@ -140,12 +142,22 @@ enum TransactionPaging {
         nextCursor(cursor, hasMore: false)
     }
 
+    /// Whether a request counts toward maxRequestsPerLoad. A page whose items were all left
+    /// out (a team's jump passing over what's newer than the month) doesn't: stopping there
+    /// would say the month had none when it hadn't been reached. maxPagesPerLoad still caps it.
+    static func countsAgainstLimit(answered: Int, kept: Int) -> Bool {
+        answered == 0 || kept > 0
+    }
+
     /// Whether one load asks again after an answer: while it has nothing to show, and in
-    /// soccer until the year is finished, but never past nothing older or the request limit.
-    static func loadContinues(found: Int, requests: Int, cursor: Cursor, following: Cursor?, leaguePath: String) -> Bool {
-        guard let following, requests < maxRequestsPerLoad else { return false }
-        if found == 0 { return true }
-        return wholeYearAtOnce(leaguePath) && following.year == cursor.year
+    /// soccer until the year is finished, so a year never comes out half in order. `requests`
+    /// is what counts against maxRequestsPerLoad and `pages` every request, never past
+    /// maxPagesPerLoad.
+    static func loadContinues(found: Int, requests: Int, cursor: Cursor, following: Cursor?,
+                              leaguePath: String, pages: Int) -> Bool {
+        guard let following, pages < maxPagesPerLoad else { return false }
+        if found > 0 && wholeYearAtOnce(leaguePath) && following.year == cursor.year { return true }
+        return found == 0 && requests < maxRequestsPerLoad
     }
 
     private static func grouped(_ number: Int) -> String {

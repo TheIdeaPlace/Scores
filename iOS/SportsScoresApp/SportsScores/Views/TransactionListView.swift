@@ -124,14 +124,13 @@ struct TransactionListView: View {
             .onAppear {
                 // Reaching the end of the list loads older ones.
                 if entry.id == viewModel.lastEntryID {
-                    Task { await viewModel.loadMore() }
+                    Task { await viewModel.loadMore(announcing: false) }
                 }
             }
         }
     }
 
-    /// Under the list: loading, a failure to try again, a button for older ones (it loads
-    /// them as it appears, too), or the end.
+    /// Under the list: loading, a failure to try again, a button for older ones, or the end.
     @ViewBuilder
     private var footer: some View {
         if viewModel.isLoadingMore {
@@ -152,10 +151,9 @@ struct TransactionListView: View {
                 }
             }
         } else if viewModel.hasMore {
+            // Loads only when tapped: reaching the last row loads by itself. Loading on this
+            // button's appearing would load year after year under a short list, unasked.
             Button("Load Older Transactions") {
-                Task { await viewModel.loadMore() }
-            }
-            .onAppear {
                 Task { await viewModel.loadMore() }
             }
         } else if !viewModel.entries.isEmpty {

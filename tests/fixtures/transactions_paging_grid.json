@@ -4,6 +4,7 @@
   "page_size": 50,
   "whole_year_page_size": 200,
   "max_requests_per_load": 6,
+  "max_pages_per_load": 30,
   "labels": [
     {"year": 2003, "month": 3, "label": "March 2003"},
     {"year": 2026, "month": 11, "label": "November 2026"},
@@ -109,16 +110,24 @@
     {"team": "Chicago Bears", "text": "No older Chicago Bears transactions. The list goes back to January 2001."}
   ],
   "load_continues": [
-    {"name": "found some, done", "league": "football/nfl", "found": 50, "requests": 1, "cursor": {"year": 2026, "month": null, "page": 1}, "following": {"year": 2026, "month": null, "page": 2}, "continues": false},
-    {"name": "found none, ask again", "league": "football/nfl", "found": 0, "requests": 1, "cursor": {"year": 2025, "month": 9, "page": 1}, "following": {"year": 2025, "month": 9, "page": 2}, "continues": true},
-    {"name": "found none, on to the year before", "league": "football/college-football", "found": 0, "requests": 2, "cursor": {"year": 2025, "month": null, "page": 1}, "following": {"year": 2024, "month": null, "page": 1}, "continues": true},
-    {"name": "found none, but that's the limit", "league": "football/college-football", "found": 0, "requests": 6, "cursor": {"year": 2022, "month": null, "page": 1}, "following": {"year": 2021, "month": null, "page": 1}, "continues": false},
-    {"name": "found none, and nothing older", "league": "football/nfl", "found": 0, "requests": 1, "cursor": {"year": 2001, "month": null, "page": 1}, "following": null, "continues": false},
-    {"name": "soccer finishes its year", "league": "soccer/eng.1", "found": 200, "requests": 1, "cursor": {"year": 2025, "month": null, "page": 1}, "following": {"year": 2025, "month": null, "page": 2}, "continues": true},
-    {"name": "soccer's year is done", "league": "soccer/eng.1", "found": 611, "requests": 2, "cursor": {"year": 2025, "month": null, "page": 2}, "following": {"year": 2024, "month": null, "page": 1}, "continues": false},
-    {"name": "a skip after finding some stops, so its notice goes below them", "league": "football/nfl", "found": 450, "requests": 2, "cursor": {"year": 2003, "month": null, "page": 11}, "following": {"year": 2002, "month": null, "page": 1}, "continues": false},
-    {"name": "a soccer skip mid-year stops too", "league": "soccer/eng.1", "found": 200, "requests": 2, "cursor": {"year": 2025, "month": null, "page": 2}, "following": {"year": 2024, "month": null, "page": 1}, "continues": false},
-    {"name": "soccer stops at the limit too", "league": "soccer/eng.1", "found": 10, "requests": 6, "cursor": {"year": 2025, "month": null, "page": 5}, "following": {"year": 2025, "month": null, "page": 6}, "continues": false}
+    {"name": "found some, done", "league": "football/nfl", "found": 50, "requests": 1, "pages": 1, "cursor": {"year": 2026, "month": null, "page": 1}, "following": {"year": 2026, "month": null, "page": 2}, "continues": false},
+    {"name": "found none, ask again", "league": "football/nfl", "found": 0, "requests": 1, "pages": 1, "cursor": {"year": 2025, "month": 9, "page": 1}, "following": {"year": 2025, "month": 9, "page": 2}, "continues": true},
+    {"name": "found none, on to the year before", "league": "football/college-football", "found": 0, "requests": 2, "pages": 2, "cursor": {"year": 2025, "month": null, "page": 1}, "following": {"year": 2024, "month": null, "page": 1}, "continues": true},
+    {"name": "found none, but that's the limit", "league": "football/college-football", "found": 0, "requests": 6, "pages": 6, "cursor": {"year": 2022, "month": null, "page": 1}, "following": {"year": 2021, "month": null, "page": 1}, "continues": false},
+    {"name": "found none, and nothing older", "league": "football/nfl", "found": 0, "requests": 1, "pages": 1, "cursor": {"year": 2001, "month": null, "page": 1}, "following": null, "continues": false},
+    {"name": "soccer finishes its year", "league": "soccer/eng.1", "found": 200, "requests": 1, "pages": 1, "cursor": {"year": 2025, "month": null, "page": 1}, "following": {"year": 2025, "month": null, "page": 2}, "continues": true},
+    {"name": "soccer's year is done", "league": "soccer/eng.1", "found": 611, "requests": 2, "pages": 2, "cursor": {"year": 2025, "month": null, "page": 2}, "following": {"year": 2024, "month": null, "page": 1}, "continues": false},
+    {"name": "a skip after finding some stops, so its notice goes below them", "league": "football/nfl", "found": 450, "requests": 2, "pages": 2, "cursor": {"year": 2003, "month": null, "page": 11}, "following": {"year": 2002, "month": null, "page": 1}, "continues": false},
+    {"name": "a soccer skip mid-year stops too", "league": "soccer/eng.1", "found": 200, "requests": 2, "pages": 2, "cursor": {"year": 2025, "month": null, "page": 2}, "following": {"year": 2024, "month": null, "page": 1}, "continues": false},
+    {"name": "soccer finishes its year past the request limit", "league": "soccer/eng.1", "found": 10, "requests": 6, "pages": 6, "cursor": {"year": 2025, "month": null, "page": 5}, "following": {"year": 2025, "month": null, "page": 6}, "continues": true},
+    {"name": "but not past the page cap", "league": "soccer/eng.1", "found": 10, "requests": 6, "pages": 30, "cursor": {"year": 2025, "month": null, "page": 29}, "following": {"year": 2025, "month": null, "page": 30}, "continues": false},
+    {"name": "a team's jump passing over newer pages isn't stopped by the request limit", "league": "baseball/mlb", "found": 0, "requests": 0, "pages": 8, "cursor": {"year": 2025, "month": 1, "page": 8}, "following": {"year": 2025, "month": 1, "page": 9}, "continues": true},
+    {"name": "nothing found, stopped by the page cap", "league": "baseball/mlb", "found": 0, "requests": 0, "pages": 30, "cursor": {"year": 2025, "month": 1, "page": 30}, "following": {"year": 2025, "month": 1, "page": 31}, "continues": false}
+  ],
+  "counts_against_limit": [
+    {"name": "nothing in the answer", "answered": 0, "kept": 0, "counts": true},
+    {"name": "some kept", "answered": 50, "kept": 3, "counts": true},
+    {"name": "all newer than the month", "answered": 50, "kept": 0, "counts": false}
   ],
   "transaction_items": [
     {"name": "a list", "listed": [{"description": "a"}, {"description": "b"}], "descriptions": ["a", "b"]},

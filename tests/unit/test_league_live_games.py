@@ -727,7 +727,7 @@ class TestAFailureInADialog(FailureViews):
         assert self.rows(dialog.trans_list) == ["2026-11-01 A trade"]
         assert dialog._cursor == {"year": 2026, "month": None, "page": 2}
         assert dialog.load_more_btn.isEnabled()
-        self.said.assert_called_once_with(FAILED)
+        self.said.assert_called_once_with(f"{FAILED} Press F5 or Load More to try again.")
 
     def test_the_team_filter_failing_says_so_and_f5_asks_again(self):
         dialog = self.transactions()

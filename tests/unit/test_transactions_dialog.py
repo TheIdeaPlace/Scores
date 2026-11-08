@@ -45,7 +45,6 @@ class Harness:
             if dialog._cursor is None or dialog._loading:
                 return
             dialog._loading = True
-            dialog.load_more_btn.setEnabled(False)
             item = scores.QListWidgetItem("Loading transactions..." if dialog._first_load
                                           else "Loading older transactions...")
             dialog.trans_list.addItem(item)
@@ -94,7 +93,8 @@ class TestNewestFirst:
         harness.dialog._load_more()
         assert harness.started[-1][0] == {"year": 2026, "month": None, "page": 2}
         assert harness.texts()[-1] == "Loading older transactions..."
-        assert not harness.dialog.load_more_btn.isEnabled(), "not twice at once"
+        harness.dialog._load_more()
+        assert len(harness.started) == 2, "not twice at once"
         harness.answer([row("2026-11-05", "KC", "Released a corner.")], {"year": 2026, "month": None, "page": 3})
         assert harness.texts()[-1] == "2026-11-05 — KC — Released a corner."
         assert harness.dialog.trans_list.currentRow() == 2
@@ -112,6 +112,56 @@ class TestNewestFirst:
         harness.answer([], {"year": 2020, "month": None, "page": 1}, oldest_year=2021)
         said.assert_called_once_with("No older transactions found back to January 2021.")
         assert harness.dialog.load_more_btn.isEnabled()
+
+    def test_looking_further_back_and_finding_nothing_keeps_the_line_up_to_date(self, qt, harness):
+        _, said = qt
+        harness.answer([], {"year": 2021, "month": None, "page": 1}, oldest_year=2022)
+        harness.dialog._load_more()
+        harness.answer([], {"year": 2015, "month": None, "page": 1}, oldest_year=2016)
+        assert harness.texts() == ["No transactions since January 2016."]
+        said.assert_called_once_with("No transactions since January 2016.")
+
+    def test_a_load_more_that_reaches_2001_with_nothing_ends_the_list(self, qt, harness):
+        _, said = qt
+        harness.answer(ROWS, {"year": 2002, "month": None, "page": 1})
+        harness.dialog._load_more()
+        harness.answer([], None, oldest_year=2001)
+        assert harness.texts()[-1] == "No older transactions. The list goes back to January 2001."
+        said.assert_called_once_with("No older transactions found back to January 2001. "
+                                     "No older transactions. The list goes back to January 2001.")
+
+    def test_load_more_keeps_focus_and_the_end_moves_it_to_the_list_not_close(self, harness):
+        from PyQt6.QtWidgets import QApplication
+        dialog = harness.dialog
+        dialog.show()
+        QApplication.processEvents()
+        harness.answer(ROWS, {"year": 2026, "month": None, "page": 2})
+        dialog.activateWindow()
+        dialog.load_more_btn.setFocus()
+        QApplication.processEvents()
+        assert dialog.load_more_btn.hasFocus()
+        dialog._load_more()
+        QApplication.processEvents()
+        assert dialog.load_more_btn.hasFocus(), "still on Load More while it loads"
+        harness.answer([row("2026-11-05", "KC", "Released a corner.")], None, oldest_year=2001)
+        QApplication.processEvents()
+        assert dialog.trans_list.hasFocus(), "not thrown onto Close"
+        assert dialog.trans_list.currentItem().text() == "2026-11-05 — KC — Released a corner."
+        assert harness.texts()[-1].startswith("No older transactions.")
+        dialog.close()
+
+    def test_f5_retries_a_failed_load_more(self, qt, harness):
+        from PyQt6.QtCore import QEvent, Qt
+        from PyQt6.QtGui import QKeyEvent
+        dialog = harness.dialog
+        harness.answer(ROWS, {"year": 2026, "month": None, "page": 2})
+        dialog._load_more()
+        cursor, _team, item, generation = harness.started[-1]
+        dialog._on_error("ESPN isn't providing transactions right now.", item, generation)
+        dialog.keyPressEvent(QKeyEvent(QEvent.Type.KeyPress, Qt.Key.Key_F5, Qt.KeyboardModifier.NoModifier))
+        assert len(harness.started) == 3 and harness.started[-1][0] == cursor
+        dialog.keyPressEvent(QKeyEvent(QEvent.Type.KeyPress, Qt.Key.Key_F5, Qt.KeyboardModifier.NoModifier))
+        assert len(harness.started) == 3, "only what failed, once"
 
     def test_a_league_with_nothing_says_so_plainly(self, harness):
         harness.answer([], {"year": 2021, "month": None, "page": 1}, oldest_year=2022)
@@ -134,6 +184,17 @@ class TestReachingTheEnd:
         # Again while it loads: nothing more is asked for.
         dialog.eventFilter(dialog.trans_list, down)
         assert len(harness.started) == 2
+
+    def test_keypad_down_on_the_last_row_loads_older_too(self, harness):
+        from PyQt6.QtCore import QEvent, Qt
+        from PyQt6.QtGui import QKeyEvent
+        dialog = harness.dialog
+        harness.answer(ROWS, {"year": 2026, "month": None, "page": 2})
+        dialog.trans_list.setCurrentRow(1)
+        down = QKeyEvent(QEvent.Type.KeyPress, Qt.Key.Key_Down, Qt.KeyboardModifier.KeypadModifier)
+        assert dialog.eventFilter(dialog.trans_list, down) is True
+        shift_down = QKeyEvent(QEvent.Type.KeyPress, Qt.Key.Key_Down, Qt.KeyboardModifier.ShiftModifier)
+        assert dialog.eventFilter(dialog.trans_list, shift_down) is False
 
     def test_down_elsewhere_or_with_nothing_older_is_just_down(self, harness):
         from PyQt6.QtCore import QEvent, Qt

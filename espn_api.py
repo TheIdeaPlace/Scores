@@ -3413,22 +3413,26 @@ def get_transactions_from(league_key, cursor, team_id=None):
     league_path = LEAGUES.get(league_key)
     if not league_path or not cursor:
         return {"rows": [], "next": None, "oldest_year": (cursor or {}).get("year"), "skipped": []}
-    items, skipped, requests_made, oldest_year = [], [], 0, cursor["year"]
+    items, skipped, requests_made, pages, oldest_year = [], [], 0, 0, cursor["year"]
     while True:
         params = transactions_paging.request_params(cursor, league_path, team_id)
         answer = _transactions_page(league_path, params, cursor["page"])
-        requests_made += 1
+        pages += 1
         oldest_year = cursor["year"]
         if answer is None:
+            requests_made += 1
             # A 400 or 404: ESPN can't give this stretch at all (NFL 2003, or a team it doesn't
             # know). Asking again would get the same, so the list goes on without it.
             skipped.append({"year": cursor["year"], "below": bool(items)})
             following = transactions_paging.after_no_answer(cursor)
         else:
             page_items, has_more = answer
-            items += [item for item in page_items if transactions_paging.keeps(cursor, item.get("date"))]
+            kept = [item for item in page_items if transactions_paging.keeps(cursor, item.get("date"))]
+            items += kept
+            if transactions_paging.counts_against_limit(len(page_items), len(kept)):
+                requests_made += 1
             following = transactions_paging.next_cursor(cursor, has_more)
-        if not transactions_paging.load_continues(len(items), requests_made, cursor, following, league_path):
+        if not transactions_paging.load_continues(len(items), requests_made, cursor, following, league_path, pages):
             break
         cursor = following
     order = transactions_paging.newest_first([item.get("date") for item in items])

@@ -8846,7 +8846,7 @@ class FavoriteCardLoader(QThread):
 
 class LeagueTransactionsLoader(QThread):
     """One load of the Transactions running list from a cursor (transactions_paging)."""
-    data_loaded = pyqtSignal(dict)  # {"rows", "next", "oldest_year"}
+    data_loaded = pyqtSignal(dict)  # {"rows", "next", "oldest_year", "skipped"}
     error_occurred = pyqtSignal(str)
 
     def __init__(self, league: str, cursor: dict, team_id=None):
@@ -9593,6 +9593,8 @@ class TransactionsDialog(QDialog):
         self._generation += 1
         self._loading = False
         self._load_failed = False
+        self._more_failed = False
+        self._nothing_item = None  # the "No transactions since..." line, while it's all there is
         self._first_load = True
         year, month = self._now()
         self._cursor = transactions_paging.start_cursor(year, month, *(self._jump or (None, None)))
@@ -9606,7 +9608,9 @@ class TransactionsDialog(QDialog):
         if self._cursor is None or self._loading:
             return
         self._loading = True
-        self.load_more_btn.setEnabled(False)
+        self._more_failed = False
+        # Load More stays enabled while it loads (the _loading guard stops a second one):
+        # disabling the focused button would throw focus onto Close.
         loading_item = QListWidgetItem(
             "Loading transactions..." if self._first_load else "Loading older transactions...")
         self.trans_list.addItem(loading_item)
@@ -9624,7 +9628,7 @@ class TransactionsDialog(QDialog):
         # Down Arrow, or Page Down, on the last row goes on into older transactions.
         if (obj is self.trans_list and event.type() == QEvent.Type.KeyPress
                 and event.key() in (Qt.Key.Key_Down, Qt.Key.Key_PageDown)
-                and not event.modifiers()
+                and not (event.modifiers() & ~Qt.KeyboardModifier.KeypadModifier)
                 and self.trans_list.currentRow() == self.trans_list.count() - 1
                 and self._cursor is not None and not self._loading and not self._first_load):
             self._load_next()
@@ -9658,25 +9662,40 @@ class TransactionsDialog(QDialog):
             notice = transactions_paging.jump_notice(*self._jump, [r.get("date") for r in rows], team_name)
             if notice:
                 self.trans_list.addItem(notice)
+        if rows or skipped:
+            self._nothing_item = None
         for text in above:
             self.trans_list.addItem(text)
-        if first and not rows and not skipped:
-            self.trans_list.addItem(transactions_paging.nothing_found(oldest_year, self._jump, team_name))
+        nothing = None
+        if not rows and not skipped and (first or self._nothing_item is not None):
+            # Nothing at all, from the first load or from looking further back: one line says
+            # how far back, kept up to date.
+            nothing = transactions_paging.nothing_found(oldest_year, self._jump, team_name)
+            if self._nothing_item is None:
+                self._nothing_item = QListWidgetItem(nothing)
+                self.trans_list.addItem(self._nothing_item)
+            else:
+                self._nothing_item.setText(nothing)
         for t in rows:
             parts = [p for p in [t.get('date'), t.get('team'), t.get('description') or t.get('player')] if p]
             self.trans_list.addItem(" — ".join(parts))
         for text in below:
             self.trans_list.addItem(text)
-        if self._cursor is None and rows:
+        # The end, unless the list is only the line saying there's nothing back to 2001.
+        ended = self._cursor is None and self.trans_list.count() > 0 and self._nothing_item is None
+        if ended:
             self.trans_list.addItem(transactions_paging.end_text(team_name))
-        self.load_more_btn.setEnabled(self._cursor is not None)
+        self._set_load_more_enabled(self._cursor is not None)
 
         if first:
             self.trans_list.setCurrentRow(0)
             _take_focus_after_load(self.trans_list)
             return
         if not rows:
-            announce(" ".join(above + below) or transactions_paging.nothing_older(oldest_year, team_name))
+            said = " ".join(above + below) or nothing or transactions_paging.nothing_older(oldest_year, team_name)
+            if ended:
+                said += " " + transactions_paging.end_text(team_name)
+            announce(said)
             return
         # The first new row is current: read at once from Down Arrow, and where Shift+Tab
         # lands from Load More.
@@ -9691,9 +9710,11 @@ class TransactionsDialog(QDialog):
         self._loading = False
         self._take_out(loading_item)
         if not self._first_load:
-            # Loading more failed. What's there stays, and asking again asks for the same.
-            self.load_more_btn.setEnabled(True)
-            announce(error)
+            # Loading more failed. What's there stays, and Load More, Down Arrow at the end or
+            # F5 asks for the same again.
+            self._more_failed = True
+            self._set_load_more_enabled(True)
+            announce(f"{error} Press F5 or Load More to try again.")
             return
         self._load_failed = True
         self.trans_list.clear()
@@ -9726,8 +9747,17 @@ class TransactionsDialog(QDialog):
                 self._load_teams()
             if self._load_failed:
                 self._restart()
+            elif self._more_failed:
+                self._load_next()
             return
         super().keyPressEvent(event)
+
+    def _set_load_more_enabled(self, enabled):
+        """Disabling the focused Load More would throw focus onto Close; it goes to the list."""
+        if not enabled and self.load_more_btn.hasFocus():
+            self.trans_list.setCurrentRow(self.trans_list.count() - 1)
+            self.trans_list.setFocus()
+        self.load_more_btn.setEnabled(enabled)
 
 
 class NFLDraftDialog(QDialog):

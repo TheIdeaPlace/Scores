@@ -126,10 +126,12 @@ class TransactionViewModel: ObservableObject {
         await load(first: true)
     }
 
-    /// Load older ones, from the end of the list or its button.
-    func loadMore() async {
+    /// Load older ones, from its button (announcing what came) or from reaching the end of
+    /// the list, where the new rows are simply there to swipe to: announcing each load as the
+    /// list fills a short screen would be a stream of them.
+    func loadMore(announcing: Bool = true) async {
         guard cursor != nil, !isLoading, !isLoadingMore else { return }
-        await load(first: false)
+        await load(first: false, announcing: announcing)
     }
 
     private struct Load {
@@ -143,19 +145,25 @@ class TransactionViewModel: ObservableObject {
         var cursor = start
         var load = Load(oldestYear: start.year)
         var requests = 0
+        var pages = 0
         while true {
             let answer = try await apiService.fetchTransactions(sport: sport, cursor: cursor, teamID: filterTeam?.id)
-            requests += 1
+            pages += 1
             load.oldestYear = cursor.year
             if let answer {
-                load.items += answer.transactions.filter { TransactionPaging.keeps(cursor, dateText: $0.dateString) }
+                let kept = answer.transactions.filter { TransactionPaging.keeps(cursor, dateText: $0.dateString) }
+                load.items += kept
+                if TransactionPaging.countsAgainstLimit(answered: answer.transactions.count, kept: kept.count) {
+                    requests += 1
+                }
                 load.following = TransactionPaging.nextCursor(cursor, hasMore: cursor.page < answer.pageCount)
             } else {
+                requests += 1
                 load.skipped.append((cursor.year, !load.items.isEmpty))
                 load.following = TransactionPaging.afterNoAnswer(cursor)
             }
             guard TransactionPaging.loadContinues(found: load.items.count, requests: requests, cursor: cursor,
-                                                  following: load.following, leaguePath: sport.apiPath),
+                                                  following: load.following, leaguePath: sport.apiPath, pages: pages),
                   let next = load.following else { break }
             cursor = next
         }
@@ -164,7 +172,7 @@ class TransactionViewModel: ObservableObject {
         return load
     }
 
-    private func load(first: Bool) async {
+    private func load(first: Bool, announcing: Bool = true) async {
         guard let from = cursor else { return }
         let mine = generation
         if first { isLoading = true } else { isLoadingMore = true }
@@ -178,7 +186,7 @@ class TransactionViewModel: ObservableObject {
             let load = try await fetchLoad(from: from)
             guard mine == generation else { return }  // the month or team changed meanwhile
             cursor = load.following
-            show(load, first: first)
+            show(load, first: first, announcing: announcing)
         } catch {
             guard mine == generation else { return }
             if Task.isCancelled {
@@ -200,7 +208,7 @@ class TransactionViewModel: ObservableObject {
         }
     }
 
-    private func show(_ load: Load, first: Bool) {
+    private func show(_ load: Load, first: Bool, announcing: Bool) {
         var added: [TransactionEntry] = []
         let above = load.skipped.filter { !$0.below }.map { TransactionPaging.skippedText(year: $0.year, teamName: teamName) }
         let below = load.skipped.filter { $0.below }.map { TransactionPaging.skippedText(year: $0.year, teamName: teamName) }
@@ -221,13 +229,13 @@ class TransactionViewModel: ObservableObject {
         if entries.isEmpty {
             // Nothing at all yet, from the first load or from looking further back.
             emptyMessage = TransactionPaging.nothingFound(oldestYear: load.oldestYear, jumpedTo: jump, teamName: teamName)
-            if !first {
+            if !first && announcing {
                 Self.announce(emptyMessage!)
             }
             return
         }
         emptyMessage = nil
-        if !first {
+        if !first && announcing {
             if load.items.isEmpty {
                 Self.announce((above + below).joined(separator: " ").isEmpty
                               ? TransactionPaging.nothingOlder(oldestYear: load.oldestYear, teamName: teamName)

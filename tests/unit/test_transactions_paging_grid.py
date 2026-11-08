@@ -20,6 +20,7 @@ def test_constants():
     assert paging.PAGE_SIZE == GRID["page_size"]
     assert paging.WHOLE_YEAR_PAGE_SIZE == GRID["whole_year_page_size"]
     assert paging.MAX_REQUESTS_PER_LOAD == GRID["max_requests_per_load"]
+    assert paging.MAX_PAGES_PER_LOAD == GRID["max_pages_per_load"]
 
 
 @named("labels")
@@ -101,7 +102,12 @@ def test_end_text(case):
 @named("load_continues")
 def test_load_continues(case):
     assert paging.load_continues(case["found"], case["requests"], case["cursor"], case["following"],
-                                 case["league"]) is case["continues"]
+                                 case["league"], case["pages"]) is case["continues"]
+
+
+@named("counts_against_limit")
+def test_counts_against_limit(case):
+    assert paging.counts_against_limit(case["answered"], case["kept"]) is case["counts"]
 
 
 @named("transaction_items")

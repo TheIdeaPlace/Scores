@@ -42,6 +42,8 @@ WHOLE_YEAR_PAGE_SIZE = 200
 # One load asks again while it has found nothing to show, but no more than this many times:
 # a college league has nothing in any year.
 MAX_REQUESTS_PER_LOAD = 6
+# And never more requests than this in one load, whatever they found.
+MAX_PAGES_PER_LOAD = 30
 
 MONTH_NAMES = ["January", "February", "March", "April", "May", "June", "July", "August",
                "September", "October", "November", "December"]
@@ -134,16 +136,24 @@ def after_no_answer(cursor):
     return next_cursor(cursor, False)
 
 
-def load_continues(found, requests, cursor, following, league_path):
+def counts_against_limit(answered, kept):
+    """Whether a request counts toward MAX_REQUESTS_PER_LOAD. A page whose items were all left
+    out (a team's jump passing over what's newer than the month) doesn't: stopping there would
+    say the month had none when it hadn't been reached. MAX_PAGES_PER_LOAD still caps it."""
+    return answered == 0 or kept > 0
+
+
+def load_continues(found, requests, cursor, following, league_path, pages):
     """Whether one load asks again after an answer: while it has nothing to show, and in soccer
-    until the year is finished, but never past `following` being None or the request limit.
-    After a skip (after_no_answer) with something found, the year has changed, so it stops,
-    and the skip's notice goes below what was found."""
-    if following is None or requests >= MAX_REQUESTS_PER_LOAD:
+    until the year is finished, so a year never comes out half in order. `requests` is what
+    counts against MAX_REQUESTS_PER_LOAD (counts_against_limit) and `pages` every request,
+    which never passes MAX_PAGES_PER_LOAD. After a skip (after_no_answer) with something found,
+    the year has changed, so it stops, and the skip's notice goes below what was found."""
+    if following is None or pages >= MAX_PAGES_PER_LOAD:
         return False
-    if found == 0:
+    if found and whole_year_at_once(league_path) and following["year"] == cursor["year"]:
         return True
-    return whole_year_at_once(league_path) and following["year"] == cursor["year"]
+    return found == 0 and requests < MAX_REQUESTS_PER_LOAD
 
 
 def transaction_items(listed):

@@ -25,9 +25,10 @@ private struct PagingGrid: Decodable {
     struct Next: Decodable { let name: String; let cursor: Cursor; let has_more: Bool; let next: Cursor? }
     struct NoAnswer: Decodable { let cursor: Cursor; let next: Cursor? }
     struct Continues: Decodable {
-        let name: String; let league: String; let found: Int; let requests: Int
+        let name: String; let league: String; let found: Int; let requests: Int; let pages: Int
         let cursor: Cursor; let following: Cursor?; let continues: Bool
     }
+    struct Counts: Decodable { let name: String; let answered: Int; let kept: Int; let counts: Bool }
     struct JumpNotice: Decodable { let name: String; let jump: [Int]; let team: String?; let dates: [String?]; let text: String? }
     struct NothingFound: Decodable { let name: String; let oldest_year: Int; let jump: [Int]?; let team: String?; let text: String }
     struct Skipped: Decodable { let year: Int; let team: String?; let text: String }
@@ -40,6 +41,8 @@ private struct PagingGrid: Decodable {
     let page_size: Int
     let whole_year_page_size: Int
     let max_requests_per_load: Int
+    let max_pages_per_load: Int
+    let counts_against_limit: [Counts]
     let labels: [Label]
     let months_back: [MonthsBack]
     let start: [Start]
@@ -74,6 +77,10 @@ final class TransactionPagingGridTests: XCTestCase {
         XCTAssertEqual(TransactionPaging.pageSize, grid.page_size)
         XCTAssertEqual(TransactionPaging.wholeYearPageSize, grid.whole_year_page_size)
         XCTAssertEqual(TransactionPaging.maxRequestsPerLoad, grid.max_requests_per_load)
+        XCTAssertEqual(TransactionPaging.maxPagesPerLoad, grid.max_pages_per_load)
+        for item in grid.counts_against_limit {
+            XCTAssertEqual(TransactionPaging.countsAgainstLimit(answered: item.answered, kept: item.kept), item.counts, item.name)
+        }
     }
 
     func testLabelsAndMonths() {
@@ -133,7 +140,8 @@ final class TransactionPagingGridTests: XCTestCase {
         }
         for item in grid.load_continues {
             XCTAssertEqual(TransactionPaging.loadContinues(found: item.found, requests: item.requests, cursor: item.cursor,
-                                                           following: item.following, leaguePath: item.league),
+                                                           following: item.following, leaguePath: item.league,
+                                                           pages: item.pages),
                            item.continues, item.name)
         }
     }
