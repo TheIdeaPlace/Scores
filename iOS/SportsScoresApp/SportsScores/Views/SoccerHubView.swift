@@ -190,5 +190,6 @@ private struct LeagueRowView: View {
     NavigationStack {
         SoccerHubView()
             .environmentObject(AppSettings())
+            .environmentObject(MonitoringStore())
     }
 }
