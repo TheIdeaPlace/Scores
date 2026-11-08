@@ -8,5 +8,6 @@ Reports, findings logs and steps files from NVDA runs of the Windows app in the 
 | `nvda-live-ncaaf-2026-11-03/` | Live college football check. |
 | `nvda-bugbash-2026-11-07-ncaaf/` | College football bug bash on 1.1.1. `README.md` is the report. Its findings became #202, #203 and #204, plus the Polls fix in #207. |
 | `monitoring-2026-11-07/` | NVDA checks of the Live Scores Monitoring section (#186). |
+| `jaws-stray-dialog-text-2026-11-08/` | JAWS repeating a closed dialog's text after the window title, fixed in #250. The first JAWS run, with exact JAWS speech from its speech history; a PyQt harness of the variants tried. |
 
 The missing-data audit from Nov 3 is in `docs/audits/`.

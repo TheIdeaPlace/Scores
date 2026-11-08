@@ -1,0 +1,31 @@
+# JAWS: Home > NBA > --- Statistics --- > Enter (StatisticsChoiceDialog) > Escape > Alt+Tab away and back >
+# Escape to home > Alt+Tab away and back. The stray text is that dialog's first label, whose accessible
+# name is "NBA Statistics Selection" (scores.py StatisticsChoiceDialog).
+w 0.5
+t NBA
+w 3
+k {ENTER}
+w 14
+t ---
+w 4
+e Statistics
+k {ENTER}
+w 6
+e Statistics Type List
+k {ESC}
+w 6
+e! Statistics Selection
+k %{TAB}
+w 5
+e Notepad
+k %{TAB}
+w 7
+e! Statistics Selection
+k {ESC}
+w 7
+e! Statistics Selection
+k %{TAB}
+w 5
+k %{TAB}
+w 7
+e! Statistics Selection
