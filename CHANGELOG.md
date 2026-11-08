@@ -98,6 +98,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   words as Windows. In the Quick List and Full List views; table rows have no actions yet (#208). (#185)
 
 ### Changed
+- **Transactions: one list, newest first, and a jump to any month, on both apps (#188).** Windows had
+  pages newest first and no way to go back further than a page at a time; the iPhone showed one month at
+  a time. Both now show one running list, newest first, that loads older ones as you go, back to January
+  2001, and both can start it at the end of any month and keep going older from there.
+  - Windows: **Load More** (Alt+M), or Down Arrow on the last item, loads older ones. Ctrl+G (or **Go to
+    Month**) opens a list of months, newest first; nothing loads until Enter. The window title says where
+    the list starts ("Transactions from March 2003 — NFL"), and the team filter keeps the month.
+  - iPhone: older ones load as you scroll, with a Load Older Transactions button at the end. **Jump to
+    Month** opens the month and year picker, and **Newest** goes back to the latest. The previous and
+    next month arrows and the page buttons are gone.
+  - A month with none says so above the older ones; a league with none at all, such as the college
+    leagues, says so in place of the list; and a failed request says so, with Try Again or F5.
+  - Soccer's transactions are transfers with no description, so they were blank lines on Windows and an
+    error on the iPhone. Both now read them as sentences ("Marquinhos joins Cruzeiro from Arsenal on loan"),
+    newest first, and a soccer team's list works.
+  - ESPN can't provide some stretches (NFL February to August 2003 answers with an error at any page
+    size). The list says so and goes on with the year before, rather than stopping there.
+  - The paging rule is `transactions_paging.py` and its twin `TransactionPaging.swift`, held to
+    `tests/fixtures/transactions_paging_grid.json`.
 - **Windows: monitoring is a section at the top of Live Scores.** Alt+M on a game adds it to Monitoring,
   where its row reads as it does below with the sport after it, and the game stays in its own section too.
   Alt+M also works on today's games on a sport's page. Alt+M on a Monitoring row takes it off and moves you

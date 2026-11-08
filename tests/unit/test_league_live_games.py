@@ -705,28 +705,29 @@ class TestAFailureInADialog(FailureViews):
 
     def transactions(self):
         with patch.object(self.scores.TransactionsDialog, "_load_teams"), \
-                patch.object(self.scores.TransactionsDialog, "_load_transactions"):
+                patch.object(self.scores.TransactionsDialog, "_load_next"):
             return self.scores.TransactionsDialog("NFL")
 
     def test_transactions_failing_is_not_no_transactions(self):
         dialog = self.transactions()
         loading = self.scores.QListWidgetItem("Loading transactions...")
         dialog.trans_list.addItem(loading)
-        dialog._on_error(FAILED, loading)
+        dialog._on_error(FAILED, loading, dialog._generation)
         assert self.rows(dialog.trans_list) == [FAILED]
         assert dialog.trans_list.currentRow() == 0
 
     def test_load_more_failing_keeps_the_list_and_asks_for_the_same_page_next(self):
         dialog = self.transactions()
+        dialog._first_load = False
+        dialog._cursor = {"year": 2026, "month": None, "page": 2}
         dialog.trans_list.addItem("2026-11-01 A trade")
-        dialog.current_page = 2
-        loading = self.scores.QListWidgetItem("Loading transactions...")
+        loading = self.scores.QListWidgetItem("Loading older transactions...")
         dialog.trans_list.addItem(loading)
-        dialog._on_error(FAILED, loading)
+        dialog._on_error(FAILED, loading, dialog._generation)
         assert self.rows(dialog.trans_list) == ["2026-11-01 A trade"]
-        assert dialog.current_page == 1
+        assert dialog._cursor == {"year": 2026, "month": None, "page": 2}
         assert dialog.load_more_btn.isEnabled()
-        self.said.assert_called_once_with(FAILED)
+        self.said.assert_called_once_with(f"{FAILED} Press F5 or Load More to try again.")
 
     def test_the_team_filter_failing_says_so_and_f5_asks_again(self):
         dialog = self.transactions()
@@ -776,14 +777,14 @@ class TestAFailureInADialog(FailureViews):
 
     def test_f5_in_transactions_only_tries_again_what_failed(self):
         dialog = self.transactions()
-        with patch.object(dialog, "_load_transactions") as load:
+        with patch.object(dialog, "_restart") as load:
             self.press_f5(dialog)
             load.assert_not_called()
             loading = self.scores.QListWidgetItem("Loading transactions...")
             dialog.trans_list.addItem(loading)
-            dialog._on_error(FAILED, loading)
+            dialog._on_error(FAILED, loading, dialog._generation)
             self.press_f5(dialog)
-            load.assert_called_once_with(reset=True)
+            load.assert_called_once_with()
 
     def golf(self):
         with patch.object(self.scores.GolfTournamentDialog, "_load_leaderboard"), \

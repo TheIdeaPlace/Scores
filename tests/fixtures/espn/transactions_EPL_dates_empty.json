@@ -1,0 +1,19 @@
+{
+ "timestamp": "2026-11-08T00:31:54Z",
+ "status": "success",
+ "season": {
+  "year": 2026,
+  "type": 14308,
+  "name": "2026-27 English Premier League",
+  "displayName": "2026-27 English Premier League"
+ },
+ "requestedYear": {
+  "year": 2024,
+  "displayName": "2024"
+ },
+ "count": 0,
+ "pageIndex": 0,
+ "pageSize": 25,
+ "pageCount": 0,
+ "transactions": []
+}

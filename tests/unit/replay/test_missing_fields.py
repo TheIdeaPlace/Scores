@@ -123,6 +123,10 @@ CASES = [
     case("get_team_roster flat", lambda: espn_api.get_team_roster("NBA", "15"), "roster_NBA_15.json", "/roster"),
     case("get_transactions", lambda: espn_api.get_transactions("NFL"), "transactions_NFL.json", "/transactions"),
     case("get_team_transactions", lambda: espn_api.get_team_transactions("NFL", "9"), "transactions_NFL_9.json", "/transactions"),
+    case("get_transactions_from jump", lambda: espn_api.get_transactions_from("NFL", {"year": 2025, "month": 9, "page": 1})["rows"],
+         "transactions_NFL_2025_09.json", "/transactions"),
+    case("get_transactions_from soccer team", lambda: espn_api.get_transactions_from(
+        "EPL", {"year": 2025, "month": None, "page": 1}, "359")["rows"], "transactions_EPL_359_2025.json", "/transactions"),
     case("get_rankings", lambda: espn_api.get_rankings("NCAAF"), "rankings_NCAAF.json", "/rankings"),
     case("get_world_cup_standings", lambda: espn_api.get_world_cup_standings("WC2026"), "worldcup_standings_WC2026.json", "/standings"),
     case("get_standings MLB", lambda: espn_api.get_standings("MLB"), "standings_MLB.json", "/standings"),

@@ -1329,7 +1329,20 @@ class TestTransactions:
         http = FakeHttp([("dates=", (400, {})), ("transactions", (200, {"transactions": [{}]}))])
         report = v.Report()
         v.check_transactions(http, report, league("NFL"))
-        assert statuses(report, "Transactions by date (iPhone)") == [v.FAIL]
+        assert statuses(report, "Transactions by month (Go to Month)") == [v.FAIL]
+
+    def test_nfl_year_is_the_calendar_year_newest_first(self, monkeypatch):
+        import espn_api
+        from datetime import date
+        monkeypatch.setattr(espn_api, "get_transactions", lambda *a, **k: ([{"description": "x"}], False))
+        year = date.today().year - 1
+        good = {"transactions": [{"date": f"{year}-12-30T08:00Z"}, {"date": f"{year}-01-02T08:00Z"}]}
+        bad = {"transactions": [{"date": f"{year}-01-02T08:00Z"}, {"date": f"{year}-12-30T08:00Z"}]}
+        for answer, expected in ((good, v.PASS), (bad, v.FAIL), ({"transactions": []}, v.FAIL)):
+            http = FakeHttp([("season=", (200, answer)), ("transactions", (200, {"transactions": [{}]}))])
+            report = v.Report()
+            v.check_transactions(http, report, league("NFL"))
+            assert statuses(report, "Transactions by year") == [expected]
 
     def test_app_reads_nothing_though_espn_has_data(self, monkeypatch):
         import espn_api

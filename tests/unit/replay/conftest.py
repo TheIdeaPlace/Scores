@@ -43,7 +43,9 @@ def espn(monkeypatch):
     monkeypatch.setattr(requests, "get", fake)
     yield fake
     assert not fake.unstubbed, f"Requests no route answered: {fake.unstubbed}"
-    ranges = [url for url in fake.calls if DATE_RANGE.search(url)]
+    # /transactions is a different endpoint and still takes a range of up to a year
+    # (transactions_paging.py, checked 2026-11-07).
+    ranges = [url for url in fake.calls if DATE_RANGE.search(url) and "/transactions?" not in url]
     assert not ranges, f"ESPN rejects dates=A-B ranges: {ranges}"
 
 

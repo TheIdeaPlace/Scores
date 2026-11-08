@@ -19,6 +19,7 @@ from team_list import source as team_list_source
 import team_stats
 from team_stats import needs_team_list, parse_team_stats
 from timezone_utils import convert_espn_time_to_local
+import transactions_paging
 
 # Every ESPN request gets a timeout. requests has none by default, so one
 # stalled response would block its caller forever; several screens fetch on
@@ -3483,6 +3484,40 @@ def _transaction_date(item):
         return date_str[:10]
 
 
+def _transaction_items(data):
+    """The items in a /transactions answer: a list, or a soccer team's `in` and `out`. A null
+    where they belong isn't an answer."""
+    key = "transactions" if "transactions" in data else "items"
+    if isinstance(data.get(key), dict):
+        return transactions_paging.transaction_items(data[key])
+    return _listed(data, key, TRANSACTIONS_UNAVAILABLE)
+
+
+def _transaction_row(item):
+    team = item.get("team") or {}
+    return {
+        "date":        _transaction_date(item),
+        "team":        (team.get("abbreviation") or "") if isinstance(team, dict) else "",
+        "description": transactions_paging.describe(item),
+        # Keep legacy keys so callers using player/type/position still work.
+        "type":        "",
+        "player":      "",
+        "position":    "",
+    }
+
+
+def _transactions_page(league_path, params, page):
+    """One /transactions request: (items, has_more), or None for a 400 or 404."""
+    data = _espn_answer(TRANSACTIONS_UNAVAILABLE, f"{BASE_URL}/{league_path}/transactions", params=params)
+    if data is None:
+        return None
+    items = _transaction_items(data)
+    # ESPN returns pageIndex / pageCount as top-level integers. A null is no more pages, not
+    # a reason to lose the page it came with.
+    page_count = data.get("pageCount")
+    return items, int(page) < _stat_number({"value": page_count, "displayValue": page_count})
+
+
 def get_transactions(league_key, team_id=None, limit=50, page=1):
     """Get league-wide (or team-filtered) transactions with pagination.
 
@@ -3495,29 +3530,52 @@ def get_transactions(league_key, team_id=None, limit=50, page=1):
     params = {"limit": limit, "page": page}
     if team_id:
         params["team"] = team_id
-    data = _espn_answer(TRANSACTIONS_UNAVAILABLE, f"{BASE_URL}/{league_path}/transactions", params=params)
-    if data is None:
+    answer = _transactions_page(league_path, params, page)
+    if answer is None:
         return [], False
-    raw_items = _listed(data, "transactions" if "transactions" in data else "items", TRANSACTIONS_UNAVAILABLE)
-    # ESPN returns pageIndex / pageCount as top-level integers. A null is no more pages, not
-    # a reason to lose the page it came with.
-    page_count = data.get("pageCount")
-    has_more = int(page) < _stat_number({"value": page_count, "displayValue": page_count})
-    result = []
-    for item in raw_items:
-        date_display = _transaction_date(item)
-        team = item.get("team") or {}
-        team_abbr = (team.get("abbreviation") or "") if isinstance(team, dict) else ""
-        result.append({
-            "date":        date_display,
-            "team":        team_abbr,
-            "description": item.get("description") or "",
-            # Keep legacy keys so callers using player/type/position still work.
-            "type":        "",
-            "player":      "",
-            "position":    "",
-        })
-    return result, has_more
+    items, has_more = answer
+    return [_transaction_row(item) for item in items], has_more
+
+
+def get_transactions_from(league_key, cursor, team_id=None):
+    """One load of the Transactions screen's running list, from `cursor`
+    (transactions_paging.start_cursor or the `next` of the load before).
+
+    Returns {"rows", "next", "oldest_year", "skipped"}: the rows newest first, where the next
+    load starts (None when there is nothing older), the oldest year this load looked in, and
+    the years ESPN had no answer for, each {"year", "below"}: below the rows when it came after
+    some were found, above them otherwise. It asks again while it has found nothing, and
+    finishes a soccer year (transactions_paging.load_continues). A failure raises ApiError and
+    leaves the cursor where it was, so asking again retries it.
+    """
+    league_path = LEAGUES.get(league_key)
+    if not league_path or not cursor:
+        return {"rows": [], "next": None, "oldest_year": (cursor or {}).get("year"), "skipped": []}
+    items, skipped, requests_made, pages, oldest_year = [], [], 0, 0, cursor["year"]
+    while True:
+        params = transactions_paging.request_params(cursor, league_path, team_id)
+        answer = _transactions_page(league_path, params, cursor["page"])
+        pages += 1
+        oldest_year = cursor["year"]
+        if answer is None:
+            requests_made += 1
+            # A 400 or 404: ESPN can't give this stretch at all (NFL 2003, or a team it doesn't
+            # know). Asking again would get the same, so the list goes on without it.
+            skipped.append({"year": cursor["year"], "below": bool(items)})
+            following = transactions_paging.after_no_answer(cursor)
+        else:
+            page_items, has_more = answer
+            kept = [item for item in page_items if transactions_paging.keeps(cursor, item.get("date"))]
+            items += kept
+            if transactions_paging.counts_against_limit(len(page_items), len(kept)):
+                requests_made += 1
+            following = transactions_paging.next_cursor(cursor, has_more)
+        if not transactions_paging.load_continues(len(items), requests_made, cursor, following, league_path, pages):
+            break
+        cursor = following
+    order = transactions_paging.newest_first([item.get("date") for item in items])
+    return {"rows": [_transaction_row(items[index]) for index in order], "next": following,
+            "oldest_year": oldest_year, "skipped": skipped}
 
 
 # One request has a whole draft, as on the iPhone. It's kept briefly, since each round's tab asks for
@@ -3618,13 +3676,13 @@ def get_team_transactions(league_key, team_id, limit=25):
     )
     if data is None:
         return []
-    items = _listed(data, "transactions" if "transactions" in data else "items", TRANSACTIONS_UNAVAILABLE)
+    items = _transaction_items(data)
     result = []
     for item in items:
         date_display = _transaction_date(item)
         result.append({
             "date":        date_display,
-            "description": item.get("description") or "",
+            "description": transactions_paging.describe(item),
             # Keep legacy keys so callers using player/type/position still work.
             "type":        "",
             "player":      "",

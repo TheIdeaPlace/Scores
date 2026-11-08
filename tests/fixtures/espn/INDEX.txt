@@ -46,6 +46,11 @@ news_NFL.json	1 KB	league news, 2 articles, web and mobile links
 team_news_NFL_9.json	1 KB	/news?team=9, 2 articles. /teams/9/news answers 200 with {}
 transactions_NFL.json	1 KB	league-wide: team on each item; pageCount 407
 transactions_NFL_9.json	1 KB	team-filtered: no team on the items
+transactions_NFL_2025_09.json	1 KB	dates=20250101-20250930, limit 3, captured Nov 7 2026: a jump to September 2025, January 1 to the month's end; newest first, pageCount 609; team logos cut
+transactions_NFL_9_2024.json	1 KB	season=2024&team=9, limit 3: season is the calendar year (Dec 2024 first), no team on the items; team=9 ignores dates
+transactions_MLS_2025.json	2 KB	season=2025, limit 4: soccer comes oldest first (Jan 1 first), items are transfers with athlete/from/to/type and no description or team; links and logos cut
+transactions_EPL_359_2025.json	2 KB	season=2025&team=359, limit 3: a soccer team's transactions are {"in": [], "out": [...]}, not a list
+transactions_EPL_dates_empty.json	1 KB	dates=20240101-20240331 on soccer: always nothing (count 0), though season=2024 has 578
 rankings_NCAAF.json	7 KB	week 10 of 2026: all six polls in ESPN's order (CFP, AP, AFCA Coaches, FCS Coaches, AFCA Div II, AFCA Div III), 3 teams each, others and droppedOut left out; CFP's first week: points 0.0 and previous 0 for everyone
 draft_site_NFL_2026.json	11 KB	/draft season=2026, cut to 6 picks and their teams: position only as an id, college on the athlete; 2nd-round pick 33 was traded; round 3's Georgia State is Georgia St as a short name
 golf_schedule_PGA.json	5 KB	dates=2026: a cancelled event with no competitors, a final, a scheduled one

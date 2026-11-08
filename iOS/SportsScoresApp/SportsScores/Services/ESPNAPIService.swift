@@ -2125,21 +2125,22 @@ class ESPNAPIService {
     ///   - page: 1-based page index (default 1).
     ///   - limit: Transactions per page (default 25).
     ///   - dateRange: Optional `(start, end)` strings in `"yyyyMMdd"` format for `?dates=` filtering.
-    func fetchTransactions(
-        sport: Sport,
-        page: Int = 1,
-        limit: Int = 25,
-        dateRange: (start: String, end: String)? = nil
-    ) async throws -> TransactionResponse {
-        var urlString = "\(baseURL)/\(sport.apiPath)/transactions?limit=\(limit)&page=\(page)"
-        if let range = dateRange {
-            urlString += "&dates=\(range.start)-\(range.end)"
-        }
-        guard let url = URL(string: urlString) else { throw APIError.invalidURL }
+    /// The /transactions URL for one step of the running list (TransactionPaging.requestParams).
+    func transactionsURL(sport: Sport, cursor: TransactionPaging.Cursor, teamID: String?) -> URL? {
+        var components = URLComponents(string: "\(baseURL)/\(sport.apiPath)/transactions")
+        components?.queryItems = TransactionPaging.requestParams(cursor, leaguePath: sport.apiPath, teamID: teamID)
+            .map { URLQueryItem(name: $0.name, value: $0.value) }
+        return components?.url
+    }
+
+    /// One /transactions request. Nil for a 400 or 404, which say ESPN can't give that stretch
+    /// at all (NFL 2003, or a team it doesn't know); anything else that isn't an answer throws.
+    func fetchTransactions(sport: Sport, cursor: TransactionPaging.Cursor, teamID: String?) async throws -> TransactionResponse? {
+        guard let url = transactionsURL(sport: sport, cursor: cursor, teamID: teamID) else { throw APIError.invalidURL }
         let (data, response) = try await session.data(from: url)
-        guard let http = response as? HTTPURLResponse, http.statusCode == 200 else {
-            throw APIError.invalidResponse
-        }
+        guard let http = response as? HTTPURLResponse else { throw APIError.invalidResponse }
+        if http.statusCode == 400 || http.statusCode == 404 { return nil }
+        guard http.statusCode == 200 else { throw APIError.invalidResponse }
         return try JSONDecoder().decode(TransactionResponse.self, from: data)
     }
 
