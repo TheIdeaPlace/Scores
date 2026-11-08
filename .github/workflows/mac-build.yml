@@ -40,8 +40,8 @@ jobs:
           set -euo pipefail
           python -m PyInstaller --noconfirm --windowed --name Scores \
             --osx-bundle-identifier net.theideaplace.scores \
-            --add-data "user_guide.html:." \
-            --add-data "radio_links.json:." \
+            --add-data "$PWD/user_guide.html:." \
+            --add-data "$PWD/radio_links.json:." \
             --distpath dist --workpath build/mac --specpath build/mac \
             main.py
           ls -la dist
