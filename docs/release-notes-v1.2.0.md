@@ -1,7 +1,7 @@
 ## What's New in Version 1.2.0
 
 Listen to the game on the radio, follow the games you care about in a Monitoring section, and on Windows, racing
-and the CFL. Both apps now read the same data in more places, and a lot of things that were wrong now aren't.
+and the CFL. Both apps now read the same data in more places, and several other improvements.
 
 ### Windows
 
