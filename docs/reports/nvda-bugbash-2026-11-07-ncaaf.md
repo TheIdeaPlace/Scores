@@ -4,7 +4,7 @@
 > Fixed: 1, 2, 6 and 7 in #219; 8's polls in #207; 3 in #186. Moot: 4 and 14, since #186 removed automatic score speech.
 > Filed: 5 as #235, 11 as #236, 12 as #237, 13 as #238, 15 as #239, 10 as #240 (with #139 for 9), 8's Teams table as #241, 16 as #242.
 >
-> The check reports (`out\`), steps files and raw recordings named below are in `OneDrive\testing\scores\`, and may be cleared.
+> The steps files and scripts are in [nvda-bugbash-2026-11-07-ncaaf/](nvda-bugbash-2026-11-07-ncaaf/), so the bash can be run again: see "How to run it again" below. The check reports and raw recordings are in `OneDrive\testing\scores\`, and may be cleared.
 
 
 **Build:** Scores 1.1.1, installed from the release installer (`Scores-1.1.1-Setup.exe`, daa093a).
@@ -102,11 +102,28 @@ Each finding was heard in a clip, or seen in the VM's UI tree where it says so. 
 5. Game Wrap Up on your PC: it opens the browser and then shows a "Game Wrap Up opened in your default web browser" box with OK. Is that box in the way? In the VM, Edge's first-run page took over, so I couldn't judge it.
 6. Is a live row's play cut at 60 characters ("pass complete short right to #16...") too short to be useful?
 
+## How to run it again
+
+The folder [nvda-bugbash-2026-11-07-ncaaf/](nvda-bugbash-2026-11-07-ncaaf/) has what you need:
+- `steps/` has the 21 steps files, one per clip, named as in the Results table.
+- `tools/` has the scripts.
+
+It uses the vmtest and sr-test tools in TheWorkBench (`vmtest\vmtest.ps1` and `audio-demo\tools`: `setup-rig.ps1`, `clip.ps1` and `srcheck.py`). Steps files use the audio-demo format, described in `audio-demo\sr-test-skill\SKILL.md`.
+
+1. **Make a clip folder outside the repo,** for example `OneDrive\testing\scores\moreaudio\nvda-bugbash-<date>\`. Copy `steps\` and `tools\` into it, and add empty `clips\` and `out\` folders.
+2. **Start a VM and NVDA,** from a Scores checkout on the branch to test: `vmtest begin`, then `setup-rig.ps1 -ScreenReader NVDA`. If the PC is on Ethernet, first run `Connect-VMNetworkAdapter -VMName ClaudeTesting -SwitchName 'External Ethernet'`. Then run `tools\net-renew.ps1` in the VM with `vmtest run -ScriptFile ... -Elevated`; a 169.254 address means no network.
+3. **Install the build** the way users get it. Push its `Scores-<version>-Setup.exe` with `vmtest push`, then run `tools\install.ps1` in the VM. It expects the installer at `C:\vmtest\files\Scores-1.1.1-Setup.exe`, so change the name for another version.
+4. **Record ESPN's feed** while you test, so each clip can be checked against the same minute: `python -I tools\recorder.py <folder>\snapshots 3 2` saves every 3 minutes for 2 hours. Change its `DAY` to the date being tested. `tools\feed.py <HHMMSS> <team>` then prints a game as ESPN had it at that time.
+5. **Run the clips:** `PROJECT=<folder> REPO=<scores checkout> bash tools/run.sh -a "--ncaaf" s1-ncaaf-slate g1-live-details`. Pass `-a "--live"` for the `l*` clips and `-a "--ncaaf-standings"` for `d3`. Each clip resets the settings (`tools\reset.ps1`), clears the shell host that can hold the foreground (`tools\vm-shell-reset.ps1`), records, and writes `out\<clip>-check.md`. `tools\gen_slate.py` writes a slate walk for a different number of games.
+6. **Keep each clip under about 14 minutes:** vmtest stops a command after 15. If one is cut off, `tools\pull-nvda-log.ps1` copies NVDA's own log out of the VM.
+
+Live games, dates and team names change, so steps that type a team (`Q Duke Blue`) or wait for a game's end need editing for the day you test.
+
 ## Files
 
-- `out\`: one check report per clip, every key with what NVDA said after it.
-- `steps\`: the steps files, which can be re-run against a later build.
-- Raw recordings, speech logs, ESPN snapshots, scripts and the running log (`findings-log.md`) are in `OneDrive\testing\scores\moreaudio\nvda-bugbash-2026-11-07-ncaaf\`.
+- In the repo: this report, and `nvda-bugbash-2026-11-07-ncaaf/` with its steps files and scripts.
+- In `OneDrive\testing\scores\nvda-bugbash-2026-11-07-ncaaf\out\`: the check report from each clip, with every key and what NVDA said after it.
+- In `OneDrive\testing\scores\moreaudio\nvda-bugbash-2026-11-07-ncaaf\`: the raw recordings, speech logs, ESPN snapshots and the running log (`findings-log.md`). These can be made again by the steps above, though never with the same games.
 
 ## Rig notes
 

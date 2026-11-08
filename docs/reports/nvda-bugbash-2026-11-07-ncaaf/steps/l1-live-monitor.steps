@@ -1,0 +1,26 @@
+# Live Scores: find a live college game, monitor it with Alt+M, then sit through six minutes of 1-minute refreshes.
+w 0.5
+x
+w 40
+n t
+w 3
+Q Alabama Crimson
+w 3
+n {TAB}
+w 4
+k %m
+w 5
+w 60
+w 60
+w 60
+w 60
+w 60
+w 60
+n {TAB}
+w 5
+k {F5}
+w 20
+n {TAB}
+w 5
+k %m
+w 5

@@ -1,0 +1,23 @@
+# Live Scores: monitor a tied game at the end of regulation, through overtime to the final if it gets there (under 14 minutes).
+w 0.5
+x
+w 40
+Q Arkansas Raz
+w 3
+n {TAB}
+w 6
+k %m
+w 6
+w 60
+w 60
+w 60
+w 60
+w 60
+w 60
+w 60
+w 60
+w 60
+w 60
+w 60
+n {TAB}
+w 5

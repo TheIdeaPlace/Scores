@@ -1,0 +1,28 @@
+# Live Scores: monitor a game in its last two minutes and stay until it goes final. What is said, and where is focus?
+w 0.5
+x
+w 40
+Q Texas Long
+w 3
+n {TAB}
+w 6
+k %m
+w 6
+w 60
+w 60
+w 60
+w 60
+w 60
+w 60
+w 60
+w 60
+w 60
+w 60
+w 60
+w 60
+w 60
+w 60
+n {TAB}
+w 6
+n t
+w 3
