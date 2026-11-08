@@ -99,7 +99,7 @@ Each finding was heard in a clip, or seen in the VM's UI tree where it says so. 
 
 - `out\`: one check report per clip, every key with what NVDA said after it.
 - `steps\`: the steps files, which can be re-run against a later build.
-- Raw recordings, speech logs, ESPN snapshots, scripts and the running log (`findings-log.md`) are in `OneDrive\testing\scores\moreaudio\nvda-bugbash-2026-11-07-ncaaf\`.
+- `findings-log.md`: the running log. The raw recordings, ESPN snapshots and builds were in the OneDrive testing folder and were cleared on Nov 7, 2026; the issues filed from this report (#202, #203, #204) carry what they needed.
 
 ## Rig notes
 
