@@ -98,6 +98,16 @@ class ApiService:
         return ApiService._call(espn_api.get_team_statistics, league)
     
     @staticmethod
+    def get_team_player_leaders(league: str, team_id: str) -> Dict:
+        """One team's players in each stat category, for Team Hub. A failed request raises ApiError."""
+        return ApiService._call(espn_api.get_team_player_leaders, league, team_id)
+
+    @staticmethod
+    def get_team_stat_rankings(league: str, team_id: str) -> Dict:
+        """Where one team ranks in its stats, for Team Hub. A failed request raises ApiError."""
+        return ApiService._call(espn_api.get_team_stat_rankings, league, team_id)
+
+    @staticmethod
     def get_stat_glossary(league: str) -> Dict:
         """ESPN's definitions of a league's statistics. A failed request raises ApiError."""
         return ApiService._call(espn_api.get_stat_glossary, league)

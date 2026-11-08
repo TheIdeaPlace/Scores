@@ -22,7 +22,7 @@ Sources, as the `source` column names them:
     mlb_statsapi      statsapi.mlb.com stats/leaders, Windows' MLB leaders until #166
     byteam            site.web.api.espn.com .../statistics/byteam, team statistics, both apps
     site_team_stats   site.api.espn.com .../teams/{id}/statistics, Windows' team stats until #152
-    core_team_stats   the core API's teams/{id}/statistics, one team at a time, the iPhone's Team Hub
+    core_team_stats   the core API's teams/{id}/statistics, one team at a time, both apps' Team Hub
 """
 
 from __future__ import annotations
@@ -593,7 +593,7 @@ def team_ids(league, byteam):
     return [team_id for team_id in ids if team_id != "None"][:TEAMS_TO_ASK]
 
 
-def add_team_stat(rows, league, section, stat, source, note, iphone=False, iphone_note=""):
+def add_team_stat(rows, league, section, stat, source, note, iphone=False, iphone_note="", windows=False):
     name = stat.get("name")
     if not name:
         return
@@ -603,7 +603,7 @@ def add_team_stat(rows, league, section, stat, source, note, iphone=False, iphon
                    display_name=stat.get("displayName") or name,
                    abbreviation=stat.get("abbreviation") or stat.get("shortDisplayName") or "",
                    definition=stat.get("description") or "", source=source, shown_iphone=iphone,
-                   note="" if existing else note)
+                   shown_windows=windows, note="" if existing else note)
     if iphone_note:
         Rows.note(row, iphone_note)
 
@@ -684,8 +684,9 @@ def core_team_rows(rows, league, ids, year, excluded, byteam):
     for (section, name), stat in seen.items():
         hub = (section, name) in shown
         add_team_stat(rows, league, section, stat, "core_team_stats", "core per-team only: one request per team",
-                      iphone=hub, iphone_note=f"iPhone: {TEAM_HUB}" if hub else
-                      "iPhone: Team Hub leaves it out for the teams checked (excluded, Fielding, zero or no usable rank)")
+                      # Windows's Team Hub has the same rule since #196: team_stats.hub_rankings.
+                      iphone=hub, windows=hub, iphone_note=f"both apps: {TEAM_HUB}" if hub else
+                      "both apps: Team Hub leaves it out for the teams checked (excluded, Fielding, zero or no usable rank)")
     return bool(seen)
 
 

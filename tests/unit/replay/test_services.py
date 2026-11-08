@@ -47,6 +47,8 @@ class TestApiService:
         ("get_player_statistics", "get_player_statistics", ("NFL",)),
         ("get_team_statistics", "get_team_statistics", ("NFL",)),
         ("get_stat_glossary", "get_stat_glossary", ("NFL",)),
+        ("get_team_player_leaders", "get_team_player_leaders", ("NBA", "14")),
+        ("get_team_stat_rankings", "get_team_stat_rankings", ("NBA", "29")),
         ("get_rankings", "get_rankings", ("NCAAF",)),
         ("get_transactions", "get_transactions", ("NFL", "9", 5, 2)),
         ("get_team_info", "get_team_info", ("NFL", "9")),

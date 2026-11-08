@@ -8,6 +8,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Windows: a Stats tab in Team Hub, and golf news (#196).** Two things the iPhone had.
+  - Team Hub's new **Stats** tab (Alt+A), after Roster as on the iPhone, has a **Show** box (Alt+W) with
+    **Players**, the team's leaders in each category ranked within the team, and **Team**, where the team
+    ranks in the league in each of its statistics. Both are in one table with the three view modes, say
+    which season they're from, and say so if they can't be loaded. They come from the same places as the
+    iPhone's: ESPN's leaders for the one team, and the core API's statistics for the team ranked against
+    the league's team statistics, so a rank matches the league's Statistics screen. Soccer and college
+    hockey have the Team ranks only for now.
+  - The golf dialog has a **News** tab with ESPN's PGA Tour or LPGA Tour stories; Enter opens one in your
+    browser, and F5 tries again if they couldn't be loaded.
+  - A shared file, `tests/fixtures/team_hub_stats_grid.json`, holds both apps' Stats tabs to the same rows.
 - **Listen to the game.** For the NFL, NBA, NHL, and college football and basketball (the SEC, Big Ten,
   ACC, Big 12 and Notre Dame), Scores lists where to hear a game: each team's radio and the services that
   carry every game, such as SiriusXM. Each opens in your browser, or on the iPhone in the service's app;

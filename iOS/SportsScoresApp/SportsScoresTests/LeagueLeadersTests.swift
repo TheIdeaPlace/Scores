@@ -677,6 +677,42 @@ final class LeaderListGridTests: XCTestCase {
         }
     }
 
+    private struct TeamHubGrid: Decodable {
+        struct Case: Decodable {
+            let fixture: String
+            let season: String
+            let categories: [Category]
+        }
+        struct Category: Decodable {
+            let title: String
+            let rows: [Row]
+        }
+        struct Row: Decodable {
+            let rank: Int
+            let player: String
+            let value: String
+        }
+        let players: [Case]
+    }
+
+    /// One team's answer, as Team Hub's Stats tab reads it on both apps.
+    func testOneTeamReadsAsTheSharedTeamHubGridSays() throws {
+        let url = Fixtures.repoRoot.appendingPathComponent("tests/fixtures/team_hub_stats_grid.json")
+        let grid = try JSONDecoder().decode(TeamHubGrid.self, from: Data(contentsOf: url))
+        XCTAssertGreaterThanOrEqual(grid.players.count, 3)
+        for item in grid.players {
+            let response = try JSONDecoder().decode(SiteLeadersResponse.self, from: Fixtures.data(item.fixture))
+            let categories = ESPNAPIService.leaderCategories(from: response, oneTeam: true)
+            XCTAssertEqual(categories.map(\.displayName), item.categories.map(\.title), item.fixture)
+            for (category, expected) in zip(categories, item.categories) {
+                XCTAssertEqual(category.seasonLabel, item.season, item.fixture)
+                XCTAssertEqual(category.leaders.map(\.rank), expected.rows.map(\.rank), "\(item.fixture) \(expected.title)")
+                XCTAssertEqual(category.leaders.map(\.athleteName), expected.rows.map(\.player), "\(item.fixture) \(expected.title)")
+                XCTAssertEqual(category.leaders.map(\.displayValue), expected.rows.map(\.value), "\(item.fixture) \(expected.title)")
+            }
+        }
+    }
+
     func testAListWithNoRealMinimumIsLeftOut() throws {
         let row = #"{"value":0,"displayValue":"1.0 IP","athlete":{"displayName":"A"}},{"value":0.25,"displayValue":"60 IP","athlete":{"displayName":"B"}}"#
         let json = #"{"leaders":{"categories":[{"name":"opponentAvg","displayName":"Opp","leaders":[\#(row)]},{"name":"ERA","displayName":"ERA","leaders":[\#(row)]}]}}"#
