@@ -74,6 +74,7 @@ from popup_menu import exec_menu as _exec_menu
 from models.standings import StandingsData
 import error_log
 from windows_notifications import announce, set_notifier_window
+from dialog_text import DialogTextOrder
 from accessible_table import AccessibleTable, StandingsTable, WildCardTable, LeadersTable, RankingsTable, BoxscoreTable, InjuryTable, ListPages, is_tab_bar, keep_in_tab_order, make_tab_area, ButtonKeys
 from tab_keys import group_noun
 import transactions_paging
@@ -13912,6 +13913,9 @@ class SportsScoresApp(QWidget):
         self.monitored_games = {}
         self._button_keys = ButtonKeys(self)
         QApplication.instance().installEventFilter(self._button_keys)
+        # Or JAWS says a closed dialog's text again with every title change (dialog_text.py).
+        self._dialog_text_order = DialogTextOrder(self)
+        QApplication.instance().installEventFilter(self._dialog_text_order)
         # Without this, a native child makes its siblings native too, and those hold every view.
         QApplication.setAttribute(Qt.ApplicationAttribute.AA_DontCreateNativeWidgetSiblings)
         # Hidden and never focused: only here so announcements have a window to come from.
