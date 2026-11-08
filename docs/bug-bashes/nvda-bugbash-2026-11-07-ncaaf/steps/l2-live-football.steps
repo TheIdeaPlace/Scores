@@ -1,0 +1,32 @@
+# Live Scores: monitor a live college football game through eight 1-minute refreshes, open it, come back.
+w 0.5
+x
+w 40
+Q Arkansas Raz
+w 3
+n {TAB}
+w 5
+k %m
+w 6
+w 60
+w 60
+w 60
+w 60
+w 60
+w 60
+w 60
+w 60
+n {TAB}
+w 6
+k {ENTER}
+w 15
+n t
+w 3
+k {ESC}
+w 30
+n {TAB}
+w 6
+n t
+w 3
+k {END}
+w 4

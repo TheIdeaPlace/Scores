@@ -1,0 +1,65 @@
+recorded g5-bigdetails (184.9 s)
+Focus: ListItem 'News' id='QApplication.SportsScoresApp.QStackedWidget.GameDetailsView.QListWidget' value='' selected FOCUSED  [in window 'NCAAF, Alabama Crimson Tide at LSU Tigers - Sports Scores']
+  [0:03.9] NCAAF, Week 10 - Sports Scores window
+  [0:04.0] Scores List list List of games and scores for the selected date or week
+  [0:04.0] In Progress, 50 games
+  [0:04.0] Week 10
+  [0:32.9] #23 Oregon Ducks 0 at #12 Ohio State Buckeyes 7 | No Huddle-Shotgun #8 D.Raiola pass incomplete short middle t... 5:50 Q1 | ORE ball | 2nd & 10 at ORE 39
+  [0:33.0] #5 Alabama Crimson Tide 3 at #14 LSU Tigers 3 (RZ) | (04:57) No Huddle-Shotgun #10 S.Leavitt pass incomplete shor... 4:51 Q1 | LSU ball | 4th & Goal at ALA 5
+  [0:36.9] #5 Alabama Crimson Tide 3 at #14 LSU Tigers 3 (RZ) | (04:57) No Huddle-Shotgun #10 S.Leavitt pass incomplete shor... 4:51 Q1 | LSU ball | 4th & Goal at ALA 5 list item focused selected
+  [0:43.1] Game Details List list List of detailed information about the selected game
+  [0:43.1] Loading game details...
+  [0:43.2] LSU Tigers (Home)
+  [0:58.1] News
+  [1:01.1] Standings
+  [1:04.1] Leaders
+  [1:07.2] Drives
+  [1:10.2] Boxscore
+  [1:13.3] --- Additional Details ---
+  [1:16.3] TV: Disney+, ERADM
+  [1:19.4] Leaders
+  [1:22.2] Leaders Details dialog
+  [1:22.2] Team Leaders grouping Statistical leaders by team. Use arrow keys to navigate between teams, Tab to enter table.
+  [1:22.2] LSU Tigers tab control
+  [1:22.2] LSU Tigers tab
+  [1:22.2] LSU Tigers Statistical Leaders grouping Statistical leaders for LSU Tigers. Multiple view modes available: Alt+V to cycle views, Alt+T for table, Alt+Q for quick list, Alt+F for full list.
+  [1:22.2] LSU Tigers Statistical Leaders table Statistical leaders for LSU Tigers. Use up/down/left/right arrow keys to navigate cells, Tab to enter or exit table. Alt+V to cycle views, Alt+Q for quick list, Alt+F for full list.
+  [1:22.3] Category, Passing Yards data item 1 row 1 Category column 1
+  [1:32.0] Category, Passing Yards data item focused selected
+  [1:35.1] Category, Rushing Yards data item 2 row 2
+  [1:37.7] Rushing Yards, Player, Dilin Jones data item Player column 2
+  [1:40.2] Rushing Yards, Value, 5 CAR, 21 YDS data item Value column 3
+  [1:42.8] Alabama Crimson Tide Statistical Leaders grouping Statistical leaders for Alabama Crimson Tide. Multiple view modes available: Alt+V to cycle views, Alt+T for table, Alt+Q for quick list, Alt+F for full list.
+  [1:42.8] Alabama Crimson Tide Statistical Leaders table Statistical leaders for Alabama Crimson Tide. Use up/down/left/right arrow keys to navigate cells, Tab to enter or exit table. Alt+V to cycle views, Alt+Q for quick list, Alt+F for full list.
+  [1:42.9] Category, Passing Yards data item 1 row 1 Category column 1
+  [1:46.8] Category, Rushing Yards data item 2 row 2
+  [1:49.4] Game Details List list List of detailed information about the selected game
+  [1:49.4] Leaders
+  [1:52.4] Standings
+  [1:55.2] Standings Details dialog
+  [1:55.3] Standings Tabs grouping
+  [1:55.3] 2026 Southeastern Conference Standings tab control
+  [1:55.3] 2026 Southeastern Conference Standings tab
+  [1:55.3] 2026 Southeastern Conference Standings grouping 2026 Southeastern Conference Standings data table with player or team statistics. Multiple view modes available: Alt+V to cycle views, Alt+T for table, Alt+Q for quick list, Alt+F for full list.
+  [1:55.4] 2026 Southeastern Conference Standings table 2026 Southeastern Conference Standings data table with player or team statistics. Use up/down/left/right arrow keys to navigate cells, Tab to enter or exit table. Alt+V to cycle views, Alt+Q for quick list, Alt+F for full list.
+  [1:55.4] Team, Georgia data item 1 row 1 Team column 1
+  [2:05.2] Team, Georgia data item focused selected
+  [2:08.3] Georgia, OVER, 7-1 data item OVER column 2
+  [2:10.9] Kentucky, OVER, 7-1 data item 2 row 2
+  [2:13.4] Game Details List list List of detailed information about the selected game
+  [2:13.4] Standings
+  [2:16.4] News
+  Traceback (most recent call last):
+    File "C:\Users\kelly\GitHub\TheWorkBench\audio-demo\tools\speechlog.py", line 151, in <module>
+      print(f"  [{int(t // 60)}:{t % 60:04.1f}] {text}")
+    File "C:\Program Files\Python312\Lib\encodings\cp1252.py", line 19, in encode
+      return codecs.charmap_encode(input,self.errors,encoding_table)[0]
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  UnicodeEncodeError: 'charmap' codec can't encode character '\U0001f3af' in position 47: character maps to <undefined>
+Couldn't read NVDA's speech log for g5-bigdetails (exit 1); see above.
+At C:\Users\kelly\GitHub\TheWorkBench\audio-demo\tools\clip.ps1:75 char:18
++ ... f ($code) { throw "Couldn't read NVDA's speech log for $Name (exit $c ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : OperationStopped: (Couldn't read N... 1); see above.:String) [], RuntimeException
+    + FullyQualifiedErrorId : Couldn't read NVDA's speech log for g5-bigdetails (exit 1); see above.
+ 

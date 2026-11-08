@@ -1,0 +1,47 @@
+recorded g2-drives (171.5 s)
+Focus: ListItem 'Drives' id='QApplication.SportsScoresApp.QStackedWidget.GameDetailsView.QListWidget' value='' selected FOCUSED  [in window 'NCAAF, Duke Blue Devils at NC State Wolfpack - Sports Scores']
+  [0:04.4] NCAAF - Sports Scores window
+  [0:04.4] Scores List list List of games and scores for the selected date or week
+  [0:04.4] Loading scores...
+  [0:05.4] In Progress, 49 games
+  [0:05.4] Week 10
+  [0:34.2] Dartmouth Big Green 14 at Princeton Tigers 21 | PENALTY DART False Start (#71 W.Prince) 5 yards from DART29 ... 5:02 Q4 | DART ball | 2nd & 15 at DART 24
+  [0:34.4] Duke Blue Devils 31 at NC State Wolfpack 3 | (13:31) Shotgun #2 W.Eget pass complete short left to #5 J.N... 13:19 Q3 | DUKE ball | 1st & 10 at DUKE 32
+  [0:38.7] Game Details List list List of detailed information about the selected game
+  [0:38.7] Loading game details...
+  [0:38.8] NC State Wolfpack (Home)
+  [0:52.7] Duke Blue Devils (Away)
+  [0:52.9] Drives
+  [0:55.3] Drives list item focused selected
+  [0:57.5] Drives Details dialog Drive-by-Drive Summary (12 drives)
+  [0:57.5] Export Game Log button Export the complete game log as an HTML file
+  [0:57.6] NFL/NCAAF Drives Tree tree view Hierarchical view of NFL/NCAAF drives organized by quarter. Use up/down arrows to navigate, left/right to expand/collapse.
+  [0:57.6] Quarter 1 not selected collapsed row 1 Drive Summary column 1 level 1
+  [1:12.4] NCAAF, Duke Blue Devils at NC State Wolfpack - Sports Scores
+  [1:15.6] Quarter 1 tree view item focused collapsed level 1
+  [1:18.8] Quarter 2 collapsed row 2 level 1
+  [1:21.8] Quarter 3 collapsed row 3 level 1
+  [1:27.9] Kickoff collapsed row 4 level 1
+  [1:30.9] [PUNT] NC State Wolfpack: 3 plays, 8 yards, 1:27 collapsed row 5 level 1
+  [1:34.0] [DRIVE] Duke Blue Devils: 1 play, 11 yards, 0:11 collapsed row 6 level 1
+  [1:40.0] Quarter 3 expanded row 3 level 1
+  [1:55.2] Kickoff collapsed row 4 level 1
+  [1:58.3] [PUNT] NC State Wolfpack: 3 plays, 8 yards, 1:27 collapsed row 5 level 1
+  [2:01.3] [DRIVE] Duke Blue Devils: 1 play, 11 yards, 0:11 collapsed row 6 level 1
+  [2:04.4] [PUNT] NC State Wolfpack: 3 plays, 8 yards, 1:27 collapsed row 5 level 1
+  [2:07.4] Quarter 1 collapsed row 1 level 1
+  [2:10.4] Close button
+  [2:13.5] Export Game Log button Export the complete game log as an HTML file
+  [2:16.5] NFL/NCAAF Drives Tree tree view Hierarchical view of NFL/NCAAF drives organized by quarter. Use up/down arrows to navigate, left/right to expand/collapse.
+  [2:16.5] Quarter 1 collapsed level 1
+  [2:19.6] Game Details List list List of detailed information about the selected game
+  [2:19.6] Drives
+  [2:19.8] Drives Details dialog Drive-by-Drive Summary (12 drives)
+  [2:19.8] Export Game Log button Export the complete game log as an HTML file
+  [2:19.9] NFL/NCAAF Drives Tree tree view Hierarchical view of NFL/NCAAF drives organized by quarter. Use up/down arrows to navigate, left/right to expand/collapse.
+  [2:20.0] Quarter 1 not selected collapsed row 1 Drive Summary column 1 level 1
+  [2:34.6] NCAAF, Duke Blue Devils at NC State Wolfpack - Sports Scores
+  [2:37.8] Quarter 1 tree view item focused collapsed level 1
+  [2:41.0] Game Details List list List of detailed information about the selected game
+  [2:41.0] Drives
+  [2:45.0] Drives list item focused selected

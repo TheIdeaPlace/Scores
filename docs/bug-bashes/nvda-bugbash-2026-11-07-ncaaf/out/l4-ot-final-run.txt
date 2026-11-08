@@ -1,0 +1,21 @@
+recorded l4-ot-final (729 s)
+Focus: ListItem 'Arkansas Razorbacks 23 at Auburn Tigers 26 [Final] - monitoring' id='QApplication.SportsScoresApp.QStackedWidget.LiveScoresView.QListWidget' value='' selected FOCUSED  [in window 'Live Scores - Sports Scores']
+  [0:04.5] Live Scores - Sports Scores window
+  [0:04.5] Live Scores List list List of currently live games from all sports. Press Alt+M to monitor a game for notifications.
+  [0:04.5] === GOLF LIVE ===
+  [0:43.2] Atlanta United FC at Red Bull New York - 0-0 (10')
+  [0:43.3] Arkansas Razorbacks 23 at Auburn Tigers 26 | (00:33) #41 C.Gibbs kickoff 65 yards to the ARK00, Touchback 0:33 Q4 | 1st & 10 at ARK 25
+  [0:48.1] Arkansas Razorbacks 23 at Auburn Tigers 26 | (00:33) #41 C.Gibbs kickoff 65 yards to the ARK00, Touchback 0:33 Q4 | 1st & 10 at ARK 25 list item focused selected
+  [0:54.3] Arkansas Razorbacks 23 at Auburn Tigers 26 | (00:33) #41 C.Gibbs kickoff 65 yards to the ARK00, Touchback 0:33 Q4 | 1st & 10 at ARK 25 - monitoring
+  [0:54.3] Monitoring enabled for Arkansas Razorbacks at Auburn Tigers
+  [1:04.4] Arkansas Razorbacks 23 at Auburn Tigers 26 | (00:31) No Huddle-Shotgun #7 K.Jackson pass incomplete short... 0:18 Q4 | ARK ball | 2nd & 10 at ARK 25 - monitoring
+  [2:04.5] Arkansas Razorbacks 23 at Auburn Tigers 26 | (00:07) No Huddle-Shotgun #7 K.Jackson pass incomplete deep ... 0:05 Q4 | ARK ball | 3rd & 17 at ARK 18 - monitoring
+  [3:05.1] Arkansas Razorbacks 23 (RZ) at Auburn Tigers 26 | Timeout Auburn, clock 00:05 0:04 Q4 | ARK ball - monitoring
+  [4:04.6] Arkansas Razorbacks 23 at Auburn Tigers 26 [Final] - monitoring
+  [5:04.8] Arkansas Razorbacks 23 at Auburn Tigers 26 [Final] - monitoring
+  [7:04.7] Arkansas Razorbacks 23 at Auburn Tigers 26 [Final] - monitoring
+  [8:04.7] Arkansas Razorbacks 23 at Auburn Tigers 26 [Final] - monitoring
+  [9:04.5] Arkansas Razorbacks 23 at Auburn Tigers 26 [Final] - monitoring
+  [10:04.5] Arkansas Razorbacks 23 at Auburn Tigers 26 [Final] - monitoring
+  [12:00.5] Arkansas Razorbacks 23 at Auburn Tigers 26 [Final] - monitoring list item focused selected
+  [12:04.6] Arkansas Razorbacks 23 at Auburn Tigers 26 [Final] - monitoring

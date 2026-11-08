@@ -1,0 +1,32 @@
+# Enter in the Teams dialog on a row opens one Team Hub; closing leaves Teams open.
+w 0.5
+x
+w 18
+q {END}
+w 1
+q {UP}
+w 0.4
+q {UP}
+w 0.4
+q {UP}
+w 0.4
+q {UP}
+w 1
+k {ENTER}
+w 14
+k {DOWN}
+w 3
+k {ENTER}
+w 10
+n t
+w 3
+k {ESC}
+w 5
+n t
+w 3
+n {TAB}
+w 3
+k {ESC}
+w 6
+n {TAB}
+w 3

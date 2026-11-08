@@ -1,0 +1,46 @@
+# Set college football coverage to FBS only, OK, open NCAAF: section counts, Standings conference list.
+w 0.5
+x
+w 15
+q {TAB}
+w 1
+q {ENTER}
+w 5
+q {TAB}
+w 0.5
+q {TAB}
+w 0.5
+q {TAB}
+w 0.5
+q {TAB}
+w 2
+k {DOWN}
+w 3
+k {ENTER}
+w 4
+n {TAB}
+w 3
+q {HOME}
+w 1
+Q ncaaf
+w 2
+k {ENTER}
+w 30
+n t
+w 3
+q {END}
+w 1
+Q --- Stan
+w 2
+k {ENTER}
+w 15
+n {TAB}
+w 3
+k {END}
+w 3
+k {ESC}
+w 3
+k {HOME}
+w 3
+q {DOWN}
+w 0.3

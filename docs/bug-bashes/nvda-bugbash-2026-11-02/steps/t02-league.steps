@@ -1,0 +1,33 @@
+# A league screen (NFL): list, buttons, title, back (scores.py 1430-2186, 12810)
+w 0.5
+x
+w 12
+q {DOWN}
+w 2
+k {ENTER}
+w 12
+e Scores List
+# First row after loading is a section header like "Upcoming, 14 games", or "No games found for this week."
+e/ (games?|No games found)
+n t
+w 3
+e NFL - Sports Scores
+k {DOWN}
+w 3
+e/ \bat\b
+k {TAB}
+w 2.5
+e Back (Alt+B)
+k {TAB}
+w 2.5
+e Previous Week (Alt+P)
+k {TAB}
+w 2.5
+e Next Week (Alt+N)
+k {TAB}
+w 2.5
+e Refresh
+e! Go to Date
+k {ESC}
+w 4
+e League Selection List

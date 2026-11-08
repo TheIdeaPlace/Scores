@@ -1,0 +1,62 @@
+recorded d5-teamhub (197.9 s)
+Focus: DataItem 'Miami Hurricanes' (announced as 'item') id='QApplication.SimpleTeamsDialog.ListPages.QWidget.QStackedWidget.QWidget.AccessibleTable.QStackedWidget.QTableWidget' value='' selected FOCUSED  [in window 'Atlantic Coast Conference - NCAAF Teams']
+  [0:03.5] NCAAF - Sports Scores window
+  [0:03.5] Scores List list List of games and scores for the selected date or week
+  [0:03.5] Loading scores...
+  [0:04.5] In Progress, 51 games
+  [0:04.5] Week 10
+  [0:33.6] --- Bowls & Playoffs ---
+  [0:35.7] --- News Headlines ---
+  [0:35.8] --- Standings ---
+  [0:36.0] --- Polls ---
+  [0:36.3] --- Teams ---
+  [0:39.8] --- Teams --- (loading...)
+  [0:40.4] --- Teams ---
+  [0:40.6] NCAAF Teams dialog
+  [0:40.6] Conferences list Press Enter on one to open its teams. Escape comes back to this list.
+  [0:40.7] Southeastern Conference
+  [0:59.8] NCAAF, Teams - Sports Scores
+  [1:03.0] Southeastern Conference list item focused selected
+  [1:06.2] Atlantic Coast Conference
+  [1:09.7] Atlantic Coast Conference Teams Table grouping Teams in Atlantic Coast Conference with wins, losses, and other statistics. Multiple view modes available: Alt+V to cycle views, Alt+T for table, Alt+Q for quick list, Alt+F for full list.
+  [1:09.8] Atlantic Coast Conference Teams Table table Teams in Atlantic Coast Conference with wins, losses, and other statistics. Use up/down/left/right arrow keys to navigate cells, Tab to enter or exit table. Alt+V to cycle views, Alt+Q for quick list, Alt+F for full list.
+  [1:09.8] Miami Hurricanes data item 1 row 1 Team column 1
+  [1:14.8] Miami Hurricanes data item focused selected
+  [1:18.0] SMU Mustangs data item 2 row 2
+  [1:20.6] Wake Forest Demon Deacons data item 3 row 3
+  [1:23.0] 7 data item Wins column 2
+  [1:25.6] 1 data item Losses column 3
+  [1:28.1] 7 data item Wins column 2
+  [1:30.7] Wake Forest Demon Deacons data item Team column 1
+  [1:35.7] Miami Hurricanes data item 1 row 1
+  [1:39.8] Miami Hurricanes - NCAAF - Sports Scores dialog Team: Miami Hurricanes
+  [1:39.8] Add to Favorites button Add Miami Hurricanes to your favorite teams
+  [1:39.9] Miami Hurricanes Team Info list Team details including record, venue, coach, and next game
+  [1:39.9] Loading team info... not selected
+  [1:40.3] Team: Miami Hurricanes
+  [1:59.3] NCAAF, Teams - Sports Scores
+  [2:02.5] Team: Miami Hurricanes list item focused selected
+  [2:05.7] Close button Alt+ C
+  [2:08.2] Add to Favorites button Add Miami Hurricanes to your favorite teams
+  [2:10.7] Info tab control
+  [2:10.7] Info tab Alt+ I
+  [2:13.3] Miami Hurricanes Team Info list Team details including record, venue, coach, and next game
+  [2:13.3] Team: Miami Hurricanes
+  [2:15.8] Close button Alt+ C
+  [2:19.7] Miami Hurricanes Schedule list
+  [2:19.8] Sat, Nov 07: @ Notre Dame Fighting Irish - 11/7 - 6:30 PM CST (Notre Dame Stadium)
+  [2:33.5] Sat, Nov 07: @ Notre Dame Fighting Irish - 11/7 - 6:30 PM CST (Notre Dame Stadium) list item focused selected
+  [2:36.6] Sat, Nov 14: vs Duke Blue Devils - 11/14 - 11:00 AM CST (Hard Rock Stadium)
+  [2:39.2] Sat, Nov 21: vs Virginia Tech Hokies - TBD (Hard Rock Stadium)
+  [2:41.7] Sat, Nov 14: vs Duke Blue Devils - 11/14 - 11:00 AM CST (Hard Rock Stadium)
+  [2:44.3] Sat, Nov 07: @ Notre Dame Fighting Irish - 11/7 - 6:30 PM CST (Notre Dame Stadium)
+  [2:46.8] Sat, Oct 31: @ North Carolina Tar Heels - W 38-35
+  [2:49.4] Miami Hurricanes Roster grouping Team roster. Alt+V to cycle view modes.. Multiple view modes available: Alt+V to cycle views, Alt+T for table, Alt+Q for quick list, Alt+F for full list.
+  [2:49.4] Miami Hurricanes Roster table Team roster. Alt+V to cycle view modes.. Use up/down/left/right arrow keys to navigate cells, Tab to enter or exit table. Alt+V to cycle views, Alt+Q for quick list, Alt+F for full list.
+  [2:49.4] Name, Loading roster... data item 1 row 1 Name column 1
+  [2:49.6] Name, Seuseu Alofaituli
+  [3:04.5] Name, Seuseu Alofaituli data item focused selected
+  [3:07.7] Atlantic Coast Conference Teams Table grouping Teams in Atlantic Coast Conference with wins, losses, and other statistics. Multiple view modes available: Alt+V to cycle views, Alt+T for table, Alt+Q for quick list, Alt+F for full list.
+  [3:07.7] Atlantic Coast Conference Teams Table table Teams in Atlantic Coast Conference with wins, losses, and other statistics. Use up/down/left/right arrow keys to navigate cells, Tab to enter or exit table. Alt+V to cycle views, Alt+Q for quick list, Alt+F for full list.
+  [3:07.7] Miami Hurricanes data item 1 row 1 Team column 1
+  [3:11.7] Miami Hurricanes data item focused selected

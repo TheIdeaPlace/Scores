@@ -1,0 +1,24 @@
+recorded l1-live-monitor (460 s)
+Focus: ListItem 'Alabama State Lady Hornets at West Georgia Wolves - 34-37 (9:29 - 3rd) | Alanah Pooler makes layup' id='QApplication.SportsScoresApp.QStackedWidget.LiveScoresView.QListWidget' value='' selected FOCUSED  [in window 'Live Scores - Sports Scores']
+  [0:02.7] Live Scores - Sports Scores window
+  [0:02.7] Live Scores List list List of currently live games from all sports. Press Alt+M to monitor a game for notifications.
+  [0:02.7] Loading live scores...
+  [0:04.1] === GOLF LIVE ===
+  [0:42.9] Live Scores - Sports Scores
+  [0:46.1] Arkansas Razorbacks 10 at Auburn Tigers 3 | (07:54) No Huddle-Shotgun #17 B.Brown rush left for 13 yards... 7:22 Q3 | AUB ball | 4th & 1 at ARK 44
+  [0:46.2] Alabama State Lady Hornets at West Georgia Wolves - 32-35 (Halftime) | End of 2nd Quarter
+  [0:51.5] Alabama State Lady Hornets at West Georgia Wolves - 32-35 (Halftime) | End of 2nd Quarter list item focused selected
+  [0:55.7] Alabama State Lady Hornets at West Georgia Wolves - 32-35 (Halftime) | End of 2nd Quarter - monitoring
+  [0:55.7] Monitoring enabled for Alabama State Lady Hornets at West Georgia Wolves
+  [1:04.0] Alabama State Lady Hornets at West Georgia Wolves - 32-35 (Halftime) | End of 2nd Quarter - monitoring
+  [2:03.9] Alabama State Lady Hornets at West Georgia Wolves - 32-35 (Halftime) | End of 2nd Quarter - monitoring
+  [3:04.2] Alabama State Lady Hornets at West Georgia Wolves - 32-35 (Halftime) | End of 2nd Quarter - monitoring
+  [4:04.1] Alabama State Lady Hornets at West Georgia Wolves - 32-35 (Halftime) | End of 2nd Quarter - monitoring
+  [5:04.0] Alabama State Lady Hornets at West Georgia Wolves - 32-35 (Halftime) | Caylee Simpson subbing in for Alabama State - monitoring
+  [6:04.5] Alabama State Lady Hornets at West Georgia Wolves - 32-35 (9:59 - 3rd) | Caylee Simpson subbing in for Alabama State - monitoring
+  [7:00.9] Alabama State Lady Hornets at West Georgia Wolves - 32-35 (9:59 - 3rd) | Caylee Simpson subbing in for Alabama State - monitoring list item focused selected
+  [7:04.4] Alabama State Lady Hornets at West Georgia Wolves - 32-37 (10:00 - 3rd) | team makes 3-foot shot - monitoring
+  [7:04.5] Alabama State Lady Hornets at West Georgia Wolves: West Georgia Wolves 37 - Alabama State Lady Hornets 32
+  [7:26.1] Alabama State Lady Hornets at West Georgia Wolves - 32-37 (10:00 - 3rd) | team makes 3-foot shot - monitoring list item focused selected
+  [7:31.3] Alabama State Lady Hornets at West Georgia Wolves - 32-37 (10:00 - 3rd) | team makes 3-foot shot
+  [7:31.3] Monitoring disabled for Alabama State Lady Hornets at West Georgia Wolves

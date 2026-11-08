@@ -1,0 +1,68 @@
+=== Game Wrap Up: real clean_description over article.description and article.story (scores.py:5617-5623)
+ NFL: {'articles': 26, 'description present': 26, 'story present': 26, 'story changed': 26, 'story [Player Name] count': 403}
+     ('401873035', 'story', 'raw len', 5667, 'out', 'LANDOVER, Md. -- — The <a href="http://www.espn.com/nfl/team/_/name/wsh/washington-commanders">Washington Comm', 'trigger', 'd 10-0.\n\n\r\n              <a href="http://www.espn.com/nfl/player/_/id/4426348/jayden-daniels">Jayden Daniels</a> thre')
+     ('401873033', 'story', 'raw len', 7148, 'out', 'DENVER -- — The one thing the <a href="http://www.espn.com/nfl/team/_/name/den/denver-broncos">Denver Broncos<', 'trigger', '4 on Sunday and dropping <a href="http://www.espn.com/nfl/player/_/id/3139477/patrick-mahomes">Patrick Mahomes</a> to')
+ NCAAF: {'articles': 28, 'description present': 28, 'story present': 28, 'story changed': 28, 'story [Player Name] count': 250}
+     ('401860924', 'story', 'raw len', 3024, 'out', 'FRESNO, Calif. -- — <a href="http://www.espn.com/college-football/player/_/id/[Player Name]/jayden-mandal" tar', 'trigger', 'Calif. -- — <a href="http://www.espn.com/college-football/player/_/id/5010409/jayden-mandal" target="_new">Jayden Man')
+     ('401864530', 'story', 'raw len', 3237, 'out', 'LAS VEGAS -- — <a href="http://www.espn.com/college-football/player/_/id/[Player Name]/jackson-arnold" target=', 'trigger', ' VEGAS -- — <a href="http://www.espn.com/college-football/player/_/id/4870607/jackson-arnold" target="_new">Jackson A')
+ NBA: {'articles': 33, 'description present': 33, 'story present': 33, 'story changed': 33, 'story [Player Name] count': 257}
+     ('401909906', 'story', 'raw len', 3277, 'out', 'LOS ANGELES -- — <a href="http://www.espn.com/nba/player/_/id/[Player Name]/luka-doncic">Luka Doncic</a> had 4', 'trigger', 'LOS ANGELES -- — <a href="http://www.espn.com/nba/player/_/id/3945274/luka-doncic">Luka Doncic</a> had 45 poi')
+     ('401909905', 'story', 'raw len', 3453, 'out', 'SAN FRANCISCO -- — Rookie <a href="http://www.espn.com/nba/player/_/id/[Player Name]/yaxel-lendeborg">Yaxel Le', 'trigger', 'AN FRANCISCO -- — Rookie <a href="http://www.espn.com/nba/player/_/id/5175737/yaxel-lendeborg">Yaxel Lendeborg</a> sc')
+ WNBA: {'articles': 18, 'description present': 18, 'story present': 18, 'story changed': 4, 'story [Player Name] count': 4}
+     ('401918299', 'story', 'raw len', 4739, 'out', '\r\n              NEW YORK -- — Angel Reese was sitting at home watching the end of the WNBA Finals last season ', 'trigger', ' season when she tweeted “ <a href="https://x.com/Reese10Angel/status/2108740051404210206?s=20">manifesting the finals.”</a>\n\n\r\n ')
+     ('401918019', 'story', 'raw len', 2098, 'out', '\r\n              WASHINGTON -- — Allisha Gray scored 22 points, Jordin Canada had 13 of her 19 points in the fo', 'trigger', 're Washington closed on a 7-0 run, <a href="https://x.com/WNBA/status/2105447939397001611">capped by Citron\'s shot in the lane ju')
+ NCAAM: {'articles': 22, 'description present': 22, 'story present': 22, 'story changed': 22, 'story [Player Name] count': 130}
+     ('401911469', 'story', 'raw len', 1701, 'out', 'SAN JOSE, Calif. -- — <a href="http://www.espn.com/mens-college-basketball/player/_/id/[Player Name]/joey-cham', 'trigger', '-- — <a href="http://www.espn.com/mens-college-basketball/player/_/id/5176449/joey-chammaa">Joey Chammaa</a>\'s 27 poi')
+     ('401911532', 'story', 'raw len', 1549, 'out', 'SIOUX FALLS, S.D. -- — <a href="http://www.espn.com/mens-college-basketball/player/_/id/[Player Name]/willie-f', 'trigger', '-- — <a href="http://www.espn.com/mens-college-basketball/player/_/id/5459304/willie-foster">Willie Foster</a> had 24')
+ NCAAWB: {'articles': 7, 'description present': 7, 'story present': 7, 'story changed': 1, 'story [Player Name] count': 2}
+     ('401927836', 'story', 'raw len', 2337, 'out', '\r\n              SEATTLE -- — <a href="https://x.com/UW--WBB/status/[Player Name]">Sayvia Sellers opened the se', 'trigger', '\r\n              SEATTLE -- — <a href="https://x.com/UW--WBB/status/2117356632535658660">Sayvia Sellers opened the season with ')
+ NHL: {'articles': 33, 'description present': 33, 'story present': 33, 'story changed': 33, 'story [Player Name] count': 337}
+     ('401892628', 'story', 'raw len', 2194, 'out', 'ANAHEIM, Calif. -- — <a href="http://www.espn.com/nhl/player/_/id/[Player Name]/cutter-gauthier">Cutter Gauthi', 'trigger', 'ANAHEIM, Calif. -- — <a href="http://www.espn.com/nhl/player/_/id/5080145/cutter-gauthier">Cutter Gauthier</a> ha')
+     ('401892627', 'story', 'raw len', 2782, 'out', 'NEW YORK -- — <a href="http://www.espn.com/nhl/player/_/id/[Player Name]/connor-mcdavid">Connor McDavid</a> sc', 'trigger', 'NEW YORK -- — <a href="http://www.espn.com/nhl/player/_/id/3895074/connor-mcdavid">Connor McDavid</a> scor')
+ NCAAH: {}
+ NCAAWH: {}
+
+=== Team hub: nextEvent date in the past when asked on 2026-11-02 evening (real get_team_info)
+ NFL: {'teams': 12, 'nextEvent already played': 11, 'future or live': 1} [('Arizona Cardinals', 'ARI @ DAL', '2026-11-01T18:00Z', 'post'), ('Atlanta Falcons', 'ATL @ TB', '2026-11-01T18:00Z', 'post')]
+ NCAAF: {'teams': 12, 'future or live': 12} []
+ NBA: {'teams': 12, 'future or live': 12} []
+ WNBA: {'teams': 12, 'no nextEvent': 12} []
+ NCAAM: {'teams': 12, 'future or live': 12} []
+ NCAAWB: {'teams': 12, 'future or live': 12} []
+ NHL: {'teams': 12, 'future or live': 12} []
+ NCAAH: {'teams': 12, 'no nextEvent': 7, 'future or live': 5} []
+ NCAAWH: {'teams': 12, 'future or live': 12} []
+
+=== NHL record in Team hub vs standings (real get_team_info)
+ team hub record != ESPN overall (W-L-OTL) in 12/12: [('Boston Bruins', '10-4', '10-4-1, 21 PTS'), ('Montreal Canadiens', '9-3', '9-3-2, 20 PTS'), ('Ottawa Senators', '9-6', '9-6-1, 19 PTS')]; ti keys head_coach present: False
+
+=== Venue requests against the 3 s timeout at venue_service.py:48, measured once each with the real requests
+ nfl 202609: 200 402 KB in 0.71s, events 48
+ nfl 202610: 200 507 KB in 0.81s, events 60
+ nfl 202611: 200 952 KB in 0.76s, events 71
+ nba 202609: 200 5 KB in 0.75s, events 0
+ nba 202610: 200 1918 KB in 0.81s, events 100
+ nba 202611: 200 1389 KB in 0.77s, events 100
+ ncaaf 202609: 200 3176 KB in 0.82s, events 200
+ ncaaf 202610: 200 3073 KB in 0.70s, events 200
+ ncaaf 202611: 200 2770 KB in 0.73s, events 200
+ nhl 202609: 200 1526 KB in 0.90s, events 73
+ nhl 202610: 200 2871 KB in 0.73s, events 100
+ nhl 202611: 200 1479 KB in 0.73s, events 100
+
+=== Hockey web page, not cached, real requests with the app's UA
+ NHL https://www.espn.com/nhl/playbyplay/_/gameId/401892628: 202 len 0 {'Server': 'CloudFront', 'x-amzn-waf-action': 'challenge', 'Content-Type': 'text/html; charset=UTF-8', 'X-Cache': 'Error from cloudfront'} marker False
+ NHL https://www.espn.com/nhl/playbyplay/_/gameId/401892628: 202 len 0 {'Server': 'CloudFront', 'x-amzn-waf-action': 'challenge', 'Content-Type': 'text/html; charset=UTF-8', 'X-Cache': 'Error from cloudfront'} marker False
+ NCAAH https://www.espn.com/mens-college-hockey/playbyplay/_/gameId/401923148: 202 len 0 {'Server': 'CloudFront', 'x-amzn-waf-action': 'challenge', 'Content-Type': 'text/html; charset=UTF-8', 'X-Cache': 'Error from cloudfront'} marker False
+ NCAAH https://www.espn.com/mens-college-hockey/playbyplay/_/gameId/401923148: 202 len 0 {'Server': 'CloudFront', 'x-amzn-waf-action': 'challenge', 'Content-Type': 'text/html; charset=UTF-8', 'X-Cache': 'Error from cloudfront'} marker False
+
+=== Game-detail sub-dialogs (real format_complex_data for Standings; modelled tables for Leaders, Injuries)
+ NFL: standings dialog text {'Standings data available': 12}; {'leader teams': 24, 'leader rows': 118, 'injury rows': 120, 'inj no detail': 7}; leader example ('Passing Yards', 'Jayden Daniels', '16/29, 217 YDS, 1 TD')
+ NCAAF: standings dialog text {'Standings data available': 12}; {'leader teams': 24, 'leader rows': 115}; leader example ('Passing Yards', 'Jayden Mandal', '11/17, 202 YDS, 2 TD, 1 INT')
+ NBA: standings dialog text {'Standings data available': 12}; {'leader teams': 24, 'leader rows': 72, 'injury rows': 73, 'inj no detail': 24}; leader example ('Points', 'Luka Doncic', '45')
+ WNBA: standings dialog text {'Standings data available': 12}; {'leader teams': 24, 'leader rows': 72, 'injury rows': 35, 'inj no detail': 35}; leader example ('Points', 'Gabby Williams', '30')
+ NCAAM: standings dialog text {'Standings data available': 12}; {'leader teams': 24, 'leader rows': 72}; leader example ('Points', 'Mekhi Lowery', '20')
+ NCAAWB: standings dialog text {'Standings data available': 12}; {'leader teams': 24, 'leader rows': 72}; leader example ('Points', 'Sarah Strong', '19')
+ NHL: standings dialog text {'Standings data available': 12}; {'leader teams': 24, 'leader rows': 69, 'injury rows': 90, 'inj no detail': 61}; leader example ('Goals', 'Cutter Gauthier', '3')
+ NCAAH: standings dialog text {}; {}; leader example None
+ NCAAWH: standings dialog text {}; {}; leader example None

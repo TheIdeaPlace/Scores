@@ -1,0 +1,142 @@
+recorded s1-ncaaf-slate (252.3 s)
+Focus: ListItem '--- Bowls & Playoffs ---' id='QApplication.SportsScoresApp.QStackedWidget.LeagueView.QListWidget' value='' selected FOCUSED  [in window 'NCAAF, Week 10 - Sports Scores']
+  [0:04.8] NCAAF - Sports Scores window
+  [0:04.8] Scores List list List of games and scores for the selected date or week
+  [0:04.9] Loading scores...
+  [0:06.0] In Progress, 42 games
+  [0:06.0] Week 10
+  [0:34.7] NCAAF, Week 10 - Sports Scores
+  [0:37.9] #9 BYU Cougars 20 at #3 Utah Utes 14 | End of Half. 0:00 Q2 (Halftime)
+  [0:39.2] #7 Texas Longhorns 10 at #18 Missouri Tigers 10 | End of Half. 0:00 Q2 (Halftime)
+  [0:40.7] #8 UCLA Bruins 10 at Minnesota Golden Gophers 10 | End of Half. 0:00 Q2 (Halftime)
+  [0:42.2] Iowa State Cyclones 17 at Baylor Bears 21 | End of Half. 0:00 Q2 (Halftime)
+  [0:43.6] Clemson Tigers 9 at Syracuse Orange 6 | End of Half. 0:00 Q2 (Halftime)
+  [0:45.0] Florida State Seminoles 21 at Boston College Eagles 17 | End of Half. 0:00 Q2 (Halftime)
+  [0:46.4] North Carolina Tar Heels 28 at UConn Huskies 14 | End of Half. 0:00 Q2 (Halftime)
+  [0:47.9] Tulsa Golden Hurricane 32 at Tulane Green Wave 0 | End of Half. 0:00 Q2 (Halftime)
+  [0:49.3] North Carolina A&T Aggies 17 at Monmouth Hawks 21 | No Huddle-Shotgun #1 J.Smith rush middle for 2 yards gain to... 15:00 Q3 | NCAT ball | 1st & 10 at NCAT 36
+  [0:50.8] Towson Tigers 16 at Sacred Heart Pioneers 27 | End of Half. 0:00 Q2 (Halftime)
+  [0:52.2] Brown Bears 17 at Yale Bulldogs 14 (RZ) | No Huddle-Shotgun #2 D.Reno pass complete short right to #16... 13:14 Q3 | YALE ball | 1st & Goal at BRWN 2
+  [0:53.6] Dartmouth Big Green 7 at Princeton Tigers 21 (RZ) | No Huddle-Shotgun #17 W.Becker pass complete short right to ... 14:17 Q3 | PRIN ball | 3rd & 4 at DART 17
+  [0:55.1] Long Island University Sharks 7 at New Haven Chargers 7 | End of Half. 0:00 Q2 (Halftime)
+  [0:56.5] Robert Morris Colonials 13 at Duquesne Dukes 3 | No Huddle-Shotgun #32 N.Davis rush middle for 15 yards gain ... 14:53 Q3 | DUQ ball | 1st & 10 at DUQ 42
+  [0:58.0] Wagner Seahawks 27 at Mercyhurst Lakers 21 | No Huddle-Shotgun #6 J.Wiley Jr pass complete short right to... 6:55 Q3
+  [0:59.4] North Carolina Central Eagles 7 at Norfolk State Spartans 21 | No Huddle-Shotgun #20 G.Addison rush left for 20 yards gain ... 15:00 Q3 | NCCU ball | 1st & 10 at NORF 29
+  [1:00.9] Colgate Raiders 0 at Lehigh Mountain Hawks 23 | (13:40) No Huddle-Shotgun #5 A.Crossley rush middle for 3 ya... 13:37 Q3 | LEH ball | 2nd & 7 at LEH 24
+  [1:02.3] Valparaiso Beacons 13 at Dayton Flyers 17 | No Huddle-Shotgun #27 M.Hackett rush right for 2 yards gain ... 10:42 Q3 | DAY ball | 2nd & 8 at DAY 12
+  [1:03.7] Morehead State Eagles 13 at Marist Red Foxes 0 | No Huddle-Shotgun #28 J.Lanier rush middle for 1 yard loss t... 12:48 Q3 | MORE ball | 2nd & 10 at MORE 1
+  [1:05.2] Duke Blue Devils 17 at NC State Wolfpack 3 | (03:07) Shotgun #7 D.Gause rush middle for 2 yards gain to t... 3:04 Q2 | NCSU ball | 2nd & 8 at NCSU 21
+  [1:06.7] Maryland Terrapins 7 at Purdue Boilermakers 12 | (00:38) No Huddle-Shotgun #15 R.Browne pass incomplete short... 0:35 Q2 | PUR ball | 3rd & 3 at MD 32
+  [1:08.1] Holy Cross Crusaders 14 at Georgetown Hoyas 17 | No Huddle-Shotgun #15 G.Beard pass incomplete short left to ... 2:45 Q2 | GTWN ball | 2nd & 10 at HC 37
+  [1:09.5] Arkansas Razorbacks 10 at Auburn Tigers 0 | (08:33) #14 H.Kaak punt 39 yards to the ARK20, out of bounds... 8:30 Q2 | ARK ball | 1st & 10 at ARK 20
+  [1:11.0] Oklahoma State Cowboys 28 at Kansas State Wildcats 7 | (S. Keltner KICK) 0:50 Q1
+  [1:12.5] UAlbany Great Danes 0 at Bryant Bulldogs 20 | Shotgun #9 B.Myer rush left for 2 yards gain to the UALB00 T... 6:06 Q2
+  [1:13.9] Stony Brook Seawolves 14 at Campbell Fighting Camels 7 | (12:07) No Huddle-Shotgun #27 J.Reeder rush middle for 58 ya... 11:36 Q2 | STBK ball | 1st & 13 at STBK 4
+  [1:15.3] Rhode Island Rams 14 at New Hampshire Wildcats 14 | No Huddle-Shotgun #15 A.McClelland pass incomplete short mid... 11:48 Q2 | URI ball | 1st & 10 at URI 47
+  [1:16.8] Columbia Lions 0 at Harvard Crimson 22 | Shotgun #18 D.Gordon rush middle for 35 yards gain to the CO... 12:52 Q2
+  [1:18.2] Pennsylvania Quakers 0 at Cornell Big Red 7 | Timeout Cornell, clock 03:51 9:35 Q2 | COR ball
+  [1:19.6] Central Connecticut Blue Devils 14 at Stonehill Skyhawks 7 | Shotgun #6 J.O'Connell pass incomplete deep left to #2 A.Nea... 12:54 Q2 | STO ball | 2nd & 10 at STO 15
+  [1:21.0] Morgan State Bears 0 at Delaware State Hornets 0 | No Huddle-Shotgun #5 M.Adams pass complete short left to #8 ... 13:20 Q2 | DSU ball | 2nd & 10 at MORG 22
+  [1:22.5] Fordham Rams 14 at Bucknell Bison 6 | (B. Henderson KICK) 12:06 Q2
+  [1:24.0] Lafayette Leopards 0 at William & Mary Tribe 14 | No Huddle-Shotgun #11 E.Jordan pass complete short left to #... 11:44 Q2 | LAF ball | 2nd & 6 at LAF 29
+  [1:25.5] Richmond Spiders 0 at Villanova Wildcats 10 | No Huddle-Shotgun #7 P.McQuaide pass complete short right to... 9:24 Q2 | VILL ball | 3rd & 1 at RICH 48
+  [1:26.8] St. Thomas Tommies 7 at Butler Bulldogs 9 | (09:51) #25 D.Jackson rush right for 19 yards gain to the St... 9:49 Q2
+  [1:28.3] Stetson Hatters 7 at Davidson Wildcats 3 | PENALTY DAV False Start (#50 C.Coffman) 5 yards from STE49 t... 12:16 Q2 | DAV ball | 1st & 15 at DAV 46
+  [1:29.7] San Diego Toreros 7 at Drake Bulldogs 3 | (E. Salazar KICK) 9:54 Q2
+  [1:31.2] Mercer Bears 0 at Chattanooga Mocs 7 | #16 H.Jehu punt 52 yards to the MER30, out of bounds at MER3... 9:27 Q2 | MER ball | 1st & 10 at MER 30
+  [1:32.6] Samford Bulldogs 10 at East Tennessee State Buccaneers 7 | (Ty Ippolito KICK) 13:52 Q2
+  [1:34.1] Wofford Terriers 0 at Western Carolina Catamounts 10 | #60 B.McCollum field goal attempt from 47 yards GOOD (H: #63... 13:42 Q2
+  [1:35.5] Old Dominion Monarchs 14 at Coastal Carolina Chanticleers 0 | Timeout Coastal Carolina, clock 11:42 11:42 Q2 | CCU ball
+  [1:36.9] Lindenwood Lions 7 at Gardner-Webb Runnin' Bulldogs 0 | No Huddle-Shotgun #9 P.Battle sacked for loss of 6 yards to ... 9:37 Q1 | GWEB ball | 2nd & 10 at LIN 25
+  [1:38.4] Upcoming, 69 games
+  [1:39.8] Hampton Pirates (1-8) at Elon Phoenix (4-5) (Sat 11/7 1:00PM)
+  [1:41.3] Illinois State Redbirds (7-2) at North Dakota Fighting Hawks (6-4) (Sat 11/7 1:00PM)
+  [1:42.7] Youngstown State Penguins (7-2) at Murray State Racers (1-8) (Sat 11/7 1:00PM)
+  [1:44.1] UT Martin Skyhawks (3-6) at Charleston Southern Buccaneers (4-5) (Sat 11/7 1:00PM)
+  [1:45.6] UT Rio Grande Valley Vaqueros (4-5) at Northwestern State Demons (0-9) (Sat 11/7 1:00PM)
+  [1:47.0] Furman Paladins (2-7) at The Citadel Bulldogs (2-7) (Sat 11/7 1:00PM)
+  [1:48.4] South Dakota State Jackrabbits (7-2) at Northern Iowa Panthers (4-4) (Sat 11/7 1:00PM)
+  [1:49.9] VMI Keydets (0-9) at Tennessee Tech Golden Eagles (8-1) (Sat 11/7 1:30PM)
+  [1:51.3] Georgia State Panthers (4-4) at App State Mountaineers (5-3) (Sat 11/7 1:30PM)
+  [1:52.8] Texas A&M Aggies (4-4) at #21 South Carolina Gamecocks (5-3) (Sat 11/7 2:00PM)
+  [1:54.2] Portland State Vikings (2-7) at Montana Grizzlies (6-3) (Sat 11/7 2:00PM)
+  [1:55.7] Northern Colorado Bears (3-6) at Southern Utah Thunderbirds (3-6) (Sat 11/7 2:00PM)
+  [1:57.2] Western Illinois Leathernecks (5-4) at Eastern Illinois Panthers (3-6) (Sat 11/7 2:00PM)
+  [1:58.6] Alabama A&M Bulldogs (7-2) at Prairie View A&M Panthers (4-5) (Sat 11/7 2:00PM)
+  [2:00.0] Alabama State Hornets (4-4) at Texas Southern Tigers (3-5) (Sat 11/7 2:00PM)
+  [2:01.4] Florida A&M Rattlers (2-7) at Alcorn State Braves (5-4) (Sat 11/7 2:00PM)
+  [2:02.9] Arkansas-Pine Bluff Golden Lions (5-3) at Grambling Tigers (4-4) (Sat 11/7 2:00PM)
+  [2:04.3] Bethune-Cookman Wildcats (5-4) at Southern Jaguars (4-5) (Sat 11/7 2:00PM)
+  [2:05.8] Mississippi Valley State Delta Devils (3-6) at Jackson State Tigers (6-2) (Sat 11/7 2:00PM)
+  [2:07.2] UL Monroe Warhawks (1-7) at Arkansas State Red Wolves (4-4) (Sat 11/7 2:00PM)
+  [2:08.7] Delaware Blue Hens (4-4) at Kennesaw State Owls (2-6) (Sat 11/7 2:00PM)
+  [2:10.1] #5 Alabama Crimson Tide (6-2) at #14 LSU Tigers (6-2) (Sat 11/7 2:30PM)
+  [2:11.5] #23 Oregon Ducks (5-3) at #12 Ohio State Buckeyes (6-2) (Sat 11/7 2:30PM)
+  [2:13.0] Merrimack Warriors (4-5) at #16 Wake Forest Demon Deacons (7-1) (Sat 11/7 2:30PM)
+  [2:14.4] Cincinnati Bearcats (5-3) at #17 Houston Cougars (6-2) (Sat 11/7 2:30PM)
+  [2:15.8] Penn State Nittany Lions (4-4) at Washington Huskies (5-3) (Sat 11/7 2:30PM)
+  [2:17.3] Charlotte 49ers (1-7) at UAB Blazers (4-4) (Sat 11/7 2:30PM)
+  [2:18.8] Temple Owls (2-6) at Navy Midshipmen (2-6) (Sat 11/7 2:30PM)
+  [2:20.3] Southeast Missouri State Redhawks (5-4) at Tennessee State Tigers (2-7) (Sat 11/7 2:30PM)
+  [2:21.6] Marshall Thundering Herd (5-3) at Georgia Southern Eagles (4-4) (Sat 11/7 2:30PM)
+  [2:23.1] Western Kentucky Hilltoppers (3-5) at Middle Tennessee Blue Raiders (4-4) (Sat 11/7 2:30PM)
+  [2:24.5] UCF Knights (4-4) at Kansas Jayhawks (3-5) (Sat 11/7 2:45PM)
+  [2:26.0] Rice Owls (1-7) at North Texas Mean Green (6-2) (Sat 11/7 3:00PM)
+  [2:27.4] Northern Illinois Huskies (0-8) at San José State Spartans (4-5) (Sat 11/7 3:00PM)
+  [2:28.9] Eastern Kentucky Colonels (3-6) at Austin Peay Governors (7-2) (Sat 11/7 3:00PM)
+  [2:30.3] Stephen F. Austin Lumberjacks (9-0) at Lamar Cardinals (7-2) (Sat 11/7 3:00PM)
+  [2:31.8] East Texas A&M Lions (3-6) at Nicholls Colonels (3-6) (Sat 11/7 3:00PM)
+  [2:33.2] Missouri State Bears (3-5) at Florida International Panthers (3-5) (Sat 11/7 3:00PM)
+  [2:34.6] Louisiana Tech Bulldogs (6-2) at Troy Trojans (4-4) (Sat 11/7 3:00PM)
+  [2:36.0] Vanderbilt Commodores (3-5) at Mississippi State Bulldogs (4-4) (Sat 11/7 3:15PM)
+  [2:37.5] Rutgers Scarlet Knights (2-6) at Wisconsin Badgers (5-3) (Sat 11/7 3:15PM)
+  [2:39.0] Northern Arizona Lumberjacks (7-2) at Cal Poly Mustangs (4-6) (Sat 11/7 4:00PM)
+  [2:40.4] Eastern Washington Eagles (2-7) at Idaho Vandals (4-5) (Sat 11/7 4:00PM)
+  [2:41.8] West Georgia Wolves (1-8) at Central Arkansas Bears (2-7) (Sat 11/7 4:00PM)
+  [2:43.3] McNeese Cowboys (4-5) at Houston Christian Huskies (4-5) (Sat 11/7 4:00PM)
+  [2:44.7] South Alabama Jaguars (4-4) at Louisiana Ragin' Cajuns (5-3) (Sat 11/7 4:00PM)
+  [2:46.1] #25 Boise State Broncos (7-1) at Colorado State Rams (3-5) (Sat 11/7 5:00PM)
+  [2:47.6] Southern Illinois Salukis (4-5) at Indiana State Sycamores (2-7) (Sat 11/7 5:00PM)
+  [2:49.1] Montana State Bobcats (8-1) at Idaho State Bengals (6-3) (Sat 11/7 5:00PM)
+  [2:50.5] #6 Kentucky Wildcats (7-1) at #13 Tennessee Volunteers (6-2) (Sat 11/7 5:15PM)
+  [2:51.9] Abilene Christian Wildcats (5-4) at Tarleton State Texans (9-0) (Sat 11/7 6:00PM)
+  [2:53.4] West Florida Argonauts (4-3) at North Alabama Lions (5-4) (Sat 11/7 6:00PM)
+  [2:54.8] Utah Tech Trailblazers (1-8) at UC Davis Aggies (5-4) (Sat 11/7 6:00PM)
+  [2:56.2] Incarnate Word Cardinals (5-4) at SE Louisiana Lions (4-5) (Sat 11/7 6:00PM)
+  [2:57.7] Sam Houston Bearkats (1-7) at Jacksonville State Gamecocks (6-2) (Sat 11/7 6:00PM)
+  [2:59.1] #1 Miami Hurricanes (8-0) at #11 Notre Dame Fighting Irish (7-1) (Sat 11/7 6:30PM)
+  [3:00.6] #2 Georgia Bulldogs (7-1) at #10 Ole Miss Rebels (6-2) (Sat 11/7 6:30PM)
+  [3:02.0] #19 Iowa Hawkeyes (6-2) at Northwestern Wildcats (6-2) (Sat 11/7 6:30PM)
+  [3:03.4] Colorado Buffaloes (3-5) at Arizona State Sun Devils (4-4) (Sat 11/7 6:30PM)
+  [3:04.9] Louisville Cardinals (5-3) at Georgia Tech Yellow Jackets (2-6) (Sat 11/7 6:30PM)
+  [3:06.4] Michigan State Spartans (2-6) at Michigan Wolverines (5-3) (Sat 11/7 6:30PM)
+  [3:07.8] Air Force Falcons (6-2) at Army Black Knights (5-3) (Sat 11/7 6:30PM)
+  [3:09.2] Oklahoma Sooners (4-4) at #24 Florida Gators (5-3) (Sat 11/7 6:45PM)
+  [3:10.7] Liberty Flames (7-1) at New Mexico State Aggies (3-5) (Sat 11/7 7:00PM)
+  [3:12.1] West Virginia Mountaineers (5-3) at #15 Texas Tech Red Raiders (7-1) (Sat 11/7 8:30PM)
+  [3:13.5] Fresno State Bulldogs (5-3) at Utah State Aggies (3-5) (Sat 11/7 8:30PM)
+  [3:15.0] Hawai'i Rainbow Warriors (2-6) at UTEP Miners (1-7) (Sat 11/7 8:30PM)
+  [3:16.4] Texas State Bobcats (4-4) at Oregon State Beavers (5-3) (Sat 11/7 9:30PM)
+  [3:17.9] Wyoming Cowboys (5-3) at UNLV Rebels (5-3) (Sat 11/7 9:30PM)
+  [3:19.3] Completed, 13 games
+  [3:20.7] Ohio Bobcats 28 at Akron Zips 20 [Final]
+  [3:22.2] Buffalo Bulls 34 at Miami (OH) RedHawks 31 [Final/OT]
+  [3:23.6] Ball State Cardinals 30 at Massachusetts Minutemen 31 [Final/OT]
+  [3:25.1] Toledo Rockets 20 at Sacramento State Hornets 17 [Final]
+  [3:26.5] Central Michigan Chippewas 35 vs Eastern Michigan Eagles 7 [Final]
+  [3:27.9] UTSA Roadrunners 29 at Florida Atlantic Owls 60 [Final]
+  [3:29.4] South Carolina State Bulldogs 35 at Howard Bison 28 [Final]
+  [3:30.8] James Madison Dukes 54 at Southern Miss Golden Eagles 23 [Final]
+  [3:32.2] Virginia Tech Hokies 28 at SMU Mustangs 51 [Final]
+  [3:33.7] South Florida Bulls 17 at East Carolina Pirates 20 [Final]
+  [3:35.2] Nebraska Cornhuskers 13 at Illinois Fighting Illini 24 [Final]
+  [3:36.6] New Mexico Lobos 31 at Nevada Wolf Pack 3 [Final]
+  [3:38.1] TCU Horned Frogs 28 at #22 Arizona Wildcats 29 [Final]
+  [3:39.5] --- News Headlines ---
+  [3:40.9] --- Standings ---
+  [3:42.4] --- Polls ---
+  [3:43.8] --- Statistics ---
+  [3:45.3] --- Teams ---
+  [3:46.7] --- Transactions ---
+  [3:48.2] --- Venues ---
+  [3:49.5] --- Bowls & Playoffs ---

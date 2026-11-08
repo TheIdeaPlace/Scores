@@ -1,0 +1,24 @@
+# Live Scores and its refresh setting (scores.py 806-915; announcements in windows_notifications.py 294-319)
+w 0.5
+x
+w 12
+k {ENTER}
+w 12
+e Live Scores List
+k {TAB}
+w 2.5
+e/ Refresh
+# The refresh frequency combo: choosing "Manual (F5 only)" should announce
+# "Automatic refresh disabled. Press F5 to refresh manually." (910-915)
+k +{TAB}
+w 1
+k +{TAB}
+w 2.5
+e Refresh Frequency
+k {END}
+w 4
+e Manual (F5 only)
+e Automatic refresh disabled
+k {ESC}
+w 4
+e League Selection List

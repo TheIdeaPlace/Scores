@@ -1,0 +1,33 @@
+recorded m2-from-league (254.9 s)
+Focus: ListItem 'Texas A&M Aggies 9 at #21 South Carolina Gamecocks 17 [Final] | NCAAF' id='QApplication.SportsScoresApp.QStackedWidget.LiveScoresView.QListWidget' value='' selected FOCUSED  [in window 'Live Scores - Sports Scores']
+  [0:03.5] NCAAF - Sports Scores window
+  [0:03.6] Scores List list List of games and scores for the selected date or week. Alt+M monitors one of today's games in Live Scores, Alt+L listens to a game.
+  [0:03.6] Loading scores...
+  [0:04.4] In Progress, 37 games
+  [0:04.4] Week 10
+  [0:33.5] Texas A&M Aggies 9 at #21 South Carolina Gamecocks 17 | (00:26) No Huddle-Shotgun #10 M.Reed pass complete short lef... 0:13 Q4 | TA&M ball | 2nd & 5 at SC 24
+  [0:36.5] Added to monitoring, at the top of Live Scores
+  [0:40.8] Loading scores...
+  [0:41.3] Upcoming, 130 games
+  [0:41.3] Week 11
+  [1:05.7] Western Michigan Broncos (6-3) at Akron Zips (1-8) (Tue 11/10 6:00PM)
+  [1:08.7] Only today's games can be monitored
+  [1:14.0] League Selection List list List of available sports leagues and live scores
+  [1:14.0] Live Scores - All Sports
+  [1:22.0] Live Scores List list Live, upcoming and finished games from all sports, with the games you're monitoring first. Alt+M adds a game to Monitoring or takes it off, Alt+L listens to it.
+  [1:22.0] Loading live scores...
+  [1:23.8] === MONITORING ===
+  [2:10.0] Texas A&M Aggies 9 at South Carolina Gamecocks 17 | Timeout Texas A&M, clock 00:14 0:13 Q4 | TA&M ball | NCAAF
+  [2:14.3] Game Details List list List of detailed information about the selected game
+  [2:14.3] South Carolina Gamecocks (Home)
+  [2:29.1] NCAAF, Texas A&M Aggies at South Carolina Gamecocks - Sports Scores
+  [2:32.3] Live Scores List list Live, upcoming and finished games from all sports, with the games you're monitoring first. Alt+M adds a game to Monitoring or takes it off, Alt+L listens to it.
+  [2:32.3] Loading live scores... not selected
+  [2:34.3] Texas A&M Aggies 9 at South Carolina Gamecocks 17 | Timeout Texas A&M, clock 00:09 0:09 Q4 | TA&M ball | NCAAF
+  [3:07.3] Texas A&M Aggies 9 at South Carolina Gamecocks 17 | Timeout Texas A&M, clock 00:09 0:09 Q4 | TA&M ball | NCAAF list item focused selected
+  [3:11.6] League Selection List list List of available sports leagues and live scores
+  [3:11.6] Live Scores - All Sports
+  [3:19.6] Live Scores List list Live, upcoming and finished games from all sports, with the games you're monitoring first. Alt+M adds a game to Monitoring or takes it off, Alt+L listens to it.
+  [3:19.6] Loading live scores...
+  [3:23.1] === MONITORING ===
+  [4:07.6] Texas A&M Aggies 9 (RZ) at South Carolina Gamecocks 17 | (00:08) No Huddle-Shotgun #10 M.Reed pass incomplete short r... 0:03 Q4 | TA&M ball | 2nd & Goal at SC 10 | NCAAF

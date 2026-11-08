@@ -1,0 +1,45 @@
+recorded d3-standings (128.7 s)
+Focus: ListItem 'Live Scores - All Sports' id='QApplication.SportsScoresApp.QStackedWidget.HomeView.QListWidget' value='' selected FOCUSED  [in window 'Sports Scores']
+  [0:03.8] Sports Scores window
+  [0:03.8] NCAAF Standings dialog
+  [0:03.9] Conferences list Press Enter on one to open its standings. Escape comes back to this list.
+  [0:03.9] Southeastern Conference
+  [0:37.9] NCAAF Standings
+  [0:41.1] Southeastern Conference list item focused selected
+  [0:44.3] Big Ten Conference
+  [0:46.8] Big 12 Conference
+  [0:49.4] Atlantic Coast Conference
+  [0:51.9] Pac-12 Conference
+  [0:54.4] American Conference
+  [0:57.0] Conference USA
+  [0:59.5] United Athletic Conference
+  [1:02.1] Southeastern Conference
+  [1:04.6] Sun Belt Conference
+  [1:04.8] Southern Conference
+  [1:08.1] Southern Conference Standings grouping Southern Conference Standings table showing team records and statistics. Multiple view modes available: Alt+V to cycle views, Alt+T for table, Alt+Q for quick list, Alt+F for full list.
+  [1:08.1] Southern Conference Standings table Southern Conference Standings table showing team records and statistics. Use up/down/left/right arrow keys to navigate cells, Tab to enter or exit table. Alt+V to cycle views, Alt+Q for quick list, Alt+F for full list.
+  [1:08.2] Tennessee Tech Golden Eagles, Pos, 1 data item 1 row 1 Pos column 1
+  [1:13.2] Southern Conference - NCAAF Standings
+  [1:16.4] Team, Tennessee Tech Golden Eagles data item Team column 2
+  [1:18.9] Tennessee Tech Golden Eagles, W, 8 data item W column 3
+  [1:21.4] Tennessee Tech Golden Eagles, L, 1 data item L column 4
+  [1:24.0] Tennessee Tech Golden Eagles, PCT, 0.889 data item PCT column 5
+  [1:26.5] Tennessee Tech Golden Eagles, Conf, 5-1 data item Conf column 6
+  [1:29.1] Tennessee Tech Golden Eagles, Streak, W4 data item Streak column 7
+  [1:31.6] Mercer Bears, Streak, W5 data item 2 row 2
+  [1:34.1] Chattanooga Mocs, Streak, W3 data item 3 row 3
+  [1:36.7] East Tennessee State Buccaneers, Streak, L1 data item 4 row 4
+  [1:39.2] Wofford Terriers, Streak, L1 data item 5 row 5
+  [1:41.8] Southern Conference Standings - Full List list Southern Conference Standings table showing team records and statistics in detailed list format with headers. Use up/down arrow keys to navigate, Alt+V to cycle views, Alt+T for table view.
+  [1:41.8] Pos: 5; Team: Wofford Terriers; W: 5; L: 4; PCT: 0.556; Conf: 3-3; Streak: L1
+  [1:44.9] Pos: 6; Team: Western Carolina Catamounts; W: 4; L: 5; PCT: 0.444; Conf: 2-3; Streak: W1
+  [1:47.9] Southern Conference Standings table Southern Conference Standings table showing team records and statistics. Use up/down/left/right arrow keys to navigate cells, Tab to enter or exit table. Alt+V to cycle views, Alt+Q for quick list, Alt+F for full list.
+  [1:48.0] Western Carolina Catamounts, Streak, W1 data item 6 row 6
+  [1:51.0] Southland Conference Standings grouping Southland Conference Standings table showing team records and statistics. Multiple view modes available: Alt+V to cycle views, Alt+T for table, Alt+Q for quick list, Alt+F for full list.
+  [1:51.0] Southland Conference Standings table Southland Conference Standings table showing team records and statistics. Use up/down/left/right arrow keys to navigate cells, Tab to enter or exit table. Alt+V to cycle views, Alt+Q for quick list, Alt+F for full list.
+  [1:51.0] Stephen F. Austin Lumberjacks, Pos, 1 data item 1 row 1 Pos column 1
+  [1:55.1] Conferences list Press Enter on one to open its standings. Escape comes back to this list.
+  [1:55.1] Southland Conference
+  [1:58.1] League Selection List list List of available sports leagues and live scores
+  [1:58.1] Live Scores - All Sports
+  [2:02.1] Live Scores - All Sports list item focused selected

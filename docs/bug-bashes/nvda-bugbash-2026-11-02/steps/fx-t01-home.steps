@@ -1,0 +1,32 @@
+# Home screen: startup focus and the league list (scores.py 499-651, 12583-12605)
+w 0.5
+x
+w 12
+e Sports Scores
+e League Selection List
+e Live Scores - All Sports
+# Row 2 is a separator (30 x U+2500), not selectable: Down should skip it to NFL.
+k {DOWN}
+w 2.5
+e NFL
+e! ──
+k {DOWN}
+w 2.5
+e NBA
+k {DOWN}
+w 2.5
+e MLB
+k {END}
+w 2.5
+e Check for Updates
+k {UP}
+w 2.5
+e User Guide
+# Tab to the Settings button: accessible name "Home Page Settings" (585)
+k {TAB}
+w 2.5
+e Home Page Settings
+e button
+k +{TAB}
+w 2.5
+e League Selection List

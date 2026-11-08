@@ -1,0 +1,194 @@
+
+==================== NFL
+  raw top keys ['uid', 'id', 'name', 'abbreviation', 'shortName', 'children', 'isConference', 'season'] season  children: ['American Football Conference', 'National Football Conference'] ... 2
+  app rows 32, unique 32, dup ids 0; raw standings entries 32 unique 32; level3 entries 32; /teams?limit=1000 32
+  in /teams but not in app standings: 0 e.g. []
+  in app standings but not in /teams: 0 e.g. []
+  raw stat names: ['Home', 'Road', 'differential', 'divisionLosses', 'divisionRecord', 'divisionTies', 'divisionWins', 'gamesBehind', 'lockedDivRank', 'losses', 'overall', 'playoffSeed', 'pointDifferential', 'pointsAgainst', 'pointsFor', 'streak', 'ties', 'vs. Conf.', 'vs. Div.', 'winPercent', 'wins']
+  first entry stats (display): {'differential': '+52', 'gamesBehind': '-', 'losses': '1', 'playoffSeed': '1', 'pointDifferential': '+52', 'pointsAgainst': '181', 'pointsFor': '233', 'streak': 'W3', 'ties': '0', 'winPercent': '.857', 'wins': '6', 'divisionLosses': '1', 'divisionRecord': '0-1', 'divisionTies': '0.000', 'divisionWins': '0.000', 'lockedDivRank': '0', 'overall': '6-1', 'Home': '3-1', 'Road': '3-0', 'vs. Div.': '0-1', 'vs. Conf.': '4-1'}
+  value comparison: {'espn_has_streak': 32, 'app_streak_NA_when_espn_has_it': 32, 'app_streak_NA': 32, 'espn_conf_record_available': 32}
+    streak: ['Buffalo Bills ESPN W3 app N/A', 'New England Patriots ESPN W1 app N/A', 'New York Jets ESPN L3 app N/A', 'Miami Dolphins ESPN L1 app N/A']
+  vs /teams/{id} total record: {'checked': 12} []
+  app divisions: {'AFC East': 4, 'AFC North': 4, 'AFC South': 4, 'AFC West': 4, 'NFC East': 4, 'NFC North': 4, 'NFC South': 4, 'NFC West': 4}
+  teams whose app division disagrees with ESPN level=3 group name: 0 []
+  ordering vs ESPN: {'cells': 32, 'groups': 8} []
+  dialog layout (modelled scores.py:8988-8996): division tabs; menu shows Standings: True (scores.py:1658)
+  MODELLED row for Buffalo Bills (AFC East):
+    Pos=1 | Team=Buffalo Bills | W=6 | L=1 | T=0 | PCT=0.857 | GB=— | Streak=N/A | PF=233 | PA=181 | Diff=+52 | Div Rec=0-1 | Seed=1 [13 headers, 13 cells]
+
+==================== NCAAF
+  raw top keys ['uid', 'id', 'name', 'shortName', 'children', 'parent', 'isConference', 'season'] season  children: ['American Conference', 'Atlantic Coast Conference', 'Big 12 Conference', 'Big Ten Conference', 'Conference USA', 'FBS Independents'] ... 11
+  app rows 124, unique 124, dup ids 0; raw standings entries 138 unique 138; level3 entries 138; /teams?limit=1000 762
+  in /teams but not in app standings: 638 e.g. ['Abilene Christian Wildcats', 'Adams State Grizzlies', 'Adrian Bulldogs', 'Alabama A&M Bulldogs', 'Alabama State Hornets', 'Albany State Golden Rams', 'Albion Britons', 'Albright Lions', 'Alcorn State Braves', 'Alfred Saxons', 'Alfred State Pioneers', 'Allegheny Gators', 'Allen Yellow Jackets', 'Alma Scots', 'Alvernia Golden Wolves']
+  in app standings but not in /teams: 0 e.g. []
+  raw stat names: ['Away', 'Home', 'divisionLosses', 'divisionTies', 'divisionWins', 'gamesBehind', 'leagueWinPercent', 'lockedDivRank', 'overall', 'playoffSeed', 'pointDifferential', 'pointsAgainst', 'pointsFor', 'streak', 'vs AP Top 25', 'vs Division', 'vs USA ranked teams', 'vs. Conf.', 'wins']
+  first entry stats (display): {'gamesBehind': '0.5', 'leagueWinPercent': '0.000', 'playoffSeed': '1', 'pointDifferential': '-24', 'pointsAgainst': '30', 'pointsFor': '6', 'streak': 'W5', 'wins': '0', 'divisionLosses': '0', 'divisionTies': '0.000', 'divisionWins': '0.000', 'lockedDivRank': '0', 'overall': '7-1', 'Home': '4-0', 'Away': '3-1', 'vs Division': '0-0', 'vs. Conf.': '4-0', 'vs AP Top 25': '0-1', 'vs USA ranked teams': '0-1'}
+  value comparison: {'wins_differs': 123, 'espn_has_streak': 124, 'app_streak_NA_when_espn_has_it': 124, 'app_streak_NA': 124, 'overall_summary_differs': 124, 'espn_conf_record_available': 124}
+    wins_differs: ['UTSA Roadrunners app 0 espn 7.0', 'Memphis Tigers app 0 espn 7.0', 'North Texas Mean Green app 0 espn 6.0', 'South Florida Bulls app 0 espn 6.0', 'Army Black Knights app 0 espn 5.0', 'Florida Atlantic Owls app 0 espn 5.0']
+    streak: ['UTSA Roadrunners ESPN W5 app N/A', 'Memphis Tigers ESPN W2 app N/A', 'North Texas Mean Green ESPN W5 app N/A', 'South Florida Bulls ESPN W2 app N/A']
+    overall_summary_differs: ['UTSA Roadrunners app 0-0 espn overall 7-1', 'Memphis Tigers app 0-0 espn overall 7-2', 'North Texas Mean Green app 0-0 espn overall 6-2', 'South Florida Bulls app 0-0 espn overall 6-2', 'Army Black Knights app 0-0 espn overall 5-3', 'Florida Atlantic Owls app 0-0 espn overall 5-3']
+  vs /teams/{id} total record: {'checked': 12, 'differs': 12} ['UTSA Roadrunners: app 0-0, /teams/id 7-1', 'Memphis Tigers: app 0-0, /teams/id 7-2', 'North Texas Mean Green: app 0-0, /teams/id 6-2', 'South Florida Bulls: app 0-0, /teams/id 6-2', 'Army Black Knights: app 0-0, /teams/id 5-3', 'Florida Atlantic Owls: app 0-0, /teams/id 5-3', 'Rutgers Scarlet Knights: app 0-0, /teams/id 2-6', 'Maryland Terrapins: app 0-0, /teams/id 2-6']
+  app divisions: {'American Conference': 14, 'Atlantic Coast Conference': 17, 'Big 12 Conference': 16, 'Big Ten Conference': 18, 'Conference USA': 10, 'FBS Independents': 2, 'Mid-American Conference': 13, 'Mountain West Conference': 10, 'Pac-12 Conference': 8, 'Southeastern Conference': 16}
+  teams whose app division disagrees with ESPN level=3 group name: 0 []
+  tiny groups: {'FBS Independents': ['Notre Dame Fighting Irish', 'UConn Huskies']}
+  ordering vs ESPN: {'cells': 124, 'groups': 10, 'pos_differs': 48, 'groups_differ': 4} ['Atlantic Coast Conference: app#1 Wake Forest Demon Deacons ESPN#1 Miami Hurricanes', 'Big 12 Conference: app#1 Texas Tech Red Raiders ESPN#1 Utah Utes', 'Big Ten Conference: app#1 Minnesota Golden Gophers ESPN#1 UCLA Bruins', 'Southeastern Conference: app#1 Georgia Bulldogs ESPN#1 Georgia Bulldogs']
+  dialog layout (modelled scores.py:8988-8996): division tabs; menu shows Standings: True (scores.py:1658)
+  MODELLED row for UTSA Roadrunners (American Conference):
+    Pos=1 | Team=UTSA Roadrunners | W=0 | L=0 | PCT=0.000 | GB=— | Streak=N/A [7 headers, 7 cells]
+
+==================== NBA
+  raw top keys ['uid', 'id', 'name', 'abbreviation', 'shortName', 'children', 'isConference', 'season'] season  children: ['Eastern Conference', 'Western Conference'] ... 2
+  app rows 30, unique 30, dup ids 0; raw standings entries 30 unique 30; level3 entries 30; /teams?limit=1000 30
+  in /teams but not in app standings: 0 e.g. []
+  in app standings but not in /teams: 0 e.g. []
+  raw stat names: ['Home', 'Last Ten Games', 'Road', 'avgPointsAgainst', 'avgPointsFor', 'differential', 'divisionWinPercent', 'gamesAhead', 'gamesBehind', 'leagueWinPercent', 'losses', 'overall', 'playoffSeed', 'pointDifferential', 'points', 'pointsAgainst', 'pointsFor', 'streak', 'vs. Conf.', 'vs. Div.', 'winPercent', 'wins']
+  first entry stats (display): {'avgPointsAgainst': '129.3', 'avgPointsFor': '113.5', 'differential': '-15.8', 'divisionWinPercent': '1.000', 'gamesBehind': '4.5', 'leagueWinPercent': '0.167', 'losses': '5', 'playoffSeed': '13', 'pointDifferential': '-95', 'points': '-2.0', 'pointsAgainst': '776', 'pointsFor': '681', 'streak': 'L4', 'winPercent': '.167', 'wins': '1', 'gamesAhead': '-', 'overall': '1-5', 'Home': '0-2', 'Road': '1-3', 'vs. Div.': '1-0', 'vs. Conf.': '1-5', 'Last Ten Games': '1-5'}
+  value comparison: {'points_dropped_nonzero': 28, 'espn_has_streak': 30, 'app_streak_NA_when_espn_has_it': 30, 'app_streak_NA': 30, 'espn_conf_record_available': 30}
+    points_dropped_nonzero: ['Philadelphia 76ers points=2.5', 'Boston Celtics points=2.0', 'New York Knicks points=-1.0', 'Brooklyn Nets points=-2.0', 'Detroit Pistons points=2.0', 'Cleveland Cavaliers points=1.0']
+    streak: ['Philadelphia 76ers ESPN W3 app N/A', 'Boston Celtics ESPN W5 app N/A', 'Toronto Raptors ESPN L2 app N/A', 'New York Knicks ESPN L1 app N/A']
+  vs /teams/{id} total record: {'checked': 12} []
+  app divisions: {'Eastern Conference Atlantic': 5, 'Eastern Conference Central': 5, 'Eastern Conference Southeast': 5, 'Western Conference Northwest': 5, 'Western Conference Pacific': 5, 'Western Conference Southwest': 5}
+  teams whose app division disagrees with ESPN level=3 group name: 0 []
+  ordering vs ESPN: {'cells': 30, 'pos_differs': 27, 'groups_differ': 6, 'groups': 6} ['Eastern Conference Atlantic: app#1 Philadelphia 76ers ESPN#1 Brooklyn Nets', 'Eastern Conference Central: app#1 Detroit Pistons ESPN#1 Chicago Bulls', 'Eastern Conference Southeast: app#1 Washington Wizards ESPN#1 Orlando Magic', 'Western Conference Northwest: app#1 Portland Trail Blazers ESPN#1 Utah Jazz', 'Western Conference Pacific: app#1 Los Angeles Lakers ESPN#1 Sacramento Kings', 'Western Conference Southwest: app#1 Memphis Grizzlies ESPN#1 New Orleans Pelicans']
+  dialog layout (modelled scores.py:8988-8996): division tabs; menu shows Standings: True (scores.py:1658)
+  MODELLED row for Philadelphia 76ers (Eastern Conference Atlantic):
+    Pos=1 | Team=Philadelphia 76ers | W=6 | L=1 | PCT=0.857 | GB=— | Streak=N/A | PPG=108.7 | OppPPG=104.9 | Diff=27 | DivW%=100.0% | Seed=1 [12 headers, 12 cells]
+
+==================== WNBA
+  raw top keys ['uid', 'id', 'name', 'abbreviation', 'shortName', 'children', 'isConference', 'season'] season  children: ['Eastern Conference', 'Western Conference'] ... 2
+  app rows 15, unique 15, dup ids 0; raw standings entries 15 unique 15; level3 entries 15; /teams?limit=1000 15
+  in /teams but not in app standings: 0 e.g. []
+  in app standings but not in /teams: 0 e.g. []
+  raw stat names: ['Home', 'Last Ten Games', 'Road', 'avgPointsAgainst', 'avgPointsFor', 'clincher', 'differential', 'divisionWinPercent', 'gamesAhead', 'gamesBehind', 'leagueWinPercent', 'losses', 'overall', 'playoffSeed', 'pointDifferential', 'points', 'pointsAgainst', 'pointsFor', 'streak', 'vs. Conf.', 'vs. Div.', 'winPercent', 'wins']
+  first entry stats (display): {'avgPointsAgainst': '84.5', 'avgPointsFor': '91.3', 'clincher': 'x', 'differential': '+6.8', 'divisionWinPercent': '0.000', 'gamesBehind': '-', 'leagueWinPercent': '0.750', 'losses': '14', 'playoffSeed': '1', 'pointDifferential': '+302', 'points': '8.0', 'pointsAgainst': '3717', 'pointsFor': '4019', 'streak': 'W5', 'winPercent': '.682', 'wins': '30', 'gamesAhead': '-', 'overall': '30-14', 'Home': '15-7', 'Road': '15-7', 'vs. Div.': '0-0', 'vs. Conf.': '15-5', 'Last Ten Games': '9-1'}
+  value comparison: {'wins_differs': 15, 'losses_differs': 15, 'points_dropped_nonzero': 15, 'pct_differs': 15, 'espn_has_streak': 15, 'app_streak_NA': 7, 'overall_summary_differs': 15, 'espn_conf_record_available': 15, 'app_streak_NA_when_espn_has_it': 7}
+    wins_differs: ['Golden State Valkyries app 9 espn 32.0', 'Atlanta Dream app 8 espn 30.0', 'New York Liberty app 2 espn 26.0', 'Las Vegas Aces app 2 espn 31.0', 'Dallas Wings app 1 espn 27.0', 'Indiana Fever app 1 espn 28.0']
+    losses_differs: ['Golden State Valkyries app 4 espn 12.0', 'Atlanta Dream app 4 espn 14.0', 'New York Liberty app 3 espn 18.0', 'Las Vegas Aces app 4 espn 13.0', 'Dallas Wings app 2 espn 17.0', 'Indiana Fever app 2 espn 16.0']
+    points_dropped_nonzero: ['Golden State Valkyries points=10.0', 'Atlanta Dream points=8.0', 'New York Liberty points=4.0', 'Las Vegas Aces points=9.0', 'Dallas Wings points=5.0', 'Indiana Fever points=6.0']
+    pct_differs: ['Golden State Valkyries app 0.692 espn 0.727 W9 L4 TNone OTLNone', 'Atlanta Dream app 0.667 espn 0.682 W8 L4 TNone OTLNone', 'New York Liberty app 0.400 espn 0.591 W2 L3 TNone OTLNone', 'Las Vegas Aces app 0.333 espn 0.705 W2 L4 TNone OTLNone', 'Dallas Wings app 0.333 espn 0.614 W1 L2 TNone OTLNone', 'Indiana Fever app 0.333 espn 0.636 W1 L2 TNone OTLNone']
+    overall_summary_differs: ['Golden State Valkyries app 9-4 espn overall 32-12', 'Atlanta Dream app 8-4 espn overall 30-14', 'New York Liberty app 2-3 espn overall 26-18', 'Las Vegas Aces app 2-4 espn overall 31-13', 'Dallas Wings app 1-2 espn overall 27-17', 'Indiana Fever app 1-2 espn overall 28-16']
+    streak: ['Chicago Sky ESPN L1 app N/A', 'Connecticut Sun ESPN W1 app N/A', 'Los Angeles Sparks ESPN L2 app N/A', 'Phoenix Mercury ESPN L1 app N/A']
+  vs /teams/{id} total record: {'checked': 12} []
+  app divisions: {'League': 15}
+  teams whose app division disagrees with ESPN level=3 group name: 15 [('Golden State Valkyries', 'GS', 'League', 'Western Conference'), ('Atlanta Dream', 'ATL', 'League', 'Eastern Conference'), ('New York Liberty', 'NY', 'League', 'Eastern Conference'), ('Las Vegas Aces', 'LV', 'League', 'Western Conference'), ('Dallas Wings', 'DAL', 'League', 'Western Conference'), ('Indiana Fever', 'IND', 'League', 'Eastern Conference'), ('Chicago Sky', 'CHI', 'League', 'Eastern Conference'), ('Connecticut Sun', 'CON', 'League', 'Eastern Conference'), ('Los Angeles Sparks', 'LA', 'League', 'Western Conference'), ('Minnesota Lynx', 'MIN', 'League', 'Western Conference'), ('Phoenix Mercury', 'PHX', 'League', 'Western Conference'), ('Portland Fire', 'POR', 'League', 'Western Conference')]
+  ordering vs ESPN: {'cells': 8, 'pos_differs': 7, 'groups_differ': 1, 'groups': 1} ['League: app#1 Golden State Valkyries ESPN#1 Minnesota Lynx']
+  dialog layout (modelled scores.py:8988-8996): single table, Pos runs across every group; menu shows Standings: False (scores.py:1658)
+  MODELLED row for Golden State Valkyries (League):
+    Pos=1 | Team=Golden State Valkyries | W=9 | L=4 | PCT=0.692 | GB=— | Streak=W1 [7 headers, 7 cells]
+
+==================== NCAAM
+  raw top keys ['uid', 'id', 'name', 'abbreviation', 'shortName', 'children', 'parent', 'isConference'] season  children: ['America East Conference', 'American Conference', 'Atlantic 10 Conference', 'Atlantic Coast Conference', 'Atlantic Sun Conference', 'Big 12 Conference'] ... 32
+  app rows 365, unique 365, dup ids 0; raw standings entries 365 unique 365; level3 entries 365; /teams?limit=1000 362
+  in /teams but not in app standings: 0 e.g. []
+  in app standings but not in /teams: 3 e.g. ['Queens University Royals', 'Lindenwood Lions', 'Southern Indiana Screaming Eagles']
+  raw stat names: ['Home', 'Road', 'avgPointsAgainst', 'avgPointsFor', 'gamesAhead', 'gamesBehind', 'leagueWinPercent', 'losses', 'overall', 'playoffSeed', 'pointDifferential', 'pointsAgainst', 'pointsFor', 'streak', 'vs AP Top 25', 'vs USA ranked teams', 'vs. Conf.', 'winPercent', 'wins']
+  first entry stats (display): {'avgPointsAgainst': '0.0', 'avgPointsFor': '0.0', 'gamesBehind': '-', 'leagueWinPercent': '0.000', 'losses': '0', 'playoffSeed': '0', 'pointDifferential': '0', 'pointsAgainst': '0', 'pointsFor': '0', 'streak': '-', 'winPercent': '.000', 'wins': '0', 'gamesAhead': '-', 'overall': '0-0', 'Home': '0-0', 'Road': '0-0', 'vs AP Top 25': '0-0', 'vs USA ranked teams': '0-0', 'vs. Conf.': '0-0'}
+  value comparison: {'app_streak_NA': 365, 'espn_conf_record_available': 365, 'losses_differs': 10, 'espn_has_streak': 28, 'app_streak_NA_when_espn_has_it': 28, 'overall_summary_differs': 28, 'wins_differs': 18, 'pct_differs': 18}
+    losses_differs: ['UMBC Retrievers app 0 espn 1.0', 'UAB Blazers app 0 espn 1.0', 'UTSA Roadrunners app 0 espn 1.0', 'Villanova Wildcats app 0 espn 1.0', 'Winthrop Eagles app 0 espn 1.0', 'Liberty Flames app 0 espn 1.0']
+    streak: ['UMBC Retrievers ESPN L1 app N/A', 'UAB Blazers ESPN L1 app N/A', 'UTSA Roadrunners ESPN L1 app N/A', 'George Mason Patriots ESPN W1 app N/A']
+    overall_summary_differs: ['UMBC Retrievers app 0-0 espn overall 0-1', 'UAB Blazers app 0-0 espn overall 0-1', 'UTSA Roadrunners app 0-0 espn overall 0-1', 'George Mason Patriots app 0-0 espn overall 1-0', 'Notre Dame Fighting Irish app 0-0 espn overall 1-0', 'Queens University Royals app 0-0 espn overall 1-0']
+    wins_differs: ['George Mason Patriots app 0 espn 1.0', 'Notre Dame Fighting Irish app 0 espn 1.0', 'Queens University Royals app 0 espn 1.0', 'High Point Panthers app 0 espn 1.0', 'Hofstra Pride app 0 espn 1.0', 'Middle Tennessee Blue Raiders app 0 espn 1.0']
+    pct_differs: ['George Mason Patriots app 0.000 espn 1.000 W0 L0 TNone OTLNone', 'Notre Dame Fighting Irish app 0.000 espn 1.000 W0 L0 TNone OTLNone', 'Queens University Royals app 0.000 espn 1.000 W0 L0 TNone OTLNone', 'High Point Panthers app 0.000 espn 1.000 W0 L0 TNone OTLNone', 'Hofstra Pride app 0.000 espn 1.000 W0 L0 TNone OTLNone', 'Middle Tennessee Blue Raiders app 0.000 espn 1.000 W0 L0 TNone OTLNone']
+  vs /teams/{id} total record: {'checked': 12} []
+  app divisions: {'America East Conference': 9, 'American Conference': 13, 'Atlantic 10 Conference': 14, 'Atlantic Coast Conference': 18, 'Atlantic Sun Conference': 8, 'Big 12 Conference': 16, 'Big East Conference': 11, 'Big Sky Conference': 11, 'Big South Conference': 9, 'Big Ten Conference': 18, 'Big West Conference': 12, 'Coastal Athletic Association': 13, 'Conference USA': 10, 'Horizon League': 12, 'Ivy League': 8, 'Metro Conference': 13, 'Mid-American Conference': 12, 'Mid-Eastern Athletic Conference': 8, 'Missouri Valley Conference': 11, 'Mountain West Conference': 10, 'Northeast Conference': 9, 'Ohio Valley Conference': 9, 'Pac-12 Conference': 9, 'Patriot League': 10, 'Southeastern Conference': 16, 'Southern Conference': 11, 'Southland Conference': 12, 'Southwestern Athletic Conference': 12, 'Summit League': 8, 'Sun Belt Conference': 14, 'United Athletic Conference': 9, 'West Coast Conference': 10}
+  teams whose app division disagrees with ESPN level=3 group name: 0 []
+  ordering vs ESPN: {'cells': 365, 'groups': 32} []
+  dialog layout (modelled scores.py:8988-8996): division tabs; menu shows Standings: True (scores.py:1658)
+  MODELLED row for Binghamton Bearcats (America East Conference):
+    Pos=1 | Team=Binghamton Bearcats | W=0 | L=0 | PCT=0.000 | GB=— | Streak=N/A [7 headers, 7 cells]
+
+==================== NCAAWB
+  raw top keys ['uid', 'id', 'name', 'abbreviation', 'shortName', 'children', 'parent', 'season'] season  children: ['America East Conference', 'American Conference', 'Atlantic 10 Conference', 'Atlantic Coast Conference', 'Atlantic Sun Conference', 'Big 12 Conference'] ... 32
+  app rows 363, unique 363, dup ids 0; raw standings entries 363 unique 363; level3 entries 363; /teams?limit=1000 362
+  in /teams but not in app standings: 0 e.g. []
+  in app standings but not in /teams: 1 e.g. ['Mercyhurst Lakers']
+  raw stat names: ['Home', 'Road', 'avgPointsAgainst', 'avgPointsFor', 'gamesAhead', 'gamesBehind', 'leagueWinPercent', 'losses', 'overall', 'playoffSeed', 'pointDifferential', 'pointsAgainst', 'pointsFor', 'streak', 'vs AP Top 25', 'vs USA ranked teams', 'vs. Conf.', 'winPercent', 'wins']
+  first entry stats (display): {'avgPointsAgainst': '0.0', 'avgPointsFor': '0.0', 'gamesBehind': '-', 'leagueWinPercent': '0.000', 'losses': '0', 'playoffSeed': '0', 'pointDifferential': '0', 'pointsAgainst': '0', 'pointsFor': '0', 'streak': '-', 'winPercent': '.000', 'wins': '0', 'gamesAhead': '-', 'overall': '1-0', 'Home': '1-0', 'Road': '0-0', 'vs AP Top 25': '0-0', 'vs USA ranked teams': '0-0', 'vs. Conf.': '0-0'}
+  value comparison: {'wins_differs': 50, 'pct_differs': 50, 'espn_has_streak': 78, 'app_streak_NA_when_espn_has_it': 78, 'app_streak_NA': 363, 'overall_summary_differs': 78, 'espn_conf_record_available': 363, 'losses_differs': 28}
+    wins_differs: ['Bryant Bulldogs app 0 espn 1.0', 'UMass Lowell River Hawks app 0 espn 1.0', 'South Florida Bulls app 0 espn 1.0', 'Tulane Green Wave app 0 espn 1.0', 'George Washington Revolutionaries app 0 espn 1.0', 'Clemson Tigers app 0 espn 1.0']
+    pct_differs: ['Bryant Bulldogs app 0.000 espn 1.000 W0 L0 TNone OTLNone', 'UMass Lowell River Hawks app 0.000 espn 1.000 W0 L0 TNone OTLNone', 'South Florida Bulls app 0.000 espn 1.000 W0 L0 TNone OTLNone', 'Tulane Green Wave app 0.000 espn 1.000 W0 L0 TNone OTLNone', 'George Washington Revolutionaries app 0.000 espn 1.000 W0 L0 TNone OTLNone', 'Clemson Tigers app 0.000 espn 1.000 W0 L0 TNone OTLNone']
+    streak: ['Bryant Bulldogs ESPN W1 app N/A', 'UMass Lowell River Hawks ESPN W1 app N/A', 'South Florida Bulls ESPN W1 app N/A', 'Tulane Green Wave ESPN W1 app N/A']
+    overall_summary_differs: ['Bryant Bulldogs app 0-0 espn overall 1-0', 'UMass Lowell River Hawks app 0-0 espn overall 1-0', 'South Florida Bulls app 0-0 espn overall 1-0', 'Tulane Green Wave app 0-0 espn overall 1-0', 'George Washington Revolutionaries app 0-0 espn overall 1-0', 'Davidson Wildcats app 0-0 espn overall 0-1']
+    losses_differs: ['Davidson Wildcats app 0 espn 1.0', 'North Carolina Tar Heels app 0 espn 1.0', 'Stanford Cardinal app 0 espn 1.0', 'Bellarmine Knights app 0 espn 1.0', 'Lipscomb Bisons app 0 espn 1.0', 'Villanova Wildcats app 0 espn 1.0']
+  vs /teams/{id} total record: {'checked': 12, 'differs': 3} ['Bryant Bulldogs: app 0-0, /teams/id 1-0', 'UMass Lowell River Hawks: app 0-0, /teams/id 1-0', 'Iona Gaels: app 0-0, /teams/id 1-0']
+  app divisions: {'America East Conference': 9, 'American Conference': 13, 'Atlantic 10 Conference': 14, 'Atlantic Coast Conference': 18, 'Atlantic Sun Conference': 8, 'Big 12 Conference': 16, 'Big East Conference': 11, 'Big Sky Conference': 11, 'Big South Conference': 9, 'Big Ten Conference': 18, 'Big West Conference': 12, 'Coastal Athletic Association': 13, 'Conference USA': 10, 'Horizon League': 12, 'Ivy League': 8, 'Metro Conference': 13, 'Mid-American Conference': 12, 'Mid-Eastern Athletic Conference': 8, 'Missouri Valley Conference': 11, 'Mountain West Conference': 10, 'Northeast Conference': 9, 'Ohio Valley Conference': 9, 'Pac-12 Conference': 9, 'Patriot League': 10, 'Southeastern Conference': 16, 'Southern Conference': 9, 'Southland Conference': 12, 'Southwestern Athletic Conference': 12, 'Summit League': 8, 'Sun Belt Conference': 14, 'United Athletic Conference': 9, 'West Coast Conference': 10}
+  teams whose app division disagrees with ESPN level=3 group name: 0 []
+  ordering vs ESPN: {'cells': 363, 'groups': 32} []
+  dialog layout (modelled scores.py:8988-8996): division tabs; menu shows Standings: True (scores.py:1658)
+  MODELLED row for Bryant Bulldogs (America East Conference):
+    Pos=1 | Team=Bryant Bulldogs | W=0 | L=0 | PCT=0.000 | GB=— | Streak=N/A [7 headers, 7 cells]
+
+==================== NHL
+  raw top keys ['uid', 'id', 'name', 'abbreviation', 'children', 'season', 'links', 'seasons'] season  children: ['Eastern Conference', 'Western Conference'] ... 2
+  app rows 32, unique 32, dup ids 0; raw standings entries 32 unique 32; level3 entries 32; /teams?limit=1000 32
+  in /teams but not in app standings: 0 e.g. []
+  in app standings but not in /teams: 0 e.g. []
+  raw stat names: ['Home', 'Last Ten Games', 'Road', 'differential', 'gamesBehind', 'gamesPlayed', 'losses', 'otLosses', 'overall', 'overtimeLosses', 'overtimeWins', 'playoffSeed', 'pointDifferential', 'points', 'pointsAgainst', 'pointsDiff', 'pointsFor', 'regLosses', 'regWins', 'rotLosses', 'rotWins', 'shootoutLosses', 'shootoutWins', 'streak', 'vs. Div.', 'wins']
+  first entry stats (display): {'otLosses': '2', 'differential': '+1.6', 'gamesBehind': '-', 'gamesPlayed': '16', 'losses': '2', 'playoffSeed': '1', 'pointDifferential': '+27', 'points': '26', 'pointsAgainst': '36', 'pointsFor': '63', 'streak': 'W4', 'wins': '12', 'overtimeLosses': '2', 'overtimeWins': '1', 'pointsDiff': '+27', 'regLosses': '0', 'regWins': '11', 'rotLosses': '1', 'rotWins': '12', 'shootoutLosses': '1', 'shootoutWins': '0', 'overall': '12-2-2, 26 PTS', 'Home': '5-1-1', 'Road': '7-1-1', 'Last Ten Games': '8-1-1, 0 PTS', 'vs. Div.': '4-1-0, 0 PTS'}
+  value comparison: {'espn_has_streak': 32, 'app_streak_NA_when_espn_has_it': 32, 'app_streak_NA': 32, 'overall_summary_differs': 32}
+    streak: ['Boston Bruins ESPN W1 app N/A', 'Montreal Canadiens ESPN W5 app N/A', 'Ottawa Senators ESPN L1 app N/A', 'Tampa Bay Lightning ESPN L1 app N/A']
+    overall_summary_differs: ['Boston Bruins app 10-4 espn overall 10-4-1, 21 PTS', 'Montreal Canadiens app 9-3 espn overall 9-3-2, 20 PTS', 'Ottawa Senators app 9-6 espn overall 9-6-1, 19 PTS', 'Tampa Bay Lightning app 8-3 espn overall 8-3-2, 18 PTS', 'Florida Panthers app 8-4 espn overall 8-4-2, 18 PTS', 'Toronto Maple Leafs app 8-6 espn overall 8-6-2, 18 PTS']
+  vs /teams/{id} total record: {'checked': 12} []
+  app divisions: {'Eastern Conference Atlantic': 8, 'Eastern Conference Metropolitan': 8, 'Western Conference': 1, 'Western Conference Central': 7, 'Western Conference Pacific': 8}
+  teams whose app division disagrees with ESPN level=3 group name: 32 [('Boston Bruins', 'BOS', 'Eastern Conference Atlantic', 'Atlantic Division'), ('Montreal Canadiens', 'MTL', 'Eastern Conference Atlantic', 'Atlantic Division'), ('Ottawa Senators', 'OTT', 'Eastern Conference Atlantic', 'Atlantic Division'), ('Tampa Bay Lightning', 'TB', 'Eastern Conference Atlantic', 'Atlantic Division'), ('Florida Panthers', 'FLA', 'Eastern Conference Atlantic', 'Atlantic Division'), ('Toronto Maple Leafs', 'TOR', 'Eastern Conference Atlantic', 'Atlantic Division'), ('Buffalo Sabres', 'BUF', 'Eastern Conference Atlantic', 'Atlantic Division'), ('Detroit Red Wings', 'DET', 'Eastern Conference Atlantic', 'Atlantic Division'), ('Carolina Hurricanes', 'CAR', 'Eastern Conference Metropolitan', 'Metropolitan Division'), ('New Jersey Devils', 'NJ', 'Eastern Conference Metropolitan', 'Metropolitan Division'), ('Washington Capitals', 'WSH', 'Eastern Conference Metropolitan', 'Metropolitan Division'), ('New York Islanders', 'NYI', 'Eastern Conference Metropolitan', 'Metropolitan Division')]
+  tiny groups: {'Western Conference': ['Utah Mammoth']}
+  ordering vs ESPN: {'cells': 32, 'pos_differs': 9, 'groups_differ': 2, 'pos1_not_gb_dash': 1, 'groups': 5} ['Eastern Conference Atlantic: app#1 Montreal Canadiens ESPN#1 Boston Bruins', 'Eastern Conference Atlantic: Pos 1 Montreal Canadiens GB 0.5', 'Eastern Conference Metropolitan: app#1 Carolina Hurricanes ESPN#1 Carolina Hurricanes']
+  dialog layout (modelled scores.py:8988-8996): division tabs; menu shows Standings: True (scores.py:1658)
+  MODELLED row for Montreal Canadiens (Eastern Conference Atlantic):
+    Pos=1 | Team=Montreal Canadiens | W=9 | L=3 | OTL=0.714 | PCT=0.5 | GB=N/A | Streak=20 | Pts=2 | GF=48 | GA=42 | Diff=+6 | Seed=3 [13 headers, 13 cells]
+
+==================== NCAAH
+  raw top keys ['uid', 'id', 'name', 'abbreviation', 'children', 'season', 'seasons'] season  children: ['Atlantic Hockey America', 'Big Ten Conference', 'Central Collegiate Hockey Association', 'College Hockey America', 'East Coast Athletic Conference', 'Hockey East'] ... 10
+  app rows 62, unique 62, dup ids 0; raw standings entries 62 unique 62; level3 entries 62; /teams?limit=1000 116
+  in /teams but not in app standings: 54 e.g. ['Adrian Bulldogs', 'Alabama Huntsville Chargers', 'Alberta Golden Bears & Pandas', 'American International Yellow Jackets', 'Anna Maria Amcats', 'Arizona Wildcats', 'Assumption Greyhounds', 'Augsburg Auggies', 'Bethel College Minnesota Falcons', 'Brockport Golden Eagles', 'Concordia (MN) Cobbers', 'FRANKLIN PIERCE', 'Fairfield Badgers', 'Findlay Falcons', 'Framingham State Rams']
+  in app standings but not in /teams: 0 e.g. []
+  raw stat names: ['OTLosses', 'OTWins', 'avgPointsAgainst', 'avgPointsFor', 'differential', 'gamesBehind', 'gamesPlayed', 'losses', 'overall', 'playoffSeed', 'pointDifferential', 'points', 'pointsAgainst', 'pointsFor', 'streak', 'tiegames', 'winPercent', 'wins']
+  first entry stats (display): {'OTLosses': '0', 'OTWins': '0', 'avgPointsAgainst': '0.0', 'avgPointsFor': '0.0', 'differential': '0.0', 'gamesBehind': '-', 'gamesPlayed': '6', 'losses': '1', 'playoffSeed': '0', 'pointDifferential': '0', 'points': '0.0', 'pointsAgainst': '0', 'pointsFor': '0', 'streak': '-', 'tiegames': '0', 'winPercent': '.833', 'wins': '5', 'overall': '5-1-0'}
+  value comparison: {'app_streak_NA': 62, 'overall_summary_differs': 62}
+    overall_summary_differs: ['Army Black Knights app 5-1 espn overall 5-1-0', 'Niagara Purple Eagles app 5-4 espn overall 5-4-1', 'Bentley Falcons app 4-4 espn overall 4-4-0', 'Sacred Heart Pioneers app 4-4 espn overall 4-4-0', 'Holy Cross Crusaders app 4-6 espn overall 4-6-0', 'Canisius Golden Griffins app 3-4 espn overall 3-4-1']
+  vs /teams/{id} total record: {'checked': 12, 'no_team_record': 12} []
+  app divisions: {'Atlantic Hockey America': 9, 'Big Ten Conference': 7, 'Central Collegiate Hockey Association': 9, 'East Coast Athletic Conference': 12, 'Hockey East': 11, 'Independent': 5, 'National Collegiate Hockey Conference': 9}
+  teams whose app division disagrees with ESPN level=3 group name: 0 []
+  ordering vs ESPN: {'cells': 62, 'pos_differs': 56, 'groups_differ': 7, 'groups': 7} ['Atlantic Hockey America: app#1 Army Black Knights ESPN#1 Army Black Knights', 'Big Ten Conference: app#1 Wisconsin Badgers ESPN#1 Michigan State Spartans', 'Central Collegiate Hockey Association: app#1 Augustana (SD) Vikings ESPN#1 St. Thomas Tommies', 'East Coast Athletic Conference: app#1 Dartmouth Big Green ESPN#1 Yale Bulldogs', 'Hockey East: app#1 Providence Friars ESPN#1 Northeastern Huskies', 'Independent: app#1 Stonehill Stonehill ESPN#1 Stonehill Stonehill', 'National Collegiate Hockey Conference: app#1 Western Michigan Broncos ESPN#1 Omaha Mavericks']
+  dialog layout (modelled scores.py:8988-8996): single table, Pos runs across every group; menu shows Standings: True (scores.py:1658)
+  MODELLED row for Army Black Knights (Atlantic Hockey America):
+    Pos=1 | Team=Army Black Knights | W=5 | L=1 | PCT=0.833 | GB=— | Streak=N/A [7 headers, 7 cells]
+
+==================== NCAAWH
+  raw top keys ['uid', 'id', 'name', 'abbreviation', 'standings', 'children', 'season', 'seasons'] season  children: [] ... 0
+  app rows 47, unique 47, dup ids 0; raw standings entries 45 unique 45; level3 entries 45; /teams?limit=1000 47
+  in /teams but not in app standings: 0 e.g. []
+  in app standings but not in /teams: 0 e.g. []
+  raw stat names: ['OTLosses', 'OTWins', 'avgPointsAgainst', 'avgPointsFor', 'differential', 'gamesBehind', 'gamesPlayed', 'losses', 'overall', 'playoffSeed', 'pointDifferential', 'points', 'pointsAgainst', 'pointsFor', 'streak', 'ties', 'winPercent', 'wins']
+  first entry stats (display): {'OTLosses': '0', 'OTWins': '0', 'avgPointsAgainst': '0.0', 'avgPointsFor': '0.0', 'differential': '0.0', 'gamesBehind': '-', 'gamesPlayed': '4', 'losses': '1', 'playoffSeed': '0', 'pointDifferential': '0', 'points': '0.0', 'pointsAgainst': '0', 'pointsFor': '0', 'streak': '-', 'ties': '1', 'winPercent': '.667', 'wins': '2', 'overall': '2-1-1'}
+  value comparison: {'wins_differs': 42, 'losses_differs': 42, 'ties_differs': 14, 'pct_differs': 42, 'app_streak_NA': 43, 'overall_summary_differs': 43, 'not_in_raw': 4}
+    wins_differs: ['Assumption Greyhounds app 0 espn 6.0', 'Bemidji State Beavers app 0 espn 1.0', 'Boston College Eagles app 0 espn 6.0', 'Boston University Terriers app 0 espn 2.0', 'Brown Bears app 0 espn 2.0', 'Clarkson Golden Knights app 0 espn 10.0']
+    losses_differs: ['Assumption Greyhounds app 0 espn 2.0', 'Bemidji State Beavers app 0 espn 9.0', 'Boston College Eagles app 0 espn 3.0', 'Boston University Terriers app 0 espn 7.0', 'Brown Bears app 0 espn 2.0', 'Clarkson Golden Knights app 0 espn 2.0']
+    ties_differs: ['Assumption Greyhounds app 0 espn 1.0', 'Boston University Terriers app 0 espn 1.0', 'Dartmouth Big Green app 0 espn 1.0', 'Holy Cross Crusaders app 0 espn 4.0', 'Long Island University Sharks app 0 espn 1.0', 'Mercyhurst Lakers app 0 espn 1.0']
+    pct_differs: ['Assumption Greyhounds app 0.000 espn 0.750 W0 L0 T1.0 OTLNone', 'Bemidji State Beavers app 0.000 espn 0.100 W0 L0 T0.0 OTLNone', 'Boston College Eagles app 0.000 espn 0.667 W0 L0 T0.0 OTLNone', 'Boston University Terriers app 0.000 espn 0.222 W0 L0 T1.0 OTLNone', 'Brown Bears app 0.000 espn 0.500 W0 L0 T0.0 OTLNone', 'Clarkson Golden Knights app 0.000 espn 0.833 W0 L0 T0.0 OTLNone']
+    overall_summary_differs: ['Assumption Greyhounds app 0-0 espn overall 6-2-1', 'Bemidji State Beavers app 0-0 espn overall 1-9-0', 'Boston College Eagles app 0-0 espn overall 6-3-0', 'Boston University Terriers app 0-0 espn overall 2-7-1', 'Brown Bears app 0-0 espn overall 2-2-0', 'Clarkson Golden Knights app 0-0 espn overall 10-2-0']
+  vs /teams/{id} total record: {'checked': 12, 'differs': 12} ['Assumption Greyhounds: app 0-0, /teams/id 6-2-1', 'Bemidji State Beavers: app 0-0, /teams/id 1-9', 'Boston College Eagles: app 0-0, /teams/id 6-3', 'Boston University Terriers: app 0-0, /teams/id 2-7-1', 'Brown Bears: app 0-0, /teams/id 2-2', 'Clarkson Golden Knights: app 0-0, /teams/id 10-2', 'Northeastern Huskies: app 0-0, /teams/id 7-1-1', 'Ohio State Buckeyes: app 0-0, /teams/id 11-1']
+  app divisions: {"NCAA Women's Hockey": 47}
+  teams whose app division disagrees with ESPN level=3 group name: 0 []
+  ordering vs ESPN: {'cells': 43, 'pos_differs': 42, 'groups_differ': 1, 'groups': 1} ["NCAA Women's Hockey: app#1 Assumption Greyhounds ESPN#1 Yale Bulldogs"]
+  dialog layout (modelled scores.py:8988-8996): single table, Pos runs across every group; menu shows Standings: True (scores.py:1658)
+  MODELLED row for Assumption Greyhounds (NCAA Women's Hockey):
+    Pos=1 | Team=Assumption Greyhounds | W=0 | L=0 | PCT=0.000 | GB=— | Streak=N/A [7 headers, 7 cells]
+
+== NCAAF coverage
+ standings?group=80: 138 entries, children ['American Conference', 'Atlantic Coast Conference', 'Big 12 Conference', 'Big Ten Conference', 'Conference USA', 'FBS Independents', 'Mid-American Conference', 'Mountain West Conference', 'Pac-12 Conference', 'Southeastern Conference', 'Sun Belt Conference']
+ standings?group=81: 128 entries, children ['Big Sky Conference', 'Coastal Athletic Association', 'FCS Independents', 'Ivy League', 'Mid-Eastern Athletic Conference', 'Missouri Valley Football Conference', 'Northeast Conference', 'Ohio Valley Conference', 'Patriot League', 'Pioneer Football League', 'Southern Conference', 'Southland Conference', 'Southwestern Athletic Conference', 'United Athletic Conference']
+ standings?group=90: 266 entries, children ['FBS', 'FCS']
+ NCAAM standings?group=50: 365
+ NCAAWB standings?group=50: 363
+
+== _get_team_record on real three-part records (real function)
+ NHL Boston Bruins: ESPN 10-4 -> _get_team_record (10, 4, '0.714', 'W1')
+ NHL Montreal Canadiens: ESPN 9-3 -> _get_team_record (9, 3, '0.750', 'W5')
+ NCAAH Army Black Knights: ESPN None -> _get_team_record (0, 0, '0.000', '')
+ NCAAH Niagara Purple Eagles: ESPN None -> _get_team_record (0, 0, '0.000', '')
+ NCAAWH Assumption Greyhounds: ESPN 6-2-1 -> _get_team_record (0, 0, '0.000', '')
+ NCAAWH Bemidji State Beavers: ESPN 1-9 -> _get_team_record (1, 9, '0.100', '')
+ NFL Buffalo Bills: ESPN 6-1 -> _get_team_record (6, 1, '0.857', 'W3')
+ NFL New England Patriots: ESPN 5-3 -> _get_team_record (5, 3, '0.625', 'W1')
+requests {'net': 145, 'cached': 41}

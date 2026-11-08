@@ -1,0 +1,24 @@
+# Game details from the NFL list (scores.py 2188-2976, 12814)
+w 0.5
+x
+w 12
+q {DOWN}
+w 2
+q {ENTER}
+w 12
+q {DOWN}
+w 3
+k {ENTER}
+w 12
+e Game Details List
+# The first row is a team, marked (Home) or (Away) (scores.py 2705-2720).
+e/ \((Home|Away)\)
+n t
+w 3
+e/ NFL, .+ at .+ - Sports Scores
+k {DOWN}
+w 3
+e Record:
+k {ESC}
+w 10
+e Scores List

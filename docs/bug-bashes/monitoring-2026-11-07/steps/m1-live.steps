@@ -1,0 +1,53 @@
+# Live Scores: the Monitoring section, adding, moving through, removing, idling through refreshes.
+w 0.5
+x
+w 40
+n t
+w 3
+k {HOME}
+w 3
+e MONITORING
+k {DOWN}
+w 2.5
+k {DOWN}
+w 2.5
+k {DOWN}
+w 2.5
+k {DOWN}
+w 2.5
+k %m
+w 4
+e added to monitoring
+k {DOWN}
+w 2.5
+k %m
+w 4
+e added to monitoring
+k {HOME}
+w 3
+e MONITORING
+k {DOWN}
+w 3
+k {DOWN}
+w 3
+k {DOWN}
+w 3
+k {UP}
+w 3
+k {UP}
+w 3
+# Rest on a Monitoring row through two 1-minute refreshes: anything said here is a reread.
+w 125
+n {TAB}
+w 4
+k %m
+w 4
+e removed from monitoring
+n {TAB}
+w 4
+k %m
+w 4
+e removed from monitoring
+n {TAB}
+w 4
+e MONITORING

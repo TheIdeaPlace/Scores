@@ -1,0 +1,25 @@
+The command in the VM failed:
+Exit code 1
+No window for a process named 'Scores' is open in the VM.
+At C:\vmtest\files\demo.ps1:106 char:20
++ ... (-not $p) { throw "No window for a process named '$App' is open in th ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : OperationStopped: (No window for a...open in the VM.:String) [], RuntimeException
+    + FullyQualifiedErrorId : No window for a process named 'Scores' is open in the VM.
+ 
+At C:\Users\kelly\GitHub\TheWorkBench\audio-demo\tools\VmFiles.psm1:42 char:13
++             throw "The command in the VM failed:`n$all"
++             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : OperationStopped: (The command in ...n in the VM.
+ 
+:String) [], RuntimeException
+    + FullyQualifiedErrorId : The command in the VM failed:
+Exit code 1
+No window for a process named 'Scores' is open in the VM.
+At C:\vmtest\files\demo.ps1:106 char:20
++ ... (-not $p) { throw "No window for a process named '$App' is open in th ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : OperationStopped: (No window for a...open in the VM.:String) [], RuntimeException
+    + FullyQualifiedErrorId : No window for a process named 'Scores' is open in the VM.
+ 
+ 

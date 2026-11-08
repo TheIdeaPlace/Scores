@@ -1,0 +1,37 @@
+recorded g1-live-details (160.7 s)
+2:00 Q2 | NCSU ball | 2nd & 10 at NCSU 32' id='QApplication.SportsScoresApp.QStackedWidget.LeagueView.QListWidget' value='' selected FOCUSED  [in window 'NCAAF, Week 10 - Sports Scores']
+  [0:04.2] NCAAF, Week 10 - Sports Scores window
+  [0:04.2] Scores List list List of games and scores for the selected date or week
+  [0:04.3] In Progress, 42 games
+  [0:04.3] Week 10
+  [0:33.3] Dartmouth Big Green 7 (RZ) at Princeton Tigers 21 | Timeout Princeton, clock 10:23 10:23 Q3 | DART ball
+  [0:33.4] Duke Blue Devils 17 at NC State Wolfpack 3 | (02:27) Shotgun #11 C.Bailey pass complete short middle to #... 2:10 Q2 | NCSU ball | 1st & 10 at NCSU 32
+  [0:37.8] Game Details List list List of detailed information about the selected game
+  [0:37.8] Loading game details...
+  [0:38.0] NC State Wolfpack (Home)
+  [0:51.8] NCAAF, Duke Blue Devils at NC State Wolfpack - Sports Scores
+  [0:54.9] Record: 4-4
+  [0:57.5] Duke Blue Devils (Away)
+  [1:00.0] Record: 6-2
+  [1:02.6] Status: In Progress
+  [1:05.1] Score: Wolfpack: 3 - Blue Devils: 17
+  [1:07.7] Game Time: 2:00 - 2nd Quarter
+  [1:10.2] Venue: Carter-Finley Stadium (Raleigh, NC)
+  [1:12.8] Weather: 63°F
+  [1:15.3] Betting Line: DUKE -4.5
+  [1:17.8] Over/Under: O/U 53.5
+  [1:20.4] TV: CW
+  [1:22.9] --- Additional Details ---
+  [1:25.4] Boxscore
+  [1:28.0] Drives
+  [1:30.6] Leaders
+  [1:33.1] Standings
+  [1:35.7] News
+  [1:50.9] Loading game details...
+  [1:51.2] NC State Wolfpack (Home)
+  [2:03.0] NCAAF, Duke Blue Devils at NC State Wolfpack - Sports Scores
+  [2:06.2] Scores List list List of games and scores for the selected date or week
+  [2:06.2] Loading scores...
+  [2:07.2] Duke Blue Devils 17 at NC State Wolfpack 3 | (02:05) Shotgun #7 D.Gause rush middle for 0 yards to the NC... 2:00 Q2 | NCSU ball | 2nd & 10 at NCSU 32
+  [2:31.2] Duke Blue Devils 17 at NC State Wolfpack 3 | (02:05) Shotgun #7 D.Gause rush middle for 0 yards to the NC... 2:00 Q2 | NCSU ball | 2nd & 10 at NCSU 32 list item focused selected
+  [2:34.4] NCAAF, Week 10 - Sports Scores

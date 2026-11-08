@@ -1,0 +1,170 @@
+
+============ NFL
+  Green Bay Packers (9) season 2026: app 17; ESPN pre/reg/post 3/17/0; missing pre/reg/post 3/0/0; not in ESPN schedule 0; date differs from Central date 7; opponent None 0
+       off: ('401872948', '2026-09-25T00:15Z', '2026-09-25', '2026-09-24', 'Fri, Sep 25', 'Atlanta Falcons')
+       off: ('401873007', '2026-10-19T00:20Z', '2026-10-19', '2026-10-18', 'Mon, Oct 19', 'Dallas Cowboys')
+       first row: {'date_display': 'Sun, Sep 13', 'home_away': '@', 'opponent': 'Minnesota Vikings', 'time': 'Final', 'status': 'Final', 'home_score': '39', 'away_score': '22'}
+     season 2025: app 17; ESPN pre/reg/post 3/17/1; missing {1: 3, 2: 0, 3: 1}
+  Buffalo Bills (2) season 2026: app 17; ESPN pre/reg/post 3/17/0; missing pre/reg/post 3/0/0; not in ESPN schedule 0; date differs from Central date 7; opponent None 0
+       off: ('401872932', '2026-09-18T00:15Z', '2026-09-18', '2026-09-17', 'Fri, Sep 18', 'Detroit Lions')
+       off: ('401872994', '2026-10-13T00:15Z', '2026-10-13', '2026-10-12', 'Tue, Oct 13', 'Los Angeles Rams')
+       first row: {'date_display': 'Sun, Sep 13', 'home_away': '@', 'opponent': 'Houston Texans', 'time': 'Final', 'status': 'Final', 'home_score': '31', 'away_score': '36'}
+     season 2025: app 17; ESPN pre/reg/post 3/17/2; missing {1: 3, 2: 0, 3: 2}
+  Las Vegas Raiders (13) season 2026: app 17; ESPN pre/reg/post 3/17/0; missing pre/reg/post 3/0/0; not in ESPN schedule 0; date differs from Central date 1; opponent None 0
+       off: ('401873178', '2027-01-10T05:00Z', '2027-01-10', '2027-01-09', 'Sun, Jan 10', 'Kansas City Chiefs')
+       first row: {'date_display': 'Sun, Sep 13', 'home_away': 'vs', 'opponent': 'Miami Dolphins', 'time': 'Final', 'status': 'Final', 'home_score': '27', 'away_score': '13'}
+     season 2025: app 17; ESPN pre/reg/post 3/17/0; missing {1: 3, 2: 0, 3: 0}
+
+============ NCAAF
+  Wisconsin Badgers (275) season 2026: app 12; ESPN pre/reg/post 0/12/0; missing pre/reg/post 0/0/0; not in ESPN schedule 0; date differs from Central date 3; opponent None 0
+       off: ('401858520', '2026-11-14T05:00Z', '2026-11-14', '2026-11-13', 'Sat, Nov 14', 'Maryland Terrapins')
+       off: ('401858533', '2026-11-21T05:00Z', '2026-11-21', '2026-11-20', 'Sat, Nov 21', 'Purdue Boilermakers')
+       first row: {'date_display': 'Sun, Sep 06', 'home_away': '@', 'opponent': 'Notre Dame Fighting Irish', 'time': 'Final', 'status': 'Final', 'home_score': '41', 'away_score': '13'}
+     season 2025: app 12; ESPN pre/reg/post 0/12/0; missing {1: 0, 2: 0, 3: 0}
+  Troy Trojans (2653) season 2026: app 12; ESPN pre/reg/post 0/12/0; missing pre/reg/post 0/0/0; not in ESPN schedule 0; date differs from Central date 3; opponent None 0
+       off: ('401871090', '2026-10-07T00:00Z', '2026-10-07', '2026-10-06', 'Wed, Oct 07', 'Southern Miss Golden Eagles')
+       off: ('401871100', '2026-11-15T00:00Z', '2026-11-15', '2026-11-14', 'Sun, Nov 15', 'South Alabama Jaguars')
+       first row: {'date_display': 'Sat, Sep 05', 'home_away': 'vs', 'opponent': 'Sam Houston Bearkats', 'time': 'Final', 'status': 'Final', 'home_score': '24', 'away_score': '21'}
+     season 2025: app 13; ESPN pre/reg/post 0/13/1; missing {1: 0, 2: 0, 3: 1}
+  North Dakota State Bison (2449) season 2026: app 12; ESPN pre/reg/post 0/12/0; missing pre/reg/post 0/0/0; not in ESPN schedule 0; date differs from Central date 4; opponent None 0
+       off: ('401864502', '2026-09-13T02:00Z', '2026-09-13', '2026-09-12', 'Sun, Sep 13', 'Air Force Falcons')
+       off: ('401864507', '2026-09-20T02:30Z', '2026-09-20', '2026-09-19', 'Sun, Sep 20', 'Sacramento State Hornets')
+       first row: {'date_display': 'Sat, Aug 29', 'home_away': 'vs', 'opponent': 'Jacksonville State Gamecocks', 'time': 'Final', 'status': 'Final', 'home_score': '33', 'away_score': '7'}
+     season 2025: app 13; ESPN pre/reg/post 0/13/0; missing {1: 0, 2: 0, 3: 0}
+  Morehead State Eagles (2413) season 2026: app 12; ESPN pre/reg/post 0/12/0; missing pre/reg/post 0/0/0; not in ESPN schedule 0; date differs from Central date 0; opponent None 0
+       first row: {'date_display': 'Thu, Aug 27', 'home_away': 'vs', 'opponent': 'Ohio Dominican Panthers', 'time': 'Final/3OT', 'status': 'Final', 'home_score': '40', 'away_score': '42'}
+     season 2025: app 12; ESPN pre/reg/post 0/12/0; missing {1: 0, 2: 0, 3: 0}
+
+============ NBA
+  Milwaukee Bucks (15) season 2027: app 85; ESPN pre/reg/post 5/80/0; missing pre/reg/post 0/0/0; not in ESPN schedule 0; date differs from Central date 73; opponent None 0
+       off: ('401914102', '2026-10-06T00:00Z', '2026-10-06', '2026-10-05', 'Tue, Oct 06', 'Minnesota Timberwolves')
+       off: ('401908620', '2026-10-08T00:00Z', '2026-10-08', '2026-10-07', 'Thu, Oct 08', 'Oklahoma City Thunder')
+       first row: {'date_display': 'Tue, Oct 06', 'home_away': 'vs', 'opponent': 'Minnesota Timberwolves', 'time': 'Final', 'status': 'Final', 'home_score': '97', 'away_score': '116'}
+     season 2026: app 87; ESPN pre/reg/post 4/83/0; missing {1: 0, 2: 0, 3: 0}
+  Los Angeles Lakers (13) season 2027: app 85; ESPN pre/reg/post 5/80/0; missing pre/reg/post 0/0/0; not in ESPN schedule 0; date differs from Central date 76; opponent None 0
+       off: ('401898716', '2026-10-06T02:00Z', '2026-10-06', '2026-10-05', 'Tue, Oct 06', 'Sacramento Kings')
+       off: ('401898390', '2026-10-07T02:00Z', '2026-10-07', '2026-10-06', 'Wed, Oct 07', 'Golden State Warriors')
+       first row: {'date_display': 'Tue, Oct 06', 'home_away': '@', 'opponent': 'Sacramento Kings', 'time': 'Final', 'status': 'Final', 'home_score': '103', 'away_score': '127'}
+     season 2026: app 98; ESPN pre/reg/post 6/82/10; missing {1: 0, 2: 0, 3: 0}
+  Utah Jazz (26) season 2027: app 84; ESPN pre/reg/post 4/80/0; missing pre/reg/post 0/0/0; not in ESPN schedule 0; date differs from Central date 65; opponent None 0
+       off: ('401914128', '2026-10-07T01:00Z', '2026-10-07', '2026-10-06', 'Wed, Oct 07', 'Denver Nuggets')
+       off: ('401898721', '2026-10-13T01:00Z', '2026-10-13', '2026-10-12', 'Tue, Oct 13', 'San Antonio Spurs')
+       first row: {'date_display': 'Sun, Oct 04', 'home_away': '@', 'opponent': 'Denver Nuggets', 'time': 'Final', 'status': 'Final', 'home_score': '97', 'away_score': '109'}
+     season 2026: app 86; ESPN pre/reg/post 4/82/0; missing {1: 0, 2: 0, 3: 0}
+
+============ WNBA
+  Minnesota Lynx (8) season 2026: app 0; ESPN pre/reg/post 3/44/2; missing pre/reg/post 3/44/2; not in ESPN schedule 0; date differs from Central date 0; opponent None 0
+     season 2025: app 0; ESPN pre/reg/post 2/45/6; missing {1: 2, 2: 45, 3: 6}
+  Las Vegas Aces (17) season 2026: app 3; ESPN pre/reg/post 2/45/6; missing pre/reg/post 2/45/3; not in ESPN schedule 0; date differs from Central date 2; opponent None 0
+       off: ('401918298', '2026-10-08T01:30Z', '2026-10-08', '2026-10-07', 'Thu, Oct 08', 'Golden State Valkyries')
+       off: ('401918300', '2026-10-10T01:30Z', '2026-10-10', '2026-10-09', 'Sat, Oct 10', 'Golden State Valkyries')
+       first row: {'date_display': 'Sun, Oct 04', 'home_away': '@', 'opponent': 'Golden State Valkyries', 'time': 'Final', 'status': 'Final', 'home_score': '71', 'away_score': '60'}
+     season 2025: app 3; ESPN pre/reg/post 2/44/12; missing {1: 2, 2: 44, 3: 12}
+  Golden State Valkyries (129689) season 2026: app 11; ESPN pre/reg/post 1/44/13; missing pre/reg/post 1/44/2; not in ESPN schedule 0; date differs from Central date 7; opponent None 0
+       off: ('401918294', '2026-10-03T01:00Z', '2026-10-03', '2026-10-02', 'Sat, Oct 03', 'Dallas Wings')
+       off: ('401918298', '2026-10-08T01:30Z', '2026-10-08', '2026-10-07', 'Thu, Oct 08', 'Las Vegas Aces')
+       first row: {'date_display': 'Sat, Oct 03', 'home_away': 'vs', 'opponent': 'Dallas Wings', 'time': 'Final', 'status': 'Final', 'home_score': '77', 'away_score': '73'}
+     season 2025: app 11; ESPN pre/reg/post 2/44/2; missing {1: 2, 2: 44, 3: 2}
+
+============ NCAAM
+  Wisconsin Badgers (275) season 2027: app 31; ESPN pre/reg/post 0/31/0; missing pre/reg/post 0/0/0; not in ESPN schedule 0; date differs from Central date 21; opponent None 0
+       off: ('401920893', '2026-11-03T00:30Z', '2026-11-03', '2026-11-02', 'Tue, Nov 03', 'Denver Pioneers')
+       off: ('401920894', '2026-11-07T00:30Z', '2026-11-07', '2026-11-06', 'Sat, Nov 07', 'Delaware Blue Hens')
+       first row: {'date_display': 'Tue, Nov 03', 'home_away': 'vs', 'opponent': 'Denver Pioneers', 'time': '9:31 - 1st', 'status': 'In Progress', 'home_score': '', 'away_score': ''}
+     season 2026: app 35; ESPN pre/reg/post 0/34/1; missing {1: 0, 2: 0, 3: 0}
+  Duke Blue Devils (150) season 2027: app 32; ESPN pre/reg/post 0/32/0; missing pre/reg/post 0/0/0; not in ESPN schedule 0; date differs from Central date 26; opponent None 0
+       off: ('401909563', '2026-11-06T01:00Z', '2026-11-06', '2026-11-05', 'Fri, Nov 06', 'Coastal Carolina Chanticleers')
+       off: ('401909564', '2026-11-11T00:00Z', '2026-11-11', '2026-11-10', 'Wed, Nov 11', 'Michigan State Spartans')
+       first row: {'date_display': 'Mon, Nov 02', 'home_away': 'vs', 'opponent': 'Army Black Knights', 'time': '15:09 - 2nd', 'status': 'In Progress', 'home_score': '', 'away_score': ''}
+     season 2026: app 38; ESPN pre/reg/post 0/34/4; missing {1: 0, 2: 0, 3: 0}
+  Stonehill Skyhawks (284) season 2027: app 31; ESPN pre/reg/post 0/31/0; missing pre/reg/post 0/0/0; not in ESPN schedule 0; date differs from Central date 15; opponent None 0
+       off: ('401919845', '2026-11-03T00:00Z', '2026-11-03', '2026-11-02', 'Tue, Nov 03', 'Curry Colonels')
+       off: ('401911195', '2026-11-06T00:30Z', '2026-11-06', '2026-11-05', 'Fri, Nov 06', 'Fordham Rams')
+       first row: {'date_display': 'Tue, Nov 03', 'home_away': 'vs', 'opponent': 'Curry Colonels', 'time': 'Halftime', 'status': 'Halftime', 'home_score': '47', 'away_score': '23'}
+     season 2026: app 33; ESPN pre/reg/post 0/33/0; missing {1: 0, 2: 0, 3: 0}
+  Green Bay Phoenix (2739) season 2027: app 32; ESPN pre/reg/post 0/32/0; missing pre/reg/post 0/0/0; not in ESPN schedule 0; date differs from Central date 17; opponent None 0
+       off: ('401928806', '2026-11-03T00:30Z', '2026-11-03', '2026-11-02', 'Tue, Nov 03', 'Lawrence Vikings')
+       off: ('401921747', '2026-11-06T00:00Z', '2026-11-06', '2026-11-05', 'Fri, Nov 06', 'Cincinnati Bearcats')
+       first row: {'date_display': 'Tue, Nov 03', 'home_away': 'vs', 'opponent': 'Lawrence Vikings', 'time': '11:49 - 1st', 'status': 'In Progress', 'home_score': '', 'away_score': ''}
+     season 2026: app 33; ESPN pre/reg/post 0/33/0; missing {1: 0, 2: 0, 3: 0}
+
+============ NCAAWB
+  Wisconsin Badgers (275) season 2027: app 31; ESPN pre/reg/post 0/31/0; missing pre/reg/post 0/0/0; not in ESPN schedule 0; date differs from Central date 14; opponent None 0
+       off: ('401918864', '2026-11-04T00:30Z', '2026-11-04', '2026-11-03', 'Wed, Nov 04', 'Bradley Braves')
+       off: ('401918865', '2026-11-06T00:30Z', '2026-11-06', '2026-11-05', 'Fri, Nov 06', 'Oakland Golden Grizzlies')
+       first row: {'date_display': 'Wed, Nov 04', 'home_away': 'vs', 'opponent': 'Bradley Braves', 'time': '11/3 - 6:30 PM CST', 'status': 'Scheduled', 'home_score': '', 'away_score': ''}
+     season 2026: app 34; ESPN pre/reg/post 0/30/4; missing {1: 0, 2: 0, 3: 0}
+  South Carolina Gamecocks (2579) season 2027: app 31; ESPN pre/reg/post 0/31/0; missing pre/reg/post 0/0/0; not in ESPN schedule 0; date differs from Central date 14; opponent None 0
+       off: ('401915886', '2026-11-13T00:00Z', '2026-11-13', '2026-11-12', 'Fri, Nov 13', 'Clemson Tigers')
+       off: ('401918851', '2026-11-18T00:00Z', '2026-11-18', '2026-11-17', 'Wed, Nov 18', 'Florida Gulf Coast Eagles')
+       first row: {'date_display': 'Mon, Nov 02', 'home_away': 'vs', 'opponent': 'Maryland Terrapins', 'time': 'Final', 'status': 'Final', 'home_score': '101', 'away_score': '93'}
+     season 2026: app 40; ESPN pre/reg/post 0/34/6; missing {1: 0, 2: 0, 3: 0}
+  Green Bay Phoenix (2739) season 2027: app 32; ESPN pre/reg/post 0/32/0; missing pre/reg/post 0/0/0; not in ESPN schedule 0; date differs from Central date 15; opponent None 0
+       off: ('401915906', '2026-11-04T00:00Z', '2026-11-04', '2026-11-03', 'Wed, Nov 04', 'Duke Blue Devils')
+       off: ('401911754', '2026-11-08T00:00Z', '2026-11-08', '2026-11-07', 'Sun, Nov 08', 'Loyola Chicago Ramblers')
+       first row: {'date_display': 'Wed, Nov 04', 'home_away': '@', 'opponent': 'Duke Blue Devils', 'time': '11/3 - 6:00 PM CST', 'status': 'Scheduled', 'home_score': '', 'away_score': ''}
+     season 2026: app 34; ESPN pre/reg/post 0/33/1; missing {1: 0, 2: 0, 3: 0}
+  Stonehill Skyhawks (284) season 2027: app 29; ESPN pre/reg/post 0/29/0; missing pre/reg/post 0/0/0; not in ESPN schedule 0; date differs from Central date 5; opponent None 0
+       off: ('401913034', '2026-11-04T00:00Z', '2026-11-04', '2026-11-03', 'Wed, Nov 04', 'Providence Friars')
+       off: ('401919954', '2026-11-07T00:00Z', '2026-11-07', '2026-11-06', 'Sat, Nov 07', 'Notre Dame Fighting Irish')
+       first row: {'date_display': 'Wed, Nov 04', 'home_away': '@', 'opponent': 'Providence Friars', 'time': '11/3 - 6:00 PM CST', 'status': 'Scheduled', 'home_score': '', 'away_score': ''}
+     season 2026: app 30; ESPN pre/reg/post 0/30/0; missing {1: 0, 2: 0, 3: 0}
+
+============ NHL
+  Chicago Blackhawks (4) season 2027: app 88; ESPN pre/reg/post 4/84/0; missing pre/reg/post 0/0/0; not in ESPN schedule 0; date differs from Central date 58; opponent None 0
+       off: ('401886258', '2026-09-20T00:00Z', '2026-09-20', '2026-09-19', 'Sun, Sep 20', 'Minnesota Wild')
+       off: ('401886259', '2026-09-22T00:00Z', '2026-09-22', '2026-09-21', 'Tue, Sep 22', 'Minnesota Wild')
+       first row: {'date_display': 'Sun, Sep 20', 'home_away': '@', 'opponent': 'Minnesota Wild', 'time': 'Final/OT', 'status': 'Final', 'home_score': '3', 'away_score': '2'}
+     season 2026: app 88; ESPN pre/reg/post 6/82/0; missing {1: 0, 2: 0, 3: 0}
+  Utah Mammoth (129764) season 2027: app 88; ESPN pre/reg/post 4/84/0; missing pre/reg/post 0/0/0; not in ESPN schedule 0; date differs from Central date 68; opponent None 0
+       off: ('401879366', '2026-09-23T02:00Z', '2026-09-23', '2026-09-22', 'Wed, Sep 23', 'Los Angeles Kings')
+       off: ('401879367', '2026-09-25T02:00Z', '2026-09-25', '2026-09-24', 'Fri, Sep 25', 'Vegas Golden Knights')
+       first row: {'date_display': 'Sun, Sep 20', 'home_away': '@', 'opponent': 'Colorado Avalanche', 'time': 'Final', 'status': 'Final', 'home_score': '4', 'away_score': '1'}
+     season 2026: app 95; ESPN pre/reg/post 7/82/6; missing {1: 0, 2: 0, 3: 0}
+  Minnesota Wild (30) season 2027: app 88; ESPN pre/reg/post 4/84/0; missing pre/reg/post 0/0/0; not in ESPN schedule 0; date differs from Central date 67; opponent None 0
+       off: ('401886258', '2026-09-20T00:00Z', '2026-09-20', '2026-09-19', 'Sun, Sep 20', 'Chicago Blackhawks')
+       off: ('401886259', '2026-09-22T00:00Z', '2026-09-22', '2026-09-21', 'Tue, Sep 22', 'Chicago Blackhawks')
+       first row: {'date_display': 'Sun, Sep 20', 'home_away': 'vs', 'opponent': 'Chicago Blackhawks', 'time': 'Final/OT', 'status': 'Final', 'home_score': '3', 'away_score': '2'}
+     season 2026: app 99; ESPN pre/reg/post 6/82/11; missing {1: 0, 2: 0, 3: 0}
+
+============ NCAAH
+  Wisconsin Badgers (275) season 2027: app 33; ESPN pre/reg/post 0/33/0; missing pre/reg/post 0/0/0; not in ESPN schedule 0; date differs from Central date 26; opponent None 0
+       off: ('401913698', '2026-10-03T01:00Z', '2026-10-03', '2026-10-02', 'Sat, Oct 03', 'Robert Morris Colonials')
+       off: ('401913699', '2026-10-04T00:00Z', '2026-10-04', '2026-10-03', 'Sun, Oct 04', 'Robert Morris Colonials')
+       first row: {'date_display': 'Sat, Oct 03', 'home_away': 'vs', 'opponent': 'Robert Morris Colonials', 'time': 'Final', 'status': 'Final', 'home_score': '4', 'away_score': '2'}
+     season 2026: app 39; ESPN pre/reg/post 0/35/4; missing {1: 0, 2: 0, 3: 0}
+  Stonehill Skyhawks (284) season 2027: app 31; ESPN pre/reg/post 0/31/0; missing pre/reg/post 0/0/0; not in ESPN schedule 0; date differs from Central date 17; opponent None 0
+       off: ('401904960', '2026-11-07T00:00Z', '2026-11-07', '2026-11-06', 'Sat, Nov 07', 'Alaska Bulldogs')
+       off: ('401904961', '2026-11-08T00:00Z', '2026-11-08', '2026-11-07', 'Sun, Nov 08', 'Alaska Bulldogs')
+       first row: {'date_display': 'Fri, Oct 09', 'home_away': 'vs', 'opponent': 'Colgate Raiders', 'time': 'Final/OT', 'status': 'Final', 'home_score': '2', 'away_score': '1'}
+     season 2026: app 35; ESPN pre/reg/post 0/35/0; missing {1: 0, 2: 0, 3: 0}
+  Alaska Nanooks (298) season 2027: app 28; ESPN pre/reg/post 0/28/0; missing pre/reg/post 0/0/0; not in ESPN schedule 0; date differs from Central date 21; opponent None 0
+       off: ('401904701', '2026-10-03T03:07Z', '2026-10-03', '2026-10-02', 'Sat, Oct 03', 'Boston University Terriers')
+       off: ('401904702', '2026-10-04T03:07Z', '2026-10-04', '2026-10-03', 'Sun, Oct 04', 'Boston University Terriers')
+       first row: {'date_display': 'Sat, Oct 03', 'home_away': 'vs', 'opponent': 'Boston University Terriers', 'time': 'Final/OT', 'status': 'Final', 'home_score': '1', 'away_score': '2'}
+     season 2026: app 33; ESPN pre/reg/post 0/33/0; missing {1: 0, 2: 0, 3: 0}
+
+============ NCAAWH
+  Wisconsin Badgers (275) season 2027: app 34; ESPN pre/reg/post 0/34/0; missing pre/reg/post 0/0/0; not in ESPN schedule 0; date differs from Central date 11; opponent None 0
+       off: ('401904041', '2026-10-02T00:00Z', '2026-10-02', '2026-10-01', 'Fri, Oct 02', 'Boston University Terriers')
+       off: ('401903784', '2026-10-17T00:00Z', '2026-10-17', '2026-10-16', 'Sat, Oct 17', 'Minnesota State Mavericks')
+       first row: {'date_display': 'Fri, Sep 25', 'home_away': '@', 'opponent': 'St. Lawrence Saints', 'time': 'Final', 'status': 'Final', 'home_score': '2', 'away_score': '6'}
+     season 2026: app 41; ESPN pre/reg/post 0/38/3; missing {1: 0, 2: 0, 3: 0}
+  Yale Bulldogs (43) season 2027: app 29; ESPN pre/reg/post 0/29/0; missing pre/reg/post 0/0/0; not in ESPN schedule 0; date differs from Central date 0; opponent None 0
+       first row: {'date_display': 'Fri, Oct 23', 'home_away': '@', 'opponent': 'Boston University Terriers', 'time': 'Final', 'status': 'Final', 'home_score': '2', 'away_score': '3'}
+     season 2026: app 36; ESPN pre/reg/post 0/34/2; missing {1: 0, 2: 0, 3: 0}
+  Stonehill Skyhawks (284) season 2027: app 34; ESPN pre/reg/post 0/34/0; missing pre/reg/post 0/0/0; not in ESPN schedule 0; date differs from Central date 4; opponent None 0
+       off: ('401903888', '2026-12-06T00:30Z', '2026-12-06', '2026-12-05', 'Sun, Dec 06', 'Franklin Pierce Ravens')
+       off: ('401903889', '2027-01-09T00:45Z', '2027-01-09', '2027-01-08', 'Sat, Jan 09', 'Post University Eagles')
+       first row: {'date_display': 'Fri, Sep 25', 'home_away': '@', 'opponent': 'Syracuse Orange', 'time': 'Final', 'status': 'Final', 'home_score': '3', 'away_score': '0'}
+     season 2026: app 37; ESPN pre/reg/post 0/37/0; missing {1: 0, 2: 0, 3: 0}
+
+TOTALS {'NFL rows': 51, 'NFL dateoff': 15, 'NFL missing_reg': 0, 'NFL missing_post': 0, 'NFL missing_pre': 9, 'NFL hist_missing_reg': 0, 'NFL hist_missing_post': 3, 'NCAAF rows': 48, 'NCAAF dateoff': 10, 'NCAAF missing_reg': 0, 'NCAAF missing_post': 0, 'NCAAF missing_pre': 0, 'NCAAF hist_missing_reg': 0, 'NCAAF hist_missing_post': 1, 'NBA rows': 254, 'NBA dateoff': 214, 'NBA missing_reg': 0, 'NBA missing_post': 0, 'NBA missing_pre': 0, 'NBA hist_missing_reg': 0, 'NBA hist_missing_post': 0, 'WNBA rows': 14, 'WNBA dateoff': 9, 'WNBA missing_reg': 133, 'WNBA missing_post': 7, 'WNBA missing_pre': 6, 'WNBA hist_missing_reg': 133, 'WNBA hist_missing_post': 20, 'NCAAM rows': 126, 'NCAAM dateoff': 79, 'NCAAM missing_reg': 0, 'NCAAM missing_post': 0, 'NCAAM missing_pre': 0, 'NCAAM hist_missing_reg': 0, 'NCAAM hist_missing_post': 0, 'NCAAWB rows': 123, 'NCAAWB dateoff': 48, 'NCAAWB missing_reg': 0, 'NCAAWB missing_post': 0, 'NCAAWB missing_pre': 0, 'NCAAWB hist_missing_reg': 0, 'NCAAWB hist_missing_post': 0, 'NHL rows': 264, 'NHL dateoff': 193, 'NHL missing_reg': 0, 'NHL missing_post': 0, 'NHL missing_pre': 0, 'NHL hist_missing_reg': 0, 'NHL hist_missing_post': 0, 'NCAAH rows': 92, 'NCAAH dateoff': 64, 'NCAAH missing_reg': 0, 'NCAAH missing_post': 0, 'NCAAH missing_pre': 0, 'NCAAH hist_missing_reg': 0, 'NCAAH hist_missing_post': 0, 'NCAAWH rows': 97, 'NCAAWH dateoff': 15, 'NCAAWH missing_reg': 0, 'NCAAWH missing_post': 0, 'NCAAWH missing_pre': 0, 'NCAAWH hist_missing_reg': 0, 'NCAAWH hist_missing_post': 0}
+
+== failure paths, real function, _http_get made to fail for one call
+  NBA Bucks, regular-season request raises: returned 5 rows silently, no error; first Tue, Oct 06, last Fri, Oct 16
+  NBA Bucks, regular-season request returns 500: returned 5 rows silently, no error; first Tue, Oct 06, last Fri, Oct 16
+  NFL total failure: raised ConnectionError (surfaced to UI through ApiError)
+  NBA total failure: returned [] silently -> dialog sees an empty schedule, not an error
+  WNBA total failure: returned []
+requests {'net': 182, 'cached': 166}

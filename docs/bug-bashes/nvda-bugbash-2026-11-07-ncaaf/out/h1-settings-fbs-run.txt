@@ -1,0 +1,23 @@
+recorded h1-settings-fbs (62.2 s)
+Focus: ListItem 'NFL' id='QApplication.HomeSettingsDialog.QListWidget' value='' toggle=On FOCUSED  [in window 'Home Page Settings - Sports Scores']
+  [0:02.7] Sports Scores window
+  [0:02.7] League Selection List list List of available sports leagues and live scores
+  [0:02.7] Live Scores - All Sports
+  [0:17.7] Home Page Settings button Configure which sports appear on the home page and their order
+  [0:20.8] League Selection List list List of available sports leagues and live scores
+  [0:20.8] Live Scores - All Sports
+  [0:23.9] Home Page Settings button Configure which sports appear on the home page and their order
+  [0:27.0] Home Page Settings button focused Configure which sports appear on the home page and their order
+  [0:30.3] Home Page Settings - Sports Scores dialog Check sports to show on the home page. Select an item and use Up/Down to reorder. College football coverage:
+  [0:30.3] Sport List list List of sports. Check or uncheck to show or hide. Select and use Up or Down buttons to reorder.
+  [0:30.3] NFL not selected checked
+  [0:35.1] Sports Scores
+  [0:38.3] Move selected sport up button
+  [0:40.9] Move selected sport down button
+  [0:43.4] Reset to Default button
+  [0:45.9] College football coverage combo box All Division I (FBS and FCS) collapsed All Division I shows FBS and FCS together, around 200 games a week, and is the only setting that shows opening weekend in full. FBS only shows about 100 games a week. Standings and Teams list the same teams. Down
+  [0:48.5] Automatically check for updates at startup check box not checked When checked, Scores looks for a newer version each time it starts. You can always check manually from the home page.
+  [0:51.0] OK button Enter
+  [0:53.5] Cancel button
+  [0:56.1] Sport List list List of sports. Check or uncheck to show or hide. Select and use Up or Down buttons to reorder.
+  [0:56.1] NFL not selected checked

@@ -1,0 +1,39 @@
+recorded g7-bowls-news (135.7 s)
+Focus: ListItem '--- News Headlines ---' id='QApplication.SportsScoresApp.QStackedWidget.LeagueView.QListWidget' value='' selected FOCUSED  [in window 'NCAAF - Sports Scores']
+  [0:04.0] NCAAF - Sports Scores window
+  [0:04.0] Scores List list List of games and scores for the selected date or week
+  [0:04.0] ESPN isn't providing scores right now. Try again in a minute.
+  [0:34.0] --- Bowls & Playoffs ---
+  [0:37.1] NCAAF Bowls & Playoffs dialog College Football Playoff & Bowl Games
+  [0:37.2] list
+  [0:37.2] Loading bowl games...
+  [0:37.6] === Championship ===
+  [1:02.1] NCAAF, Bowls & Playoffs - Sports Scores
+  [1:05.3] === Championship === list item focused
+  [1:08.4] [College Football Playoff National Championship Presented by AT&T] TBD vs TBD (Mon 1/25 6:30PM)
+  [1:11.0] [College Football Playoff Semifinal at the Capital One Orange Bowl] TBD vs TBD (Thu 1/14 6:30PM)
+  [1:13.5] [College Football Playoff Semifinal at the Allstate Sugar Bowl] TBD vs TBD (Fri 1/15 6:30PM)
+  [1:16.0] [College Football Playoff Quarterfinal at the Vrbo Fiesta Bowl] TBD vs TBD (Wed 12/30 6:30PM)
+  [1:18.6] AutoZone Liberty Bowl - TBD vs TBD (Sat 1/2 6:30PM)
+  [1:23.7] Scores List list List of games and scores for the selected date or week
+  [1:23.8] --- Bowls & Playoffs ---
+  [1:27.8] --- News Headlines ---
+  [1:27.9] --- Standings ---
+  [1:28.1] --- Polls ---
+  [1:28.4] --- News Headlines ---
+  [1:30.8] --- News Headlines --- (loading...)
+  [1:31.1] --- News Headlines ---
+  [1:31.1] News Headlines - NCAAF dialog Press Enter or double-click a headline to open in your browser:
+  [1:31.1] News Headlines List list List of news headlines - Enter or double-click opens in browser
+  [1:31.1] Mercer defeats Chattanooga 14-7 in overtime on Pickles' TD pass to Smith not selected
+  [1:45.9] NCAAF, News - Sports Scores
+  [1:49.2] Mercer defeats Chattanooga 14-7 in overtime on Pickles' TD pass to Smith list item focused
+  [1:52.3] Samford Bulldogs vs. East Tennessee State Buccaneers: Full Highlights
+  [1:54.9] Old Dominion Monarchs vs. Coastal Carolina Chanticleers: Full Highlights
+  [1:57.4] Open Selected button
+  [1:59.9] Close button
+  [2:02.5] News Headlines List list List of news headlines - Enter or double-click opens in browser
+  [2:02.5] Old Dominion Monarchs vs. Coastal Carolina Chanticleers: Full Highlights
+  [2:05.0] Scores List list List of games and scores for the selected date or week
+  [2:05.1] --- News Headlines ---
+  [2:09.1] --- News Headlines --- list item focused selected

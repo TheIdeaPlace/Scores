@@ -1,0 +1,48 @@
+recorded k1-league-keys (207 s)
+Focus: ListItem 'Live Scores - All Sports' id='QApplication.SportsScoresApp.QStackedWidget.HomeView.QListWidget' value='' selected FOCUSED  [in window 'Sports Scores']
+  [0:03.3] NCAAF, Week 10 - Sports Scores window
+  [0:03.3] Scores List list List of games and scores for the selected date or week
+  [0:03.3] In Progress, 41 games
+  [0:03.3] Week 10
+  [0:32.8] #5 Alabama Crimson Tide 10 at #14 LSU Tigers 3 | (03:36) No Huddle-Shotgun #10 S.Leavitt pass incomplete shor... 3:31 Q2 | ALA ball | 1st & 10 at ALA 9
+  [0:32.9] #1 Miami Hurricanes (8-0) at #11 Notre Dame Fighting Irish (7-1) (Sat 11/7 6:30PM)
+  [0:36.7] #1 Miami Hurricanes (8-0) at #11 Notre Dame Fighting Irish (7-1) (Sat 11/7 6:30PM) list item focused selected
+  [0:40.9] Loading scores...
+  [0:41.6] #1 Miami Hurricanes (8-0) at #11 Notre Dame Fighting Irish (7-1) (Sat 11/7 6:30PM)
+  [1:05.9] #1 Miami Hurricanes (8-0) at #11 Notre Dame Fighting Irish (7-1) (Sat 11/7 6:30PM) list item focused selected
+  [1:10.1] In Progress, 41 games
+  [1:13.1] Loading scores...
+  [1:13.7] In Progress, 41 games
+  [1:38.2] In Progress, 41 games list item focused selected
+  [1:42.3] Back (Alt+B) button
+  [1:44.8] Previous Week (Alt+P) button
+  [1:47.4] Next Week (Alt+N) button
+  [1:49.9] Refresh button
+  [1:52.5] Scores List list List of games and scores for the selected date or week
+  [1:52.5] In Progress, 41 games
+  [1:55.0] Back (Alt+B) button
+  [1:57.6] Scores List list List of games and scores for the selected date or week
+  [1:57.6] In Progress, 41 games
+  [2:00.1] Refresh button
+  [2:02.7] Next Week (Alt+N) button
+  [2:05.3] Previous Week (Alt+P) button
+  [2:07.9] Previous Week (Alt+P) button focused
+  [2:11.0] Scores List list List of games and scores for the selected date or week
+  [2:11.0] Loading scores...
+  [2:11.4] Completed, 115 games
+  [2:11.4] Week 9
+  [2:31.1] NCAAF, Week 9 - Sports Scores
+  [2:34.2] Completed, 115 games list item focused selected
+  [2:37.4] Back (Alt+B) button
+  [2:39.9] Previous Week (Alt+P) button
+  [2:42.4] Next Week (Alt+N) button
+  [2:45.0] Scores List list List of games and scores for the selected date or week
+  [2:45.0] Loading scores...
+  [2:45.7] In Progress, 40 games
+  [2:45.7] Week 10
+  [3:05.0] NCAAF, Week 10 - Sports Scores
+  [3:08.2] In Progress, 40 games list item focused selected
+  [3:11.6] League Selection List list List of available sports leagues and live scores
+  [3:11.6] Live Scores - All Sports
+  [3:17.4] Live Scores - All Sports list item focused selected
+  [3:20.6] Sports Scores

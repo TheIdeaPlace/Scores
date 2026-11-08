@@ -1,0 +1,70 @@
+# Live Scores: idle through refreshes, monitor a game through a real score change, focus and row kept.
+w 0.5
+x
+w 15
+n t
+w 3
+q {DOWN}
+w 1
+k {DOWN}
+w 3
+k {DOWN}
+w 3
+k {DOWN}
+w 3
+# Two and a half minutes idle at the 1-minute default: does NVDA speak? is the row kept?
+k {DOWN}
+w 150
+n {UP}
+w 4
+# Monitor this game
+k %m
+w 5
+n {UP}
+w 4
+# Wait through refreshes and likely score changes
+k {DOWN}
+w 2
+k {UP}
+w 200
+n {UP}
+w 4
+k %m
+w 5
+n {UP}
+w 4
+# Refresh by hand
+k {F5}
+w 10
+n {UP}
+w 4
+n {TAB}
+w 3
+# Tab around, change frequency to 30 seconds if offered
+k {TAB}
+w 2.5
+k {TAB}
+w 2.5
+k {TAB}
+w 2.5
+k {TAB}
+w 2.5
+k +{TAB}
+w 2.5
+k +{TAB}
+w 2.5
+k +{TAB}
+w 2.5
+k +{TAB}
+w 2.5
+# Open a live game, come back
+k {ENTER}
+w 12
+n t
+w 3
+k {ESC}
+w 10
+n {UP}
+w 4
+n t
+w 3

@@ -1,0 +1,10 @@
+NFL rows 51 time-TBD 3 timed 48: wrong day Central 12 (25%), Eastern 12, Pacific 12
+NCAAF rows 48 time-TBD 3 timed 45: wrong day Central 7 (16%), Eastern 7, Pacific 7
+NBA rows 254 time-TBD 0 timed 254: wrong day Central 214 (84%), Eastern 214, Pacific 214
+WNBA rows 14 time-TBD 0 timed 14: wrong day Central 9 (64%), Eastern 9, Pacific 9
+NCAAM rows 126 time-TBD 4 timed 122: wrong day Central 75 (61%), Eastern 75, Pacific 75
+NCAAWB rows 123 time-TBD 1 timed 122: wrong day Central 47 (39%), Eastern 47, Pacific 47
+NHL rows 264 time-TBD 0 timed 264: wrong day Central 193 (73%), Eastern 193, Pacific 193
+NCAAH rows 92 time-TBD 2 timed 90: wrong day Central 62 (69%), Eastern 62, Pacific 62
+NCAAWH rows 97 time-TBD 7 timed 90: wrong day Central 8 (9%), Eastern 8, Pacific 8
+ALL 1049 627 60%

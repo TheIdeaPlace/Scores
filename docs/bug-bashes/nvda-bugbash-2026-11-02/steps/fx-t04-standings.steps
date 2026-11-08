@@ -1,0 +1,41 @@
+# NFL standings dialog and the Alt+Q / Alt+F / Alt+T view modes (accessible_table.py 67-252; scores.py 8735-8903)
+w 0.5
+x
+w 12
+q {DOWN}
+w 2
+q {ENTER}
+w 12
+q {END}
+w 2
+q {UP}
+q {UP}
+q {UP}
+q {UP}
+q {UP}
+q {UP}
+w 3
+k {ENTER}
+w 15
+e Division Standings
+# The dialog opens in the first tab's table.
+e AFC East Standings
+e Buffalo Bills
+k %q
+w 3
+e Quick List
+e Buffalo Bills
+k %f
+w 3
+e Full List
+e Team: Buffalo Bills
+k %t
+w 3
+e AFC East Standings
+# Switching must not pile up a "Switched to" prefix.
+k %q
+w 4
+e! Switched to Quick List View. Switched to
+k {ESC}
+w 4
+e Scores List

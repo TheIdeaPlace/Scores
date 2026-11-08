@@ -1,0 +1,136 @@
+
+=============== NFL
+  leaders: 404 keys None None
+  athletes: 404 keys None None
+  statistics: 200 keys ['timestamp', 'status', 'season', 'league', 'stats'] stats.categories=list[16]
+  _parse_statistics_data RAISES AttributeError: 'list' object has no attribute 'items'
+  get_player_statistics: err=None categories=0 modelled list rows=0 players=0 printed=["Error fetching player statistics for NFL: 'list' object has no attribute 'items'"]
+    list items: []
+    FABRICATED rows reached? all names from sample table: False; []
+  get_team_statistics: categories=11 modelled list rows=166; teams per category [32]; /teams default page=32 vs limit=1000 32
+    list items: ['Completion Percentage (Passing)', 'Completions (Passing)', 'Interception Percentage (Passing)', 'Interceptions (Passing)', 'Longest Pass (Passing)', 'Net Passing Yards (Passing)', 'Net Passing Yards Per Game (Passing)', 'Passing Attempts (Passing)', 'Passing Touchdown % (Passing)', 'Passing Touchdowns (Passing)', 'Passer Rating (Passing)', 'Total Sacks (Passing)']
+    first item rows: [('Cincinnati Bengals', 73.0, '73.0'), ('San Francisco 49ers', 69.2, '69.2'), ('New York Jets', 69.0, '69.0'), ('Chicago Bears', 68.5, '68.5')]
+    values non-numeric, sorted as 0: 517
+  get_statistics (dead path, scores.py:11695): sample rows: True, player categories 2
+  requests so far {'net': 39, 'cached': 42}
+
+=============== NCAAF
+  leaders: 404 keys None None
+  athletes: 404 keys None None
+  statistics: 200 keys ['timestamp', 'status', 'season', 'league', 'stats'] stats.categories=list[13]
+  _parse_statistics_data OK: 13 categories
+  get_player_statistics: err=None categories=13 modelled list rows=13 players=490 printed=[]
+    list items: ['Passing Yards', 'Kickoff Yards', 'Rushing Yards', 'Receiving Yards', 'Sacks', 'Interceptions', 'Interception Yards', 'Passing Touchdowns', 'Quarterback Rating', 'Rushing Touchdowns', 'Receptions', 'Receiving Touchdowns', 'Total Tackles']
+    first item rows: [('Braden Atkinson', 'ORST', '2977.0'), ('Jaylon Tolbert', 'ALCN', '2681.0'), ('Drew Mestemaker', 'OKST', '2649.0'), ('Kamden Sixkiller', 'CAM', '2620.0'), ('Kaden Anderson', 'TAR', '2619.0')]
+    FABRICATED rows reached? all names from sample table: False; []
+  get_team_statistics: categories=11 modelled list rows=166; teams per category [34]; /teams default page=50 vs limit=1000 762
+    list items: ['Completion Percentage (Passing)', 'Completions (Passing)', 'Interception Percentage (Passing)', 'Interceptions (Passing)', 'Longest Pass (Passing)', 'Net Passing Yards (Passing)', 'Net Passing Yards Per Game (Passing)', 'Passing Attempts (Passing)', 'Passing Touchdown % (Passing)', 'Passing Touchdowns (Passing)', 'Passer Rating (Passing)', 'Total Sacks (Passing)']
+    first item rows: [('Arizona Wildcats', 73.7, '73.7'), ('Florida Gators', 70.7, '70.7'), ('Georgia Bulldogs', 70.0, '70.0'), ('Georgia Tech Yellow Jackets', 67.7, '67.7')]
+    values non-numeric, sorted as 0: 565
+  get_statistics (dead path, scores.py:11695): sample rows: False, player categories 13
+  requests so far {'net': 93, 'cached': 102}
+
+=============== NBA
+  leaders: 404 keys None None
+  athletes: 404 keys None None
+  statistics: 200 keys ['timestamp', 'status', 'season', 'league'] None
+  _parse_statistics_data OK: 0 categories
+  get_player_statistics: err=None categories=2 modelled list rows=6 players=10 printed=[]
+    list items: ['Points Per Game (Scoring)', 'Field Goal % (Scoring)', '3-Point % (Scoring)', 'Rebounds Per Game (Rebounding)', 'Offensive Rebounds (Rebounding)', 'Defensive Rebounds (Rebounding)']
+    first item rows: [('Luka Doncic', 'DAL', '32.4'), ('Joel Embiid', 'PHI', '33.1'), ('Jayson Tatum', 'BOS', '30.1')]
+    FABRICATED rows reached? all names from sample table: True; ['Andre Drummond', 'Luka Doncic']
+  get_team_statistics: categories=3 modelled list rows=44; teams per category [30]; /teams default page=30 vs limit=1000 30
+    list items: ['Rebounds Per Game (General)', 'Assist To Turnover Ratio (General)', 'Fouls Per Game (General)', 'Games Played (General)', 'Games Started (General)', 'Minutes (General)', 'Minutes Per Game (General)', 'Rebounds (General)', 'Free Throw Percentage (Offensive)', '3-Point Field Goal Percentage (Offensive)', 'Average Field Goals Made (Offensive)', 'Average Field Goals Attempted (Offensive)']
+    first item rows: [('Memphis Grizzlies', 49.8, '49.8'), ('Milwaukee Bucks', 49.0, '49.0'), ('Minnesota Timberwolves', 48.4, '48.4'), ('Cleveland Cavaliers', 48.2, '48.2')]
+    values non-numeric, sorted as 0: 0
+  get_statistics (dead path, scores.py:11695): sample rows: True, player categories 2
+  requests so far {'net': 130, 'cached': 142}
+
+=============== WNBA
+  leaders: 404 keys None None
+  athletes: 404 keys None None
+  statistics: 200 keys ['timestamp', 'status', 'season', 'league', 'stats'] stats.categories=list[15]
+  _parse_statistics_data OK: 15 categories
+  get_player_statistics: err=None categories=15 modelled list rows=15 players=194 printed=[]
+    list items: ['Points Per Game', 'Assists Per Game', 'Field Goal Percentage', 'Rebounds Per Game', 'Steals Per Game', 'Blocks Per Game', 'Free Throws Percentage', '3 points field goal percentage', 'Player Efficiency Rating', 'Average 3-Point Field Goals Made', 'Double Double', 'Minutes Per Game', 'Personal fouls per game', 'Points']
+    first item rows: [('Mai Yamamoto', 'LV', '18.5'), ('Kahleah Copper', 'PHX', '18.0'), ('Kelsey Plum', 'PHX', '17.5'), ('Aziaha James', 'DAL', '17.5'), ('Jackie Young', 'LV', '16.5')]
+    FABRICATED rows reached? all names from sample table: False; []
+  get_team_statistics: categories=3 modelled list rows=43; teams per category [15]; /teams default page=15 vs limit=1000 15
+    list items: ['Rebounds Per Game (General)', 'Assist To Turnover Ratio (General)', 'Fouls Per Game (General)', 'Games Played (General)', 'Games Started (General)', 'Minutes Per Game (General)', 'Rebounds (General)', 'Free Throw Percentage (Offensive)', '3-Point Field Goal Percentage (Offensive)', 'Average Field Goals Made (Offensive)', 'Average Field Goals Attempted (Offensive)', 'Average 3-Point Field Goals Made (Offensive)']
+    first item rows: [('Washington Mystics', 46.0, '46.0'), ('Golden State Valkyries', 36.8, '36.8'), ('Atlanta Dream', 34.9, '34.9'), ('New York Liberty', 34.6, '34.6')]
+    values non-numeric, sorted as 0: 0
+  get_statistics (dead path, scores.py:11695): sample rows: False, player categories 15
+  requests so far {'net': 148, 'cached': 168}
+
+=============== NCAAM
+  leaders: 404 keys None None
+  athletes: 404 keys None None
+  statistics: 200 keys ['timestamp', 'status', 'season', 'league', 'stats'] stats.categories=list[14]
+  _parse_statistics_data OK: 14 categories
+  get_player_statistics: err=None categories=14 modelled list rows=14 players=40 printed=[]
+    list items: ['Points Per Game', 'Assists Per Game', 'Field Goal Percentage', 'Rebounds Per Game', 'Steals Per Game', 'Blocks Per Game', 'Free Throws Percentage', '3 points field goal percentage', 'Player Efficiency Rating', 'Average 3-Point Field Goals Made', 'Double Double', 'Minutes Per Game', 'Personal fouls per game', 'Points']
+    first item rows: [('Zander Carter', 'LIB', '21.0'), ('Tyler Perkins', 'VILL', '18.0'), ('Braeden Smith', 'ND', '16.0'), ('Brady Koehler', 'ND', '16.0'), ('Braeden Shrewsberry', 'ND', '15.0')]
+    FABRICATED rows reached? all names from sample table: False; []
+  get_team_statistics: categories=3 modelled list rows=44; teams per category [50]; /teams default page=50 vs limit=1000 362
+    list items: ['Rebounds Per Game (General)', 'Assist To Turnover Ratio (General)', 'Fouls Per Game (General)', 'Games Played (General)', 'Games Started (General)', 'Minutes (General)', 'Minutes Per Game (General)', 'Rebounds (General)', 'Free Throw Percentage (Offensive)', 'Average Field Goals Made (Offensive)', 'Average Field Goals Attempted (Offensive)', 'Average 3-Point Field Goals Made (Offensive)']
+    first item rows: [('Florida Gators', 45.4, '45.4'), ('South Florida Bulls', 42.7, '42.7'), ('Arizona Wildcats', 42.5, '42.5'), ('UAB Blazers', 39.9, '39.9')]
+    values non-numeric, sorted as 0: 0
+  get_statistics (dead path, scores.py:11695): sample rows: False, player categories 14
+  requests so far {'net': 202, 'cached': 228}
+
+=============== NCAAWB
+  leaders: 404 keys None None
+  athletes: 404 keys None None
+  statistics: 200 keys ['timestamp', 'status', 'season', 'league', 'stats'] stats.categories=list[14]
+  _parse_statistics_data OK: 14 categories
+  get_player_statistics: err=None categories=14 modelled list rows=14 players=19 printed=[]
+    list items: ['Points Per Game', 'Assists Per Game', 'Field Goal Percentage', 'Rebounds Per Game', 'Steals Per Game', 'Blocks Per Game', 'Free Throws Percentage', '3 points field goal percentage', 'Player Efficiency Rating', 'Average 3-Point Field Goals Made', 'Double Double', 'Minutes Per Game', 'Personal fouls per game', 'Points']
+    first item rows: [('Hannah Hidalgo', 'ND', '32.0'), ('Leah Macy', 'ND', '27.0'), ('Jasmine Bascoe', 'VILL', '26.0'), ('Madison St. Rose', 'ND', '17.0'), ('Elise Bender', 'VILL', '14.0')]
+    FABRICATED rows reached? all names from sample table: False; []
+  get_team_statistics: categories=3 modelled list rows=44; teams per category [50]; /teams default page=50 vs limit=1000 362
+    list items: ['Rebounds Per Game (General)', 'Assist To Turnover Ratio (General)', 'Fouls Per Game (General)', 'Games Played (General)', 'Games Started (General)', 'Minutes (General)', 'Minutes Per Game (General)', 'Rebounds (General)', 'Free Throw Percentage (Offensive)', 'Average Field Goals Made (Offensive)', 'Average Field Goals Attempted (Offensive)', 'Average 3-Point Field Goals Made (Offensive)']
+    first item rows: [('Idaho Vandals', 46.9, '46.9'), ('UCLA Bruins', 42.3, '42.3'), ('Louisville Cardinals', 41.2, '41.2'), ('Murray State Racers', 41.1, '41.1')]
+    values non-numeric, sorted as 0: 0
+  get_statistics (dead path, scores.py:11695): sample rows: False, player categories 14
+  requests so far {'net': 256, 'cached': 288}
+
+=============== NHL
+  leaders: 404 keys None None
+  athletes: 404 keys None None
+  statistics: 200 keys ['timestamp', 'status', 'season', 'league', 'stats'] stats.categories=list[9]
+  _parse_statistics_data RAISES AttributeError: 'list' object has no attribute 'items'
+  get_player_statistics: err=None categories=0 modelled list rows=0 players=0 printed=["Error fetching player statistics for NHL: 'list' object has no attribute 'items'"]
+    list items: []
+    FABRICATED rows reached? all names from sample table: False; []
+  get_team_statistics: categories=4 modelled list rows=34; teams per category [32]; /teams default page=32 vs limit=1000 32
+    list items: ['Games Played (General)', 'Time On Ice (General)', 'Time On Ice Per Game (General)', 'Plus/Minus Rating (General)', 'Production (General)', 'Shifts (General)', 'Losses (General)', 'Wins (General)', 'Goals (Offensive)', 'Assists (Offensive)', 'Faceoffs Won (Offensive)', 'Faceoffs Lost (Offensive)']
+    first item rows: [('Carolina Hurricanes', 16.0, '16'), ('Minnesota Wild', 16.0, '16'), ('Ottawa Senators', 16.0, '16'), ('Philadelphia Flyers', 16.0, '16')]
+    values non-numeric, sorted as 0: 112
+  get_statistics (dead path, scores.py:11695): sample rows: True, player categories 2
+  requests so far {'net': 295, 'cached': 330}
+
+=============== NCAAH
+  leaders: 404 keys None None
+  athletes: 404 keys None None
+  statistics: 200 keys ['timestamp', 'status', 'season', 'league'] None
+  _parse_statistics_data OK: 0 categories
+  get_player_statistics: err=None categories=1 modelled list rows=1 players=3 printed=[]
+    list items: ['Sample Stat (General Stats)']
+    first item rows: [('Sample Player 1', 'TEAM1', '100'), ('Sample Player 2', 'TEAM2', '90'), ('Sample Player 3', 'TEAM3', '85')]
+    FABRICATED rows reached? all names from sample table: True; ['Sample Player 1']
+  get_team_statistics: categories=0 modelled list rows=0; teams per category []; /teams default page=50 vs limit=1000 116
+  get_statistics (dead path, scores.py:11695): sample rows: True, player categories 1
+  requests so far {'net': 352, 'cached': 390}
+
+=============== NCAAWH
+  leaders: 404 keys None None
+  athletes: 404 keys None None
+  statistics: 200 keys ['timestamp', 'status', 'season', 'league'] None
+  _parse_statistics_data OK: 0 categories
+  get_player_statistics: err=None categories=1 modelled list rows=1 players=3 printed=[]
+    list items: ['Sample Stat (General Stats)']
+    first item rows: [('Sample Player 1', 'TEAM1', '100'), ('Sample Player 2', 'TEAM2', '90'), ('Sample Player 3', 'TEAM3', '85')]
+    FABRICATED rows reached? all names from sample table: True; ['Sample Player 1']
+  get_team_statistics: categories=0 modelled list rows=0; teams per category []; /teams default page=47 vs limit=1000 47
+  get_statistics (dead path, scores.py:11695): sample rows: True, player categories 1
+  requests so far {'net': 406, 'cached': 447}

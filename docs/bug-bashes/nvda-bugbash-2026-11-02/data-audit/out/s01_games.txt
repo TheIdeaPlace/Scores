@@ -1,0 +1,19 @@
+NFL window games 27 window finals 26 all 47 all finals 46 statuses {'STATUS_FINAL': 46, 'STATUS_SCHEDULED': 1}
+   shorts [('Final/OT', 4)]
+NCAAF window games 212 window finals 212 all 304 all finals 304 statuses {'STATUS_FINAL': 304}
+   shorts [('Final/OT', 16), ('Final/2OT', 2)]
+NBA window games 79 window finals 64 all 223 all finals 208 statuses {'STATUS_FINAL': 208, 'STATUS_IN_PROGRESS': 1, 'STATUS_SCHEDULED': 14}
+   shorts [('Final/OT', 8)]
+WNBA window games 4 window finals 4 all 138 all finals 138 statuses {'STATUS_FINAL': 138}
+   shorts [('Final/OT', 6)]
+NCAAM window games 184 window finals 17 all 861 all finals 692 statuses {'STATUS_FINAL': 692, 'STATUS_IN_PROGRESS': 72, 'STATUS_HALFTIME': 6, 'STATUS_SCHEDULED': 89, 'STATUS_POSTPONED': 2}
+   shorts [('Final/OT', 34), ('Final/2OT', 5), ('Final/3OT', 2)]
+NCAAWB window games 165 window finals 50 all 497 all finals 381 statuses {'STATUS_FINAL': 381, 'STATUS_IN_PROGRESS': 81, 'STATUS_END_PERIOD': 7, 'STATUS_HALFTIME': 5, 'STATUS_SCHEDULED': 21, 'STATUS_POSTPONED': 2}
+   shorts [('Final/OT', 20), ('Final/2OT', 2), ('Final/3OT', 1)]
+NHL window games 68 window finals 64 all 310 all finals 306 statuses {'STATUS_FINAL': 306, 'STATUS_IN_PROGRESS': 2, 'STATUS_SCHEDULED': 2}
+   shorts [('Final/OT', 49), ('Final/SO', 28)]
+NCAAH window games 74 window finals 74 all 183 all finals 183 statuses {'STATUS_FINAL': 183}
+   shorts [('Final/OT', 41)]
+NCAAWH window games 61 window finals 61 all 148 all finals 148 statuses {'STATUS_FINAL': 148}
+   shorts [('Final/OT', 22)]
+requests {'net': 138, 'cached': 0}

@@ -1,0 +1,9 @@
+vmtest run failed: In the test VM: The command was still running after 900 seconds and was stopped. Last output:
+At C:\Users\kelly\GitHub\TheWorkBench\audio-demo\tools\VmFiles.psm1:38 char:44
++     if ($all -match 'vmtest \w+ failed') { throw $all }
++                                            ~~~~~~~~~~
+    + CategoryInfo          : OperationStopped: (vmtest run fail.... Last output:
+:String) [], RuntimeException
+    + FullyQualifiedErrorId : vmtest run failed: In the test VM: The command was still running after 900 seconds and w 
+   as stopped. Last output:
+ 

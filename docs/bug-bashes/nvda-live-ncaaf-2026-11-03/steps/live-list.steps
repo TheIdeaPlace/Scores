@@ -1,0 +1,25 @@
+# NCAAF league list during a live game
+w 0.5
+x
+w 14
+k {DOWN}
+w 2.5
+k {DOWN}
+w 2.5
+k {DOWN}
+w 2.5
+k {DOWN}
+w 2.5
+k {DOWN}
+w 2.5
+k {DOWN}
+w 2.5
+k {DOWN}
+w 2.5
+k {DOWN}
+w 2.5
+# Refresh keeps your place
+k {F5}
+w 10
+n t
+w 3

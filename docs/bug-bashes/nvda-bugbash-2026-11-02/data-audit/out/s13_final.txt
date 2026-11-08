@@ -1,0 +1,18 @@
+NFL {'stories': 26, 'in link url': 403, 'in visible text': 0, 'stories with broken links': 26} []
+NCAAF {'stories': 28, 'in link url': 250, 'in visible text': 0, 'stories with broken links': 28} []
+NBA {'stories': 33, 'in link url': 257, 'in visible text': 0, 'stories with broken links': 33} []
+WNBA {'stories': 18, 'in link url': 4, 'in visible text': 0, 'stories with broken links': 4} []
+NCAAM {'stories': 22, 'in link url': 130, 'in visible text': 0, 'stories with broken links': 22} []
+NCAAWB {'stories': 7, 'in link url': 2, 'in visible text': 0, 'stories with broken links': 1} []
+NHL {'stories': 33, 'in link url': 337, 'in visible text': 0, 'stories with broken links': 33} []
+NCAAH {} []
+NCAAWH {} []
+TOTAL {'stories': 167, 'in link url': 1383, 'in visible text': 0, 'stories with broken links': 147}
+
+calendar:
+NFL (2026, 2, 8)
+NCAAF (2026, 2, 10)
+NCAAF default /teams page 50 Amherst Mammoths ... Yale Bulldogs
+NCAAM default /teams page 50 American University Eagles ... Yale Bulldogs
+NCAAWB default /teams page 50 American University Eagles ... Yale Bulldogs
+NCAAH default /teams page 50 Air Force Falcons ... Yale Bulldogs
