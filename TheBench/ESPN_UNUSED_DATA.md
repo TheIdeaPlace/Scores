@@ -103,8 +103,8 @@ Confirmed for NFL and CFB. Per side: `gameProjection` (win %), `teamChanceLoss`,
 `teamOffEff` / `teamDefEff` / `teamSTEff` / `teamTotEff`, `teamAvgWp`,
 `oppSeasonStrengthRating`. Most stats carry a `description`, so the screen
 reader text can be generated rather than hardcoded. This is a pregame
-counterpart to the in-game `winprobability` the Windows app already shows at
-scores.py:7225 — `matchupQuality` in particular is a nice "is this game worth
+counterpart to the in-game `winprobability` both apps show for MLB games
+(`win_probability.py`) — `matchupQuality` in particular is a nice "is this game worth
 watching tonight?" signal for the scores list.
 
 ## 5. Shot and rink coordinates — NBA, NCAAM and NHL plays
@@ -159,8 +159,8 @@ it needs an id→name resolve. Reads naturally as an awards-race view.
   only the AP Top 25 was shown, but both apps show every poll `rankings` returns
   (CFP, AP, AFCA Coaches, FCS Coaches, AFCA Division II and III); only the
   trimmed fixture had two. It now has all six and both apps are tested on them (#104).
-- **`againstTheSpread`** — on most summaries. Only `KitchenSinkDialog` reads it,
-  and that's never opened, so neither app shows it.
+- **`againstTheSpread`** — on most summaries. Neither app reads it (the unreachable
+  `KitchenSinkDialog` that did was removed in #194).
 
 ## Dead ends (don't retry)
 

@@ -8,12 +8,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+<<<<<<< HEAD
+- **MLB win probability and season series on Windows, as on the iPhone (#194).** An MLB game's details
+  have a **Win probability** row ("Win probability: Mets 70%") and a season series row ("Regular Season
+  Series: Mets lead 7-5"). Enter on the first opens the chances by inning, after every play, and the five
+  biggest swings, with who gained on each play; F5 updates it during a game. Enter on the second opens a
+  tab for each series (playoff round, regular season, current set, spring training) listing its games,
+  starting on the game you came from. Both apps count each series' record from its games, as of the game
+  you're looking at, so an old game doesn't give away how a series ended; ESPN's own sentence isn't read,
+  since it can be wrong (in one World Series game it gave the wrong team the lead). Both round win
+  percentages the same way: the iPhone's chart used to cut 69.8% to 69% and called a live game's chances
+  "Final". The unreachable Kitchen Sink dialog these came from is gone.
+=======
 - **Past football seasons on Windows (#192).** In the NFL and college football scores lists, Ctrl+G (or
   **Go to Season**) opens a list of seasons, back to 2001 for the NFL and 2005 for college football, as on
   the iPhone. A past season opens on its regular season Week 1, and the week and season are spoken and put
   in the window title ("Week 1, 2019 season"). Alt+P and Alt+N step through that season and say when they
   reach its first or last week. The current season is first in the list, and choosing it goes back to this
   week. Nothing is kept between launches.
+>>>>>>> origin/main
 - **Listen to the game.** For the NFL, NBA, NHL, and college football and basketball (the SEC, Big Ten,
   ACC, Big 12 and Notre Dame), Scores lists where to hear a game: each team's radio and the services that
   carry every game, such as SiriusXM. Each opens in your browser, or on the iPhone in the service's app;

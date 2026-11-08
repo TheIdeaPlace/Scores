@@ -26,6 +26,13 @@ extension KeyedDecodingContainer {
         return rows.compactMap { $0.value }
     }
 
+    /// An id ESPN may send as text or as a whole number: "11" either way; nil for anything else.
+    func lenientString(forKey key: Key) -> String? {
+        if let text = try? decodeIfPresent(String.self, forKey: key) { return text }
+        if let number = try? decodeIfPresent(Int.self, forKey: key) { return String(number) }
+        return nil
+    }
+
     /// A number ESPN may send as an int, a float or text such as "64,195"; nil for
     /// anything else, so an odd value costs that value and not what's around it.
     func lenientNumber(forKey key: Key) -> Double? {
@@ -476,6 +483,10 @@ struct GameDetails: Codable {
                 struct HeaderTeam: Codable {
                     let id: String?
                     let abbreviation: String?
+                    /// "Mets": the short name win probability and the season series say.
+                    var name: String? = nil
+                    var shortDisplayName: String? = nil
+                    var displayName: String? = nil
                 }
 
                 // ESPN summary returns score as a plain integer; handle int/double/string.
@@ -509,14 +520,27 @@ struct GameDetails: Codable {
 
     // MARK: - Win Probability
 
+    /// One point on the line, after one play. Only the home team's chance is
+    /// needed: an entry without it is dropped, as win_probability.py drops it.
     struct WinProbEntry: Codable {
         let homeWinPercentage: Double
-        let tiePercentage: Double
-        let playId: String
+        let tiePercentage: Double?
+        let playId: String?
+
+        enum CodingKeys: String, CodingKey { case homeWinPercentage, tiePercentage, playId }
+
+        init(from decoder: Decoder) throws {
+            let c = try decoder.container(keyedBy: CodingKeys.self)
+            homeWinPercentage = try c.decode(Double.self, forKey: .homeWinPercentage)
+            tiePercentage = try? c.decodeIfPresent(Double.self, forKey: .tiePercentage)
+            playId = c.lenientString(forKey: .playId)
+        }
     }
 
     // MARK: - Season Series
 
+    /// One series between the two teams. ESPN's `summary` sentence is kept but not
+    /// shown: it can be wrong, so SeasonSeries counts the record from `events`.
     struct SeasonSeriesEntry: Codable {
         let type: String?
         let title: String?
@@ -524,14 +548,83 @@ struct GameDetails: Codable {
         let completed: Bool?
         let totalCompetitions: Int?
         let seriesScore: String?
+        /// "World Series", on a playoff series.
+        let round: String?
+        /// The games in the series, oldest first.
+        let events: [SeriesEvent]
 
-        // Prefer "Regular Season Series" and "Current Series" for display
+        enum CodingKeys: String, CodingKey {
+            case type, title, summary, completed, totalCompetitions, seriesScore, round, events
+        }
+
+        init(from decoder: Decoder) throws {
+            let c = try decoder.container(keyedBy: CodingKeys.self)
+            type = try? c.decodeIfPresent(String.self, forKey: .type)
+            title = try? c.decodeIfPresent(String.self, forKey: .title)
+            summary = try? c.decodeIfPresent(String.self, forKey: .summary)
+            completed = try? c.decodeIfPresent(Bool.self, forKey: .completed)
+            totalCompetitions = try? c.decodeIfPresent(Int.self, forKey: .totalCompetitions)
+            seriesScore = try? c.decodeIfPresent(String.self, forKey: .seriesScore)
+            round = try? c.decodeIfPresent(String.self, forKey: .round)
+            events = c.lossyArray(forKey: .events) ?? []
+        }
+
+        struct SeriesEvent: Codable {
+            let id: String?
+            let status: String?
+            let statusType: StatusType?
+            let competitors: [Competitor]
+
+            enum CodingKeys: String, CodingKey { case id, status, statusType, competitors }
+
+            init(from decoder: Decoder) throws {
+                let c = try decoder.container(keyedBy: CodingKeys.self)
+                id = c.lenientString(forKey: .id)
+                status = try? c.decodeIfPresent(String.self, forKey: .status)
+                statusType = try? c.decodeIfPresent(StatusType.self, forKey: .statusType)
+                competitors = c.lossyArray(forKey: .competitors) ?? []
+            }
+
+            /// Only a finished game counts toward the record. `status` is read only
+            /// without a `statusType`: a postponed game can say "post" too.
+            var isFinished: Bool {
+                if let statusType = statusType { return statusType.completed == true }
+                return status?.trimmingCharacters(in: .whitespacesAndNewlines) == "post"
+            }
+
+            struct StatusType: Codable {
+                let completed: Bool?
+            }
+
+            struct Competitor: Codable {
+                let winner: Bool?
+                let team: Team?
+
+                struct Team: Codable {
+                    let id: String?
+                    let displayName: String?
+                    let abbreviation: String?
+
+                    enum CodingKeys: String, CodingKey { case id, displayName, abbreviation }
+
+                    init(from decoder: Decoder) throws {
+                        let c = try decoder.container(keyedBy: CodingKeys.self)
+                        id = c.lenientString(forKey: .id)
+                        displayName = try? c.decodeIfPresent(String.self, forKey: .displayName)
+                        abbreviation = try? c.decodeIfPresent(String.self, forKey: .abbreviation)
+                    }
+                }
+            }
+        }
+
+        /// Playoff, regular season, this set of games, spring training, then the rest.
         var displayOrder: Int {
             switch type {
-            case "current":  return 0
-            case "season":   return 1
-            case "preseason": return 2
-            default:         return 3
+            case "playoff":   return 0
+            case "season":    return 1
+            case "current":   return 2
+            case "preseason": return 3
+            default:          return 4
             }
         }
     }
