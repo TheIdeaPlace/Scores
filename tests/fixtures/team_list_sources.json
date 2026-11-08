@@ -1,0 +1,28 @@
+{
+ "why": "Where each league's list of teams comes from, on both apps: the Teams screen and Transactions team filter on Windows, Transactions and Team Hub's team picker on the iPhone. Every league's comes from /teams?limit=1000 except those under standings. College football's team list is all 762 teams of every division with nothing to tell them apart, and its standings follow the coverage setting. Men's college basketball's team list became every division in November 2026, over 1,000 teams cut off at 1,000, with Division I teams such as NJIT past the cut; women's is still Division I alone, 363 teams. College hockey's lists, men's and women's, have Division III schools and programs that no longer play (116 men's teams against 62 in the standings), so Kelly chose the standings for both: Division I alone. Keys are ESPN's league paths, which both apps use. team_list.py and tests/unit/replay/test_team_list.py hold Windows to this, Sport.teamListFromStandings and TeamListRequestTests in FeedDecodingTests.swift the iPhone. A change here is a change to both apps.",
+ "standings": [
+  "football/college-football",
+  "basketball/mens-college-basketball",
+  "hockey/mens-college-hockey",
+  "hockey/womens-college-hockey"
+ ],
+ "teamList": [
+  "baseball/mlb",
+  "football/nfl",
+  "basketball/nba",
+  "hockey/nhl",
+  "basketball/wnba",
+  "basketball/womens-college-basketball",
+  "soccer/eng.1",
+  "soccer/usa.1",
+  "soccer/usa.nwsl",
+  "soccer/esp.1",
+  "soccer/ger.1",
+  "soccer/ita.1",
+  "soccer/fra.1",
+  "soccer/uefa.champions",
+  "soccer/uefa.europa",
+  "soccer/mex.1",
+  "soccer/concacaf.champions"
+ ]
+}

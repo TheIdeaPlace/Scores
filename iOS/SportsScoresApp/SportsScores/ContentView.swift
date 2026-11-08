@@ -38,4 +38,5 @@ struct ContentView: View {
 #Preview {
     ContentView()
         .environmentObject(AppSettings())
+        .environmentObject(MonitoringStore())
 }
