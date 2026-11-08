@@ -1441,8 +1441,10 @@ class LiveScoresView(BaseView):
             self.live_scores_list = visible
 
         def row_key(item):
-            data = item.data(Qt.ItemDataRole.UserRole)
-            return _row_key(data) if isinstance(data, dict) else item.text()
+            # A row's own key when it has one (games, headings, the Monitoring header, whose
+            # text carries a count); otherwise its text.
+            key = _row_key(item.data(Qt.ItemDataRole.UserRole))
+            return key if key is not None else item.text()
 
         def game_rows(lst):
             last = lst.count() - 1

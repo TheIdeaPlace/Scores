@@ -991,9 +991,21 @@ class TestMonitoring(FailureViews):
         """Its data says which heading it is, so a refresh finds it though its text changed."""
         self.load(view, [self.finished("1", "NHL"), self.finished("2", "NBA")])
         self.go_to(view, (self.scores.LIVE_HEADER, "completed:NHL"))
+        kept = view.live_scores_list.currentItem()
         self.load(view, [self.finished("1", "NHL"), self.finished("5", "NHL"), self.finished("2", "NBA")])
-        assert self.current_key(view) == (self.scores.LIVE_HEADER, "completed:NHL")
-        assert view.live_scores_list.currentItem().text() == "--- NHL, 2 ---"
+        # The same row, not a rebuilt one found again, which a screen reader would read out.
+        assert view.live_scores_list.currentItem() is kept and view._rows_rebuilt is False
+        assert kept.text() == "--- NHL, 2 ---"
+
+    def test_the_monitoring_header_keeps_its_place_as_games_come_and_go(self, view):
+        """Its text has a count now; its data still says it's the Monitoring header."""
+        self.load(view, [self.finished("1", "NHL"), self.finished("2", "NBA")])
+        self.go_to(view, "2")
+        view._toggle_monitoring()
+        self.go_to(view, self.scores.MONITORING_HEADER)
+        kept = view.live_scores_list.currentItem()
+        self.load(view, [self.finished("1", "NHL"), self.finished("2", "NBA"), self.finished("7", "MLB")])
+        assert view.live_scores_list.currentItem() is kept and view._rows_rebuilt is False
 
     def test_enter_on_a_heading_opens_nothing(self, view):
         self.load(view, [self.finished("1", "NHL")])
