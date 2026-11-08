@@ -24,7 +24,7 @@ struct ScheduleGame: Identifiable {
     var timeIsKnown: Bool = true
     var isNeutralSite: Bool = false
     /// ESPN's own `completed` and `state` for the status, which hold whatever the status is
-    /// called. Nil for CFL games, whose feed has neither.
+    /// called. CFL games set them from the CFL feed's own status (CFLFeed.makeScheduleGame).
     var espnCompleted: Bool? = nil
     var espnState: String? = nil
     /// What sets this game apart, read with the row: "Super Bowl LX", "SEC Championship",

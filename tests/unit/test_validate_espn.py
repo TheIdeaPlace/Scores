@@ -1989,15 +1989,65 @@ class TestOtherSources:
         v.check_every_league_path(http, report)
         assert [(c.source, c.status) for c in report.checks] == [("racing/f1", v.FAIL)]
 
-    def test_cfl_empty_is_only_a_warning(self):
+    @staticmethod
+    def cfl_feed(monkeypatch, rounds=None, squads=None, raises=None):
+        """The app's CFL request, answering with the real capture unless told otherwise."""
+        import espn_api
+
+        def feed():
+            if raises:
+                raise raises
+            load = lambda name: json.load(open(os.path.join(FIXTURES, name), encoding="utf-8"))
+            return {"rounds": load("cfl_rounds_2026_halftime.json") if rounds is None else rounds,
+                    "squads": load("cfl_squads_2026.json") if squads is None else squads}
+        monkeypatch.setattr(espn_api, "get_cfl_feed", feed)
+
+    def test_cfl_empty_is_only_a_warning(self, monkeypatch):
+        self.cfl_feed(monkeypatch, rounds=[], squads=[])
         report = v.Report()
         v.check_cfl(FakeHttp(default=(200, [])), report)
         assert statuses(report, "Rounds") == [v.WARN]
+        assert statuses(report, "App: CFL week") == [v.WARN]
+        assert statuses(report, "App: CFL teams") == [v.WARN]
+        assert not report.failed
 
-    def test_cfl_error_fails(self):
+    def test_cfl_error_fails(self, monkeypatch):
+        from exceptions import ApiError
+        self.cfl_feed(monkeypatch, raises=ApiError("The CFL isn't providing scores right now. Try again in a minute."))
         report = v.Report()
         v.check_cfl(FakeHttp(default=(500, None)), report)
         assert statuses(report, "Rounds") == [v.FAIL]
+        assert FAIL_IN(report, "App: CFL feed")
+
+    def test_cfl_on_the_real_feed_passes(self, monkeypatch):
+        self.cfl_feed(monkeypatch)
+        report = v.Report()
+        v.check_cfl_app(report)
+        assert not report.failed
+        assert v.PASS in statuses(report, "App: CFL week")
+        assert "Conference Finals" in detail(report, "App: CFL week")
+        assert "East Division: 4, West Division: 5" in detail(report, "App: CFL teams")
+        assert statuses(report, "App: CFL game status") == [v.PASS]
+
+    def test_a_cfl_status_never_seen_is_a_warning(self, monkeypatch):
+        rounds = json.load(open(os.path.join(FIXTURES, "cfl_rounds_2026_halftime.json"), encoding="utf-8"))
+        rounds[3]["tournaments"][0]["status"] = "postponed"
+        self.cfl_feed(monkeypatch, rounds=rounds)
+        report = v.Report()
+        v.check_cfl_app(report)
+        assert statuses(report, "App: CFL game status") == [v.WARN]
+        assert "postponed" in detail(report, "App: CFL game status")
+
+    def test_a_cfl_week_with_no_end_or_a_team_in_no_division_fails(self, monkeypatch):
+        rounds = json.load(open(os.path.join(FIXTURES, "cfl_rounds_2026_halftime.json"), encoding="utf-8"))
+        rounds[2]["endDate"] = None
+        squads = json.load(open(os.path.join(FIXTURES, "cfl_squads_2026.json"), encoding="utf-8"))
+        squads.append({"id": 5, "name": "Halifax", "abbreviation": "HFX", "wins": 0, "draw": 0, "loss": 0})
+        self.cfl_feed(monkeypatch, rounds=rounds, squads=squads)
+        report = v.Report()
+        v.check_cfl_app(report)
+        assert FAIL_IN(report, "App: CFL week")
+        assert FAIL_IN(report, "App: CFL teams")
 
     def test_the_draft_can_be_last_year_s(self, monkeypatch):
         import espn_api

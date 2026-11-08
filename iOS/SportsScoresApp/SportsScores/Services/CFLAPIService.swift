@@ -19,6 +19,10 @@
 //  The two JSON documents describe the entire season in one fetch each, so a
 //  short in-memory cache keeps date navigation and auto-refresh cheap.
 //
+//  Reading them is `CFLFeed`, below, apart from the fetching so it can be tested. Windows reads
+//  the same feed in cfl.py, and tests/fixtures/cfl_grid.json holds the two to the same reading
+//  (CFLGridTests.swift and tests/unit/test_cfl.py): change both together.
+//
 
 import Foundation
 
@@ -33,7 +37,7 @@ final class CFLAPIService {
     /// long enough that navigating between days doesn't re-fetch repeatedly.
     private let cacheTTL: TimeInterval = 25
 
-    private var cachedFeed: Feed?
+    private var cachedFeed: CFLFeed?
     private var cacheTimestamp: Date?
 
     private init() {
@@ -46,27 +50,12 @@ final class CFLAPIService {
         self.session = URLSession(configuration: config)
     }
 
-    // MARK: - Division layout (East / West)
-
-    /// CFL division membership keyed by team abbreviation (the feed's `shortName`).
-    private static let eastTeams: Set<String> = ["HAM", "MTL", "OTT", "TOR"]
-    private static let westTeams: Set<String> = ["BC", "CGY", "EDM", "SSK", "WPG"]
-
-    private static func divisionName(for abbreviation: String) -> String {
-        westTeams.contains(abbreviation) ? "West Division" : "East Division"
-    }
-
     // MARK: - Public API
 
     /// Games taking place on the given calendar day (local time), grouped exactly
     /// like every other sport so `ScoresView` can render them unchanged.
     func fetchGames(on date: Date) async throws -> [Game] {
-        let feed = try await loadFeed()
-        let cal = Calendar.current
-        return feed.allTournaments()
-            .filter { cal.isDate($0.tournament.parsedDate, inSameDayAs: date) }
-            .map { makeGame(from: $0.tournament, seasonType: $0.seasonType, records: feed.recordMap) }
-            .sorted { $0.date < $1.date }
+        try await loadFeed().games(on: date)
     }
 
     /// Number of games scheduled on the given day — for the home-page badge.
@@ -89,30 +78,104 @@ final class CFLAPIService {
     /// - Parameter index: the round to load, or `nil` to resolve the current round
     ///   (the one in progress, or the next upcoming one if between weeks).
     func fetchRound(index: Int?) async throws -> CFLRoundResult {
-        let feed = try await loadFeed()
-        let rounds = feed.rounds
-        guard !rounds.isEmpty else {
-            return CFLRoundResult(games: [], roundIndex: 0, label: "", roundCount: 0, isCurrentRound: true)
+        try await loadFeed().round(index: index)
+    }
+
+    /// East / West standings built from each team's win-loss-draw record.
+    func fetchStandings() async throws -> [StandingsGroup] {
+        try await loadFeed().standings()
+    }
+
+    /// All teams, sorted by name — for the Team Hub team picker.
+    func fetchTeams() async throws -> [TransactionTeam] {
+        try await loadFeed().teams()
+    }
+
+    /// Every game a team plays this season, oldest first — for the Team Hub schedule tab.
+    func fetchSchedule(teamId: String) async throws -> [ScheduleGame] {
+        try await loadFeed().schedule(teamId: teamId)
+    }
+
+    /// Team Hub Info-tab summary: record, division standing, and next game.
+    func fetchTeamInfo(teamId: String) async throws -> TeamHubTeamInfo {
+        try await loadFeed().teamInfo(teamId: teamId)
+    }
+
+    // MARK: - Feed loading + cache
+
+    private func loadFeed() async throws -> CFLFeed {
+        if let cached = cachedFeed, let stamp = cacheTimestamp,
+           Date().timeIntervalSince(stamp) < cacheTTL {
+            return cached
         }
 
-        let currentIdx = currentRoundIndex(rounds)
+        // Both documents fetch concurrently; decode once each is in.
+        async let roundsData = fetch(roundsURL)
+        async let squadsData = fetch(squadsURL)
+        let feed = try CFLFeed.decode(rounds: try await roundsData, squads: try await squadsData)
+        cachedFeed = feed
+        cacheTimestamp = Date()
+        return feed
+    }
+
+    private func fetch(_ url: URL) async throws -> Data {
+        var request = URLRequest(url: url)
+        // The feed only serves browser-like clients reliably.
+        request.setValue("Mozilla/5.0", forHTTPHeaderField: "User-Agent")
+        let (data, response) = try await session.data(for: request)
+        guard let http = response as? HTTPURLResponse, http.statusCode == 200 else {
+            throw APIError.invalidResponse
+        }
+        return data
+    }
+}
+
+// MARK: - Reading the feed
+
+/// The CFL's two files read into the app's models. No fetching, so the tests can give it the
+/// real fixtures. cfl.py on Windows is the other half.
+struct CFLFeed {
+    let rounds: [CFLRound]
+    let squads: [CFLSquad]
+
+    static func decode(rounds: Data, squads: Data) throws -> CFLFeed {
+        CFLFeed(rounds: try JSONDecoder().decode([CFLRound].self, from: rounds),
+                squads: try JSONDecoder().decode([CFLSquad].self, from: squads))
+    }
+
+    // MARK: Division layout (East / West)
+
+    /// CFL division membership keyed by team abbreviation (the feed's `shortName`).
+    static let eastTeams: Set<String> = ["HAM", "MTL", "OTT", "TOR"]
+    static let westTeams: Set<String> = ["BC", "CGY", "EDM", "SSK", "WPG"]
+
+    static func divisionName(for abbreviation: String) -> String {
+        westTeams.contains(abbreviation) ? "West Division" : "East Division"
+    }
+
+    // MARK: Games and weeks
+
+    func games(on date: Date, calendar: Calendar = .current) -> [Game] {
+        Self.byKickoff(allTournaments()
+            .filter { calendar.isDate($0.tournament.parsedDate, inSameDayAs: date) }
+            .map { makeGame(from: $0.tournament, seasonType: $0.seasonType) })
+    }
+
+    func round(index: Int?, now: Date = Date()) -> CFLAPIService.CFLRoundResult {
+        guard !rounds.isEmpty else {
+            return CFLAPIService.CFLRoundResult(games: [], roundIndex: 0, label: "", roundCount: 0, isCurrentRound: true)
+        }
+
+        let currentIdx = currentRoundIndex(now: now)
         let idx = min(max(index ?? currentIdx, 0), rounds.count - 1)
         let round = rounds[idx]
-        let seasonType: Int
-        switch round.type {
-        case "PRE":  seasonType = 1
-        case "POST": seasonType = 3
-        default:     seasonType = 2
-        }
-        let games = round.tournaments
-            .filter { !($0.isHidden ?? false) }
-            .map { makeGame(from: $0, seasonType: seasonType, records: feed.recordMap) }
-            .sorted { $0.date < $1.date }
+        let seasonType = Self.seasonType(for: round.type)
+        let games = Self.byKickoff(round.visibleTournaments.map { makeGame(from: $0, seasonType: seasonType) })
 
-        return CFLRoundResult(
+        return CFLAPIService.CFLRoundResult(
             games: games,
             roundIndex: idx,
-            label: round.name,
+            label: round.displayName(index: idx),
             roundCount: rounds.count,
             isCurrentRound: idx == currentIdx
         )
@@ -121,20 +184,33 @@ final class CFLAPIService {
     /// Index of the round considered "current": the first round that hasn't
     /// finished yet (in progress or upcoming), or the final round if the season
     /// is over.
-    private func currentRoundIndex(_ rounds: [CFLRound]) -> Int {
-        let now = Date()
-        if let i = rounds.firstIndex(where: { ($0.endDateParsed ?? .distantFuture) >= now }) {
+    ///
+    /// A round ends at 23:59 UTC on its last day, and games kick off as late as 23:30 UTC, so a
+    /// game is still being played after its round has "ended". A round with a game under way is
+    /// current, or next week would show all evening with the last game live.
+    func currentRoundIndex(now: Date = Date()) -> Int {
+        if let i = rounds.firstIndex(where: { round in
+            (round.endDateParsed ?? .distantFuture) >= now
+                || round.visibleTournaments.contains { Self.gameStatus(for: $0).state == "in" }
+        }) {
             return i
         }
         return rounds.count - 1
     }
 
-    /// East / West standings built from each team's win-loss-draw record.
-    func fetchStandings() async throws -> [StandingsGroup] {
-        let feed = try await loadFeed()
+    /// Two games at the same time go by id, so both apps list them in the same order.
+    private static func byKickoff(_ games: [Game]) -> [Game] {
+        games.sorted { $0.date != $1.date ? $0.date < $1.date : $0.id < $1.id }
+    }
+
+    // MARK: Standings and teams
+
+    /// East / West standings built from each team's win-loss-draw record. Teams level on win
+    /// percentage and wins go by name: the feed has no tiebreakers.
+    func standings() -> [StandingsGroup] {
         var buckets: [String: [StandingsEntry]] = ["East Division": [], "West Division": []]
 
-        for squad in feed.squads where squad.id != 0 {
+        for squad in squads where squad.id != 0 {
             let division = Self.divisionName(for: squad.abbreviation)
             buckets[division, default: []].append(standingsEntry(from: squad))
         }
@@ -143,9 +219,9 @@ final class CFLAPIService {
         return ["East Division", "West Division"].compactMap { name in
             guard var entries = buckets[name], !entries.isEmpty else { return nil }
             entries.sort {
-                $0.stats.winPercent != $1.stats.winPercent
-                    ? $0.stats.winPercent > $1.stats.winPercent
-                    : $0.stats.wins > $1.stats.wins
+                if $0.stats.winPercent != $1.stats.winPercent { return $0.stats.winPercent > $1.stats.winPercent }
+                if $0.stats.wins != $1.stats.wins { return $0.stats.wins > $1.stats.wins }
+                return $0.team.displayName < $1.team.displayName
             }
             let ranked = entries.enumerated().map { idx, entry in
                 StandingsEntry(rank: idx + 1, team: entry.team, stats: entry.stats)
@@ -154,10 +230,8 @@ final class CFLAPIService {
         }
     }
 
-    /// All teams, sorted by name — for the Team Hub team picker.
-    func fetchTeams() async throws -> [TransactionTeam] {
-        let feed = try await loadFeed()
-        return feed.squads
+    func teams() -> [TransactionTeam] {
+        squads
             .filter { $0.id != 0 }
             .map {
                 TransactionTeam(
@@ -173,37 +247,30 @@ final class CFLAPIService {
             .sorted { $0.displayName < $1.displayName }
     }
 
-    /// Every game a team plays this season, oldest first — for the Team Hub schedule tab.
-    func fetchSchedule(teamId: String) async throws -> [ScheduleGame] {
-        let feed = try await loadFeed()
-        return feed.allTournaments()
+    func schedule(teamId: String) -> [ScheduleGame] {
+        allTournaments()
             .filter { String($0.tournament.homeSquad.id) == teamId || String($0.tournament.awaySquad.id) == teamId }
             .map { makeScheduleGame(from: $0.tournament, seasonType: $0.seasonType) }
-            .sorted { $0.date < $1.date }
+            .sorted { $0.date != $1.date ? $0.date < $1.date : $0.id < $1.id }
     }
 
-    /// Team Hub Info-tab summary: record, division standing, and next game.
-    func fetchTeamInfo(teamId: String) async throws -> TeamHubTeamInfo {
-        let feed = try await loadFeed()
-        guard let squad = feed.squads.first(where: { String($0.id) == teamId }) else {
+    func teamInfo(teamId: String, now: Date = Date()) throws -> TeamHubTeamInfo {
+        guard let squad = squads.first(where: { String($0.id) == teamId && $0.id != 0 }) else {
             throw APIError.invalidResponse
         }
 
         // Division rank from the computed standings.
-        let standings = try await fetchStandings()
         var standingSummary: String?
-        for group in standings {
+        for group in standings() {
             if let idx = group.entries.firstIndex(where: { $0.team.id == teamId }) {
-                standingSummary = "\(ordinal(idx + 1)) in \(group.name)"
+                standingSummary = "\(Self.ordinal(idx + 1)) in \(group.name)"
                 break
             }
         }
 
         // Next scheduled game.
-        let schedule = try await fetchSchedule(teamId: teamId)
-        let now = Date()
         var nextGame: TeamHubNextGame?
-        if let upcoming = schedule.first(where: { !$0.isCompleted && !$0.isInProgress && $0.date > now }) {
+        if let upcoming = schedule(teamId: teamId).first(where: { !$0.isCompleted && !$0.isInProgress && $0.date > now }) {
             let isHome = upcoming.homeTeam.id == teamId
             let opponent = isHome ? upcoming.awayTeam : upcoming.homeTeam
             nextGame = TeamHubNextGame(
@@ -234,42 +301,36 @@ final class CFLAPIService {
         )
     }
 
-    // MARK: - Feed loading + cache
+    // MARK: Mapping helpers
 
-    private func loadFeed() async throws -> Feed {
-        if let cached = cachedFeed, let stamp = cacheTimestamp,
-           Date().timeIntervalSince(stamp) < cacheTTL {
-            return cached
+    /// Maps a season-type label (PRE/REG/POST) to the ESPN season-type
+    /// convention used throughout the app (1 pre / 2 regular / 3 post).
+    static func seasonType(for roundType: String) -> Int {
+        switch roundType {
+        case "PRE":  return 1
+        case "POST": return 3
+        default:     return 2
         }
-
-        // Both documents fetch concurrently; decode once each is in.
-        async let roundsData = fetch(roundsURL)
-        async let squadsData = fetch(squadsURL)
-        let rounds = try JSONDecoder().decode([CFLRound].self, from: try await roundsData)
-        let squads = try JSONDecoder().decode([CFLSquad].self, from: try await squadsData)
-
-        let feed = Feed(rounds: rounds, squads: squads)
-        cachedFeed = feed
-        cacheTimestamp = Date()
-        return feed
     }
 
-    private func fetch(_ url: URL) async throws -> Data {
-        var request = URLRequest(url: url)
-        // The feed only serves browser-like clients reliably.
-        request.setValue("Mozilla/5.0", forHTTPHeaderField: "User-Agent")
-        let (data, response) = try await session.data(for: request)
-        guard let http = response as? HTTPURLResponse, http.statusCode == 200 else {
-            throw APIError.invalidResponse
+    /// Flattened (tournament, seasonType) pairs across every round.
+    func allTournaments() -> [(tournament: CFLTournament, seasonType: Int)] {
+        rounds.flatMap { round in
+            round.visibleTournaments.map { ($0, Self.seasonType(for: round.type)) }
         }
-        return data
     }
 
-    // MARK: - Mapping helpers
+    /// Team id → "W-L" (or "W-L-D") record string, from squads. Squad 0 is a team not yet
+    /// known, whose 0-0 isn't a record.
+    var recordMap: [Int: String] {
+        Dictionary(squads.filter { $0.id != 0 }.map { ($0.id, $0.recordString) },
+                   uniquingKeysWith: { first, _ in first })
+    }
 
-    private func makeGame(from t: CFLTournament, seasonType: Int, records: [Int: String]) -> Game {
-        let status = gameStatus(for: t)
+    func makeGame(from t: CFLTournament, seasonType: Int) -> Game {
+        let status = Self.gameStatus(for: t)
         let suppressScores = status.state == "pre"
+        let records = recordMap
 
         func team(_ squad: CFLSquadScore) -> Game.Team {
             Game.Team(
@@ -298,35 +359,56 @@ final class CFLAPIService {
         )
     }
 
-    private func gameStatus(for t: CFLTournament) -> Game.GameStatus {
+    /// A game being played says which quarter it's in ("third_quarter", with activePeriod 3).
+    /// "playing" is what a round under way says, kept in case a game says it too.
+    static let playingStatuses: Set<String> = [
+        "first_quarter", "second_quarter", "third_quarter", "fourth_quarter", "overtime", "playing"
+    ]
+
+    /// The feed says "scheduled", then the quarter, "half_time" and "complete". Halftime is under
+    /// way, with no period and the clock at 15:00, which isn't running. A status never seen is
+    /// under way if it has a period or a clock.
+    static func gameStatus(for t: CFLTournament) -> Game.GameStatus {
+        let period = (t.activePeriod ?? 0) > 0 ? t.activePeriod : nil
+        let clock = t.clock?.trimmingCharacters(in: .whitespacesAndNewlines)
+        let runningClock = (clock?.isEmpty ?? true) ? nil : clock
         switch t.status {
         case "complete":
             return Game.GameStatus(state: "post", detail: "Final", period: nil, clock: nil, name: "STATUS_FINAL")
-        case "playing":
+        case "half_time":
+            return Game.GameStatus(state: "in", detail: "Halftime", period: nil, clock: nil, name: "STATUS_HALFTIME")
+        case let status where playingStatuses.contains(status):
             var detail = "In Progress"
-            if let period = t.activePeriod {
-                detail = "Q\(period)"
-                if let clock = t.clock, !clock.isEmpty { detail += " \(clock)" }
-            } else if let clock = t.clock, !clock.isEmpty {
-                detail = clock
+            if let period {
+                detail = period > 4 ? "OT" : "Q\(period)"
+                if let runningClock { detail += " \(runningClock)" }
+            } else if let runningClock {
+                detail = runningClock
             }
-            return Game.GameStatus(state: "in", detail: detail, period: t.activePeriod,
-                                   clock: t.clock, name: "STATUS_IN_PROGRESS")
-        default: // "scheduled"
+            return Game.GameStatus(state: "in", detail: detail, period: period,
+                                   clock: runningClock, name: "STATUS_IN_PROGRESS")
+        case "scheduled", "":
             return Game.GameStatus(state: "pre", detail: "Scheduled", period: nil, clock: nil, name: "STATUS_SCHEDULED")
+        default:
+            let words = t.status.replacingOccurrences(of: "_", with: " ")
+                .trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+            let detail: String = words.prefix(1).uppercased() + String(words.dropFirst())
+            let state = (period != nil || runningClock != nil) ? "in" : "pre"
+            return Game.GameStatus(state: state, detail: detail, period: nil, clock: nil,
+                                   name: "STATUS_" + t.status.uppercased())
         }
     }
 
-    private func makeScheduleGame(from t: CFLTournament, seasonType: Int) -> ScheduleGame {
+    func makeScheduleGame(from t: CFLTournament, seasonType: Int) -> ScheduleGame {
+        let status = Self.gameStatus(for: t)
         let statusType: String
-        let statusText: String
-        switch t.status {
-        case "complete": statusType = "STATUS_FINAL";       statusText = "Final"
-        case "playing":  statusType = "STATUS_IN_PROGRESS"; statusText = "In Progress"
-        default:         statusType = "STATUS_SCHEDULED";   statusText = "Scheduled"
+        switch status.state {
+        case "post": statusType = "STATUS_FINAL"
+        case "in":   statusType = "STATUS_IN_PROGRESS"
+        default:     statusType = "STATUS_SCHEDULED"
         }
-        let played = t.status != "scheduled"
-        return ScheduleGame(
+        let played = status.state != "pre"
+        var game = ScheduleGame(
             id: String(t.id),
             date: t.parsedDate,
             name: "\(t.awaySquad.name) at \(t.homeSquad.name)",
@@ -342,11 +424,15 @@ final class CFLAPIService {
                 displayName: t.homeSquad.name,
                 score: played ? t.homeSquad.score : nil
             ),
-            statusText: statusText,
+            statusText: status.detail,
             statusType: statusType,
             seasonType: seasonType,
             venueName: nil
         )
+        // Halftime is under way, which the status name alone wouldn't say.
+        game.espnState = status.state
+        game.espnCompleted = status.state == "post"
+        return game
     }
 
     private func standingsEntry(from squad: CFLSquad) -> StandingsEntry {
@@ -380,11 +466,11 @@ final class CFLAPIService {
             displayName: squad.name,
             logo: nil
         )
-        // Rank is assigned after sorting in fetchStandings().
+        // Rank is assigned after sorting in standings().
         return StandingsEntry(rank: 0, team: team, stats: stats)
     }
 
-    private func ordinal(_ n: Int) -> String {
+    static func ordinal(_ n: Int) -> String {
         switch n {
         case 1: return "1st"
         case 2: return "2nd"
@@ -392,43 +478,12 @@ final class CFLAPIService {
         default: return "\(n)th"
         }
     }
-
-    // MARK: - Decoded feed
-
-    private struct Feed {
-        let rounds: [CFLRound]
-        let squads: [CFLSquad]
-
-        /// Maps a season-type label (PRE/REG/POST) to the ESPN season-type
-        /// convention used throughout the app (1 pre / 2 regular / 3 post).
-        private static func seasonType(for roundType: String) -> Int {
-            switch roundType {
-            case "PRE":  return 1
-            case "POST": return 3
-            default:     return 2
-            }
-        }
-
-        /// Flattened (tournament, seasonType) pairs across every round.
-        func allTournaments() -> [(tournament: CFLTournament, seasonType: Int)] {
-            rounds.flatMap { round in
-                round.tournaments
-                    .filter { !($0.isHidden ?? false) }
-                    .map { ($0, Feed.seasonType(for: round.type)) }
-            }
-        }
-
-        /// Team id → "W-L" (or "W-L-D") record string, from squads.
-        var recordMap: [Int: String] {
-            Dictionary(uniqueKeysWithValues: squads.map { ($0.id, $0.recordString) })
-        }
-    }
 }
 
 // MARK: - Raw JSON models
 
-private struct CFLRound: Decodable {
-    let name: String
+struct CFLRound: Decodable {
+    let name: String?
     let type: String        // "PRE" | "REG" | "POST"
     let number: Int?
     let startDate: String?
@@ -437,12 +492,20 @@ private struct CFLRound: Decodable {
 
     /// End of the round's date window, used to resolve the current round.
     var endDateParsed: Date? { endDate.flatMap(parseCFLFeedDate) }
+
+    var visibleTournaments: [CFLTournament] { tournaments.filter { !($0.isHidden ?? false) } }
+
+    /// The feed has always named its weeks; "Week N" if it ever doesn't, as on Windows.
+    func displayName(index: Int) -> String {
+        if let name, !name.isEmpty { return name }
+        return "Week \(index + 1)"
+    }
 }
 
-private struct CFLTournament: Decodable {
+struct CFLTournament: Decodable {
     let id: Int
     let date: String
-    let status: String      // "scheduled" | "playing" | "complete"
+    let status: String      // "scheduled" | "first_quarter"... | "half_time" | "complete"
     let homeSquad: CFLSquadScore
     let awaySquad: CFLSquadScore
     let activePeriod: Int?
@@ -457,7 +520,7 @@ private struct CFLTournament: Decodable {
 
 /// Parse a CFL feed timestamp. The feed uses ISO-8601 with an explicit offset
 /// ("2026-06-12T00:30:00+00:00"); a couple of fallbacks cover minor variants.
-private func parseCFLFeedDate(_ s: String) -> Date? {
+func parseCFLFeedDate(_ s: String) -> Date? {
     let fmt = DateFormatter()
     fmt.locale = Locale(identifier: "en_US_POSIX")
     let formats = [
@@ -472,14 +535,14 @@ private func parseCFLFeedDate(_ s: String) -> Date? {
     return ISO8601DateFormatter().date(from: s)
 }
 
-private struct CFLSquadScore: Decodable {
+struct CFLSquadScore: Decodable {
     let id: Int
     let name: String
     let shortName: String
     let score: Int?
 }
 
-private struct CFLSquad: Decodable {
+struct CFLSquad: Decodable {
     let id: Int
     let name: String
     let abbreviation: String
