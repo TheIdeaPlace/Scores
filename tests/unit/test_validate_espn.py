@@ -1985,15 +1985,31 @@ class TestStatistics:
 class TestLigaMXTorneos:
     URL = "sports.core.api.espn.com/v2/sports/soccer/leagues/mex.1/season"
 
-    def run(self, answer):
+    # Any season type: which torneo is on depends on today's date.
+    LEADERS = "/soccer/mex.1/leaders?region=us&lang=en&season=2026&seasontype="
+
+    def run(self, answer, leaders=(200, None)):
         report = v.Report()
-        v.check_liga_mx_torneos(FakeHttp([(self.URL, answer)]), report)
+        leaders = leaders if leaders[1] is not None or leaders[0] != 200 else (200, load("leaders_v3_LigaMX.json"))
+        v.check_liga_mx_torneos(FakeHttp([(self.URL, answer), (self.LEADERS, leaders)]), report)
         return report
 
     def test_the_real_season_has_both_torneos(self):
         report = self.run((200, load("season_LigaMX.json")))
         assert statuses(report, "Torneos") == [v.PASS]
         assert "the Clausura is type 5" in detail(report, "Torneos")
+
+    def test_the_torneos_leaders_are_asked_for_as_the_apps_ask(self):
+        report = self.run((200, load("season_LigaMX.json")))
+        assert statuses(report, "Torneo leaders") == [v.PASS]
+        assert "Torneo Apertura" in detail(report, "Torneo leaders")
+
+    def test_the_torneos_leaders_failing_fails(self):
+        assert FAIL_IN(self.run((200, load("season_LigaMX.json")), leaders=(500, None)), "Torneo leaders")
+
+    def test_a_torneo_with_nobody_on_it_yet_only_warns(self):
+        report = self.run((200, load("season_LigaMX.json")), leaders=(200, load("leaders_v3_LigaMX_clausura_empty.json")))
+        assert statuses(report, "Torneo leaders") == [v.WARN]
 
     def test_no_clausura_by_that_name_fails(self):
         season = load("season_LigaMX.json")

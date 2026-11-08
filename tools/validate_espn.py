@@ -1675,6 +1675,19 @@ def check_liga_mx_torneos(http, report):
     types = soccer.leaders_season_types("Liga MX", data, datetime.now(timezone.utc))
     report.ok("Liga MX", "Torneos", f"{data.get('year')}: the Clausura is type {clausura[0].get('id')}, "
                                     f"and the apps ask for {types or 'the season before'}", url)
+    if not types:
+        return
+    # /leaders for the torneo the apps ask for first. Small: soccer's fails at 20 more than at 5.
+    url = (f"{V3}/{espn_api.LEAGUES['Liga MX']}/leaders?region=us&lang=en&season={data.get('year')}"
+           f"&seasontype={types[0]}&limit=5")
+    status, answer = http.get(url)
+    if status != 200 or not isinstance(answer, dict):
+        report.fail("Liga MX", "Torneo leaders", f"got {status} for season type {types[0]}", url)
+    elif soccer.soccer_leader_lists(answer):
+        report.ok("Liga MX", "Torneo leaders", soccer.soccer_leaders_season(answer, "Liga MX", data.get("year")), url)
+    else:
+        report.warn("Liga MX", "Torneo leaders", f"nobody on type {types[0]}'s lists yet, so the apps show the "
+                                                 "torneo before", url)
 
 
 def check_core_statistics(http, report, league, event, in_season):
