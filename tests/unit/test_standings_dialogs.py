@@ -261,9 +261,12 @@ class TestSoccerTeams:
 class TestSoccerSections:
     def test_a_league_offers_standings_statistics_and_teams(self, app):
         view = MagicMock(league="EPL", scores_list=QListWidget())
+        view._add_section_row = lambda title, role: scores.LeagueView._add_section_row(view, title, role)
         scores.LeagueView._add_common_sections(view)
         rows = [view.scores_list.item(i) for i in range(view.scores_list.count())]
-        assert [row.text() for row in rows] == ["--- Standings ---", "--- Statistics ---", "--- Teams ---"]
+        # Words only, set apart by bold: "--- Standings ---" was read as "dash dash dash".
+        assert [row.text() for row in rows] == ["Standings", "Statistics", "Teams"]
+        assert all(row.font().bold() for row in rows)
         assert [row.data(Qt.ItemDataRole.UserRole) for row in rows] == ["__standings__", "__statistics__", "__teams__"]
 
     def test_a_league_with_no_team_statistics_offers_no_choice_of_them(self, app):

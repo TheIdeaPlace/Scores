@@ -342,8 +342,8 @@ class TestAFailedLeagueList(FailureViews):
         view._on_scores_error(view._scores_generation, FAILED)
         rows = self.rows(view.scores_list)
         assert rows[0] == FAILED
-        assert "--- News Headlines ---" in rows
-        assert "--- Standings ---" in rows and "--- Teams ---" in rows
+        assert "News Headlines" in rows
+        assert "Standings" in rows and "Teams" in rows
         assert not any("No games found" in row for row in rows)
         assert view.scores_list.currentRow() == 0
         self.box.assert_not_called()
@@ -391,9 +391,9 @@ class TestAFailedLeagueList(FailureViews):
 
     def test_news_that_failed_keeps_its_row_and_no_news_has_none(self, view):
         view._on_scores_loaded(view._scores_generation, None, self.GAMES, None)
-        assert "--- News Headlines ---" in self.rows(view.scores_list)
+        assert "News Headlines" in self.rows(view.scores_list)
         self.land(view)
-        assert "--- News Headlines ---" not in self.rows(view.scores_list)
+        assert "News Headlines" not in self.rows(view.scores_list)
 
     def test_enter_on_a_news_row_with_no_news_asks_again(self, view):
         view._on_scores_loaded(view._scores_generation, None, self.GAMES, None)
@@ -983,9 +983,17 @@ class TestMonitoring(FailureViews):
         self.load(view, [self.finished("1", "NHL"), self.finished("2", "NHL"), self.finished("3", "NBA")],
                   live=[self.live("4", "NFL")])
         rows = self.rows(view.live_scores_list)
-        assert "=== LIVE GAMES, 1 ===" in rows and "--- NFL, 1 ---" in rows
-        assert "=== COMPLETED GAMES, 3 ===" in rows
-        assert "--- NBA, 1 ---" in rows and "--- NHL, 2 ---" in rows
+        assert "Live games, 1" in rows and "NFL, 1" in rows
+        assert "Completed games, 3" in rows
+        assert "NBA, 1" in rows and "NHL, 2" in rows
+        # Bold sets a heading apart now, not "===" or "---", which a screen reader read aloud.
+        lst = view.live_scores_list
+        keys = self.keys(view)
+        headings = [lst.item(i) for i, key in enumerate(keys)
+                    if key == self.scores.MONITORING_HEADER
+                    or isinstance(key, tuple) and key[0] == self.scores.LIVE_HEADER]
+        assert len(headings) == 6 and all(item.font().bold() for item in headings)
+        assert not any(lst.item(i).font().bold() for i in range(lst.count()) if lst.item(i) not in headings)
 
     def test_a_heading_keeps_its_place_when_its_count_changes(self, view):
         """Its data says which heading it is, so a refresh finds it though its text changed."""
@@ -995,7 +1003,7 @@ class TestMonitoring(FailureViews):
         self.load(view, [self.finished("1", "NHL"), self.finished("5", "NHL"), self.finished("2", "NBA")])
         # The same row, not a rebuilt one found again, which a screen reader would read out.
         assert view.live_scores_list.currentItem() is kept and view._rows_rebuilt is False
-        assert kept.text() == "--- NHL, 2 ---"
+        assert kept.text() == "NHL, 2"
 
     def test_the_monitoring_header_keeps_its_place_as_games_come_and_go(self, view):
         """Its text has a count now; its data still says it's the Monitoring header."""
@@ -1022,7 +1030,7 @@ class TestMonitoring(FailureViews):
         self.go_to(view, "2")
         view._toggle_monitoring()
         rows = self.rows(view.live_scores_list)
-        assert rows[0] == "=== MONITORING, 1 ==="
+        assert rows[0] == "Monitoring, 1"
         assert rows[1] == "NBA game 2 | NBA"
         assert "NBA game 2 - monitoring" in rows
         assert "NHL game 1" in rows
