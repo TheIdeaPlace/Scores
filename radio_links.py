@@ -21,6 +21,7 @@ LEAGUE_TABLES = {
     "NFL": "NFL",
     "NBA": "NBA",
     "NHL": "NHL",
+    "MLB": "MLB",
     "NCAAF": "NCAA",
     "NCAAM": "NCAA",
     "NCAAWB": "NCAA",

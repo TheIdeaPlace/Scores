@@ -14,7 +14,7 @@ IPHONE = ROOT / "iOS" / "SportsScoresApp" / "SportsScores" / "radio_links.json"
 DATA = json.loads(WINDOWS.read_text(encoding="utf-8"))
 
 # Every team in the league, so a team can't drop out of the list unnoticed.
-TEAM_COUNTS = {"NFL": 32, "NBA": 30, "NHL": 32}
+TEAM_COUNTS = {"NFL": 32, "NBA": 30, "NHL": 32, "MLB": 30}
 
 
 def test_iphone_copy_matches():
@@ -53,7 +53,8 @@ def test_entries_are_usable(table):
 
 @pytest.mark.parametrize("league, fixture", [
     ("NFL", "scoreboard_NFL_202611.json"), ("NBA", "scoreboard_NBA_202611.json"),
-    ("NHL", "box_NHL_401892628.json")])
+    ("NHL", "box_NHL_401892628.json"), ("MLB", "scoreboard_MLB_202606.json"),
+    ("MLB", "summary_final_MLB_401817091.json"), ("MLB", "summary_final_MLB_401908045_WS.json")])
 def test_real_game_teams_are_found(league, fixture):
     """The file's ids are ESPN's: every team in a real game has radio. A game summary's
     competition is in its header, as game details read it."""
@@ -65,6 +66,29 @@ def test_real_game_teams_are_found(league, fixture):
         away_id, away_name, home_id, home_name = radio_links.competitors(comp)
         for team_id, name in ((away_id, away_name), (home_id, home_name)):
             assert radio_links.team_entry(DATA, league, team_id), f"{league} {name} ({team_id})"
+
+
+def test_mlb_ids_are_espns():
+    """ESPN numbers MLB's 30 teams 1 to 30 (baseball/mlb/teams); the table has each once,
+    the Athletics (11) and the Rays (30) as ESPN names them."""
+    teams = DATA["tables"]["MLB"]["teams"]
+    assert set(teams) == {str(n) for n in range(1, 31)}
+    assert teams["11"]["name"] == "Athletics"
+    assert teams["30"]["name"] == "Tampa Bay Rays"
+
+
+def test_mlb_game_puts_the_teams_before_the_league():
+    """Mets at Nationals, from a real summary: the Mets' radio, the Nationals', then MLB's."""
+    summary = json.loads((ROOT / "tests" / "fixtures" / "espn" / "summary_final_MLB_401817091.json")
+                         .read_text(encoding="utf-8"))
+    options = radio_links.options_for_competition(DATA, "MLB", summary["header"]["competitions"][0])
+    labels = [option["label"] for option in options]
+    assert labels[0].startswith("New York Mets: ")
+    first_nats = next(i for i, label in enumerate(labels) if label.startswith("Washington Nationals: "))
+    last_mets = max(i for i, label in enumerate(labels) if label.startswith("New York Mets: "))
+    assert last_mets < first_nats
+    assert labels[-len(DATA["tables"]["MLB"]["links"]):] == [
+        link["label"] for link in DATA["tables"]["MLB"]["links"]]
 
 
 def test_college_ids_are_espns():
