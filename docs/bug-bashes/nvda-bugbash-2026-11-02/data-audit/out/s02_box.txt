@@ -1,0 +1,81 @@
+
+== NFL: sampled 26 finals
+   {'games': 26, 'team_tabs': 52, 'empty_team_tabs': 52, 'player_tabs': 0, 'unknown_tabs': 0, 'skipped_groups': 471, 'skipped_athlete_rows': 2154, 'espn_player_rows': 2154, 'espn_played': 2154, 'kept_rows': 0, 'dropped_rows': 0, 'dropped_who_played': 0, 'espn_pts': 0, 'dropped_pts': 0, 'short_rows': 0, 'order_mismatch': 0, 'games_only_empty_tabs': 26}
+   players who played dropped: 0/2154 = 0.0%
+   tab name endings: {'Stats': 52}
+   skipped groups: {'passing': 52, 'rushing': 52, 'receiving': 52, 'fumbles': 38, 'defensive': 52, 'kickReturns': 51, 'puntReturns': 41, 'kicking': 52, 'punting': 52, 'interceptions': 29}
+
+== NCAAF: sampled 33 finals
+   {'games': 33, 'team_tabs': 66, 'empty_team_tabs': 66, 'player_tabs': 0, 'unknown_tabs': 0, 'skipped_groups': 573, 'skipped_athlete_rows': 2716, 'espn_player_rows': 2716, 'espn_played': 2716, 'kept_rows': 0, 'dropped_rows': 0, 'dropped_who_played': 0, 'espn_pts': 0, 'dropped_pts': 0, 'short_rows': 0, 'order_mismatch': 0, 'games_only_empty_tabs': 33}
+   players who played dropped: 0/2716 = 0.0%
+   tab name endings: {'Stats': 66}
+   skipped groups: {'passing': 66, 'rushing': 66, 'receiving': 66, 'fumbles': 52, 'defensive': 66, 'interceptions': 37, 'kickReturns': 47, 'kicking': 65, 'punting': 65, 'puntReturns': 43}
+
+== NBA: sampled 33 finals
+   {'games': 33, 'team_tabs': 66, 'empty_team_tabs': 66, 'player_tabs': 66, 'unknown_tabs': 66, 'skipped_groups': 0, 'skipped_athlete_rows': 0, 'espn_player_rows': 889, 'espn_played': 724, 'kept_rows': 330, 'dropped_rows': 559, 'dropped_who_played': 396, 'espn_pts': 7587, 'dropped_pts': 3592, 'short_rows': 0, 'order_mismatch': 0}
+   players who played dropped: 396/724 = 54.7%
+   points dropped: 3592/7587 = 47.3%
+   tab name endings: {'Stats': 66, 'Unknown': 66}
+   skipped groups: {}
+   active/starter/played crosstab: {'active bench DNP': 2, 'active bench played': 172, 'active starter played': 156, 'active=false bench DNP': 163, 'active=false bench played': 222, 'active=false starter played': 174}
+   worst: (41, '401909281', 'Orlando Magic', 'Toronto Raptors', 'Scottie Barnes', 'Toronto Raptors', 10, 90, 235)
+   worst: (38, '401909899', 'Sacramento Kings', 'Memphis Grizzlies', 'Darius Acuff Jr.', 'Sacramento Kings', 16, 216, 241)
+   worst: (37, '401909905', 'LA Clippers', 'Golden State Warriors', 'Yaxel Lendeborg', 'Golden State Warriors', 16, 152, 236)
+   worst: (37, '401909285', 'Los Angeles Lakers', 'Golden State Warriors', 'Luka Doncic', 'Los Angeles Lakers', 16, 192, 207)
+   worst: (32, '401909903', 'Boston Celtics', 'Orlando Magic', 'Jayson Tatum', 'Boston Celtics', 9, 82, 205)
+
+== WNBA: sampled 28 finals
+   {'games': 28, 'team_tabs': 56, 'empty_team_tabs': 56, 'player_tabs': 56, 'unknown_tabs': 56, 'skipped_groups': 0, 'skipped_athlete_rows': 0, 'espn_player_rows': 697, 'espn_played': 528, 'kept_rows': 280, 'dropped_rows': 417, 'dropped_who_played': 248, 'espn_pts': 4588, 'dropped_pts': 1628, 'short_rows': 0, 'order_mismatch': 0}
+   players who played dropped: 248/528 = 47.0%
+   points dropped: 1628/4588 = 35.5%
+   tab name endings: {'Stats': 56, 'Unknown': 56}
+   skipped groups: {}
+   active/starter/played crosstab: {'active bench played': 114, 'active starter played': 166, 'active=false bench DNP': 169, 'active=false bench played': 134, 'active=false starter played': 114}
+   worst: (38, '401918015', 'Indiana Fever', 'Las Vegas Aces', "A'ja Wilson", 'Las Vegas Aces', 11, 153, 187)
+   worst: (34, '401918014', 'New York Liberty', 'Minnesota Lynx', 'Breanna Stewart', 'New York Liberty', 13, 155, 166)
+   worst: (31, '401918018', 'Las Vegas Aces', 'Indiana Fever', 'Jackie Young', 'Las Vegas Aces', 10, 146, 188)
+   worst: (25, '401918019', 'Atlanta Dream', 'Washington Mystics', 'Sonia Citron', 'Washington Mystics', 12, 134, 168)
+   worst: (25, '401918013', 'Washington Mystics', 'Atlanta Dream', 'Sonia Citron', 'Washington Mystics', 10, 73, 169)
+
+== NCAAM: sampled 33 finals
+   {'games': 33, 'team_tabs': 66, 'empty_team_tabs': 66, 'player_tabs': 66, 'unknown_tabs': 66, 'skipped_groups': 0, 'skipped_athlete_rows': 0, 'espn_player_rows': 1070, 'espn_played': 715, 'kept_rows': 330, 'dropped_rows': 740, 'dropped_who_played': 385, 'espn_pts': 5255, 'dropped_pts': 2442, 'short_rows': 0, 'order_mismatch': 0}
+   players who played dropped: 385/715 = 53.8%
+   points dropped: 2442/5255 = 46.5%
+   tab name endings: {'Stats': 66, 'Unknown': 66}
+   skipped groups: {}
+   active/starter/played crosstab: {'active bench played': 178, 'active starter played': 152, 'active=false bench DNP': 355, 'active=false bench played': 207, 'active=false starter played': 178}
+   worst: (31, '401845838', 'Massachusetts Minutemen', 'Coastal Carolina Chanticleers', "K'Jei Parker", 'Massachusetts Minutemen', 11, 44, 185)
+   worst: (28, '401858356', 'Wichita State Shockers', 'Oklahoma State Cowboys', 'Kenyon Giles', 'Wichita State Shockers', 12, 123, 166)
+   worst: (27, '401856559', 'UCLA Bruins', 'UConn Huskies', 'Alex Karaban', 'UConn Huskies', 12, 90, 130)
+   worst: (27, '401814537', 'Kent State Golden Flashes', 'Eastern Michigan Eagles', 'Rob Whaley Jr.', 'Kent State Golden Flashes', 12, 68, 151)
+   worst: (26, '401808282', 'Texas A&M Aggies', 'LSU Tigers', 'Rashaun Agee', 'Texas A&M Aggies', 9, 79, 185)
+
+== NCAAWB: sampled 33 finals
+   {'games': 33, 'team_tabs': 64, 'empty_team_tabs': 64, 'player_tabs': 66, 'unknown_tabs': 66, 'skipped_groups': 0, 'skipped_athlete_rows': 0, 'espn_player_rows': 898, 'espn_played': 685, 'kept_rows': 354, 'dropped_rows': 544, 'dropped_who_played': 367, 'espn_pts': 4424, 'dropped_pts': 2151, 'short_rows': 36, 'order_mismatch': 0}
+   players who played dropped: 367/685 = 53.6%
+   points dropped: 2151/4424 = 48.6%
+   tab name endings: {'Stats': 64, 'Unknown': 66}
+   skipped groups: {}
+   active/starter/played crosstab: {'active bench played': 191, 'active starter played': 127, 'active=false bench DNP': 201, 'active=false bench played': 177, 'active=false starter DNP': 12, 'active=false starter played': 190}
+   worst: (25, '401819666', 'California Golden Bears', 'Syracuse Orange', 'Naya Ojukwu', 'California Golden Bears', 7, 58, 177)
+   worst: (23, '401920491', 'USC Trojans', 'UNLV Lady Rebels', 'Jazzy Davidson', 'USC Trojans', 14, 132, 168)
+   worst: (23, '401913735', 'Wofford Terriers', 'NC State Wolfpack', 'Zoe Brooks', 'NC State Wolfpack', 14, 110, 130)
+   worst: (22, '401917183', 'Elms Blazers', 'Yale Bulldogs', 'Lea Vukic', 'Yale Bulldogs', 16, 96, 149)
+   worst: (20, '401913810', 'Saint Anselm Hawks', 'UMass Lowell River Hawks', 'Kayla Solomon', 'UMass Lowell River Hawks', 13, 71, 130)
+
+== NHL: sampled 33 finals
+   {'games': 33, 'team_tabs': 66, 'empty_team_tabs': 66, 'player_tabs': 0, 'unknown_tabs': 0, 'skipped_groups': 198, 'skipped_athlete_rows': 1258, 'espn_player_rows': 1258, 'espn_played': 1258, 'kept_rows': 0, 'dropped_rows': 0, 'dropped_who_played': 0, 'espn_pts': 0, 'dropped_pts': 0, 'short_rows': 0, 'order_mismatch': 0, 'games_only_empty_tabs': 33}
+   players who played dropped: 0/1258 = 0.0%
+   tab name endings: {'Stats': 66}
+   skipped groups: {'forwards': 66, 'defenses': 66, 'goalies': 66}
+
+== NCAAH: sampled 33 finals
+   {'games': 33, 'team_tabs': 0, 'empty_team_tabs': 0, 'player_tabs': 0, 'unknown_tabs': 0, 'skipped_groups': 0, 'skipped_athlete_rows': 0, 'espn_player_rows': 0, 'espn_played': 0, 'kept_rows': 0, 'dropped_rows': 0, 'dropped_who_played': 0, 'espn_pts': 0, 'dropped_pts': 0, 'short_rows': 0, 'order_mismatch': 0, 'games_zero_tabs': 33}
+   tab name endings: {}
+   skipped groups: {}
+
+== NCAAWH: sampled 33 finals
+   {'games': 33, 'team_tabs': 0, 'empty_team_tabs': 0, 'player_tabs': 0, 'unknown_tabs': 0, 'skipped_groups': 0, 'skipped_athlete_rows': 0, 'espn_player_rows': 0, 'espn_played': 0, 'kept_rows': 0, 'dropped_rows': 0, 'dropped_who_played': 0, 'espn_pts': 0, 'dropped_pts': 0, 'short_rows': 0, 'order_mismatch': 0, 'games_zero_tabs': 33}
+   tab name endings: {}
+   skipped groups: {}
+requests {'net': 193, 'cached': 92}

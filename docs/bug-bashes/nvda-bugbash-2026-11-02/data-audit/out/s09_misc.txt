@@ -1,0 +1,226 @@
+=== RANKINGS (real get_rankings; PollsTable row modelled scores.py:9175-9205)
+ NFL: 0 polls []; menu shows Polls: False
+    {}
+ NCAAF: 5 polls ['AP Top 25', 'AFCA Coaches Poll', 'FCS Coaches Poll', 'AFCA Division II Coaches Poll', 'AFCA Division III Coaches Poll']; menu shows Polls: True
+    AP Top 25: rows 25 first 1 Miami Hurricanes rec 8-0 pts 1740.0 prev 1; others-receiving 10
+    AFCA Coaches Poll: rows 25 first 1 Miami Hurricanes rec 8-0 pts 1818.0 prev 1; others-receiving 15
+    FCS Coaches Poll: rows 25 first 1 Tarleton State Texans rec 9-0 pts 645.0 prev 1; others-receiving 15
+    AFCA Division II Coaches Poll: rows 25 first 1 Ferris State Bulldogs rec 9-0 pts 749.0 prev 1; others-receiving 14
+    AFCA Division III Coaches Poll: rows 25 first 1 Wheaton Thunder rec 8-0 pts 1300.0 prev 1; others-receiving 21
+    {'rows': 125, 'prev0_NR': 13}
+ NBA: 0 polls []; menu shows Polls: False
+    {}
+ WNBA: 0 polls []; menu shows Polls: False
+    {}
+ NCAAM: 2 polls ['AP Top 25', 'Coaches Poll']; menu shows Polls: True
+    AP Top 25: rows 25 first 1 Florida Gators rec 0-0 pts 1461.0 prev 0; others-receiving 19
+    Coaches Poll: rows 25 first 1 Florida Gators rec 0-0 pts 732.0 prev 0; others-receiving 15
+    {'rows': 50, 'prev0_NR': 50}
+ NCAAWB: 2 polls ['AP Top 25', 'Coaches Poll']; menu shows Polls: True
+    AP Top 25: rows 25 first 1 South Carolina Gamecocks rec 0-0 pts 764.0 prev 0; others-receiving 17
+    Coaches Poll: rows 25 first 1 South Carolina Gamecocks rec 0-0 pts 792.0 prev 0; others-receiving 19
+    {'rows': 50, 'prev0_NR': 50}
+ NHL: 0 polls []; menu shows Polls: False
+    {}
+ NCAAH: 1 polls ["USCHO Men's Poll"]; menu shows Polls: True
+    USCHO Men's Poll: rows 20 first 1 Wisconsin Badgers rec 6-0 pts 0.0 prev 2; others-receiving 16
+    {'rows': 20, 'no_points': 20, 'prev0_NR': 2}
+ NCAAWH: 1 polls ["USCHO Women's Poll"]; menu shows Polls: True
+    USCHO Women's Poll: rows 15 first 1 Ohio State Buckeyes rec 11-1 pts 0.0 prev 1; others-receiving 5
+    {'rows': 15, 'no_points': 15}
+
+=== NEWS (real get_news, get_team_news, clean_description)
+ NFL: {'articles': 20}
+ NCAAF: {'articles': 20}
+ NBA: {'articles': 20}
+ WNBA: {'articles': 20}
+ NCAAM: {'articles': 20}
+ NCAAWB: {'articles': 20}
+ NHL: {'articles': 20}
+ NCAAH: {'articles': 20}
+ NCAAWH: {'articles': 20}
+ TOTAL {'articles': 180}
+ pure tests of the real cleaner on text a real article could contain:
+    'Smith signed a one-year, $1500000 contract with the Bears.' -> 'Smith signed a one-year, $[Player Name] contract with the Bears.'
+    'Attendance was 105000 at Michigan Stadium.' -> 'Attendance was [Player Name] at Michigan Stadium.'
+    'He wore #123456 in camp.' -> 'He wore [Player Name] in camp.'
+    'The {Bears} and Lions meet Sunday.' -> 'The [Player Name] and Lions meet Sunday.'
+    'See note [12] for the Big Ten.' -> 'See note [Player Name] for the Big Ten.'
+    'The 2026 Rose Bowl was seen by 18000000 viewers.' -> 'The 2026 Rose Bowl was seen by [Player Name] viewers.'
+
+=== ROSTERS (real get_team_roster)
+ NFL 9: app 81 raw 81 (shape grouped); odd height/name 81; no jersey 5; no pos 0; sample {'jersey': '65', 'name': 'Aaron Banks', 'position': 'G', 'age': '29', 'height': '6.0\'5.0"', 'weight': '325.0 lbs'}
+    odd: [{'jersey': '65', 'name': 'Aaron Banks', 'position': 'G', 'age': '29', 'height': '6.0\'5.0"', 'weight': '325.0 lbs'}, {'jersey': '74', 'name': 'Mekhi Becton', 'position': 'G', 'age': '27', 'height': '6.0\'7.0"', 'weight': '357.0 lbs'}]
+ NFL 2: app 73 raw 73 (shape grouped); odd height/name 73; no jersey 1; no pos 0; sample {'jersey': '17', 'name': 'Josh Allen', 'position': 'QB', 'age': '30', 'height': '6.0\'5.0"', 'weight': '237.0 lbs'}
+    odd: [{'jersey': '17', 'name': 'Josh Allen', 'position': 'QB', 'age': '30', 'height': '6.0\'5.0"', 'weight': '237.0 lbs'}, {'jersey': '11', 'name': 'Kyle Allen', 'position': 'QB', 'age': '30', 'height': '6.0\'3.0"', 'weight': '210.0 lbs'}]
+ NFL 13: app 76 raw 76 (shape grouped); odd height/name 76; no jersey 3; no pos 0; sample {'jersey': '18', 'name': 'Jack Bech', 'position': 'WR', 'age': '23', 'height': '6.0\'1.0"', 'weight': '214.0 lbs'}
+    odd: [{'jersey': '18', 'name': 'Jack Bech', 'position': 'WR', 'age': '23', 'height': '6.0\'1.0"', 'weight': '214.0 lbs'}, {'jersey': '19', 'name': 'Malik Benson', 'position': 'WR', 'age': '24', 'height': '6.0\'1.0"', 'weight': '195.0 lbs'}]
+ NCAAF 275: app 100 raw 100 (shape grouped); odd height/name 100; no jersey 0; no pos 0; sample {'jersey': '8', 'name': 'Deuce Adams', 'position': 'QB', 'age': '', 'height': '6.0\'2.0"', 'weight': '207.0 lbs'}
+    odd: [{'jersey': '8', 'name': 'Deuce Adams', 'position': 'QB', 'age': '', 'height': '6.0\'2.0"', 'weight': '207.0 lbs'}, {'jersey': '26', 'name': 'Eli Adams', 'position': 'WR', 'age': '', 'height': '6.0\'0.0"', 'weight': '188.0 lbs'}]
+ NCAAF 2653: app 100 raw 100 (shape grouped); odd height/name 100; no jersey 0; no pos 0; sample {'jersey': '54', 'name': 'Caleb Ash', 'position': 'OL', 'age': '', 'height': '6.0\'6.0"', 'weight': '301.0 lbs'}
+    odd: [{'jersey': '54', 'name': 'Caleb Ash', 'position': 'OL', 'age': '', 'height': '6.0\'6.0"', 'weight': '301.0 lbs'}, {'jersey': '73', 'name': 'Tyler Bell', 'position': 'OL', 'age': '', 'height': '6.0\'2.0"', 'weight': '319.0 lbs'}]
+ NCAAF 2449: app 100 raw 100 (shape grouped); odd height/name 100; no jersey 0; no pos 0; sample {'jersey': '55', 'name': 'Kene Anene', 'position': 'OL', 'age': '', 'height': '6.0\'5.0"', 'weight': '310.0 lbs'}
+    odd: [{'jersey': '55', 'name': 'Kene Anene', 'position': 'OL', 'age': '', 'height': '6.0\'5.0"', 'weight': '310.0 lbs'}, {'jersey': '76', 'name': 'Ryan Babatz', 'position': 'OT', 'age': '', 'height': '6.0\'5.0"', 'weight': '315.0 lbs'}]
+ NCAAF 2413: app 100 raw 100 (shape grouped); odd height/name 100; no jersey 0; no pos 0; sample {'jersey': '47', 'name': 'Connor Archer', 'position': 'TE', 'age': '', 'height': '6.0\'3.0"', 'weight': '245.0 lbs'}
+    odd: [{'jersey': '47', 'name': 'Connor Archer', 'position': 'TE', 'age': '', 'height': '6.0\'3.0"', 'weight': '245.0 lbs'}, {'jersey': '67', 'name': 'Brady Baker', 'position': 'OL', 'age': '', 'height': '6.0\'3.0"', 'weight': '300.0 lbs'}]
+ NBA 15: app 18 raw 18 (shape flat); odd height/name 18; no jersey 0; no pos 0; sample {'jersey': '15', 'name': 'Nate Ament', 'position': 'F', 'age': '19', 'height': '6.0\'10.0"', 'weight': '211.0 lbs'}
+    odd: [{'jersey': '15', 'name': 'Nate Ament', 'position': 'F', 'age': '19', 'height': '6.0\'10.0"', 'weight': '211.0 lbs'}, {'jersey': '0', 'name': 'Brayden Burries', 'position': 'G', 'age': '21', 'height': '6.0\'4.0"', 'weight': '215.0 lbs'}]
+ NBA 13: app 19 raw 19 (shape flat); odd height/name 19; no jersey 1; no pos 0; sample {'jersey': '43', 'name': 'Cameron Carr', 'position': 'G', 'age': '21', 'height': '6.0\'5.0"', 'weight': '184.0 lbs'}
+    odd: [{'jersey': '43', 'name': 'Cameron Carr', 'position': 'G', 'age': '21', 'height': '6.0\'5.0"', 'weight': '184.0 lbs'}, {'jersey': '77', 'name': 'Luka Doncic', 'position': 'G', 'age': '27', 'height': '6.0\'8.0"', 'weight': '230.0 lbs'}]
+ NBA 26: app 18 raw 18 (shape flat); odd height/name 18; no jersey 0; no pos 0; sample {'jersey': '15', 'name': 'Trey Alexander', 'position': 'G', 'age': '23', 'height': '6.0\'5.0"', 'weight': '185.0 lbs'}
+    odd: [{'jersey': '15', 'name': 'Trey Alexander', 'position': 'G', 'age': '23', 'height': '6.0\'5.0"', 'weight': '185.0 lbs'}, {'jersey': '19', 'name': 'Ace Bailey', 'position': 'G', 'age': '20', 'height': '6.0\'9.0"', 'weight': '200.0 lbs'}]
+ WNBA 8: app 15 raw 15 (shape flat); odd height/name 15; no jersey 1; no pos 0; sample {'jersey': '55', 'name': 'Chloe Bibby', 'position': 'F', 'age': '28', 'height': '6.0\'2.0"', 'weight': '194.0 lbs'}
+    odd: [{'jersey': '55', 'name': 'Chloe Bibby', 'position': 'F', 'age': '28', 'height': '6.0\'2.0"', 'weight': '194.0 lbs'}, {'jersey': '12', 'name': 'Nia Brodie', 'position': 'F', 'age': '31', 'height': '6.0\'1.0"', 'weight': '182.0 lbs'}]
+ WNBA 17: app 14 raw 14 (shape flat); odd height/name 14; no jersey 0; no pos 0; sample {'jersey': '1', 'name': 'Kierstan Bell', 'position': 'F', 'age': '26', 'height': '6.0\'1.0"', 'weight': '176.0 lbs'}
+    odd: [{'jersey': '1', 'name': 'Kierstan Bell', 'position': 'F', 'age': '26', 'height': '6.0\'1.0"', 'weight': '176.0 lbs'}, {'jersey': '20', 'name': 'Kalani Brown', 'position': 'C', 'age': '29', 'height': '6.0\'7.0"', 'weight': '245.0 lbs'}]
+ NCAAM 275: app 15 raw 15 (shape flat); odd height/name 15; no jersey 0; no pos 0; sample {'jersey': '0', 'name': 'Trey Autry', 'position': 'G', 'age': '', 'height': '6.0\'4.0"', 'weight': '211.0 lbs'}
+    odd: [{'jersey': '0', 'name': 'Trey Autry', 'position': 'G', 'age': '', 'height': '6.0\'4.0"', 'weight': '211.0 lbs'}, {'jersey': '9', 'name': 'Jackson Ball', 'position': 'G', 'age': '', 'height': '6.0\'5.0"', 'weight': '217.0 lbs'}]
+ NCAAM 150: app 15 raw 15 (shape flat); odd height/name 15; no jersey 0; no pos 0; sample {'jersey': '55', 'name': 'Nick Arnold', 'position': 'G', 'age': '', 'height': '5.0\'11.0"', 'weight': '175.0 lbs'}
+    odd: [{'jersey': '55', 'name': 'Nick Arnold', 'position': 'G', 'age': '', 'height': '5.0\'11.0"', 'weight': '175.0 lbs'}, {'jersey': '13', 'name': 'John Blackwell', 'position': 'G', 'age': '', 'height': '6.0\'5.0"', 'weight': '205.0 lbs'}]
+ NCAAM 284: app 16 raw 16 (shape flat); odd height/name 16; no jersey 0; no pos 0; sample {'jersey': '11', 'name': 'Amare Allen', 'position': 'G', 'age': '', 'height': '6.0\'7.0"', 'weight': '225.0 lbs'}
+    odd: [{'jersey': '11', 'name': 'Amare Allen', 'position': 'G', 'age': '', 'height': '6.0\'7.0"', 'weight': '225.0 lbs'}, {'jersey': '22', 'name': 'Devon Arlington', 'position': 'G', 'age': '', 'height': '6.0\'3.0"', 'weight': '180.0 lbs'}]
+ NCAAWB 275: app 14 raw 14 (shape flat); odd height/name 14; no jersey 0; no pos 0; sample {'jersey': '22', 'name': 'Shay Bollin', 'position': 'G', 'age': '', 'height': '6.0\'3.0"', 'weight': ''}
+    odd: [{'jersey': '22', 'name': 'Shay Bollin', 'position': 'G', 'age': '', 'height': '6.0\'3.0"', 'weight': ''}, {'jersey': '71', 'name': 'Alicia Courthiau', 'position': 'G', 'age': '', 'height': '5.0\'10.0"', 'weight': ''}]
+ NCAAWB 2579: app 14 raw 14 (shape flat); odd height/name 14; no jersey 0; no pos 0; sample {'jersey': '23', 'name': 'Kelsi Andrews', 'position': 'F', 'age': '', 'height': '6.0\'3.0"', 'weight': ''}
+    odd: [{'jersey': '23', 'name': 'Kelsi Andrews', 'position': 'F', 'age': '', 'height': '6.0\'3.0"', 'weight': ''}, {'jersey': '8', 'name': 'Joyce Edwards', 'position': 'F', 'age': '', 'height': '6.0\'3.0"', 'weight': ''}]
+ NCAAWB 284: app 16 raw 16 (shape flat); odd height/name 16; no jersey 0; no pos 0; sample {'jersey': '15', 'name': 'Emma Arca', 'position': 'G', 'age': '', 'height': '6.0\'1.0"', 'weight': ''}
+    odd: [{'jersey': '15', 'name': 'Emma Arca', 'position': 'G', 'age': '', 'height': '6.0\'1.0"', 'weight': ''}, {'jersey': '34', 'name': 'Caitlin Boyle', 'position': 'F', 'age': '', 'height': '6.0\'2.0"', 'weight': ''}]
+ NHL 4: app 24 raw 24 (shape grouped); odd height/name 24; no jersey 0; no pos 0; sample {'jersey': '98', 'name': 'Connor Bedard', 'position': 'C', 'age': '21', 'height': '5.0\'10.0"', 'weight': '190.0 lbs'}
+    odd: [{'jersey': '98', 'name': 'Connor Bedard', 'position': 'C', 'age': '21', 'height': '5.0\'10.0"', 'weight': '190.0 lbs'}, {'jersey': '8', 'name': 'Ryan Donato', 'position': 'C', 'age': '30', 'height': '6.0\'0.0"', 'weight': '190.0 lbs'}]
+ NHL 129764: app 25 raw 25 (shape grouped); odd height/name 25; no jersey 0; no pos 0; sample {'jersey': '92', 'name': 'Logan Cooley', 'position': 'C', 'age': '22', 'height': '6.0\'0.0"', 'weight': '191.0 lbs'}
+    odd: [{'jersey': '92', 'name': 'Logan Cooley', 'position': 'C', 'age': '22', 'height': '6.0\'0.0"', 'weight': '191.0 lbs'}, {'jersey': '27', 'name': 'Barrett Hayton', 'position': 'C', 'age': '26', 'height': '6.0\'1.0"', 'weight': '200.0 lbs'}]
+ NHL 30: app 28 raw 28 (shape grouped); odd height/name 28; no jersey 0; no pos 0; sample {'jersey': '14', 'name': 'Joel Eriksson Ek', 'position': 'C', 'age': '29', 'height': '6.0\'3.0"', 'weight': '207.0 lbs'}
+    odd: [{'jersey': '14', 'name': 'Joel Eriksson Ek', 'position': 'C', 'age': '29', 'height': '6.0\'3.0"', 'weight': '207.0 lbs'}, {'jersey': '47', 'name': 'Michael McCarron', 'position': 'C', 'age': '31', 'height': '6.0\'6.0"', 'weight': '232.0 lbs'}]
+ NCAAH 275: app 20 raw 20 (shape flat); odd height/name 20; no jersey 0; no pos 0; sample {'jersey': '21', 'name': 'Ryan Botterill', 'position': 'F', 'age': '', 'height': '5.0\'11.0"', 'weight': '180.0 lbs'}
+    odd: [{'jersey': '21', 'name': 'Ryan Botterill', 'position': 'F', 'age': '', 'height': '5.0\'11.0"', 'weight': '180.0 lbs'}, {'jersey': '27', 'name': 'Finn Brink', 'position': 'F', 'age': '', 'height': '5.0\'10.0"', 'weight': '180.0 lbs'}]
+ NCAAH 284: app 0 raw 0 (shape flat); odd height/name 0; no jersey 0; no pos 0; sample None
+ NCAAH 298: app 0 raw 0 (shape flat); odd height/name 0; no jersey 0; no pos 0; sample None
+ NCAAWH 275: app 0 raw 0 (shape flat); odd height/name 0; no jersey 0; no pos 0; sample None
+ NCAAWH 43: app 0 raw 0 (shape flat); odd height/name 0; no jersey 0; no pos 0; sample None
+ NCAAWH 284: app 0 raw 0 (shape flat); odd height/name 0; no jersey 0; no pos 0; sample None
+
+=== TEAM INFO (real get_team_info)
+ NFL 9: {'name': 'Green Bay Packers', 'abbreviation': 'GB', 'nickname': 'Packers', 'location': 'Green Bay', 'venue_name': '', 'venue_location': '', 'record_overall': '5-3', 'record_home': '3-1', 'record_road': '2-2', 'division': '', 'conference': '', 'next_game_opponent': 'Carolina Panthers', 'next_game_home_away': 'vs', 'next_game_date': 'Thu, Oct 29'}
+    raw keys ['abbreviation', 'alternateColor', 'color', 'displayName', 'franchise', 'groups', 'id', 'isActive', 'links', 'location', 'logos', 'name', 'nextEvent', 'nickname', 'record', 'shortDisplayName', 'slug', 'standingSummary', 'uid']; record types ['total', 'home', 'road']; groups {'id': '7', 'isConference': True, 'parent': {'id': '9'}}; coaches 0; franchise venue Lambeau Field; standingSummary 7th in National Football Conference
+ NFL 2: {'name': 'Buffalo Bills', 'abbreviation': 'BUF', 'nickname': 'Bills', 'location': 'Buffalo', 'venue_name': '', 'venue_location': '', 'record_overall': '6-1', 'record_home': '3-1', 'record_road': '3-0', 'division': '', 'conference': '', 'next_game_opponent': 'Baltimore Ravens', 'next_game_home_away': 'vs', 'next_game_date': 'Sun, Nov 1'}
+    raw keys ['abbreviation', 'alternateColor', 'color', 'displayName', 'franchise', 'groups', 'id', 'isActive', 'links', 'location', 'logos', 'name', 'nextEvent', 'nickname', 'record', 'shortDisplayName', 'slug', 'standingSummary', 'uid']; record types ['total', 'home', 'road']; groups {'id': '4', 'isConference': False, 'parent': {'id': '8'}}; coaches 0; franchise venue Highmark Stadium (Old); standingSummary 1st in AFC East
+ NCAAF 275: {'name': 'Wisconsin Badgers', 'abbreviation': 'WIS', 'nickname': 'Badgers', 'location': 'Wisconsin', 'venue_name': '', 'venue_location': '', 'record_overall': '5-3', 'division': '', 'conference': '', 'next_game_opponent': 'Rutgers Scarlet Knights', 'next_game_home_away': 'vs', 'next_game_date': 'Sat, Nov 7'}
+    raw keys ['abbreviation', 'alternateColor', 'color', 'displayName', 'groups', 'id', 'isActive', 'links', 'location', 'logos', 'name', 'nextEvent', 'nickname', 'record', 'shortDisplayName', 'slug', 'standingSummary', 'uid']; record types ['total']; groups {'id': '5', 'isConference': True, 'parent': {'id': '80'}}; coaches 0; franchise venue None; standingSummary 10th in Big Ten
+ NCAAF 2653: {'name': 'Troy Trojans', 'abbreviation': 'TROY', 'nickname': 'Trojans', 'location': 'Troy', 'venue_name': '', 'venue_location': '', 'record_overall': '4-4', 'division': '', 'conference': '', 'next_game_opponent': 'Louisiana Tech Bulldogs', 'next_game_home_away': 'vs', 'next_game_date': 'Sat, Nov 7'}
+    raw keys ['abbreviation', 'alternateColor', 'color', 'displayName', 'groups', 'id', 'isActive', 'links', 'location', 'logos', 'name', 'nextEvent', 'nickname', 'record', 'shortDisplayName', 'slug', 'standingSummary', 'uid']; record types ['total']; groups {'id': '37', 'isConference': True, 'parent': {'id': '80'}}; coaches 0; franchise venue None; standingSummary 8th in Sun Belt
+ NBA 15: {'name': 'Milwaukee Bucks', 'abbreviation': 'MIL', 'nickname': 'Bucks', 'location': 'Milwaukee', 'venue_name': '', 'venue_location': '', 'record_overall': '1-5', 'record_home': '1-3', 'record_road': '0-2', 'division': '', 'conference': '', 'next_game_opponent': 'Boston Celtics', 'next_game_home_away': '@', 'next_game_date': 'Wed, Nov 4'}
+    raw keys ['abbreviation', 'alternateColor', 'color', 'displayName', 'franchise', 'groups', 'id', 'isActive', 'links', 'location', 'logos', 'name', 'nextEvent', 'record', 'shortDisplayName', 'slug', 'standingSummary', 'uid']; record types ['total', 'home', 'road']; groups {'id': '2', 'isConference': False, 'parent': {'id': '5'}}; coaches 0; franchise venue BMO Harris Bradley Center; standingSummary 4th in Central Division
+ NBA 13: {'name': 'Los Angeles Lakers', 'abbreviation': 'LAL', 'nickname': 'Lakers', 'location': 'Los Angeles', 'venue_name': '', 'venue_location': '', 'record_overall': '5-2', 'record_home': '3-1', 'record_road': '2-1', 'division': '', 'conference': '', 'next_game_opponent': 'Miami Heat', 'next_game_home_away': 'vs', 'next_game_date': 'Mon, Nov 2'}
+    raw keys ['abbreviation', 'alternateColor', 'color', 'displayName', 'franchise', 'groups', 'id', 'isActive', 'links', 'location', 'logos', 'name', 'nextEvent', 'record', 'shortDisplayName', 'slug', 'standingSummary', 'uid']; record types ['total', 'home', 'road']; groups {'id': '4', 'isConference': False, 'parent': {'id': '6'}}; coaches 0; franchise venue crypto.com Arena; standingSummary 1st in Pacific Division
+ WNBA 8: {'name': 'Minnesota Lynx', 'abbreviation': 'MIN', 'nickname': 'Lynx', 'location': 'Minnesota', 'venue_name': '', 'venue_location': '', 'record_overall': '0-2', 'record_home': '0-1', 'record_road': '0-1', 'division': '', 'conference': ''}
+    raw keys ['abbreviation', 'alternateColor', 'color', 'displayName', 'groups', 'id', 'isActive', 'links', 'location', 'logos', 'name', 'record', 'shortDisplayName', 'slug', 'standingSummary', 'uid']; record types ['total', 'home', 'road']; groups {'id': '2', 'isConference': True}; coaches 0; franchise venue None; standingSummary 8th in Western Conference Division
+ WNBA 17: {'name': 'Las Vegas Aces', 'abbreviation': 'LV', 'nickname': 'Aces', 'location': 'Las Vegas', 'venue_name': '', 'venue_location': '', 'record_overall': '2-4', 'record_home': '2-1', 'record_road': '0-3', 'division': '', 'conference': ''}
+    raw keys ['abbreviation', 'alternateColor', 'color', 'displayName', 'groups', 'id', 'isActive', 'links', 'location', 'logos', 'name', 'record', 'shortDisplayName', 'slug', 'standingSummary', 'uid']; record types ['total', 'home', 'road']; groups {'id': '2', 'isConference': True}; coaches 0; franchise venue None; standingSummary 3rd in Western Conference Division
+ NCAAM 275: {'name': 'Wisconsin Badgers', 'abbreviation': 'WIS', 'nickname': 'Badgers', 'location': 'Wisconsin', 'venue_name': '', 'venue_location': '', 'record_overall': '0-0', 'division': '', 'conference': '', 'next_game_opponent': 'Delaware Blue Hens', 'next_game_home_away': 'vs', 'next_game_date': 'Fri, Nov 6'}
+    raw keys ['abbreviation', 'alternateColor', 'color', 'displayName', 'groups', 'id', 'isActive', 'links', 'location', 'logos', 'name', 'nextEvent', 'nickname', 'record', 'shortDisplayName', 'slug', 'standingSummary', 'uid']; record types ['total']; groups {'id': '7', 'isConference': True, 'parent': {'id': '50'}}; coaches 0; franchise venue None; standingSummary 1st in Big Ten
+ NCAAM 150: {'name': 'Duke Blue Devils', 'abbreviation': 'DUKE', 'nickname': 'Blue Devils', 'location': 'Duke', 'venue_name': '', 'venue_location': '', 'record_overall': '0-0', 'division': '', 'conference': '', 'next_game_opponent': 'Coastal Carolina Chanticleers', 'next_game_home_away': 'vs', 'next_game_date': 'Thu, Nov 5'}
+    raw keys ['abbreviation', 'alternateColor', 'color', 'displayName', 'groups', 'id', 'isActive', 'links', 'location', 'logos', 'name', 'nextEvent', 'nickname', 'record', 'shortDisplayName', 'slug', 'standingSummary', 'uid']; record types ['total']; groups {'id': '2', 'isConference': True, 'parent': {'id': '50'}}; coaches 0; franchise venue None; standingSummary 1st in ACC
+ NCAAWB 275: {'name': 'Wisconsin Badgers', 'abbreviation': 'WIS', 'nickname': 'Badgers', 'location': 'Wisconsin', 'venue_name': '', 'venue_location': '', 'record_overall': '0-0', 'division': '', 'conference': '', 'next_game_opponent': 'Bradley Braves', 'next_game_home_away': 'vs', 'next_game_date': 'Tue, Nov 3'}
+    raw keys ['abbreviation', 'alternateColor', 'color', 'displayName', 'groups', 'id', 'isActive', 'links', 'location', 'logos', 'name', 'nextEvent', 'nickname', 'record', 'shortDisplayName', 'slug', 'standingSummary', 'uid']; record types ['total']; groups {'id': '7', 'isConference': True, 'parent': {'id': '50'}}; coaches 0; franchise venue None; standingSummary 1st in Big Ten
+ NCAAWB 2579: {'name': 'South Carolina Gamecocks', 'abbreviation': 'SC', 'nickname': 'Gamecocks', 'location': 'South Carolina', 'venue_name': '', 'venue_location': '', 'record_overall': '1-0', 'division': '', 'conference': '', 'next_game_opponent': 'North Carolina Tar Heels', 'next_game_home_away': 'vs', 'next_game_date': 'Sun, Nov 8'}
+    raw keys ['abbreviation', 'alternateColor', 'color', 'displayName', 'groups', 'id', 'isActive', 'links', 'location', 'logos', 'name', 'nextEvent', 'nickname', 'record', 'shortDisplayName', 'slug', 'standingSummary', 'uid']; record types ['total']; groups {'id': '23', 'isConference': True, 'parent': {'id': '50'}}; coaches 0; franchise venue None; standingSummary 1st in SEC
+ NHL 4: {'name': 'Chicago Blackhawks', 'abbreviation': 'CHI', 'nickname': 'Blackhawks', 'location': 'Chicago', 'venue_name': '', 'venue_location': '', 'record_overall': '4-9', 'division': '', 'conference': '', 'next_game_opponent': 'Colorado Avalanche', 'next_game_home_away': 'vs', 'next_game_date': 'Mon, Nov 2'}
+    raw keys ['abbreviation', 'alternateColor', 'color', 'displayName', 'franchise', 'groups', 'id', 'isActive', 'links', 'location', 'logos', 'name', 'nextEvent', 'nickname', 'record', 'shortDisplayName', 'slug', 'standingSummary', 'uid']; record types ['total']; groups {'id': '8', 'isConference': True, 'parent': {'id': '31'}}; coaches 0; franchise venue United Center; standingSummary 15th in Western Conference
+ NHL 129764: {'name': 'Utah Mammoth', 'abbreviation': 'UTAH', 'nickname': 'Mammoth', 'location': 'Utah', 'venue_name': '', 'venue_location': '', 'record_overall': '9-6', 'division': '', 'conference': '', 'next_game_opponent': 'Toronto Maple Leafs', 'next_game_home_away': '@', 'next_game_date': 'Tue, Nov 3'}
+    raw keys ['abbreviation', 'alternateColor', 'color', 'displayName', 'franchise', 'groups', 'id', 'isActive', 'links', 'location', 'logos', 'name', 'nextEvent', 'nickname', 'record', 'shortDisplayName', 'slug', 'standingSummary', 'uid']; record types ['total']; groups {'id': '8', 'isConference': True, 'parent': {'id': '31'}}; coaches 0; franchise venue Delta Center; standingSummary 4th in Western Conference
+ NCAAH 275: {'name': 'Wisconsin Badgers', 'abbreviation': 'WISC', 'nickname': 'Badgers', 'location': 'Wisconsin', 'venue_name': '', 'venue_location': '', 'division': '', 'conference': '', 'next_game_opponent': 'Minnesota Golden Gophers', 'next_game_home_away': '@', 'next_game_date': 'Thu, Nov 5'}
+    raw keys ['abbreviation', 'displayName', 'groups', 'id', 'isActive', 'links', 'location', 'logos', 'name', 'nextEvent', 'nickname', 'shortDisplayName', 'slug', 'uid']; record types []; groups {'id': '62', 'isConference': True}; coaches 0; franchise venue None; standingSummary None
+ NCAAH 284: {'name': 'Stonehill', 'abbreviation': 'STONEHILL', 'nickname': 'Stonehill', 'location': 'Stonehill', 'venue_name': '', 'venue_location': '', 'division': '', 'conference': '', 'next_game_opponent': 'Alaska Bulldogs', 'next_game_home_away': 'vs', 'next_game_date': 'Fri, Nov 6'}
+    raw keys ['abbreviation', 'displayName', 'groups', 'id', 'isActive', 'links', 'location', 'logos', 'name', 'nextEvent', 'nickname', 'shortDisplayName', 'slug', 'uid']; record types []; groups {'id': '59', 'isConference': True}; coaches 0; franchise venue None; standingSummary None
+ NCAAWH 275: {'name': 'Wisconsin Badgers', 'abbreviation': 'WIS', 'nickname': 'Badgers', 'location': 'Wisconsin', 'venue_name': '', 'venue_location': '', 'record_overall': '8-2', 'division': '', 'conference': '', 'next_game_opponent': 'St. Thomas-Minnesota Tommies', 'next_game_home_away': 'vs', 'next_game_date': 'Fri, Nov 13'}
+    raw keys ['abbreviation', 'displayName', 'id', 'isActive', 'location', 'logos', 'name', 'nextEvent', 'nickname', 'record', 'shortDisplayName', 'slug', 'standingSummary', 'uid']; record types ['total']; groups None; coaches 0; franchise venue None; standingSummary 1st
+ NCAAWH 43: {'name': 'Yale Bulldogs', 'abbreviation': 'YALE', 'nickname': 'Bulldogs', 'location': 'Yale', 'venue_name': '', 'venue_location': '', 'record_overall': '2-1-1', 'division': '', 'conference': '', 'next_game_opponent': 'Dartmouth Big Green', 'next_game_home_away': 'vs', 'next_game_date': 'Fri, Nov 6'}
+    raw keys ['abbreviation', 'displayName', 'id', 'isActive', 'location', 'logos', 'name', 'nextEvent', 'nickname', 'record', 'shortDisplayName', 'slug', 'standingSummary', 'uid']; record types ['total']; groups None; coaches 0; franchise venue None; standingSummary 1st
+
+=== TRANSACTIONS (real get_transactions; menu scores.py:1675 omits WNBA)
+ NFL: status 200 raw 50 app 50 more True first {'date': '2026-11-02', 'team': 'ATL', 'description': 'Waived OLB Jared Ivey. Released OLB Drake Jackson from the practice squad.', 'type': '', 'player': '', 'position': ''}
+    raw first: {'date': '2026-11-02T08:00Z', 'description': 'Waived OLB Jared Ivey. Released OLB Drake Jackson from the practice squad.'} team ATL
+    team filter 9: 25 rows, teams [('', 25)]
+    get_team_transactions: 25 rows, first {'date': '2026-10-26', 'description': 'Signed G Mekhi Becton Sr. from the practice squad to the active roster. Placed C/G Jacob Monk on injured reserve.', 'type': '', 'player': '', 'position': ''}
+ NCAAF: status 200 raw 0 app 0 more False first None
+ NBA: status 200 raw 50 app 50 more True first {'date': '2026-11-01', 'team': 'CHA', 'description': 'Exercised the third-year team options on Fs Kon Knueppel and Liam McNeeley.', 'type': '', 'player': '', 'position': ''}
+    raw first: {'date': '2026-11-01T07:00Z', 'description': 'Exercised the third-year team options on Fs Kon Knueppel and Liam McNeeley.'} team CHA
+    team filter 15: 13 rows, teams [('', 13)]
+    get_team_transactions: 13 rows, first {'date': '2026-10-19', 'description': 'Waived G Kevin Porter Jr.', 'type': '', 'player': '', 'position': ''}
+ WNBA: status 200 raw 50 app 50 more True first {'date': '2026-10-23', 'team': 'IND', 'description': 'Announced Kelly Krauskopf stepped down as president. Fired general manager Amber Cox', 'type': '', 'player': '', 'position': ''}
+    raw first: {'date': '2026-10-23T07:00Z', 'description': 'Announced Kelly Krauskopf stepped down as president. Fired general manager Amber Cox'} team IND
+    team filter 8: 12 rows, teams [('', 12)]
+    get_team_transactions: 12 rows, first {'date': '2026-08-11', 'description': 'Signed G Elena Buenavida to a player development contract.', 'type': '', 'player': '', 'position': ''}
+ NCAAM: status 200 raw 0 app 0 more False first None
+ NCAAWB: status 200 raw 0 app 0 more False first None
+ NHL: status 200 raw 50 app 50 more True first {'date': '2026-11-02', 'team': 'FLA', 'description': 'Activated G Jacob Markstrom from injured reserve.', 'type': '', 'player': '', 'position': ''}
+    raw first: {'date': '2026-11-02T08:00Z', 'description': 'Activated G Jacob Markstrom from injured reserve.'} team FLA
+    team filter 4: 25 rows, teams [('', 25)]
+    get_team_transactions: 25 rows, first {'date': '2026-10-18', 'description': 'Assigned C Dominic Toninato to Rockford (AHL).', 'type': '', 'player': '', 'position': ''}
+ NCAAH: status 200 raw 0 app 0 more False first None
+ NCAAWH: status 200 raw 0 app 0 more False first None
+ NameError check: espn_api has module-level datetime? False
+
+=== VENUES (real VenueService with the key the UI passes: league.lower(), scores.py:1943)
+ NFL key 'nfl': mapped True; venues 38; with home teams 0; sample ['Lumen Field', 'Melbourne Cricket Ground', 'Paycor Stadium']
+    details: {'basic_info': {'name': 'Lumen Field', 'city': 'Seattle', 'state': 'WA', 'zip_code': None, 'league': 'nfl'}, 'characteristics': {'indoor': False, 'grass': None, 'capacity': None}, 'media': {'images': []}, 'home_teams': [], 'interesting_facts': ['Open-air stadium exposed to weather', 'Located in Seattle, WA']}
+ NCAAF key 'ncaaf': mapped True; venues 160; with home teams 0; sample ['Rice-Eccles Stadium', 'Memorial Stadium', 'SHI Stadium']
+ NBA key 'nba': mapped True; venues 40; with home teams 0; sample ['Videotron Centre', 'CU Events Center', 'Stan Sheriff Center']
+    details: {'basic_info': {'name': 'Videotron Centre', 'city': 'Quebec City', 'state': 'PQ', 'zip_code': None, 'league': 'nba'}, 'characteristics': {'indoor': True, 'grass': None, 'capacity': None}, 'media': {'images': []}, 'home_teams': [], 'interesting_facts': ['Indoor stadium with climate control', 'Located in Quebec City, PQ']}
+ WNBA key 'wnba': mapped False; venues 0; with home teams 0; sample []
+ NCAAM key 'ncaam': mapped False; venues 0; with home teams 0; sample []
+ NCAAWB key 'ncaawb': mapped False; venues 0; with home teams 0; sample []
+ NHL key 'nhl': mapped True; venues 37; with home teams 0; sample ['Scotiabank Arena', 'Bell Centre', 'Enterprise Center']
+ NCAAH key 'ncaah': mapped False; venues 0; with home teams 0; sample []
+ NCAAWH key 'ncaawh': mapped False; venues 0; with home teams 0; sample []
+ demo fallback: scoreboard made to fail (a timeout at the 3 s used at venue_service.py:48)
+   nfl: [('Lambeau Field', ['Green Bay Packers']), ('AT&T Stadium', ['Dallas Cowboys'])]
+     get_venue_details raises AttributeError: 'str' object has no attribute 'get' (scores.py:12517)
+   nba: [('Staples Center', ['Los Angeles Lakers'])]
+     get_venue_details raises AttributeError: 'str' object has no attribute 'get' (scores.py:12517)
+
+=== NFL DRAFT (real get_draft, get_draft_round)
+ get_draft(2026): {'year': 2026, 'num_rounds': 7, 'status': 'post', 'rounds': [{'number': 1, 'display_name': '1st Round', 'short_name': '1st'}, {'number': 2, 'display_name': '2nd Round', 'short_name': '2nd'}]}
+ round 1: {'picks': 32} [{'overall': 1, 'pick': 1, 'round': 1, 'traded': False, 'trade_note': '', 'team_abbrev': 'LV', 'team_name': 'Las Vegas Raiders', 'player_name': 'Fernando Mendoza', 'position': 'QB', 'status_name': 'SELECTION_MADE', 'college': 'Indiana'}, {'overall': 2, 'pick': 2, 'round': 1, 'traded': False, 'trade_note': '', 'team_abbrev': 'NYJ', 'team_name': 'New York Jets', 'player_name': 'David Bailey', 'position': 'EDGE', 'status_name': 'SELECTION_MADE', 'college': 'Texas Tech'}]
+ get_draft(2027): {'year': 2027, 'num_rounds': 7, 'status': 'pre'}
+
+=== BOWLS (real get_scores seasontype=3; categories modelled scores.py:12728-12746)
+ current season (as UI calls it): 48 games; modelled categories {'Other Bowls': 48}; competition type ids [(("'42'", None, 'Bowl Game'), 37), (("'1'", None, 'STD'), 4), (("'40'", None, 'Major Bowl'), 4), (("'35'", None, 'Semifinal Bowl'), 2), (("'33'", None, 'Championship'), 1)]
+    notes: ['Cricket Celebration Bowl', 'IS4S Salute to Veterans Bowl', 'Frisco Football Classic', 'TransPerfect San Juan Bowl', 'Boca Raton Bowl', 'Union Home Mortgage Gasparilla Bowl', 'College Football Playoff First Round Game', 'College Football Playoff First Round Game']
+ 2025 season by dates=: 46 games; modelled categories {'Other Bowls': 46}; competition type ids [(("'1'", None, 'STD'), 42), (("'42'", None, 'Bowl Game'), 3), (("'33'", None, 'Championship'), 1)]
+    notes: ['Bucked Up LA Bowl', 'IS4S Salute to Veterans Bowl', 'StaffDNA Cure Bowl', '68 Ventures Bowl', 'Xbox Bowl', 'Myrtle Beach Bowl', 'Union Home Mortgage Gasparilla Bowl', 'College Football Playoff First Round Game']
+    title game type: {'id': '33', 'abbreviation': 'Championship'} College Football Playoff National Championship Presented by AT&T
+
+=== FANTASY CHEATSHEET (real get_fantasy_cheatsheet)
+ season 2026: {'players': 1036, 'pos RB': 239, 'pos WR': 376, 'injury': 188, 'no projection': 650, 'rookie': 94, 'pos TE': 200, 'pos QB': 131, 'adp None': 795, 'team FA': 328, 'pos D/ST': 32, 'pos K': 58}
+ top 5: [(1, 'Jahmyr Gibbs', 'RB', 'DET', 1.75, ''), (2, 'Bijan Robinson', 'RB', 'ATL', 4.02, ''), (3, "Ja'Marr Chase", 'WR', 'CIN', 5.94, ''), (4, 'Puka Nacua', 'WR', 'LAR', 6.24, ''), (5, 'Jonathan Taylor', 'RB', 'IND', 9.94, '')]
+ dup names: ['Josh Johnson']
+
+=== STATISTICS on network failure (real get_player_statistics, all requests failing)
+ NFL: 10 rows, e.g. [('Josh Allen', 'BUF', '4306', 'Passing Yards'), ('Patrick Mahomes', 'KC', '38', 'Passing TDs')], contains Tom Brady True
+ NCAAF: 3 rows, e.g. [('Sample Player 1', 'TEAM1', '100', 'Sample Stat'), ('Sample Player 2', 'TEAM2', '90', 'Sample Stat')], contains Tom Brady False
+ NBA: 10 rows, e.g. [('Luka Doncic', 'DAL', '32.4', 'Points Per Game'), ('Giannis Antetokounmpo', 'MIL', '55.3', 'Field Goal %')], contains Tom Brady False
+ WNBA: 3 rows, e.g. [('Sample Player 1', 'TEAM1', '100', 'Sample Stat'), ('Sample Player 2', 'TEAM2', '90', 'Sample Stat')], contains Tom Brady False
+ NCAAM: 3 rows, e.g. [('Sample Player 1', 'TEAM1', '100', 'Sample Stat'), ('Sample Player 2', 'TEAM2', '90', 'Sample Stat')], contains Tom Brady False
+ NCAAWB: 3 rows, e.g. [('Sample Player 1', 'TEAM1', '100', 'Sample Stat'), ('Sample Player 2', 'TEAM2', '90', 'Sample Stat')], contains Tom Brady False
+ NHL: 10 rows, e.g. [('Connor McDavid', 'EDM', '150', 'Points'), ('David Pastrnak', 'BOS', '61', 'Goals')], contains Tom Brady False
+ NCAAH: 3 rows, e.g. [('Sample Player 1', 'TEAM1', '100', 'Sample Stat'), ('Sample Player 2', 'TEAM2', '90', 'Sample Stat')], contains Tom Brady False
+ NCAAWH: 3 rows, e.g. [('Sample Player 1', 'TEAM1', '100', 'Sample Stat'), ('Sample Player 2', 'TEAM2', '90', 'Sample Stat')], contains Tom Brady False
+
+=== Team stat ranks broken by comma values (modelled scores.py:11627-11641)
+ NFL Net Passing Yards (Passing): 32/32 non-numeric; list top 3 [('Green Bay Packers', '2,168'), ('Buffalo Bills', '1,713'), ('Cincinnati Bengals', '2,019')]
+ NFL Passing Yards (Passing): 32/32 non-numeric; list top 3 [('Green Bay Packers', '2,246'), ('Buffalo Bills', '1,793'), ('Cincinnati Bengals', '2,115')]
+ NFL Comp-Att (Passing): 32/32 non-numeric; list top 3 [('Green Bay Packers', '192-312'), ('Buffalo Bills', '135-205'), ('Cincinnati Bengals', '195-267')]
+ NFL Sacks-Yards Lost (Passing): 32/32 non-numeric; list top 3 [('Green Bay Packers', '14-78'), ('Buffalo Bills', '13-80'), ('Cincinnati Bengals', '13-96')]
+ NFL Rushing Yards (Rushing): 6/32 non-numeric; list top 3 [('New England Patriots', '985'), ('Pittsburgh Steelers', '943'), ('Kansas City Chiefs', '939')]
+ NFL Total Yards (Rushing): 32/32 non-numeric; list top 3 [('Green Bay Packers', '2,731'), ('Buffalo Bills', '2,832'), ('Cincinnati Bengals', '2,677')]
+ NCAAF Net Passing Yards (Passing): 34/34 non-numeric; list top 3 [('Arizona Wildcats', '2,593'), ('Boise State Broncos', '1,812'), ('Auburn Tigers', '1,726')]
+ NCAAF Passing Yards (Passing): 34/34 non-numeric; list top 3 [('Arizona Wildcats', '2,593'), ('Boise State Broncos', '1,812'), ('Auburn Tigers', '1,726')]
+ NCAAF Comp-Att (Passing): 34/34 non-numeric; list top 3 [('Arizona Wildcats', '210-285'), ('Boise State Broncos', '156-236'), ('Auburn Tigers', '172-265')]
+ NCAAF Sacks-Yards Lost (Passing): 34/34 non-numeric; list top 3 [('Arizona Wildcats', '22-129'), ('Boise State Broncos', '6-35'), ('Auburn Tigers', '34-169')]
+ NCAAF Rushing Yards (Rushing): 26/34 non-numeric; list top 3 [('Stanford Cardinal', '979'), ('Sacramento State Hornets', '968'), ('Georgia Tech Yellow Jackets', '959')]
+ NCAAF Total Yards (Rushing): 34/34 non-numeric; list top 3 [('Arizona Wildcats', '3,645'), ('Boise State Broncos', '3,594'), ('Auburn Tigers', '2,947')]
+ NHL Time On Ice (General): 32/32 non-numeric; list top 3 [('Carolina Hurricanes', '5708:06'), ('Florida Panthers', '4988:09'), ('Buffalo Sabres', '5019:05')]
+ NHL Time On Ice Per Game (General): 32/32 non-numeric; list top 3 [('Carolina Hurricanes', '356:45'), ('Florida Panthers', '356:17'), ('Buffalo Sabres', '358:30')]
+ NHL Production (General): 32/32 non-numeric; list top 3 [('Carolina Hurricanes', '0:00'), ('Florida Panthers', '0:00'), ('Buffalo Sabres', '0:00')]
+requests {'net': 181, 'cached': 217}

@@ -1,0 +1,79 @@
+recorded d6-stats (195.2 s)
+Focus: ListItem 'Team Statistics' id='QApplication.StatisticsChoiceDialog.QListWidget' value='' selected FOCUSED  [in window 'NCAAF Statistics']
+  [0:02.8] NCAAF - Sports Scores window
+  [0:02.8] Scores List list List of games and scores for the selected date or week
+  [0:02.8] Loading scores...
+  [0:03.8] In Progress, 48 games
+  [0:03.8] Week 10
+  [0:32.9] --- Bowls & Playoffs ---
+  [0:35.0] --- News Headlines ---
+  [0:35.1] --- Standings ---
+  [0:35.2] --- Polls ---
+  [0:35.6] --- Statistics ---
+  [0:39.1] --- Statistics --- list item focused selected
+  [0:42.4] NCAAF Statistics dialog NCAAF Statistics Selection
+  [0:42.4] Statistics Type List list Choose between team or player statistics. Press Enter to select.
+  [0:42.4] Team Statistics
+  [0:48.3] Team Statistics list item focused selected
+  [0:51.5] Player Statistics
+  [0:54.6] Scores List list List of games and scores for the selected date or week
+  [0:54.6] --- Statistics ---
+  [0:54.6] NCAAF Player Statistics dialog
+  [0:54.6] Player statistics list
+  [0:54.6] Loading NCAAF player statistics...
+  [0:55.1] Player Statistics list Press Enter on one to open its rankings. Escape comes back to this list.
+  [0:55.1] Passing Yards
+  [1:19.6] NCAAF, Statistics - Sports Scores
+  [1:22.8] Passing Yards list item focused selected
+  [1:25.9] Kickoff Yards
+  [1:28.5] Rushing Yards
+  [1:31.0] Receiving Yards
+  [1:33.6] Sacks
+  [1:36.1] Interceptions
+  [1:38.6] Interception Yards
+  [1:41.2] Passing Yards
+  [1:43.8] 2026 Regular Season Leaders: Passing Yards grouping Rankings for the selected statistic. Multiple view modes available: Alt+V to cycle views, Alt+T for table, Alt+Q for quick list, Alt+F for full list.
+  [1:43.8] 2026 Regular Season Leaders: Passing Yards table Rankings for the selected statistic. Use up/down/left/right arrow keys to navigate cells, Tab to enter or exit table. Alt+V to cycle views, Alt+Q for quick list, Alt+F for full list.
+  [1:43.8] Braden Atkinson, Rank, 1 data item 1 row 1 Rank column 1
+  [1:47.8] Player, Braden Atkinson data item Player column 2
+  [1:50.3] Braden Atkinson, Team, ORST data item Team column 3
+  [1:52.8] Braden Atkinson, Value, 2977 data item Value column 4
+  [1:55.4] Noah Fifita, Value, 2794 data item 2 row 2
+  [1:57.9] Kevin Jennings, Value, 2764 data item 3 row 3
+  [2:00.7] NCAAF Statistics Definitions dialog NCAAF Statistics Definitions Browse definitions for statistical categories:
+  [2:00.7] Statistics Definitions list
+  [2:00.7] Passing Yards: Total yards gained through forward passes. not selected
+  [2:04.6] Passing Yards: Total yards gained through forward passes. list item focused
+  [2:07.8] 2026 Regular Season Leaders: Passing Yards grouping Rankings for the selected statistic. Multiple view modes available: Alt+V to cycle views, Alt+T for table, Alt+Q for quick list, Alt+F for full list.
+  [2:07.8] 2026 Regular Season Leaders: Passing Yards table Rankings for the selected statistic. Use up/down/left/right arrow keys to navigate cells, Tab to enter or exit table. Alt+V to cycle views, Alt+Q for quick list, Alt+F for full list.
+  [2:07.9] Kevin Jennings, Value, 2764 data item
+  [2:10.8] Player Statistics list Press Enter on one to open its rankings. Escape comes back to this list.
+  [2:10.8] Passing Yards
+  [2:13.9] Scores List list List of games and scores for the selected date or week
+  [2:13.9] --- Statistics ---
+  [2:14.0] NCAAF Statistics dialog NCAAF Statistics Selection
+  [2:14.0] Statistics Type List list Choose between team or player statistics. Press Enter to select.
+  [2:14.0] Team Statistics
+  [2:17.9] Team Statistics list item focused selected
+  [2:23.7] Scores List list List of games and scores for the selected date or week
+  [2:23.7] --- Statistics ---
+  [2:23.8] NCAAF Team Statistics dialog
+  [2:23.8] Team statistics list
+  [2:23.8] Loading NCAAF team statistics...
+  [2:24.0] Team Statistics list Press Enter on one to open its rankings. Escape comes back to this list.
+  [2:24.0] Games Played (General)
+  [2:48.7] Games Played (General) list item focused selected
+  [2:51.8] Fumbles Recovered (General)
+  [2:54.5] 2026 Regular Season Rankings: Fumbles Recovered (General) grouping Rankings for the selected statistic. Multiple view modes available: Alt+V to cycle views, Alt+T for table, Alt+Q for quick list, Alt+F for full list.
+  [2:54.5] 2026 Regular Season Rankings: Fumbles Recovered (General) table Rankings for the selected statistic. Use up/down/left/right arrow keys to navigate cells, Tab to enter or exit table. Alt+V to cycle views, Alt+Q for quick list, Alt+F for full list.
+  [2:54.5] Georgia Bulldogs, Rank, 1 data item 1 row 1 Rank column 1
+  [2:58.4] Team, Georgia Bulldogs data item Team column 2
+  [3:01.0] Georgia Bulldogs, Value, 11 data item Value column 3
+  [3:03.5] Louisiana Ragin' Cajuns, Value, 11 data item 2 row 2
+  [3:06.0] Team Statistics list Press Enter on one to open its rankings. Escape comes back to this list.
+  [3:06.1] Fumbles Recovered (General)
+  [3:09.1] Scores List list List of games and scores for the selected date or week
+  [3:09.1] --- Statistics ---
+  [3:09.2] NCAAF Statistics dialog NCAAF Statistics Selection
+  [3:09.2] Statistics Type List list Choose between team or player statistics. Press Enter to select.
+  [3:09.2] Team Statistics

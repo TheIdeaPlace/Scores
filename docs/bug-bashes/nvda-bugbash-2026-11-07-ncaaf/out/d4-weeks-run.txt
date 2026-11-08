@@ -1,0 +1,47 @@
+recorded d4-weeks (356.7 s)
+Focus: ListItem 'Upcoming, 11 games' id='QApplication.SportsScoresApp.QStackedWidget.LeagueView.QListWidget' value='' selected FOCUSED  [in window 'NCAAF, Week: CFP - Sports Scores']
+  [0:03.2] NCAAF - Sports Scores window
+  [0:03.3] Scores List list List of games and scores for the selected date or week
+  [0:03.3] Loading scores...
+  [0:04.2] In Progress, 54 games
+  [0:04.2] Week 10
+  [0:33.4] Loading scores...
+  [0:34.0] Completed, 115 games
+  [0:34.0] Week 9
+  [0:53.4] NCAAF, Week 9 - Sports Scores
+  [0:56.7] Loading scores...
+  [0:57.5] Completed, 111 games
+  [0:57.5] Week 8
+  [1:16.6] NCAAF, Week 8 - Sports Scores
+  [1:19.9] Loading scores...
+  [1:20.4] Completed, 115 games
+  [1:20.5] Week 9
+  [1:40.0] Loading scores...
+  [1:40.9] In Progress, 54 games
+  [1:40.9] Week 10
+  [2:00.1] Loading scores...
+  [2:00.7] Upcoming, 130 games
+  [2:00.7] Week 11
+  [2:20.0] NCAAF, Week 11 - Sports Scores
+  [2:23.4] Loading scores...
+  [2:24.0] Upcoming, 130 games
+  [2:24.0] Week 12
+  [2:43.4] Loading scores...
+  [2:44.0] Upcoming, 71 games
+  [2:44.0] Week 13
+  [3:03.5] Loading scores...
+  [3:03.9] Upcoming, 10 games
+  [3:03.9] Week 14
+  [3:23.6] Loading scores...
+  [3:24.0] Upcoming, 1 game
+  [3:24.0] Week 15
+  [3:43.6] Loading scores...
+  [3:44.2] Upcoming, 48 games
+  [3:44.2] Week: Bowls
+  [4:03.6] NCAAF, Week: Bowls - Sports Scores
+  [4:06.9] Loading scores...
+  [4:07.4] Upcoming, 11 games
+  [4:07.4] Week: CFP
+  [4:17.7] New notification from Settings, Activation needed, Windows is not activated on this device. Please click here to go to the Activation page.. 1 of 1 window
+  [5:47.2] NCAAF, Week: CFP - Sports Scores
+  [5:50.4] Upcoming, 11 games list item focused selected

@@ -1,0 +1,75 @@
+
+== NCAAM: most common coordinates [((25, 0), 10475), ((25, 1), 169), ((27, 3), 69), ((26, 2), 55), ((23, 2), 52), ((27, 1), 51), ((27, 2), 47), ((26, 3), 46)]; {'located': 16609, 'non_spatial_located': 7092}
+  non-spatial plays and their coords: ['Substitution (25, 0): 4782', 'MadeFreeThrow (25, 0): 1395', 'OfficialTVTimeOut (25, 0): 290', 'Dead Ball Rebound (25, 0): 214', 'ShortTimeOut (25, 0): 163', 'Jumpball (25, 0): 99', 'End Period (25, 0): 83', 'End Game (25, 0): 33', 'RegularTimeOut (25, 0): 30', 'Offensive Rebound (25, 0): 3']
+   Substitution [('at the rim', 4782)]
+   OfficialTVTimeOut [('at the rim', 290)]
+   ShortTimeOut [('at the rim', 163)]
+   PersonalFoul [('deep', 1017), ('short mid-range', 52), ('in the paint', 44), ('at the rim', 36), ('from three', 30)]
+   MadeFreeThrow [('at the rim', 1395)]
+   Dead Ball Rebound [('at the rim', 214)]
+   types: ['Block Shot', "Coach's Challenge (Overturned)", "Coach's Challenge (Stands)", 'Dead Ball Rebound', 'Defensive Rebound', 'DunkShot', 'End Game', 'End Period', 'JumpShot', 'Jumpball', 'LayUpShot', 'Lost Ball Turnover', 'MadeFreeThrow', 'Offensive Rebound', 'OfficialTVTimeOut', 'PersonalFoul', 'RegularTimeOut', 'ShortTimeOut', 'Steal', 'Substitution', 'Technical Foul', 'TipShot']
+     Jumpball {'x': 25, 'y': 0} | Start game -> at the rim
+     Jumpball {'x': 25, 'y': 0} | Jump Ball won by UIC -> at the rim
+     Jumpball {'x': 25, 'y': 0} | Jump Ball lost by St. Francis (IL) -> at the rim
+     PersonalFoul {'x': 43, 'y': 67} | Foul on Bryce Tillery. -> deep, 66 feet out
+     LayUpShot {'x': 25, 'y': 1} | Mekhi Lowery makes driving layup (Jayce Nathaniel assists) -> at the rim
+     JumpShot {'x': 9, 'y': 19} | Nick Niego misses 25-foot three point jumper -> from three, left side
+     Defensive Rebound {'x': 25, 'y': 0} | Jayce Nathaniel Defensive Rebound. -> at the rim
+     PersonalFoul {'x': 28, 'y': 81} | Foul on Justen Morgan. -> deep, 78 feet out
+     MadeFreeThrow {'x': 25, 'y': 0} | Rashund Washington Jr. makes free throw 1 of 2 -> at the rim
+     MadeFreeThrow {'x': 25, 'y': 0} | Rashund Washington Jr. misses free throw 2 of 2 -> at the rim
+     Offensive Rebound {'x': 25, 'y': 0} | Mekhi Lowery Offensive Rebound. -> at the rim
+     PersonalFoul {'x': 29, 'y': 83} | Foul on Justen Morgan. -> deep, 80 feet out
+     MadeFreeThrow {'x': 25, 'y': 0} | Rashund Washington Jr. makes free throw 1 of 2 -> at the rim
+     Substitution {'x': 25, 'y': 0} | Justen Morgan subbing out for St. Francis (IL) -> at the rim
+
+== NCAAWB: most common coordinates [((25, 0), 10328), ((25, 1), 108), ((27, 3), 60), ((27, 2), 51), ((22, 3), 49), ((28, 3), 49), ((28, 2), 45), ((23, 3), 41)]; {'located': 16573, 'non_spatial_located': 6659}
+  non-spatial plays and their coords: ['Substitution (25, 0): 4677', 'MadeFreeThrow (25, 0): 1174', 'Dead Ball Rebound (25, 0): 223', 'ShortTimeOut (25, 0): 153', 'OfficialTVTimeOut (25, 0): 141', 'End Period (25, 0): 140', 'Jumpball (25, 0): 96', 'End Game (25, 0): 32', 'RegularTimeOut (25, 0): 23']
+   Substitution [('at the rim', 4677)]
+   OfficialTVTimeOut [('at the rim', 141)]
+   ShortTimeOut [('at the rim', 153)]
+   PersonalFoul [('deep', 927), ('short mid-range', 69), ('in the paint', 60), ('at the rim', 55), ('mid-range', 22)]
+   MadeFreeThrow [('at the rim', 1174)]
+   Dead Ball Rebound [('at the rim', 223)]
+   types: ['Block Shot', "Coach's Challenge (Overturned)", "Coach's Challenge (Stands)", 'Dead Ball Rebound', 'Defensive Rebound', 'End Game', 'End Period', 'JumpShot', 'Jumpball', 'LayUpShot', 'Lost Ball Turnover', 'MadeFreeThrow', 'Offensive Rebound', 'OfficialTVTimeOut', 'PersonalFoul', 'RegularTimeOut', 'ShortTimeOut', 'Steal', 'Substitution', 'Technical Foul', 'TipShot']
+
+== NBA: most common coordinates [((25, 0), 283), ((25, 1), 165), ((26, 1), 132), ((24, 1), 131), ((26, 2), 118), ((25, 2), 110), ((27, 2), 95), ((24, 2), 93)]; {'located': 11480}
+  non-spatial plays and their coords: []
+   types: ['3-Second Turnover', '5-Second Turnover', '8-Second Turnover', 'Alley Oop Dunk Shot', 'Alley Oop Layup Shot', 'Away from Play Foul', 'Back Court Turnover', 'Bad Pass\nTurnover', 'Cutting Dunk Shot', 'Cutting Finger Roll Layup Shot', 'Cutting Layup Shot', 'Defensive 3-Seconds Technical', 'Defensive Goaltending', 'Defensive Rebound', 'Disc Dribble Turnover', 'Double Dribble Turnover', 'Double Personal Foul', 'Driving Dunk Shot', 'Driving Finger Roll Layup', 'Driving Floating Bank Jump Shot', 'Driving Floating Jump Shot', 'Driving Hook Shot', 'Driving Jump Shot Bank', 'Driving Layup Shot', 'Dunk Shot', 'Fade Away Bank Jump Shot', 'Fade Away Jump Shot', 'Finger Roll Layup', 'Flagrant Foul Type 1', 'Flagrant Foul Type 2', 'Floating Jump Shot', 'Flopping Technical', 'Heave Jump Shot', 'Hook Driving Bank', 'Hook Shot', 'Hook Shot Bank', 'Hook Turnaround Bank', 'Inbound Turnover', 'Jump Shot', 'Jump Shot Bank']
+
+== WNBA: most common coordinates [((26, 2), 106), ((27, 2), 99), ((24, 2), 97), ((25, 0), 92), ((28, 3), 86), ((25, 1), 84), ((27, 3), 80), ((23, 3), 79)]; {'located': 7857}
+  non-spatial plays and their coords: []
+   types: ['3-Second Turnover', 'Alley Oop Layup Shot', 'Away from Play Foul', 'Back Court Turnover', 'Bad Pass\nTurnover', 'Cutting Finger Roll Layup Shot', 'Cutting Layup Shot', 'Defensive 3-Seconds Technical', 'Defensive Rebound', 'Disc Dribble Turnover', 'Double Dribble Turnover', 'Driving Finger Roll Layup', 'Driving Floating Bank Jump Shot', 'Driving Floating Jump Shot', 'Driving Hook Shot', 'Driving Jump Shot Bank', 'Driving Layup Shot', 'Fade Away Bank Jump Shot', 'Fade Away Jump Shot', 'Finger Roll Layup', 'Flagrant Foul Type 1', 'Floating Jump Shot', 'Hook Driving Bank', 'Hook Shot', 'Hook Shot Bank', 'Hook Turnaround Bank', 'Jump Shot', 'Jump Shot Bank', 'Layup Driving Reverse', 'Layup Running Reverse', 'Layup Shot', 'Layup Shot Putback', 'Loose Ball Foul', 'Lost Ball Turnover', 'Offensive Charge', 'Offensive Foul', 'Offensive Foul Turnover', 'Offensive Goaltending Turnover', 'Offensive Rebound', 'Opposite Basket Turnover']
+
+== hockey web pages (status, marker)
+NHL 401892628 https://www.espn.com/nhl/playbyplay/_/gameId/401892628 status 202 len 0 marker1 False marker2 False title 
+   summary plays 306 scoringPlays 0 keys ['againstTheSpread', 'article', 'boxscore', 'broadcasts', 'format', 'gameInfo', 'header', 'injuries', 'leaders', 'meta', 'news', 'odds', 'onIce', 'pickcenter', 'plays', 'seasonseries', 'standings', 'videos', 'wallclockAvailable']
+NCAAH 401923148 https://www.espn.com/mens-college-hockey/playbyplay/_/gameId/401923148 status 202 len 0 marker1 False marker2 False title 
+   summary plays 0 scoringPlays 0 keys ['boxscore', 'broadcasts', 'format', 'gameInfo', 'header', 'meta', 'news', 'plays', 'videos', 'wallclockAvailable']
+NCAAWH 401903813 https://www.espn.com/womens-college-hockey/playbyplay/_/gameId/401903813 status 202 len 0 marker1 False marker2 False title 
+   summary plays 0 scoringPlays 0 keys ['boxscore', 'broadcasts', 'format', 'gameInfo', 'header', 'meta', 'news', 'plays', 'videos', 'wallclockAvailable']
+
+== college hockey finals reading 0-0
+NCAAH finals in index 183 reading 0-0 3 [('401822028', 'Canisius Golden Griffins', 'Mercyhurst Lakers', 'Final', '2026-01-24'), ('401821471', 'Union Dutchmen', 'Rensselaer Engineers', 'Final', '2026-01-24'), ('401821564', 'Dartmouth Big Green', 'Colgate Raiders', 'Final', '2026-01-25')]
+   summary 401822028 [('MERC', '0', False, []), ('CAN', '0', False, [])] keys ['boxscore', 'plays']
+   summary 401821471 [('RPI', '0', False, []), ('UNNY', '0', False, [])] keys ['boxscore', 'plays']
+   summary 401821564 [('COLG', '0', False, []), ('DART', '0', False, [])] keys ['boxscore', 'plays']
+NCAAWH finals in index 148 reading 0-0 7 [('401913611', 'UConn Huskies', 'Holy Cross Crusaders', 'Final/OT', '2026-10-29'), ('401814278', 'St. Anselm Hawks', 'Sacred Heart Pioneers', 'Final', '2026-01-24'), ('401814041', 'Union (NY) Garnet Chargers', 'Rensselaer Engineers', 'Final', '2026-01-24'), ('401814358', 'Cornell Big Red', 'Quinnipiac Bobcats', 'Final', '2026-01-24'), ('401814452', 'Clarkson Golden Knights', 'Harvard Crimson', 'Final', '2026-01-24'), ('401821058', 'St. Lawrence Saints', 'Dartmouth Big Green', 'Final', '2026-01-24')]
+   summary 401913611 [('HC', '0', False, ['0', '0', '0', '0']), ('CONN', '0', False, ['0', '0', '0', '0'])] keys ['boxscore', 'plays']
+   summary 401814278 [('SHU', '0', False, []), ('STA', '0', False, [])] keys ['boxscore', 'plays']
+   summary 401814041 [('RPI', '0', False, []), ('UNNY', '0', False, [])] keys ['boxscore', 'plays']
+
+== attendance
+NFL {'value': 26}
+NCAAF {'value': 33}
+NBA {'value': 33}
+WNBA {'value': 28}
+NCAAM {'zero': 5, 'value': 28}
+NCAAWB {'value': 23, 'zero': 10}
+NHL {'value': 33}
+NCAAH {'zero': 33}
+NCAAWH {'zero': 33}
+
+== box: rows with no active key
+401925979 Trinity College of Jacksonville Eagles names 13 athletes 13 short 13 noactivekey 13 e.g. {'starter': True, 'didNotPlay': True, 'ejected': False, 'stats': []}
+401925979 South Carolina State Lady Bulldogs names 13 athletes 23 short 23 noactivekey 23 e.g. {'starter': True, 'didNotPlay': True, 'ejected': False, 'stats': []}

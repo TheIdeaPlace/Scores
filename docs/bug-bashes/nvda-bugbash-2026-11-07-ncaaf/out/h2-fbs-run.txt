@@ -1,0 +1,40 @@
+recorded h2-fbs (111.7 s)
+0:37 Q4 | AUB ball' id='QApplication.SportsScoresApp.QStackedWidget.LeagueView.QListWidget' value='' selected FOCUSED  [in window 'NCAAF, Week 10 - Sports Scores']
+  [0:03.9] Sports Scores window
+  [0:03.9] League Selection List list List of available sports leagues and live scores
+  [0:03.9] Live Scores - All Sports
+  [0:19.0] Home Page Settings button Configure which sports appear on the home page and their order
+  [0:20.2] Home Page Settings - Sports Scores dialog Check sports to show on the home page. Select an item and use Up/Down to reorder. College football coverage:
+  [0:20.2] Sport List list List of sports. Check or uncheck to show or hide. Select and use Up or Down buttons to reorder.
+  [0:20.2] NFL not selected checked
+  [0:25.1] Move selected sport up button
+  [0:25.6] Move selected sport down button
+  [0:26.1] Reset to Default button
+  [0:26.7] College football coverage combo box All Division I (FBS and FCS) collapsed All Division I shows FBS and FCS together, around 200 games a week, and is the only setting that shows opening weekend in full. FBS only shows about 100 games a week. Standings and Teams list the same teams. Down
+  [0:28.7] FBS only
+  [0:31.8] Home Page Settings button Configure which sports appear on the home page and their order
+  [0:31.8] League Selection List list List of available sports leagues and live scores
+  [0:31.8] Live Scores - All Sports
+  [0:35.8] Live Scores - All Sports list item focused selected
+  [0:40.0] NFL
+  [0:40.1] NCAAF
+  [0:42.8] Scores List list List of games and scores for the selected date or week
+  [0:42.8] Loading scores...
+  [0:43.9] In Progress, 22 games
+  [0:43.9] Week 10
+  [1:12.9] NCAAF, Week 10 - Sports Scores
+  [1:16.1] --- Bowls & Playoffs ---
+  [1:17.1] --- News Headlines ---
+  [1:17.2] --- Standings ---
+  [1:17.4] --- Polls ---
+  [1:17.7] --- Statistics ---
+  [1:18.2] --- Standings ---
+  [1:21.1] NCAAF Standings dialog
+  [1:21.1] Conferences list Press Enter on one to open its standings. Escape comes back to this list.
+  [1:21.1] Southeastern Conference
+  [1:35.4] Southeastern Conference list item focused selected
+  [1:38.6] FBS Independents
+  [1:41.6] Scores List list List of games and scores for the selected date or week
+  [1:41.6] --- Standings ---
+  [1:44.6] In Progress, 22 games
+  [1:47.7] Arkansas Razorbacks 23 at Auburn Tigers 23 | Timeout Arkansas, clock 00:37 0:37 Q4 | AUB ball

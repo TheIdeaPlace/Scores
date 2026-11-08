@@ -1,0 +1,26 @@
+# Live Scores: monitor a live game and wait through real score changes
+w 0.5
+x
+w 22
+n t
+w 3
+q {DOWN}
+w 1
+k {DOWN}
+w 3
+n {UP}
+w 4
+# Monitor this game
+k %m
+w 5
+n {UP}
+w 4
+# Wait through refreshes and real score changes
+w 150
+w 150
+n {UP}
+w 4
+k %m
+w 5
+n {UP}
+w 4

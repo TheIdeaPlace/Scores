@@ -1,0 +1,131 @@
+NFL: {'app': 27, 'espn_full': 27, 'espn_default_page': 27, 'missing_ids': 0} days where app count != ESPN: []
+NCAAF: {'app': 212, 'espn_full': 212, 'espn_default_page': 100, 'missing_ids': 0} days where app count != ESPN: []
+NBA: {'app': 79, 'espn_full': 79, 'espn_default_page': 79, 'missing_ids': 0} days where app count != ESPN: []
+WNBA: {'app': 4, 'espn_full': 4, 'espn_default_page': 4, 'missing_ids': 0} days where app count != ESPN: []
+NCAAM: {'app': 184, 'espn_full': 184, 'espn_default_page': 20, 'missing_ids': 0} days where app count != ESPN: []
+NCAAWB: {'app': 165, 'espn_full': 165, 'espn_default_page': 17, 'missing_ids': 0} days where app count != ESPN: []
+NHL: {'app': 68, 'espn_full': 68, 'espn_default_page': 68, 'missing_ids': 0} days where app count != ESPN: []
+NCAAH: {'app': 74, 'espn_full': 74, 'espn_default_page': 74, 'missing_ids': 0} days where app count != ESPN: []
+NCAAWH: {'app': 61, 'espn_full': 61, 'espn_default_page': 61, 'missing_ids': 0} days where app count != ESPN: []
+
+== college hockey default page
+NCAAH [('20261024', 20, 20), ('20261025', 1, 1), ('20261026', 0, 0), ('20261027', 0, 0), ('20261028', 0, 0), ('20261029', 2, 2), ('20261030', 24, 24), ('20261031', 25, 25), ('20261101', 2, 2), ('20261102', 0, 0)]
+   20260117 default 26 limit=1000 26
+   20260124 default 28 limit=1000 28
+   20260131 default 25 limit=1000 25
+   20260207 default 24 limit=1000 24
+   20251101 default 26 limit=1000 26
+   20251108 default 26 limit=1000 26
+NCAAWH [('20261024', 16, 16), ('20261025', 0, 0), ('20261026', 1, 1), ('20261027', 0, 0), ('20261028', 0, 0), ('20261029', 3, 3), ('20261030', 22, 22), ('20261031', 19, 19), ('20261101', 0, 0), ('20261102', 0, 0)]
+   20260117 default 20 limit=1000 20
+   20260124 default 22 limit=1000 22
+   20260131 default 21 limit=1000 21
+   20260207 default 22 limit=1000 22
+   20251101 default 22 limit=1000 22
+   20251108 default 17 limit=1000 17
+
+== football week view
+ NFL week 8: app 14; statuses Counter({'STATUS_FINAL': 13, 'STATUS_SCHEDULED': 1})
+ NFL week 9: app 15; statuses Counter({'STATUS_SCHEDULED': 15})
+ NCAAF week 9: app 115; statuses Counter({'STATUS_FINAL': 115})
+ NCAAF week 10: app 124; statuses Counter({'STATUS_SCHEDULED': 124})
+
+== status inventory: league, status name, state, description, section, count, example text
+ NFL STATUS_FINAL state=post desc='Final' section=completed n=450: 'Steelers 16 at Saints 10 [Final]' start_time='Final' id=401873011 [window]
+ NFL STATUS_SCHEDULED state=pre desc='Scheduled' section=upcoming n=21: 'Bears (5-2) at Seahawks (4-3) (Mon 11/2 7:15PM)' start_time='11/2 - 7:15 PM CST' id=401873036 [window]
+ NCAAF STATUS_FINAL state=post desc='Final' section=completed n=826: 'Pittsburgh Panthers 23 at Miami Hurricanes 52 [Final]' start_time='Final' id=401858274 [window]
+ NCAAF STATUS_SCHEDULED state=pre desc='Scheduled' section=upcoming n=2480: 'Ohio Bobcats (6-2) at Akron Zips (1-7) (Tue 11/3 6:00PM)' start_time='11/3 - 6:00 PM CST' id=401866453 [snapshot:20261102T235723Z]
+ NBA STATUS_FINAL state=post desc='Final' section=completed n=1123: 'Heat 110 at Hornets 115 [Final]' start_time='Final' id=401909853 [window]
+ NBA STATUS_IN_PROGRESS state=in desc='In Progress' section=in_progress n=45: 'Thunder 52 at Cavaliers 45 [3:41 - 2nd]' start_time='3:41 - 2nd' id=401909907 [window]
+ NBA STATUS_POSTPONED state=post desc='Postponed' section=postponed n=4: 'Heat (43-39) at Bulls (31-51) [Postponed]' start_time='Postponed' id=401810384 [month:202601]
+ NBA STATUS_SCHEDULED state=pre desc='Scheduled' section=upcoming n=255: 'Kings (0-6) at Mavericks (4-2) (7:00 PM CST)' start_time='11/2 - 7:00 PM CST' id=401909913 [window]
+ WNBA STATUS_FINAL state=post desc='Final' section=completed n=4: 'Valkyries 67 at Dream 62 [Final]' start_time='Final' id=401918308 [window]
+ NCAAM STATUS_DELAYED state=in desc='Delayed' section=in_progress n=6: 'Charleston Southern Buccaneers 0 at South Florida Bulls 0 [Delayed]' start_time='Delayed' id=401911374 [snapshot:20261103T001230Z]
+ NCAAM STATUS_END_PERIOD state=in desc='End of Period' section=in_progress n=4: 'St. Francis (IL) Fighting Saints 47 at UIC Flames 96 [End of Period]' start_time='End of 2nd' id=401928858 [snapshot:20261102T235723Z]
+ NCAAM STATUS_FINAL state=post desc='Final' section=completed n=3831: 'Notre Dame Fighting Irish 74 at Villanova Wildcats 72 [Final]' start_time='Final' id=401920982 [window]
+ NCAAM STATUS_HALFTIME state=in desc='Halftime' section=in_progress n=222: 'SUNY Old Westbury Panthers 18 at Stony Brook Seawolves 42 [Halftime]' start_time='Halftime' id=401926833 [window]
+ NCAAM STATUS_IN_PROGRESS state=in desc='In Progress' section=in_progress n=1133: 'Miami Hurricanes 56 at Florida Gators 66 [8:54 - 2nd]' start_time='8:54 - 2nd' id=401906769 [window]
+ NCAAM STATUS_SCHEDULED state=pre desc='Scheduled' section=upcoming n=1967: 'Fairleigh Dickinson Knights at Illinois Fighting Illini (7:00 PM CST)' start_time='11/2 - 7:00 PM CST' id=401913525 [window]
+ NCAAWB STATUS_END_PERIOD state=in desc='End of Period' section=in_progress n=113: 'Bruins 31 at Catamounts 96 [End of Period]' start_time='End of 4th' id=401929155 [window]
+ NCAAWB STATUS_FINAL state=post desc='Final' section=completed n=4465: 'Fighting Irish 99 at Wildcats 75 [Final]' start_time='Final' id=401920983 [window]
+ NCAAWB STATUS_FORFEIT state=post desc='Forfeit' section=completed n=1: 'Mountain Hawks 0 at Midshipmen 2 [Forfeit]' start_time='Forfeit' id=401823071 [month:202601]
+ NCAAWB STATUS_HALFTIME state=in desc='Halftime' section=in_progress n=263: 'Lady Lions 9 at Tigers 69 [Halftime]' start_time='Halftime' id=401912964 [window]
+ NCAAWB STATUS_IN_PROGRESS state=in desc='In Progress' section=in_progress n=1257: 'Panthers 81 at Bulls 82 [0:00 - 4th]' start_time='0:00 - 4th' id=401929166 [window]
+ NCAAWB STATUS_POSTPONED state=post desc='Postponed' section=postponed n=14: 'Panthers at Ospreys [Postponed]' start_time='Postponed' id=401927045 [window]
+ NCAAWB STATUS_SCHEDULED state=pre desc='Scheduled' section=upcoming n=622: 'Tigers at Hawkeyes (7:00 PM CST)' start_time='11/2 - 7:00 PM CST' id=401921404 [window]
+ NHL STATUS_END_PERIOD state=in desc='End of Period' section=in_progress n=11: 'Golden Knights 0 at Bruins 1 [End of Period]' start_time='End of 1st' id=401892629 [window]
+ NHL STATUS_FINAL state=post desc='Final' section=completed n=1071: 'Ducks 5 at Flyers 4 [Final]' start_time='Final' id=401892566 [window]
+ NHL STATUS_IN_PROGRESS state=in desc='In Progress' section=in_progress n=23: 'Golden Knights 0 at Bruins 0 [19:58 - 1st]' start_time='19:58 - 1st' id=401892629 [snapshot:20261103T000929Z]
+ NHL STATUS_POSTPONED state=post desc='Postponed' section=postponed n=1: 'Kings (35-27-20) at Blue Jackets (40-30-12) [Postponed]' start_time='Postponed' id=401803179 [month:202601]
+ NHL STATUS_SCHEDULED state=pre desc='Scheduled' section=upcoming n=50: 'Avalanche (8-5-1) at Blackhawks (4-9-1) (7:00 PM CST)' start_time='11/2 - 7:00 PM CST' id=401892631 [window]
+ NCAAH STATUS_FINAL state=post desc='Final' section=completed n=1014: 'Golden Griffins 2 at Nittany Lions 3 [Final/OT]' start_time='Final/OT' id=401904410 [window]
+ NCAAH STATUS_POSTPONED state=post desc='Postponed' section=postponed n=1: 'Beavers at Vikings [Postponed]' start_time='Postponed' id=401821682 [month:202512]
+ NCAAWH STATUS_FINAL state=post desc='Final' section=completed n=676: 'Lakers 1 at Huskies 1 [Final/OT]' start_time='Final/OT' id=401912357 [window]
+
+== flags per league (rows across window, snapshots, older months)
+  NFL {'rows': 471, "neutral site read as 'at'": 5, 'nickname only': 470}
+  NCAAF {'rows': 3306, 'has AP rank, rank not in text': 490, "neutral site read as 'at'": 79}
+  NBA {'rows': 1427, 'nickname only': 1423, "neutral site read as 'at'": 6}
+  WNBA {'rows': 4, 'nickname only': 4}
+  NCAAM {'rows': 7163, "neutral site read as 'at'": 605, 'has AP rank, rank not in text': 798, '0 at 0 not never-played:STATUS_IN_PROGRESS': 28, '0 at 0 not never-played:STATUS_DELAYED': 6}
+     e.g. ('Quinnipiac Bobcats 0 at Michigan State Spartans 0 [19:52 - 1st]', '401924856')
+     e.g. ('Saint Vincent Bearcats 0 at Delaware State Hornets 0 [19:04 - 1st]', '401927341')
+     e.g. ('Howard Bison 0 at Yale Bulldogs 0 [20:00 - 1st]', '401924743')
+     e.g. ('Florida Gulf Coast Eagles 0 at UCF Knights 0 [18:52 - 1st]', '401921753')
+  NCAAWB {'rows': 6735, "neutral site read as 'at'": 399, 'has AP rank, rank not in text': 722, 'nickname only': 6735, '0 at 0 not never-played:STATUS_IN_PROGRESS': 24, 'both teams same name': 25}
+     e.g. ('Owls 0 at Hurricanes 0 [9:04 - 1st]', '401913723')
+     e.g. ('Lady Lions 0 at Tigers 0 [9:57 - 1st]', '401912964')
+     e.g. ('Trailblazers 0 at Bears 0 [9:11 - 1st]', '401928199')
+     e.g. ('Lady Techsters 0 at Rockets 0 [9:14 - 1st]', '401928002')
+  NHL {'rows': 1156, 'nickname only': 1156, '0 at 0 not never-played:STATUS_IN_PROGRESS': 8, "neutral site read as 'at'": 4}
+     e.g. ('Golden Knights 0 at Bruins 0 [19:58 - 1st]', '401892629')
+     e.g. ('Red Wings 0 at Panthers 0 [19:35 - 1st]', '401892630')
+     e.g. ('Golden Knights 0 at Bruins 0 [16:56 - 1st]', '401892629')
+     e.g. ('Red Wings 0 at Panthers 0 [17:10 - 1st]', '401892630')
+  NCAAH {'rows': 1015, 'nickname only': 1015, 'has AP rank, rank not in text': 523, "neutral site read as 'at'": 54, 'both teams same name': 7, '0 at 0 not never-played:STATUS_FINAL': 22}
+     e.g. ('Huskies 2 at Huskies 4 [Final]', '401821221')
+     e.g. ('Huskies 4 at Huskies 3 [Final/OT]', '401821222')
+     e.g. ('Dutchmen 0 at Big Red 0 [Final]', '401821460')
+     e.g. ('Wolverines 0 at Spartans 0 [Final]', '401821850')
+  NCAAWH {'rows': 676, 'has AP rank, rank not in text': 357, 'nickname only': 676, "neutral site read as 'at'": 35, '0 at 0 not never-played:STATUS_FINAL': 18, 'both teams same name': 5}
+     e.g. ('Huskies 0 at Crusaders 0 [Final/OT]', '401913611')
+     e.g. ('Eagles 0 at Catamounts 0 [Final/OT]', '401820986')
+     e.g. ('Engineers 0 at Garnet Chargers 0 [Final]', '401814026')
+     e.g. ('Golden Knights 0 at Bobcats 0 [Final/OT]', '401814348')
+
+== synthetic statuses through the real get_scores/GameData (not seen live: labelled synthetic)
+ NHL STATUS_DELAYED in 'Delayed' short='Delayed': section=in_progress text='Away 0 at Home 0 [Delayed]'
+ NFL STATUS_DELAYED in 'Delayed' short='Delayed': section=in_progress text='Away 0 at Home 0 [Delayed]'
+ NHL STATUS_RAIN_DELAY in 'Rain Delay' short='Rain Delay': section=in_progress text='Away 0 at Home 0 [Rain Delay]'
+ NFL STATUS_RAIN_DELAY in 'Rain Delay' short='Rain Delay': section=in_progress text='Away 0 at Home 0 [Rain Delay]'
+ NHL STATUS_DELAYED pre 'Delayed' short='11/2 - 7:00 PM EST': section=upcoming text='Away 0 at Home 0 [Delayed]'
+ NFL STATUS_DELAYED pre 'Delayed' short='11/2 - 7:00 PM EST': section=upcoming text='Away 0 at Home 0 [Delayed]'
+ NHL STATUS_POSTPONED post 'Postponed' short='Postponed': section=postponed text='Away at Home [Postponed]'
+ NFL STATUS_POSTPONED post 'Postponed' short='Postponed': section=postponed text='Away at Home [Postponed]'
+ NHL STATUS_CANCELED post 'Canceled' short='Canceled': section=postponed text='Away at Home [Canceled]'
+ NFL STATUS_CANCELED post 'Canceled' short='Canceled': section=postponed text='Away at Home [Canceled]'
+ NHL STATUS_SUSPENDED in 'Suspended' short='Suspended - 8:12 - 3rd': section=in_progress text='Away 2 at Home 3 [Suspended]'
+ NFL STATUS_SUSPENDED in 'Suspended' short='Suspended - 8:12 - 3rd': section=in_progress text='Away 2 at Home 3 [Suspended]'
+ NHL STATUS_FORFEIT post 'Forfeit' short='Forfeit': section=completed text='Away 1 at Home 0 [Forfeit]'
+ NFL STATUS_FORFEIT post 'Forfeit' short='Forfeit': section=completed text='Away 1 at Home 0 [Forfeit]'
+ NHL STATUS_FORFEIT_HOME_TEAM post 'Forfeit' short='Forfeit': section=completed text='Away 0 at Home 1 [Forfeit]'
+ NFL STATUS_FORFEIT_HOME_TEAM post 'Forfeit' short='Forfeit': section=completed text='Away 0 at Home 1 [Forfeit]'
+ NHL STATUS_HALFTIME in 'Halftime' short='Halftime': section=in_progress text='Away 33 at Home 30 [Halftime]'
+ NFL STATUS_HALFTIME in 'Halftime' short='Halftime': section=in_progress text='Away 33 at Home 30 [Halftime]'
+ NHL STATUS_END_PERIOD in 'End of Period' short='End of 2nd': section=in_progress text='Away 1 at Home 1 [End of Period]'
+ NFL STATUS_END_PERIOD in 'End of Period' short='End of 2nd': section=in_progress text='Away 1 at Home 1 [End of Period]'
+ NHL STATUS_IN_PROGRESS in 'In Progress' short='1:12 - SO': section=in_progress text='Away 3 at Home 3 [In Progress]'
+ NFL STATUS_IN_PROGRESS in 'In Progress' short='1:12 - SO': section=in_progress text='Away 3 at Home 3 [In Progress]'
+ NHL STATUS_SHOOTOUT in 'Shootout' short='Shootout': section=in_progress text='Away 3 at Home 3 [Shootout]'
+ NFL STATUS_SHOOTOUT in 'Shootout' short='Shootout': section=in_progress text='Away 3 at Home 3 [Shootout]'
+ NHL STATUS_FINAL post 'Final' short='Final/SO': section=completed text='Away 3 at Home 2 [Final/SO]'
+ NFL STATUS_FINAL post 'Final' short='Final/SO': section=completed text='Away 3 at Home 2 [Final/SO]'
+ NHL STATUS_FINAL post 'Final' short='Final/2OT': section=completed text='Away 80 at Home 78 [Final/2OT]'
+ NFL STATUS_FINAL post 'Final' short='Final/2OT': section=completed text='Away 80 at Home 78 [Final/2OT]'
+ NHL STATUS_FINAL_OVERTIME post 'Final/Overtime' short='Final/OT': section=completed text='Away 20 at Home 17 [Final/Overtime]'
+ NFL STATUS_FINAL_OVERTIME post 'Final/Overtime' short='Final/OT': section=completed text='Away 20 at Home 17 [Final/Overtime]'
+ NHL STATUS_SCHEDULED pre 'Scheduled' short='11/3 - 12:30 AM EST': section=upcoming text='Away at Home (11:30 PM CST)'
+ NFL STATUS_SCHEDULED pre 'Scheduled' short='11/3 - 12:30 AM EST': section=upcoming text='Away at Home (Tue 11/3 11:30PM)'
+ NHL STATUS_SCHEDULED pre 'Scheduled' short='TBD': section=upcoming text='Away at Home (TBD)'
+ NFL STATUS_SCHEDULED pre 'Scheduled' short='TBD': section=upcoming text='Away at Home (TBD)'
+requests {'net': 238, 'cached': 243}

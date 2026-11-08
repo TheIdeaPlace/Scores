@@ -1,0 +1,24 @@
+# Live Scores: monitor a live basketball game through real score changes
+w 0.5
+x
+w 25
+q {DOWN}
+w 0.5
+q {DOWN}
+w 0.5
+q {DOWN}
+w 0.5
+q {DOWN}
+w 0.5
+k {DOWN}
+w 4
+k %m
+w 6
+n {UP}
+w 5
+w 150
+w 120
+n {UP}
+w 5
+k %m
+w 6

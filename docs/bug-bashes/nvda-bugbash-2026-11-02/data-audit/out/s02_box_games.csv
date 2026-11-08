@@ -1,0 +1,286 @@
+league,id,away,home,short,tabs,team_tabs,empty_team_tabs,player_tabs,skipped_groups,espn_rows,kept,dropped,dropped_played,espn_played,espn_pts,dropped_pts,score_total,short_rows
+NFL,401873035,Philadelphia Eagles,Washington Commanders,Final,2,2,2,0,19,77,0,0,0,77,0,0,37,0
+NFL,401873033,Kansas City Chiefs,Denver Broncos,Final,2,2,2,0,18,87,0,0,0,87,0,0,52,0
+NFL,401873034,New England Patriots,Miami Dolphins,Final,2,2,2,0,18,81,0,0,0,81,0,0,43,0
+NFL,401873032,Los Angeles Chargers,Los Angeles Rams,Final,2,2,2,0,19,79,0,0,0,79,0,0,33,0
+NFL,401873026,Baltimore Ravens,Buffalo Bills,Final,2,2,2,0,20,96,0,0,0,96,0,0,46,0
+NFL,401873031,Tennessee Titans,Cincinnati Bengals,Final/OT,2,2,2,0,19,86,0,0,0,86,0,0,79,0
+NFL,401873024,Arizona Cardinals,Dallas Cowboys,Final/OT,2,2,2,0,19,93,0,0,0,93,0,0,63,0
+NFL,401873030,Minnesota Vikings,Detroit Lions,Final,2,2,2,0,17,80,0,0,0,80,0,0,34,0
+NFL,401873029,Las Vegas Raiders,New York Jets,Final,2,2,2,0,16,66,0,0,0,66,0,0,71,0
+NFL,401873027,Cleveland Browns,Pittsburgh Steelers,Final,2,2,2,0,19,86,0,0,0,86,0,0,33,0
+NFL,401873025,Atlanta Falcons,Tampa Bay Buccaneers,Final,2,2,2,0,18,73,0,0,0,73,0,0,16,0
+NFL,401873028,Indianapolis Colts,Jacksonville Jaguars,Final,2,2,2,0,19,95,0,0,0,95,0,0,49,0
+NFL,401873023,Carolina Panthers,Green Bay Packers,Final,2,2,2,0,20,89,0,0,0,89,0,0,46,0
+NFL,401873009,Dallas Cowboys,Philadelphia Eagles,Final,2,2,2,0,16,83,0,0,0,83,0,0,59,0
+NFL,401873022,Kansas City Chiefs,Seattle Seahawks,Final,2,2,2,0,18,81,0,0,0,81,0,0,23,0
+NFL,401873020,Green Bay Packers,Detroit Lions,Final,2,2,2,0,18,77,0,0,0,77,0,0,37,0
+NFL,401873021,Los Angeles Rams,Las Vegas Raiders,Final,2,2,2,0,19,81,0,0,0,81,0,0,56,0
+NFL,401873019,Denver Broncos,Arizona Cardinals,Final,2,2,2,0,17,81,0,0,0,81,0,0,46,0
+NFL,401873017,San Francisco 49ers,Atlanta Falcons,Final,2,2,2,0,17,91,0,0,0,91,0,0,49,0
+NFL,401873013,Cleveland Browns,Tennessee Titans,Final,2,2,2,0,19,78,0,0,0,78,0,0,51,0
+NFL,401873014,Indianapolis Colts,Minnesota Vikings,Final,2,2,2,0,18,78,0,0,0,78,0,0,26,0
+NFL,401873015,Miami Dolphins,New York Jets,Final,2,2,2,0,17,74,0,0,0,74,0,0,53,0
+NFL,401873018,Tampa Bay Buccaneers,Carolina Panthers,Final,2,2,2,0,19,89,0,0,0,89,0,0,56,0
+NFL,401873012,Cincinnati Bengals,Baltimore Ravens,Final,2,2,2,0,17,81,0,0,0,81,0,0,48,0
+NFL,401873016,New York Giants,Houston Texans,Final/OT,2,2,2,0,17,84,0,0,0,84,0,0,48,0
+NFL,401772985,Los Angeles Rams,Chicago Bears,Final/OT,2,2,2,0,18,88,0,0,0,88,0,0,37,0
+NCAAF,401860924,Oregon State Beavers,Fresno State Bulldogs,Final,2,2,2,0,18,88,0,0,0,88,0,0,60,0
+NCAAF,401864530,Northern Illinois Huskies,UNLV Rebels,Final,2,2,2,0,18,73,0,0,0,73,0,0,55,0
+NCAAF,401860908,Texas State Bobcats,Boise State Broncos,Final,2,2,2,0,18,78,0,0,0,78,0,0,91,0
+NCAAF,401868956,Grambling Tigers,Texas Southern Tigers,Final/OT,2,2,2,0,18,81,0,0,0,81,0,0,43,0
+NCAAF,401858504,Washington Huskies,Nebraska Cornhuskers,Final,2,2,2,0,16,84,0,0,0,84,0,0,27,0
+NCAAF,401862814,Army Black Knights,Memphis Tigers,Final,2,2,2,0,16,74,0,0,0,74,0,0,71,0
+NCAAF,401868251,Lamar Cardinals,UT Rio Grande Valley Vaqueros,Final,2,2,2,0,17,97,0,0,0,97,0,0,75,0
+NCAAF,401856733,Missouri Tigers,Arkansas Razorbacks,Final,2,2,2,0,16,81,0,0,0,81,0,0,44,0
+NCAAF,401858282,Miami Hurricanes,North Carolina Tar Heels,Final,2,2,2,0,15,72,0,0,0,72,0,0,73,0
+NCAAF,401858509,Ohio State Buckeyes,USC Trojans,Final,2,2,2,0,18,81,0,0,0,81,0,0,48,0
+NCAAF,401856737,Mississippi State Bulldogs,Texas Longhorns,Final,2,2,2,0,17,87,0,0,0,87,0,0,34,0
+NCAAF,401858281,Georgia Tech Yellow Jackets,Pittsburgh Panthers,Final,2,2,2,0,18,94,0,0,0,94,0,0,45,0
+NCAAF,401856847,Oklahoma State Cowboys,Iowa State Cyclones,Final,2,2,2,0,18,82,0,0,0,82,0,0,100,0
+NCAAF,401858280,Clemson Tigers,Florida State Seminoles,Final,2,2,2,0,19,80,0,0,0,80,0,0,60,0
+NCAAF,401860909,Washington State Cougars,San Diego State Aztecs,Final,2,2,2,0,16,74,0,0,0,74,0,0,46,0
+NCAAF,401868147,Eastern Kentucky Colonels,Tarleton State Texans,Final,2,2,2,0,15,69,0,0,0,69,0,0,52,0
+NCAAF,401868388,Wofford Terriers,Samford Bulldogs,Final,2,2,2,0,17,72,0,0,0,72,0,0,19,0
+NCAAF,401869846,App State Mountaineers,Georgia Southern Eagles,Final,2,2,2,0,18,96,0,0,0,96,0,0,22,0
+NCAAF,401868136,North Alabama Lions,Central Arkansas Bears,Final,2,2,2,0,19,86,0,0,0,86,0,0,23,0
+NCAAF,401858508,Nevada Wolf Pack,UCLA Bruins,Final,2,2,2,0,15,86,0,0,0,86,0,0,27,0
+NCAAF,401856736,South Carolina Gamecocks,Oklahoma Sooners,Final,2,2,2,0,18,95,0,0,0,95,0,0,67,0
+NCAAF,401858506,Purdue Boilermakers,Penn State Nittany Lions,Final,2,2,2,0,16,72,0,0,0,72,0,0,48,0
+NCAAF,401864529,New Mexico Lobos,San José State Spartans,Final,2,2,2,0,17,73,0,0,0,73,0,0,37,0
+NCAAF,401867887,South Dakota Coyotes,South Dakota State Jackrabbits,Final,2,2,2,0,18,79,0,0,0,79,0,0,52,0
+NCAAF,401868056,West Georgia Wolves,Abilene Christian Wildcats,Final,2,2,2,0,18,105,0,0,0,105,0,0,59,0
+NCAAF,401757313,Kennesaw State Owls,Liberty Flames,Final/2OT,2,2,2,0,18,87,0,0,0,87,0,0,90,0
+NCAAF,401856835,BYU Cougars,UCF Knights,Final/2OT,2,2,2,0,17,83,0,0,0,83,0,0,70,0
+NCAAF,401757315,Middle Tennessee Blue Raiders,New Mexico State Aggies,Final/OT,2,2,2,0,19,86,0,0,0,86,0,0,55,0
+NCAAF,401761665,UL Monroe Warhawks,Louisiana Ragin' Cajuns,Final/OT,2,2,2,0,18,88,0,0,0,88,0,0,57,0
+NCAAF,401777328,Duke Blue Devils,Virginia Cavaliers,Final/OT,2,2,2,0,16,74,0,0,0,74,0,0,47,0
+NCAAF,401778314,New Mexico Lobos,Minnesota Golden Gophers,Final/OT,2,2,2,0,19,73,0,0,0,73,0,0,37,0
+NCAAF,401858496,Indiana Hoosiers,Michigan Wolverines,Final/OT,2,2,2,0,17,67,0,0,0,67,0,0,19,0
+NCAAF,401867808,Cornell Big Red,Brown Bears,Final/OT,2,2,2,0,20,99,0,0,0,99,0,0,69,0
+NBA,401909906,Toronto Raptors,Los Angeles Lakers,Final,4,2,2,2,0,26,10,16,14,24,256,130,256,0
+NBA,401909905,LA Clippers,Golden State Warriors,Final,4,2,2,2,0,27,10,17,16,26,236,152,236,0
+NBA,401909904,Brooklyn Nets,Indiana Pacers,Final,4,2,2,2,0,25,10,15,10,20,188,111,188,0
+NBA,401909903,Boston Celtics,Orlando Magic,Final,4,2,2,2,0,26,10,16,9,19,205,82,205,0
+NBA,401909902,Oklahoma City Thunder,Houston Rockets,Final,4,2,2,2,0,26,10,16,13,23,217,166,217,0
+NBA,401909899,Sacramento Kings,Memphis Grizzlies,Final,4,2,2,2,0,28,10,18,16,26,241,216,241,0
+NBA,401909900,Cleveland Cavaliers,Milwaukee Bucks,Final,4,2,2,2,0,28,10,18,15,25,247,173,247,0
+NBA,401909901,Minnesota Timberwolves,San Antonio Spurs,Final,4,2,2,2,0,25,10,15,8,18,232,38,232,0
+NBA,401909898,Atlanta Hawks,New Orleans Pelicans,Final,4,2,2,2,0,25,10,15,14,24,220,170,220,0
+NBA,401909897,Philadelphia 76ers,Charlotte Hornets,Final,4,2,2,2,0,26,10,16,10,20,213,47,213,0
+NBA,401909896,Portland Trail Blazers,Utah Jazz,Final,4,2,2,2,0,26,10,16,15,25,202,136,202,0
+NBA,401909285,Los Angeles Lakers,Golden State Warriors,Final,4,2,2,2,0,28,10,18,16,24,207,192,207,0
+NBA,401909286,Denver Nuggets,Phoenix Suns,Final,4,2,2,2,0,27,10,17,9,19,247,59,247,0
+NBA,401909282,Indiana Pacers,Miami Heat,Final,4,2,2,2,0,27,10,17,15,25,270,93,270,0
+NBA,401909283,Houston Rockets,Dallas Mavericks,Final,4,2,2,2,0,28,10,18,9,19,227,44,227,0
+NBA,401909284,LA Clippers,Minnesota Timberwolves,Final,4,2,2,2,0,27,10,17,16,26,228,194,228,0
+NBA,401909278,Chicago Bulls,Boston Celtics,Final,4,2,2,2,0,29,10,19,17,27,236,181,236,0
+NBA,401909279,Detroit Pistons,Brooklyn Nets,Final,4,2,2,2,0,28,10,18,16,26,204,142,204,0
+NBA,401909280,New York Knicks,Philadelphia 76ers,Final,4,2,2,2,0,26,10,16,9,19,191,36,191,0
+NBA,401909281,Orlando Magic,Toronto Raptors,Final,4,2,2,2,0,25,10,15,10,20,235,90,235,0
+NBA,401909277,Charlotte Hornets,Washington Wizards,Final,4,2,2,2,0,26,10,16,15,25,174,140,174,0
+NBA,401909895,Memphis Grizzlies,Portland Trail Blazers,Final,4,2,2,2,0,28,10,18,18,28,227,198,227,0
+NBA,401909893,Cleveland Cavaliers,Atlanta Hawks,Final,4,2,2,2,0,26,10,16,9,19,225,67,225,0
+NBA,401909894,Sacramento Kings,New Orleans Pelicans,Final,4,2,2,2,0,25,10,15,9,19,252,49,252,0
+NBA,401909892,Los Angeles Lakers,LA Clippers,Final,4,2,2,2,0,25,10,15,11,21,190,117,190,0
+NBA,401810985,San Antonio Spurs,Denver Nuggets,Final/OT,4,2,2,2,0,30,10,20,10,20,270,71,270,0
+NBA,401811002,Portland Trail Blazers,Denver Nuggets,Final/OT,4,2,2,2,0,30,10,20,8,18,269,83,269,0
+NBA,401866755,Miami Heat,Charlotte Hornets,Final/OT,4,2,2,2,0,30,10,20,9,19,253,66,253,0
+NBA,401869400,Los Angeles Lakers,Houston Rockets,Final/OT,4,2,2,2,0,27,10,17,10,20,220,24,220,0
+NBA,401909859,New Orleans Pelicans,Denver Nuggets,Final/OT,4,2,2,2,0,28,10,18,11,21,276,79,276,0
+NBA,401909869,Minnesota Timberwolves,Cleveland Cavaliers,Final/OT,4,2,2,2,0,28,10,18,9,19,252,82,252,0
+NBA,401909877,Brooklyn Nets,Boston Celtics,Final/OT,4,2,2,2,0,27,10,17,11,21,249,105,249,0
+NBA,401909890,San Antonio Spurs,Utah Jazz,Final/OT,4,2,2,2,0,26,10,16,9,19,228,59,228,0
+WNBA,401918311,Atlanta Dream,Golden State Valkyries,Final,4,2,2,2,0,27,10,17,5,15,131,25,131,0
+WNBA,401918310,Golden State Valkyries,Atlanta Dream,Final,4,2,2,2,0,25,10,15,6,16,149,40,149,0
+WNBA,401918309,Atlanta Dream,Golden State Valkyries,Final,4,2,2,2,0,27,10,17,7,17,119,21,119,0
+WNBA,401918308,Golden State Valkyries,Atlanta Dream,Final,4,2,2,2,0,24,10,14,7,17,129,34,129,0
+WNBA,401918307,Golden State Valkyries,Atlanta Dream,Final,4,2,2,2,0,24,10,14,13,23,168,134,168,0
+WNBA,401918306,Atlanta Dream,Golden State Valkyries,Final,4,2,2,2,0,27,10,17,10,20,144,50,144,0
+WNBA,401918305,Atlanta Dream,Golden State Valkyries,Final,4,2,2,2,0,27,10,17,7,17,132,19,132,0
+WNBA,401918300,Golden State Valkyries,Las Vegas Aces,Final/OT,4,2,2,2,0,24,10,14,9,19,164,33,164,0
+WNBA,401918299,Atlanta Dream,New York Liberty,Final,4,2,2,2,0,24,10,14,5,15,168,12,168,0
+WNBA,401918298,Las Vegas Aces,Golden State Valkyries,Final,4,2,2,2,0,25,10,15,11,21,164,47,164,0
+WNBA,401918297,New York Liberty,Atlanta Dream,Final/OT,4,2,2,2,0,24,10,14,8,18,199,43,199,0
+WNBA,401918296,Las Vegas Aces,Golden State Valkyries,Final,4,2,2,2,0,25,10,15,10,20,131,78,131,0
+WNBA,401918295,New York Liberty,Atlanta Dream,Final,4,2,2,2,0,24,10,14,9,19,174,26,174,0
+WNBA,401918294,Dallas Wings,Golden State Valkyries,Final,4,2,2,2,0,26,10,16,7,17,150,22,150,0
+WNBA,401918022,Indiana Fever,Las Vegas Aces,Final,4,2,2,2,0,21,10,11,6,16,177,12,177,0
+WNBA,401918020,Golden State Valkyries,Dallas Wings,Final/OT,4,2,2,2,0,25,10,15,7,17,208,45,208,0
+WNBA,401918019,Atlanta Dream,Washington Mystics,Final,4,2,2,2,0,24,10,14,12,22,168,134,168,0
+WNBA,401918017,Minnesota Lynx,New York Liberty,Final,4,2,2,2,0,24,10,14,8,18,158,38,158,0
+WNBA,401918018,Las Vegas Aces,Indiana Fever,Final,4,2,2,2,0,24,10,14,10,20,188,146,188,0
+WNBA,401918016,Dallas Wings,Golden State Valkyries,Final,4,2,2,2,0,27,10,17,13,23,184,139,184,0
+WNBA,401918013,Washington Mystics,Atlanta Dream,Final,4,2,2,2,0,25,10,15,10,20,169,73,169,0
+WNBA,401918015,Indiana Fever,Las Vegas Aces,Final,4,2,2,2,0,22,10,12,11,21,187,153,187,0
+WNBA,401918014,New York Liberty,Minnesota Lynx,Final,4,2,2,2,0,24,10,14,13,23,166,155,166,0
+WNBA,401857218,Golden State Valkyries,Los Angeles Sparks,Final,4,2,2,2,0,25,10,15,10,20,151,48,151,0
+WNBA,401857219,Las Vegas Aces,Phoenix Mercury,Final,4,2,2,2,0,26,10,16,9,19,182,34,182,0
+WNBA,401857119,Las Vegas Aces,Indiana Fever,Final/OT,4,2,2,2,0,25,10,15,7,17,170,13,170,0
+WNBA,401857150,Indiana Fever,Atlanta Dream,Final/OT,4,2,2,2,0,25,10,15,9,19,186,19,186,0
+WNBA,401857212,Golden State Valkyries,Portland Fire,Final/OT,4,2,2,2,0,27,10,17,9,19,172,35,172,0
+NCAAM,401928858,St. Francis (IL) Fighting Saints,UIC Flames,Final,4,2,2,2,0,50,10,40,16,26,143,122,143,0
+NCAAM,401924732,Carnegie Mellon Tartans,Princeton Tigers,Final,4,2,2,2,0,40,10,30,21,31,124,92,124,0
+NCAAM,401920071,UMBC Retrievers,George Mason Patriots,Final,4,2,2,2,0,32,10,22,13,23,136,100,136,0
+NCAAM,401911469,UTSA Roadrunners,San José State Spartans,Final,4,2,2,2,0,29,10,19,11,21,169,56,169,0
+NCAAM,401911532,UTEP Miners,Northern Kentucky Norse,Final,4,2,2,2,0,29,10,19,9,19,160,40,160,0
+NCAAM,401925925,Morris Hornets,South Carolina State Bulldogs,Final,4,2,2,2,0,41,10,31,18,28,149,73,149,0
+NCAAM,401925062,North American Stallions,Nicholls Colonels,Final,4,2,2,2,0,31,10,21,19,29,166,116,166,0
+NCAAM,401928619,Fisk Bulldogs,Middle Tennessee Blue Raiders,Final,4,2,2,2,0,31,10,21,18,28,190,172,190,0
+NCAAM,401926830,St. Joseph's Long Island Golden Eagles,Hofstra Pride,Final,4,2,2,2,0,33,10,23,19,29,148,129,148,0
+NCAAM,401911707,Murray State Racers,Tennessee State Tigers,Final,4,2,2,2,0,30,10,20,16,26,158,124,158,0
+NCAAM,401929384,Reinhardt Eagles,Mercer Bears,Final,4,2,2,2,0,38,10,28,19,29,143,106,143,0
+NCAAM,401921173,Miami (OH) Middletown ThunderHawks,IU Indianapolis Jaguars,Final,4,2,2,2,0,27,10,17,15,25,189,164,189,0
+NCAAM,401921423,Winthrop Eagles,Queens University Royals,Final,4,2,2,2,0,35,10,25,10,20,201,54,201,0
+NCAAM,401921422,Merrimack Warriors,App State Mountaineers,Final,4,2,2,2,0,33,10,23,10,20,112,36,112,0
+NCAAM,401920912,Northern Illinois Huskies,Grambling Tigers,Final,4,2,2,2,0,31,10,21,9,19,176,55,176,0
+NCAAM,401920409,Liberty Flames,High Point Panthers,Final,4,2,2,2,0,32,10,22,11,21,129,79,129,0
+NCAAM,401920982,Notre Dame Fighting Irish,Villanova Wildcats,Final,4,2,2,2,0,30,10,20,9,19,146,53,146,0
+NCAAM,401856560,Texas Tech Red Raiders,Alabama Crimson Tide,Final,4,2,2,2,0,31,10,21,13,23,155,117,155,0
+NCAAM,401856559,UCLA Bruins,UConn Huskies,Final,4,2,2,2,0,30,10,20,12,22,130,90,130,0
+NCAAM,401858354,Saint Joseph's Hawks,California Golden Bears,Final,4,2,2,2,0,34,10,24,8,18,151,28,151,0
+NCAAM,401858356,Wichita State Shockers,Oklahoma State Cowboys,Final,4,2,2,2,0,30,10,20,12,22,166,123,166,0
+NCAAM,401856565,Utah State Aggies,Arizona Wildcats,Final,4,2,2,2,0,31,10,21,7,17,144,34,144,0
+NCAAM,401858353,George Washington Revolutionaries,New Mexico Lobos,Final,4,2,2,2,0,29,10,19,5,15,147,60,147,0
+NCAAM,401856563,Iowa Hawkeyes,Florida Gators,Final,4,2,2,2,0,29,10,19,7,17,145,11,145,0
+NCAAM,401858355,UNLV Rebels,Tulsa Golden Hurricane,Final,4,2,2,2,0,30,10,20,7,17,143,26,143,0
+NCAAM,401820165,Navy Midshipmen,Lehigh Mountain Hawks,Final/2OT,4,2,2,2,0,40,10,30,7,17,161,9,161,0
+NCAAM,401812021,Charleston Cougars,Stony Brook Seawolves,Final/2OT,4,2,2,2,0,31,10,21,8,18,218,63,218,0
+NCAAM,401804890,Missouri State Bears,Middle Tennessee Blue Raiders,Final/2OT,4,2,2,2,0,29,10,19,10,20,177,47,177,0
+NCAAM,401814537,Kent State Golden Flashes,Eastern Michigan Eagles,Final/2OT,4,2,2,2,0,31,10,21,12,22,151,68,151,0
+NCAAM,401845838,Massachusetts Minutemen,Coastal Carolina Chanticleers,Final/3OT,4,2,2,2,0,30,10,20,11,21,185,44,185,0
+NCAAM,401808282,Texas A&M Aggies,LSU Tigers,Final/3OT,4,2,2,2,0,30,10,20,9,19,185,79,185,0
+NCAAM,401805215,Utah Valley Wolverines,Utah Tech Trailblazers,Final/2OT,4,2,2,2,0,29,10,19,8,18,205,38,205,0
+NCAAM,401812120,UMBC Retrievers,Bryant Bulldogs,Final/OT,4,2,2,2,0,34,10,24,6,16,153,34,153,0
+NCAAWB,401911736,Cornell Big Red,UConn Huskies,Final,4,2,2,2,0,29,10,19,16,26,135,95,135,0
+NCAAWB,401906074,Bellarmine Knights,Louisville Cardinals,Final,4,2,2,2,0,28,10,18,14,24,166,121,166,0
+NCAAWB,401913735,Wofford Terriers,NC State Wolfpack,Final,4,2,2,2,0,25,10,15,14,24,130,110,130,0
+NCAAWB,401928203,Montevallo Falcons,Samford Bulldogs,Final,4,2,2,2,0,29,10,19,14,24,129,73,144,0
+NCAAWB,401927920,Berry Vikings,Charleston Cougars,Final,4,2,2,2,0,28,10,18,15,25,135,90,135,0
+NCAAWB,401927104,Cleveland State Vikings,Penn State Lady Lions,Final,4,2,2,2,0,24,10,14,6,16,123,20,123,0
+NCAAWB,401922322,Apprentice School Builders,Longwood Lancers,Final,4,2,2,2,0,25,10,15,9,19,123,67,123,0
+NCAAWB,401916057,Texas Southern Tigers,Tulane Green Wave,Final,4,2,2,2,0,27,10,17,13,23,130,71,130,0
+NCAAWB,401913842,Furman Paladins,South Florida Bulls,Final,4,2,2,2,0,27,10,17,12,22,134,92,134,0
+NCAAWB,401913754,MIT Engineers,Bryant Bulldogs,Final,4,2,2,2,0,26,10,16,11,21,100,70,100,0
+NCAAWB,401913664,District of Columbia DISTRICT OF COLUMBIA,George Washington Revolutionaries,Final,4,2,2,2,0,23,10,13,11,21,107,80,107,0
+NCAAWB,401912977,West Georgia Wolves,Georgia Lady Bulldogs,Final,4,2,2,2,0,24,10,14,12,22,145,109,145,0
+NCAAWB,401906102,South Carolina Upstate Spartans,Wake Forest Demon Deacons,Final,4,2,2,2,0,26,10,16,10,20,123,34,123,0
+NCAAWB,401927972,Molloy Lions,Stony Brook Seawolves,Final,4,2,2,2,0,25,10,15,11,21,112,74,112,0
+NCAAWB,401917183,Elms Blazers,Yale Bulldogs,Final,4,2,2,2,0,34,10,24,16,26,149,96,149,0
+NCAAWB,401920491,USC Trojans,UNLV Lady Rebels,Final,4,2,2,2,0,25,10,15,14,24,168,132,168,0
+NCAAWB,401927980,Chowan Hawks,William & Mary Tribe,Final,4,2,2,2,0,29,9,20,16,25,135,107,137,0
+NCAAWB,401913810,Saint Anselm Hawks,UMass Lowell River Hawks,Final,4,2,2,2,0,27,10,17,13,23,130,71,130,0
+NCAAWB,401925979,Trinity College of Jacksonville Eagles,South Carolina State Lady Bulldogs,Final,2,0,0,2,0,36,36,0,0,0,0,0,154,36
+NCAAWB,401906088,Oklahoma Sooners,North Carolina Tar Heels,Final,4,2,2,2,0,28,10,18,12,22,170,43,170,0
+NCAAWB,401918896,Lehigh Mountain Hawks,UCLA Bruins,Final,4,2,2,2,0,25,10,15,11,21,126,46,126,0
+NCAAWB,401927836,UC San Diego Tritons,Washington Huskies,Final,4,2,2,2,0,25,10,15,12,22,142,40,142,0
+NCAAWB,401926957,Saint Martin's Saints,Idaho Vandals,Final,4,2,2,2,0,30,10,20,14,24,118,92,118,0
+NCAAWB,401921305,Lafayette Leopards,St. John's Red Storm,Final,4,2,2,2,0,28,9,19,13,22,123,94,132,0
+NCAAWB,401913054,Arizona Wildcats,Stanford Cardinal,Final,4,2,2,2,0,25,10,15,9,19,153,39,153,0
+NCAAWB,401819666,California Golden Bears,Syracuse Orange,Final/3OT,4,2,2,2,0,28,10,18,7,17,177,58,177,0
+NCAAWB,401825284,Oregon Ducks,Wisconsin Badgers,Final/2OT,4,2,2,2,0,29,10,19,9,19,186,18,186,0
+NCAAWB,401824530,Monmouth Hawks,Drexel Dragons,Final/2OT,4,2,2,2,0,27,10,17,7,17,122,20,122,0
+NCAAWB,401827769,Coppin State Eagles,Maryland Eastern Shore Hawks,Final/OT,4,2,2,2,0,28,10,18,9,19,129,34,129,0
+NCAAWB,401817735,IU Indianapolis Jaguars,Robert Morris Colonials,Final/OT,4,2,2,2,0,29,10,19,8,18,150,39,150,0
+NCAAWB,401807794,Central Arkansas Sugar Bears,Jacksonville Dolphins,Final/OT,4,2,2,2,0,28,10,18,10,20,182,45,182,0
+NCAAWB,401806551,Southern Indiana Screaming Eagles,Tennessee Tech Golden Eagles,Final/OT,4,2,2,2,0,25,10,15,7,17,140,21,140,0
+NCAAWB,401828828,Washington State Cougars,Saint Mary's Gaels,Final/OT,4,2,2,2,0,26,10,16,12,22,132,50,132,0
+NHL,401892628,Ottawa Senators,Anaheim Ducks,Final,2,2,2,0,6,38,0,0,0,38,0,0,9,0
+NHL,401892627,Edmonton Oilers,New York Rangers,Final,2,2,2,0,6,38,0,0,0,38,0,0,5,0
+NHL,401892626,Utah Mammoth,Philadelphia Flyers,Final,2,2,2,0,6,38,0,0,0,38,0,0,9,0
+NHL,401892625,Minnesota Wild,Washington Capitals,Final,2,2,2,0,6,38,0,0,0,38,0,0,6,0
+NHL,401892624,Winnipeg Jets,Carolina Hurricanes,Final,2,2,2,0,6,39,0,0,0,39,0,0,7,0
+NHL,401892623,Calgary Flames,Colorado Avalanche,Final,2,2,2,0,6,38,0,0,0,38,0,0,7,0
+NHL,401892622,Columbus Blue Jackets,Dallas Stars,Final,2,2,2,0,6,38,0,0,0,38,0,0,4,0
+NHL,401892620,Pittsburgh Penguins,Montreal Canadiens,Final,2,2,2,0,6,38,0,0,0,38,0,0,9,0
+NHL,401892621,Toronto Maple Leafs,Vancouver Canucks,Final,2,2,2,0,6,38,0,0,0,38,0,0,6,0
+NHL,401892618,Buffalo Sabres,Los Angeles Kings,Final,2,2,2,0,6,38,0,0,0,38,0,0,5,0
+NHL,401892619,Ottawa Senators,San Jose Sharks,Final,2,2,2,0,6,38,0,0,0,38,0,0,6,0
+NHL,401892616,Tampa Bay Lightning,Nashville Predators,Final/SO,2,2,2,0,6,38,0,0,0,38,0,0,9,0
+NHL,401892617,Edmonton Oilers,New York Islanders,Final,2,2,2,0,6,38,0,0,0,38,0,0,4,0
+NHL,401892614,Chicago Blackhawks,Boston Bruins,Final/OT,2,2,2,0,6,38,0,0,0,38,0,0,9,0
+NHL,401892615,St. Louis Blues,Detroit Red Wings,Final,2,2,2,0,6,38,0,0,0,38,0,0,9,0
+NHL,401892613,Seattle Kraken,Calgary Flames,Final,2,2,2,0,6,39,0,0,0,39,0,0,8,0
+NHL,401892612,Winnipeg Jets,Florida Panthers,Final,2,2,2,0,6,38,0,0,0,38,0,0,7,0
+NHL,401892611,New Jersey Devils,Vegas Golden Knights,Final,2,2,2,0,6,38,0,0,0,38,0,0,7,0
+NHL,401892608,Buffalo Sabres,Anaheim Ducks,Final,2,2,2,0,6,38,0,0,0,38,0,0,13,0
+NHL,401892609,Ottawa Senators,Los Angeles Kings,Final/OT,2,2,2,0,6,39,0,0,0,39,0,0,11,0
+NHL,401892610,Vancouver Canucks,San Jose Sharks,Final,2,2,2,0,6,38,0,0,0,38,0,0,5,0
+NHL,401892604,Boston Bruins,St. Louis Blues,Final,2,2,2,0,6,38,0,0,0,38,0,0,5,0
+NHL,401892605,Washington Capitals,Nashville Predators,Final,2,2,2,0,6,38,0,0,0,38,0,0,7,0
+NHL,401892606,Montreal Canadiens,Dallas Stars,Final,2,2,2,0,6,38,0,0,0,38,0,0,7,0
+NHL,401892607,New York Islanders,Minnesota Wild,Final/OT,2,2,2,0,6,38,0,0,0,38,0,0,7,0
+NHL,401803303,Calgary Flames,Anaheim Ducks,Final/SO,2,2,2,0,6,38,0,0,0,38,0,0,5,0
+NHL,401803305,Philadelphia Flyers,Toronto Maple Leafs,Final/SO,2,2,2,0,6,38,0,0,0,38,0,0,5,0
+NHL,401803322,Toronto Maple Leafs,New Jersey Devils,Final/SO,2,2,2,0,6,38,0,0,0,38,0,0,7,0
+NHL,401803335,Colorado Avalanche,Dallas Stars,Final/SO,2,2,2,0,6,39,0,0,0,39,0,0,9,0
+NHL,401803338,Montreal Canadiens,Anaheim Ducks,Final/SO,2,2,2,0,6,38,0,0,0,38,0,0,11,0
+NHL,401803344,Philadelphia Flyers,Pittsburgh Penguins,Final/SO,2,2,2,0,6,38,0,0,0,38,0,0,7,0
+NHL,401803352,Minnesota Wild,Colorado Avalanche,Final/SO,2,2,2,0,6,38,0,0,0,38,0,0,5,0
+NHL,401803369,Pittsburgh Penguins,Carolina Hurricanes,Final/SO,2,2,2,0,6,38,0,0,0,38,0,0,9,0
+NCAAH,401923148,Michigan Wolverines,Ohio State Buckeyes,Final/OT,0,0,0,0,0,0,0,0,0,0,0,0,9,0
+NCAAH,401905069,Alaska Bulldogs,Dartmouth Big Green,Final,0,0,0,0,0,0,0,0,0,0,0,0,4,0
+NCAAH,401904893,Minnesota Duluth Bulldogs,Colorado College Tigers,Final,0,0,0,0,0,0,0,0,0,0,0,0,8,0
+NCAAH,401905010,Michigan State Spartans,North Dakota Fighting Hawks,Final,0,0,0,0,0,0,0,0,0,0,0,0,8,0
+NCAAH,401904867,Omaha Mavericks,Denver Pioneers,Final,0,0,0,0,0,0,0,0,0,0,0,0,5,0
+NCAAH,401904674,St. Thomas Tommies,Miami (OH) RedHawks,Final,0,0,0,0,0,0,0,0,0,0,0,0,5,0
+NCAAH,401904844,UMass Lowell  River Hawks,Colgate Raiders,Final/OT,0,0,0,0,0,0,0,0,0,0,0,0,7,0
+NCAAH,401904522,Northern Michigan Wildcats,Augustana (SD) Vikings,Final,0,0,0,0,0,0,0,0,0,0,0,0,5,0
+NCAAH,401904555,Ferris State Bulldogs,Bemidji State Beavers,Final,0,0,0,0,0,0,0,0,0,0,0,0,8,0
+NCAAH,401904628,Lake Superior State Lakers,Minnesota State Mavericks,Final/OT,0,0,0,0,0,0,0,0,0,0,0,0,4,0
+NCAAH,401904344,Air Force Falcons,Robert Morris Colonials,Final,0,0,0,0,0,0,0,0,0,0,0,0,5,0
+NCAAH,401904502,Sacred Heart Pioneers,Cornell Big Red,Final,0,0,0,0,0,0,0,0,0,0,0,0,5,0
+NCAAH,401904919,Arizona State Sun Devils,St. Cloud State Huskies,Final,0,0,0,0,0,0,0,0,0,0,0,0,3,0
+NCAAH,401904959,Princeton Tigers,Stonehill Stonehill,Final,0,0,0,0,0,0,0,0,0,0,0,0,5,0
+NCAAH,401905068,Alaska Bulldogs,Dartmouth Big Green,Final,0,0,0,0,0,0,0,0,0,0,0,0,6,0
+NCAAH,401912387,Northeastern Huskies,Boston College Eagles,Final/OT,0,0,0,0,0,0,0,0,0,0,0,0,7,0
+NCAAH,401923145,Penn State Nittany Lions,Minnesota Golden Gophers,Final/OT,0,0,0,0,0,0,0,0,0,0,0,0,7,0
+NCAAH,401904378,Holy Cross Crusaders,Bentley Falcons,Final,0,0,0,0,0,0,0,0,0,0,0,0,7,0
+NCAAH,401904709,Maine Black Bears,Boston University Terriers,Final/OT,0,0,0,0,0,0,0,0,0,0,0,0,5,0
+NCAAH,401923147,Notre Dame Fighting Irish,Wisconsin Badgers,Final,0,0,0,0,0,0,0,0,0,0,0,0,10,0
+NCAAH,401912395,Rensselaer Engineers,Union Dutchmen,Final,0,0,0,0,0,0,0,0,0,0,0,0,8,0
+NCAAH,401923146,Michigan Wolverines,Ohio State Buckeyes,Final,0,0,0,0,0,0,0,0,0,0,0,0,7,0
+NCAAH,401913586,UConn Huskies,Merrimack Warriors,Final/OT,0,0,0,0,0,0,0,0,0,0,0,0,10,0
+NCAAH,401904482,RIT Tigers,Army Black Knights,Final,0,0,0,0,0,0,0,0,0,0,0,0,3,0
+NCAAH,401904465,Niagara Purple Eagles,Clarkson Golden Knights,Final,0,0,0,0,0,0,0,0,0,0,0,0,8,0
+NCAAH,401822007,Bentley Falcons,Sacred Heart Pioneers,Final/OT,0,0,0,0,0,0,0,0,0,0,0,0,8,0
+NCAAH,401821855,Michigan Wolverines,Minnesota Golden Gophers,Final/OT,0,0,0,0,0,0,0,0,0,0,0,0,5,0
+NCAAH,401821697,Ferris State Bulldogs,Augustana University (SD) Vikings,Final/OT,0,0,0,0,0,0,0,0,0,0,0,0,7,0
+NCAAH,401822076,Niagara Purple Eagles,RIT Tigers,Final/OT,0,0,0,0,0,0,0,0,0,0,0,0,6,0
+NCAAH,401821837,Princeton Tigers,Bentley Falcons,Final/OT,0,0,0,0,0,0,0,0,0,0,0,0,4,0
+NCAAH,401821177,Maine Black Bears,UMass Lowell  River Hawks,Final/OT,0,0,0,0,0,0,0,0,0,0,0,0,11,0
+NCAAH,401821807,Brown Bears,Stonehill Stonehill,Final/OT,0,0,0,0,0,0,0,0,0,0,0,0,5,0
+NCAAH,401821334,Western Michigan Broncos,Minnesota Duluth Bulldogs,Final/OT,0,0,0,0,0,0,0,0,0,0,0,0,7,0
+NCAAWH,401903813,Minnesota Golden Gophers,Minnesota Duluth Bulldogs,Final,0,0,0,0,0,0,0,0,0,0,0,0,5,0
+NCAAWH,401904048,Northeastern Huskies,Boston University Terriers,Final,0,0,0,0,0,0,0,0,0,0,0,0,6,0
+NCAAWH,401904273,Brown Bears,Quinnipiac Bobcats,Final,0,0,0,0,0,0,0,0,0,0,0,0,10,0
+NCAAWH,401911804,Sacred Heart Pioneers,Franklin Pierce Ravens,Final,0,0,0,0,0,0,0,0,0,0,0,0,3,0
+NCAAWH,401903727,Bemidji State Beavers,Ohio State Buckeyes,Final,0,0,0,0,0,0,0,0,0,0,0,0,6,0
+NCAAWH,401903757,St. Thomas-Minnesota Tommies,Minnesota State Mavericks,Final,0,0,0,0,0,0,0,0,0,0,0,0,3,0
+NCAAWH,401904174,Clarkson Golden Knights,Dartmouth Big Green,Final,0,0,0,0,0,0,0,0,0,0,0,0,5,0
+NCAAWH,401904198,Union (NY) Garnet Chargers,Colgate Raiders,Final,0,0,0,0,0,0,0,0,0,0,0,0,4,0
+NCAAWH,401904246,St. Lawrence Saints,Harvard Crimson,Final,0,0,0,0,0,0,0,0,0,0,0,0,4,0
+NCAAWH,401904292,Rensselaer Engineers,Cornell Big Red,Final,0,0,0,0,0,0,0,0,0,0,0,0,5,0
+NCAAWH,401912337,Yale Bulldogs,Princeton Tigers,Final,0,0,0,0,0,0,0,0,0,0,0,0,3,0
+NCAAWH,401903864,Wisconsin Badgers,St. Cloud State Huskies,Final,0,0,0,0,0,0,0,0,0,0,0,0,9,0
+NCAAWH,401903878,St. Anselm Hawks,Stonehill Skyhawks,Final,0,0,0,0,0,0,0,0,0,0,0,0,10,0
+NCAAWH,401903912,Saint Michael's Purple Knights,Long Island University Long Island University,Final,0,0,0,0,0,0,0,0,0,0,0,0,8,0
+NCAAWH,401903988,Merrimack Warriors,New Hampshire Wildcats,Final,0,0,0,0,0,0,0,0,0,0,0,0,5,0
+NCAAWH,401904018,Providence Friars,Maine Black Bears,Final,0,0,0,0,0,0,0,0,0,0,0,0,4,0
+NCAAWH,401904129,Penn State Nittany Lions,RIT Tigers,Final,0,0,0,0,0,0,0,0,0,0,0,0,6,0
+NCAAWH,401912303,Vermont Catamounts,Boston College Eagles,Final,0,0,0,0,0,0,0,0,0,0,0,0,4,0
+NCAAWH,401903964,Assumption College Greyhounds,Mercyhurst Lakers,Final,0,0,0,0,0,0,0,0,0,0,0,0,3,0
+NCAAWH,401903756,Minnesota State Mavericks,St. Thomas-Minnesota Tommies,Final,0,0,0,0,0,0,0,0,0,0,0,0,5,0
+NCAAWH,401903812,Minnesota Golden Gophers,Minnesota Duluth Bulldogs,Final/OT,0,0,0,0,0,0,0,0,0,0,0,0,5,0
+NCAAWH,401911803,Sacred Heart Pioneers,Franklin Pierce Ravens,Final,0,0,0,0,0,0,0,0,0,0,0,0,7,0
+NCAAWH,401903726,Bemidji State Beavers,Ohio State Buckeyes,Final,0,0,0,0,0,0,0,0,0,0,0,0,5,0
+NCAAWH,401903877,Stonehill Skyhawks,St. Anselm Hawks,Final/OT,0,0,0,0,0,0,0,0,0,0,0,0,14,0
+NCAAWH,401903963,Assumption College Greyhounds,Mercyhurst Lakers,Final,0,0,0,0,0,0,0,0,0,0,0,0,6,0
+NCAAWH,401814427,Maine Black Bears,Vermont Catamounts,Final/OT,0,0,0,0,0,0,0,0,0,0,0,0,3,0
+NCAAWH,401820956,Stonehill Skyhawks,Sacred Heart Pioneers,Final/OT,0,0,0,0,0,0,0,0,0,0,0,0,4,0
+NCAAWH,401814007,Mercyhurst Lakers,RIT Tigers,Final/OT,0,0,0,0,0,0,0,0,0,0,0,0,3,0
+NCAAWH,401820978,Colgate Raiders,Princeton Tigers,Final/OT,0,0,0,0,0,0,0,0,0,0,0,0,5,0
+NCAAWH,401814472,Franklin Pierce Ravens,Assumption College Greyhounds,Final/OT,0,0,0,0,0,0,0,0,0,0,0,0,6,0
+NCAAWH,401814251,New Hampshire Wildcats,UConn Huskies,Final/OT,0,0,0,0,0,0,0,0,0,0,0,0,5,0
+NCAAWH,401814280,St. Anselm Hawks,Long Island University Long Island University,Final/OT,0,0,0,0,0,0,0,0,0,0,0,0,5,0
+NCAAWH,401814045,Rensselaer Engineers,Colgate Raiders,Final/OT,0,0,0,0,0,0,0,0,0,0,0,0,3,0

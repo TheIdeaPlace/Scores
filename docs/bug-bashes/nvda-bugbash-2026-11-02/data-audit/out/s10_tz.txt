@@ -1,0 +1,71 @@
+this PC: Central Standard Time -1 day, 18:00:00 time.daylight 1 get_user_timezone -> US/Central
+
+== get_user_timezone by machine zone (real function, timezone_utils.py:156-176)
+  US/Eastern: summer -> US/Central WRONG; winter -> US/Eastern OK
+  US/Central: summer -> US/Central OK; winter -> US/Central OK
+  US/Mountain: summer -> US/Eastern WRONG; winter -> US/Mountain OK
+  US/Pacific: summer -> US/Central WRONG; winter -> US/Pacific OK
+  US/Arizona: summer -> US/Mountain WRONG; winter -> US/Mountain WRONG
+  US/Alaska: summer -> US/Mountain WRONG; winter -> US/Central WRONG
+  US/Hawaii: summer -> US/Central WRONG; winter -> US/Central WRONG
+  Europe/London: summer -> US/Central WRONG; winter -> US/Central WRONG
+  America/Toronto: summer -> US/Central WRONG; winter -> US/Eastern WRONG
+
+== convert_espn_time_to_local on ESPN strings, as a PC in each zone would see them (real conversion, zone forced)
+  US/Central: '11/2 - 7:00 PM EST' -> '11/2 - 6:00 PM CST'
+  US/Central: '11/3 - 12:30 AM EST' -> '11/3 - 11:30 PM CST'
+  US/Central: '11/2 - 10:30 PM EST' -> '11/2 - 9:30 PM CST'
+  US/Central: '7:00 PM EST' -> '6:00 PM CST'
+  US/Central: 'Final' -> 'Final'
+  US/Central: 'Final/OT' -> 'Final/OT'
+  US/Central: '12:00 - 3rd' -> '12:00 - 3rd'
+  US/Central: 'Halftime' -> 'Halftime'
+  US/Central: 'TBD' -> 'TBD'
+  US/Central: 'Postponed' -> 'Postponed'
+  US/Central: '11/14 - TBD' -> '11/14 - TBD'
+  US/Central: 'OCT 5' -> 'OCT 5'
+  US/Pacific: '11/2 - 7:00 PM EST' -> '11/2 - 4:00 PM PST'
+  US/Pacific: '11/3 - 12:30 AM EST' -> '11/3 - 9:30 PM PST'
+  US/Pacific: '11/2 - 10:30 PM EST' -> '11/2 - 7:30 PM PST'
+  US/Pacific: '7:00 PM EST' -> '4:00 PM PST'
+  US/Pacific: 'Final' -> 'Final'
+  US/Pacific: 'Final/OT' -> 'Final/OT'
+  US/Pacific: '12:00 - 3rd' -> '12:00 - 3rd'
+  US/Pacific: 'Halftime' -> 'Halftime'
+  US/Pacific: 'TBD' -> 'TBD'
+  US/Pacific: 'Postponed' -> 'Postponed'
+  US/Pacific: '11/14 - TBD' -> '11/14 - TBD'
+  US/Pacific: 'OCT 5' -> 'OCT 5'
+  US/Eastern: '11/2 - 7:00 PM EST' -> '11/2 - 7:00 PM EST'
+  US/Eastern: '11/3 - 12:30 AM EST' -> '11/3 - 12:30 AM EST'
+  US/Eastern: '11/2 - 10:30 PM EST' -> '11/2 - 10:30 PM EST'
+  US/Eastern: '7:00 PM EST' -> '7:00 PM EST'
+  US/Eastern: 'Final' -> 'Final'
+  US/Eastern: 'Final/OT' -> 'Final/OT'
+  US/Eastern: '12:00 - 3rd' -> '12:00 - 3rd'
+  US/Eastern: 'Halftime' -> 'Halftime'
+  US/Eastern: 'TBD' -> 'TBD'
+  US/Eastern: 'Postponed' -> 'Postponed'
+  US/Eastern: '11/14 - TBD' -> '11/14 - TBD'
+  US/Eastern: 'OCT 5' -> 'OCT 5'
+
+== correct answer via pytz for the day rollover case
+  00:30 EST on 11/3 = 11/02 11:30 PM CST in Central; the app keeps the date '11/3'
+
+== DST boundary: conversion uses today's date, not the game's (timezone_utils.py:106)
+  On Mar 7 (MST+EST), game Mar 9 '3/9 - 7:00 PM EDT' for Arizona: 3/9 - 5:00 PM MST (true Arizona time 4:00 PM MST)
+
+== _format_football_time year guess (models/game.py:66-77), weekday by viewing month (real method)
+  viewing in month 11: '11/8 - 12:00 PM CST' -> 'Sun 11/8 12:00PM'; true weekday for next occurrence: Sun 11/8; OK
+  viewing in month 11: '1/3 - 12:00 PM CST' -> 'Sun 1/3 12:00PM'; true weekday for next occurrence: Sun 1/3; OK
+  viewing in month 7: '1/3 - 12:00 PM CST' -> 'Fri 1/3 12:00PM'; true weekday for next occurrence: Sun 1/3; WRONG WEEKDAY
+  viewing in month 7: '9/13 - 12:00 PM CDT' -> 'Sun 9/13 12:00PM'; true weekday for next occurrence: Sun 9/13; OK
+  viewing in month 8: '12/26 - 12:00 PM CST' -> 'Sat 12/26 12:00PM'; true weekday for next occurrence: Sat 12/26; OK
+  viewing in month 12: '2/14 - 5:30 PM CST' -> 'Sun 2/14 5:30PM'; true weekday for next occurrence: Sun 2/14; OK
+  viewing in month 6: '9/13 - 12:00 PM CDT' -> 'Sun 9/13 12:00PM'; true weekday for next occurrence: Sun 9/13; OK
+  viewing in month 5: '12/25 - 12:00 PM CST' -> 'Fri 12/25 12:00PM'; true weekday for next occurrence: Fri 12/25; OK
+  viewing in month 5: '1/2 - 12:00 PM CST' -> 'Thu 1/2 12:00PM'; true weekday for next occurrence: Sat 1/2; WRONG WEEKDAY
+
+== scoreboard day boundary: the same late game under dates=
+  NBA 401909880 starts 2026-10-28T03:00Z = Central 20261027: on dates=20261027: True; on dates=20261028: False
+  NCAAM 401920409 starts 2026-11-02T04:59Z = Central 20261101: on dates=20261101: True; on dates=20261102: False

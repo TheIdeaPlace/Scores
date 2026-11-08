@@ -1,0 +1,20 @@
+# Home Page Settings dialog (scores.py 222-286)
+w 0.5
+x
+w 12
+k {TAB}
+w 2.5
+e Home Page Settings
+# Enter should press a focused button on Windows.
+k {ENTER}
+w 4
+e Home Page Settings - Sports Scores
+e Sport List
+k {ESC}
+w 4
+e Home Page Settings
+k {SPACE}
+w 4
+e Home Page Settings - Sports Scores
+k {ESC}
+w 4

@@ -1,0 +1,30 @@
+# Enter across the app on the final build: schedule game, Alt+B, Enter on rows and buttons in dialogs, plus Settings.
+w 0.5
+x
+w 16
+q {DOWN}
+w 1
+k {ENTER}
+w 14
+k {ENTER}
+w 10
+k %s
+w 12
+k {ENTER}
+w 12
+n {TAB}
+w 3
+k %b
+w 7
+n {TAB}
+w 3
+k {ESC}
+w 5
+k {ESC}
+w 10
+k {TAB}
+w 2.5
+k {ENTER}
+w 12
+n t
+w 3

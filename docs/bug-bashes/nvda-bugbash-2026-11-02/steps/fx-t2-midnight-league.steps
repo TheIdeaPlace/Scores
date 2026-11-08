@@ -1,0 +1,22 @@
+# T1: VM on Eastern, just after midnight Eastern: open a league; is it the new day, are last night's live games reachable?
+w 0.5
+x
+w 15
+n t
+w 3
+n {UP}
+w 3
+k {DOWN}
+w 3
+k {DOWN}
+w 3
+k {DOWN}
+w 3
+k %p
+w 12
+k {DOWN}
+w 3
+k {DOWN}
+w 3
+k {DOWN}
+w 3

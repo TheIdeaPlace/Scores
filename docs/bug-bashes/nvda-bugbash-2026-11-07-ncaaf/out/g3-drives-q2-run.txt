@@ -1,0 +1,34 @@
+recorded g3-drives-q2 (145.7 s)
+Focus: TreeItem 'Quarter 3' (announced as 'tree item') id='QApplication.QDialog.QTreeWidget' value='' selected collapsed FOCUSED  [in window 'Drives Details']
+  [0:04.0] NCAAF, Week 10 - Sports Scores window
+  [0:04.0] Scores List list List of games and scores for the selected date or week
+  [0:04.0] In Progress, 49 games
+  [0:04.0] Week 10
+  [0:33.2] Dartmouth Big Green 14 at Princeton Tigers 21 | Timeout Dartmouth, clock 01:15 1:20 Q4 | PRIN ball
+  [0:33.4] Duke Blue Devils 31 at NC State Wolfpack 3 | (10:51) Shotgun #2 W.Eget pass complete short left to #15 J.... 10:14 Q3 | DUKE ball | 4th & 4 at NCSU 43
+  [0:37.8] Game Details List list List of detailed information about the selected game
+  [0:37.8] Loading game details...
+  [0:37.9] NC State Wolfpack (Home)
+  [0:51.8] Duke Blue Devils (Away)
+  [0:52.0] Drives
+  [0:54.4] Drives Details dialog Drive-by-Drive Summary (12 drives)
+  [0:54.4] Export Game Log button Export the complete game log as an HTML file
+  [0:54.5] NFL/NCAAF Drives Tree tree view Hierarchical view of NFL/NCAAF drives organized by quarter. Use up/down arrows to navigate, left/right to expand/collapse.
+  [0:54.6] Quarter 1 not selected collapsed row 1 Drive Summary column 1 level 1
+  [1:09.3] Quarter 2 collapsed row 2 level 1
+  [1:15.4] Kickoff collapsed row 3 level 1
+  [1:18.4] [PUNT] NC State Wolfpack: 7 plays, 35 yards, 3:18 collapsed row 4 level 1
+  [1:21.5] [FG 3pts] Duke Blue Devils: 11 plays, 82 yards, 5:27 collapsed row 5 level 1
+  [1:24.5] Kickoff collapsed row 6 level 1
+  [1:27.6] [PUNT] NC State Wolfpack: 6 plays, 13 yards, 1:26 collapsed row 7 level 1
+  [1:33.7] [3:04] [1 & 10 from NCSU 19] (+2 yards) (03:07) Shotgun #7 D.Gause rush middle for 2 yards gain to the NCSU21 (#7 N.Morris Jr.) row 8 level 1
+  [1:37.7] [2:27] [2 & 8 from NCSU 21] PASS: (02:31) Shotgun #11 C.Bailey pass incomplete deep right to #2 J.Trader thrown to DUKE45 row 9 level 1
+  [1:41.7] [2:16] [3 & 8 from NCSU 21] PASS: (+11 yards) (02:27) Shotgun #11 C.Bailey pass complete short middle to #0 V.Snow caught at NCSU25, for 11 yards to the NCSU32 (#0 D.Flowers), 1ST DOWN row 10 level 1
+  [1:45.8] [2:00] [1 & 10 from NCSU 32] (02:05) Shotgun #7 D.Gause rush middle for 0 yards to the NCSU32 (#10 T.Reed; #12 B.Davis) row 11 level 1
+  [1:49.8] [1:55] [2 & 10 from NCSU 32] PASS: (01:58) Shotgun #11 C.Bailey pass incomplete short right to #8 K.Jackson thrown to DUKE49 broken up by #1 K.Loud row 12 level 1
+  [1:53.9] [1:50] [3 & 10 from NCSU 32] PASS: (01:54) Shotgun #11 C.Bailey pass incomplete short right to #86 H.Provience thrown to NCSU41 row 13 level 1
+  [1:58.0] [1:43] [4TH DOWN 4 & 10 from NCSU 32] PUNT: (+1 yards) (01:43) #96 J.Waller punt 39 yards to the DUKE29 #21 K.Cotton return 1 yard to the DUKE30, End Of Play row 14 level 1
+  [2:02.0] [TD 7pts] Duke Blue Devils: 6 plays, 70 yards, 1:17 collapsed row 15 level 1
+  [2:06.0] Kickoff collapsed row 16 level 1
+  [2:10.1] [TD 7pts] NC State Wolfpack: 5 plays, 37 yards, 0:26 collapsed row 17 level 1
+  [2:14.1] Quarter 3 collapsed row 18 level 1

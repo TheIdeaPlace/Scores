@@ -1,0 +1,16 @@
+# Game Wrap Up on the Packers game, from the details list.
+w 0.5
+x
+w 16
+q {DOWN}
+w 1
+k {ENTER}
+w 14
+q {END}
+w 2
+k {ENTER}
+w 12
+n t
+w 3
+n {TAB}
+w 3

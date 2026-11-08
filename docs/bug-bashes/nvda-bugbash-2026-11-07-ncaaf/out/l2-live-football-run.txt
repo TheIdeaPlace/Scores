@@ -1,0 +1,30 @@
+recorded l2-live-football (611.8 s)
+Focus: ListItem 'Bologna 2 at Parma 1 [Full Time]' id='QApplication.SportsScoresApp.QStackedWidget.LiveScoresView.QListWidget' value='' selected FOCUSED  [in window 'Live Scores - Sports Scores']
+  [0:04.5] Live Scores - Sports Scores window
+  [0:04.5] Live Scores List list List of currently live games from all sports. Press Alt+M to monitor a game for notifications.
+  [0:04.5] Loading live scores...
+  [0:06.3] === GOLF LIVE ===
+  [0:44.4] Arkansas Razorbacks 10 at Auburn Tigers 9 | (A. McPherson PAT MISSED) 5:01 Q3
+  [0:49.5] Arkansas Razorbacks 10 at Auburn Tigers 9 | (A. McPherson PAT MISSED) 5:01 Q3 list item focused selected
+  [0:54.6] Arkansas Razorbacks 10 at Auburn Tigers 9 | (A. McPherson PAT MISSED) 5:01 Q3 - monitoring
+  [0:54.6] Monitoring enabled for Arkansas Razorbacks at Auburn Tigers
+  [1:05.8] Arkansas Razorbacks 10 at Auburn Tigers 9 | (04:28) No Huddle-Shotgun #7 K.Jackson pass incomplete deep ... 4:28 Q3 | ARK ball | 3rd & 12 at ARK 23 - monitoring
+  [2:08.5] Arkansas Razorbacks 10 (RZ) at Auburn Tigers 9 | (04:20) No Huddle-Shotgun #27 C.Settles rush middle for 46 y... 4:17 Q3 | ARK ball | 1st & 10 at AUB 16 - monitoring
+  [3:06.7] Arkansas Razorbacks 10 (RZ) at Auburn Tigers 9 | (03:41) No Huddle-Shotgun #0 B.Russell rush middle for 3 yar... 2:57 Q3 | ARK ball | 2nd & 7 at AUB 13 - monitoring
+  [4:05.9] Arkansas Razorbacks 10 (RZ) at Auburn Tigers 9 | (02:22) No Huddle-Shotgun #7 K.Jackson sacked for loss of 8 ... 2:15 Q3 | ARK ball | 4th & 13 at AUB 19 - monitoring
+  [5:06.3] Arkansas Razorbacks 13 at Auburn Tigers 9 | (01:38) #30 M.Gilbert field goal attempt from 37 yards GOOD ... 1:36 Q3 - monitoring
+  [5:06.3] Arkansas Razorbacks at Auburn Tigers: Auburn Tigers 9 - Arkansas Razorbacks 13
+  [6:06.9] Arkansas Razorbacks 13 at Auburn Tigers 9 | (01:36) #30 M.Gilbert kickoff 65 yards to the AUB00, Touchba... 1:36 Q3 | 1st & 10 at AUB 25 - monitoring
+  [7:06.7] Arkansas Razorbacks 13 at Auburn Tigers 9 | (00:54) No Huddle-Shotgun #17 B.Brown pass incomplete short ... 0:52 Q3 | AUB ball | 2nd & 10 at AUB 35 - monitoring
+  [8:05.9] Arkansas Razorbacks 13 at Auburn Tigers 9 | (00:49) No Huddle-Shotgun #17 B.Brown rush left for 11 yards... 0:20 Q3 | AUB ball | 1st & 10 at AUB 46 - monitoring
+  [9:00.8] Arkansas Razorbacks 13 at Auburn Tigers 9 | (00:49) No Huddle-Shotgun #17 B.Brown rush left for 11 yards... 0:20 Q3 | AUB ball | 1st & 10 at AUB 46 - monitoring list item focused selected
+  [9:05.8] Arkansas Razorbacks 13 at Auburn Tigers 9 | (00:27) No Huddle-Shotgun #17 B.Brown pass complete short ri... 0:14 Q3 | AUB ball | 2nd & 1 at ARK 45 - monitoring
+  [9:07.1] Game Details List list List of detailed information about the selected game
+  [9:07.1] Auburn Tigers (Home)
+  [9:22.0] NCAAF, Arkansas Razorbacks at Auburn Tigers - Sports Scores
+  [9:25.2] Live Scores List list List of currently live games from all sports. Press Alt+M to monitor a game for notifications.
+  [9:25.2] Loading live scores... not selected
+  [9:26.6] Arkansas Razorbacks 13 at Auburn Tigers 9 | (00:27) No Huddle-Shotgun #17 B.Brown pass complete short ri... 0:14 Q3 | AUB ball | 2nd & 1 at ARK 45 - monitoring
+  [9:55.2] Arkansas Razorbacks 13 at Auburn Tigers 9 | (00:27) No Huddle-Shotgun #17 B.Brown pass complete short ri... 0:14 Q3 | AUB ball | 2nd & 1 at ARK 45 - monitoring list item focused selected
+  [10:01.4] Live Scores - Sports Scores
+  [10:04.6] Bologna 2 at Parma 1 [Full Time]

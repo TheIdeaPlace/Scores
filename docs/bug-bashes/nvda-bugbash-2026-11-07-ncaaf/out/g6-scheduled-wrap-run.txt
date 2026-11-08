@@ -1,0 +1,53 @@
+recorded g6-scheduled-wrap (300.6 s)
+Focus: Hyperlink 'Privacy Statement' (announced as 'link') id='privacy-link' value='' FOCUSED  [in window '']
+  [0:03.9] NCAAF - Sports Scores window
+  [0:03.9] Scores List list List of games and scores for the selected date or week
+  [0:03.9] Loading scores...
+  [0:05.0] In Progress, 43 games
+  [0:05.0] Week 10
+  [0:33.9] #5 Alabama Crimson Tide 10 at #14 LSU Tigers 3 | (C. Talty KICK) 8:23 Q2
+  [0:34.0] #1 Miami Hurricanes (8-0) at #11 Notre Dame Fighting Irish (7-1) (Sat 11/7 6:30PM)
+  [0:38.0] #1 Miami Hurricanes (8-0) at #11 Notre Dame Fighting Irish (7-1) (Sat 11/7 6:30PM) list item focused selected
+  [0:43.1] Game Details List list List of detailed information about the selected game
+  [0:43.2] Loading game details...
+  [0:43.3] Notre Dame Fighting Irish (Home)
+  [0:58.2] Record: 7-1
+  [1:00.7] Miami Hurricanes (Away)
+  [1:03.3] Record: 8-0
+  [1:05.8] Status: Scheduled
+  [1:08.4] Game Time: Sat, November 7th at 7:30 PM EST
+  [1:10.9] Venue: Notre Dame Stadium (Notre Dame, IN)
+  [1:13.5] Weather: 41°F
+  [1:16.0] Betting Line: ND -7
+  [1:18.5] Over/Under: O/U 54.5
+  [1:21.0] TV: NBC
+  [1:23.6] --- Additional Details ---
+  [1:26.1] Boxscore
+  [1:28.6] Leaders
+  [1:31.2] Standings
+  [1:33.8] Scores List list List of games and scores for the selected date or week
+  [1:33.8] Loading scores...
+  [1:34.5] #1 Miami Hurricanes (8-0) at #11 Notre Dame Fighting Irish (7-1) (Sat 11/7 6:30PM)
+  [2:03.8] #2 Georgia Bulldogs (7-1) at #10 Ole Miss Rebels (6-2) (Sat 11/7 6:30PM)
+  [2:03.9] #7 Texas Longhorns 34 at #18 Missouri Tigers 20 [Final]
+  [2:07.8] #7 Texas Longhorns 34 at #18 Missouri Tigers 20 [Final] list item focused selected
+  [2:13.0] Game Details List list List of detailed information about the selected game
+  [2:13.0] Loading game details...
+  [2:13.2] Missouri Tigers (Home)
+  [2:28.0] Game Wrap Up
+  [2:32.1] Game Wrap Up dialog Game Wrap Up opened in your default web browser.
+  [2:32.1] OK button Enter
+  [2:38.6] Make Microsoft Edge your own. Customize your browser theme
+  [2:46.1] OK button Enter
+  [2:53.3] OK button Enter
+  [3:54.6] NCAAF, Texas Longhorns at Missouri Tigers - Sports Scores
+  [3:57.8] OK button Enter
+  [4:35.7] NCAAF, Texas Longhorns at Missouri Tigers - Sports Scores
+  [4:38.9] OK button Enter
+  [4:44.9] Microsoft Edge document
+  [4:44.9] Continue button
+  [4:44.9] Microsoft Edge
+  [4:45.0] button Continue
+  [4:45.0] link Privacy Statement
+  [4:47.2] Privacy Statement link
+  [4:53.7] Privacy Statement link focused linked

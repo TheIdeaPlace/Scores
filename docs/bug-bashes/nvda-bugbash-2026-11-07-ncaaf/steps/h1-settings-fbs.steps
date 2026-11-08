@@ -1,0 +1,32 @@
+# Home Page Settings: college football coverage to FBS only, OK, then NCAAF: how many games, and what's said.
+w 0.5
+x
+w 15
+k {TAB}
+w 3
+k {TAB}
+w 3
+k {TAB}
+w 3
+n {TAB}
+w 3
+k {ENTER}
+w 5
+n t
+w 3
+k {TAB}
+w 2.5
+k {TAB}
+w 2.5
+k {TAB}
+w 2.5
+k {TAB}
+w 2.5
+k {TAB}
+w 2.5
+k {TAB}
+w 2.5
+k {TAB}
+w 2.5
+k {TAB}
+w 2.5

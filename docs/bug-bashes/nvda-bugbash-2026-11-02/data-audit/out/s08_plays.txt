@@ -1,0 +1,137 @@
+=== BASKETBALL period labels (modelled)
+ NBA: 33 games 16706 plays; (number, ESPN displayValue, app label): count
+     (1, '1st Quarter', '1st Quarter') 33
+     (2, '2nd Quarter', '2nd Quarter') 33
+     (3, '3rd Quarter', '3rd Quarter') 33
+     (4, '4th Quarter', '4th Quarter') 33
+     (5, 'OT', 'OT') 8
+     OT game: ('401810985', 'Final/OT', ['1st Quarter', '2nd Quarter', '3rd Quarter', '4th Quarter', 'OT'], ['1st Quarter', '2nd Quarter', '3rd Quarter', '4th Quarter', 'OT'])
+     OT game: ('401811002', 'Final/OT', ['1st Quarter', '2nd Quarter', '3rd Quarter', '4th Quarter', 'OT'], ['1st Quarter', '2nd Quarter', '3rd Quarter', '4th Quarter', 'OT'])
+     OT game: ('401866755', 'Final/OT', ['1st Quarter', '2nd Quarter', '3rd Quarter', '4th Quarter', 'OT'], ['1st Quarter', '2nd Quarter', '3rd Quarter', '4th Quarter', 'OT'])
+     OT game: ('401869400', 'Final/OT', ['1st Quarter', '2nd Quarter', '3rd Quarter', '4th Quarter', 'OT'], ['1st Quarter', '2nd Quarter', '3rd Quarter', '4th Quarter', 'OT'])
+     OT game: ('401909859', 'Final/OT', ['1st Quarter', '2nd Quarter', '3rd Quarter', '4th Quarter', 'OT'], ['1st Quarter', '2nd Quarter', '3rd Quarter', '4th Quarter', 'OT'])
+     OT game: ('401909869', 'Final/OT', ['1st Quarter', '2nd Quarter', '3rd Quarter', '4th Quarter', 'OT'], ['1st Quarter', '2nd Quarter', '3rd Quarter', '4th Quarter', 'OT'])
+ WNBA: 28 games 11278 plays; (number, ESPN displayValue, app label): count
+     (1, '1st Quarter', '1st Quarter') 28
+     (2, '2nd Quarter', '2nd Quarter') 28
+     (3, '3rd Quarter', '3rd Quarter') 28
+     (4, '4th Quarter', '4th Quarter') 28
+     (5, 'OT', 'OT') 6
+     OT game: ('401918300', 'Final/OT', ['1st Quarter', '2nd Quarter', '3rd Quarter', '4th Quarter', 'OT'], ['1st Quarter', '2nd Quarter', '3rd Quarter', '4th Quarter', 'OT'])
+     OT game: ('401918297', 'Final/OT', ['1st Quarter', '2nd Quarter', '3rd Quarter', '4th Quarter', 'OT'], ['1st Quarter', '2nd Quarter', '3rd Quarter', '4th Quarter', 'OT'])
+     OT game: ('401918020', 'Final/OT', ['1st Quarter', '2nd Quarter', '3rd Quarter', '4th Quarter', 'OT'], ['1st Quarter', '2nd Quarter', '3rd Quarter', '4th Quarter', 'OT'])
+     OT game: ('401857119', 'Final/OT', ['1st Quarter', '2nd Quarter', '3rd Quarter', '4th Quarter', 'OT'], ['1st Quarter', '2nd Quarter', '3rd Quarter', '4th Quarter', 'OT'])
+     OT game: ('401857150', 'Final/OT', ['1st Quarter', '2nd Quarter', '3rd Quarter', '4th Quarter', 'OT'], ['1st Quarter', '2nd Quarter', '3rd Quarter', '4th Quarter', 'OT'])
+     OT game: ('401857212', 'Final/OT', ['1st Quarter', '2nd Quarter', '3rd Quarter', '4th Quarter', 'OT'], ['1st Quarter', '2nd Quarter', '3rd Quarter', '4th Quarter', 'OT'])
+ NCAAM: 33 games 16617 plays; (number, ESPN displayValue, app label): count
+     (1, '1st Half', '1st Quarter') 33
+     (2, '2nd Half', '2nd Quarter') 33
+     (3, 'OT', 'OT') 8
+     (4, '2OT', 'OT') 7
+     (5, '3OT', 'OT') 2
+     OT game: ('401820165', 'Final/2OT', ['1st Quarter', '2nd Quarter', 'OT', 'OT'], ['1st Half', '2nd Half', 'OT', '2OT'])
+     OT game: ('401812021', 'Final/2OT', ['1st Quarter', '2nd Quarter', 'OT', 'OT'], ['1st Half', '2nd Half', 'OT', '2OT'])
+     OT game: ('401804890', 'Final/2OT', ['1st Quarter', '2nd Quarter', 'OT', 'OT'], ['1st Half', '2nd Half', 'OT', '2OT'])
+     OT game: ('401814537', 'Final/2OT', ['1st Quarter', '2nd Quarter', 'OT', 'OT'], ['1st Half', '2nd Half', 'OT', '2OT'])
+     OT game: ('401845838', 'Final/3OT', ['1st Quarter', '2nd Quarter', 'OT', 'OT', 'OT'], ['1st Half', '2nd Half', 'OT', '2OT', '3OT'])
+     OT game: ('401808282', 'Final/3OT', ['1st Quarter', '2nd Quarter', 'OT', 'OT', 'OT'], ['1st Half', '2nd Half', 'OT', '2OT', '3OT'])
+ NCAAWB: 33 games 16573 plays; (number, ESPN displayValue, app label): count
+     (1, '1st Quarter', '1st Quarter') 32
+     (2, '2nd Quarter', '2nd Quarter') 32
+     (3, '3rd Quarter', '3rd Quarter') 32
+     (4, '4th Quarter', '4th Quarter') 32
+     (5, 'OT', 'OT') 8
+     (6, '2OT', 'OT2') 3
+     (7, '3OT', 'OT3') 1
+     OT game: ('401819666', 'Final/3OT', ['1st Quarter', '2nd Quarter', '3rd Quarter', '4th Quarter', 'OT', 'OT2', 'OT3'], ['1st Quarter', '2nd Quarter', '3rd Quarter', '4th Quarter', 'OT', '2OT', '3OT'])
+     OT game: ('401825284', 'Final/2OT', ['1st Quarter', '2nd Quarter', '3rd Quarter', '4th Quarter', 'OT', 'OT2'], ['1st Quarter', '2nd Quarter', '3rd Quarter', '4th Quarter', 'OT', '2OT'])
+     OT game: ('401824530', 'Final/2OT', ['1st Quarter', '2nd Quarter', '3rd Quarter', '4th Quarter', 'OT', 'OT2'], ['1st Quarter', '2nd Quarter', '3rd Quarter', '4th Quarter', 'OT', '2OT'])
+     OT game: ('401827769', 'Final/OT', ['1st Quarter', '2nd Quarter', '3rd Quarter', '4th Quarter', 'OT'], ['1st Quarter', '2nd Quarter', '3rd Quarter', '4th Quarter', 'OT'])
+     OT game: ('401817735', 'Final/OT', ['1st Quarter', '2nd Quarter', '3rd Quarter', '4th Quarter', 'OT'], ['1st Quarter', '2nd Quarter', '3rd Quarter', '4th Quarter', 'OT'])
+     OT game: ('401807794', 'Final/OT', ['1st Quarter', '2nd Quarter', '3rd Quarter', '4th Quarter', 'OT'], ['1st Quarter', '2nd Quarter', '3rd Quarter', '4th Quarter', 'OT'])
+
+=== FOOTBALL (modelled)
+ NFL: {'games': 26, 'has_drives': 26, 'espn_drives': 569, 'top_plays': 0, 'model_top_nodes': 0, 'model_drive_nodes': 0, 'plays_with_team_name': 0, 'drive_trees_with_q5+': 4, 'drive_span_quarter': 50}
+   (period, displayValue): []
+   OT drives tree: ('401873031', 'Final/OT', {'Quarter 1': 6, 'Quarter 2': 5, 'Quarter 3': 9, 'Quarter 4': 6, 'Quarter 5': 2})
+   OT drives tree: ('401873024', 'Final/OT', {'Quarter 1': 7, 'Quarter 2': 5, 'Quarter 3': 5, 'Quarter 4': 6, 'Quarter 5': 3})
+   OT drives tree: ('401873016', 'Final/OT', {'Quarter 1': 5, 'Quarter 2': 5, 'Quarter 3': 5, 'Quarter 4': 4, 'Quarter 5': 2})
+   OT drives tree: ('401772985', 'Final/OT', {'Quarter 1': 3, 'Quarter 2': 7, 'Quarter 3': 6, 'Quarter 4': 5, 'Quarter 5': 3})
+ NCAAF: {'games': 33, 'has_drives': 32, 'espn_drives': 759, 'top_plays': 0, 'model_top_nodes': 0, 'model_drive_nodes': 0, 'plays_with_team_name': 0, 'drive_trees_with_q5+': 8, 'drive_span_quarter': 63}
+   (period, displayValue): []
+   OT drives tree: ('401868956', 'Final/OT', {'Quarter 1': 3, 'Quarter 2': 4, 'Quarter 3': 5, 'Quarter 4': 8, 'Quarter 5': 2})
+   OT drives tree: ('401757313', 'Final/2OT', {'Quarter 1': 4, 'Quarter 2': 5, 'Quarter 3': 6, 'Quarter 4': 7, 'Quarter 5': 2, 'Quarter 6': 2})
+   OT drives tree: ('401856835', 'Final/2OT', {'Quarter 1': 5, 'Quarter 2': 7, 'Quarter 3': 3, 'Quarter 4': 5, 'Quarter 5': 2, 'Quarter 6': 2})
+   OT drives tree: ('401757315', 'Final/OT', {'Quarter 1': 8, 'Quarter 2': 6, 'Quarter 3': 6, 'Quarter 4': 7, 'Quarter 5': 2})
+   OT drives tree: ('401761665', 'Final/OT', {'Quarter 1': 8, 'Quarter 2': 5, 'Quarter 3': 5, 'Quarter 4': 6, 'Quarter 5': 2})
+   OT drives tree: ('401777328', 'Final/OT', {'Quarter 1': 4, 'Quarter 2': 5, 'Quarter 3': 3, 'Quarter 4': 7, 'Quarter 5': 2})
+
+=== HOCKEY (modelled _build_generic_tree 4118-4148)
+ NHL: {'games': 33, 'plays': 10482, 'period_goal_mismatch': 7, 'mismatch:SO': 7, 'tree_total_goals != final': 7}
+   (number, displayValue) seen: [((1, '1st'), 33), ((2, '2nd'), 33), ((3, '3rd'), 33), ((4, 'OT'), 12), ((5, 'SO'), 9)]
+    ('401803303', 'Final/SO', 5, 'SO', 'tree says', 3, 'linescore', 1, 'final total', 5, 'shootout attempts', 2)
+    ('401803303', 'Final/SO', 'tree total', 7, 'final', 5)
+    ('401803305', 'Final/SO', 5, 'SO', 'tree says', 3, 'linescore', 1, 'final total', 5, 'shootout attempts', 2)
+    ('401803305', 'Final/SO', 'tree total', 7, 'final', 5)
+    ('401803322', 'Final/SO', 5, 'SO', 'tree says', 2, 'linescore', 1, 'final total', 7, 'shootout attempts', 2)
+    ('401803322', 'Final/SO', 'tree total', 8, 'final', 7)
+    ('401803335', 'Final/SO', 5, 'SO', 'tree says', 2, 'linescore', 1, 'final total', 9, 'shootout attempts', 2)
+    ('401803335', 'Final/SO', 'tree total', 10, 'final', 9)
+    ('401803338', 'Final/SO', 5, 'SO', 'tree says', 3, 'linescore', 1, 'final total', 11, 'shootout attempts', 2)
+    ('401803338', 'Final/SO', 'tree total', 13, 'final', 11)
+    ('401803352', 'Final/SO', 5, 'SO', 'tree says', 3, 'linescore', 1, 'final total', 5, 'shootout attempts', 2)
+    ('401803352', 'Final/SO', 'tree total', 7, 'final', 5)
+ NCAAH: {'games': 33, 'plays': 0, 'games_no_plays': 33}
+   (number, displayValue) seen: []
+ NCAAWH: {'games': 33, 'plays': 0, 'games_no_plays': 33}
+   (number, displayValue) seen: []
+
+=== COORDINATES (real play_geometry)
+ NBA: {'games': 33, 'plays': 16706, 'sentinel_or_invalid': 5226, 'usable': 11480, 'located_non_shot': 5567, 'out_of_range': 415, 'games_with_any_location': 33, 'zero_zero': 3} usable 68.7%
+    x min/p1/med/p99/max (0, 1, 25, 49, 50); y (-5, -2, 7, 34, 82)
+    description bands: [('from three', 4545), ('at the rim', 3005), ('short mid-range', 1602), ('in the paint', 1446), ('mid-range', 467), ('deep', 415)]
+    3pt check: {'3pt total': 2360, '3pt called three/deep': 2360}
+    layup/dunk check: {'rim total': 1297, 'called at the rim': 1106, 'called in the paint': 179, 'called mid-range': 2, 'called short mid-range': 10}
+    located non-shot / (0,0) types: [('Defensive Rebound', 2168), ('Offensive Rebound', 1054), ('Shooting Foul', 653), ('Personal Foul', 502), ('Bad Pass\nTurnover', 368), ('Lost Ball Turnover', 207), ('Out of Bounds - Bad Pass Turnover', 114), ('Offensive Foul', 100), ('Loose Ball Foul', 89), ('Out of Bounds - Lost Ball Turnover', 62)]
+    out-of-range examples: [('401909906', 2, -2, "Ja'Kobe Walter makes 22-foot three point jumper (RJ Barrett assists)"), ('401909906', 1, -3, 'Jamal Shead makes 23-foot running pullup jump shot (Alijah Martin assists)'), ('401909906', 34, -4, 'Collin Sexton out of bounds bad pass turnover')]
+ WNBA: {'games': 28, 'plays': 11278, 'sentinel_or_invalid': 3421, 'usable': 7857, 'located_non_shot': 4052, 'out_of_range': 117, 'games_with_any_location': 28} usable 69.7%
+    x min/p1/med/p99/max (1, 2, 25, 48, 50); y (-5, -1, 8, 34, 64)
+    description bands: [('from three', 2533), ('at the rim', 2197), ('short mid-range', 1321), ('in the paint', 1146), ('mid-range', 416), ('deep', 244)]
+    3pt check: {'3pt total': 1305, '3pt called three/deep': 1284, '3pt called mid-range': 21}
+    layup/dunk check: {'rim total': 992, 'called at the rim': 814, 'called in the paint': 171, 'called short mid-range': 7}
+    located non-shot / (0,0) types: [('Defensive Rebound', 1551), ('Offensive Rebound', 675), ('Shooting Foul', 481), ('Personal Foul', 409), ('Bad Pass\nTurnover', 273), ('Lost Ball Turnover', 126), ('Offensive Foul Turnover', 99), ('Offensive Foul', 88), ('Loose Ball Foul', 81), ('Out of Bounds - Bad Pass Turnover', 60)]
+    out-of-range examples: [('401918311', 14, -2, 'Allisha Gray makes 11-foot fade away jump shot'), ('401918311', 13, -3, 'Naz Hillmon personal take foul'), ('401918310', 48, -1, 'Jordin Canada misses 23-foot three point jumper')]
+ NCAAM: {'games': 33, 'plays': 16617, 'usable': 16609, 'located_non_shot': 11047, 'free_throw_located': 1395, 'out_of_range': 85, 'games_with_any_location': 33, 'sentinel_or_invalid': 8} usable 100.0%
+    x min/p1/med/p99/max (0, 3, 25, 48, 50); y (-5, 0, 0, 82, 88)
+    description bands: [('at the rim', 12007), ('from three', 1833), ('deep', 1198), ('short mid-range', 708), ('in the paint', 658), ('mid-range', 205)]
+    3pt check: {'3pt total': 1713, '3pt called three/deep': 1692, '3pt called mid-range': 21}
+    layup/dunk check: {'rim total': 1622, 'called at the rim': 1334, 'called in the paint': 277, 'called short mid-range': 11}
+    located non-shot / (0,0) types: [('Substitution', 4782), ('Defensive Rebound', 1692), ('PersonalFoul', 1196), ('Lost Ball Turnover', 872), ('Offensive Rebound', 825), ('Steal', 498), ('OfficialTVTimeOut', 290), ('Block Shot', 243), ('Dead Ball Rebound', 214), ('ShortTimeOut', 163)]
+    out-of-range examples: [('401928858', 21, -1, 'Rashund Washington Jr. bad pass\nturnover'), ('401928858', 20, -3, 'Nick Niego traveling turnover'), ('401928858', 2, -1, 'Benny Gealer misses 23-foot three point jumper')]
+ NCAAWB: {'games': 33, 'plays': 16573, 'usable': 16573, 'located_non_shot': 11348, 'free_throw_located': 1174, 'out_of_range': 92, 'games_with_any_location': 32, 'games_no_plays': 1, 'zero_zero': 1} usable 100.0%
+    x min/p1/med/p99/max (0, 3, 25, 47, 50); y (-4, 0, 0, 82, 89)
+    description bands: [('at the rim', 11727), ('from three', 1609), ('deep', 1175), ('short mid-range', 951), ('in the paint', 850), ('mid-range', 261)]
+    3pt check: {'3pt total': 1424, '3pt called three/deep': 1412, '3pt called mid-range': 12}
+    layup/dunk check: {'rim total': 1621, 'called in the paint': 411, 'called at the rim': 1202, 'called short mid-range': 8}
+    located non-shot / (0,0) types: [('Substitution', 4677), ('Defensive Rebound', 1690), ('Lost Ball Turnover', 1234), ('PersonalFoul', 1151), ('Offensive Rebound', 886), ('Steal', 685), ('Dead Ball Rebound', 223), ('Block Shot', 200), ('ShortTimeOut', 153), ('OfficialTVTimeOut', 141)]
+    out-of-range examples: [('401911736', 48, -1, 'Kelsey Langston misses 23-foot three point jumper'), ('401906074', 2, -1, 'Imari Berry makes 23-foot three point jumper (Elif Istanbulluoglu assists)'), ('401906074', 2, -2, 'Reagan Bender makes 24-foot three point jumper (Zamareya Jones assists)')]
+ NHL: {'games': 33, 'plays': 10482, 'no_coordinate_key': 671, 'usable': 9811, 'games_with_any_location': 33} usable 93.6%
+    x min/p1/med/p99/max (-99, -98, 0, 98, 99); y (-42, -41, 0, 41, 42)
+    description bands: [('far end, from the point', 1458), ('near end, from the point', 1452), ('far end, from distance', 951), ('near end, from distance', 891), ('far end, in the slot', 678), ('near end, in the slot', 670), ('far end, from the hash marks', 506), ('near end, from the hash marks', 494), ('neutral zone, right side', 481), ('neutral zone, left side', 472), ('near end, behind the net', 360), ('far end, behind the net', 358)]
+    goals: [('goal', 251), ('in the slot', 81), ('from the point', 74), ('from the hash marks', 71), ('from distance', 17), ('in the left corner', 3), ('right side', 1), ('centre', 1)]
+    located non-shot / (0,0) types: [('Hit', 0), ('Blocked', 0), ('Shot', 0), ('Stoppage', 0), ('Face Off', 0), ('Giveaway', 0), ('Takeaway', 0), ('Holding', 0), ('Goal', 0), ('Holding the Stick', 0)]
+    out-of-range examples: []
+ NCAAH: {'games': 33, 'games_no_plays': 33} usable 0.0%
+ NCAAWH: {'games': 33, 'games_no_plays': 33} usable 0.0%
+
+=== HOCKEY web gamepackage (real get_game_details on 8 games each)
+ NHL: {'src site_summary': 8, 'web_nonempty': 0, 'web>api': 0}
+   web play example: None
+   URL: https://www.espn.com/nhl/playbyplay/_/gameId/<id>
+ NCAAH: {'src site_summary': 8, 'web_nonempty': 0, 'web>api': 0}
+   web play example: None
+   URL: https://www.espn.com/mens-college-hockey/playbyplay/_/gameId/<id>
+ NCAAWH: {'src site_summary': 8, 'web_nonempty': 0, 'web>api': 0}
+   web play example: None
+   URL: https://www.espn.com/womens-college-hockey/playbyplay/_/gameId/<id>
+requests {'net': 24, 'cached': 583}

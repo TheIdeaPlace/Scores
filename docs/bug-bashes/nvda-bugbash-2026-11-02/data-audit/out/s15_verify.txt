@@ -1,0 +1,20 @@
+NFL 9 get_team_news rows 0 | /teams/id/news status 200 (0, []) | /news?team= 200 (15, ["NFL Week 8's best arrivals, led by Rams' Quen", "Packers expect Parsons at practice 'sometime "]) | printed 
+NFL 2 get_team_news rows 0 | /teams/id/news status 200 (0, []) | /news?team= 200 (15, ["NFL Week 8's best arrivals, led by Rams' Quen", 'NFL Week 9 betting odds: Lines and totals for']) | printed 
+NCAAF 275 get_team_news rows 0 | /teams/id/news status 200 (0, []) | /news?team= 200 (15, ['Top 25 betting lines: No. 4 Notre Dame favore', 'Wisconsin and Rutgers meet in Big Ten play']) | printed 
+NCAAF 2653 get_team_news rows 0 | /teams/id/news status 200 (0, []) | /news?team= 200 (15, ['Troy hosts Louisiana Tech in Sun Belt matchup', "Hayden Wolfe's field goal in OT lifts Troy to"]) | printed 
+NBA 15 get_team_news rows 0 | /teams/id/news status 200 (0, []) | /news?team= 200 (15, ['Minnesota and Milwaukee square off in non-con', 'Mobley scores 27, Allen adds 25 as Cavaliers ']) | printed 
+NBA 13 get_team_news rows 0 | /teams/id/news status 200 (0, []) | /news?team= 200 (15, ["Miami visits Los Angeles following Doncic's 4", 'Luka Doncic touts his improved defense, draws']) | printed 
+WNBA 8 get_team_news rows 0 | /teams/id/news status 200 (0, []) | /news?team= 200 (15, ['Valkyries, Lynx, Aces all seen as WNBA title ', 'Where do 2026 champion Valkyries rank among e']) | printed 
+NCAAM 275 get_team_news rows 0 | /teams/id/news status 200 (0, []) | /news?team= 200 (15, ['Wisconsin Badgers open season at home against', 'Transfers, recruits and roster moves for key ']) | printed 
+NCAAM 150 get_team_news rows 0 | /teams/id/news status 200 (0, []) | /news?team= 200 (15, ["Early top-10 men's basketball recruiting clas", 'No. 2 Duke opens season at home against Army']) | printed 
+NCAAWB 275 get_team_news rows 0 | /teams/id/news status 200 (0, []) | /news?team= 200 (15, ['Wisconsin Badgers begin season at home agains', "Women's college basketball recruiting: Top 25"]) | printed 
+NHL 4 get_team_news rows 0 | /teams/id/news status 200 (0, []) | /news?team= 200 (15, ["Who's No. 1? Our definitive ranking of the NH", 'NHL Tonight: What to watch in Golden Knights-']) | printed 
+NHL 30 get_team_news rows 0 | /teams/id/news status 200 (0, []) | /news?team= 200 (15, ["Who's No. 1? Our definitive ranking of the NH", 'Wild visit the Flyers, look to extend road wi']) | printed 
+NCAAH 275 get_team_news rows 0 | /teams/id/news status 200 (0, []) | /news?team= 200 (8, ['Wisconsin Badgers vs. North Dakota Fighting H', 'Wisconsin Badgers vs. Michigan St. Spartans G']) | printed 
+NCAAWH 43 get_team_news rows 0 | /teams/id/news status 200 (0, []) | /news?team= 200 (13, ['Yale Bulldogs vs. Boston U. Terriers Game Hig', 'Minn. Duluth Bulldogs vs. Vermont Catamounts ']) | printed 
+NCAAF UTSA Roadrunners wins splits in order [('wins', '7'), ('homerecord_wins', '4'), ('awayrecord_wins', '3'), ('vsdivision_wins', '0'), ('vsconf_wins', '4'), ('vsaprankedteams_wins', '0'), ('vsusarankedteams_wins', '0')] overall 7-1
+NCAAM Binghamton Bearcats wins splits in order [('wins', '0'), ('home_wins', '0'), ('road_wins', '0'), ('vsaprankedteams_wins', '0'), ('vsusarankedteams_wins', '0'), ('vsconf_wins', '0')] overall 0-0
+NHL divisions Counter({'Eastern Conference Atlantic': 8, 'Eastern Conference Metropolitan': 8, 'Western Conference Pacific': 8, 'Western Conference Central': 7, 'Western Conference': 1})
+[('Fri, Sep 25', 'vs', 'Atlanta Falcons')]
+Aces 2025 vs 2026 window logic: rows now 3
+WNBA Aces season=None ids == season=2025 ids: True 3 3

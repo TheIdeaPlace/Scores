@@ -1,0 +1,4 @@
+old = "        self._add_nav_buttons()\n        self.load_scores()\n"
+must(old)
+s = s.replace(old, NAV_TEXT)
+

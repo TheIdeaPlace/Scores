@@ -1,0 +1,22 @@
+# Live Scores, left alone through refreshes
+w 0.5
+x
+w 20
+w 30
+w 30
+w 30
+k {DOWN}
+w 2.5
+k {DOWN}
+w 2.5
+k {DOWN}
+w 2.5
+k {DOWN}
+w 2.5
+k {DOWN}
+w 2.5
+w 40
+k {DOWN}
+w 2.5
+k {DOWN}
+w 2.5

@@ -1,0 +1,66 @@
+# A live game's details, every row, then Back. Game picked by type-ahead.
+w 0.5
+x
+w 30
+Q Duke Blue
+w 3
+k {ENTER}
+w 14
+n t
+w 3
+k {DOWN}
+w 2.5
+k {DOWN}
+w 2.5
+k {DOWN}
+w 2.5
+k {DOWN}
+w 2.5
+k {DOWN}
+w 2.5
+k {DOWN}
+w 2.5
+k {DOWN}
+w 2.5
+k {DOWN}
+w 2.5
+k {DOWN}
+w 2.5
+k {DOWN}
+w 2.5
+k {DOWN}
+w 2.5
+k {DOWN}
+w 2.5
+k {DOWN}
+w 2.5
+k {DOWN}
+w 2.5
+k {DOWN}
+w 2.5
+k {DOWN}
+w 2.5
+k {DOWN}
+w 2.5
+k {DOWN}
+w 2.5
+k {DOWN}
+w 2.5
+k {DOWN}
+w 2.5
+k {DOWN}
+w 2.5
+k {DOWN}
+w 2.5
+# F5 on a live game: where does focus land?
+k {F5}
+w 12
+n t
+w 3
+# Back to the league: which row?
+k {ESC}
+w 25
+n {TAB}
+w 3
+n t
+w 3

@@ -1,0 +1,75 @@
+recorded g4-box (207 s)
+Focus: ListItem 'Boxscore' id='QApplication.SportsScoresApp.QStackedWidget.GameDetailsView.QListWidget' value='' selected FOCUSED  [in window 'NCAAF, Duke Blue Devils at NC State Wolfpack - Sports Scores']
+  [0:02.7] NCAAF - Sports Scores window
+  [0:02.7] Scores List list List of games and scores for the selected date or week
+  [0:02.7] Loading scores...
+  [0:03.8] In Progress, 48 games
+  [0:03.8] Week 10
+  [0:32.7] Duke Blue Devils 31 at NC State Wolfpack 3 | (08:39) #41 K.Reynoldson punt 35 yards to the NCSU00, Touchb... 8:39 Q3 | NCSU ball | 1st & 10 at NCSU 20
+  [0:37.3] Game Details List list List of detailed information about the selected game
+  [0:37.4] Loading game details...
+  [0:37.5] NC State Wolfpack (Home)
+  [0:51.3] Betting Line: DUKE -4.5
+  [0:51.5] Boxscore
+  [0:54.3] Boxscore Details dialog
+  [0:54.3] Boxscore Tables list Press Enter on one to open it. Escape comes back to this list.
+  [0:54.3] Duke Blue Devils Passing
+  [1:08.9] NCAAF, Duke Blue Devils at NC State Wolfpack - Sports Scores
+  [1:12.1] Duke Blue Devils Rushing
+  [1:14.6] Duke Blue Devils Receiving
+  [1:17.1] Duke Blue Devils Defense
+  [1:19.7] Duke Blue Devils Kick Returns
+  [1:22.3] Duke Blue Devils Punt Returns
+  [1:24.8] Duke Blue Devils Kicking
+  [1:27.3] Duke Blue Devils Punting
+  [1:29.9] NC State Wolfpack Passing
+  [1:32.4] NC State Wolfpack Rushing
+  [1:34.9] NC State Wolfpack Receiving
+  [1:37.5] NC State Wolfpack Defense
+  [1:40.0] NC State Wolfpack Kick Returns
+  [1:42.6] NC State Wolfpack Kicking
+  [1:45.1] NC State Wolfpack Punting
+  [1:47.6] Team Stats
+  [1:50.2] Duke Blue Devils Passing
+  [1:52.7] Duke Blue Devils Rushing
+  [1:55.2] Duke Blue Devils Receiving
+  [1:57.8] Duke Blue Devils Defense
+  [2:00.4] Duke Blue Devils Kick Returns
+  [2:02.9] Duke Blue Devils Punt Returns
+  [2:05.4] Duke Blue Devils Kicking
+  [2:07.9] Duke Blue Devils Passing
+  [2:10.5] Duke Blue Devils Passing grouping Duke Blue Devils Passing data table with player or team statistics. Multiple view modes available: Alt+V to cycle views, Alt+T for table, Alt+Q for quick list, Alt+F for full list.
+  [2:10.6] Duke Blue Devils Passing table Duke Blue Devils Passing data table with player or team statistics. Use up/down/left/right arrow keys to navigate cells, Tab to enter or exit table. Alt+V to cycle views, Alt+Q for quick list, Alt+F for full list.
+  [2:10.6] Player, Walker Eget data item 1 row 1 Player column 1
+  [2:14.6] NCAAF, Duke Blue Devils at NC State Wolfpack - Sports Scores
+  [2:17.7] Walker Eget, C/ATT, 21/30 data item C/ATT column 2
+  [2:20.3] Walker Eget, YDS, 199 data item YDS column 3
+  [2:22.8] Walker Eget, AVG, 6.6 data item AVG column 4
+  [2:25.4] Walker Eget, TD, 1 data item TD column 5
+  [2:27.9] Dan Mahan, TD, 0 data item 2 row 2
+  [2:30.5] Totals, TD, 1 data item 3 row 3
+  [2:33.0] Duke Blue Devils Passing - Quick List list Duke Blue Devils Passing data table with player or team statistics in quick list format. Use up/down arrow keys to navigate, Alt+V to cycle views, Alt+T for table view.
+  [2:33.0] Totals, 21/31, 199, 6.4, 1, 0
+  [2:39.1] Duke Blue Devils Passing - Full List list Duke Blue Devils Passing data table with player or team statistics in detailed list format with headers. Use up/down arrow keys to navigate, Alt+V to cycle views, Alt+T for table view.
+  [2:39.1] Player: Totals; C/ATT: 21/31; YDS: 199; AVG: 6.4; TD: 1; INT: 0
+  [2:45.2] Duke Blue Devils Passing table Duke Blue Devils Passing data table with player or team statistics. Use up/down/left/right arrow keys to navigate cells, Tab to enter or exit table. Alt+V to cycle views, Alt+Q for quick list, Alt+F for full list.
+  [2:45.2] Totals, TD, 1 data item
+  [2:48.2] Duke Blue Devils Rushing grouping Duke Blue Devils Rushing data table with player or team statistics. Multiple view modes available: Alt+V to cycle views, Alt+T for table, Alt+Q for quick list, Alt+F for full list.
+  [2:48.3] Duke Blue Devils Rushing table Duke Blue Devils Rushing data table with player or team statistics. Use up/down/left/right arrow keys to navigate cells, Tab to enter or exit table. Alt+V to cycle views, Alt+Q for quick list, Alt+F for full list.
+  [2:48.3] Player, Nate Sheppard data item 1 row 1 Player column 1
+  [2:52.3] Player, CJ Campbell Jr. data item 2 row 2
+  [2:54.8] Boxscore Tables list Press Enter on one to open it. Escape comes back to this list.
+  [2:54.8] Duke Blue Devils Rushing
+  [2:57.9] Team Stats
+  [3:00.4] Team Stats grouping Team Stats data table with player or team statistics. Multiple view modes available: Alt+V to cycle views, Alt+T for table, Alt+Q for quick list, Alt+F for full list.
+  [3:00.4] Team Stats table Team Stats data table with player or team statistics. Use up/down/left/right arrow keys to navigate cells, Tab to enter or exit table. Alt+V to cycle views, Alt+Q for quick list, Alt+F for full list.
+  [3:00.5] Statistic, 1st Downs data item 1 row 1 Statistic column 1
+  [3:04.4] Statistic, 3rd down efficiency data item 2 row 2
+  [3:07.0] Statistic, 4th down efficiency data item 3 row 3
+  [3:09.5] 4th down efficiency, Duke Blue Devils, 2-2 data item Duke Blue Devils column 2
+  [3:12.1] 4th down efficiency, NC State Wolfpack, 1-1 data item NC State Wolfpack column 3
+  [3:14.6] Boxscore Tables list Press Enter on one to open it. Escape comes back to this list.
+  [3:14.6] Team Stats
+  [3:17.7] Game Details List list List of detailed information about the selected game
+  [3:17.7] Boxscore
+  [3:20.7] Boxscore list item focused selected

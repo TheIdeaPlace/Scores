@@ -1,0 +1,28 @@
+recorded m1-live (239.2 s)
+Focus: ListItem '=== MONITORING: none. Alt+M on a game adds it here ===' id='QApplication.SportsScoresApp.QStackedWidget.LiveScoresView.QListWidget' value='' selected FOCUSED  [in window 'Live Scores - Sports Scores']
+  [0:04.6] Live Scores - Sports Scores window
+  [0:04.7] Live Scores List list Live, upcoming and finished games from all sports, with the games you're monitoring first. Alt+M adds a game to Monitoring or takes it off, Alt+L listens to it.
+  [0:04.7] Loading live scores...
+  [0:07.4] === LIVE GAMES ===
+  [0:44.3] Live Scores - Sports Scores
+  [0:47.5] === MONITORING: none. Alt+M on a game adds it here ===
+  [0:50.5] === LIVE GAMES ===
+  [0:53.0] --- Liga MX ---
+  [0:55.6] Pachuca at Atlas - 2-0 (14')
+  [0:58.1] --- NBA ---
+  [1:00.7] Choose a game to monitor
+  [1:04.8] Denver Nuggets at Indiana Pacers - 64-41 (Halftime) | End of the 2nd Quarter
+  [1:08.8] Added to monitoring
+  [1:08.9] Denver Nuggets at Indiana Pacers - 64-41 (Halftime) | End of the 2nd Quarter - monitoring
+  [1:12.0] === MONITORING ===
+  [1:14.8] Denver Nuggets at Indiana Pacers - 64-41 (Halftime) | End of the 2nd Quarter | NBA
+  [1:17.8] === LIVE GAMES ===
+  [1:20.8] --- Liga MX ---
+  [1:23.8] === LIVE GAMES ===
+  [1:26.8] Denver Nuggets at Indiana Pacers - 64-41 (Halftime) | End of the 2nd Quarter | NBA
+  [3:34.9] Denver Nuggets at Indiana Pacers - 64-41 (Halftime) | End of the 2nd Quarter | NBA list item focused selected
+  [3:39.9] Denver Nuggets at Indiana Pacers removed from monitoring
+  [3:39.9] === MONITORING: none. Alt+M on a game adds it here ===
+  [3:43.2] === MONITORING: none. Alt+M on a game adds it here === list item focused selected
+  [3:47.3] Choose a game to monitor
+  [3:51.4] === MONITORING: none. Alt+M on a game adds it here === list item focused selected
