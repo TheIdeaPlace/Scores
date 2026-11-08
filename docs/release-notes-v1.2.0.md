@@ -58,7 +58,13 @@ and the CFL. Both apps now read the same data in more places, and a lot of thing
 
 **Fixed**
 - Every menu the app builds is announced as it opens, on its first item, instead of waiting for an arrow key.
-- Live Scores headings say how many games they hold, as the iPhone's do: "LIVE GAMES, 5", "NHL, 3".
+- Live Scores headings say how many games they hold, as the iPhone's do: "Live games, 5", "NHL, 3".
+- Closing a dialog no longer leaves its text behind. JAWS used to say a closed dialog's instruction line again
+  every time you came back to the window or went back a screen, for example "Press Enter or double-click a
+  headline to open in your browser". 1.1.1 did this too.
+- Screen readers no longer read out decoration: the dashes and equals signs around section rows such as
+  "News Headlines", and symbols such as stars and emoji. Section rows and headings are bold instead, and symbols
+  that meant something are words: "Game story:", "Scoring play:", "(up 3)", "Remove from Favorites".
 - Enter on an upcoming or finished game in Live Scores opens it.
 - Pitch audio: Alt+S on an at-bat plays its pitches, a new Alt+S replaces one still playing, and closing the
   plays stops it.
@@ -75,6 +81,7 @@ and the CFL. Both apps now read the same data in more places, and a lot of thing
 - **Transactions:** one list, newest first, that loads older ones as you go, with Jump to Month. Soccer transfers read as sentences.
 - **Polls:** every college football poll, chosen from a Poll menu.
 - **Your Default view setting** now applies to every table screen.
+- **VoiceOver no longer reads emoji names** in Live Scores headings, such as the golf flag and each sport's icon.
 - **Fixed:** Formula 1 loads during a race weekend; a pitcher's Strikeouts, NFL interceptions and punt returns have the right definitions; a wild card row's Full List says its Record; and MLB win probability rounds correctly and doesn't give away later results.
 
 ### Windows known issues
