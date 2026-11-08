@@ -2557,3 +2557,14 @@ class TestRemainingChecks:
         report = v.Report()
         v.check_standings(FakeHttp(default=(200, data)), report, league("NFL"), True)
         assert "missing" in detail(report, "App: standings")
+
+
+def test_on_ice_problems_on_a_real_live_summary():
+    summary = load("summary_live_NHL_*.json")
+    assert v.on_ice_problems(summary) == []
+    broken = copy.deepcopy(summary)
+    broken["onIce"][0]["entries"][0]["athleteid"] = "1"
+    del broken["onIce"][1]["teamId"]
+    assert v.on_ice_problems(broken) == ["onIce ids not in the box score: 1", "an onIce block has no teamId"]
+    assert v.on_ice_problems({"onIce": []}) == ["no onIce block"]
+    assert v.on_ice_problems({}) == ["no onIce block"]

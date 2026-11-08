@@ -1,0 +1,195 @@
+{
+ "about": "Who is on the ice, from an NHL summary. on_ice.py (tests/unit/test_on_ice.py) and the iPhone's Models/OnIce.swift (OnIceGridTests.swift) must both give these answers. A case reads either a real summary from tests/fixtures/<fixture> or the summary written out here.",
+ "cases": [
+  {
+   "name": "live Rangers at Kraken, 6 on 6",
+   "fixture": "espn/summary_live_NHL_401892664.json",
+   "expected_teams": [
+    {"id": "13", "name": "New York Rangers", "short_name": "Rangers", "home_away": "away", "players": [
+     {"id": "2562637", "name": "Mika Zibanejad", "last_name": "Zibanejad", "jersey": "93", "position": "Center", "group": "forward"},
+     {"id": "4697382", "name": "Alexis Lafreniere", "last_name": "Lafreniere", "jersey": "13", "position": "Left Wing", "group": "forward"},
+     {"id": "5149204", "name": "Gabe Perreault", "last_name": "Perreault", "jersey": "94", "position": "Right Wing", "group": "forward"},
+     {"id": "3942292", "name": "Vladislav Gavrikov", "last_name": "Gavrikov", "jersey": "44", "position": "Defense", "group": "defense"},
+     {"id": "4874882", "name": "Scott Morrow", "last_name": "Morrow", "jersey": "60", "position": "Defense", "group": "defense"},
+     {"id": "3069266", "name": "Joonas Korpisalo", "last_name": "Korpisalo", "jersey": "70", "position": "Goaltender", "group": "goalie"}
+    ]},
+    {"id": "124292", "name": "Seattle Kraken", "short_name": "Kraken", "home_away": "home", "players": [
+     {"id": "4565223", "name": "Kaapo Kakko", "last_name": "Kakko", "jersey": "84", "position": "Right Wing", "group": "forward"},
+     {"id": "4874741", "name": "Mackie Samoskevich", "last_name": "Samoskevich", "jersey": "11", "position": "Right Wing", "group": "forward"},
+     {"id": "5216877", "name": "Berkly Catton", "last_name": "Catton", "jersey": "27", "position": "Center", "group": "forward"},
+     {"id": "4063504", "name": "Joshua Mahura", "last_name": "Mahura", "jersey": "28", "position": "Defense", "group": "defense"},
+     {"id": "5103811", "name": "Ville Ottavainen", "last_name": "Ottavainen", "jersey": "46", "position": "Defense", "group": "defense"},
+     {"id": "3942073", "name": "Joey Daccord", "last_name": "Daccord", "jersey": "35", "position": "Goaltender", "group": "goalie"}
+    ]}
+   ],
+   "expected_line": "On the ice: Rangers: Zibanejad, Lafreniere, Perreault, Gavrikov, Morrow, Korpisalo; Kraken: Kakko, Samoskevich, Catton, Mahura, Ottavainen, Daccord",
+   "expected_headings": ["New York Rangers, 6 on the ice", "Seattle Kraken, 6 on the ice"],
+   "expected_player_texts": [
+    ["Mika Zibanejad, number 93, Center", "Alexis Lafreniere, number 13, Left Wing", "Gabe Perreault, number 94, Right Wing", "Vladislav Gavrikov, number 44, Defense", "Scott Morrow, number 60, Defense", "Joonas Korpisalo, number 70, Goaltender"],
+    ["Kaapo Kakko, number 84, Right Wing", "Mackie Samoskevich, number 11, Right Wing", "Berkly Catton, number 27, Center", "Joshua Mahura, number 28, Defense", "Ville Ottavainen, number 46, Defense", "Joey Daccord, number 35, Goaltender"]
+   ]
+  },
+  {
+   "name": "odd entries: goalie listed first, an id the box score lacks, a repeat, a player on the bench, no group name, no jersey",
+   "summary": {
+    "header": {"competitions": [{"status": {"period": 2, "type": {"state": "in"}}, "competitors": [
+     {"homeAway": "home", "team": {"id": "2", "displayName": "Beta Bears", "name": "Bears", "abbreviation": "BET"}},
+     {"homeAway": "away", "team": {"id": "1", "displayName": "Alpha Aces", "name": "Aces", "abbreviation": "ALP"}}
+    ]}]},
+    "boxscore": {"players": [
+     {"team": {"id": "1"}, "statistics": [
+      {"name": "forwards", "athletes": [{"athlete": {"id": "101", "displayName": "Ann Archer", "lastName": "Archer", "jersey": "9", "position": {"displayName": "Center", "abbreviation": "C"}}}]},
+      {"name": "defenses", "athletes": [{"athlete": {"id": "102", "displayName": "Dee Dunn", "lastName": "Dunn", "jersey": "4", "position": {"displayName": "Defense", "abbreviation": "D"}}}]},
+      {"name": "goalies", "athletes": [{"athlete": {"id": "103", "displayName": "Gus Gold", "lastName": "Gold", "jersey": "30", "position": {"displayName": "Goaltender", "abbreviation": "G"}}}]},
+      {"name": "skaters", "athletes": [{"athlete": {"id": "104", "displayName": "Sam Stone", "position": {"displayName": "Left Wing", "abbreviation": "LW"}}}]}
+     ]},
+     {"team": {"id": "2"}, "statistics": [
+      {"name": "forwards", "athletes": [
+       {"athlete": {"id": "201", "displayName": "Bo Burns", "lastName": "Burns", "jersey": "12", "position": {"displayName": "Right Wing", "abbreviation": "RW"}}},
+       {"athlete": {"id": "202", "displayName": "Cy Cole", "lastName": "Cole", "jersey": "17", "position": {"name": "Right Wing", "abbreviation": "RW"}}}
+      ]}
+     ]}
+    ]},
+    "onIce": [
+     {"teamId": "1", "entries": [
+      {"athleteid": "103", "whereabouts": {"name": "ROSTER_WHEREABOUTS_IN_PLAY"}},
+      {"athleteid": "102", "whereabouts": {"name": "ROSTER_WHEREABOUTS_IN_PLAY"}},
+      {"athleteid": "999", "whereabouts": {"name": "ROSTER_WHEREABOUTS_IN_PLAY"}},
+      {"athleteid": "104"},
+      {"athleteid": "101", "whereabouts": {"name": "ROSTER_WHEREABOUTS_IN_PLAY"}},
+      {"athleteid": "101", "whereabouts": {"name": "ROSTER_WHEREABOUTS_IN_PLAY"}}
+     ]},
+     {"teamId": "2", "entries": [
+      {"athleteid": "201", "whereabouts": {"name": "ROSTER_WHEREABOUTS_BENCH"}},
+      {"athleteid": "202", "whereabouts": {"name": "ROSTER_WHEREABOUTS_IN_PLAY"}}
+     ]}
+    ]
+   },
+   "expected_teams": [
+    {"id": "1", "name": "Alpha Aces", "short_name": "Aces", "home_away": "away", "players": [
+     {"id": "104", "name": "Sam Stone", "last_name": "Sam Stone", "jersey": "", "position": "Left Wing", "group": "forward"},
+     {"id": "101", "name": "Ann Archer", "last_name": "Archer", "jersey": "9", "position": "Center", "group": "forward"},
+     {"id": "102", "name": "Dee Dunn", "last_name": "Dunn", "jersey": "4", "position": "Defense", "group": "defense"},
+     {"id": "103", "name": "Gus Gold", "last_name": "Gold", "jersey": "30", "position": "Goaltender", "group": "goalie"}
+    ]},
+    {"id": "2", "name": "Beta Bears", "short_name": "Bears", "home_away": "home", "players": [
+     {"id": "202", "name": "Cy Cole", "last_name": "Cole", "jersey": "17", "position": "Right Wing", "group": "forward"}
+    ]}
+   ],
+   "expected_line": "On the ice: Aces: Sam Stone, Archer, Dunn, Gold; Bears: Cole",
+   "expected_headings": ["Alpha Aces, 4 on the ice", "Beta Bears, 1 on the ice"],
+   "expected_player_texts": [
+    ["Sam Stone, Left Wing", "Ann Archer, number 9, Center", "Dee Dunn, number 4, Defense", "Gus Gold, number 30, Goaltender"],
+    ["Cy Cole, number 17, Right Wing"]
+   ]
+  },
+  {
+   "name": "a team with nobody the box score knows is left out",
+   "summary": {
+    "header": {"competitions": [{"status": {"period": 3, "type": {"state": "in"}}, "competitors": [
+     {"homeAway": "away", "team": {"id": "1", "displayName": "Alpha Aces", "name": "Aces"}},
+     {"homeAway": "home", "team": {"id": "2", "displayName": "Beta Bears", "name": "Bears"}}
+    ]}]},
+    "boxscore": {"players": [
+     {"team": {"id": "2"}, "statistics": [{"name": "goalies", "athletes": [{"athlete": {"id": "203", "displayName": "Pat Post", "lastName": "Post", "jersey": "1", "position": {"displayName": "Goaltender", "abbreviation": "G"}}}]}]}
+    ]},
+    "onIce": [
+     {"teamId": "1", "entries": [{"athleteid": "150", "whereabouts": {"name": "ROSTER_WHEREABOUTS_IN_PLAY"}}]},
+     {"teamId": "2", "entries": [{"athleteid": "203", "whereabouts": {"name": "ROSTER_WHEREABOUTS_IN_PLAY"}}]}
+    ]
+   },
+   "expected_teams": [
+    {"id": "2", "name": "Beta Bears", "short_name": "Bears", "home_away": "home", "players": [
+     {"id": "203", "name": "Pat Post", "last_name": "Post", "jersey": "1", "position": "Goaltender", "group": "goalie"}
+    ]}
+   ],
+   "expected_line": "On the ice: Bears: Post",
+   "expected_headings": ["Beta Bears, 1 on the ice"],
+   "expected_player_texts": [["Pat Post, number 1, Goaltender"]]
+  },
+  {
+   "name": "a finished game shows nothing, though ESPN still sends the last shift",
+   "summary": {
+    "header": {"competitions": [{"status": {"period": 3, "type": {"state": "post"}}, "competitors": [
+     {"homeAway": "home", "team": {"id": "2", "displayName": "Beta Bears", "name": "Bears"}}
+    ]}]},
+    "boxscore": {"players": [{"team": {"id": "2"}, "statistics": [{"name": "goalies", "athletes": [{"athlete": {"id": "203", "displayName": "Pat Post"}}]}]}]},
+    "onIce": [{"teamId": "2", "entries": [{"athleteid": "203", "whereabouts": {"name": "ROSTER_WHEREABOUTS_IN_PLAY"}}]}]
+   },
+   "expected_teams": [], "expected_line": "", "expected_headings": [], "expected_player_texts": []
+  },
+  {
+   "name": "a game not started shows nothing",
+   "summary": {
+    "header": {"competitions": [{"status": {"period": 0, "type": {"state": "pre"}}, "competitors": [
+     {"homeAway": "home", "team": {"id": "2", "displayName": "Beta Bears", "name": "Bears"}}
+    ]}]},
+    "boxscore": {"players": [{"team": {"id": "2"}, "statistics": [{"name": "goalies", "athletes": [{"athlete": {"id": "203", "displayName": "Pat Post"}}]}]}]},
+    "onIce": [{"teamId": "2", "entries": [{"athleteid": "203"}]}]
+   },
+   "expected_teams": [], "expected_line": "", "expected_headings": [], "expected_player_texts": []
+  },
+  {
+   "name": "a delay, in progress at period 0, shows nothing",
+   "summary": {
+    "header": {"competitions": [{"status": {"period": 0, "type": {"state": "in"}}, "competitors": [
+     {"homeAway": "home", "team": {"id": "2", "displayName": "Beta Bears", "name": "Bears"}}
+    ]}]},
+    "boxscore": {"players": [{"team": {"id": "2"}, "statistics": [{"name": "goalies", "athletes": [{"athlete": {"id": "203", "displayName": "Pat Post"}}]}]}]},
+    "onIce": [{"teamId": "2", "entries": [{"athleteid": "203"}]}]
+   },
+   "expected_teams": [], "expected_line": "", "expected_headings": [], "expected_player_texts": []
+  },
+  {
+   "name": "an intermission shows nothing: the block is the period's last shift",
+   "summary": {
+    "header": {"competitions": [{"status": {"period": 1, "type": {"state": "in", "name": "STATUS_END_PERIOD"}}, "competitors": [
+     {"homeAway": "home", "team": {"id": "2", "displayName": "Beta Bears", "name": "Bears"}}
+    ]}]},
+    "boxscore": {"players": [{"team": {"id": "2"}, "statistics": [{"name": "goalies", "athletes": [{"athlete": {"id": "203", "displayName": "Pat Post"}}]}]}]},
+    "onIce": [{"teamId": "2", "entries": [{"athleteid": "203"}]}]
+   },
+   "expected_teams": [], "expected_line": "", "expected_headings": [], "expected_player_texts": []
+  },
+  {
+   "name": "no onIce block shows nothing",
+   "summary": {
+    "header": {"competitions": [{"status": {"period": 1, "type": {"state": "in"}}, "competitors": [
+     {"homeAway": "home", "team": {"id": "2", "displayName": "Beta Bears", "name": "Bears"}}
+    ]}]},
+    "boxscore": {"players": [{"team": {"id": "2"}, "statistics": [{"name": "goalies", "athletes": [{"athlete": {"id": "203", "displayName": "Pat Post"}}]}]}]}
+   },
+   "expected_teams": [], "expected_line": "", "expected_headings": [], "expected_player_texts": []
+  },
+  {
+   "name": "empty entries show nothing",
+   "summary": {
+    "header": {"competitions": [{"status": {"period": 1, "type": {"state": "in"}}, "competitors": [
+     {"homeAway": "home", "team": {"id": "2", "displayName": "Beta Bears", "name": "Bears"}}
+    ]}]},
+    "boxscore": {"players": [{"team": {"id": "2"}, "statistics": [{"name": "goalies", "athletes": [{"athlete": {"id": "203", "displayName": "Pat Post"}}]}]}]},
+    "onIce": [{"teamId": "2", "entries": []}, {"teamId": "1"}]
+   },
+   "expected_teams": [], "expected_line": "", "expected_headings": [], "expected_player_texts": []
+  },
+  {
+   "name": "odd shapes don't break it: numbers for ids, junk entries, no box score",
+   "summary": {
+    "header": {"competitions": [{"status": {"period": 1, "type": {"state": "in"}}, "competitors": [
+     {"homeAway": "away", "team": {"id": 1, "displayName": "Alpha Aces", "name": "Aces"}},
+     "junk"
+    ]}]},
+    "boxscore": {"players": [{"team": {"id": 1}, "statistics": [{"name": "forwards", "athletes": ["junk", {"athlete": {"id": 101, "displayName": "Ann Archer", "lastName": "Archer", "jersey": "9"}}]}]}]},
+    "onIce": ["junk", {"teamId": 1, "entries": ["junk", {"athleteid": 101}]}]
+   },
+   "expected_teams": [
+    {"id": "1", "name": "Alpha Aces", "short_name": "Aces", "home_away": "away", "players": [
+     {"id": "101", "name": "Ann Archer", "last_name": "Archer", "jersey": "9", "position": "", "group": "forward"}
+    ]}
+   ],
+   "expected_line": "On the ice: Aces: Archer",
+   "expected_headings": ["Alpha Aces, 1 on the ice"],
+   "expected_player_texts": [["Ann Archer, number 9"]]
+  }
+ ]
+}

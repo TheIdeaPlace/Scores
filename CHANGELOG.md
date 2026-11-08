@@ -38,6 +38,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Windows: a tab for each poll, as before.
   - iPhone: with this many polls, a **Poll** menu chooses one, since six segments would cut their names
     short. Basketball's two polls and hockey's one keep the segmented control.
+- **Who is on the ice, during a live NHL game.** Each team's players on the ice right now: forwards,
+  then defense, then the goalie, with jersey numbers and positions. It comes from the game's own
+  summary, so it costs no extra request, and isn't shown before or after a game or in an intermission.
+  College hockey isn't included; ESPN doesn't send it.
+  - Windows: an **On the ice** row in game details, after the game time, reads every player by last
+    name. Enter opens a list of each team and its players, which checks for the latest as it opens;
+    F5 there checks again and keeps you on the same player.
+  - iPhone: an **On the Ice** section at the top of the game's Info tab, a heading per team and one
+    VoiceOver element per player, with an **Update** button that says when it's done. Pulling down
+    on the Info tab also gets the latest.
 - **iPhone: Bowls & Playoffs.** College football's Scores tab has a **Bowls & Playoffs** link below the
   week bar: every bowl and College Football Playoff game in one list, from the same ESPN request the
   Windows list makes, instead of stepping through the postseason weeks. The playoff comes first, round by

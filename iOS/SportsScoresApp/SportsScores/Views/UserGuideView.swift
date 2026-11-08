@@ -74,7 +74,8 @@ struct UserGuideView: View {
                     Text("Select any game row to open its detail screen. The header shows both teams, the current score or start time, and the venue. Four tabs are available:")
                     BulletPoint("**Box Score** — one tab per team and stat group, then the team comparison. Tables have a Totals row wherever ESPN sends one. Before a game, the team table holds season stats and says so")
                     BulletPoint("**Plays / Drives** — pitch-by-pitch (baseball), play-by-play (basketball, hockey), or drive chart (football)")
-                    BulletPoint("**Info** — leaders, injuries, officials, venue, related news")
+                    BulletPoint("**Info** — leaders, injuries, officials, venue, related news. Pull down on it for the latest")
+                    BulletPoint("**On the Ice** — while an NHL game is being played, the Info tab starts with each team's players on the ice: a heading per team, then its forwards, defense and goalie, each with a jersey number and position. Fewer than six usually means a penalty or a pulled goalie. The **Update** button at the end gets the latest and says when it has. Not shown before or after a game, in an intermission, or for college hockey")
                     BulletPoint("**More** — win probability and season series; MLB only")
 
                     Text("**MLB game header extras:**")

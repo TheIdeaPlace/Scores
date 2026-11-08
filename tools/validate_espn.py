@@ -553,6 +553,28 @@ def summary_header_problems(summary):
     return problems
 
 
+def on_ice_problems(summary):
+    """What's wrong with an NHL summary's onIce block, which a finished game still has as its
+    last shift. Both apps read it, with names from the box score, during a live game."""
+    blocks = summary.get("onIce")
+    if not isinstance(blocks, list) or not blocks:
+        return ["no onIce block"]
+    known = {str(((row or {}).get("athlete") or {}).get("id"))
+             for team in (summary.get("boxscore") or {}).get("players") or [] if isinstance(team, dict)
+             for group in team.get("statistics") or [] if isinstance(group, dict)
+             for row in group.get("athletes") or [] if isinstance(row, dict)}
+    problems = []
+    for block in blocks:
+        block = block if isinstance(block, dict) else {}
+        entries = [e for e in block.get("entries") or [] if isinstance(e, dict)]
+        if not block.get("teamId"):
+            problems.append("an onIce block has no teamId")
+        missing = [str(e.get("athleteid")) for e in entries if str(e.get("athleteid")) not in known]
+        if missing:
+            problems.append(f"onIce ids not in the box score: {', '.join(missing)}")
+    return problems
+
+
 def game_problems(summary, league):
     """Everything wrong with one game's summary, by the check it belongs to."""
     return {"Game summary": summary_header_problems(summary),
@@ -865,6 +887,14 @@ def check_games(http, report, league, finals, in_season):
     # Lines come and go, and college finals often have none, so only a recent pro game says anything.
     if in_season and not league.is_college and league.family != SOCCER and not (summary.get("pickcenter") or summary.get("odds")):
         report.warn(league.key, "Odds", f"no pickcenter or odds on final {event['id']}", url)
+    if league.key == "NHL":
+        problems = on_ice_problems(summary)
+        if problems:
+            report.warn(league.key, "On the ice", "; ".join(problems), url)
+        else:
+            report.ok(league.key, "On the ice", "onIce ids all named in the box score", url)
+    elif league.family == HOCKEY and summary.get("onIce"):
+        report.warn(league.key, "On the ice", "ESPN now sends onIce here. The apps could show it", url)
     http.save("summary", league.key, summary)
     return event, summary
 
