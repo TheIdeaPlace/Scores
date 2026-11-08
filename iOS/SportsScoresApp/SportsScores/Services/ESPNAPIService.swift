@@ -924,8 +924,12 @@ class ESPNAPIService {
     // MARK: - Fetch League Leaders (Phase 5)
 
     /// A league's player leaders, the first `limit` of each list. They come from the same place
-    /// as on Windows wherever ESPN has it (`Sport.hasSiteLeaders`), with its qualifying minimums.
+    /// as on Windows wherever ESPN has it (`Sport.hasSiteLeaders`), with its qualifying minimums,
+    /// and soccer's from the same place with its own season types.
     func fetchLeagueLeaders(for sport: Sport, limit: Int = 10) async throws -> [LeagueLeaderCategory] {
+        if sport.isSoccer {
+            return try await fetchSoccerLeaders(for: sport).map { $0.keepingFirst(limit) }
+        }
         guard sport.hasSiteLeaders else {
             return try await fetchCoreLeaders(for: sport, limit: limit, onlyTeam: nil)
         }
@@ -952,10 +956,13 @@ class ESPNAPIService {
     static let siteLeadersLimit = 20
     static let siteLeadersSmallerLimits = [10, 5]
 
-    /// A season's regular season leaders, or nil if ESPN has no such season. Without `seasontype`,
-    /// a finished season's answer is its postseason. The second try at the full list gets a
-    /// throwaway parameter, since ESPN can cache a 500 for up to 30 seconds.
-    private func requestSiteLeaders(for sport: Sport, season: Int, teamId: String?) async throws -> SiteLeadersResponse? {
+    /// A season's leaders, the regular season's unless asked for another type, or nil if ESPN has
+    /// no such season. Without `seasontype`, a finished season's answer is its postseason; soccer's
+    /// answer is the wrong season or a 500 without `season`, and a 404 or a playoff round's without
+    /// `seasontype`. The second try at the full list gets a throwaway parameter, since ESPN can
+    /// cache a 500 for up to 30 seconds.
+    private func requestSiteLeaders(for sport: Sport, season: Int, teamId: String?,
+                                    seasonType: Int = 2) async throws -> SiteLeadersResponse? {
         let attempts: [(Int, Bool)] = [(Self.siteLeadersLimit, false), (Self.siteLeadersLimit, true)]
             + Self.siteLeadersSmallerLimits.map { ($0, false) }
         var lastStatus = 0
@@ -964,7 +971,7 @@ class ESPNAPIService {
                 URLQueryItem(name: "region", value: "us"),
                 URLQueryItem(name: "lang", value: "en"),
                 URLQueryItem(name: "season", value: String(season)),
-                URLQueryItem(name: "seasontype", value: "2"),
+                URLQueryItem(name: "seasontype", value: String(seasonType)),
                 URLQueryItem(name: "limit", value: String(limit)),
             ]
             if let teamId { items.append(URLQueryItem(name: "team", value: teamId)) }
@@ -1093,39 +1100,37 @@ class ESPNAPIService {
         let league = sport.apiPath.components(separatedBy: "/").last ?? sport.rawValue.lowercased()
         let sportType = sport.apiPath.components(separatedBy: "/").first ?? "unknown"
 
-        // Soccer goes by ESPN's own idea of the season, as on Windows, which also names it for the
-        // list. The others go by the current season year (the winter sports use the year+1 format).
-        let current: CurrentSeasonResponse? = sport.isSoccer ? try await fetchCurrentSeason(sport: sport) : nil
-        let seasonYear = current?.year ?? sport.currentSeasonYear
+        // Soccer is only here for one team's players, which /leaders can't give it (`team=` is
+        // ignored there): the same seasons and season types as its league list, and a failed list
+        // says so rather than showing last season's, as on Windows.
+        if sport.isSoccer {
+            var found = [LeagueLeaderCategory]()
+            try await forEachSoccerLeadersSeason(for: sport) { season, seasonType in
+                found = try await self.fetchLeadersForSeason(sportType: sportType, league: league, season: season,
+                                                             seasonType: seasonType, limit: limit, onlyTeam: onlyTeam)
+                return !found.isEmpty
+            }
+            return found
+        }
 
-        // The regular season, this year's or the most recent. Never a preseason: the app has
-        // nowhere to say so. Soccer files its whole league season under type 1.
-        let seasonType = sport.isSoccer ? 1 : 2
-        let seasonsToTry = [seasonYear, seasonYear - 1, seasonYear - 2]
-
-        for season in seasonsToTry {
+        // The current season year (the winter sports use the year+1 format), and the regular
+        // season, this year's or the most recent. Never a preseason: the app has nowhere to say so.
+        let seasonYear = sport.currentSeasonYear
+        for season in [seasonYear, seasonYear - 1, seasonYear - 2] {
             do {
                 let categories = try await fetchLeadersForSeason(
                     sportType: sportType,
                     league: league,
                     season: season,
-                    seasonType: seasonType,
+                    seasonType: 2,
                     limit: limit,
                     onlyTeam: onlyTeam
                 )
-                if !categories.isEmpty {
-                    guard sport.isSoccer else { return categories }
-                    let label = await seasonName(sportType: sportType, league: league, season: season, current: current)
-                    return categories.map {
-                        LeagueLeaderCategory(name: $0.name, displayName: $0.displayName, leaders: $0.leaders, seasonLabel: label)
-                    }
-                }
+                if !categories.isEmpty { return categories }
             } catch let error as URLError {
                 // Another season won't get through a stalled network either, 30 seconds a try.
                 throw error
             } catch {
-                // A failed list says so rather than showing last season's, as on Windows.
-                if sport.isSoccer { throw error }
                 continue
             }
         }
@@ -1133,20 +1138,170 @@ class ESPNAPIService {
         // No data found for any season
         return []
     }
-    
-    /// What ESPN calls this season, such as "2025-26 English Premier League". `current` is the
-    /// core API's current one, so only an earlier season takes a request. If that fails, the year
-    /// still says it isn't this season's. On Windows: `_core_season_name`.
-    private func seasonName(sportType: String, league: String, season: Int, current: CurrentSeasonResponse?) async -> String {
-        if let current, current.year == season, let name = current.displayName { return name }
-        guard let url = URL(string: "\(coreAPIBaseURL)/\(sportType)/leagues/\(league)/seasons/\(season)"),
-              let (data, response) = try? await session.data(for: URLRequest(url: url, timeoutInterval: 10)),
-              (response as? HTTPURLResponse)?.statusCode == 200,
-              let answer = try? JSONDecoder().decode(CurrentSeasonResponse.self, from: data),
-              let name = answer.displayName else {
-            return String(season)
+
+    // MARK: Soccer's leaders
+
+    /// The most lists soccer asks /leaders for before saying there's nothing: a new season or
+    /// torneo can have nobody on it yet. On Windows: `SOCCER_LEADER_TRIES`.
+    static let soccerLeaderTries = 3
+    /// A league season's leaders are all under type 1, through its knockouts. The type ESPN calls
+    /// current is a playoff round, such as NWSL's "Playoffs - Quarterfinals", with the wrong
+    /// numbers or none, and a cup's type 1 is named for its first stage and holds it all anyway.
+    static let soccerLeadersSeasonType = 1
+    /// A season of two torneos, each with leaders of its own: the Apertura is type 1, and the
+    /// Clausura's number changes from season to season (8 in 2025, 5 in 2026), so it's found by name.
+    static let torneoLeagues: Set<Sport> = [.soccerLigaMX]
+    static let clausuraName = "Torneo Clausura"
+    /// A row whose name ESPN left out says so. Windows: soccer.NAME_UNAVAILABLE.
+    static let nameUnavailable = "Name not available"
+
+    /// Soccer's leaders, from /leaders as on Windows (`_soccer_player_statistics`): one request,
+    /// with names and teams inside, where the core API took one for each player and team. Asked
+    /// for 20, soccer answers 500 more than other sports do, and NWSL and CONCACAF never have at
+    /// 20, so they step down to 10 as the others' do. Nobody on a list yet means the torneo or
+    /// season before; a failed request says so rather than showing that one. `now` is for tests:
+    /// which Liga MX torneo is on depends on it.
+    func fetchSoccerLeaders(for sport: Sport, now: Date = Date()) async throws -> [LeagueLeaderCategory] {
+        var found = [LeagueLeaderCategory]()
+        try await forEachSoccerLeadersSeason(for: sport, now: now) { season, seasonType in
+            let answer = try await self.requestSiteLeaders(for: sport, season: season, teamId: nil, seasonType: seasonType)
+            found = Self.soccerLeaderCategories(from: answer, sport: sport, year: season)
+            return !found.isEmpty
         }
-        return name
+        return found
+    }
+
+    /// Calls `body` with each (season, season type) to ask for, latest first, until it says it
+    /// found something or `soccerLeaderTries` have been asked: ESPN's season and the two before
+    /// it, from the core API rather than the calendar. An earlier season's types are only asked
+    /// for by a league with torneos, and only once reached; failing that is a failure, since it
+    /// leaves no telling which torneo to show. On Windows: `_soccer_seasons_to_try`.
+    private func forEachSoccerLeadersSeason(for sport: Sport, now: Date = Date(),
+                                            _ body: (Int, Int) async throws -> Bool) async throws {
+        let current = try await fetchCurrentSeason(sport: sport)
+        var tries = 0
+        for year in stride(from: current.year, to: current.year - Self.soccerLeaderTries, by: -1) {
+            guard tries < Self.soccerLeaderTries else { return }
+            var season = current
+            if year != current.year && Self.torneoLeagues.contains(sport) {
+                season = try await fetchSeason(sport: sport, year: year)
+            }
+            for seasonType in Self.soccerLeadersSeasonTypes(sport: sport, season: season, now: now) {
+                guard tries < Self.soccerLeaderTries else { return }
+                tries += 1
+                if try await body(year, seasonType) { return }
+            }
+        }
+    }
+
+    /// The core API's answer for one season, with its types inside.
+    private func fetchSeason(sport: Sport, year: Int) async throws -> CurrentSeasonResponse {
+        let path = sport.apiPath.components(separatedBy: "/")
+        guard path.count == 2,
+              let url = URL(string: "\(coreAPIBaseURL)/\(path[0])/leagues/\(path[1])/seasons/\(year)") else {
+            throw APIError.invalidURL
+        }
+        let (data, response) = try await session.data(for: URLRequest(url: url, timeoutInterval: 10))
+        let status = (response as? HTTPURLResponse)?.statusCode ?? 0
+        guard status == 200 else { throw APIError.unexpectedStatus(status) }
+        return try JSONDecoder().decode(CurrentSeasonResponse.self, from: data)
+    }
+
+    /// The season types to ask for a season's leaders, most recent first. `season` is the core
+    /// API's answer for that season, with its types inside.
+    ///
+    /// Every league but Liga MX has one: type 1. Liga MX has the torneos that have started by
+    /// `now`, by their dates, never by the type ESPN calls current, which names playoff rounds
+    /// (and dates its Clausura playoffs in the November before). So from January it's the
+    /// Clausura and then the Apertura before it, and before the season's Apertura starts it's
+    /// nothing: the season before. If ESPN lists no torneo at all, the Apertura is all there is to
+    /// ask for, and an Apertura with no date to read is taken as started, since a season begins
+    /// with it. A Clausura with none isn't. On Windows: `soccer.leaders_season_types`, and
+    /// tests/fixtures/soccer_grid.json holds both.
+    static func soccerLeadersSeasonTypes(sport: Sport, season: CurrentSeasonResponse?, now: Date) -> [Int] {
+        guard torneoLeagues.contains(sport) else { return [soccerLeadersSeasonType] }
+        var torneos = [(start: Date, id: Int)]()
+        for item in season?.types?.items ?? [] {
+            guard let id = item.id else { continue }
+            let start = item.startDate.flatMap(coreDate)
+            if id == soccerLeadersSeasonType {
+                torneos.append((start ?? .distantPast, id))
+            } else if item.name == clausuraName, let start {
+                torneos.append((start, id))
+            }
+        }
+        guard !torneos.isEmpty else { return [soccerLeadersSeasonType] }
+        return torneos
+            .filter { $0.start <= now }
+            .sorted { $0.start != $1.start ? $0.start > $1.start : $0.id > $1.id }
+            .map(\.id)
+    }
+
+    /// A core API date, which ESPN writes without seconds, 2027-01-01T05:00Z, or with them.
+    static func coreDate(_ text: String) -> Date? {
+        coreDateFormats.lazy.compactMap { $0.date(from: text) }.first
+    }
+
+    private static let coreDateFormats: [DateFormatter] = ["yyyy-MM-dd'T'HH:mmX", "yyyy-MM-dd'T'HH:mm:ssX",
+                                                           "yyyy-MM-dd'T'HH:mm:ss.SSSX"].map { pattern in
+        let format = DateFormatter()
+        format.locale = Locale(identifier: "en_US_POSIX")
+        format.timeZone = TimeZone(secondsFromGMT: 0)
+        format.dateFormat = pattern
+        return format
+    }
+
+    /// Soccer's /leaders to the lists the app shows, in ESPN's order. A list where everyone is on
+    /// nothing isn't a list of leaders. A list that repeats an earlier one is left out:
+    /// goalsLeaders and goals are both called Goals, with the same players in the same order, and
+    /// read the same once their text is a number. A list that differs in any row stays. A row
+    /// whose name or team is missing says so and keeps its place: a blank cell would be silent in
+    /// VoiceOver. On Windows: `soccer.soccer_leader_lists`, and tests/fixtures/soccer_grid.json
+    /// holds both.
+    static func soccerLeaderCategories(from response: SiteLeadersResponse?, sport: Sport, year: Int) -> [LeagueLeaderCategory] {
+        guard let response else { return [] }
+        let label = soccerLeadersSeasonLabel(response.requestedSeason, sport: sport, year: year)
+        var kept = [LeagueLeaderCategory]()
+        for category in response.leaders?.categories ?? [] {
+            let key = firstText(category.name) ?? "unknown"
+            let leaders = category.leaders ?? []
+            guard leaders.contains(where: { ($0.value ?? 0) != 0 }) else { continue }
+            let title = firstText(category.displayName) ?? key.capitalized
+            let rows = leaders.map { leader -> (name: String, team: String, value: String) in
+                let value = leaderDisplayValue(category: key, value: leader.value, displayValue: leader.displayValue)
+                return (firstText(leader.athlete?.displayName, leader.athlete?.fullName, leader.athlete?.shortName)
+                            ?? nameUnavailable,
+                        firstText(leader.team?.abbreviation, leader.team?.displayName) ?? SoccerTableRow.noStatus,
+                        value.isEmpty ? SoccerTableRow.noStatus : value)
+            }
+            let repeated = kept.contains { earlier in
+                earlier.displayName == title && earlier.leaders.map { [$0.athleteName, $0.teamAbbreviation, $0.displayValue] }
+                    == rows.map { [$0.name, $0.team, $0.value] }
+            }
+            guard !repeated else { continue }
+            let ranks = sharedRanks(rows.map(\.value))
+            kept.append(LeagueLeaderCategory(
+                name: key,
+                displayName: title,
+                leaders: zip(ranks, rows).map { rank, row in
+                    LeagueLeaderCategory.LeagueLeaderEntry(rank: rank, displayValue: row.value, athleteName: row.name,
+                                                           teamAbbreviation: row.team)
+                },
+                seasonLabel: label
+            ))
+        }
+        return kept
+    }
+
+    /// What soccer's leaders are from: ESPN's name for the season, such as "2026-27 English
+    /// Premier League", and for Liga MX the torneo too, "2026-27 Liga BBVA MX Torneo Apertura".
+    /// Other leagues' type names would mislead: a cup's type 1 is named for its first stage and
+    /// holds the whole competition. With no name, the year still says which season it is.
+    /// On Windows: `soccer.soccer_leaders_season`.
+    static func soccerLeadersSeasonLabel(_ season: SiteLeadersResponse.Season?, sport: Sport, year: Int) -> String {
+        let name = firstText(season?.displayName) ?? String(year)
+        guard torneoLeagues.contains(sport), let torneo = firstText(season?.type?.name) else { return name }
+        return "\(name) \(torneo)"
     }
 
     /// A team's own players in each stat category, ranked among themselves. `/leaders` takes a
@@ -1446,26 +1601,13 @@ class ESPNAPIService {
         }
         let athletes = await resolveRefs(athleteRefs, as: CoreAthleteResponse.self, stallWatch: stallWatch)
 
-        // A soccer row whose name or team couldn't be had says so and keeps its place. But a
-        // network that stalled partway, or most of them not coming, means ESPN isn't answering, so
-        // it fails rather than showing a screen of those. On Windows: `_core_player_statistics`.
-        let isSoccerLeagueList = sportType == "soccer" && onlyTeam == nil
-        if isSoccerLeagueList {
-            let stalled = await stallWatch.hasStalled
-            if stalled || athletes.isEmpty || athletes.count * 2 < athleteRefs.count || teams.count * 2 < teamRefs.count {
-                throw APIError.invalidResponse
-            }
-        }
-
         // Build results using the resolved caches
         return categories.map { category in
             let rows = category.leaders ?? []
             let displays = rows.map { Self.coreLeaderValue(category: category.name, leader: $0) }
             let ranks = Self.sharedRanks(displays)
             let leaders = rows.enumerated().map { index, leader -> LeagueLeaderCategory.LeagueLeaderEntry in
-                // A blank cell would be silent in VoiceOver. Windows says the same.
-                let entityTeam = leader.team?.ref.flatMap { teams[secureURL($0)]?.abbreviation }
-                    ?? (isSoccerLeagueList ? SoccerTableRow.noStatus : "")
+                let entityTeam = leader.team?.ref.flatMap { teams[secureURL($0)]?.abbreviation } ?? ""
                 let entityName: String
                 if let ref = leader.athlete?.ref {
                     // Not the team's name if this lookup failed: that reads as if a team led.

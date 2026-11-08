@@ -1,14 +1,10 @@
 """Soccer's Standings, Statistics and Teams on Windows, on ESPN's real answers: a league with one
 table, MLS's conferences, a cup's league phase or groups, and a cup with no table at all."""
 import copy
+from datetime import datetime, timezone
 import json
 from pathlib import Path
-import re
-import subprocess
-import sys
-import textwrap
-import threading
-import time
+from urllib.parse import parse_qs, urlparse
 
 import pytest
 import requests
@@ -30,8 +26,7 @@ def team(rows, name):
 def test_every_soccer_league_is_named_and_the_world_cups_are_not():
     paths = {key for key, path in espn_api.LEAGUES.items() if path.startswith("soccer/")}
     assert soccer.SOCCER_LEAGUES == paths - {"WC2026", "WWC2027"}
-    assert espn_api.CORE_LEADER_LEAGUES == soccer.SOCCER_LEAGUES
-    assert not espn_api.CORE_LEADER_LEAGUES & espn_api.LEADER_LEAGUES
+    assert not soccer.SOCCER_LEAGUES & espn_api.LEADER_LEAGUES, "soccer asks /leaders for its own season types"
 
 
 class TestStandings:
@@ -214,43 +209,49 @@ def test_a_competition_with_no_table_says_it_plainly():
         "ESPN has no league table for CONCACAF right now. A knockout competition doesn't have one.")
 
 
-NAMES = {"253989": "Erling Haaland"}
+def query(url, name):
+    return parse_qs(urlparse(url).query).get(name, [None])[0]
 
 
-def athlete(url):
-    """Only one real athlete's page is saved. The rest are that page with their own name, so a
-    row can be told from another."""
-    number = re.search(r"/athletes/(\d+)", url).group(1)
-    page = copy.deepcopy(load("core_athlete_EPL_253989.json"))
-    page["displayName"] = NAMES.get(number, f"Player {number}")
-    return page
+def asked(espn):
+    """(season, season type, limit) of each /leaders request."""
+    return [(query(url, "season"), query(url, "seasontype"), query(url, "limit")) for url in espn.urls("/leaders")]
+
+
+def named(data, season_name=None, type_id=None, type_name=None):
+    """A real answer, as if it were for another season or torneo."""
+    data = copy.deepcopy(data)
+    requested = data["requestedSeason"]
+    if season_name:
+        requested["displayName"] = season_name
+    if type_id:
+        requested["type"].update(id=str(type_id), name=type_name)
+    return data
 
 
 @pytest.fixture
 def leaders(espn, monkeypatch):
     monkeypatch.setattr(espn_api.time, "sleep", lambda seconds: None)
     espn.on("/season$", load("season_EPL.json"))
-    espn.on(r"/seasons/\d+/types/1/leaders", load("leaders_core_EPL.json"))
-    espn.on(r"/athletes/\d+", athlete)
-    espn.on(r"/seasons/\d+/teams/\d+", load("core_team_EPL_382.json"))
+    espn.on("/leaders", load("leaders_v3_EPL.json"))
     return espn
 
 
 class TestLeaders:
-    def test_a_null_list_of_categories_does_not_step_back_a_season(self, leaders):
-        """Last season's leaders, with no sign anything went wrong."""
-        leaders.on("/leaders", {"categories": None})
-        with pytest.raises(ApiError) as caught:
-            espn_api.get_player_statistics("EPL")
-        assert str(caught.value) == espn_api.STATISTICS_UNAVAILABLE
-        assert len(leaders.urls("/leaders")) == 1
-
-    def test_they_come_from_the_core_api_under_type_1_for_espns_season(self, leaders):
+    def test_one_request_has_the_names_and_teams(self, leaders):
+        """The core API took one for each player and team, about 150 for the Premier League."""
         espn_api.get_player_statistics("EPL")
-        first = leaders.urls("/leaders")[0]
-        assert "/soccer/leagues/eng.1/seasons/2026/types/1/leaders" in first
-        assert "limit=20" in first
-        assert not leaders.urls("site.web.api"), "/leaders is a 404 for most of soccer"
+        assert len(leaders.urls("/leaders")) == 1
+        assert leaders.calls == leaders.urls("/season$") + leaders.urls("/leaders")
+
+    def test_it_asks_what_the_iphone_asks(self, leaders):
+        """Without season, ESPN answers last season or a 500; without seasontype, a 404 or a playoff
+        round's; without region and lang, a 500 far more often."""
+        espn_api.get_player_statistics("EPL")
+        url = leaders.urls("/leaders")[0]
+        assert url.startswith("https://site.web.api.espn.com/apis/site/v3/sports/soccer/eng.1/leaders?")
+        assert (query(url, "region"), query(url, "lang")) == ("us", "en")
+        assert asked(leaders) == [("2026", "1", "20")]
 
     def test_the_lists_are_the_iphones_without_the_repeats(self, leaders):
         result = espn_api.get_player_statistics("EPL")
@@ -259,7 +260,11 @@ class TestLeaders:
                           "Fouls Committed", "Fouls Suffered", "Total Shots", "Accurate Passes", "Saves"]
         assert result["team_stats"] == []
 
-    def test_a_row_has_a_looked_up_name_and_team_and_reads_as_a_number(self, leaders):
+    def test_a_list_keeps_espns_name_for_it_for_its_definition(self, leaders):
+        keys = [category["key"] for category in espn_api.get_player_statistics("EPL")["player_stats"]]
+        assert keys[:3] == ["goalsLeaders", "assistsLeaders", "shotsOnTarget"]
+
+    def test_a_row_has_a_name_and_team_and_reads_as_a_number(self, leaders):
         goals = espn_api.get_player_statistics("EPL")["player_stats"][0]["stats"][0]
         assert goals == {"player_name": "Erling Haaland", "team": "MNC", "value": "9", "stat_name": "Goals"}
 
@@ -268,238 +273,210 @@ class TestLeaders:
 
     def test_rows_rank_on_the_list_as_the_other_leagues_do(self, leaders):
         stats = espn_api.get_player_statistics("EPL")["player_stats"][0]["stats"]
-        assert ranking_rows("player", stats)[0] == [1, "Erling Haaland", "MNC", "9"]
-
-    def test_each_reference_is_asked_for_once_over_https(self, leaders):
-        espn_api.get_player_statistics("EPL")
-        references = leaders.urls("/athletes/") + leaders.urls(r"/seasons/\d+/teams/")
-        assert len(references) == len(set(references))
-        assert all(url.startswith("https://") for url in references)
-
-    def test_the_names_share_connections_kept_open(self, leaders):
-        """A new connection for each took a minute for the Premier League."""
-        espn_api.get_player_statistics("EPL")
-        sessions = {id(kwargs.get("session")) for url, kwargs in zip(leaders.calls, leaders.kwargs)
-                    if "/athletes/" in url}
-        assert len(sessions) == 1
-        session = next(kwargs["session"] for url, kwargs in zip(leaders.calls, leaders.kwargs) if "/athletes/" in url)
-        assert session.get_adapter("https://espn.example")._pool_maxsize == espn_api.CORE_REF_WORKERS
-
-    def test_a_second_opening_only_asks_for_the_list(self, leaders):
-        espn_api.get_player_statistics("EPL")
-        before = len(leaders.urls("/athletes/"))
-        espn_api.get_player_statistics("EPL")
-        assert len(leaders.urls("/athletes/")) == before
+        assert ranking_rows("player", stats)[:3] == [[1, "Erling Haaland", "MNC", "9"], [2, "Thierno Barry", "EVE", "6"],
+                                                     [2, "Alexander Isak", "LIV", "6"]]
 
     def test_a_league_in_its_playoffs_still_reads_its_season_from_type_1(self, leaders):
         leaders.on("/season$", load("season_NWSL.json"))
         espn_api.get_player_statistics("NWSL")
-        assert "/usa.nwsl/seasons/2026/types/1/leaders" in leaders.urls("/leaders")[0]
-
-    def test_a_list_where_everyone_is_on_nothing_is_left_out(self):
-        lists = soccer.core_leader_lists(load("leaders_core_UEL_2024.json"))
-        assert [category["title"] for category in lists] == ["Goals"]
-
-    def test_lists_that_differ_both_stay(self):
-        data = load("leaders_core_EPL.json")
-        data["categories"][2]["leaders"][1]["value"] += 1
-        data["categories"][2]["leaders"][1]["displayValue"] = "99"
-        titles = [category["title"] for category in soccer.core_leader_lists(data)]
-        assert titles.count("Goals") == 2
-
-    def test_a_season_with_no_list_yet_means_the_one_before_and_says_so(self, leaders):
-        leaders.on(r"/seasons/2026/types/1/leaders", HTTP_404)
-        leaders.on(r"/seasons/2025$", load("season_EPL_2025.json"))
-        result = espn_api.get_player_statistics("EPL")
-        assert result["player_stats"]
-        assert result["season"] == "2025-26 English Premier League"
-
-    @pytest.mark.parametrize("reply", [HTTP_500, TIMEOUT, NOT_JSON, EMPTY_JSON], ids=["500", "timeout", "not_json", "empty"])
-    def test_an_earlier_seasons_name_not_coming_still_says_its_year(self, leaders, reply):
-        leaders.on(r"/seasons/2026/types/1/leaders", HTTP_404)
-        leaders.on(r"/seasons/2025$", reply)
-        assert espn_api.get_player_statistics("EPL")["season"] == "2025"
-
-    def test_three_seasons_of_nothing_is_an_honest_nothing(self, leaders):
-        leaders.on(r"/types/1/leaders", HTTP_404)
-        result = espn_api.get_player_statistics("EPL")
-        assert result == {"player_stats": [], "team_stats": []}
-        asked = [re.search(r"/seasons/(\d+)/", url).group(1) for url in leaders.urls("/leaders")]
-        assert asked == ["2026", "2025", "2024"]
+        assert "/soccer/usa.nwsl/leaders" in leaders.urls("/leaders")[0]
+        assert asked(leaders) == [("2026", "1", "20")]
 
     def test_the_season_comes_from_espn_not_the_calendar(self, leaders):
         season = load("season_EPL.json")
         season["year"] = 2031
         leaders.on("/season$", season)
         espn_api.get_player_statistics("EPL")
-        assert "/seasons/2031/" in leaders.urls("/leaders")[0]
+        assert asked(leaders)[0][0] == "2031"
 
-    @pytest.mark.parametrize("reply", [HTTP_500, TIMEOUT, NOT_JSON, FakeResponse({"code": 403}, status=403)],
-                             ids=["500", "timeout", "not_json", "403"])
+    def test_a_season_with_no_list_yet_means_the_one_before_and_says_so(self, leaders):
+        leaders.on(r"/leaders\?.*season=2026&", HTTP_404)
+        leaders.on(r"/leaders\?.*season=2025&", named(load("leaders_v3_EPL.json"), "2025-26 English Premier League"))
+        result = espn_api.get_player_statistics("EPL")
+        assert result["player_stats"]
+        assert result["season"] == "2025-26 English Premier League"
+        assert not leaders.urls(r"/seasons/2025"), "only Liga MX needs an earlier season's types"
+
+    def test_an_answer_with_nobody_on_it_also_means_the_one_before(self, leaders):
+        leaders.on(r"/leaders\?.*season=2026&", load("leaders_v3_LigaMX_clausura_empty.json"))
+        assert espn_api.get_player_statistics("EPL")["player_stats"]
+        assert [season for season, _, _ in asked(leaders)] == ["2026", "2025"]
+
+    def test_an_answer_with_no_name_for_its_season_says_its_year(self, leaders):
+        data = load("leaders_v3_EPL.json")
+        data["requestedSeason"] = None
+        leaders.on("/leaders", data)
+        assert espn_api.get_player_statistics("EPL")["season"] == "2026"
+
+    def test_three_seasons_of_nothing_is_an_honest_nothing(self, leaders):
+        leaders.on("/leaders", HTTP_404)
+        assert espn_api.get_player_statistics("EPL") == {"player_stats": [], "team_stats": []}
+        assert [season for season, _, _ in asked(leaders)] == ["2026", "2025", "2024"]
+
+    @pytest.mark.parametrize("reply", [HTTP_500, TIMEOUT, NOT_JSON, FakeResponse({"code": 403}, status=403),
+                                       FakeResponse([1, 2])],
+                             ids=["500", "timeout", "not_json", "403", "not_an_answer"])
     def test_a_failed_list_says_so_rather_than_showing_last_season(self, leaders, reply):
-        leaders.on(r"/types/1/leaders", reply)
+        leaders.on("/leaders", reply)
         with pytest.raises(ApiError, match="ESPN isn't providing these right now"):
             ApiService.get_player_statistics("EPL")
-        assert not leaders.urls("/seasons/2025/")
+        assert not leaders.urls("season=2025")
 
-    def test_a_500_gets_a_second_try(self, leaders):
-        answers = [HTTP_500, load("leaders_core_EPL.json")]
-        leaders.on(r"/types/1/leaders", lambda url: answers.pop(0))
+    def test_a_500_is_tried_again_fresh_then_steps_down_to_10(self, leaders):
+        """NWSL's and CONCACAF's have never answered at 20, and 10 is better than nothing."""
+        answers = [HTTP_500, HTTP_500, load("leaders_v3_EPL.json")]
+        leaders.on("/leaders", lambda url: answers.pop(0))
         assert espn_api.get_player_statistics("EPL")["player_stats"]
+        assert [limit for _, _, limit in asked(leaders)] == ["20", "20", "10"]
+        urls = leaders.urls("/leaders")
+        assert query(urls[0], "_") is None and query(urls[1], "_"), "ESPN can cache a 500"
+        assert {(season, season_type) for season, season_type, _ in asked(leaders)} == {("2026", "1")}
+
+    def test_failing_at_every_limit_says_so(self, leaders):
+        leaders.on("/leaders", HTTP_500)
+        with pytest.raises(ApiError, match="ESPN isn't providing these right now"):
+            espn_api.get_player_statistics("CONCACAF")
+        assert [limit for _, _, limit in asked(leaders)] == ["20", "20", "10", "5"]
 
     def test_the_season_failing_says_so(self, espn):
         espn.on(".*", HTTP_500)
         with pytest.raises(ApiError, match="ESPN isn't providing these right now"):
             ApiService.get_player_statistics("UCL")
 
-    def test_one_name_failing_keeps_the_row_and_says_so(self, leaders):
-        leaders.on(r"/athletes/253989", HTTP_404)
+    def test_a_name_missing_keeps_the_row_and_says_so(self, leaders):
+        data = load("leaders_v3_EPL.json")
+        data["leaders"]["categories"][0]["leaders"][0]["athlete"] = None
+        leaders.on("/leaders", data)
         stats = espn_api.get_player_statistics("EPL")["player_stats"][0]["stats"]
-        assert stats[0]["player_name"] == soccer.NAME_UNAVAILABLE
-        assert stats[0]["team"] == "MNC"
-        assert stats[0]["value"] == "9"
-        assert stats[1]["player_name"].startswith("Player ")
+        assert stats[0] == {"player_name": soccer.NAME_UNAVAILABLE, "team": "MNC", "value": "9", "stat_name": "Goals"}
+        assert stats[1]["player_name"] == "Thierno Barry"
 
-    def test_a_team_failing_keeps_the_row_and_reads_not_available(self, leaders):
-        leaders.on(r"/seasons/\d+/teams/382\b", HTTP_404)
+    def test_a_team_missing_keeps_the_row_and_reads_not_available(self, leaders):
+        data = load("leaders_v3_EPL.json")
+        data["leaders"]["categories"][0]["leaders"][0]["team"] = None
+        leaders.on("/leaders", data)
         stats = espn_api.get_player_statistics("EPL")["player_stats"][0]["stats"]
-        assert stats[0]["player_name"] == "Erling Haaland"
-        assert ranking_rows("player", stats)[0][2] == "N/A"
+        assert ranking_rows("player", stats)[0] == [1, "Erling Haaland", "N/A", "9"]
 
-    def test_every_team_failing_is_a_failure_not_a_column_of_blanks(self, leaders):
-        leaders.on(r"/seasons/\d+/teams/\d+", HTTP_500)
+    def test_a_value_missing_is_not_a_silent_cell(self):
+        data = load("leaders_v3_EPL.json")
+        row = data["leaders"]["categories"][1]["leaders"][0]
+        row["value"], row["displayValue"] = 5, None
+        data["leaders"]["categories"][1]["leaders"][1].update(value=4, displayValue="")
+        stats = soccer.soccer_leader_lists(data)[1]["stats"]
+        assert stats[0]["value"] == "5"
+        assert all(row["value"] for row in stats)
+
+    def test_a_list_where_everyone_is_on_nothing_is_left_out(self):
+        lists = soccer.soccer_leader_lists(load("leaders_v3_UEL_2024.json"))
+        assert [category["category"] for category in lists] == ["Goals"]
+
+    def test_lists_that_differ_both_stay(self):
+        data = load("leaders_v3_EPL.json")
+        data["leaders"]["categories"][2]["leaders"][1]["value"] += 1
+        data["leaders"]["categories"][2]["leaders"][1]["displayValue"] = "99"
+        titles = [category["category"] for category in soccer.soccer_leader_lists(data)]
+        assert titles.count("Goals") == 2
+
+    def test_a_list_with_no_name_is_called_by_its_key(self):
+        data = {"leaders": {"categories": [{"name": "goals", "leaders": [{"value": 3, "displayValue": "3"}]}]}}
+        assert soccer.soccer_leader_lists(data)[0]["category"] == "Goals"
+
+
+@pytest.fixture
+def liga_mx(espn, monkeypatch, freeze_now):
+    """Liga MX on Nov 7, 2026, in its Apertura, unless a test moves the clock."""
+    monkeypatch.setattr(espn_api.time, "sleep", lambda seconds: None)
+    espn.on("/season$", load("season_LigaMX.json"))
+    espn.on("/leaders", load("leaders_v3_LigaMX.json"))
+    espn.freeze = lambda text: freeze_now(datetime.fromisoformat(text.replace("Z", "+00:00")))
+    espn.freeze("2026-11-07T12:00:00Z")
+    return espn
+
+
+CLAUSURA_2026 = r"/leaders\?.*season=2026&seasontype=5&"
+
+
+class TestLigaMXTorneos:
+    """#178: a Liga MX season is two torneos, each with its own leaders."""
+
+    def test_the_apertura_is_type_1_and_says_so(self, liga_mx):
+        result = espn_api.get_player_statistics("Liga MX")
+        assert asked(liga_mx) == [("2026", "1", "20")]
+        assert result["season"] == "2026-27 Liga BBVA MX Torneo Apertura"
+
+    def test_its_season_types_come_inside_the_season_already_asked_for(self, liga_mx):
+        espn_api.get_player_statistics("Liga MX")
+        assert liga_mx.calls == liga_mx.urls("/season$") + liga_mx.urls("/leaders")
+
+    def test_from_january_it_is_the_clausura_found_by_name(self, liga_mx):
+        liga_mx.freeze("2027-01-20T12:00:00Z")
+        liga_mx.on(CLAUSURA_2026, named(load("leaders_v3_LigaMX.json"), type_id=5, type_name="Torneo Clausura"))
+        result = espn_api.get_player_statistics("Liga MX")
+        assert asked(liga_mx) == [("2026", "5", "20")]
+        assert result["season"] == "2026-27 Liga BBVA MX Torneo Clausura"
+
+    def test_a_clausura_with_nobody_on_it_yet_means_the_apertura_before_it(self, liga_mx):
+        liga_mx.freeze("2027-01-02T12:00:00Z")
+        liga_mx.on(CLAUSURA_2026, load("leaders_v3_LigaMX_clausura_empty.json"))
+        result = espn_api.get_player_statistics("Liga MX")
+        assert asked(liga_mx) == [("2026", "5", "20"), ("2026", "1", "20")]
+        assert result["season"] == "2026-27 Liga BBVA MX Torneo Apertura"
+
+    def test_the_apertura_playoffs_are_still_the_apertura(self, liga_mx):
+        """ESPN dates the 2026 Clausura's playoff rounds in Nov and Dec 2026, and /season's
+        current type names a playoff round, so neither can say which torneo is on."""
+        liga_mx.freeze("2026-12-15T12:00:00Z")
+        espn_api.get_player_statistics("Liga MX")
+        assert asked(liga_mx) == [("2026", "1", "20")]
+
+    def test_before_the_apertura_it_is_last_seasons_clausura_whatever_its_number(self, liga_mx):
+        liga_mx.freeze("2026-05-31T12:00:00Z")
+        liga_mx.on(r"/seasons/2025$", load("season_LigaMX_2025.json"))
+        liga_mx.on(r"/leaders\?.*season=2025&seasontype=8&", load("leaders_v3_LigaMX_2025_clausura.json"))
+        result = espn_api.get_player_statistics("Liga MX")
+        assert asked(liga_mx) == [("2025", "8", "20")]
+        assert result["season"] == "2025-26 Liga BBVA MX Torneo Clausura"
+
+    @pytest.mark.parametrize("reply", [HTTP_500, HTTP_404, TIMEOUT, NOT_JSON], ids=["500", "404", "timeout", "not_json"])
+    def test_an_earlier_season_not_coming_says_so(self, liga_mx, reply):
+        """Not knowing which torneo to show isn't nothing to show."""
+        liga_mx.freeze("2026-05-31T12:00:00Z")
+        liga_mx.on(r"/seasons/2025$", reply)
         with pytest.raises(ApiError, match="ESPN isn't providing these right now"):
-            espn_api.get_player_statistics("EPL")
+            espn_api.get_player_statistics("Liga MX")
+        assert not asked(liga_mx)
 
-    def test_one_page_that_is_always_a_404_doesnt_fail_later_openings(self, leaders):
-        """It's never cached, so a later opening has it as the only name still to find."""
-        leaders.on(r"/athletes/253989", HTTP_404)
-        for _ in range(3):
-            stats = espn_api.get_player_statistics("EPL")["player_stats"][0]["stats"]
-            assert stats[0]["player_name"] == soccer.NAME_UNAVAILABLE
-            assert stats[1]["player_name"].startswith("Player ")
+    def test_at_most_three_lists_are_asked_for(self, liga_mx):
+        liga_mx.freeze("2027-02-01T12:00:00Z")
+        liga_mx.on("/leaders", load("leaders_v3_LigaMX_clausura_empty.json"))
+        liga_mx.on(r"/seasons/2025$", load("season_LigaMX_2025.json"))
+        assert espn_api.get_player_statistics("Liga MX") == {"player_stats": [], "team_stats": []}
+        assert [(season, season_type) for season, season_type, _ in asked(liga_mx)] == [
+            ("2026", "5"), ("2026", "1"), ("2025", "8")]
 
-    def test_one_team_that_is_always_a_404_doesnt_fail_later_openings(self, leaders):
-        leaders.on(r"/seasons/\d+/teams/382\b", HTTP_404)
-        for _ in range(2):
-            assert espn_api.get_player_statistics("EPL")["player_stats"]
 
-    def test_a_closing_app_asks_for_no_more_names(self, leaders, monkeypatch):
-        closing = threading.Event()
-        closing.set()
-        monkeypatch.setattr(espn_api, "_APP_CLOSING", closing)
-        with pytest.raises(ApiError):
-            espn_api.get_player_statistics("EPL")
-        assert not leaders.urls("/athletes/")
+class TestSeasonTypes:
+    def test_a_season_with_no_types_listed_asks_for_the_apertura(self):
+        now = datetime(2027, 2, 1, tzinfo=timezone.utc)
+        assert soccer.leaders_season_types("Liga MX", {}, now) == [1]
+        assert soccer.leaders_season_types("Liga MX", {"types": {"items": None}}, now) == [1]
 
-    def test_a_closing_app_really_does_exit_with_lookups_still_queued(self, tmp_path):
-        """Python joins a pool's workers at exit, and they work through the queue first, with the
-        main thread still counted as alive. 400 lookups of half a second on 8 workers is 25 seconds."""
-        script = tmp_path / "exits.py"
-        script.write_text(textwrap.dedent(f"""
-            import sys, threading, time
-            sys.path.insert(0, {str(Path(__file__).parents[3])!r})
-            import espn_api
+    def test_a_torneo_with_no_date_it_can_read_is_not_counted_as_started(self):
+        season = {"types": {"items": [{"id": "1", "name": "Torneo Apertura", "startDate": "2026-06-01T04:00Z"},
+                                      {"id": "5", "name": "Torneo Clausura", "startDate": "soon"},
+                                      {"id": None, "name": "Torneo Clausura", "startDate": "2027-01-01T05:00Z"}]}}
+        assert soccer.leaders_season_types("Liga MX", season, datetime(2027, 2, 1, tzinfo=timezone.utc)) == [1]
 
-            class Answer:
-                status_code = 200
-                def json(self):
-                    return {{"displayName": "A"}}
+    def test_an_apertura_with_no_date_it_can_read_is_taken_as_started(self):
+        season = {"types": {"items": [{"id": "1", "name": "Torneo Apertura"},
+                                      {"id": "5", "name": "Torneo Clausura", "startDate": "2027-01-01T05:00Z"}]}}
+        assert soccer.leaders_season_types("Liga MX", season, datetime(2026, 11, 7, tzinfo=timezone.utc)) == [1]
+        assert soccer.leaders_season_types("Liga MX", season, datetime(2027, 2, 1, tzinfo=timezone.utc)) == [5, 1]
 
-            def slow(url, **kwargs):
-                time.sleep(0.5)
-                return Answer()
-
-            espn_api._http_get = slow
-            references = {{f"https://espn.example/{{i}}" for i in range(400)}}
-            reader = espn_api._CoreRefReader()
-            threading.Thread(target=reader.read, args=(references, espn_api._athlete_name), daemon=True).start()
-            time.sleep(1)
-            espn_api.stop_core_lookups()
-        """), encoding="utf-8")
-        started = time.monotonic()
-        subprocess.run([sys.executable, str(script)], check=True, timeout=20)
-        assert time.monotonic() - started < 10
-
-    def test_quitting_stops_the_lookups(self):
-        source = (Path(__file__).parents[3] / "scores.py").read_text(encoding="utf-8")
-        assert "aboutToQuit.connect(stop_core_lookups)" in source
-
-    def test_every_name_failing_is_a_failure_not_a_screen_of_blanks(self, leaders):
-        leaders.on(r"/athletes/\d+", HTTP_500)
-        with pytest.raises(ApiError, match="ESPN isn't providing these right now"):
-            espn_api.get_player_statistics("EPL")
-
-    def test_a_server_error_on_a_name_is_asked_again(self, leaders):
-        answers = [HTTP_500]
-        leaders.on(r"/athletes/253989", lambda url: answers.pop() if answers else athlete(url))
-        stats = espn_api.get_player_statistics("EPL")["player_stats"][0]["stats"]
-        assert stats[0]["player_name"] == "Erling Haaland"
-
-    def test_a_not_found_name_is_not_asked_again(self, leaders):
-        leaders.on(r"/athletes/253989", HTTP_404)
-        espn_api.get_player_statistics("EPL")
-        assert len(leaders.urls("/athletes/253989")) == 1
-
-    def test_a_timeout_on_a_name_is_not_asked_again(self, leaders):
-        leaders.on(r"/athletes/253989", TIMEOUT)
-        espn_api.get_player_statistics("EPL")
-        assert len(leaders.urls("/athletes/253989")) == 1
-
-    def test_a_lost_connection_on_a_name_is_asked_again(self, leaders):
-        leaders.on(r"/athletes/253989", requests.ConnectionError("reset"))
-        espn_api.get_player_statistics("EPL")
-        assert len(leaders.urls("/athletes/253989")) == 2
-
-    def test_a_name_that_is_not_json_is_left_out(self, leaders):
-        leaders.on(r"/athletes/253989", NOT_JSON)
-        stats = espn_api.get_player_statistics("EPL")["player_stats"][0]["stats"]
-        assert stats[0]["player_name"] == soccer.NAME_UNAVAILABLE
-
-    def test_a_stalled_network_stops_asking_for_the_rest(self, leaders):
-        references = {leader["athlete"]["$ref"] for category in load("leaders_core_EPL.json")["categories"]
-                      for leader in category["leaders"]}
-        teams = {leader["team"]["$ref"] for category in load("leaders_core_EPL.json")["categories"]
-                 for leader in category["leaders"]}
-        leaders.on(r"/athletes/\d+", TIMEOUT)
-        leaders.on(r"/seasons/\d+/teams/\d+", TIMEOUT)
-        with pytest.raises(ApiError, match="ESPN isn't providing these right now"):
-            espn_api.get_player_statistics("EPL")
-        stopped_at = espn_api.CORE_REF_FAILURES_BEFORE_GIVING_UP + espn_api.CORE_REF_WORKERS
-        asked = leaders.urls("/athletes/") + leaders.urls(r"/seasons/\d+/teams/")
-        assert len(references) + len(teams) > stopped_at, "the fixture should have enough references to show it"
-        assert len(asked) <= stopped_at
-
-    def test_a_network_that_stalls_after_some_names_fails_rather_than_a_screen_of_blanks(self, leaders):
-        answered = []
-
-        def first_then_nothing(url):
-            if not answered:
-                answered.append(url)
-                return athlete(url)
-            return requests.ConnectionError("reset")
-
-        leaders.on(r"/athletes/\d+", first_then_nothing)
-        with pytest.raises(ApiError, match="ESPN isn't providing these right now"):
-            espn_api.get_player_statistics("EPL")
-
-    def test_most_names_not_coming_fails_even_with_some_known_already(self, leaders):
-        known = next(iter(soccer.core_leader_lists(load("leaders_core_EPL.json"))))["leaders"][0]["athlete"]
-        espn_api._CORE_REF_CACHE[known] = "Erling Haaland"
-        leaders.on(r"/athletes/\d+", HTTP_500)
-        with pytest.raises(ApiError, match="ESPN isn't providing these right now"):
-            espn_api.get_player_statistics("EPL")
-
-    def test_every_name_known_already_needs_no_new_one(self, leaders):
-        espn_api.get_player_statistics("EPL")
-        leaders.on(r"/athletes/\d+", HTTP_500)
-        assert espn_api.get_player_statistics("EPL")["player_stats"]
-
-    def test_a_name_comes_from_whatever_the_page_has(self):
-        assert espn_api._athlete_name({"fullName": "A B"}) == "A B"
-        assert espn_api._athlete_name({"shortName": "A. B"}) == "A. B"
-        assert espn_api._athlete_name({}) is None
-        assert espn_api._team_abbreviation({"displayName": "Arsenal"}) == "Arsenal"
+    def test_only_liga_mx_has_torneos(self):
+        assert soccer.TORNEO_LEAGUES == {"Liga MX"} and soccer.TORNEO_LEAGUES <= soccer.SOCCER_LEAGUES
+        assert soccer.leaders_season_types("UCL", load("season_LigaMX.json"), datetime.now(timezone.utc)) == [1]
 
 
 GRID = json.loads((Path(__file__).parents[2] / "fixtures" / "soccer_grid.json").read_text(encoding="utf-8"))
@@ -516,6 +493,10 @@ class TestSharedGrid:
         rows = [row for case in GRID["leaders"] for category in case["lists"] for row in category["rows"]]
         assert any(row["rank"] == 2 and other["rank"] == 2 and row is not other for row in rows for other in rows), \
             "it should show a tie"
+        assert {case["season"] for case in GRID["leaders"]} >= {
+            "2026-27 Liga BBVA MX Torneo Apertura", "2025-26 Liga BBVA MX Torneo Clausura"}
+        liga_mx = [case["types"] for case in GRID["seasonTypes"] if case["league"] == "Liga MX"]
+        assert [] in liga_mx and [5, 1] in liga_mx and [8, 1] in liga_mx, "both Clausura numbers, and none started"
 
     @pytest.mark.parametrize("case", GRID["tables"], ids=lambda case: case["fixture"])
     def test_every_table_reads_as_the_grid_says(self, case):
@@ -525,23 +506,26 @@ class TestSharedGrid:
         assert groups == case["groups"]
 
     @pytest.mark.parametrize("case", GRID["leaders"], ids=lambda case: case["fixture"])
-    def test_every_list_of_leaders_reads_as_the_grid_says(self, espn, case):
-        espn.on("/season$", load("season_EPL.json"))
-        espn.on("/types/1/leaders", load(case["fixture"]))
-        espn.on(r"/athletes/\d+", lambda url: {"displayName": "Athlete " + re.search(r"/athletes/(\d+)", url).group(1)})
-        espn.on(r"/seasons/\d+/teams/\d+", lambda url: {"abbreviation": re.search(r"/teams/(\d+)", url).group(1)})
-        answer = espn_api.get_player_statistics("EPL")
-        assert answer["season"] == case["season"]
+    def test_every_list_of_leaders_reads_as_the_grid_says(self, case):
+        data = load(case["fixture"])
+        assert soccer.soccer_leaders_season(data, case["league"], case["year"]) == case["season"]
         lists = [{"title": category["category"],
                   "rows": [dict(zip(("rank", "player", "team", "value"), row))
                            for row in ranking_rows("player", category["stats"])]}
-                 for category in answer["player_stats"]]
+                 for category in soccer.soccer_leader_lists(data)]
         assert lists == case["lists"]
 
+    @pytest.mark.parametrize("case", GRID["seasonTypes"], ids=lambda case: f"{case['league']} {case['now']}")
+    def test_every_choice_of_season_type_is_as_the_grid_says(self, case):
+        now = datetime.fromisoformat(case["now"].replace("Z", "+00:00"))
+        assert soccer.leaders_season_types(case["league"], load(case["season"]), now) == case["types"], case["why"]
 
-def test_a_reference_that_is_not_text_is_no_reference():
-    assert soccer._secure(None) == ""
-    assert soccer._secure("https://espn.example/a") == "https://espn.example/a"
+    def test_the_app_reads_a_league_as_the_grid_does(self, leaders):
+        """The grid's EPL case through the whole request, so the pure parts are the ones used."""
+        case = next(case for case in GRID["leaders"] if case["fixture"] == "leaders_v3_EPL.json")
+        answer = espn_api.get_player_statistics("EPL")
+        assert answer["season"] == case["season"]
+        assert [category["category"] for category in answer["player_stats"]] == [item["title"] for item in case["lists"]]
 
 
 def test_a_team_list_with_no_leagues_is_no_teams():

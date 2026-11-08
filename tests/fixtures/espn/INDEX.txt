@@ -144,13 +144,15 @@ standings_UCL_2023.json	62 KB	season=2023: Group A to Group H, 2 of 4 teams each
 standings_LigaMX.json	16 KB	2026 Torneo Apertura, 3 of 18: no notes at all
 standings_CONCACAF.json	1 KB	knockout only: 200 with no children and no entries, so no table
 teams_CONCACAF.json	4 KB	team list, trimmed to 3 of 27: the only way to its teams, with no table
-leaders_core_EPL.json	20 KB	core seasons/2026/types/1/leaders limit=3, whole: 12 categories, goalsLeaders and goals both called Goals with the same players, the former's text Matches: 9, Goals: 9
-leaders_core_UEL_2024.json	2 KB	core seasons/2024/types/1/leaders limit=2, 2 categories: accurate passes all 0, nobody counted, and goals
-core_athlete_EPL_253989.json	5 KB	core athlete reference from leaders_core_EPL: Erling Haaland
-core_team_EPL_382.json	5 KB	core team reference from leaders_core_EPL: Manchester City, MNC
+leaders_v3_EPL.json	227 KB	/leaders season=2026 seasontype=1 limit=3, whole: 12 categories with names and teams inside, goalsLeaders and goals both called Goals with the same players, the former's text Matches: 9, Goals: 9; requestedSeason names the season, its type name the same words again
+leaders_v3_LigaMX.json	57 KB	/leaders season=2026 seasontype=1 limit=3, goalsLeaders, goals and assists only: requestedSeason type name Torneo Apertura
+leaders_v3_LigaMX_clausura_empty.json	1 KB	/leaders season=2026 seasontype=5 limit=3 on Nov 7, 2026, before the Clausura: 200 with requestedSeason Torneo Clausura and no leaders key at all
+leaders_v3_LigaMX_2025_clausura.json	13 KB	/leaders season=2025 seasontype=8 limit=2, goals only: 2025's Clausura is type 8, named Torneo Clausura
+leaders_v3_UEL_2024.json	26 KB	/leaders season=2024 seasontype=1 limit=2, goals and accuratePasses only: accurate passes all 0, nobody counted
 season_EPL.json	2 KB	core /season: year 2026, displayName 2026-27 English Premier League, type.type a long id
-season_EPL_2025.json	2 KB	core seasons/2025: displayName 2025-26 English Premier League, for last season's label
 season_NWSL.json	4 KB	core /season in its playoffs: year 2026, type.id 2, and its leaders stay under type 1
+season_LigaMX.json	6 KB	core /season on Nov 7, 2026: year 2026, types inline, Torneo Apertura type 1 from Jun 1, Torneo Clausura type 5 from 2027-01-01T05:00Z, and Clausura playoff types 6-8 dated Nov-Dec 2026, placeholders
+season_LigaMX_2025.json	10 KB	core seasons/2025: types inline, Torneo Apertura type 1, play-in rounds 2-4, Torneo Clausura type 8 from 2026-01-01T05:00Z
 rankings_NCAAH.json	16 KB	USCHO Men's Poll, 5 of 20 teams, others and droppedOut emptied: points 0.0 for everyone, no lastUpdated; a three-part record, two teams level at 6, one with previous 0
 rankings_NCAAWH.json	9 KB	USCHO Women's Poll, 2 of 15 teams, others and droppedOut emptied: points 0.0 for everyone; a three-part record
 scoreboard_NCAAF_202611.json	86 KB	6 games from dates=202611 groups=90 limit=400: Eastern Michigan listed as home at a neutral Ford Field, Harvard at home and at a neutral Fenway Park, Akron twice, Syracuse's dome indoors
