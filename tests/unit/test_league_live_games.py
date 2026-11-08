@@ -978,6 +978,28 @@ class TestMonitoring(FailureViews):
         assert rows[0] == self.scores.MONITORING_EMPTY
         assert self.keys(view)[0] == self.scores.MONITORING_HEADER
 
+    def test_each_heading_says_how_many_it_holds(self, view):
+        """As the iPhone's headings do: one arrow tells whether a section is worth entering."""
+        self.load(view, [self.finished("1", "NHL"), self.finished("2", "NHL"), self.finished("3", "NBA")],
+                  live=[self.live("4", "NFL")])
+        rows = self.rows(view.live_scores_list)
+        assert "=== LIVE GAMES, 1 ===" in rows and "--- NFL, 1 ---" in rows
+        assert "=== COMPLETED GAMES, 3 ===" in rows
+        assert "--- NBA, 1 ---" in rows and "--- NHL, 2 ---" in rows
+
+    def test_a_heading_keeps_its_place_when_its_count_changes(self, view):
+        """Its data says which heading it is, so a refresh finds it though its text changed."""
+        self.load(view, [self.finished("1", "NHL"), self.finished("2", "NBA")])
+        self.go_to(view, (self.scores.LIVE_HEADER, "completed:NHL"))
+        self.load(view, [self.finished("1", "NHL"), self.finished("5", "NHL"), self.finished("2", "NBA")])
+        assert self.current_key(view) == (self.scores.LIVE_HEADER, "completed:NHL")
+        assert view.live_scores_list.currentItem().text() == "--- NHL, 2 ---"
+
+    def test_enter_on_a_heading_opens_nothing(self, view):
+        self.load(view, [self.finished("1", "NHL")])
+        self.go_to(view, (self.scores.LIVE_HEADER, "completed"))
+        assert view._current_game() is None
+
     def test_no_games_today_has_no_section(self, view):
         self.load(view)
         rows = self.rows(view.live_scores_list)
@@ -988,7 +1010,7 @@ class TestMonitoring(FailureViews):
         self.go_to(view, "2")
         view._toggle_monitoring()
         rows = self.rows(view.live_scores_list)
-        assert rows[0] == self.scores.MONITORING_HEADER
+        assert rows[0] == "=== MONITORING, 1 ==="
         assert rows[1] == "NBA game 2 | NBA"
         assert "NBA game 2 - monitoring" in rows
         assert "NHL game 1" in rows
