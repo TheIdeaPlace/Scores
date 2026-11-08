@@ -265,6 +265,29 @@
       doesn't send.
     </p>
 
+    <h3 id="win-probability">Win probability and season series (MLB)</h3>
+    <p>
+      An MLB game's details have two rows after the game time, when ESPN has them.
+      <strong>Win probability</strong> says who is more likely to win and how likely, for example
+      "Win probability: Mets 70%"; once a game is over the winner reads 100%. Press <kbd>Enter</kbd>
+      on it for three tabs: <strong>By Inning</strong>, the chances as each half inning ended;
+      <strong>Every Play</strong>; and <strong>Biggest Swings</strong>, the five plays that moved the
+      chances most. Each row has the inning, the play, the score, each team's chance, and the change,
+      such as "Mets +3", the team that gained and by how many points. The line above the tabs, also
+      read as the window opens, says where it stands and the biggest swing. <kbd>F5</kbd> checks for
+      the latest during a game, keeps your place, and says each team's chance now.
+    </p>
+    <p>
+      The <strong>season series</strong> row says how the two teams have done against each other, for
+      example "Regular Season Series: Mets lead 7-5", or in the postseason "World Series: Brewers lead
+      3-1". Press <kbd>Enter</kbd> for a tab for each series ESPN has (the playoff round, the regular
+      season, the current set of games and spring training), each a table of its games with the
+      date, the score, the winner and the status. Each table starts on the game you came from, marked
+      "this game". The record is as of that game, so looking back at game 4 of the World Series says
+      who led then, not who went on to win; the table still lists every game in the series. Every
+      table in both windows works in all three view modes.
+    </p>
+
     <h3 id="listen">Listening to a game on the radio</h3>
     <p>
       For the NFL, NBA, NHL, and college football and basketball, Scores knows where to hear a game.
@@ -430,6 +453,30 @@
       rolling over from one part of the season into the next.
     </p>
 
+    <h3 id="transactions">Transactions</h3>
+    <p>
+      <strong>Transactions</strong>, near the end of a league's list, is one running list of player
+      moves, newest first. Each item has the date, the team and what happened; soccer's are transfers,
+      such as “Marquinhos joins Cruzeiro from Arsenal on loan.” Press <kbd>Down</kbd> on the last item,
+      or the <strong>Load More</strong> button (<kbd>Alt</kbd>+<kbd>M</kbd>), to load older ones; they
+      go on back to January 2001, and the list says when there are no more. The team filter
+      (<kbd>Alt</kbd>+<kbd>T</kbd>) shows one team's.
+    </p>
+    <p>
+      To start somewhere else, press <kbd>Ctrl</kbd>+<kbd>G</kbd> (or <strong>Go to Month</strong>).
+      Choose a month from the list, newest first back to January 2001 (type a month's name, and its year,
+      to find it), and press <kbd>Enter</kbd>. Nothing loads until you do. The list then starts at the
+      end of that month and keeps going older from there, and the window title says where it starts, for
+      example “Transactions from March 2003”. If the month had none, the first line says so and older
+      ones follow. The current month is first in the list, and choosing it goes back to the newest. The
+      month you chose stays when you change the team filter.
+    </p>
+    <p>
+      ESPN can't provide every stretch: some of 2003's NFL transactions, for one. Where that happens the
+      list says so and goes on with the year before. If a request fails, the list says so; <kbd>F5</kbd>
+      tries again. College leagues have no transactions from ESPN, and the list says that plainly too.
+    </p>
+
     <h3>Golf</h3>
     <p>
       PGA Tour and LPGA Tour open a dialog with the current tournament leaderboard and the full
@@ -443,6 +490,11 @@
       window title and the line above the tabs name the tournament you are looking at. To go back
       to this week's, press <kbd>Enter</kbd> on it in the Schedule. If a leaderboard can't be
       loaded, <kbd>F5</kbd> tries that tournament again.
+    </p>
+    <p>
+      The <strong>News</strong> tab has ESPN's latest stories for the tour, each headline followed
+      by its summary. Press <kbd>Enter</kbd> on a story to open it in your browser. If the news
+      can't be loaded, the tab says so and <kbd>F5</kbd> tries again.
     </p>
 
     <h3>CFL</h3>
@@ -573,6 +625,29 @@
       schedule, roster, and news.
     </p>
     <p>
+      A team's Team Hub has six tabs: <strong>Info</strong> (<kbd>Alt</kbd>+<kbd>I</kbd>),
+      <strong>Roster</strong> (<kbd>Alt</kbd>+<kbd>O</kbd>), <strong>Stats</strong>
+      (<kbd>Alt</kbd>+<kbd>A</kbd>), <strong>Schedule</strong> (<kbd>Alt</kbd>+<kbd>S</kbd>),
+      <strong>News</strong> (<kbd>Alt</kbd>+<kbd>N</kbd>) and <strong>Transactions</strong>
+      (<kbd>Alt</kbd>+<kbd>R</kbd>). The Stats tab has a <strong>Show</strong> box
+      (<kbd>Alt</kbd>+<kbd>W</kbd>) with two choices:
+    </p>
+    <ul>
+      <li><strong>Players</strong> — the team's own leaders in each category, such as points per
+        game, with each player's rank within the team and the number. Players who qualify come first,
+        then the rest of the team.</li>
+      <li><strong>Team</strong> — where the team ranks in the league in each of its statistics, such as
+        <em>Points Per Game, 123.0, 1st</em>. A college rank says how many teams it's out of, such as
+        <em>Tied-32nd of 365</em>.</li>
+    </ul>
+    <p>
+      The line above the table, and the table's name, say which season the numbers are from. The table
+      has the three view modes (<kbd>Alt</kbd>+<kbd>T</kbd>, <kbd>Alt</kbd>+<kbd>Q</kbd>,
+      <kbd>Alt</kbd>+<kbd>F</kbd>, or <kbd>Alt</kbd>+<kbd>V</kbd> to cycle). If either list can't be
+      loaded, it says so; leave the tab and come back to try again. Player leaders for one team are
+      not yet available on Windows for soccer and college hockey.
+    </p>
+    <p>
       Each card is one item in the Favorite Teams list. After the team's name it has the team's last
       result, such as "Last: W vs LAD 2-1", then its next game with the date and time, such as
       "Next: @ VAN, 11/14/26, 11:45 AM", then two news headlines. While the team is playing, the last
@@ -608,7 +683,7 @@
         <tr><td><kbd>Tab</kbd> / <kbd>Shift</kbd>+<kbd>Tab</kbd></td><td>Move between controls</td></tr>
         <tr><td><kbd>Alt</kbd>+<kbd>P</kbd></td><td>Previous day's games (previous week in the NFL and college football)</td></tr>
         <tr><td><kbd>Alt</kbd>+<kbd>N</kbd></td><td>Next day's games (next week in the NFL and college football)</td></tr>
-        <tr><td><kbd>Ctrl</kbd>+<kbd>G</kbd></td><td>Jump to a specific date (choose a season in the NFL and college football)</td></tr>
+        <tr><td><kbd>Ctrl</kbd>+<kbd>G</kbd></td><td>Jump to a specific date (choose a season in the NFL and college football, a month in Transactions)</td></tr>
         <tr><td><kbd>F5</kbd></td><td>Refresh current view</td></tr>
         <tr><td><kbd>Alt</kbd>+<kbd>T</kbd></td><td>Switch to Table view</td></tr>
         <tr><td><kbd>Alt</kbd>+<kbd>Q</kbd></td><td>Switch to Quick List view</td></tr>

@@ -1,0 +1,43 @@
+{
+ "timestamp": "2026-11-08T00:31:53Z",
+ "status": "success",
+ "season": {
+  "year": 2026,
+  "type": 2,
+  "name": "Regular Season",
+  "displayName": "2026"
+ },
+ "requestedYear": {
+  "year": 2024,
+  "displayName": "2024"
+ },
+ "team": {
+  "id": "9",
+  "abbreviation": "GB",
+  "location": "Green Bay",
+  "name": "Packers",
+  "displayName": "Green Bay Packers",
+  "color": "204e32",
+  "recordSummary": "5-3",
+  "seasonSummary": "2026",
+  "standingSummary": "4th in NFC North"
+ },
+ "count": 107,
+ "pageIndex": 1,
+ "pageSize": 3,
+ "pageCount": 36,
+ "transactions": [
+  {
+   "date": "2024-12-28T08:00Z",
+   "description": "Elevated S Omar Brown from the practice squad."
+  },
+  {
+   "date": "2024-12-24T08:00Z",
+   "description": "Signed RB Deshaun Fenwick to the practice squad. Placed RB Ellis Merriweather on the practice squad injured list."
+  },
+  {
+   "date": "2024-12-23T08:00Z",
+   "description": "Activated TE Luke Musgrave from injured reserve."
+  }
+ ]
+}

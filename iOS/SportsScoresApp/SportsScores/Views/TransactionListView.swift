@@ -2,7 +2,9 @@
 //  TransactionListView.swift
 //  SportsScores
 //
-//  Paginated transaction list grouped by date, with a month/year jump picker.
+//  One running list of transactions, newest first and grouped by day, that loads older
+//  ones as you scroll, with a month/year picker that starts the list at the end of any
+//  month back to January 2001 and keeps going older from there.
 //
 
 import SwiftUI
@@ -15,27 +17,24 @@ struct TransactionListView: View {
     let hideTeamLabel: Bool
 
     init(sport: Sport, team: TransactionTeam?, hideTeamLabel: Bool = false) {
-        let vm = TransactionViewModel(sport: sport, team: team)
-        _viewModel = StateObject(wrappedValue: vm)
-        _pickerMonth = State(initialValue: vm.selectedMonth)
-        _pickerYear  = State(initialValue: vm.selectedYear)
+        _viewModel = StateObject(wrappedValue: TransactionViewModel(sport: sport, team: team))
+        let today = TransactionViewModel.today()
+        _pickerMonth = State(initialValue: today.month)
+        _pickerYear  = State(initialValue: today.year)
         self.hideTeamLabel = hideTeamLabel
     }
 
     var body: some View {
         VStack(spacing: 0) {
-            // Month/year header bar
-            dateHeaderBar
+            positionBar
 
             Group {
                 if viewModel.isLoading {
                     loadingView
                 } else if let error = viewModel.errorMessage {
                     errorView(error)
-                } else if viewModel.noDataForSport {
-                    emptyView("No transactions are available for \(viewModel.sport.displayName).")
-                } else if viewModel.transactions.isEmpty {
-                    emptyView("No transactions found for \(viewModel.monthYearLabel).")
+                } else if let empty = viewModel.emptyMessage {
+                    emptyView(empty)
                 } else {
                     transactionList
                 }
@@ -44,78 +43,48 @@ struct TransactionListView: View {
         }
         .navigationTitle(viewModel.listTitle)
         .navigationBarTitleDisplayMode(.inline)
-        .task { await viewModel.loadTransactions() }
+        .task { await viewModel.startIfNeeded() }
         .sheet(isPresented: $showingDatePicker) {
             datePickerSheet
         }
     }
 
-    // MARK: - Date header bar
+    // MARK: - Where the list starts
 
-    private var dateHeaderBar: some View {
+    private var positionBar: some View {
         HStack {
-            // Prev month button
             Button {
-                Task {
-                    var m = viewModel.selectedMonth - 1
-                    var y = viewModel.selectedYear
-                    if m < 1 { m = 12; y -= 1 }
-                    await viewModel.jumpToMonthYear(month: m, year: y)
-                    pickerMonth = viewModel.selectedMonth
-                    pickerYear  = viewModel.selectedYear
-                }
-            } label: {
-                Image(systemName: "chevron.left")
-                    .font(.headline)
-                    .padding(.horizontal, 8)
-            }
-            .disabled(viewModel.selectedYear <= TransactionViewModel.earliestYear && viewModel.selectedMonth <= 1)
-            .accessibilityLabel("Previous month")
-
-            Spacer()
-
-            Button {
-                pickerMonth = viewModel.selectedMonth
-                pickerYear  = viewModel.selectedYear
+                let today = TransactionViewModel.today()
+                pickerMonth = viewModel.jump?.month ?? today.month
+                pickerYear  = viewModel.jump?.year ?? today.year
                 showingDatePicker = true
             } label: {
                 HStack(spacing: 4) {
-                    Text(viewModel.monthYearLabel)
-                        .font(.subheadline.weight(.semibold))
                     Image(systemName: "calendar")
                         .font(.subheadline)
+                    Text("Jump to Month")
+                        .font(.subheadline.weight(.semibold))
                 }
             }
-            .accessibilityLabel("Jump to month. Currently \(viewModel.monthYearLabel)")
+            .accessibilityLabel("Jump to month")
+            .accessibilityValue(viewModel.positionLabel)
+            .accessibilityHint("Starts the list at the end of a month and keeps going older from there.")
 
             Spacer()
 
-            // Next month button
-            Button {
-                Task {
-                    var m = viewModel.selectedMonth + 1
-                    var y = viewModel.selectedYear
-                    if m > 12 { m = 1; y += 1 }
-                    let now = Date()
-                    let curYear  = Calendar.current.component(.year,  from: now)
-                    let curMonth = Calendar.current.component(.month, from: now)
-                    guard y < curYear || (y == curYear && m <= curMonth) else { return }
-                    await viewModel.jumpToMonthYear(month: m, year: y)
-                    pickerMonth = viewModel.selectedMonth
-                    pickerYear  = viewModel.selectedYear
+            Text(viewModel.positionLabel)
+                .font(.subheadline)
+                .foregroundColor(.secondary)
+                .accessibilityHidden(true)  // the button's value says it
+
+            if viewModel.jump != nil {
+                Button("Newest") {
+                    Task { await viewModel.start() }
                 }
-            } label: {
-                Image(systemName: "chevron.right")
-                    .font(.headline)
-                    .padding(.horizontal, 8)
+                .font(.subheadline.weight(.semibold))
+                .padding(.leading, 8)
+                .accessibilityLabel("Back to the newest")
             }
-            .disabled({
-                let now = Date()
-                let curYear  = Calendar.current.component(.year,  from: now)
-                let curMonth = Calendar.current.component(.month, from: now)
-                return viewModel.selectedYear >= curYear && viewModel.selectedMonth >= curMonth
-            }())
-            .accessibilityLabel("Next month")
         }
         .padding(.vertical, 10)
         .padding(.horizontal)
@@ -126,54 +95,83 @@ struct TransactionListView: View {
 
     private var transactionList: some View {
         List {
-            ForEach(viewModel.groupedTransactions, id: \.date) { group in
-                Section(group.date) {
-                    ForEach(group.items) { item in
-                        transactionRow(item)
-                    }
+            ForEach(viewModel.sections) { section in
+                if let title = section.title {
+                    Section(title) { rows(section) }
+                } else {
+                    Section { rows(section) }
                 }
             }
+            Section { footer }
+        }
+        .listStyle(.insetGrouped)
+    }
 
-            // Page navigation (all-sport view only)
-            if viewModel.isPaginated && viewModel.pageCount > 1 {
-                Section {
-                    HStack {
-                        Button {
-                            Task { await viewModel.previousPage() }
-                        } label: {
-                            Label("Previous", systemImage: "chevron.left")
-                        }
-                        .disabled(viewModel.currentPage <= 1)
-
-                        Spacer()
-
-                        Text("Page \(viewModel.currentPage) of \(viewModel.pageCount)")
-                            .font(.caption)
-                            .foregroundColor(.secondary)
-
-                        Spacer()
-
-                        Button {
-                            Task { await viewModel.nextPage() }
-                        } label: {
-                            Label("Next", systemImage: "chevron.right")
-                                .labelStyle(.titleAndIcon)
-                        }
-                        .disabled(viewModel.currentPage >= viewModel.pageCount)
-                    }
+    @ViewBuilder
+    private func rows(_ section: TransactionViewModel.DaySection) -> some View {
+        ForEach(section.entries) { entry in
+            Group {
+                switch entry {
+                case .item(let item, _):
+                    transactionRow(item)
+                case .notice(let notice):
+                    Text(notice.text)
+                        .font(.subheadline)
+                        .foregroundColor(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
+            .onAppear {
+                // Reaching the end of the list loads older ones.
+                if entry.id == viewModel.lastEntryID {
+                    Task { await viewModel.loadMore(announcing: false) }
                 }
             }
         }
-        .listStyle(.insetGrouped)
+    }
+
+    /// Under the list: loading, a failure to try again, a button for older ones, or the end.
+    @ViewBuilder
+    private var footer: some View {
+        if viewModel.isLoadingMore {
+            HStack {
+                Spacer()
+                ProgressView("Loading older transactions…")
+                Spacer()
+            }
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel("Loading older transactions")
+        } else if let error = viewModel.loadMoreError {
+            VStack(alignment: .leading, spacing: 8) {
+                Text(error)
+                    .foregroundColor(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+                Button("Try Again") {
+                    Task { await viewModel.loadMore() }
+                }
+            }
+        } else if viewModel.hasMore {
+            // Loads only when tapped: reaching the last row loads by itself. Loading on this
+            // button's appearing would load year after year under a short list, unasked.
+            Button("Load Older Transactions") {
+                Task { await viewModel.loadMore() }
+            }
+        } else if !viewModel.entries.isEmpty {
+            Text(viewModel.endText)
+                .font(.subheadline)
+                .foregroundColor(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+        }
     }
 
     // MARK: - Transaction row
 
     @ViewBuilder
     private func transactionRow(_ item: TransactionItem) -> some View {
+        let showTeam = !hideTeamLabel && !item.team.abbreviation.isEmpty
         HStack(alignment: .top, spacing: 10) {
             // Team abbreviation badge — hidden when viewing a single team
-            if !hideTeamLabel {
+            if showTeam {
                 Text(item.team.abbreviation)
                     .font(.caption.weight(.bold))
                     .foregroundColor(.white)
@@ -190,7 +188,7 @@ struct TransactionListView: View {
         }
         .padding(.vertical, 2)
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel(hideTeamLabel ? item.description : "\(item.team.displayName): \(item.description)")
+        .accessibilityLabel(showTeam ? "\(item.team.displayName): \(item.description)" : item.description)
     }
 
     // MARK: - State views
@@ -201,6 +199,7 @@ struct TransactionListView: View {
             ProgressView("Loading transactions…")
             Spacer()
         }
+        .accessibilityElement(children: .ignore)
         .accessibilityLabel("Loading transactions")
     }
 
@@ -210,24 +209,41 @@ struct TransactionListView: View {
             Image(systemName: "exclamationmark.triangle")
                 .font(.largeTitle)
                 .foregroundColor(.secondary)
+                .accessibilityHidden(true)
             Text(message)
                 .foregroundColor(.secondary)
                 .multilineTextAlignment(.center)
                 .padding()
             Button("Try Again") {
-                Task { await viewModel.loadTransactions() }
+                Task { await viewModel.start(at: viewModel.jump) }
             }
             Spacer()
         }
     }
 
     private func emptyView(_ message: String) -> some View {
-        VStack {
+        VStack(spacing: 12) {
             Spacer()
             Text(message)
                 .foregroundColor(.secondary)
                 .multilineTextAlignment(.center)
                 .padding()
+            if viewModel.isLoadingMore {
+                ProgressView("Looking further back…")
+                    .accessibilityElement(children: .ignore)
+                    .accessibilityLabel("Looking further back")
+            } else if let error = viewModel.loadMoreError {
+                Text(error)
+                    .foregroundColor(.secondary)
+                    .multilineTextAlignment(.center)
+                Button("Try Again") {
+                    Task { await viewModel.loadMore() }
+                }
+            } else if viewModel.hasMore {
+                Button("Look Further Back") {
+                    Task { await viewModel.loadMore() }
+                }
+            }
             Spacer()
         }
     }
@@ -239,23 +255,30 @@ struct TransactionListView: View {
             Form {
                 Picker("Month", selection: $pickerMonth) {
                     ForEach(1...12, id: \.self) { month in
-                        Text(monthName(month)).tag(month)
+                        Text(TransactionPaging.monthNames[month - 1]).tag(month)
                     }
                 }
 
                 Picker("Year", selection: $pickerYear) {
-                    ForEach(Array(stride(from: currentYear(), through: TransactionViewModel.earliestYear, by: -1)), id: \.self) { year in
+                    ForEach(Array(stride(from: TransactionViewModel.today().year,
+                                         through: TransactionPaging.earliestYear, by: -1)), id: \.self) { year in
                         Text(String(year)).tag(year)
                     }
                 }
+
+                Section {
+                    Text("Shows that month's transactions, newest first, then older ones. This month, or a later one, goes back to the newest.")
+                        .font(.footnote)
+                        .foregroundColor(.secondary)
+                }
             }
-            .navigationTitle("Jump To")
+            .navigationTitle("Jump to Month")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Go") {
                         showingDatePicker = false
-                        Task { await viewModel.jumpToMonthYear(month: pickerMonth, year: pickerYear) }
+                        Task { await viewModel.start(at: (pickerYear, pickerMonth)) }
                     }
                 }
                 ToolbarItem(placement: .cancellationAction) {
@@ -263,7 +286,7 @@ struct TransactionListView: View {
                 }
             }
         }
-        .presentationDetents([.medium])
+        .presentationDetents([.medium, .large])
     }
 
     // MARK: - Helpers
@@ -277,16 +300,6 @@ struct TransactionListView: View {
         let g = Double((value >> 8)  & 0xFF) / 255
         let b = Double( value        & 0xFF) / 255
         return Color(red: r, green: g, blue: b)
-    }
-
-    private func monthName(_ month: Int) -> String {
-        let df = DateFormatter()
-        df.locale = Locale(identifier: "en_US_POSIX")
-        return df.monthSymbols[month - 1]
-    }
-
-    private func currentYear() -> Int {
-        Calendar.current.component(.year, from: Date())
     }
 }
 

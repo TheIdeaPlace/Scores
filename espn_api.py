@@ -2,8 +2,9 @@ import requests
 import threading
 import time
 from concurrent.futures import ThreadPoolExecutor
-from datetime import datetime
+from datetime import datetime, timezone
 from exceptions import ApiError
+from itertools import islice
 import racing
 import cfl
 import favorite_card
@@ -11,12 +12,15 @@ from game_labels import (best_odds, broadcast_names, format_height, format_weigh
                          injured_player_count, leader_display_value, local_schedule_datetime,
                          schedule_game_label)
 import golf
-from soccer import NAME_UNAVAILABLE, SOCCER_LEAGUES, _stat_number, core_leader_lists, parse_soccer_standings
+from soccer import (SOCCER_LEAGUES, TORNEO_LEAGUES, _stat_number, leaders_season_types, parse_soccer_standings,
+                    soccer_leader_lists, soccer_leaders_season)
 import stat_glossary
 from team_list import STANDINGS as TEAM_LIST_FROM_STANDINGS, parse_team_list, with_standings
 from team_list import source as team_list_source
+import team_stats
 from team_stats import needs_team_list, parse_team_stats
 from timezone_utils import convert_espn_time_to_local
+import transactions_paging
 
 # Every ESPN request gets a timeout. requests has none by default, so one
 # stalled response would block its caller forever; several screens fetch on
@@ -2672,12 +2676,11 @@ def _get_team_record(team_id, league_key):
         return 0, 0, "0.000", ""
 
 # Player leaders. ESPN has them here, with names and teams inside the response, for these
-# leagues. /leaders is a 404 for college hockey, so asking would only look like a failure: that
-# league has no leaders to show. Soccer reads the core API instead, as the iPhone does.
+# leagues and soccer's (SOCCER_LEAGUES), which ask for their own season types. /leaders is a 404
+# for college hockey, so asking would only look like a failure: that league has no leaders to show.
 LEADERS_BASE_URL = "https://site.web.api.espn.com/apis/site/v3/sports"
 CORE_BASE_URL = "https://sports.core.api.espn.com/v2/sports"
 LEADER_LEAGUES = {"NFL", "NCAAF", "NBA", "WNBA", "NCAAM", "NCAAWB", "NHL", "MLB"}
-CORE_LEADER_LEAGUES = SOCCER_LEAGUES
 LEADERS_LIMIT = 20
 # /leaders answers 500 far more often the more it's asked for. It can be a retry away, or last
 # for minutes at one limit while a smaller one works: on Nov 4, 2026, four leagues' 2025 season
@@ -2697,6 +2700,10 @@ LOW_IS_GOOD_LEADERS = {"avgGoalsAgainst", "ERA", "WHIP", "opponentAvg"}
 # No qualifying minimum in practice: 2026's list opens with 13 players on .000, catchers and
 # outfielders among them. The iPhone leaves it out too.
 LEADERS_NOT_SHOWN = {"opponentAvg"}
+# A team's answer has these as well, repeating its yards lists with the same players.
+REPEATED_FOR_ONE_TEAM = {"passingLeader", "rushingLeader", "receivingLeader"}
+# What one team's ranks are, since the same season words on the league's list mean the league.
+ONE_TEAM_RANKS = "ranked within this team, qualified players first"
 
 
 def _no_leaders():
@@ -2751,16 +2758,21 @@ def regular_season_just_began(season):
     return 0 <= days <= NEW_SEASON_DAYS
 
 
-def _fetch_leaders(league_path, year):
-    """A season's regular season leaders from /leaders, or None if ESPN has no such season.
-    Without `seasontype`, a finished season's answer is its postseason. A second try at the
-    full list gets a throwaway parameter, since ESPN can cache a 500 for up to 30 seconds."""
+def _fetch_leaders(league_path, year, season_type=REGULAR_SEASON, team_id=None):
+    """A season's leaders from /leaders, the regular season's unless asked for another type, or
+    None if ESPN has no such season. Without `seasontype`, a finished season's answer is its
+    postseason; soccer's answer is the wrong season or a 500 without `season`, and a 404 or a
+    playoff round's without `seasontype`. A second try at the full list gets a throwaway
+    parameter, since ESPN can cache a 500 for up to 30 seconds.
+    `team_id` asks for one team's players, up to 20 of them in every category it has anyone in."""
     attempts = [{"limit": LEADERS_LIMIT}, {"limit": LEADERS_LIMIT, "_": int(time.time() * 1000)}]
     attempts += [{"limit": limit} for limit in LEADERS_SMALLER_LIMITS]
     for attempt in attempts:
         if "_" in attempt:
             time.sleep(1)
-        params = {"region": "us", "lang": "en", "season": year, "seasontype": 2, **attempt}
+        params = {"region": "us", "lang": "en", "season": year, "seasontype": season_type, **attempt}
+        if team_id is not None:
+            params["team"] = team_id
         try:
             resp = _http_get(f"{LEADERS_BASE_URL}/{league_path}/leaders", params=params, timeout=15)
             answer = resp.json() if resp.status_code == 200 else None
@@ -2793,13 +2805,19 @@ def _leaders_in_order(key, leaders):
     return kept
 
 
-def _parse_leaders(data):
+def _parse_leaders(data, one_team=False):
     """/leaders to the rows the dialog shows, in ESPN's order, which is best first even for a
     stat where low is good. A league's ratings can be there with nobody rated, such as the WNBA's
     Player Efficiency Rating, where the leaders all read 0.0: that isn't a list of leaders.
     Asked for a past college football season's regular season, ESPN answers with type 3, and
     the numbers run through the bowl games, so "Season" says what they are and "Postseason"
-    doesn't: 4379 passing yards for 2025, where the core API's type 2 says 4129."""
+    doesn't: 4379 passing yards for 2025, where the core API's type 2 says 4129.
+
+    `one_team` is an answer for one team, for Team Hub. It has qualified players first and then
+    everyone else, and Team Hub shows them all, so its lists aren't cut where the numbers turn
+    back up: that would lose a real player, such as Tyler Herro on 20.5 points, listed after a
+    teammate on 5.6. Its passing, rushing and receiving "leader" lists repeat its yards lists, and
+    its season says the ranks are within the team. The iPhone: leaderCategories(oneTeam:)."""
     data = _as_dict(data)
     requested = _as_dict(data.get("requestedSeason"))
     season_type = _as_dict(requested.get("type"))
@@ -2809,10 +2827,12 @@ def _parse_leaders(data):
     categories = []
     for category in _dicts(_as_dict(data.get("leaders")).get("categories")):
         key = category.get("name") or "unknown"
-        if key in LEADERS_NOT_SHOWN:
+        if key in LEADERS_NOT_SHOWN or (one_team and key in REPEATED_FOR_ONE_TEAM):
             continue
         title = category.get("displayName") or key.title()
-        leaders = _leaders_in_order(key, _dicts(category.get("leaders")))
+        leaders = _dicts(category.get("leaders"))
+        if not one_team:
+            leaders = _leaders_in_order(key, leaders)
         if all(not leader.get("value") for leader in leaders):
             continue
         stats = []
@@ -2833,11 +2853,37 @@ def _parse_leaders(data):
     if not categories:
         return _no_leaders()
     name = "Season" if season_type.get("type") == POSTSEASON else season_type.get("name")
-    return {"player_stats": categories, "team_stats": [], "season": _season_label(requested.get("displayName"), name)}
+    season = _season_label(requested.get("displayName"), name)
+    if one_team:
+        season = f"{season}, {ONE_TEAM_RANKS}" if season else ONE_TEAM_RANKS[0].upper() + ONE_TEAM_RANKS[1:]
+    return {"player_stats": categories, "team_stats": [], "season": season}
 
 
 def _season_label(year_name, type_name):
     return " ".join(str(part) for part in (year_name, type_name) if part)
+
+
+def get_team_player_leaders(league_key, team_id):
+    """One team's players in each stat category, ranked among themselves, for Team Hub's Stats
+    tab, as {player_stats, team_stats, season}: /leaders with team=, from the same season as
+    get_player_statistics. The league's list wouldn't do: 20 rows of it had no Blackhawks in any
+    category. Empty for a league without /leaders. A failed request raises ApiError.
+
+    The iPhone also has soccer and college hockey, from the core API's whole league filtered to
+    the team, which Windows doesn't read for a team yet."""
+    key = league_key if league_key in LEAGUES else str(league_key).upper()
+    if key not in LEADER_LEAGUES:
+        return _no_leaders()
+    league_path = LEAGUES[key]
+    year = _leaders_season(league_path)
+    answers = [_fetch_leaders(league_path, year, team_id=team_id)]
+    result = _parse_leaders(answers[0], one_team=True)
+    if not result["player_stats"]:
+        answers.append(_fetch_leaders(league_path, year - 1, team_id=team_id))
+        result = _parse_leaders(answers[1], one_team=True)
+    if not any(answer is not None for answer in answers):
+        raise ApiError(STATISTICS_UNAVAILABLE)
+    return result
 
 
 def get_player_statistics(league_key):
@@ -2845,8 +2891,8 @@ def get_player_statistics(league_key):
     they're from, such as "2026-27 Regular Season". Empty means ESPN has no leaders for this
     league. A failed request raises ApiError instead, so the dialog can say so."""
     key = league_key if league_key in LEAGUES else league_key.upper()
-    if key in CORE_LEADER_LEAGUES:
-        return _core_player_statistics(LEAGUES[key])
+    if key in SOCCER_LEAGUES:
+        return _soccer_player_statistics(key)
     if key not in LEADER_LEAGUES:
         return _no_leaders()
     league_path = LEAGUES[key]
@@ -2862,183 +2908,56 @@ def get_player_statistics(league_key):
     return result
 
 
-# Soccer's leaders, from the core API as on the iPhone (fetchCoreLeaders). A league files its whole
-# season under type 1, and 2 and 3 are a 404. An entry's athlete and team are references, so 20 of
-# each of a dozen lists takes about 150 requests. They're asked for a few at a time over connections
-# kept open, at most once each while the app is open. A new connection for each took a minute.
-SOCCER_LEADERS_SEASON_TYPE = 1
-# The season ESPN says it is and the two before, as the iPhone tries three. A new season can have no
-# list yet, which is a 404 rather than a failure.
-CORE_LEADER_SEASONS = 3
-CORE_REF_WORKERS = 8
-CORE_REF_TIMEOUT = 10
-# Two rounds of connection failures with no answer between them mean the network has stalled.
-CORE_REF_FAILURES_BEFORE_GIVING_UP = CORE_REF_WORKERS * 2
-_CORE_REF_CACHE = {}  # reference: what was read from it. Names don't change while the app is open.
-_APP_CLOSING = threading.Event()
+# Soccer's leaders, from /leaders as on the iPhone (fetchSoccerLeaders): one request, with names and
+# teams inside, where the core API took one for each player and team, about 150. Its season comes from
+# core_season, never the calendar, and its season type from soccer.leaders_season_types: type 1, or
+# for Liga MX the torneo that's on. Asked for 20, soccer's /leaders answers 500 more than the other
+# sports' do, and NWSL's and CONCACAF's never have at 20, so those step down to 10 as theirs do.
+# A new season or torneo can have no list yet, which means the one before, and three are tried, as
+# the core API's three seasons were.
+SOCCER_LEADER_TRIES = 3
 
 
-def stop_core_lookups():
-    """For when the app quits. Python works through a pool's whole queue at exit, even with the main
-    thread done, so a list still loading would hold a closed app open for as long as that takes."""
-    _APP_CLOSING.set()
-
-
-class _CoreRefReader:
-    """Reads a set of the core API's references, some at a time, for one list of leaders. One that
-    still fails after a second try is left out rather than failing them all. A 404 won't change, so
-    it's final, and so is a timeout, which has already cost someone 10 seconds. After too many
-    connection failures in a row the rest aren't asked for, since they'd only fail too."""
-
-    def __init__(self):
-        self._lock = threading.Lock()
-        self._failures_in_a_row = 0
-        self._session = requests.Session()
-        self._session.mount("https://", requests.adapters.HTTPAdapter(pool_maxsize=CORE_REF_WORKERS))
-
-    def __enter__(self):
-        return self
-
-    def __exit__(self, *exception):
-        self._session.close()
-
-    def _failed(self):
-        with self._lock:
-            self._failures_in_a_row += 1
-
-    def _answered(self):
-        with self._lock:
-            self._failures_in_a_row = 0
-
-    def has_stalled(self):
-        with self._lock:
-            return self._failures_in_a_row >= CORE_REF_FAILURES_BEFORE_GIVING_UP
-
-    def _read_one(self, reference):
-        for attempt in range(2):
-            if self.has_stalled() or _APP_CLOSING.is_set():
-                return None
-            if attempt:
-                time.sleep(0.3)
-            try:
-                resp = _http_get(reference, session=self._session, timeout=CORE_REF_TIMEOUT)
-            except requests.Timeout:
-                self._failed()
-                return None
-            except requests.RequestException:
-                self._failed()
-                continue
-            self._answered()
-            if resp.status_code == 200:
-                try:
-                    return _as_dict(resp.json())
-                except ValueError:
-                    return None
-            if resp.status_code < 500 and resp.status_code != 429:
-                return None
-        return None
-
-    def read(self, references, pick):
-        """{reference: pick(its answer)}, with only those that said something. The cache saves a
-        second opening of the same list from asking again."""
-        found = {ref: _CORE_REF_CACHE[ref] for ref in references if ref in _CORE_REF_CACHE}
-        wanted = [ref for ref in references if ref and ref not in found]
-
-        def read_one(reference):
-            return reference, pick(self._read_one(reference) or {})
-
-        with ThreadPoolExecutor(max_workers=CORE_REF_WORKERS) as pool:
-            for reference, value in pool.map(read_one, wanted):
-                if value:
-                    found[reference] = _CORE_REF_CACHE[reference] = value
-        return found
-
-
-def _fetch_core_leaders(league_path, year):
-    """A season's leaders from the core API, or None if ESPN has no such season."""
-    sport, league = league_path.split("/", 1)
-    url = f"{CORE_BASE_URL}/{sport}/leagues/{league}/seasons/{year}/types/{SOCCER_LEADERS_SEASON_TYPE}/leaders"
-    resp = None
-    for attempt in range(2):
-        if attempt:
-            time.sleep(1)
-        try:
-            resp = _http_get(url, params={"limit": LEADERS_LIMIT}, timeout=15)
-            if resp.status_code == 200:
-                data = resp.json()
-                # Not "no leaders this season", which would step back to the last one.
-                _listed(data, "categories", STATISTICS_UNAVAILABLE)
-                return data
-        except (requests.RequestException, ValueError) as e:
-            raise ApiError(STATISTICS_UNAVAILABLE) from e
-        if resp.status_code == 404:
-            return None
-        if resp.status_code < 500:
-            break
-    raise ApiError(STATISTICS_UNAVAILABLE)
-
-
-def _core_season_name(league_path, year, season):
-    """What ESPN calls this season, such as "2025-26 English Premier League". `season` is the core
-    API's current one, so only an earlier season takes a request. If that fails, the year still
-    says it isn't this season's."""
-    if season.get("year") == year and season.get("displayName"):
-        return season["displayName"]
+def _core_season_by_year(league_path, year):
+    """The core API's answer for one season, with its types inside. Only Liga MX needs an earlier
+    season's, to find its Clausura; failing means not knowing which torneo to show, so it says so."""
     sport, league = league_path.split("/", 1)
     try:
         resp = _http_get(f"{CORE_BASE_URL}/{sport}/leagues/{league}/seasons/{year}", timeout=10)
-        name = _as_dict(resp.json()).get("displayName") if resp.status_code == 200 else None
-    except (requests.RequestException, ValueError):
-        name = None
-    return name or str(year)
-
-
-def _team_abbreviation(team):
-    return team.get("abbreviation") or team.get("displayName")
-
-
-def _athlete_name(athlete):
-    return athlete.get("displayName") or athlete.get("fullName") or athlete.get("shortName")
-
-
-def _core_player_statistics(league_path):
-    """A soccer league's leaders, in the shape get_player_statistics returns. A row whose name or
-    team couldn't be had says so and keeps its place. But a network that stalled partway, or most
-    names or teams not coming, means ESPN isn't answering, so it fails rather than showing a screen
-    of those. It goes by how many are had, cached or not, since one page that's always a 404 is
-    never cached, and mustn't fail every opening after the first. The iPhone: fetchLeadersForSeason."""
-    season = core_season(league_path)
-    for year in range(season["year"], season["year"] - CORE_LEADER_SEASONS, -1):
-        lists = core_leader_lists(_fetch_core_leaders(league_path, year))
-        if lists:
-            break
-    else:
-        return _no_leaders()
-
-    leaders =[leader for category in lists for leader in category["leaders"]]
-    athletes = {leader["athlete"] for leader in leaders} - {""}
-    team_references = {leader["team"] for leader in leaders} - {""}
-
-    def most_missing(references, found):
-        return len(found) * 2 < len(references)
-
-    with _CoreRefReader() as reader:
-        teams = reader.read(team_references, _team_abbreviation)
-        names = reader.read(athletes, _athlete_name)
-        stalled = reader.has_stalled()
-    if stalled or not names or most_missing(athletes, names) or most_missing(team_references, teams):
+        season = resp.json() if resp.status_code == 200 else None
+    except (requests.RequestException, ValueError) as e:
+        raise ApiError(STATISTICS_UNAVAILABLE) from e
+    if not isinstance(season, dict):
         raise ApiError(STATISTICS_UNAVAILABLE)
-    categories = [{
-        "category": category["title"],
-        "stats": [{
-            "player_name": names.get(leader["athlete"], NAME_UNAVAILABLE),
-            "team": teams.get(leader["team"], ""),
-            "value": leader["value"],
-            "stat_name": category["title"],
-        } for leader in category["leaders"]],
-    } for category in lists]
-    return {"player_stats": categories, "team_stats": [],
-            "season": _core_season_name(league_path, year, season)}
+    return season
+
+
+def _soccer_seasons_to_try(league_key, league_path, season, now):
+    """(year, season type) to ask, latest first: ESPN's season and the two before it. An earlier
+    season's types are only asked for by a league that needs them, and only once reached."""
+    for year in range(season["year"], season["year"] - SOCCER_LEADER_TRIES, -1):
+        if year == season["year"] or league_key not in TORNEO_LEAGUES:
+            types_from = season
+        else:
+            types_from = _core_season_by_year(league_path, year)
+        for season_type in leaders_season_types(league_key, types_from, now):
+            yield year, season_type
+
+
+def _soccer_player_statistics(league_key):
+    """A soccer league's leaders, in the shape get_player_statistics returns. Nobody on a list yet
+    means the season or torneo before; a failed request says so rather than showing that one."""
+    league_path = LEAGUES[league_key]
+    season = core_season(league_path)
+    now = datetime.now(timezone.utc)
+    seasons = _soccer_seasons_to_try(league_key, league_path, season, now)
+    for year, season_type in islice(seasons, SOCCER_LEADER_TRIES):
+        answer = _fetch_leaders(league_path, year, season_type)
+        lists = soccer_leader_lists(answer)
+        if lists:
+            return {"player_stats": lists, "team_stats": [],
+                    "season": soccer_leaders_season(answer, league_key, year)}
+    return _no_leaders()
 
 
 # Team statistics. One request has every team's whole stat line. ESPN has none for college hockey
@@ -3125,7 +3044,15 @@ def _with_every_team(league_path, year, data):
     return {**data, "teams": list(every.values())}
 
 
-def _parse_team_stats(key, league_path, data):
+def _division_one_list(key, league_path, data):
+    """ESPN's team list, for a college basketball answer that needs it to tell Division I teams
+    apart (see team_stats.qualified_teams), or None."""
+    if key not in TEAM_STATS_NEEDS_TEAM_LIST or not needs_team_list(data):
+        return None
+    return _division_one_ids(league_path)
+
+
+def _parse_team_stats(key, league_path, data, team_list=None):
     """The result for one season's answer. Asked for a past college football season's regular
     season, ESPN answers with type 3, with the numbers running through the bowl games, so "Season"
     says what they are, as it does for the leaders. If there are still fewer teams than ESPN says it
@@ -3135,9 +3062,6 @@ def _parse_team_stats(key, league_path, data):
     season_type = _as_dict(requested.get("type"))
     if season_type.get("type") == PRESEASON:
         return _no_team_stats()
-    team_list = None
-    if key in TEAM_STATS_NEEDS_TEAM_LIST and needs_team_list(data):
-        team_list = _division_one_ids(league_path)
     team_stats = parse_team_stats(data, league_path.split("/")[0], team_list)
     if not team_stats:
         return _no_team_stats()
@@ -3158,7 +3082,12 @@ def get_team_statistics(league_key):
     key = league_key if league_key in LEAGUES else league_key.upper()
     if key not in TEAM_STAT_LEAGUES:
         return _no_team_stats()
-    league_path = LEAGUES[key]
+    return _latest_team_stats(key, LEAGUES[key])[0]
+
+
+def _latest_team_stats(key, league_path):
+    """(get_team_statistics' result, the answer it came from with every team, its team list),
+    with None for the answer when there's nothing to show."""
     season = core_season(league_path)
     year = latest_regular_season(season)
     # A new regular season can start with nobody on the list yet, or be a 404 or for its first days
@@ -3174,12 +3103,98 @@ def get_team_statistics(league_key):
             answer = None
         answers.append(answer)
         if answer is not None:
-            result = _parse_team_stats(key, league_path, _with_every_team(league_path, season_year, answer))
+            answer = _with_every_team(league_path, season_year, answer)
+            preseason = _as_dict(_as_dict(answer.get("requestedSeason")).get("type")).get("type") == PRESEASON
+            team_list = None if preseason else _division_one_list(key, league_path, answer)
+            result = _parse_team_stats(key, league_path, answer, team_list)
             if result["team_stats"]:
-                return result
+                return result, answer, team_list
     if not any(answer is not None for answer in answers):
         raise ApiError(STATISTICS_UNAVAILABLE)
-    return _no_team_stats()
+    return _no_team_stats(), None, None
+
+
+# Team Hub's ranks. The core API's statistics for one team, the regular season (soccer files its
+# whole league season under type 1), this season's or the last.
+HUB_SEASON_TYPE = 2
+SOCCER_SEASON_TYPE = 1
+
+
+def _core_season_name(league_path, year, season):
+    """What ESPN calls a season, such as "2026-27" or "2025-26 English Premier League". `season` is
+    the core API's current one, so only an earlier season takes a request. If that fails, the year
+    still says it isn't this season's."""
+    if season.get("year") == year and season.get("displayName"):
+        return season["displayName"]
+    sport, league = league_path.split("/", 1)
+    try:
+        resp = _http_get(f"{CORE_BASE_URL}/{sport}/leagues/{league}/seasons/{year}", timeout=10)
+        name = _as_dict(resp.json()).get("displayName") if resp.status_code == 200 else None
+    except (requests.RequestException, ValueError):
+        name = None
+    return name or str(year)
+
+
+def _network_failed(error):
+    """Whether an ApiError was the network not getting through rather than ESPN answering badly."""
+    return isinstance(error.__cause__, (requests.ConnectionError, requests.Timeout))
+
+
+def get_team_stat_rankings(league_key, team_id):
+    """Where one team ranks in each of its stats, for Team Hub's Stats tab, as {rankings, season}:
+    team_stats.hub_rankings' rows and what season they're from. As on the iPhone
+    (fetchTeamStatRankings), the stats come from the core API's statistics for the team, and a
+    rank from the league's byteam list where it has the stat, if it's the same season's regular
+    season. Not having that list only costs the ranks that come from it, unless the network didn't
+    get through, which fails the lot. Empty rankings means ESPN has none to show. A failed request
+    raises ApiError, which the iPhone treats as no rankings."""
+    key = league_key if league_key in LEAGUES else str(league_key).upper()
+    league_path = LEAGUES.get(key)
+    if not league_path or key in GOLF_TOURS:
+        return {"rankings": [], "season": ""}
+    sport, league = league_path.split("/", 1)
+
+    answer, team_list = None, None
+    if key in TEAM_STAT_LEAGUES:
+        try:
+            _result, answer, team_list = _latest_team_stats(key, league_path)
+        except ApiError as e:
+            if _network_failed(e):
+                raise
+
+    season = core_season(league_path)
+    soccer = key in SOCCER_LEAGUES
+    year = season["year"] if soccer else latest_regular_season(season)
+    season_type = SOCCER_SEASON_TYPE if soccer else HUB_SEASON_TYPE
+    for season_year in (year, year - 1):
+        url = (f"{CORE_BASE_URL}/{sport}/leagues/{league}/seasons/{season_year}"
+               f"/types/{season_type}/teams/{team_id}/statistics")
+        try:
+            resp = _http_get(url, timeout=15)
+            data = resp.json() if resp.status_code == 200 else None
+        except (requests.RequestException, ValueError) as e:
+            raise ApiError(STATISTICS_UNAVAILABLE) from e
+        if resp.status_code == 404:
+            continue  # No such season for this team.
+        if resp.status_code != 200:
+            # A new season's first days can be a 500 for now, as byteam's are.
+            if resp.status_code >= 500 and season_year == year and regular_season_just_began(season):
+                continue
+            raise ApiError(STATISTICS_UNAVAILABLE)
+        if not isinstance(data, dict):
+            raise ApiError(STATISTICS_UNAVAILABLE)
+        # Only if it's the same numbers, or the rank would be for others. A past college football
+        # list is type 3 through the bowls, where these are type 2: Alabama's 3,551 passing yards in
+        # 2025 are 11th, and that list has 3,953, 6th.
+        requested = _as_dict((answer or {}).get("requestedSeason"))
+        same = (answer is not None and requested.get("year") == season_year
+                and _as_dict(requested.get("type")).get("type") == REGULAR_SEASON)
+        ranks = team_stats.LeagueRanks(answer, sport, team_list) if same else None
+        rankings = team_stats.hub_rankings(data, team_id, key.startswith("NCAA"), ranks)
+        if rankings:
+            name = _core_season_name(league_path, season_year, season)
+            return {"rankings": rankings, "season": name if soccer else f"{name} Regular Season"}
+    return {"rankings": [], "season": ""}
 
 
 def league_sport(league_key):
@@ -3470,6 +3485,40 @@ def _transaction_date(item):
         return date_str[:10]
 
 
+def _transaction_items(data):
+    """The items in a /transactions answer: a list, or a soccer team's `in` and `out`. A null
+    where they belong isn't an answer."""
+    key = "transactions" if "transactions" in data else "items"
+    if isinstance(data.get(key), dict):
+        return transactions_paging.transaction_items(data[key])
+    return _listed(data, key, TRANSACTIONS_UNAVAILABLE)
+
+
+def _transaction_row(item):
+    team = item.get("team") or {}
+    return {
+        "date":        _transaction_date(item),
+        "team":        (team.get("abbreviation") or "") if isinstance(team, dict) else "",
+        "description": transactions_paging.describe(item),
+        # Keep legacy keys so callers using player/type/position still work.
+        "type":        "",
+        "player":      "",
+        "position":    "",
+    }
+
+
+def _transactions_page(league_path, params, page):
+    """One /transactions request: (items, has_more), or None for a 400 or 404."""
+    data = _espn_answer(TRANSACTIONS_UNAVAILABLE, f"{BASE_URL}/{league_path}/transactions", params=params)
+    if data is None:
+        return None
+    items = _transaction_items(data)
+    # ESPN returns pageIndex / pageCount as top-level integers. A null is no more pages, not
+    # a reason to lose the page it came with.
+    page_count = data.get("pageCount")
+    return items, int(page) < _stat_number({"value": page_count, "displayValue": page_count})
+
+
 def get_transactions(league_key, team_id=None, limit=50, page=1):
     """Get league-wide (or team-filtered) transactions with pagination.
 
@@ -3482,29 +3531,52 @@ def get_transactions(league_key, team_id=None, limit=50, page=1):
     params = {"limit": limit, "page": page}
     if team_id:
         params["team"] = team_id
-    data = _espn_answer(TRANSACTIONS_UNAVAILABLE, f"{BASE_URL}/{league_path}/transactions", params=params)
-    if data is None:
+    answer = _transactions_page(league_path, params, page)
+    if answer is None:
         return [], False
-    raw_items = _listed(data, "transactions" if "transactions" in data else "items", TRANSACTIONS_UNAVAILABLE)
-    # ESPN returns pageIndex / pageCount as top-level integers. A null is no more pages, not
-    # a reason to lose the page it came with.
-    page_count = data.get("pageCount")
-    has_more = int(page) < _stat_number({"value": page_count, "displayValue": page_count})
-    result = []
-    for item in raw_items:
-        date_display = _transaction_date(item)
-        team = item.get("team") or {}
-        team_abbr = (team.get("abbreviation") or "") if isinstance(team, dict) else ""
-        result.append({
-            "date":        date_display,
-            "team":        team_abbr,
-            "description": item.get("description") or "",
-            # Keep legacy keys so callers using player/type/position still work.
-            "type":        "",
-            "player":      "",
-            "position":    "",
-        })
-    return result, has_more
+    items, has_more = answer
+    return [_transaction_row(item) for item in items], has_more
+
+
+def get_transactions_from(league_key, cursor, team_id=None):
+    """One load of the Transactions screen's running list, from `cursor`
+    (transactions_paging.start_cursor or the `next` of the load before).
+
+    Returns {"rows", "next", "oldest_year", "skipped"}: the rows newest first, where the next
+    load starts (None when there is nothing older), the oldest year this load looked in, and
+    the years ESPN had no answer for, each {"year", "below"}: below the rows when it came after
+    some were found, above them otherwise. It asks again while it has found nothing, and
+    finishes a soccer year (transactions_paging.load_continues). A failure raises ApiError and
+    leaves the cursor where it was, so asking again retries it.
+    """
+    league_path = LEAGUES.get(league_key)
+    if not league_path or not cursor:
+        return {"rows": [], "next": None, "oldest_year": (cursor or {}).get("year"), "skipped": []}
+    items, skipped, requests_made, pages, oldest_year = [], [], 0, 0, cursor["year"]
+    while True:
+        params = transactions_paging.request_params(cursor, league_path, team_id)
+        answer = _transactions_page(league_path, params, cursor["page"])
+        pages += 1
+        oldest_year = cursor["year"]
+        if answer is None:
+            requests_made += 1
+            # A 400 or 404: ESPN can't give this stretch at all (NFL 2003, or a team it doesn't
+            # know). Asking again would get the same, so the list goes on without it.
+            skipped.append({"year": cursor["year"], "below": bool(items)})
+            following = transactions_paging.after_no_answer(cursor)
+        else:
+            page_items, has_more = answer
+            kept = [item for item in page_items if transactions_paging.keeps(cursor, item.get("date"))]
+            items += kept
+            if transactions_paging.counts_against_limit(len(page_items), len(kept)):
+                requests_made += 1
+            following = transactions_paging.next_cursor(cursor, has_more)
+        if not transactions_paging.load_continues(len(items), requests_made, cursor, following, league_path, pages):
+            break
+        cursor = following
+    order = transactions_paging.newest_first([item.get("date") for item in items])
+    return {"rows": [_transaction_row(items[index]) for index in order], "next": following,
+            "oldest_year": oldest_year, "skipped": skipped}
 
 
 # One request has a whole draft, as on the iPhone. It's kept briefly, since each round's tab asks for
@@ -3605,13 +3677,13 @@ def get_team_transactions(league_key, team_id, limit=25):
     )
     if data is None:
         return []
-    items = _listed(data, "transactions" if "transactions" in data else "items", TRANSACTIONS_UNAVAILABLE)
+    items = _transaction_items(data)
     result = []
     for item in items:
         date_display = _transaction_date(item)
         result.append({
             "date":        date_display,
-            "description": item.get("description") or "",
+            "description": transactions_paging.describe(item),
             # Keep legacy keys so callers using player/type/position still work.
             "type":        "",
             "player":      "",

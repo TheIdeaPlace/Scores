@@ -26,7 +26,6 @@ def isolated(monkeypatch, tmp_path):
     monkeypatch.setattr(settings, "_cache", None)
     monkeypatch.setattr(espn_api, "_DRAFT_CACHE", {})
     monkeypatch.setattr(espn_api, "_CORE_SEASON_CACHE", {})
-    monkeypatch.setattr(espn_api, "_CORE_REF_CACHE", {})
     monkeypatch.setattr(espn_api, "_GLOSSARY_CACHE", {})
     monkeypatch.setattr(football_calendar, "_WEEK_DATE_CACHE", {})
     monkeypatch.setattr(football_calendar, "_SEASON_WEEKS_CACHE", {})
@@ -44,7 +43,9 @@ def espn(monkeypatch):
     monkeypatch.setattr(requests, "get", fake)
     yield fake
     assert not fake.unstubbed, f"Requests no route answered: {fake.unstubbed}"
-    ranges = [url for url in fake.calls if DATE_RANGE.search(url)]
+    # /transactions is a different endpoint and still takes a range of up to a year
+    # (transactions_paging.py, checked 2026-11-07).
+    ranges = [url for url in fake.calls if DATE_RANGE.search(url) and "/transactions?" not in url]
     assert not ranges, f"ESPN rejects dates=A-B ranges: {ranges}"
 
 

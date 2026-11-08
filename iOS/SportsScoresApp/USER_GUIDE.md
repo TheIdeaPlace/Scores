@@ -234,7 +234,7 @@ Browse NFL draft picks by year and round. Select the year from a menu and the ro
 
 ### Transaction Hub
 
-Browse player moves, signings, and releases across all sports. Select a sport, then a team, to see that team's recent transactions.
+Browse player moves, signings, and releases across all sports. Select a sport, then a team (or All), to see one list, newest first. Older ones load as you scroll, back to January 2001. **Jump to Month** starts the list at the end of any month and keeps going older from there; **Newest** goes back to the latest. If the month had none, the first line says so.
 
 ---
 

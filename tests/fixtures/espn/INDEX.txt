@@ -46,6 +46,11 @@ news_NFL.json	1 KB	league news, 2 articles, web and mobile links
 team_news_NFL_9.json	1 KB	/news?team=9, 2 articles. /teams/9/news answers 200 with {}
 transactions_NFL.json	1 KB	league-wide: team on each item; pageCount 407
 transactions_NFL_9.json	1 KB	team-filtered: no team on the items
+transactions_NFL_2025_09.json	1 KB	dates=20250101-20250930, limit 3, captured Nov 7 2026: a jump to September 2025, January 1 to the month's end; newest first, pageCount 609; team logos cut
+transactions_NFL_9_2024.json	1 KB	season=2024&team=9, limit 3: season is the calendar year (Dec 2024 first), no team on the items; team=9 ignores dates
+transactions_MLS_2025.json	2 KB	season=2025, limit 4: soccer comes oldest first (Jan 1 first), items are transfers with athlete/from/to/type and no description or team; links and logos cut
+transactions_EPL_359_2025.json	2 KB	season=2025&team=359, limit 3: a soccer team's transactions are {"in": [], "out": [...]}, not a list
+transactions_EPL_dates_empty.json	1 KB	dates=20240101-20240331 on soccer: always nothing (count 0), though season=2024 has 578
 rankings_NCAAF.json	7 KB	week 10 of 2026: all six polls in ESPN's order (CFP, AP, AFCA Coaches, FCS Coaches, AFCA Div II, AFCA Div III), 3 teams each, others and droppedOut left out; CFP's first week: points 0.0 and previous 0 for everyone
 draft_site_NFL_2026.json	11 KB	/draft season=2026, cut to 6 picks and their teams: position only as an id, college on the athlete; 2nd-round pick 33 was traded; round 3's Georgia State is Georgia St as a short name
 golf_schedule_PGA.json	5 KB	dates=2026: a cancelled event with no competitors, a final, a scheduled one
@@ -147,13 +152,15 @@ standings_UCL_2023.json	62 KB	season=2023: Group A to Group H, 2 of 4 teams each
 standings_LigaMX.json	16 KB	2026 Torneo Apertura, 3 of 18: no notes at all
 standings_CONCACAF.json	1 KB	knockout only: 200 with no children and no entries, so no table
 teams_CONCACAF.json	4 KB	team list, trimmed to 3 of 27: the only way to its teams, with no table
-leaders_core_EPL.json	20 KB	core seasons/2026/types/1/leaders limit=3, whole: 12 categories, goalsLeaders and goals both called Goals with the same players, the former's text Matches: 9, Goals: 9
-leaders_core_UEL_2024.json	2 KB	core seasons/2024/types/1/leaders limit=2, 2 categories: accurate passes all 0, nobody counted, and goals
-core_athlete_EPL_253989.json	5 KB	core athlete reference from leaders_core_EPL: Erling Haaland
-core_team_EPL_382.json	5 KB	core team reference from leaders_core_EPL: Manchester City, MNC
+leaders_v3_EPL.json	227 KB	/leaders season=2026 seasontype=1 limit=3, whole: 12 categories with names and teams inside, goalsLeaders and goals both called Goals with the same players, the former's text Matches: 9, Goals: 9; requestedSeason names the season, its type name the same words again
+leaders_v3_LigaMX.json	57 KB	/leaders season=2026 seasontype=1 limit=3, goalsLeaders, goals and assists only: requestedSeason type name Torneo Apertura
+leaders_v3_LigaMX_clausura_empty.json	1 KB	/leaders season=2026 seasontype=5 limit=3 on Nov 7, 2026, before the Clausura: 200 with requestedSeason Torneo Clausura and no leaders key at all
+leaders_v3_LigaMX_2025_clausura.json	13 KB	/leaders season=2025 seasontype=8 limit=2, goals only: 2025's Clausura is type 8, named Torneo Clausura
+leaders_v3_UEL_2024.json	26 KB	/leaders season=2024 seasontype=1 limit=2, goals and accuratePasses only: accurate passes all 0, nobody counted
 season_EPL.json	2 KB	core /season: year 2026, displayName 2026-27 English Premier League, type.type a long id
-season_EPL_2025.json	2 KB	core seasons/2025: displayName 2025-26 English Premier League, for last season's label
 season_NWSL.json	4 KB	core /season in its playoffs: year 2026, type.id 2, and its leaders stay under type 1
+season_LigaMX.json	6 KB	core /season on Nov 7, 2026: year 2026, types inline, Torneo Apertura type 1 from Jun 1, Torneo Clausura type 5 from 2027-01-01T05:00Z, and Clausura playoff types 6-8 dated Nov-Dec 2026, placeholders
+season_LigaMX_2025.json	10 KB	core seasons/2025: types inline, Torneo Apertura type 1, play-in rounds 2-4, Torneo Clausura type 8 from 2026-01-01T05:00Z
 rankings_NCAAH.json	16 KB	USCHO Men's Poll, 5 of 20 teams, others and droppedOut emptied: points 0.0 for everyone, no lastUpdated; a three-part record, two teams level at 6, one with previous 0
 rankings_NCAAWH.json	9 KB	USCHO Women's Poll, 2 of 15 teams, others and droppedOut emptied: points 0.0 for everyone; a three-part record
 scoreboard_NCAAF_202611.json	86 KB	6 games from dates=202611 groups=90 limit=400: Eastern Michigan listed as home at a neutral Ford Field, Harvard at home and at a neutral Fenway Park, Akron twice, Syracuse's dome indoors
@@ -185,3 +192,5 @@ summary_live_NCAAF_401856740.json	12 KB	Alabama at LSU in the 3rd quarter, the g
 core_weeks_NFL_2024.json	31 KB	core seasons/2024/types/{1,2,3}/weeks?limit=100 and every weeks/{n} they list, keyed by the path after leagues/nfl/: text Hall of Fame Weekend, Preseason Week 1 to 3, Week 1 to 18, Wild Card, Divisional Round, Conference Championship, Pro Bowl, Super Bowl
 core_weeks_NCAAF_2024.json	14 KB	the same for leagues/college-football/: preseason week 1 is text Week 1, regular Week 1 to 16, postseason week 1 Bowls
 summary_live_NHL_401892664.json	115 KB	Rangers at Kraken, 9:52 of the 1st, captured 2026-11-07; root keys header, boxscore, gameInfo, onIce: onIce is one block per team, teamId plus athleteid and whereabouts ROSTER_WHEREABOUTS_IN_PLAY, 6 a side; names, jerseys and positions only in the box score's forwards, defenses and goalies. College hockey summaries have no onIce, live or not
+summary_final_MLB_401817091.json	68 KB	Mets 7 at Nationals 1, Sep 26 2026, the game of plays_MLB_401817091, captured 2026-11-07; root keys header (logos, links, featured athletes cut), winprobability, seasonseries (logos and links cut), and plays cut to the 74 the win probability names and to id, type, text, scores, period, scoringPlay, summaryType: homeWinPercentage a fraction, 0.698 after the first play and 0.0 at the end; every playId is a play's id; seasonseries current (3 games), preseason (5), season (13 events, this is game 12: its summary "NYM lead series 7-5" is as of this game while its events run to the 13th, which the Nationals won); header team names with no shortDisplayName
+summary_final_MLB_401908045_WS.json	36 KB	World Series game 4, Brewers 3 at Rays 4 (Final/12), captured 2026-11-07; header, winprobability (92 entries) and seasonseries only, no plays: seasonseries current and playoff (round World Series) are the same 5 games, and current's summary says "TB leads series 3-2", wrong by any count (Milwaukee won 4 of the 5); playoff's "MIL leads series 3-1" is right as of this game

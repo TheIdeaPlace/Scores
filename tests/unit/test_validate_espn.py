@@ -593,6 +593,8 @@ class StubbedApp:
         self.set("get_team_roster", [{"name": "A Player", "height": "6' 2\""}])
         self.set("get_team_schedule", [{"id": "1"}])
         self.set("get_team_news", [{"headline": "x"}])
+        self.set("get_team_player_leaders", {"player_stats": [{"category": "Points", "stats": []}], "season": "2026"})
+        self.set("get_team_stat_rankings", {"rankings": [{"category": "Points"}], "season": "2026 Regular Season"})
         self.set("core_season", {"year": 2026, "type": {"type": 2}})
         self.set("get_standings", [])
 
@@ -846,6 +848,71 @@ class TestTeamHub:
         report = v.Report()
         v.check_team_hub(FakeHttp(default=(200, {})), report, league("NBA"), played, True)
         assert FAIL_IN(report, "App: team info")
+
+    def test_the_stats_tab_is_asked_as_team_hub_asks(self, monkeypatch):
+        report = self.run("NBA", monkeypatch)
+        assert statuses(report, "App: Team Hub players") == [v.PASS]
+        assert statuses(report, "App: Team Hub ranks") == [v.PASS]
+
+    def test_no_leaders_or_ranks_in_season_fails(self, monkeypatch):
+        report = self.run("NBA", monkeypatch, get_team_player_leaders={"player_stats": []},
+                          get_team_stat_rankings={"rankings": [], "season": ""})
+        assert FAIL_IN(report, "App: Team Hub players")
+        assert FAIL_IN(report, "App: Team Hub ranks")
+
+    def test_soccer_with_none_of_espns_ranks_only_warns(self, monkeypatch):
+        report = self.run("EPL", monkeypatch, get_team_player_leaders={"player_stats": []},
+                          get_team_stat_rankings={"rankings": [], "season": ""})
+        assert statuses(report, "App: Team Hub players") == []
+        assert statuses(report, "App: Team Hub ranks") == [v.WARN]
+
+    def test_a_stats_call_raising_is_a_failure(self, monkeypatch):
+        import espn_api
+        StubbedApp(monkeypatch)
+
+        def boom(*a, **k):
+            raise ValueError("bad")
+
+        monkeypatch.setattr(espn_api, "get_team_stat_rankings", boom)
+        played = event()
+        played["date"] = datetime.now(timezone.utc).isoformat()
+        report = v.Report()
+        v.check_team_hub(FakeHttp(default=(200, {})), report, league("NBA"), played, True)
+        assert FAIL_IN(report, "App: Team Hub ranks")
+
+
+class TestGolfNews:
+    def run(self, monkeypatch, answer):
+        import espn_api
+        asked = []
+
+        def news(tour, limit=10):
+            asked.append((tour, limit))
+            if isinstance(answer, Exception):
+                raise answer
+            return answer
+
+        monkeypatch.setattr(espn_api, "get_news", news)
+        report = v.Report()
+        v.check_golf_news(FakeHttp(), report)
+        return report, asked
+
+    def test_each_tour_is_asked_as_the_dialog_asks(self, monkeypatch):
+        report, asked = self.run(monkeypatch, [{"headline": "x"}])
+        assert asked == [("PGA", 25), ("LPGA", 25)]
+        assert not report.failed
+
+    def test_no_news_fails(self, monkeypatch):
+        report, _ = self.run(monkeypatch, [])
+        assert FAIL_IN(report, "App: golf news")
+
+    def test_raising_fails(self, monkeypatch):
+        report, _ = self.run(monkeypatch, ValueError("bad"))
+        assert FAIL_IN(report, "App: golf news")
+
+    def test_it_runs_with_the_others(self):
+        import inspect
+        assert "check_golf_news" in inspect.getsource(v.check_others)
 
 
 class TestTeamRecordAgreesWithStandings:
@@ -1262,7 +1329,20 @@ class TestTransactions:
         http = FakeHttp([("dates=", (400, {})), ("transactions", (200, {"transactions": [{}]}))])
         report = v.Report()
         v.check_transactions(http, report, league("NFL"))
-        assert statuses(report, "Transactions by date (iPhone)") == [v.FAIL]
+        assert statuses(report, "Transactions by month (Go to Month)") == [v.FAIL]
+
+    def test_nfl_year_is_the_calendar_year_newest_first(self, monkeypatch):
+        import espn_api
+        from datetime import date
+        monkeypatch.setattr(espn_api, "get_transactions", lambda *a, **k: ([{"description": "x"}], False))
+        year = date.today().year - 1
+        good = {"transactions": [{"date": f"{year}-12-30T08:00Z"}, {"date": f"{year}-01-02T08:00Z"}]}
+        bad = {"transactions": [{"date": f"{year}-01-02T08:00Z"}, {"date": f"{year}-12-30T08:00Z"}]}
+        for answer, expected in ((good, v.PASS), (bad, v.FAIL), ({"transactions": []}, v.FAIL)):
+            http = FakeHttp([("season=", (200, answer)), ("transactions", (200, {"transactions": [{}]}))])
+            report = v.Report()
+            v.check_transactions(http, report, league("NFL"))
+            assert statuses(report, "Transactions by year") == [expected]
 
     def test_app_reads_nothing_though_espn_has_data(self, monkeypatch):
         import espn_api
@@ -1844,19 +1924,19 @@ class TestStatistics:
         return report
 
     def test_one_teams_leaders_are_only_that_team(self):
-        assert statuses(self.team_filter(["13", "13"]), "Leaders for one team (iPhone)") == [v.PASS]
+        assert statuses(self.team_filter(["13", "13"]), "Leaders for one team (both apps)") == [v.PASS]
 
     def test_espn_ignoring_the_team_fails(self):
         report = self.team_filter(["13", "14"])
-        assert FAIL_IN(report, "Leaders for one team (iPhone)")
-        assert "14" in detail(report, "Leaders for one team (iPhone)")
+        assert FAIL_IN(report, "Leaders for one team (both apps)")
+        assert "14" in detail(report, "Leaders for one team (both apps)")
 
     def test_one_teams_leaders_not_answering_only_warns(self):
         http = FakeHttp([("team=13", (500, None))])
         report = v.Report()
         data = {"leaders": {"categories": [{"leaders": [{"team": {"id": "13"}}]}]}}
         v.check_leaders_for_a_team(http, report, league("NBA"), data, 2027)
-        assert statuses(report, "Leaders for one team (iPhone)") == [v.WARN]
+        assert statuses(report, "Leaders for one team (both apps)") == [v.WARN]
 
     def test_invented_players_fail(self, monkeypatch):
         self.app_says(monkeypatch, {"player_stats": [{"player_name": "Sample Player 1"}]})
@@ -1892,7 +1972,7 @@ class TestStatistics:
         http = FakeHttp([("/seasons/2026/", (200, {"categories": [1], "splits": {"categories": [1]}}))])
         report = v.Report()
         v.check_core_statistics(http, report, league("NCAAM"), played, True)
-        assert statuses(report, "Core API: team statistics (iPhone)") == [v.PASS]
+        assert statuses(report, "Core API: team statistics (both apps)") == [v.PASS]
 
     def test_core_requests_use_the_season_of_the_final(self, monkeypatch):
         self.app_says(monkeypatch, self.rows("38.3"))
@@ -1920,8 +2000,8 @@ class TestStatistics:
     def test_core_gone_for_every_season_type_fails_in_season(self):
         report = v.Report()
         v.check_core_statistics(FakeHttp(default=(404, None)), report, league("NBA"), event(), True)
-        assert FAIL_IN(report, "Core API: team statistics (iPhone)")
-        assert "404" in detail(report, "Core API: team statistics (iPhone)")
+        assert FAIL_IN(report, "Core API: team statistics (both apps)")
+        assert "404" in detail(report, "Core API: team statistics (both apps)")
 
     def test_a_league_with_leaders_isnt_checked_on_the_core_api_for_them(self):
         http = FakeHttp(default=(200, {"splits": {"categories": [1]}}))
@@ -1937,41 +2017,116 @@ class TestStatistics:
         v.check_statistics(http, report, league("EPL"), played, True)
         return report
 
-    def test_soccer_leaders_are_checked_where_both_apps_read_them(self, monkeypatch):
+    SOCCER_LEADERS = "/soccer/eng.1/leaders?region=us&lang=en&season=2026&seasontype=1&limit="
+
+    def test_soccer_leaders_are_checked_where_and_as_both_apps_ask(self, monkeypatch):
         self.app_says(monkeypatch, self.rows("9"))
-        http = FakeHttp([("/seasons/2026/types/1/leaders", (200, {"categories": [1]}))], default=(404, None))
+        http = FakeHttp([(self.SOCCER_LEADERS + "20", (200, load("leaders_v3_EPL.json")))], default=(404, None))
         report = self.soccer_season(http)
-        assert statuses(report, "Core API: leaders") == [v.PASS]
+        assert statuses(report, "Leaders") == [v.PASS]
+        assert "2026-27 English Premier League: 12 categories" in detail(report, "Leaders")
         assert statuses(report, "App: player statistics") == [v.PASS]
+        assert not any("sports.core.api" in url and "/leaders" in url for url in http.urls)
+
+    def test_soccer_failing_at_20_warns_that_the_app_shows_fewer(self, monkeypatch):
+        """NWSL's and CONCACAF's have never answered at 20."""
+        self.app_says(monkeypatch, self.rows("9"))
+        http = FakeHttp([(self.SOCCER_LEADERS + "20", (500, None)),
+                         (self.SOCCER_LEADERS + "10", (200, load("leaders_v3_EPL.json")))])
+        report = self.soccer_season(http)
+        assert statuses(report, "Leaders") == [v.WARN]
+        assert "shows 10" in detail(report, "Leaders")
+
+    def test_soccer_failing_at_every_limit_fails(self, monkeypatch):
+        self.app_says(monkeypatch, self.rows("9"))
+        report = self.soccer_season(FakeHttp(default=(500, None)))
+        assert FAIL_IN(report, "Leaders")
+        assert "try again" in detail(report, "Leaders")
+
+    def test_soccer_leaders_without_names_inside_fail(self, monkeypatch):
+        self.app_says(monkeypatch, self.rows("9"))
+        data = load("leaders_v3_EPL.json")
+        data["leaders"]["categories"][0]["leaders"][0]["athlete"] = {"$ref": "http://espn.example/athletes/1"}
+        report = self.soccer_season(FakeHttp([(self.SOCCER_LEADERS + "20", (200, data))]))
+        assert FAIL_IN(report, "Leaders")
+        assert "no name inside the response" in detail(report, "Leaders")
 
     def test_soccer_leaders_gone_fails_in_season(self, monkeypatch):
         self.app_says(monkeypatch, {"player_stats": []})
         report = self.soccer_season(FakeHttp(default=(404, None)))
-        assert FAIL_IN(report, "Core API: leaders")
+        assert FAIL_IN(report, "Leaders")
         assert FAIL_IN(report, "App: player statistics")
 
     def test_the_app_failing_on_soccer_leaders_says_what_a_user_was_told(self, monkeypatch):
         import espn_api
         self.app_says(monkeypatch, v.ApiError(espn_api.STATISTICS_UNAVAILABLE))
-        http = FakeHttp([("/seasons/2026/types/1/leaders", (200, {"categories": [1]}))], default=(404, None))
+        http = FakeHttp([(self.SOCCER_LEADERS + "20", (200, load("leaders_v3_EPL.json")))], default=(404, None))
         report = self.soccer_season(http)
         assert FAIL_IN(report, "App: player statistics")
         assert "Try again" in detail(report, "App: player statistics")
 
-    def test_only_soccer_has_its_leaders_on_the_core_api(self):
-        assert league("EPL").soccer_core_leaders and not league("NBA").soccer_core_leaders
+    def test_only_soccer_reads_leaders_with_its_own_season_types(self):
+        assert league("EPL").soccer_leaders and not league("NBA").soccer_leaders
+        assert not league("EPL").player_stats
 
-    def test_the_core_api_leagues_are_the_apps(self):
-        import espn_api
-        checked = {key for key in v.LEAGUE_KEYS if v.LEAGUE_KEYS[key].soccer_core_leaders}
-        assert checked <= espn_api.CORE_LEADER_LEAGUES
+    def test_the_soccer_leagues_checked_are_the_apps(self):
+        import soccer
+        checked = {key for key in v.LEAGUE_KEYS if v.LEAGUE_KEYS[key].soccer_leaders}
+        assert checked <= soccer.SOCCER_LEAGUES
         assert checked, "the validator should check some of them"
+
+
+class TestLigaMXTorneos:
+    URL = "sports.core.api.espn.com/v2/sports/soccer/leagues/mex.1/season"
+
+    # Any season type: which torneo is on depends on today's date.
+    LEADERS = "/soccer/mex.1/leaders?region=us&lang=en&season=2026&seasontype="
+
+    def run(self, answer, leaders=(200, None)):
+        report = v.Report()
+        leaders = leaders if leaders[1] is not None or leaders[0] != 200 else (200, load("leaders_v3_LigaMX.json"))
+        v.check_liga_mx_torneos(FakeHttp([(self.URL, answer), (self.LEADERS, leaders)]), report)
+        return report
+
+    def test_the_real_season_has_both_torneos(self):
+        report = self.run((200, load("season_LigaMX.json")))
+        assert statuses(report, "Torneos") == [v.PASS]
+        assert "the Clausura is type 5" in detail(report, "Torneos")
+
+    def test_the_torneos_leaders_are_asked_for_as_the_apps_ask(self):
+        report = self.run((200, load("season_LigaMX.json")))
+        assert statuses(report, "Torneo leaders") == [v.PASS]
+        assert "Torneo Apertura" in detail(report, "Torneo leaders")
+
+    def test_the_torneos_leaders_failing_fails(self):
+        assert FAIL_IN(self.run((200, load("season_LigaMX.json")), leaders=(500, None)), "Torneo leaders")
+
+    def test_a_torneo_with_nobody_on_it_yet_only_warns(self):
+        report = self.run((200, load("season_LigaMX.json")), leaders=(200, load("leaders_v3_LigaMX_clausura_empty.json")))
+        assert statuses(report, "Torneo leaders") == [v.WARN]
+
+    def test_no_clausura_by_that_name_fails(self):
+        season = load("season_LigaMX.json")
+        for item in season["types"]["items"]:
+            if item["name"] == "Torneo Clausura":
+                item["name"] = "Clausura"
+        report = self.run((200, season))
+        assert FAIL_IN(report, "Torneos")
+        assert "named 'Torneo Clausura'" in detail(report, "Torneos")
+
+    def test_a_torneo_without_a_date_fails(self):
+        season = load("season_LigaMX.json")
+        season["types"]["items"][0]["startDate"] = None
+        assert FAIL_IN(self.run((200, season)), "Torneos")
+
+    def test_the_season_not_answering_fails(self):
+        assert FAIL_IN(self.run((500, None)), "Torneos")
 
     def test_core_team_statistics_gone(self):
         http = FakeHttp([("/leaders", (200, {"categories": [1]}))], default=(200, {"splits": {}}))
         report = v.Report()
         v.check_core_statistics(http, report, league("NHL"), event(), True)
-        assert statuses(report, "Core API: team statistics (iPhone)") == [v.FAIL]
+        assert statuses(report, "Core API: team statistics (both apps)") == [v.FAIL]
 
 
 class TestOtherSources:
@@ -2729,3 +2884,28 @@ def test_on_ice_problems_on_a_real_live_summary():
     assert v.on_ice_problems(broken) == ["onIce ids not in the box score: 1", "an onIce block has no teamId"]
     assert v.on_ice_problems({"onIce": []}) == ["no onIce block"]
     assert v.on_ice_problems({}) == ["no onIce block"]
+
+
+def test_mlb_extras_problems_on_real_summaries():
+    summary = load("summary_final_MLB_401817091.json")
+    assert v.mlb_extras_problems(summary) == []
+    assert v.mlb_extras_problems(load("summary_final_MLB_401908045_WS.json")) == []
+    broken = copy.deepcopy(summary)
+    broken["winprobability"][0]["homeWinPercentage"] = 69.8
+    broken["winprobability"][1]["playId"] = "nope"
+    broken["seasonseries"][0]["events"][0]["competitors"][0]["winner"] = False
+    del broken["seasonseries"][1]["events"][0]["competitors"][0]["team"]["id"]
+    broken["seasonseries"][2]["events"] = []
+    assert v.mlb_extras_problems(broken) == [
+        "a homeWinPercentage isn't a fraction from 0 to 1",
+        "1 of 74 winprobability playIds aren't in plays",
+        "series current: 1 finished games without one winner",
+        "series preseason: a team without an id",
+        "series season lists no games",
+    ]
+    assert v.mlb_extras_problems({}) == ["no winprobability block", "no seasonseries block"]
+    # A spring training game that ended level has no winner, and that's fine.
+    tied = copy.deepcopy(summary)
+    for competitor in tied["seasonseries"][1]["events"][0]["competitors"]:
+        competitor["winner"], competitor["score"] = False, "3"
+    assert v.mlb_extras_problems(tied) == []

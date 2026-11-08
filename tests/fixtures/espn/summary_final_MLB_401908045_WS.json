@@ -1,0 +1,1668 @@
+{
+ "header": {
+  "id": "401908045",
+  "uid": "s:1~l:10~e:401908045",
+  "season": {
+   "year": 2026,
+   "current": true,
+   "type": 3
+  },
+  "timeValid": true,
+  "competitions": [
+   {
+    "id": "401908045",
+    "uid": "s:1~l:10~e:401908045~c:401908045",
+    "date": "2026-10-28T00:00Z",
+    "neutralSite": false,
+    "conferenceCompetition": false,
+    "boxscoreAvailable": true,
+    "commentaryAvailable": false,
+    "liveAvailable": false,
+    "onWatchESPN": false,
+    "recent": false,
+    "wallclockAvailable": true,
+    "boxscoreSource": "full",
+    "playByPlaySource": "full",
+    "competitors": [
+     {
+      "id": "30",
+      "uid": "s:1~l:10~t:30",
+      "order": 0,
+      "homeAway": "home",
+      "winner": true,
+      "team": {
+       "id": "30",
+       "guid": "f8a579c6-08b9-7584-141d-317d0645763b",
+       "uid": "s:1~l:10~t:30",
+       "location": "Tampa Bay",
+       "name": "Rays",
+       "abbreviation": "TB",
+       "displayName": "Tampa Bay Rays",
+       "color": "092c5c",
+       "alternateColor": "8fbce6"
+      },
+      "score": "4",
+      "linescores": [
+       {
+        "displayValue": "0",
+        "hits": 0,
+        "errors": 1
+       },
+       {
+        "displayValue": "1",
+        "hits": 2,
+        "errors": 0
+       },
+       {
+        "displayValue": "0",
+        "hits": 0,
+        "errors": 0
+       },
+       {
+        "displayValue": "1",
+        "hits": 1,
+        "errors": 0
+       },
+       {
+        "displayValue": "0",
+        "hits": 0,
+        "errors": 0
+       },
+       {
+        "displayValue": "0",
+        "hits": 1,
+        "errors": 0
+       },
+       {
+        "displayValue": "0",
+        "hits": 1,
+        "errors": 0
+       },
+       {
+        "displayValue": "0",
+        "hits": 0,
+        "errors": 0
+       },
+       {
+        "displayValue": "0",
+        "hits": 0,
+        "errors": 0
+       },
+       {
+        "displayValue": "0",
+        "hits": 0,
+        "errors": 0
+       },
+       {
+        "displayValue": "0",
+        "hits": 0,
+        "errors": 0
+       },
+       {
+        "displayValue": "2",
+        "hits": 4,
+        "errors": 0
+       }
+      ],
+      "record": [
+       {
+        "type": "total",
+        "summary": "98-64",
+        "displayValue": "98-64"
+       },
+       {
+        "type": "home",
+        "summary": "55-26",
+        "displayValue": "55-26"
+       }
+      ],
+      "probables": [
+       {
+        "name": "probableStartingPitcher",
+        "displayName": "Probable Starting Pitcher",
+        "shortDisplayName": "Starter",
+        "abbreviation": "SP",
+        "playerId": 42604,
+        "athlete": {
+         "id": "42604",
+         "uid": "s:1~l:10~a:42604",
+         "guid": "ce1d63ab-975c-3401-862d-873d513a5ba4",
+         "lastName": "Jax",
+         "fullName": "Griffin Jax",
+         "displayName": "Griffin Jax",
+         "shortName": "G. Jax",
+         "jersey": "22",
+         "position": {
+          "name": "Starting Pitcher",
+          "displayName": "Starting Pitcher",
+          "abbreviation": "SP"
+         },
+         "status": {
+          "id": "1",
+          "name": "Active",
+          "type": "active",
+          "abbreviation": "Active"
+         },
+         "throws": {
+          "type": "RIGHT",
+          "abbreviation": "R",
+          "displayValue": "Right"
+         }
+        },
+        "statistics": {
+         "splits": {
+          "categories": [
+           {
+            "name": "strikeouts",
+            "abbreviation": "K",
+            "value": 12.0,
+            "displayValue": "12"
+           },
+           {
+            "name": "losses",
+            "abbreviation": "L",
+            "value": 1.0,
+            "displayValue": "1"
+           },
+           {
+            "name": "hits",
+            "abbreviation": "H",
+            "value": 10.0,
+            "displayValue": "10"
+           },
+           {
+            "name": "walks",
+            "abbreviation": "BB",
+            "value": 5.0,
+            "displayValue": "5"
+           },
+           {
+            "name": "homeRuns",
+            "abbreviation": "HR",
+            "value": 2.0,
+            "displayValue": "2"
+           },
+           {
+            "name": "wins",
+            "abbreviation": "W",
+            "value": 0.0,
+            "displayValue": "0"
+           },
+           {
+            "name": "fullInnings",
+            "abbreviation": "FI",
+            "value": 10.0,
+            "displayValue": "10"
+           },
+           {
+            "name": "partInnings",
+            "abbreviation": "PI",
+            "value": 0.0,
+            "displayValue": "0"
+           },
+           {
+            "name": "ERA",
+            "abbreviation": "ERA",
+            "value": 5.4,
+            "displayValue": "5.40"
+           },
+           {
+            "name": "WHIP",
+            "abbreviation": "WHIP",
+            "value": 1.5,
+            "displayValue": "1.50"
+           }
+          ]
+         }
+        }
+       }
+      ],
+      "possession": false,
+      "hits": 9,
+      "errors": 1
+     },
+     {
+      "id": "8",
+      "uid": "s:1~l:10~t:8",
+      "order": 1,
+      "homeAway": "away",
+      "winner": false,
+      "team": {
+       "id": "8",
+       "guid": "4750d73d-d92e-b390-758c-2c7b44a810db",
+       "uid": "s:1~l:10~t:8",
+       "location": "Milwaukee",
+       "name": "Brewers",
+       "abbreviation": "MIL",
+       "displayName": "Milwaukee Brewers",
+       "color": "13294b",
+       "alternateColor": "ffc72c"
+      },
+      "score": "3",
+      "linescores": [
+       {
+        "displayValue": "0",
+        "hits": 0,
+        "errors": 0
+       },
+       {
+        "displayValue": "0",
+        "hits": 0,
+        "errors": 0
+       },
+       {
+        "displayValue": "0",
+        "hits": 1,
+        "errors": 0
+       },
+       {
+        "displayValue": "1",
+        "hits": 2,
+        "errors": 1
+       },
+       {
+        "displayValue": "1",
+        "hits": 1,
+        "errors": 0
+       },
+       {
+        "displayValue": "0",
+        "hits": 1,
+        "errors": 0
+       },
+       {
+        "displayValue": "0",
+        "hits": 0,
+        "errors": 0
+       },
+       {
+        "displayValue": "0",
+        "hits": 0,
+        "errors": 0
+       },
+       {
+        "displayValue": "0",
+        "hits": 1,
+        "errors": 0
+       },
+       {
+        "displayValue": "0",
+        "hits": 0,
+        "errors": 0
+       },
+       {
+        "displayValue": "0",
+        "hits": 0,
+        "errors": 0
+       },
+       {
+        "displayValue": "1",
+        "hits": 2,
+        "errors": 1
+       }
+      ],
+      "record": [
+       {
+        "type": "total",
+        "summary": "103-59",
+        "displayValue": "103-59"
+       },
+       {
+        "type": "road",
+        "summary": "48-33",
+        "displayValue": "48-33"
+       }
+      ],
+      "probables": [
+       {
+        "name": "probableStartingPitcher",
+        "displayName": "Probable Starting Pitcher",
+        "shortDisplayName": "Starter",
+        "abbreviation": "SP",
+        "playerId": 40937,
+        "athlete": {
+         "id": "40937",
+         "uid": "s:1~l:10~a:40937",
+         "guid": "256be255-c61e-cd29-77a8-ccad1362e970",
+         "lastName": "May",
+         "fullName": "Dustin May",
+         "displayName": "Dustin May",
+         "shortName": "D. May",
+         "jersey": "21",
+         "position": {
+          "name": "Starting Pitcher",
+          "displayName": "Starting Pitcher",
+          "abbreviation": "SP"
+         },
+         "status": {
+          "id": "9",
+          "name": "Free Agent",
+          "type": "free-agent",
+          "abbreviation": "FA"
+         },
+         "throws": {
+          "type": "RIGHT",
+          "abbreviation": "R",
+          "displayValue": "Right"
+         }
+        },
+        "statistics": {
+         "splits": {
+          "categories": [
+           {
+            "name": "strikeouts",
+            "abbreviation": "K",
+            "value": 8.0,
+            "displayValue": "8"
+           },
+           {
+            "name": "losses",
+            "abbreviation": "L",
+            "value": 0.0,
+            "displayValue": "0"
+           },
+           {
+            "name": "hits",
+            "abbreviation": "H",
+            "value": 11.0,
+            "displayValue": "11"
+           },
+           {
+            "name": "walks",
+            "abbreviation": "BB",
+            "value": 2.0,
+            "displayValue": "2"
+           },
+           {
+            "name": "homeRuns",
+            "abbreviation": "HR",
+            "value": 1.0,
+            "displayValue": "1"
+           },
+           {
+            "name": "wins",
+            "abbreviation": "W",
+            "value": 0.0,
+            "displayValue": "0"
+           },
+           {
+            "name": "fullInnings",
+            "abbreviation": "FI",
+            "value": 11.0,
+            "displayValue": "11"
+           },
+           {
+            "name": "partInnings",
+            "abbreviation": "PI",
+            "value": 0.0,
+            "displayValue": "0"
+           },
+           {
+            "name": "ERA",
+            "abbreviation": "ERA",
+            "value": 5.7272,
+            "displayValue": "5.73"
+           },
+           {
+            "name": "WHIP",
+            "abbreviation": "WHIP",
+            "value": 1.1818,
+            "displayValue": "1.18"
+           }
+          ]
+         }
+        }
+       }
+      ],
+      "possession": false,
+      "hits": 8,
+      "errors": 2
+     }
+    ],
+    "status": {
+     "type": {
+      "id": "3",
+      "name": "STATUS_FINAL",
+      "state": "post",
+      "completed": true,
+      "description": "Final",
+      "detail": "Final/12",
+      "shortDetail": "Final/12",
+      "altDetail": "F/12"
+     },
+     "periodPrefix": "Bottom"
+    },
+    "broadcasts": [
+     {
+      "type": {
+       "id": "1",
+       "shortName": "TV"
+      },
+      "market": {
+       "id": "1",
+       "type": "National"
+      },
+      "media": {
+       "shortName": "Fox"
+      },
+      "lang": "en",
+      "region": "us",
+      "isNational": true
+     },
+     {
+      "type": {
+       "id": "5",
+       "shortName": "Radio"
+      },
+      "market": {
+       "id": "1",
+       "type": "National"
+      },
+      "media": {
+       "shortName": "ERADM"
+      },
+      "lang": "en",
+      "region": "us",
+      "isNational": true
+     }
+    ],
+    "series": [
+     {
+      "type": "current",
+      "title": "Current Series",
+      "description": "Current Series",
+      "summary": "TB leads series 3-2",
+      "completed": false,
+      "totalCompetitions": 7,
+      "competitors": [
+       {
+        "id": "30",
+        "uid": "s:1~l:10~t:30",
+        "wins": 3,
+        "ties": 0,
+        "team": {
+         "$ref": "http://sports.core.api.espn.pvt/v2/sports/baseball/leagues/mlb/seasons/2026/teams/30?lang=en&region=us"
+        }
+       },
+       {
+        "id": "8",
+        "uid": "s:1~l:10~t:8",
+        "wins": 2,
+        "ties": 0,
+        "team": {
+         "$ref": "http://sports.core.api.espn.pvt/v2/sports/baseball/leagues/mlb/seasons/2026/teams/8?lang=en&region=us"
+        }
+       }
+      ],
+      "events": [
+       {
+        "$ref": "http://sports.core.api.espn.pvt/v2/sports/baseball/leagues/mlb/events/401908042?lang=en&region=us",
+        "id": "401908042"
+       },
+       {
+        "$ref": "http://sports.core.api.espn.pvt/v2/sports/baseball/leagues/mlb/events/401908043?lang=en&region=us",
+        "id": "401908043"
+       },
+       {
+        "$ref": "http://sports.core.api.espn.pvt/v2/sports/baseball/leagues/mlb/events/401908044?lang=en&region=us",
+        "id": "401908044"
+       },
+       {
+        "$ref": "http://sports.core.api.espn.pvt/v2/sports/baseball/leagues/mlb/events/401908045?lang=en&region=us",
+        "id": "401908045"
+       },
+       {
+        "$ref": "http://sports.core.api.espn.pvt/v2/sports/baseball/leagues/mlb/events/401908046?lang=en&region=us",
+        "id": "401908046"
+       }
+      ],
+      "startDate": "2026-10-23T04:00Z"
+     },
+     {
+      "type": "season",
+      "title": "Regular Season Series",
+      "description": "Regular Season Series",
+      "summary": "MIL wins series 2-1",
+      "completed": true,
+      "totalCompetitions": 3,
+      "competitors": [
+       {
+        "id": "30",
+        "uid": "s:1~l:10~t:30",
+        "wins": 1,
+        "ties": 0,
+        "team": {
+         "$ref": "http://sports.core.api.espn.pvt/v2/sports/baseball/leagues/mlb/seasons/2026/teams/30?lang=en&region=us"
+        }
+       },
+       {
+        "id": "8",
+        "uid": "s:1~l:10~t:8",
+        "wins": 2,
+        "ties": 0,
+        "team": {
+         "$ref": "http://sports.core.api.espn.pvt/v2/sports/baseball/leagues/mlb/seasons/2026/teams/8?lang=en&region=us"
+        }
+       }
+      ],
+      "events": [
+       {
+        "$ref": "http://sports.core.api.espn.pvt/v2/sports/baseball/leagues/mlb/events/401814745?lang=en&region=us",
+        "id": "401814745"
+       },
+       {
+        "$ref": "http://sports.core.api.espn.pvt/v2/sports/baseball/leagues/mlb/events/401814759?lang=en&region=us",
+        "id": "401814759"
+       },
+       {
+        "$ref": "http://sports.core.api.espn.pvt/v2/sports/baseball/leagues/mlb/events/401814774?lang=en&region=us",
+        "id": "401814774"
+       }
+      ],
+      "startDate": "2026-03-30T23:40Z"
+     },
+     {
+      "type": "playoff",
+      "title": "Playoff Series",
+      "description": "Playoff Series",
+      "summary": "MIL leads series 3-1",
+      "completed": false,
+      "totalCompetitions": 7,
+      "competitors": [
+       {
+        "id": "30",
+        "uid": "s:1~l:10~t:30",
+        "wins": 1,
+        "ties": 0,
+        "team": {
+         "$ref": "http://sports.core.api.espn.pvt/v2/sports/baseball/leagues/mlb/seasons/2026/teams/30?lang=en&region=us"
+        }
+       },
+       {
+        "id": "8",
+        "uid": "s:1~l:10~t:8",
+        "wins": 3,
+        "ties": 0,
+        "team": {
+         "$ref": "http://sports.core.api.espn.pvt/v2/sports/baseball/leagues/mlb/seasons/2026/teams/8?lang=en&region=us"
+        }
+       }
+      ],
+      "events": [
+       {
+        "$ref": "http://sports.core.api.espn.pvt/v2/sports/baseball/leagues/mlb/events/401908042?lang=en&region=us",
+        "id": "401908042"
+       },
+       {
+        "$ref": "http://sports.core.api.espn.pvt/v2/sports/baseball/leagues/mlb/events/401908043?lang=en&region=us",
+        "id": "401908043"
+       },
+       {
+        "$ref": "http://sports.core.api.espn.pvt/v2/sports/baseball/leagues/mlb/events/401908044?lang=en&region=us",
+        "id": "401908044"
+       },
+       {
+        "$ref": "http://sports.core.api.espn.pvt/v2/sports/baseball/leagues/mlb/events/401908045?lang=en&region=us",
+        "id": "401908045"
+       },
+       {
+        "$ref": "http://sports.core.api.espn.pvt/v2/sports/baseball/leagues/mlb/events/401908046?lang=en&region=us",
+        "id": "401908046"
+       }
+      ],
+      "startDate": "2026-10-24T00:00Z"
+     }
+    ],
+    "boxscoreMinutes": true
+   }
+  ],
+  "league": {
+   "id": "10",
+   "uid": "s:1~l:10",
+   "name": "Major League Baseball",
+   "abbreviation": "MLB",
+   "shortName": "MLB",
+   "midsizeName": "MLB",
+   "slug": "mlb",
+   "isTournament": false
+  },
+  "gameNote": "World Series - Game 4"
+ },
+ "winprobability": [
+  {
+   "homeWinPercentage": 0.582,
+   "tiePercentage": 0.0,
+   "playId": "4019080450001990057"
+  },
+  {
+   "homeWinPercentage": 0.595,
+   "tiePercentage": 0.0,
+   "playId": "4019080450002990057"
+  },
+  {
+   "homeWinPercentage": 0.584,
+   "tiePercentage": 0.0,
+   "playId": "4019080450003990057"
+  },
+  {
+   "homeWinPercentage": 0.56,
+   "tiePercentage": 0.0,
+   "playId": "4019080450004990057"
+  },
+  {
+   "homeWinPercentage": 0.56,
+   "tiePercentage": 0.0,
+   "playId": "4019080450005990057"
+  },
+  {
+   "homeWinPercentage": 0.583,
+   "tiePercentage": 0.0,
+   "playId": "4019080450101990057"
+  },
+  {
+   "homeWinPercentage": 0.566,
+   "tiePercentage": 0.0,
+   "playId": "4019080450102990057"
+  },
+  {
+   "homeWinPercentage": 0.555,
+   "tiePercentage": 0.0,
+   "playId": "4019080450103990057"
+  },
+  {
+   "homeWinPercentage": 0.575,
+   "tiePercentage": 0.0,
+   "playId": "4019080450201990057"
+  },
+  {
+   "homeWinPercentage": 0.588,
+   "tiePercentage": 0.0,
+   "playId": "4019080450202990057"
+  },
+  {
+   "homeWinPercentage": 0.592,
+   "tiePercentage": 0.0,
+   "playId": "4019080450203990057"
+  },
+  {
+   "homeWinPercentage": 0.625,
+   "tiePercentage": 0.0,
+   "playId": "4019080450301990057"
+  },
+  {
+   "homeWinPercentage": 0.59,
+   "tiePercentage": 0.0,
+   "playId": "4019080450302990057"
+  },
+  {
+   "homeWinPercentage": 0.71,
+   "tiePercentage": 0.0,
+   "playId": "4019080450303990057"
+  },
+  {
+   "homeWinPercentage": 0.684,
+   "tiePercentage": 0.0,
+   "playId": "4019080450304990057"
+  },
+  {
+   "homeWinPercentage": 0.657,
+   "tiePercentage": 0.0,
+   "playId": "4019080450305990057"
+  },
+  {
+   "homeWinPercentage": 0.675,
+   "tiePercentage": 0.0,
+   "playId": "4019080450401990057"
+  },
+  {
+   "homeWinPercentage": 0.634,
+   "tiePercentage": 0.0,
+   "playId": "4019080450402990057"
+  },
+  {
+   "homeWinPercentage": 0.67,
+   "tiePercentage": 0.0,
+   "playId": "4019080450403990057"
+  },
+  {
+   "homeWinPercentage": 0.67,
+   "tiePercentage": 0.0,
+   "playId": "4019080450404990057"
+  },
+  {
+   "homeWinPercentage": 0.681,
+   "tiePercentage": 0.0,
+   "playId": "4019080450501990057"
+  },
+  {
+   "homeWinPercentage": 0.666,
+   "tiePercentage": 0.0,
+   "playId": "4019080450502990057"
+  },
+  {
+   "homeWinPercentage": 0.659,
+   "tiePercentage": 0.0,
+   "playId": "4019080450503990057"
+  },
+  {
+   "homeWinPercentage": 0.686,
+   "tiePercentage": 0.0,
+   "playId": "4019080450601990057"
+  },
+  {
+   "homeWinPercentage": 0.702,
+   "tiePercentage": 0.0,
+   "playId": "4019080450602990057"
+  },
+  {
+   "homeWinPercentage": 0.688,
+   "tiePercentage": 0.0,
+   "playId": "4019080450603990057"
+  },
+  {
+   "homeWinPercentage": 0.541,
+   "tiePercentage": 0.0,
+   "playId": "4019080450604990057"
+  },
+  {
+   "homeWinPercentage": 0.575,
+   "tiePercentage": 0.0,
+   "playId": "4019080450605990057"
+  },
+  {
+   "homeWinPercentage": 0.617,
+   "tiePercentage": 0.0,
+   "playId": "4019080450701990057"
+  },
+  {
+   "homeWinPercentage": 0.592,
+   "tiePercentage": 0.0,
+   "playId": "4019080450702990057"
+  },
+  {
+   "homeWinPercentage": 0.701,
+   "tiePercentage": 0.0,
+   "playId": "4019080450703990057"
+  },
+  {
+   "homeWinPercentage": 0.674,
+   "tiePercentage": 0.0,
+   "playId": "4019080450704990057"
+  },
+  {
+   "homeWinPercentage": 0.674,
+   "tiePercentage": 0.0,
+   "playId": "4019080450705040298"
+  },
+  {
+   "homeWinPercentage": 0.496,
+   "tiePercentage": 0.0,
+   "playId": "4019080450801990057"
+  },
+  {
+   "homeWinPercentage": 0.522,
+   "tiePercentage": 0.0,
+   "playId": "4019080450802990057"
+  },
+  {
+   "homeWinPercentage": 0.538,
+   "tiePercentage": 0.0,
+   "playId": "4019080450803990057"
+  },
+  {
+   "homeWinPercentage": 0.523,
+   "tiePercentage": 0.0,
+   "playId": "4019080450804990057"
+  },
+  {
+   "homeWinPercentage": 0.523,
+   "tiePercentage": 0.0,
+   "playId": "4019080450805990057"
+  },
+  {
+   "homeWinPercentage": 0.522,
+   "tiePercentage": 0.0,
+   "playId": "4019080450901990057"
+  },
+  {
+   "homeWinPercentage": 0.501,
+   "tiePercentage": 0.0,
+   "playId": "4019080450902990057"
+  },
+  {
+   "homeWinPercentage": 0.491,
+   "tiePercentage": 0.0,
+   "playId": "4019080450903990057"
+  },
+  {
+   "homeWinPercentage": 0.518,
+   "tiePercentage": 0.0,
+   "playId": "4019080451001990057"
+  },
+  {
+   "homeWinPercentage": 0.535,
+   "tiePercentage": 0.0,
+   "playId": "4019080451002990057"
+  },
+  {
+   "homeWinPercentage": 0.519,
+   "tiePercentage": 0.0,
+   "playId": "4019080451003990057"
+  },
+  {
+   "homeWinPercentage": 0.519,
+   "tiePercentage": 0.0,
+   "playId": "4019080451004990057"
+  },
+  {
+   "homeWinPercentage": 0.607,
+   "tiePercentage": 0.0,
+   "playId": "4019080451101990057"
+  },
+  {
+   "homeWinPercentage": 0.476,
+   "tiePercentage": 0.0,
+   "playId": "4019080451102990057"
+  },
+  {
+   "homeWinPercentage": 0.476,
+   "tiePercentage": 0.0,
+   "playId": "4019080451103990057"
+  },
+  {
+   "homeWinPercentage": 0.487,
+   "tiePercentage": 0.0,
+   "playId": "4019080451201990057"
+  },
+  {
+   "homeWinPercentage": 0.517,
+   "tiePercentage": 0.0,
+   "playId": "4019080451202990057"
+  },
+  {
+   "homeWinPercentage": 0.517,
+   "tiePercentage": 0.0,
+   "playId": "4019080451203990057"
+  },
+  {
+   "homeWinPercentage": 0.491,
+   "tiePercentage": 0.0,
+   "playId": "4019080451301990057"
+  },
+  {
+   "homeWinPercentage": 0.463,
+   "tiePercentage": 0.0,
+   "playId": "4019080451302990057"
+  },
+  {
+   "homeWinPercentage": 0.483,
+   "tiePercentage": 0.0,
+   "playId": "4019080451303990057"
+  },
+  {
+   "homeWinPercentage": 0.483,
+   "tiePercentage": 0.0,
+   "playId": "4019080451304990057"
+  },
+  {
+   "homeWinPercentage": 0.499,
+   "tiePercentage": 0.0,
+   "playId": "4019080451401990057"
+  },
+  {
+   "homeWinPercentage": 0.543,
+   "tiePercentage": 0.0,
+   "playId": "4019080451402990057"
+  },
+  {
+   "homeWinPercentage": 0.569,
+   "tiePercentage": 0.0,
+   "playId": "4019080451403990057"
+  },
+  {
+   "homeWinPercentage": 0.528,
+   "tiePercentage": 0.0,
+   "playId": "4019080451501990057"
+  },
+  {
+   "homeWinPercentage": 0.505,
+   "tiePercentage": 0.0,
+   "playId": "4019080451502990057"
+  },
+  {
+   "homeWinPercentage": 0.491,
+   "tiePercentage": 0.0,
+   "playId": "4019080451503990057"
+  },
+  {
+   "homeWinPercentage": 0.551,
+   "tiePercentage": 0.0,
+   "playId": "4019080451601990057"
+  },
+  {
+   "homeWinPercentage": 0.496,
+   "tiePercentage": 0.0,
+   "playId": "4019080451602990057"
+  },
+  {
+   "homeWinPercentage": 0.569,
+   "tiePercentage": 0.0,
+   "playId": "4019080451603990057"
+  },
+  {
+   "homeWinPercentage": 0.627,
+   "tiePercentage": 0.0,
+   "playId": "4019080451604030298"
+  },
+  {
+   "homeWinPercentage": 0.578,
+   "tiePercentage": 0.0,
+   "playId": "4019080451701990057"
+  },
+  {
+   "homeWinPercentage": 0.533,
+   "tiePercentage": 0.0,
+   "playId": "4019080451702990057"
+  },
+  {
+   "homeWinPercentage": 0.475,
+   "tiePercentage": 0.0,
+   "playId": "4019080451703990057"
+  },
+  {
+   "homeWinPercentage": 0.525,
+   "tiePercentage": 0.0,
+   "playId": "4019080451801990057"
+  },
+  {
+   "homeWinPercentage": 0.575,
+   "tiePercentage": 0.0,
+   "playId": "4019080451802990057"
+  },
+  {
+   "homeWinPercentage": 0.611,
+   "tiePercentage": 0.0,
+   "playId": "4019080451803990057"
+  },
+  {
+   "homeWinPercentage": 0.559,
+   "tiePercentage": 0.0,
+   "playId": "4019080451901990057"
+  },
+  {
+   "homeWinPercentage": 0.521,
+   "tiePercentage": 0.0,
+   "playId": "4019080451902990057"
+  },
+  {
+   "homeWinPercentage": 0.521,
+   "tiePercentage": 0.0,
+   "playId": "4019080451903990057"
+  },
+  {
+   "homeWinPercentage": 0.505,
+   "tiePercentage": 0.0,
+   "playId": "4019080452001990057"
+  },
+  {
+   "homeWinPercentage": 0.563,
+   "tiePercentage": 0.0,
+   "playId": "4019080452002990057"
+  },
+  {
+   "homeWinPercentage": 0.534,
+   "tiePercentage": 0.0,
+   "playId": "4019080452003990057"
+  },
+  {
+   "homeWinPercentage": 0.601,
+   "tiePercentage": 0.0,
+   "playId": "4019080452004990057"
+  },
+  {
+   "homeWinPercentage": 0.55,
+   "tiePercentage": 0.0,
+   "playId": "4019080452101990057"
+  },
+  {
+   "homeWinPercentage": 0.522,
+   "tiePercentage": 0.0,
+   "playId": "4019080452102990057"
+  },
+  {
+   "homeWinPercentage": 0.559,
+   "tiePercentage": 0.0,
+   "playId": "4019080452103990057"
+  },
+  {
+   "homeWinPercentage": 0.502,
+   "tiePercentage": 0.0,
+   "playId": "4019080452104990057"
+  },
+  {
+   "homeWinPercentage": 0.16,
+   "tiePercentage": 0.0,
+   "playId": "4019080452201990057"
+  },
+  {
+   "homeWinPercentage": 0.175,
+   "tiePercentage": 0.0,
+   "playId": "4019080452202990057"
+  },
+  {
+   "homeWinPercentage": 0.185,
+   "tiePercentage": 0.0,
+   "playId": "4019080452203990057"
+  },
+  {
+   "homeWinPercentage": 0.167,
+   "tiePercentage": 0.0,
+   "playId": "4019080452204990057"
+  },
+  {
+   "homeWinPercentage": 0.194,
+   "tiePercentage": 0.0,
+   "playId": "4019080452205990057"
+  },
+  {
+   "homeWinPercentage": 0.327,
+   "tiePercentage": 0.0,
+   "playId": "4019080452301990057"
+  },
+  {
+   "homeWinPercentage": 0.597,
+   "tiePercentage": 0.0,
+   "playId": "4019080452302990057"
+  },
+  {
+   "homeWinPercentage": 0.779,
+   "tiePercentage": 0.0,
+   "playId": "4019080452303990057"
+  },
+  {
+   "homeWinPercentage": 0.897,
+   "tiePercentage": 0.0,
+   "playId": "4019080452304990057"
+  },
+  {
+   "homeWinPercentage": 1.0,
+   "tiePercentage": 0.0,
+   "playId": "4019080452305990057"
+  }
+ ],
+ "seasonseries": [
+  {
+   "type": "current",
+   "title": "Current Series",
+   "description": "Current Series",
+   "summary": "TB leads series 3-2",
+   "completed": false,
+   "totalCompetitions": 7,
+   "seriesScore": "3-2",
+   "events": [
+    {
+     "id": "401908042",
+     "uid": "s:1~l:10~e:401908042~c:401908042",
+     "date": "2026-10-24T00:00:00Z",
+     "timeValid": true,
+     "status": "post",
+     "statusType": {
+      "id": "3",
+      "name": "STATUS_FINAL",
+      "state": "post",
+      "completed": true,
+      "description": "Final",
+      "detail": "Final",
+      "shortDetail": "Final"
+     },
+     "neutralSite": false,
+     "competitors": [
+      {
+       "homeAway": "home",
+       "winner": true,
+       "team": {
+        "id": "8",
+        "uid": "s:1~l:10~t:8",
+        "displayName": "Milwaukee Brewers",
+        "abbreviation": "MIL"
+       },
+       "score": "3"
+      },
+      {
+       "homeAway": "away",
+       "winner": false,
+       "team": {
+        "id": "30",
+        "uid": "s:1~l:10~t:30",
+        "displayName": "Tampa Bay Rays",
+        "abbreviation": "TB"
+       },
+       "score": "2"
+      }
+     ]
+    },
+    {
+     "id": "401908043",
+     "uid": "s:1~l:10~e:401908043~c:401908043",
+     "date": "2026-10-25T00:00:00Z",
+     "timeValid": true,
+     "status": "post",
+     "statusType": {
+      "id": "3",
+      "name": "STATUS_FINAL",
+      "state": "post",
+      "completed": true,
+      "description": "Final",
+      "detail": "Final",
+      "shortDetail": "Final"
+     },
+     "neutralSite": false,
+     "competitors": [
+      {
+       "homeAway": "home",
+       "winner": true,
+       "team": {
+        "id": "8",
+        "uid": "s:1~l:10~t:8",
+        "displayName": "Milwaukee Brewers",
+        "abbreviation": "MIL"
+       },
+       "score": "5"
+      },
+      {
+       "homeAway": "away",
+       "winner": false,
+       "team": {
+        "id": "30",
+        "uid": "s:1~l:10~t:30",
+        "displayName": "Tampa Bay Rays",
+        "abbreviation": "TB"
+       },
+       "score": "4"
+      }
+     ]
+    },
+    {
+     "id": "401908044",
+     "uid": "s:1~l:10~e:401908044~c:401908044",
+     "date": "2026-10-27T00:00:00Z",
+     "timeValid": true,
+     "status": "post",
+     "statusType": {
+      "id": "3",
+      "name": "STATUS_FINAL",
+      "state": "post",
+      "completed": true,
+      "description": "Final",
+      "detail": "Final",
+      "shortDetail": "Final"
+     },
+     "neutralSite": false,
+     "competitors": [
+      {
+       "homeAway": "home",
+       "winner": false,
+       "team": {
+        "id": "30",
+        "uid": "s:1~l:10~t:30",
+        "displayName": "Tampa Bay Rays",
+        "abbreviation": "TB"
+       },
+       "score": "1"
+      },
+      {
+       "homeAway": "away",
+       "winner": true,
+       "team": {
+        "id": "8",
+        "uid": "s:1~l:10~t:8",
+        "displayName": "Milwaukee Brewers",
+        "abbreviation": "MIL"
+       },
+       "score": "10"
+      }
+     ]
+    },
+    {
+     "id": "401908045",
+     "uid": "s:1~l:10~e:401908045~c:401908045",
+     "date": "2026-10-28T00:00:00Z",
+     "timeValid": true,
+     "status": "post",
+     "statusType": {
+      "id": "3",
+      "name": "STATUS_FINAL",
+      "state": "post",
+      "completed": true,
+      "description": "Final",
+      "detail": "Final/12",
+      "shortDetail": "Final/12",
+      "altDetail": "F/12"
+     },
+     "neutralSite": false,
+     "competitors": [
+      {
+       "homeAway": "home",
+       "winner": true,
+       "team": {
+        "id": "30",
+        "uid": "s:1~l:10~t:30",
+        "displayName": "Tampa Bay Rays",
+        "abbreviation": "TB"
+       },
+       "score": "4"
+      },
+      {
+       "homeAway": "away",
+       "winner": false,
+       "team": {
+        "id": "8",
+        "uid": "s:1~l:10~t:8",
+        "displayName": "Milwaukee Brewers",
+        "abbreviation": "MIL"
+       },
+       "score": "3"
+      }
+     ]
+    },
+    {
+     "id": "401908046",
+     "uid": "s:1~l:10~e:401908046~c:401908046",
+     "date": "2026-10-29T00:00:00Z",
+     "timeValid": true,
+     "status": "post",
+     "statusType": {
+      "id": "3",
+      "name": "STATUS_FINAL",
+      "state": "post",
+      "completed": true,
+      "description": "Final",
+      "detail": "Final",
+      "shortDetail": "Final"
+     },
+     "neutralSite": false,
+     "competitors": [
+      {
+       "homeAway": "home",
+       "winner": false,
+       "team": {
+        "id": "30",
+        "uid": "s:1~l:10~t:30",
+        "displayName": "Tampa Bay Rays",
+        "abbreviation": "TB"
+       },
+       "score": "1"
+      },
+      {
+       "homeAway": "away",
+       "winner": true,
+       "team": {
+        "id": "8",
+        "uid": "s:1~l:10~t:8",
+        "displayName": "Milwaukee Brewers",
+        "abbreviation": "MIL"
+       },
+       "score": "4"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "type": "season",
+   "title": "Regular Season Series",
+   "description": "Regular Season Series",
+   "summary": "MIL wins series 2-1",
+   "completed": true,
+   "totalCompetitions": 3,
+   "seriesLabel": "Regular Season",
+   "seriesScore": "2-1",
+   "shortSummary": "MIL wins season",
+   "events": [
+    {
+     "id": "401814745",
+     "uid": "s:1~l:10~e:401814745~c:401814745",
+     "date": "2026-03-30T23:40:00Z",
+     "timeValid": true,
+     "status": "post",
+     "statusType": {
+      "id": "3",
+      "name": "STATUS_FINAL",
+      "state": "post",
+      "completed": true,
+      "description": "Final",
+      "detail": "Final",
+      "shortDetail": "Final"
+     },
+     "neutralSite": false,
+     "competitors": [
+      {
+       "homeAway": "home",
+       "winner": false,
+       "team": {
+        "id": "8",
+        "uid": "s:1~l:10~t:8",
+        "displayName": "Milwaukee Brewers",
+        "abbreviation": "MIL"
+       },
+       "score": "2"
+      },
+      {
+       "homeAway": "away",
+       "winner": true,
+       "team": {
+        "id": "30",
+        "uid": "s:1~l:10~t:30",
+        "displayName": "Tampa Bay Rays",
+        "abbreviation": "TB"
+       },
+       "score": "3"
+      }
+     ]
+    },
+    {
+     "id": "401814759",
+     "uid": "s:1~l:10~e:401814759~c:401814759",
+     "date": "2026-03-31T23:40:00Z",
+     "timeValid": true,
+     "status": "post",
+     "statusType": {
+      "id": "3",
+      "name": "STATUS_FINAL",
+      "state": "post",
+      "completed": true,
+      "description": "Final",
+      "detail": "Final",
+      "shortDetail": "Final"
+     },
+     "neutralSite": false,
+     "competitors": [
+      {
+       "homeAway": "home",
+       "winner": true,
+       "team": {
+        "id": "8",
+        "uid": "s:1~l:10~t:8",
+        "displayName": "Milwaukee Brewers",
+        "abbreviation": "MIL"
+       },
+       "score": "6"
+      },
+      {
+       "homeAway": "away",
+       "winner": false,
+       "team": {
+        "id": "30",
+        "uid": "s:1~l:10~t:30",
+        "displayName": "Tampa Bay Rays",
+        "abbreviation": "TB"
+       },
+       "score": "2"
+      }
+     ]
+    },
+    {
+     "id": "401814774",
+     "uid": "s:1~l:10~e:401814774~c:401814774",
+     "date": "2026-04-01T17:40:00Z",
+     "timeValid": true,
+     "status": "post",
+     "statusType": {
+      "id": "3",
+      "name": "STATUS_FINAL",
+      "state": "post",
+      "completed": true,
+      "description": "Final",
+      "detail": "Final",
+      "shortDetail": "Final"
+     },
+     "neutralSite": false,
+     "competitors": [
+      {
+       "homeAway": "home",
+       "winner": true,
+       "team": {
+        "id": "8",
+        "uid": "s:1~l:10~t:8",
+        "displayName": "Milwaukee Brewers",
+        "abbreviation": "MIL"
+       },
+       "score": "8"
+      },
+      {
+       "homeAway": "away",
+       "winner": false,
+       "team": {
+        "id": "30",
+        "uid": "s:1~l:10~t:30",
+        "displayName": "Tampa Bay Rays",
+        "abbreviation": "TB"
+       },
+       "score": "2"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "type": "playoff",
+   "title": "Playoff Series",
+   "description": "Playoff Series",
+   "summary": "MIL leads series 3-1",
+   "completed": false,
+   "totalCompetitions": 7,
+   "seriesLabel": "Playoffs",
+   "seriesScore": "3-1",
+   "shortSummary": "MIL leads series",
+   "round": "World Series",
+   "events": [
+    {
+     "id": "401908042",
+     "uid": "s:1~l:10~e:401908042~c:401908042",
+     "date": "2026-10-24T00:00:00Z",
+     "timeValid": true,
+     "status": "post",
+     "statusType": {
+      "id": "3",
+      "name": "STATUS_FINAL",
+      "state": "post",
+      "completed": true,
+      "description": "Final",
+      "detail": "Final",
+      "shortDetail": "Final"
+     },
+     "neutralSite": false,
+     "competitors": [
+      {
+       "homeAway": "home",
+       "winner": true,
+       "team": {
+        "id": "8",
+        "uid": "s:1~l:10~t:8",
+        "displayName": "Milwaukee Brewers",
+        "abbreviation": "MIL"
+       },
+       "score": "3"
+      },
+      {
+       "homeAway": "away",
+       "winner": false,
+       "team": {
+        "id": "30",
+        "uid": "s:1~l:10~t:30",
+        "displayName": "Tampa Bay Rays",
+        "abbreviation": "TB"
+       },
+       "score": "2"
+      }
+     ]
+    },
+    {
+     "id": "401908043",
+     "uid": "s:1~l:10~e:401908043~c:401908043",
+     "date": "2026-10-25T00:00:00Z",
+     "timeValid": true,
+     "status": "post",
+     "statusType": {
+      "id": "3",
+      "name": "STATUS_FINAL",
+      "state": "post",
+      "completed": true,
+      "description": "Final",
+      "detail": "Final",
+      "shortDetail": "Final"
+     },
+     "neutralSite": false,
+     "competitors": [
+      {
+       "homeAway": "home",
+       "winner": true,
+       "team": {
+        "id": "8",
+        "uid": "s:1~l:10~t:8",
+        "displayName": "Milwaukee Brewers",
+        "abbreviation": "MIL"
+       },
+       "score": "5"
+      },
+      {
+       "homeAway": "away",
+       "winner": false,
+       "team": {
+        "id": "30",
+        "uid": "s:1~l:10~t:30",
+        "displayName": "Tampa Bay Rays",
+        "abbreviation": "TB"
+       },
+       "score": "4"
+      }
+     ]
+    },
+    {
+     "id": "401908044",
+     "uid": "s:1~l:10~e:401908044~c:401908044",
+     "date": "2026-10-27T00:00:00Z",
+     "timeValid": true,
+     "status": "post",
+     "statusType": {
+      "id": "3",
+      "name": "STATUS_FINAL",
+      "state": "post",
+      "completed": true,
+      "description": "Final",
+      "detail": "Final",
+      "shortDetail": "Final"
+     },
+     "neutralSite": false,
+     "competitors": [
+      {
+       "homeAway": "home",
+       "winner": false,
+       "team": {
+        "id": "30",
+        "uid": "s:1~l:10~t:30",
+        "displayName": "Tampa Bay Rays",
+        "abbreviation": "TB"
+       },
+       "score": "1"
+      },
+      {
+       "homeAway": "away",
+       "winner": true,
+       "team": {
+        "id": "8",
+        "uid": "s:1~l:10~t:8",
+        "displayName": "Milwaukee Brewers",
+        "abbreviation": "MIL"
+       },
+       "score": "10"
+      }
+     ]
+    },
+    {
+     "id": "401908045",
+     "uid": "s:1~l:10~e:401908045~c:401908045",
+     "date": "2026-10-28T00:00:00Z",
+     "timeValid": true,
+     "status": "post",
+     "statusType": {
+      "id": "3",
+      "name": "STATUS_FINAL",
+      "state": "post",
+      "completed": true,
+      "description": "Final",
+      "detail": "Final/12",
+      "shortDetail": "Final/12",
+      "altDetail": "F/12"
+     },
+     "neutralSite": false,
+     "competitors": [
+      {
+       "homeAway": "home",
+       "winner": true,
+       "team": {
+        "id": "30",
+        "uid": "s:1~l:10~t:30",
+        "displayName": "Tampa Bay Rays",
+        "abbreviation": "TB"
+       },
+       "score": "4"
+      },
+      {
+       "homeAway": "away",
+       "winner": false,
+       "team": {
+        "id": "8",
+        "uid": "s:1~l:10~t:8",
+        "displayName": "Milwaukee Brewers",
+        "abbreviation": "MIL"
+       },
+       "score": "3"
+      }
+     ]
+    },
+    {
+     "id": "401908046",
+     "uid": "s:1~l:10~e:401908046~c:401908046",
+     "date": "2026-10-29T00:00:00Z",
+     "timeValid": true,
+     "status": "post",
+     "statusType": {
+      "id": "3",
+      "name": "STATUS_FINAL",
+      "state": "post",
+      "completed": true,
+      "description": "Final",
+      "detail": "Final",
+      "shortDetail": "Final"
+     },
+     "neutralSite": false,
+     "competitors": [
+      {
+       "homeAway": "home",
+       "winner": false,
+       "team": {
+        "id": "30",
+        "uid": "s:1~l:10~t:30",
+        "displayName": "Tampa Bay Rays",
+        "abbreviation": "TB"
+       },
+       "score": "1"
+      },
+      {
+       "homeAway": "away",
+       "winner": true,
+       "team": {
+        "id": "8",
+        "uid": "s:1~l:10~t:8",
+        "displayName": "Milwaukee Brewers",
+        "abbreviation": "MIL"
+       },
+       "score": "4"
+      }
+     ]
+    }
+   ]
+  }
+ ]
+}

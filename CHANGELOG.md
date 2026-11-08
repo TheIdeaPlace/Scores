@@ -8,6 +8,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Windows: a Stats tab in Team Hub, and golf news (#196).** Two things the iPhone had.
+  - Team Hub's new **Stats** tab (Alt+A), after Roster as on the iPhone, has a **Show** box (Alt+W) with
+    **Players**, the team's leaders in each category ranked within the team, and **Team**, where the team
+    ranks in the league in each of its statistics. Both are in one table with the three view modes, say
+    which season they're from, and say so if they can't be loaded. They come from the same places as the
+    iPhone's: ESPN's leaders for the one team, and the core API's statistics for the team ranked against
+    the league's team statistics, so a rank matches the league's Statistics screen. Soccer and college
+    hockey have the Team ranks only for now.
+  - The golf dialog has a **News** tab with ESPN's PGA Tour or LPGA Tour stories; Enter opens one in your
+    browser, and F5 tries again if they couldn't be loaded.
+  - A shared file, `tests/fixtures/team_hub_stats_grid.json`, holds both apps' Stats tabs to the same rows.
+- **MLB win probability and season series on Windows, as on the iPhone (#194).** An MLB game's details
+  have a **Win probability** row ("Win probability: Mets 70%") and a season series row ("Regular Season
+  Series: Mets lead 7-5"). Enter on the first opens the chances by inning, after every play, and the five
+  biggest swings, with who gained on each play; F5 updates it during a game. Enter on the second opens a
+  tab for each series (playoff round, regular season, current set, spring training) listing its games,
+  starting on the game you came from. Both apps count each series' record from its games, as of the game
+  you're looking at, so an old game doesn't give away how a series ended; ESPN's own sentence isn't read,
+  since it can be wrong (in one World Series game it gave the wrong team the lead). Both round win
+  percentages the same way: the iPhone's chart used to cut 69.8% to 69% and called a live game's chances
+  "Final". The unreachable Kitchen Sink dialog these came from is gone.
 - **Past football seasons on Windows (#192).** In the NFL and college football scores lists, Ctrl+G (or
   **Go to Season**) opens a list of seasons, back to 2001 for the NFL and 2005 for college football, as on
   the iPhone. A past season opens on its regular season Week 1, and the week and season are spoken and put
@@ -85,6 +106,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   words as Windows. In the Quick List and Full List views; table rows have no actions yet (#208). (#185)
 
 ### Changed
+- **Transactions: one list, newest first, and a jump to any month, on both apps (#188).** Windows had
+  pages newest first and no way to go back further than a page at a time; the iPhone showed one month at
+  a time. Both now show one running list, newest first, that loads older ones as you go, back to January
+  2001, and both can start it at the end of any month and keep going older from there.
+  - Windows: **Load More** (Alt+M), or Down Arrow on the last item, loads older ones. Ctrl+G (or **Go to
+    Month**) opens a list of months, newest first; nothing loads until Enter. The window title says where
+    the list starts ("Transactions from March 2003 — NFL"), and the team filter keeps the month.
+  - iPhone: older ones load as you scroll, with a Load Older Transactions button at the end. **Jump to
+    Month** opens the month and year picker, and **Newest** goes back to the latest. The previous and
+    next month arrows and the page buttons are gone.
+  - A month with none says so above the older ones; a league with none at all, such as the college
+    leagues, says so in place of the list; and a failed request says so, with Try Again or F5.
+  - Soccer's transactions are transfers with no description, so they were blank lines on Windows and an
+    error on the iPhone. Both now read them as sentences ("Marquinhos joins Cruzeiro from Arsenal on loan"),
+    newest first, and a soccer team's list works.
+  - ESPN can't provide some stretches (NFL February to August 2003 answers with an error at any page
+    size). The list says so and goes on with the year before, rather than stopping there.
+  - The paging rule is `transactions_paging.py` and its twin `TransactionPaging.swift`, held to
+    `tests/fixtures/transactions_paging_grid.json`.
 - **Windows: monitoring is a section at the top of Live Scores.** Alt+M on a game adds it to Monitoring,
   where its row reads as it does below with the sport after it, and the game stays in its own section too.
   Alt+M also works on today's games on a sport's page. Alt+M on a Monitoring row takes it off and moves you
@@ -102,6 +142,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   says so instead of going quiet, and F5 on a card tries again and stays on it. The card no longer shows
   the team's record. Both apps decide which game is live, last and next by one rule, tested against the
   same cases (#191).
+- **Soccer leaders open in about a second.** Both apps now get a league's leaders in one request, with
+  the names and teams inside, instead of looking up every player and team one by one: on Windows, about
+  140 to 180 requests and 7 seconds became 2 requests and 1 second. The lists, players and numbers are
+  the same as before. NWSL and the CONCACAF Champions Cup show 10 players a list for now rather than 20,
+  since ESPN won't send them 20. If ESPN doesn't answer, the screen says so (#198).
 
 ### Fixed
 - **iPhone: a CFL game being played.** It said Scheduled, with no score, all game long, and its team's
@@ -112,6 +157,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   day, but its last game kicks off as late as 23:30 UTC, so all evening in North America the scores showed
   next week's games. A week with a game under way is now the current one. A Grey Cup opponent not yet
   known (TBD) no longer shows a 0-0 record either.
+- **Liga MX leaders follow the torneo being played.** From January, Statistics shows the Torneo Clausura's
+  leaders rather than the Apertura's, and the season line names the torneo, for example "2026-27 Liga BBVA
+  MX Torneo Apertura". Until anyone has played in the Clausura, it shows the Apertura. Both apps choose
+  the torneo by its dates, by one rule tested against the same cases (#178).
 - **iPhone: Formula 1's race loads during a race weekend.** Until the race started, ESPN lists its field
   with no finishing order, which failed the whole request, so Racing said it couldn't load the race. It
   also showed the first practice session's date and the weekend's own status, which can say Final the

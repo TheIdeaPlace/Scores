@@ -1,0 +1,110 @@
+{
+ "timestamp": "2026-11-08T00:31:54Z",
+ "status": "success",
+ "season": {
+  "year": 2026,
+  "type": 13846,
+  "name": "Regular Season",
+  "displayName": "2026 MLS"
+ },
+ "requestedYear": {
+  "year": 2025,
+  "displayName": "2025"
+ },
+ "count": 344,
+ "pageIndex": 1,
+ "pageSize": 4,
+ "pageCount": 86,
+ "transactions": [
+  {
+   "date": "2025-01-01T08:00Z",
+   "athlete": {
+    "id": "380799",
+    "firstName": "Bajung",
+    "lastName": "Darboe",
+    "displayName": "Bajung Darboe"
+   },
+   "from": {
+    "id": "18966",
+    "abbreviation": "LAFC",
+    "displayName": "LAFC"
+   },
+   "to": {
+    "id": "132",
+    "abbreviation": "MUN",
+    "displayName": "Bayern Munich"
+   },
+   "type": "Undisclosed",
+   "amount": 0.0,
+   "displayAmount": "Undisclosed"
+  },
+  {
+   "date": "2025-01-01T08:00Z",
+   "athlete": {
+    "id": "251694",
+    "firstName": "Kévin",
+    "lastName": "Denkey",
+    "displayName": "Kévin Denkey",
+    "jersey": "9"
+   },
+   "from": {
+    "id": "3610",
+    "abbreviation": "CBK",
+    "displayName": "Cercle Brugge KSV"
+   },
+   "to": {
+    "id": "18267",
+    "abbreviation": "CIN",
+    "displayName": "FC Cincinnati"
+   },
+   "type": "Undisclosed",
+   "amount": 0.0,
+   "displayAmount": "Undisclosed"
+  },
+  {
+   "date": "2025-01-01T08:00Z",
+   "athlete": {
+    "id": "192278",
+    "firstName": "Diego",
+    "lastName": "Gómez",
+    "displayName": "Diego Gómez",
+    "jersey": "25"
+   },
+   "from": {
+    "id": "20232",
+    "abbreviation": "MIA",
+    "displayName": "Inter Miami CF"
+   },
+   "to": {
+    "id": "331",
+    "abbreviation": "BHA",
+    "displayName": "Brighton & Hove Albion"
+   },
+   "type": "Undisclosed",
+   "amount": 0.0,
+   "displayAmount": "Undisclosed"
+  },
+  {
+   "date": "2025-01-01T08:00Z",
+   "athlete": {
+    "id": "311157",
+    "firstName": "Mikael",
+    "lastName": "Marqués",
+    "displayName": "Mikael Marqués",
+    "jersey": "21"
+   },
+   "from": {
+    "id": "17362",
+    "abbreviation": "MIN",
+    "displayName": "Minnesota United FC"
+   },
+   "to": {
+    "displayName": "Västerås SK",
+    "abbreviation": "Västerås SK"
+   },
+   "type": "Undisclosed",
+   "amount": 0.0,
+   "displayAmount": "Undisclosed"
+  }
+ ]
+}

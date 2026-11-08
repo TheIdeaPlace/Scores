@@ -98,6 +98,16 @@ class ApiService:
         return ApiService._call(espn_api.get_team_statistics, league)
     
     @staticmethod
+    def get_team_player_leaders(league: str, team_id: str) -> Dict:
+        """One team's players in each stat category, for Team Hub. A failed request raises ApiError."""
+        return ApiService._call(espn_api.get_team_player_leaders, league, team_id)
+
+    @staticmethod
+    def get_team_stat_rankings(league: str, team_id: str) -> Dict:
+        """Where one team ranks in its stats, for Team Hub. A failed request raises ApiError."""
+        return ApiService._call(espn_api.get_team_stat_rankings, league, team_id)
+
+    @staticmethod
     def get_stat_glossary(league: str) -> Dict:
         """ESPN's definitions of a league's statistics. A failed request raises ApiError."""
         return ApiService._call(espn_api.get_stat_glossary, league)
@@ -111,6 +121,11 @@ class ApiService:
     def get_transactions(league: str, team_id: str = None, limit: int = 50, page: int = 1):
         """Returns (list, has_more)."""
         return ApiService._call(espn_api.get_transactions, league, team_id, limit, page)
+
+    @staticmethod
+    def get_transactions_from(league: str, cursor: Dict, team_id: str = None) -> Dict:
+        """One load of the Transactions screen: {"rows", "next", "oldest_year", "skipped"}."""
+        return ApiService._call(espn_api.get_transactions_from, league, cursor, team_id)
 
     @staticmethod
     def get_team_info(league: str, team_id: str) -> Dict:
