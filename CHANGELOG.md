@@ -66,13 +66,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   sessions with their start times, the season's schedule with every winner, the drivers' standings
   (and Formula 1's constructors'), and news. Every table has the three views, and a request ESPN doesn't
   answer says so, with Enter to try again. The nightly data check covers all four requests. (Part of #195)
+- **iPhone: a Monitoring section at the top of Live Scores, as on Windows.** A **Monitor** VoiceOver action
+  (and context menu item) on a game in Live Scores adds it. Its row under Monitoring reads as it does below,
+  with the sport after it, and the game stays in its own section, which says it's monitored. Rows are in the
+  order added and open the game. **Stop Monitoring** on a Monitoring row takes it off and moves VoiceOver to
+  the next one, or to the section's heading when there's none after it. A sport's scores page has Monitor
+  too, for today's games only, judged by the day ESPN's scoreboard files the game under, the same rule as
+  Windows, which both apps are now tested against with one shared grid. Monitoring lasts until the app
+  quits, and nothing is read out on its own: the only speech is each action's confirmation, in the same
+  words as Windows. In the Quick List and Full List views; table rows have no actions yet (#208). (#185)
 
 ### Changed
 - **Windows: monitoring is a section at the top of Live Scores.** Alt+M on a game adds it to Monitoring,
   where its row reads as it does below with the sport after it, and the game stays in its own section too.
   Alt+M also works on today's games on a sport's page. Alt+M on a Monitoring row takes it off and moves you
   to the next one. Monitoring lasts until you quit. Scores no longer reads out score changes on its own.
-  The iPhone is to follow (#185).
+  The iPhone has the same section (see Added).
 - **iPhone builds: the TestFlight build number can't repeat.** It is now one more than the highest build
   App Store Connect already has, or the commit count if that is higher. The commit count alone could land
   on a number Apple had already seen after a squash merge, and the upload was rejected (#112).
