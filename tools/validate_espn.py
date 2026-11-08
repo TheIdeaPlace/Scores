@@ -1319,6 +1319,32 @@ def check_team_hub(http, report, league, event, in_season):
         elif news is not None:
             report.warn(league.key, "App: team news", f"{name} has none, which can be a quiet team", url)
 
+    check_app_team_hub_stats(report, league, team_id, name, in_season, checked)
+
+
+def check_app_team_hub_stats(report, league, team_id, name, in_season, checked):
+    """Team Hub's Stats tab, asked as the app asks (#196): the team's own leaders, and its ranks.
+    A league with byteam ranks every team that has played. Soccer's and college hockey's ranks are
+    only ESPN's own, which can say nothing, so their having none is only news."""
+    import espn_api
+
+    leaders = checked("App: Team Hub players", espn_api.get_team_player_leaders, league.key, team_id)
+    if leaders is not None:
+        categories = leaders.get("player_stats") or []
+        if categories:
+            report.ok(league.key, "App: Team Hub players", f"{name}: {len(categories)} categories")
+        elif league.key in espn_api.LEADER_LEAGUES:
+            report.seasonal(in_season, league.key, "App: Team Hub players", f"{name} has no leaders")
+    ranks = checked("App: Team Hub ranks", espn_api.get_team_stat_rankings, league.key, team_id)
+    if ranks is not None:
+        rankings = ranks.get("rankings") or []
+        if rankings:
+            report.ok(league.key, "App: Team Hub ranks", f"{name}: {len(rankings)} stats, {ranks.get('season')}")
+        elif league.key in espn_api.TEAM_STAT_LEAGUES:
+            report.seasonal(in_season, league.key, "App: Team Hub ranks", f"{name} has no ranks")
+        else:
+            report.warn(league.key, "App: Team Hub ranks", f"{name} has none of ESPN's ranks to show")
+
 
 def check_news(http, report, league):
     import espn_api
@@ -1566,27 +1592,27 @@ def fetch_leaders(http, league, year):
 
 
 def check_leaders_for_a_team(http, report, league, data, year):
-    """The iPhone's team stats ask /leaders for one team's players. If ESPN stopped honoring `team`,
+    """Both apps' Team Hub ask /leaders for one team's players. If ESPN stopped honoring `team`,
     they'd be the league's leaders under the team's name."""
     team_id = None
     for category in data["leaders"]["categories"]:
         for leader in category.get("leaders") or []:
             team_id = team_id or (leader.get("team") or {}).get("id")
     if not team_id:
-        report.warn(league.key, "Leaders for one team (iPhone)", "no team id on a leader to ask with")
+        report.warn(league.key, "Leaders for one team (both apps)", "no team id on a leader to ask with")
         return
     url = f"{V3}/{league.path}/leaders?region=us&lang=en&season={year}&seasontype=2&limit=20&team={team_id}"
     status, answer = http.get(url)
     categories = ((answer or {}).get("leaders") or {}).get("categories") if isinstance(answer, dict) else None
     if status != 200 or not categories:
-        report.warn(league.key, "Leaders for one team (iPhone)", f"got {status} with no categories", url)
+        report.warn(league.key, "Leaders for one team (both apps)", f"got {status} with no categories", url)
         return
     others = {str((leader.get("team") or {}).get("id")) for category in categories
               for leader in category.get("leaders") or []} - {str(team_id)}
     if others:
-        report.fail(league.key, "Leaders for one team (iPhone)", f"other teams in the answer: {sorted(others)[:3]}", url)
+        report.fail(league.key, "Leaders for one team (both apps)", f"other teams in the answer: {sorted(others)[:3]}", url)
     else:
-        report.ok(league.key, "Leaders for one team (iPhone)", f"{len(categories)} categories", url)
+        report.ok(league.key, "Leaders for one team (both apps)", f"{len(categories)} categories", url)
 
 
 def check_leaders(http, report, league, in_season=True):
@@ -1817,7 +1843,7 @@ def check_core_statistics(http, report, league, event, in_season):
     if not (year and team_id):
         report.fail(league.key, "Core API (iPhone)", f"final {event['id']} has no season or team id")
         return
-    for name, tail, read in (("Core API: team statistics (iPhone)", f"teams/{team_id}/statistics",
+    for name, tail, read in (("Core API: team statistics (both apps)", f"teams/{team_id}/statistics",
                               lambda d: (d.get("splits") or {}).get("categories")),):
         answers = check_core_stats(http, report, league, year, name, tail, read)
         if answers is not True:
@@ -2076,6 +2102,22 @@ def check_golf(http, report):
         else:
             report.ok(tour, "App: golf leaderboard", f"{board['name']}, {len(board.get('players') or [])} players")
         check_past_golf_leaderboard(report, tour, schedule)
+
+
+def check_golf_news(http, report):
+    """The golf dialog's News tab (#196): ESPN's news for each tour, as the iPhone's golf screen has."""
+    import espn_api
+
+    for tour in espn_api.GOLF_TOURS:
+        try:
+            news = espn_api.get_news(tour, 25)
+        except Exception as e:
+            report.fail(tour, "App: golf news", f"get_news raised {type(e).__name__}: {e}")
+            continue
+        if news:
+            report.ok(tour, "App: golf news", f"{len(news)} articles")
+        else:
+            report.fail(tour, "App: golf news", "no articles, and a tour has some in any month")
 
 
 def check_past_golf_leaderboard(report, tour, schedule):
@@ -2372,8 +2414,8 @@ def check_others_twice(http, seasons):
 def check_others(http, seasons):
     report = Report()
     for check in (check_every_league_path, check_football_calendar, check_past_postseasons, check_soccer_schedules,
-                  check_soccer_tables, check_liga_mx_torneos, check_golf, check_racing, check_draft, check_world_cup,
-                  check_cfl, check_fantasy, check_radio_links):
+                  check_soccer_tables, check_liga_mx_torneos, check_golf, check_golf_news, check_racing,
+                  check_draft, check_world_cup, check_cfl, check_fantasy, check_radio_links):
         try:
             check(http, report)
         except Exception as e:

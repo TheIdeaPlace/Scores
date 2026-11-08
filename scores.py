@@ -55,8 +55,8 @@ except ImportError:
 
 # New separated modules
 from exceptions import ApiError, DataModelError, plain_message
-from espn_api import (NCAAF_CONFERENCE_ORDER, SCHEDULE_UNAVAILABLE, TEAMS_UNAVAILABLE, league_sport, live_scores_failure_text,
-                      standings_cache_key, with_failed_leagues_kept)
+from espn_api import (LEADER_LEAGUES, NCAAF_CONFERENCE_ORDER, SCHEDULE_UNAVAILABLE, TEAMS_UNAVAILABLE, league_sport,
+                      live_scores_failure_text, standings_cache_key, with_failed_leagues_kept)
 import stat_glossary
 from services.api_service import ApiService
 from services.venue_service import venue_service, venue_summary
@@ -78,7 +78,8 @@ from tab_keys import group_noun
 from box_score import build_box_tables
 from soccer import SOCCER_LEAGUES, TEAM_NAME_ONLY_HEADERS, no_table_message, soccer_teams_table
 from team_list import OTHER_TEAMS, RECORDS_UNAVAILABLE, TEAMS_WITH_NO_GROUP, has_records
-from team_stats import RANKING_HEADERS, ranking_rows, team_stat_lists
+from team_stats import (HUB_HEADERS, RANKING_HEADERS, hub_player_rows, hub_team_rows, ranking_rows,
+                        team_stat_lists)
 from drive_results import (
     FG as DRIVE_FG, TD as DRIVE_TD,
     chronological_drives, drive_badge, drive_results, summary_teams,
@@ -8339,7 +8340,11 @@ class GameDetailsDialog(QDialog):
 
 
 class TeamHubDialog(QDialog):
-    """Five-tab team hub: Info, Roster, Schedule, News, Transactions."""
+    """Six-tab team hub: Info, Roster, Stats, Schedule, News, Transactions."""
+
+    INFO_TAB, ROSTER_TAB, STATS_TAB, SCHEDULE_TAB, NEWS_TAB, TRANSACTIONS_TAB = range(6)
+    # The Stats tab's two lists, as the iPhone's Players and Team.
+    STATS_PLAYERS, STATS_TEAM = "players", "team"
 
     def __init__(self, team_data: Dict, league: str, parent=None):
         super().__init__(parent)
@@ -8349,6 +8354,8 @@ class TeamHubDialog(QDialog):
         self.team_id = team_data.get('team_id', '')
         self._tabs_loaded: set = set()
         self._loaders = []  # keep loader references alive
+        # The Stats tab's lists as they came: {"rows", "season"} or {"error"}, until then absent.
+        self._stats: Dict[str, Dict] = {}
 
         self.setWindowTitle(f"{self.team_name} - {league} - Sports Scores")
         self.setMinimumSize(900, 650)
@@ -8395,7 +8402,7 @@ class TeamHubDialog(QDialog):
 
         layout.addLayout(header_layout)
 
-        self.tab_widget = make_tab_area(5, mnemonics=True)
+        self.tab_widget = make_tab_area(6, mnemonics=True)
         self.tab_widget.currentChanged.connect(self._on_tab_changed)
 
         # Tab 0 — Info
@@ -8418,7 +8425,33 @@ class TeamHubDialog(QDialog):
         roster_layout.addWidget(self.roster_table)
         self.tab_widget.addTab(roster_w, "R&oster")
 
-        # Tab 2 — Schedule
+        # Tab 2 — Stats: the team's own leaders, and where it ranks in the league, as on the iPhone.
+        stats_w = QWidget()
+        stats_layout = QVBoxLayout(stats_w)
+        show_row = QHBoxLayout()
+        show_label = QLabel("Sho&w:")
+        show_row.addWidget(show_label)
+        self.stats_choice = QComboBox()
+        self.stats_choice.setAccessibleName("Show")
+        self.stats_choice.setAccessibleDescription(
+            "Players: the team's leaders in each category. Team: where the team ranks in the league.")
+        self.stats_choice.addItem("Players", self.STATS_PLAYERS)
+        self.stats_choice.addItem("Team", self.STATS_TEAM)
+        show_label.setBuddy(self.stats_choice)
+        show_row.addWidget(self.stats_choice)
+        show_row.addStretch()
+        stats_layout.addLayout(show_row)
+        self.stats_season = QLabel("")
+        self.stats_season.setWordWrap(True)
+        stats_layout.addWidget(self.stats_season)
+        self.stats_table = AccessibleTable(accessible_name=f"{self.team_name} Player Stats",
+                                           accessible_description="Alt+V to cycle view modes.")
+        stats_layout.addWidget(self.stats_table)
+        # A bound method, not a lambda holding self, which would keep a closed hub alive.
+        self.stats_choice.currentIndexChanged.connect(self._on_stats_choice)
+        self.tab_widget.addTab(stats_w, "St&ats")
+
+        # Tab 3 — Schedule
         sched_w = QWidget()
         sched_layout = QVBoxLayout(sched_w)
         season_row = QHBoxLayout()
@@ -8443,7 +8476,7 @@ class TeamHubDialog(QDialog):
         sched_layout.addWidget(self.schedule_list)
         self.tab_widget.addTab(sched_w, "&Schedule")
 
-        # Tab 3 — News
+        # Tab 4 — News
         news_w = QWidget()
         news_layout = QVBoxLayout(news_w)
         self.news_list = QListWidget()
@@ -8456,7 +8489,7 @@ class TeamHubDialog(QDialog):
         news_layout.addWidget(open_btn)
         self.tab_widget.addTab(news_w, "&News")
 
-        # Tab 4 — Transactions
+        # Tab 5 — Transactions
         trans_w = QWidget()
         trans_layout = QVBoxLayout(trans_w)
         self.trans_list = QListWidget()
@@ -8489,13 +8522,14 @@ class TeamHubDialog(QDialog):
         if index in self._tabs_loaded:
             return
         self._tabs_loaded.add(index)
-        {0: self._load_info, 1: self._load_roster,
-         2: self._load_schedule, 3: self._load_news,
-         4: self._load_transactions}.get(index, lambda: None)()
+        {self.INFO_TAB: self._load_info, self.ROSTER_TAB: self._load_roster,
+         self.STATS_TAB: self._load_stats, self.SCHEDULE_TAB: self._load_schedule,
+         self.NEWS_TAB: self._load_news,
+         self.TRANSACTIONS_TAB: self._load_transactions}.get(index, lambda: None)()
 
     def _on_season_changed(self):
-        self._tabs_loaded.discard(2)
-        self._on_tab_changed(2)
+        self._tabs_loaded.discard(self.SCHEDULE_TAB)
+        self._on_tab_changed(self.SCHEDULE_TAB)
 
     # --------------------------------------------------------------- info tab
 
@@ -8504,7 +8538,7 @@ class TeamHubDialog(QDialog):
         self.info_list.addItem("Loading team info...")
         loader = TeamInfoLoader(self.team_id, self.league)
         loader.data_loaded.connect(self._on_info_loaded)
-        loader.error_occurred.connect(lambda e: self._show_list_error(self.info_list, e, 0))
+        loader.error_occurred.connect(lambda e: self._show_list_error(self.info_list, e, self.INFO_TAB))
         self._loaders.append(loader)
         loader.start()
 
@@ -8549,7 +8583,7 @@ class TeamHubDialog(QDialog):
 
     def _on_roster_failed(self, message):
         self.roster_table.populate_data([[message, "", "", "", "", ""]], set_focus=False)
-        self._tabs_loaded.discard(1)  # So coming back to the tab asks again.
+        self._tabs_loaded.discard(self.ROSTER_TAB)  # So coming back to the tab asks again.
 
     def _on_roster_loaded(self, players):
         if not players:
@@ -8559,6 +8593,79 @@ class TeamHubDialog(QDialog):
                 for p in players]
         # Not set_focus: someone arrowing along the tabs stays on the tabs.
         self.roster_table.populate_data(rows, set_focus=False)
+
+    # --------------------------------------------------------------- stats tab
+
+    def _load_stats(self):
+        """Both lists at once, as the iPhone asks for them. Coming back after one failed asks for
+        that one again, and leaves one that came or is still coming alone."""
+        if self.STATS_PLAYERS not in self._stats and self.league not in LEADER_LEAGUES:
+            # Not an honest empty answer: the iPhone has these, from a source Windows doesn't
+            # read for one team yet. Show opens on Team instead.
+            self._stats[self.STATS_PLAYERS] = {
+                "rows": [], "message": "Player leaders for one team aren't on Windows yet for this league."}
+            self.stats_choice.setCurrentIndex(self.stats_choice.findData(self.STATS_TEAM))
+        for kind in (self.STATS_PLAYERS, self.STATS_TEAM):
+            entry = self._stats.get(kind, {})
+            if "rows" in entry or entry.get("loading"):
+                continue
+            self._stats[kind] = {"loading": True}
+            loader = TeamStatsLoader(self.team_id, self.league, kind)
+            loader.data_loaded.connect(self._on_stats_loaded)
+            loader.error_occurred.connect(self._on_stats_failed)
+            self._loaders.append(loader)
+            loader.start()
+        self._show_stats()
+
+    def _on_stats_loaded(self, kind, data):
+        data = data if isinstance(data, dict) else {}
+        if kind == self.STATS_PLAYERS:
+            rows = hub_player_rows(data.get("player_stats") or [])
+        else:
+            rows = hub_team_rows(data.get("rankings") or [])
+        self._stats[kind] = {"rows": rows, "season": data.get("season") or ""}
+        self._show_stats(kind)
+
+    def _on_stats_failed(self, kind, message):
+        self._stats[kind] = {"error": message}
+        self._tabs_loaded.discard(self.STATS_TAB)  # So coming back to the tab asks again.
+        self._show_stats(kind)
+
+    def _on_stats_choice(self, _index):
+        self._show_stats()
+
+    def _show_stats(self, changed=None):
+        """The list Show is on. `changed` is the list that just came or failed: the other one's
+        news mustn't redraw the table under someone reading it."""
+        kind = self.stats_choice.currentData()
+        if changed is not None and changed != kind:
+            return
+        players = kind == self.STATS_PLAYERS
+        entry = self._stats.get(kind, {})
+        season = entry.get("season") or ""
+        what = "Player Stats" if players else "Team Rankings"
+        self.stats_table.update_accessible_name(f"{self.team_name} {what}" + (f", {season}" if season else ""))
+        self.stats_season.setText(season)
+        rows = entry.get("rows")
+        if rows:
+            # The cell a screen reader repeats when moving along a row: whose number it is, the
+            # player's or the category's. The column header says when the category changes.
+            self.stats_table.ROW_CONTEXT_COLUMN = 2 if players else 1
+            self.stats_table.setup_columns(HUB_HEADERS[kind])
+        else:
+            if "error" in entry:
+                message = f"{entry['error']} Press F5 to try again."
+            elif "message" in entry:
+                message = entry["message"]
+            elif "rows" in entry:
+                message = "No player statistics available." if players else "No team statistics available."
+            else:
+                message = "Loading player stats..." if players else "Loading team stats..."
+            # One column, so no view reads empty cells or a heading that isn't about it.
+            self.stats_table.ROW_CONTEXT_COLUMN = 0
+            self.stats_table.setup_columns([what])
+            rows = [[message]]
+        self.stats_table.populate_data(rows, set_focus=False)
 
     # ------------------------------------------------------------ schedule tab
 
@@ -8587,7 +8694,7 @@ class TeamHubDialog(QDialog):
         self.schedule_list.addItem(message)
         self.schedule_list.setCurrentRow(0)
         # So coming back to the tab asks again.
-        self._tabs_loaded.discard(2)
+        self._tabs_loaded.discard(self.SCHEDULE_TAB)
         _take_focus_after_load(self.schedule_list)
 
     def _on_schedule_loaded(self, schedule_data: List[Dict], team_name: str, league: str, season_used: int):
@@ -8634,7 +8741,7 @@ class TeamHubDialog(QDialog):
         self.news_list.addItem("Loading news...")
         loader = TeamNewsLoader(self.team_id, self.league)
         loader.data_loaded.connect(self._on_news_loaded)
-        loader.error_occurred.connect(lambda e: self._show_list_error(self.news_list, e, 3))
+        loader.error_occurred.connect(lambda e: self._show_list_error(self.news_list, e, self.NEWS_TAB))
         self._loaders.append(loader)
         loader.start()
 
@@ -8672,7 +8779,7 @@ class TeamHubDialog(QDialog):
         self.trans_list.addItem("Loading transactions...")
         loader = TeamTransactionsLoader(self.team_id, self.league)
         loader.data_loaded.connect(self._on_transactions_loaded)
-        loader.error_occurred.connect(lambda e: self._show_list_error(self.trans_list, e, 4))
+        loader.error_occurred.connect(lambda e: self._show_list_error(self.trans_list, e, self.TRANSACTIONS_TAB))
         self._loaders.append(loader)
         loader.start()
 
@@ -8719,6 +8826,10 @@ class TeamHubDialog(QDialog):
     def keyPressEvent(self, event):
         if event.key() == Qt.Key.Key_Escape:
             self.accept()
+            return
+        if event.key() == Qt.Key.Key_F5 and any("error" in entry for entry in self._stats.values()):
+            # Only the Stats lists that failed: one that came, or is coming, is left alone.
+            self._load_stats()
             return
         super().keyPressEvent(event)
 
@@ -8881,6 +8992,22 @@ class GolfLeaderboardLoader(QThread):
             self.error_occurred.emit(_said(e))
 
 
+class GolfNewsLoader(QThread):
+    """A golf tour's news, ESPN's for golf/pga or golf/lpga, as many stories as the iPhone shows."""
+    data_loaded = pyqtSignal(list)
+    error_occurred = pyqtSignal(str)
+
+    def __init__(self, tour: str):
+        super().__init__()
+        self.tour = tour
+
+    def run(self):
+        try:
+            self.data_loaded.emit(ApiService.get_news(self.tour) or [])
+        except Exception as e:
+            self.error_occurred.emit(_said(e))
+
+
 class GolfScheduleLoader(QThread):
     data_loaded = pyqtSignal(list)
     error_occurred = pyqtSignal(str)
@@ -8926,6 +9053,28 @@ class TeamRosterLoader(QThread):
             self.data_loaded.emit(ApiService.get_team_roster(self.league, self.team_id))
         except Exception as e:
             self.error_occurred.emit(_said(e))
+
+
+class TeamStatsLoader(QThread):
+    """One of Team Hub's two stats lists: the team's players, or where the team ranks."""
+    data_loaded = pyqtSignal(str, dict)  # which list, what came
+    error_occurred = pyqtSignal(str, str)  # which list, what to say
+
+    def __init__(self, team_id: str, league: str, kind: str):
+        super().__init__()
+        self.team_id = team_id
+        self.league = league
+        self.kind = kind
+
+    def run(self):
+        try:
+            if self.kind == TeamHubDialog.STATS_PLAYERS:
+                data = ApiService.get_team_player_leaders(self.league, self.team_id)
+            else:
+                data = ApiService.get_team_stat_rankings(self.league, self.team_id)
+            self.data_loaded.emit(self.kind, data or {})
+        except Exception as e:
+            self.error_occurred.emit(self.kind, _said(e))
 
 
 class TeamNewsLoader(QThread):
@@ -10542,12 +10691,15 @@ class FantasyPlayerDialog(QDialog):
 
 
 class GolfTournamentDialog(QDialog):
-    """Golf tournament viewer: a leaderboard + the full season schedule.
+    """Golf tournament viewer: a leaderboard, the full season schedule, and the tour's news.
 
     The leaderboard opens on the tour's current tournament. Enter on a schedule row opens
     that tournament's leaderboard in its place (scoreboard?dates=YYYYMMDD, picked by id,
-    the way the iPhone opens a past tournament).
+    the way the iPhone opens a past tournament). The news is ESPN's for the tour, as on the
+    iPhone's golf screen, asked for the first time the tab is opened; Enter opens a story.
     """
+
+    LEADERBOARD_TAB, SCHEDULE_TAB, NEWS_TAB = range(3)
 
     _TOUR_NAMES = {"PGA": "PGA Tour", "LPGA": "LPGA Tour"}
 
@@ -10580,7 +10732,7 @@ class GolfTournamentDialog(QDialog):
         self.tournament_label.setAccessibleName("Tournament")
         layout.addWidget(self.tournament_label)
 
-        self.tab_widget = make_tab_area(2, f"{tour_name} sections")
+        self.tab_widget = make_tab_area(3, f"{tour_name} sections")
 
         self.leaderboard_list = QListWidget()
         self.leaderboard_list.setAccessibleName(f"{tour_name} Leaderboard")
@@ -10597,6 +10749,15 @@ class GolfTournamentDialog(QDialog):
         self.schedule_list.addItem("Loading schedule…")
         self.schedule_list.itemActivated.connect(self._open_tournament)
         self.tab_widget.addTab(self.schedule_list, "Schedule")
+
+        self.news_list = QListWidget()
+        self.news_list.setAccessibleName(f"{tour_name} News")
+        self.news_list.setAccessibleDescription("Golf news stories. Press Enter to open one in the browser.")
+        self.news_list.addItem("Loading news…")
+        self.news_list.itemActivated.connect(self._open_story)
+        self.tab_widget.addTab(self.news_list, "News")
+        self._news_asked = False
+        self.tab_widget.currentChanged.connect(self._on_tab_changed)
 
         layout.addWidget(self.tab_widget)
 
@@ -10755,6 +10916,38 @@ class GolfTournamentDialog(QDialog):
             item.setData(Qt.ItemDataRole.UserRole, event)
             self.schedule_list.addItem(item)
 
+    def _on_tab_changed(self, index):
+        if index == self.NEWS_TAB and not self._news_asked:
+            self._news_asked = True
+            self._load_news()
+
+    def _load_news(self):
+        loader = GolfNewsLoader(self.tour)
+        loader.data_loaded.connect(self._on_news_loaded)
+        loader.error_occurred.connect(lambda e: self._list_error(self.news_list, e))
+        self._loaders.append(loader)
+        loader.start()
+
+    def _on_news_loaded(self, articles: list):
+        self.news_list.clear()
+        if not articles:
+            self.news_list.addItem("No news available.")
+        for article in articles:
+            headline = article.get('headline') or "No headline"
+            description = article.get('description') or ""
+            item = QListWidgetItem(f"{headline}\n{description}" if description else headline)
+            item.setData(Qt.ItemDataRole.UserRole, article)
+            self.news_list.addItem(item)
+        self.news_list.setCurrentRow(0)
+
+    def _open_story(self, item):
+        """Enter on a story opens it in the browser, as the other news lists do."""
+        article = item.data(Qt.ItemDataRole.UserRole) if item is not None else None
+        if isinstance(article, dict):
+            url = article.get('web_url', '')
+            if url.startswith(('http://', 'https://')):
+                webbrowser.open(url)
+
     def _list_error(self, lw: QListWidget, error: str):
         self._failed_lists.add(lw)
         if lw is self.leaderboard_list:
@@ -10770,8 +10963,8 @@ class GolfTournamentDialog(QDialog):
         if event.key() == Qt.Key.Key_Escape:
             self.accept()
         elif event.key() in (Qt.Key.Key_Return, Qt.Key.Key_Enter) and \
-                self.focusWidget() in (self.leaderboard_list, self.schedule_list):
-            # The list has acted on it (a schedule row opens); it mustn't press Close too.
+                self.focusWidget() in (self.leaderboard_list, self.schedule_list, self.news_list):
+            # The list has acted on it (a schedule row or a story opens); it mustn't press Close too.
             event.accept()
         elif event.key() == Qt.Key.Key_F5:
             # Only what failed: what loaded stays as it is.
@@ -10780,6 +10973,11 @@ class GolfTournamentDialog(QDialog):
                 self._load_leaderboard()
             if self.schedule_list in failed:
                 self._load_schedule()
+            if self.news_list in failed:
+                self.news_list.clear()
+                self.news_list.addItem("Loading news…")
+                self.news_list.setCurrentRow(0)
+                self._load_news()
         else:
             super().keyPressEvent(event)
 

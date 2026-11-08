@@ -8,7 +8,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
-<<<<<<< HEAD
+- **Windows: a Stats tab in Team Hub, and golf news (#196).** Two things the iPhone had.
+  - Team Hub's new **Stats** tab (Alt+A), after Roster as on the iPhone, has a **Show** box (Alt+W) with
+    **Players**, the team's leaders in each category ranked within the team, and **Team**, where the team
+    ranks in the league in each of its statistics. Both are in one table with the three view modes, say
+    which season they're from, and say so if they can't be loaded. They come from the same places as the
+    iPhone's: ESPN's leaders for the one team, and the core API's statistics for the team ranked against
+    the league's team statistics, so a rank matches the league's Statistics screen. Soccer and college
+    hockey have the Team ranks only for now.
+  - The golf dialog has a **News** tab with ESPN's PGA Tour or LPGA Tour stories; Enter opens one in your
+    browser, and F5 tries again if they couldn't be loaded.
+  - A shared file, `tests/fixtures/team_hub_stats_grid.json`, holds both apps' Stats tabs to the same rows.
 - **MLB win probability and season series on Windows, as on the iPhone (#194).** An MLB game's details
   have a **Win probability** row ("Win probability: Mets 70%") and a season series row ("Regular Season
   Series: Mets lead 7-5"). Enter on the first opens the chances by inning, after every play, and the five
@@ -19,14 +29,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   since it can be wrong (in one World Series game it gave the wrong team the lead). Both round win
   percentages the same way: the iPhone's chart used to cut 69.8% to 69% and called a live game's chances
   "Final". The unreachable Kitchen Sink dialog these came from is gone.
-=======
 - **Past football seasons on Windows (#192).** In the NFL and college football scores lists, Ctrl+G (or
   **Go to Season**) opens a list of seasons, back to 2001 for the NFL and 2005 for college football, as on
   the iPhone. A past season opens on its regular season Week 1, and the week and season are spoken and put
   in the window title ("Week 1, 2019 season"). Alt+P and Alt+N step through that season and say when they
   reach its first or last week. The current season is first in the list, and choosing it goes back to this
   week. Nothing is kept between launches.
->>>>>>> origin/main
 - **Listen to the game.** For the NFL, NBA, NHL, and college football and basketball (the SEC, Big Ten,
   ACC, Big 12 and Notre Dame), Scores lists where to hear a game: each team's radio and the services that
   carry every game, such as SiriusXM. Each opens in your browser, or on the iPhone in the service's app;

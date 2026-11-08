@@ -16,6 +16,7 @@ from soccer import (SOCCER_LEAGUES, TORNEO_LEAGUES, _stat_number, leaders_season
 import stat_glossary
 from team_list import STANDINGS as TEAM_LIST_FROM_STANDINGS, parse_team_list, with_standings
 from team_list import source as team_list_source
+import team_stats
 from team_stats import needs_team_list, parse_team_stats
 from timezone_utils import convert_espn_time_to_local
 
@@ -2697,6 +2698,10 @@ LOW_IS_GOOD_LEADERS = {"avgGoalsAgainst", "ERA", "WHIP", "opponentAvg"}
 # No qualifying minimum in practice: 2026's list opens with 13 players on .000, catchers and
 # outfielders among them. The iPhone leaves it out too.
 LEADERS_NOT_SHOWN = {"opponentAvg"}
+# A team's answer has these as well, repeating its yards lists with the same players.
+REPEATED_FOR_ONE_TEAM = {"passingLeader", "rushingLeader", "receivingLeader"}
+# What one team's ranks are, since the same season words on the league's list mean the league.
+ONE_TEAM_RANKS = "ranked within this team, qualified players first"
 
 
 def _no_leaders():
@@ -2751,18 +2756,21 @@ def regular_season_just_began(season):
     return 0 <= days <= NEW_SEASON_DAYS
 
 
-def _fetch_leaders(league_path, year, season_type=REGULAR_SEASON):
+def _fetch_leaders(league_path, year, season_type=REGULAR_SEASON, team_id=None):
     """A season's leaders from /leaders, the regular season's unless asked for another type, or
     None if ESPN has no such season. Without `seasontype`, a finished season's answer is its
     postseason; soccer's answer is the wrong season or a 500 without `season`, and a 404 or a
     playoff round's without `seasontype`. A second try at the full list gets a throwaway
-    parameter, since ESPN can cache a 500 for up to 30 seconds."""
+    parameter, since ESPN can cache a 500 for up to 30 seconds.
+    `team_id` asks for one team's players, up to 20 of them in every category it has anyone in."""
     attempts = [{"limit": LEADERS_LIMIT}, {"limit": LEADERS_LIMIT, "_": int(time.time() * 1000)}]
     attempts += [{"limit": limit} for limit in LEADERS_SMALLER_LIMITS]
     for attempt in attempts:
         if "_" in attempt:
             time.sleep(1)
         params = {"region": "us", "lang": "en", "season": year, "seasontype": season_type, **attempt}
+        if team_id is not None:
+            params["team"] = team_id
         try:
             resp = _http_get(f"{LEADERS_BASE_URL}/{league_path}/leaders", params=params, timeout=15)
             answer = resp.json() if resp.status_code == 200 else None
@@ -2795,13 +2803,19 @@ def _leaders_in_order(key, leaders):
     return kept
 
 
-def _parse_leaders(data):
+def _parse_leaders(data, one_team=False):
     """/leaders to the rows the dialog shows, in ESPN's order, which is best first even for a
     stat where low is good. A league's ratings can be there with nobody rated, such as the WNBA's
     Player Efficiency Rating, where the leaders all read 0.0: that isn't a list of leaders.
     Asked for a past college football season's regular season, ESPN answers with type 3, and
     the numbers run through the bowl games, so "Season" says what they are and "Postseason"
-    doesn't: 4379 passing yards for 2025, where the core API's type 2 says 4129."""
+    doesn't: 4379 passing yards for 2025, where the core API's type 2 says 4129.
+
+    `one_team` is an answer for one team, for Team Hub. It has qualified players first and then
+    everyone else, and Team Hub shows them all, so its lists aren't cut where the numbers turn
+    back up: that would lose a real player, such as Tyler Herro on 20.5 points, listed after a
+    teammate on 5.6. Its passing, rushing and receiving "leader" lists repeat its yards lists, and
+    its season says the ranks are within the team. The iPhone: leaderCategories(oneTeam:)."""
     data = _as_dict(data)
     requested = _as_dict(data.get("requestedSeason"))
     season_type = _as_dict(requested.get("type"))
@@ -2811,10 +2825,12 @@ def _parse_leaders(data):
     categories = []
     for category in _dicts(_as_dict(data.get("leaders")).get("categories")):
         key = category.get("name") or "unknown"
-        if key in LEADERS_NOT_SHOWN:
+        if key in LEADERS_NOT_SHOWN or (one_team and key in REPEATED_FOR_ONE_TEAM):
             continue
         title = category.get("displayName") or key.title()
-        leaders = _leaders_in_order(key, _dicts(category.get("leaders")))
+        leaders = _dicts(category.get("leaders"))
+        if not one_team:
+            leaders = _leaders_in_order(key, leaders)
         if all(not leader.get("value") for leader in leaders):
             continue
         stats = []
@@ -2835,11 +2851,37 @@ def _parse_leaders(data):
     if not categories:
         return _no_leaders()
     name = "Season" if season_type.get("type") == POSTSEASON else season_type.get("name")
-    return {"player_stats": categories, "team_stats": [], "season": _season_label(requested.get("displayName"), name)}
+    season = _season_label(requested.get("displayName"), name)
+    if one_team:
+        season = f"{season}, {ONE_TEAM_RANKS}" if season else ONE_TEAM_RANKS[0].upper() + ONE_TEAM_RANKS[1:]
+    return {"player_stats": categories, "team_stats": [], "season": season}
 
 
 def _season_label(year_name, type_name):
     return " ".join(str(part) for part in (year_name, type_name) if part)
+
+
+def get_team_player_leaders(league_key, team_id):
+    """One team's players in each stat category, ranked among themselves, for Team Hub's Stats
+    tab, as {player_stats, team_stats, season}: /leaders with team=, from the same season as
+    get_player_statistics. The league's list wouldn't do: 20 rows of it had no Blackhawks in any
+    category. Empty for a league without /leaders. A failed request raises ApiError.
+
+    The iPhone also has soccer and college hockey, from the core API's whole league filtered to
+    the team, which Windows doesn't read for a team yet."""
+    key = league_key if league_key in LEAGUES else str(league_key).upper()
+    if key not in LEADER_LEAGUES:
+        return _no_leaders()
+    league_path = LEAGUES[key]
+    year = _leaders_season(league_path)
+    answers = [_fetch_leaders(league_path, year, team_id=team_id)]
+    result = _parse_leaders(answers[0], one_team=True)
+    if not result["player_stats"]:
+        answers.append(_fetch_leaders(league_path, year - 1, team_id=team_id))
+        result = _parse_leaders(answers[1], one_team=True)
+    if not any(answer is not None for answer in answers):
+        raise ApiError(STATISTICS_UNAVAILABLE)
+    return result
 
 
 def get_player_statistics(league_key):
@@ -3000,7 +3042,15 @@ def _with_every_team(league_path, year, data):
     return {**data, "teams": list(every.values())}
 
 
-def _parse_team_stats(key, league_path, data):
+def _division_one_list(key, league_path, data):
+    """ESPN's team list, for a college basketball answer that needs it to tell Division I teams
+    apart (see team_stats.qualified_teams), or None."""
+    if key not in TEAM_STATS_NEEDS_TEAM_LIST or not needs_team_list(data):
+        return None
+    return _division_one_ids(league_path)
+
+
+def _parse_team_stats(key, league_path, data, team_list=None):
     """The result for one season's answer. Asked for a past college football season's regular
     season, ESPN answers with type 3, with the numbers running through the bowl games, so "Season"
     says what they are, as it does for the leaders. If there are still fewer teams than ESPN says it
@@ -3010,9 +3060,6 @@ def _parse_team_stats(key, league_path, data):
     season_type = _as_dict(requested.get("type"))
     if season_type.get("type") == PRESEASON:
         return _no_team_stats()
-    team_list = None
-    if key in TEAM_STATS_NEEDS_TEAM_LIST and needs_team_list(data):
-        team_list = _division_one_ids(league_path)
     team_stats = parse_team_stats(data, league_path.split("/")[0], team_list)
     if not team_stats:
         return _no_team_stats()
@@ -3033,7 +3080,12 @@ def get_team_statistics(league_key):
     key = league_key if league_key in LEAGUES else league_key.upper()
     if key not in TEAM_STAT_LEAGUES:
         return _no_team_stats()
-    league_path = LEAGUES[key]
+    return _latest_team_stats(key, LEAGUES[key])[0]
+
+
+def _latest_team_stats(key, league_path):
+    """(get_team_statistics' result, the answer it came from with every team, its team list),
+    with None for the answer when there's nothing to show."""
     season = core_season(league_path)
     year = latest_regular_season(season)
     # A new regular season can start with nobody on the list yet, or be a 404 or for its first days
@@ -3049,12 +3101,98 @@ def get_team_statistics(league_key):
             answer = None
         answers.append(answer)
         if answer is not None:
-            result = _parse_team_stats(key, league_path, _with_every_team(league_path, season_year, answer))
+            answer = _with_every_team(league_path, season_year, answer)
+            preseason = _as_dict(_as_dict(answer.get("requestedSeason")).get("type")).get("type") == PRESEASON
+            team_list = None if preseason else _division_one_list(key, league_path, answer)
+            result = _parse_team_stats(key, league_path, answer, team_list)
             if result["team_stats"]:
-                return result
+                return result, answer, team_list
     if not any(answer is not None for answer in answers):
         raise ApiError(STATISTICS_UNAVAILABLE)
-    return _no_team_stats()
+    return _no_team_stats(), None, None
+
+
+# Team Hub's ranks. The core API's statistics for one team, the regular season (soccer files its
+# whole league season under type 1), this season's or the last.
+HUB_SEASON_TYPE = 2
+SOCCER_SEASON_TYPE = 1
+
+
+def _core_season_name(league_path, year, season):
+    """What ESPN calls a season, such as "2026-27" or "2025-26 English Premier League". `season` is
+    the core API's current one, so only an earlier season takes a request. If that fails, the year
+    still says it isn't this season's."""
+    if season.get("year") == year and season.get("displayName"):
+        return season["displayName"]
+    sport, league = league_path.split("/", 1)
+    try:
+        resp = _http_get(f"{CORE_BASE_URL}/{sport}/leagues/{league}/seasons/{year}", timeout=10)
+        name = _as_dict(resp.json()).get("displayName") if resp.status_code == 200 else None
+    except (requests.RequestException, ValueError):
+        name = None
+    return name or str(year)
+
+
+def _network_failed(error):
+    """Whether an ApiError was the network not getting through rather than ESPN answering badly."""
+    return isinstance(error.__cause__, (requests.ConnectionError, requests.Timeout))
+
+
+def get_team_stat_rankings(league_key, team_id):
+    """Where one team ranks in each of its stats, for Team Hub's Stats tab, as {rankings, season}:
+    team_stats.hub_rankings' rows and what season they're from. As on the iPhone
+    (fetchTeamStatRankings), the stats come from the core API's statistics for the team, and a
+    rank from the league's byteam list where it has the stat, if it's the same season's regular
+    season. Not having that list only costs the ranks that come from it, unless the network didn't
+    get through, which fails the lot. Empty rankings means ESPN has none to show. A failed request
+    raises ApiError, which the iPhone treats as no rankings."""
+    key = league_key if league_key in LEAGUES else str(league_key).upper()
+    league_path = LEAGUES.get(key)
+    if not league_path or key in GOLF_TOURS:
+        return {"rankings": [], "season": ""}
+    sport, league = league_path.split("/", 1)
+
+    answer, team_list = None, None
+    if key in TEAM_STAT_LEAGUES:
+        try:
+            _result, answer, team_list = _latest_team_stats(key, league_path)
+        except ApiError as e:
+            if _network_failed(e):
+                raise
+
+    season = core_season(league_path)
+    soccer = key in SOCCER_LEAGUES
+    year = season["year"] if soccer else latest_regular_season(season)
+    season_type = SOCCER_SEASON_TYPE if soccer else HUB_SEASON_TYPE
+    for season_year in (year, year - 1):
+        url = (f"{CORE_BASE_URL}/{sport}/leagues/{league}/seasons/{season_year}"
+               f"/types/{season_type}/teams/{team_id}/statistics")
+        try:
+            resp = _http_get(url, timeout=15)
+            data = resp.json() if resp.status_code == 200 else None
+        except (requests.RequestException, ValueError) as e:
+            raise ApiError(STATISTICS_UNAVAILABLE) from e
+        if resp.status_code == 404:
+            continue  # No such season for this team.
+        if resp.status_code != 200:
+            # A new season's first days can be a 500 for now, as byteam's are.
+            if resp.status_code >= 500 and season_year == year and regular_season_just_began(season):
+                continue
+            raise ApiError(STATISTICS_UNAVAILABLE)
+        if not isinstance(data, dict):
+            raise ApiError(STATISTICS_UNAVAILABLE)
+        # Only if it's the same numbers, or the rank would be for others. A past college football
+        # list is type 3 through the bowls, where these are type 2: Alabama's 3,551 passing yards in
+        # 2025 are 11th, and that list has 3,953, 6th.
+        requested = _as_dict((answer or {}).get("requestedSeason"))
+        same = (answer is not None and requested.get("year") == season_year
+                and _as_dict(requested.get("type")).get("type") == REGULAR_SEASON)
+        ranks = team_stats.LeagueRanks(answer, sport, team_list) if same else None
+        rankings = team_stats.hub_rankings(data, team_id, key.startswith("NCAA"), ranks)
+        if rankings:
+            name = _core_season_name(league_path, season_year, season)
+            return {"rankings": rankings, "season": name if soccer else f"{name} Regular Season"}
+    return {"rankings": [], "season": ""}
 
 
 def league_sport(league_key):

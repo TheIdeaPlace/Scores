@@ -909,4 +909,47 @@ final class TeamStatsRequestTests: XCTestCase {
         let rankings = try await service.fetchTeamStatRankings(teamId: "22", sport: .nfl)
         XCTAssertTrue(rankings.isEmpty)
     }
+
+    // MARK: The same as Windows
+
+    private struct HubGrid: Decodable {
+        struct Row: Decodable {
+            let section: String
+            let category: String
+            let value: String
+            let rank: String
+        }
+        struct Case: Decodable {
+            let sport: String
+            let teamId: String
+            let core: String
+            let byteam: String
+            let rows: [Row]
+        }
+        let team: [Case]
+    }
+
+    /// tests/fixtures/team_hub_stats_grid.json holds what Windows's Team Hub shows for the same
+    /// answers, grouped by section as TeamStatsTabView shows them.
+    func testTheHubReadsAsTheSharedGridSays() async throws {
+        let url = Fixtures.repoRoot.appendingPathComponent("tests/fixtures/team_hub_stats_grid.json")
+        let grid = try JSONDecoder().decode(HubGrid.self, from: Data(contentsOf: url))
+        XCTAssertGreaterThanOrEqual(grid.team.count, 5)
+        for item in grid.team {
+            // A service of its own, so no case is ranked against a league list another case left in the store.
+            let config = URLSessionConfiguration.ephemeral
+            config.protocolClasses = [TeamStatsESPN.self]
+            service = ESPNAPIService(session: URLSession(configuration: config))
+            let sport = try XCTUnwrap(Sport(rawValue: item.sport), item.sport)
+            let rankings = try await hub(sport: sport, teamId: item.teamId, core: item.core, byteam: item.byteam)
+            let order = rankings.map(\.sectionName).reduce(into: [String]()) { if !$0.contains($1) { $0.append($1) } }
+            let shown = order.flatMap { section in rankings.filter { $0.sectionName == section } }
+            let rows = shown.map { [$0.sectionName, $0.categoryDisplayName, $0.teamValue, $0.rankDisplay] }
+            let expected = item.rows.map { [$0.section, $0.category, $0.value, $0.rank] }
+            XCTAssertEqual(rows.count, expected.count, item.core)
+            for (index, (row, want)) in zip(rows, expected).enumerated() {
+                XCTAssertEqual(row, want, "\(item.core) row \(index)")
+            }
+        }
+    }
 }

@@ -250,6 +250,187 @@ RANKING_HEADERS = {
 }
 
 
+# ---------------------------------------------------------------- One team's ranks (Team Hub)
+#
+# Team Hub's Stats tab, as on the iPhone (ESPNAPIService.fetchTeamStatRankings): the core API's
+# statistics for one team say which stats it has and their values, and the rank comes from the
+# league's byteam list where that has the stat, so it's what the league list says. Where it doesn't,
+# ESPN's own rank from the core API is used if it can be believed.
+
+# Stat names that are technical, trivial or repeated, which Team Hub leaves out. The iPhone's list.
+HUB_EXCLUDED = {
+    "gamesPlayed", "teamGamesPlayed", "isQualified", "isQualifiedSteals",
+    "isQualifiedCatcher", "isQualifiedPitcher", "playerRating", "pitcherRating",
+    "batterRating", "MLBRating", "projectedHomeRuns", "WAR", "DWAR", "OWAR",
+    "thirdInnings", "pitchesAsStarter", "pitchesPerStart", "gameScore",
+    "pitchCount", "strikes", "strikesToPitchRatio", "pickoffAttempts",
+    "runsCreated", "runsCreatedPer27Outs", "secondaryAvgMinusBA",
+    "pinchAvg", "pinchHits", "pinchAtBats", "fullInnings", "partInnings",
+    "catcherInterference", "gameWinningRBIs", "sacHits", "sacBunts",
+    "sacFlies", "atBats", "plateAppearances", "pitches", "battersFaced",
+    "thirdInningsPlayed", "saveOpportunitiesPerWin", "inheritedRunners",
+    "inheritedRunnersScored", "blownSaves", "groundBalls", "flyBalls",
+    "runSupportAvg", "groundToFlyRatio", "pitchesPerInning",
+}
+# With no list the team is on to say how many teams there are, a rank past these is against
+# individual players or another pool: NFL kick return fair catch percentage reads 200th. 34 is more
+# than any pro league has, and 400 more than Division I.
+HUB_MOST_PRO_TEAMS = 34
+HUB_MOST_COLLEGE_TEAMS = 400
+# ESPN's rank for a stat everyone has nothing in, or that it can't rank.
+HUB_RANKS_NOT_SHOWN = {"", "?", "Tied-1st"}
+
+
+def ordinal(number):
+    """1st, 2nd, 3rd, 11th, 21st, 113th."""
+    if 11 <= number % 100 <= 13:
+        return f"{number}th"
+    return f"{number}{ {1: 'st', 2: 'nd', 3: 'rd'}.get(number % 10, 'th') }"
+
+
+def rank_display(rank, tied, out_of=None):
+    """"9th", "Tied-9th", as ESPN writes them. A college list says what it's out of: "118th" is a
+    good team among 300 and a bad one among 32, and a pro fan knows how many teams there are."""
+    place = ("Tied-" if tied else "") + ordinal(rank)
+    return place if out_of is None else f"{place} of {out_of}"
+
+
+class LeagueRanks:
+    """A season's byteam answer, ready to say where one team stands in one of its stats, the same
+    as reading it off the league list. The iPhone's LeagueTeamStats. `team_list` is for college
+    basketball: see qualified_teams."""
+
+    def __init__(self, data, sport, team_list=None):
+        data = data if isinstance(data, dict) else {}
+        self.sport = sport
+        self.teams = _dicts(data.get("teams")) if team_list is None else qualified_teams(data, team_list)
+        self.team_ids = {str(_team_info(team).get("id")) for team in self.teams}
+        # Lower-case section to stat name to column. The core API writes "defensiveInterceptions"
+        # where byteam writes "defensiveinterceptions". A stat named twice in a section has the
+        # same number both times, and the first is the one to use.
+        self._columns = {}
+        for section, (names, _titles) in _columns(data).items():
+            index = {}
+            for position, name in enumerate(names):
+                index.setdefault(name, position)
+            self._columns.setdefault(section.lower(), index)
+
+    def _values(self, section, stat):
+        """{team id: number} for the teams with a number for it, their own, not their opponents'."""
+        column = self._columns.get(section.lower(), {}).get(stat)
+        if column is None:
+            return {}
+        values = {}
+        for team in self.teams:
+            block = next((b for b in _dicts(team.get("categories"))
+                          if str(b.get("name") or "").lower() == section.lower() and not _is_opponent(b)), None)
+            if block is None:
+                continue
+            totals, numbers = _list(block.get("totals")), _list(block.get("values"))
+            total = totals[column] if column < len(totals) else None
+            value = numbers[column] if column < len(numbers) else None
+            if value is None and total == "0":
+                value = 0  # An NHL team yet to go to a shootout has "0" with a null.
+            if total not in (None, "", "-") and _is_number(value):
+                values[str(_team_info(team).get("id"))] = value
+        return values
+
+    def standing(self, team_id, section, stat):
+        """(rank, tied) for the team in one of its stats, or None if this list doesn't have it.
+        One plus how many teams are better, so teams level share a rank."""
+        values = self._values(section, stat)
+        own = values.get(str(team_id))
+        if own is None:
+            return None
+        low = low_is_good(self.sport, section.lower(), stat)
+        better = sum(1 for value in values.values() if (value < own if low else value > own))
+        return 1 + better, sum(1 for value in values.values() if value == own) > 1
+
+
+def _team_info(team):
+    return team.get("team") if isinstance(team.get("team"), dict) else {}
+
+
+def _espn_rank(stat, highest):
+    """ESPN's rank and how it writes it, if it can be believed."""
+    rank, shown = stat.get("rank"), stat.get("rankDisplayValue")
+    if isinstance(rank, float) and rank.is_integer():
+        rank = int(rank)
+    if not isinstance(rank, int) or isinstance(rank, bool) or rank > highest:
+        return None
+    if not isinstance(shown, str) or shown in HUB_RANKS_NOT_SHOWN:
+        return None
+    return rank, shown
+
+
+def hub_rankings(core, team_id, college, league=None):
+    """The core API's statistics for one team as the rows Team Hub shows: {section, category,
+    value, rank, rank_display, league_size}, grouped by section in the order they first come.
+
+    `league` is the LeagueRanks of the same season's regular season, or None. A stat it has is
+    ranked against the list, so it agrees with the league's Statistics screen. Fielding, the stats
+    in HUB_EXCLUDED and a value of nothing are left out, and so is a stat with only ESPN's rank to
+    go on when that rank says nothing: past the end of the league, "?" or everyone tied first.
+    Montana is in FCS, and college football's list is FBS, so a team not on the list has no size."""
+    listed = league if league is not None and str(team_id) in league.team_ids else None
+    size = len(listed.team_ids) if listed is not None else None
+    highest = size or (HUB_MOST_COLLEGE_TEAMS if college else HUB_MOST_PRO_TEAMS)
+    out_of = size if college else None
+
+    sections = {}
+    splits = _as_dict(_as_dict(core).get("splits"))
+    for category in _dicts(splits.get("categories")):
+        section_name = category.get("displayName")
+        if not isinstance(section_name, str) or section_name == "Fielding":
+            continue
+        section = category.get("name")
+        for stat in _dicts(category.get("stats")):
+            name, title, value = stat.get("name"), stat.get("displayName"), stat.get("displayValue")
+            if not all(isinstance(text, str) for text in (name, title, value)):
+                continue
+            if name in HUB_EXCLUDED or value in ("0", "0.0"):
+                continue
+            standing = listed.standing(team_id, section, name) if listed and isinstance(section, str) else None
+            if standing:
+                rank, shown = standing[0], rank_display(*standing, out_of)
+            else:
+                espn = _espn_rank(stat, highest)
+                if espn is None:
+                    continue
+                rank, shown = espn[0], espn[1] if out_of is None else f"{espn[1]} of {out_of}"
+            sections.setdefault(section_name, []).append({
+                "section": section_name, "category": title, "value": value,
+                "rank": rank, "rank_display": shown, "league_size": size,
+            })
+    return [row for rows in sections.values() for row in rows]
+
+
+def _as_dict(value):
+    return value if isinstance(value, dict) else {}
+
+
+HUB_HEADERS = {
+    "players": ["Category", "Rank", "Player", "Value"],
+    "team": ["Section", "Category", "Value", "Rank"],
+}
+
+
+def hub_player_rows(categories):
+    """One team's leaders as rows for HUB_HEADERS["players"]: each category's players, ranked among
+    themselves by the number as shown, as the league's list ranks its players."""
+    rows = []
+    for category in categories:
+        title = category.get("category") or "Unknown"
+        for rank, player, _team, value in ranking_rows("player", category.get("stats", [])):
+            rows.append([title, rank, player, value])
+    return rows
+
+
+def hub_team_rows(rankings):
+    """One team's ranks as rows for HUB_HEADERS["team"]."""
+    return [[row["section"], row["category"], row["value"], row["rank_display"]] for row in rankings]
+
+
 def _shown(value):
     return "" if value is None else value
 

@@ -1,0 +1,3418 @@
+{
+ "note": "What Team Hub's Stats tab shows for real answers, on both apps. players: one team's /leaders (team=), each category's players ranked within the team. team: the core API's statistics for one team, ranked against the league's byteam list where it has the stat and the same season's regular season, or by ESPN's own rank where that can be believed; grouped by section in the order they first come. tests/unit/test_team_hub_stats.py checks Windows, and LeagueLeadersTests.swift and TeamStatsTests.swift the iPhone.",
+ "players": [
+  {
+   "fixture": "leaders_v3_team_NBA_14.json",
+   "season": "2025-26 Regular Season, ranked within this team, qualified players first",
+   "categories": [
+    {
+     "title": "Points Per Game",
+     "rows": [
+      {
+       "rank": 1,
+       "player": "Norman Powell",
+       "value": "21.7"
+      },
+      {
+       "rank": 2,
+       "player": "Bam Adebayo",
+       "value": "20.1"
+      },
+      {
+       "rank": 3,
+       "player": "Andrew Wiggins",
+       "value": "15.4"
+      },
+      {
+       "rank": 3,
+       "player": "Jaime Jaquez Jr.",
+       "value": "15.4"
+      },
+      {
+       "rank": 5,
+       "player": "Pelle Larsson",
+       "value": "11.4"
+      },
+      {
+       "rank": 6,
+       "player": "Kel'el Ware",
+       "value": "11.1"
+      },
+      {
+       "rank": 7,
+       "player": "Davion Mitchell",
+       "value": "9.3"
+      },
+      {
+       "rank": 8,
+       "player": "Simone Fontecchio",
+       "value": "8.5"
+      },
+      {
+       "rank": 9,
+       "player": "Kasparas Jakucionis",
+       "value": "6.2"
+      },
+      {
+       "rank": 10,
+       "player": "Dru Smith",
+       "value": "5.6"
+      },
+      {
+       "rank": 11,
+       "player": "Tyler Herro",
+       "value": "20.5"
+      },
+      {
+       "rank": 12,
+       "player": "Nikola Jovic",
+       "value": "7.3"
+      },
+      {
+       "rank": 13,
+       "player": "Keshad Johnson",
+       "value": "4.2"
+      }
+     ]
+    },
+    {
+     "title": "Field Goal Percentage",
+     "rows": [
+      {
+       "rank": 1,
+       "player": "Kel'el Ware",
+       "value": "53.0"
+      },
+      {
+       "rank": 2,
+       "player": "Jaime Jaquez Jr.",
+       "value": "50.7"
+      },
+      {
+       "rank": 3,
+       "player": "Andrew Wiggins",
+       "value": "47.5"
+      },
+      {
+       "rank": 4,
+       "player": "Norman Powell",
+       "value": "47.0"
+      },
+      {
+       "rank": 5,
+       "player": "Bam Adebayo",
+       "value": "44.2"
+      },
+      {
+       "rank": 6,
+       "player": "Vladislav Goldin",
+       "value": "75.0"
+      },
+      {
+       "rank": 7,
+       "player": "Pelle Larsson",
+       "value": "49.6"
+      },
+      {
+       "rank": 8,
+       "player": "Keshad Johnson",
+       "value": "49.0"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "fixture": "leaders_v3_team_MLB_30.json",
+   "season": "2026 Regular Season, ranked within this team, qualified players first",
+   "categories": [
+    {
+     "title": "On Base Percentage",
+     "rows": [
+      {
+       "rank": 1,
+       "player": "Junior Caminero",
+       "value": ".360"
+      },
+      {
+       "rank": 2,
+       "player": "Yandy Diaz",
+       "value": ".359"
+      },
+      {
+       "rank": 3,
+       "player": "Jonathan Aranda",
+       "value": ".358"
+      },
+      {
+       "rank": 4,
+       "player": "Chandler Simpson",
+       "value": ".333"
+      }
+     ]
+    },
+    {
+     "title": "Earned Run Average",
+     "rows": [
+      {
+       "rank": 1,
+       "player": "Drew Rasmussen",
+       "value": "2.67"
+      },
+      {
+       "rank": 2,
+       "player": "Nick Martinez",
+       "value": "3.10"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "fixture": "leaders_v3_team_NFL_3.json",
+   "season": "2025 Regular Season, ranked within this team, qualified players first",
+   "categories": [
+    {
+     "title": "Passing Yards",
+     "rows": [
+      {
+       "rank": 1,
+       "player": "Caleb Williams",
+       "value": "3,942"
+      },
+      {
+       "rank": 2,
+       "player": "Tyson Bagent",
+       "value": "47"
+      },
+      {
+       "rank": 3,
+       "player": "DJ Moore",
+       "value": "2"
+      },
+      {
+       "rank": 4,
+       "player": "Cole Kmet",
+       "value": "0"
+      }
+     ]
+    },
+    {
+     "title": "Sacks",
+     "rows": [
+      {
+       "rank": 1,
+       "player": "Montez Sweat",
+       "value": "10"
+      },
+      {
+       "rank": 2,
+       "player": "Gervon Dexter Sr.",
+       "value": "6"
+      },
+      {
+       "rank": 3,
+       "player": "Austin Booker",
+       "value": "4.5"
+      },
+      {
+       "rank": 4,
+       "player": "C.J. Gardner-Johnson",
+       "value": "3"
+      },
+      {
+       "rank": 5,
+       "player": "Grady Jarrett",
+       "value": "1.5"
+      },
+      {
+       "rank": 5,
+       "player": "Dominique Robinson",
+       "value": "1.5"
+      }
+     ]
+    }
+   ]
+  }
+ ],
+ "team": [
+  {
+   "sport": "NBA",
+   "teamId": "29",
+   "core": "core_team_stats_NBA_29.json",
+   "byteam": "byteam_NBA.json",
+   "rows": [
+    {
+     "section": "Defensive",
+     "category": "Blocks",
+     "value": "41",
+     "rank": "Tied-9th"
+    },
+    {
+     "section": "Defensive",
+     "category": "Defensive Rebounds",
+     "value": "258",
+     "rank": "2nd"
+    },
+    {
+     "section": "Defensive",
+     "category": "Steals",
+     "value": "42",
+     "rank": "29th"
+    },
+    {
+     "section": "Defensive",
+     "category": "Defensive Rebounds Per Game",
+     "value": "36.9",
+     "rank": "1st"
+    },
+    {
+     "section": "Defensive",
+     "category": "Blocks Per Game",
+     "value": "5.9",
+     "rank": "8th"
+    },
+    {
+     "section": "Defensive",
+     "category": "Steals Per Game",
+     "value": "6.0",
+     "rank": "29th"
+    },
+    {
+     "section": "General",
+     "category": "Disqualifications",
+     "value": "1",
+     "rank": "Tied-3rd"
+    },
+    {
+     "section": "General",
+     "category": "Fouls",
+     "value": "181",
+     "rank": "27th"
+    },
+    {
+     "section": "General",
+     "category": "Rebound Rate",
+     "value": "58.2",
+     "rank": "2nd"
+    },
+    {
+     "section": "General",
+     "category": "Technical Fouls",
+     "value": "10",
+     "rank": "Tied-14th"
+    },
+    {
+     "section": "General",
+     "category": "Rebounds",
+     "value": "348",
+     "rank": "5th"
+    },
+    {
+     "section": "General",
+     "category": "Rebounds Per Game",
+     "value": "49.7",
+     "rank": "2nd"
+    },
+    {
+     "section": "General",
+     "category": "Fouls Per Game",
+     "value": "25.9",
+     "rank": "29th"
+    },
+    {
+     "section": "General",
+     "category": "Assist To Turnover Ratio",
+     "value": "1.8",
+     "rank": "10th"
+    },
+    {
+     "section": "General",
+     "category": "Rebounds",
+     "value": "348",
+     "rank": "5th"
+    },
+    {
+     "section": "General",
+     "category": "Assist To Turnover Ratio",
+     "value": "27.4",
+     "rank": "23rd"
+    },
+    {
+     "section": "Offensive",
+     "category": "Assists",
+     "value": "192",
+     "rank": "Tied-11th"
+    },
+    {
+     "section": "Offensive",
+     "category": "Effective Field Goal Percentage",
+     "value": "56.6",
+     "rank": "3rd"
+    },
+    {
+     "section": "Offensive",
+     "category": "Field Goals Attempted",
+     "value": "638",
+     "rank": "13th"
+    },
+    {
+     "section": "Offensive",
+     "category": "Field Goals Made",
+     "value": "304",
+     "rank": "9th"
+    },
+    {
+     "section": "Offensive",
+     "category": "Field Goal Percentage",
+     "value": "47.6",
+     "rank": "6th"
+    },
+    {
+     "section": "Offensive",
+     "category": "Free Throw Percentage",
+     "value": "84.2",
+     "rank": "2nd"
+    },
+    {
+     "section": "Offensive",
+     "category": "Free Throws Attempted",
+     "value": "165",
+     "rank": "21st"
+    },
+    {
+     "section": "Offensive",
+     "category": "Free Throws Made",
+     "value": "139",
+     "rank": "13th"
+    },
+    {
+     "section": "Offensive",
+     "category": "Offensive Rebounds",
+     "value": "90",
+     "rank": "Tied-10th"
+    },
+    {
+     "section": "Offensive",
+     "category": "Points",
+     "value": "861",
+     "rank": "8th"
+    },
+    {
+     "section": "Offensive",
+     "category": "Turnovers",
+     "value": "105",
+     "rank": "13th"
+    },
+    {
+     "section": "Offensive",
+     "category": "3-Point Field Goal Percentage",
+     "value": "42.1",
+     "rank": "1st"
+    },
+    {
+     "section": "Offensive",
+     "category": "3-Point Field Goals Attempted",
+     "value": "271",
+     "rank": "14th"
+    },
+    {
+     "section": "Offensive",
+     "category": "3-Point Field Goals Made",
+     "value": "114",
+     "rank": "5th"
+    },
+    {
+     "section": "Offensive",
+     "category": "True Shooting Percentage",
+     "value": "60.6",
+     "rank": "3rd"
+    },
+    {
+     "section": "Offensive",
+     "category": "Team Turnovers",
+     "value": "7",
+     "rank": "Tied-3rd"
+    },
+    {
+     "section": "Offensive",
+     "category": "Assist Ratio",
+     "value": "18.9",
+     "rank": "5th"
+    },
+    {
+     "section": "Offensive",
+     "category": "Points in the Paint",
+     "value": "338",
+     "rank": "10th"
+    },
+    {
+     "section": "Offensive",
+     "category": "Offensive Rebound Rate",
+     "value": "33.7",
+     "rank": "5th"
+    },
+    {
+     "section": "Offensive",
+     "category": "Turnover Ratio",
+     "value": "13.6",
+     "rank": "9th"
+    },
+    {
+     "section": "Offensive",
+     "category": "Possessions",
+     "value": "733",
+     "rank": "8th"
+    },
+    {
+     "section": "Offensive",
+     "category": "Pace Factor",
+     "value": "95.0",
+     "rank": "8th"
+    },
+    {
+     "section": "Offensive",
+     "category": "Average Field Goals Made",
+     "value": "43.4",
+     "rank": "3rd"
+    },
+    {
+     "section": "Offensive",
+     "category": "Average Field Goals Attempted",
+     "value": "91.1",
+     "rank": "7th"
+    },
+    {
+     "section": "Offensive",
+     "category": "Average 3-Point Field Goals Made",
+     "value": "16.3",
+     "rank": "1st"
+    },
+    {
+     "section": "Offensive",
+     "category": "Average 3-Point Field Goals Attempted",
+     "value": "38.7",
+     "rank": "12th"
+    },
+    {
+     "section": "Offensive",
+     "category": "Average Free Throws Made",
+     "value": "19.9",
+     "rank": "13th"
+    },
+    {
+     "section": "Offensive",
+     "category": "Average Free Throws Attempted",
+     "value": "23.6",
+     "rank": "21st"
+    },
+    {
+     "section": "Offensive",
+     "category": "Points Per Game",
+     "value": "123.0",
+     "rank": "1st"
+    },
+    {
+     "section": "Offensive",
+     "category": "Offensive Rebounds Per Game",
+     "value": "12.9",
+     "rank": "Tied-10th"
+    },
+    {
+     "section": "Offensive",
+     "category": "Assists Per Game",
+     "value": "27.4",
+     "rank": "Tied-7th"
+    },
+    {
+     "section": "Offensive",
+     "category": "Turnovers Per Game",
+     "value": "15.0",
+     "rank": "16th"
+    },
+    {
+     "section": "Offensive",
+     "category": "Offensive Rebound Percentage",
+     "value": "0.3",
+     "rank": "9th"
+    },
+    {
+     "section": "Offensive",
+     "category": "3-Point Field Goal Percentage",
+     "value": "42.1",
+     "rank": "1st"
+    },
+    {
+     "section": "Offensive",
+     "category": "2-Point Field Goals Made",
+     "value": "190.0",
+     "rank": "2nd"
+    },
+    {
+     "section": "Offensive",
+     "category": "2-Point Field Goals Attempted",
+     "value": "367.0",
+     "rank": "3rd"
+    },
+    {
+     "section": "Offensive",
+     "category": "Shooting Efficiency",
+     "value": "0.57",
+     "rank": "3rd"
+    },
+    {
+     "section": "Offensive",
+     "category": "Scoring Efficiency",
+     "value": "1.350",
+     "rank": "6th"
+    }
+   ]
+  },
+  {
+   "sport": "NCAAM",
+   "teamId": "150",
+   "core": "core_team_stats_NCAAM_150.json",
+   "byteam": "byteam_NCAAM.json",
+   "rows": [
+    {
+     "section": "Defensive",
+     "category": "Blocks",
+     "value": "6",
+     "rank": "Tied-2nd of 6"
+    },
+    {
+     "section": "Defensive",
+     "category": "Defensive Rebounds",
+     "value": "23",
+     "rank": "6th of 6"
+    },
+    {
+     "section": "Defensive",
+     "category": "Steals",
+     "value": "16",
+     "rank": "1st of 6"
+    },
+    {
+     "section": "Defensive",
+     "category": "Defensive Rebounds Per Game",
+     "value": "23.0",
+     "rank": "6th of 6"
+    },
+    {
+     "section": "Defensive",
+     "category": "Blocks Per Game",
+     "value": "6.0",
+     "rank": "Tied-2nd of 6"
+    },
+    {
+     "section": "Defensive",
+     "category": "Steals Per Game",
+     "value": "16.0",
+     "rank": "1st of 6"
+    },
+    {
+     "section": "General",
+     "category": "Fouls",
+     "value": "14",
+     "rank": "3rd of 6"
+    },
+    {
+     "section": "General",
+     "category": "Rebounds",
+     "value": "37",
+     "rank": "4th of 6"
+    },
+    {
+     "section": "General",
+     "category": "Rebounds Per Game",
+     "value": "37.0",
+     "rank": "4th of 6"
+    },
+    {
+     "section": "General",
+     "category": "Fouls Per Game",
+     "value": "14.0",
+     "rank": "3rd of 6"
+    },
+    {
+     "section": "General",
+     "category": "Assist To Turnover Ratio",
+     "value": "1.0",
+     "rank": "6th of 6"
+    },
+    {
+     "section": "General",
+     "category": "Rebounds",
+     "value": "37",
+     "rank": "4th of 6"
+    },
+    {
+     "section": "Offensive",
+     "category": "Assists",
+     "value": "13",
+     "rank": "6th of 6"
+    },
+    {
+     "section": "Offensive",
+     "category": "Field Goals Attempted",
+     "value": "59",
+     "rank": "3rd of 6"
+    },
+    {
+     "section": "Offensive",
+     "category": "Field Goals Made",
+     "value": "29",
+     "rank": "Tied-3rd of 6"
+    },
+    {
+     "section": "Offensive",
+     "category": "Field Goal Percentage",
+     "value": "49.2",
+     "rank": "5th of 6"
+    },
+    {
+     "section": "Offensive",
+     "category": "Free Throw Percentage",
+     "value": "84.6",
+     "rank": "2nd of 6"
+    },
+    {
+     "section": "Offensive",
+     "category": "Free Throws Attempted",
+     "value": "26",
+     "rank": "2nd of 6"
+    },
+    {
+     "section": "Offensive",
+     "category": "Free Throws Made",
+     "value": "22",
+     "rank": "2nd of 6"
+    },
+    {
+     "section": "Offensive",
+     "category": "Offensive Rebounds",
+     "value": "14",
+     "rank": "2nd of 6"
+    },
+    {
+     "section": "Offensive",
+     "category": "Points",
+     "value": "84",
+     "rank": "5th of 6"
+    },
+    {
+     "section": "Offensive",
+     "category": "Turnovers",
+     "value": "13",
+     "rank": "6th of 6"
+    },
+    {
+     "section": "Offensive",
+     "category": "3-Point Field Goals Attempted",
+     "value": "22",
+     "rank": "6th of 6"
+    },
+    {
+     "section": "Offensive",
+     "category": "3-Point Field Goals Made",
+     "value": "4",
+     "rank": "6th of 6"
+    },
+    {
+     "section": "Offensive",
+     "category": "Average Field Goals Made",
+     "value": "29.0",
+     "rank": "Tied-3rd of 6"
+    },
+    {
+     "section": "Offensive",
+     "category": "Average Field Goals Attempted",
+     "value": "59.0",
+     "rank": "3rd of 6"
+    },
+    {
+     "section": "Offensive",
+     "category": "Average 3-Point Field Goals Made",
+     "value": "4.0",
+     "rank": "6th of 6"
+    },
+    {
+     "section": "Offensive",
+     "category": "Average 3-Point Field Goals Attempted",
+     "value": "22.0",
+     "rank": "6th of 6"
+    },
+    {
+     "section": "Offensive",
+     "category": "Average Free Throws Made",
+     "value": "22.0",
+     "rank": "2nd of 6"
+    },
+    {
+     "section": "Offensive",
+     "category": "Average Free Throws Attempted",
+     "value": "26.0",
+     "rank": "2nd of 6"
+    },
+    {
+     "section": "Offensive",
+     "category": "Points Per Game",
+     "value": "84.0",
+     "rank": "5th of 6"
+    },
+    {
+     "section": "Offensive",
+     "category": "Offensive Rebounds Per Game",
+     "value": "14.0",
+     "rank": "2nd of 6"
+    },
+    {
+     "section": "Offensive",
+     "category": "Assists Per Game",
+     "value": "13.0",
+     "rank": "6th of 6"
+    },
+    {
+     "section": "Offensive",
+     "category": "Turnovers Per Game",
+     "value": "13.0",
+     "rank": "6th of 6"
+    },
+    {
+     "section": "Offensive",
+     "category": "Offensive Rebound Percentage",
+     "value": "0.5",
+     "rank": "2nd of 6"
+    },
+    {
+     "section": "Offensive",
+     "category": "3-Point Field Goal Percentage",
+     "value": "18.2",
+     "rank": "6th of 6"
+    },
+    {
+     "section": "Offensive",
+     "category": "Shooting Efficiency",
+     "value": "0.53",
+     "rank": "5th of 6"
+    },
+    {
+     "section": "Offensive",
+     "category": "Scoring Efficiency",
+     "value": "1.424",
+     "rank": "5th of 6"
+    }
+   ]
+  },
+  {
+   "sport": "NFL",
+   "teamId": "22",
+   "core": "core_team_stats_NFL_22.json",
+   "byteam": "byteam_NFL.json",
+   "rows": [
+    {
+     "section": "General",
+     "category": "Fumbles Lost",
+     "value": "1",
+     "rank": "1st"
+    },
+    {
+     "section": "General",
+     "category": "Defensive Forced Fumbles",
+     "value": "9",
+     "rank": "Tied-6th"
+    },
+    {
+     "section": "General",
+     "category": "Special Teams Forced Fumbles",
+     "value": "2",
+     "rank": "Tied-2nd"
+    },
+    {
+     "section": "General",
+     "category": "Fumbles Recovered",
+     "value": "5",
+     "rank": "Tied-2nd"
+    },
+    {
+     "section": "Passing",
+     "category": "Completion Percentage",
+     "value": "64.1",
+     "rank": "5th"
+    },
+    {
+     "section": "Passing",
+     "category": "Completions",
+     "value": "211",
+     "rank": "1st"
+    },
+    {
+     "section": "Passing",
+     "category": "Interceptions",
+     "value": "7",
+     "rank": "Tied-5th"
+    },
+    {
+     "section": "Passing",
+     "category": "Longest Pass",
+     "value": "38",
+     "rank": "7th"
+    },
+    {
+     "section": "Passing",
+     "category": "Net Passing Yards",
+     "value": "1,790",
+     "rank": "3rd"
+    },
+    {
+     "section": "Passing",
+     "category": "Net Passing Yards Per Game",
+     "value": "223.8",
+     "rank": "4th"
+    },
+    {
+     "section": "Passing",
+     "category": "Net Total Yards",
+     "value": "2,664",
+     "rank": "3rd"
+    },
+    {
+     "section": "Passing",
+     "category": "Net Yards Per Game",
+     "value": "333.0",
+     "rank": "5th"
+    },
+    {
+     "section": "Passing",
+     "category": "Passing Attempts",
+     "value": "329",
+     "rank": "1st"
+    },
+    {
+     "section": "Passing",
+     "category": "Passing 1st downs",
+     "value": "104",
+     "rank": "Tied-4th"
+    },
+    {
+     "section": "Passing",
+     "category": "Passing Touchdowns",
+     "value": "13",
+     "rank": "3rd"
+    },
+    {
+     "section": "Passing",
+     "category": "Passing Yards",
+     "value": "1,914",
+     "rank": "3rd"
+    },
+    {
+     "section": "Passing",
+     "category": "Passing Yards Per Game",
+     "value": "239.3",
+     "rank": "4th"
+    },
+    {
+     "section": "Passing",
+     "category": "Passer Rating",
+     "value": "84.1",
+     "rank": "5th"
+    },
+    {
+     "section": "Passing",
+     "category": "Total Sacks",
+     "value": "20",
+     "rank": "4th"
+    },
+    {
+     "section": "Passing",
+     "category": "Sack Yards Lost",
+     "value": "124",
+     "rank": "4th"
+    },
+    {
+     "section": "Passing",
+     "category": "Total Points",
+     "value": "175",
+     "rank": "5th"
+    },
+    {
+     "section": "Passing",
+     "category": "Total Points Per Game",
+     "value": "21.9",
+     "rank": "6th"
+    },
+    {
+     "section": "Passing",
+     "category": "Total Yards",
+     "value": "2,788",
+     "rank": "3rd"
+    },
+    {
+     "section": "Passing",
+     "category": "Yards Per Game",
+     "value": "348.5",
+     "rank": "5th"
+    },
+    {
+     "section": "Passing",
+     "category": "Yards Per Pass Attempt",
+     "value": "5.8",
+     "rank": "6th"
+    },
+    {
+     "section": "Passing",
+     "category": "Net Yards Per Pass Attempt",
+     "value": "5.1",
+     "rank": "6th"
+    },
+    {
+     "section": "Rushing",
+     "category": "Long Rushing",
+     "value": "63",
+     "rank": "2nd"
+    },
+    {
+     "section": "Rushing",
+     "category": "Rushing Attempts",
+     "value": "208",
+     "rank": "3rd"
+    },
+    {
+     "section": "Rushing",
+     "category": "Rushing Touchdowns",
+     "value": "4",
+     "rank": "Tied-5th"
+    },
+    {
+     "section": "Rushing",
+     "category": "Rushing Yards",
+     "value": "874",
+     "rank": "3rd"
+    },
+    {
+     "section": "Rushing",
+     "category": "Rushing Yards Per Game",
+     "value": "109.3",
+     "rank": "4th"
+    },
+    {
+     "section": "Rushing",
+     "category": "Yards Per Rush Attempt",
+     "value": "4.2",
+     "rank": "3rd"
+    },
+    {
+     "section": "Receiving",
+     "category": "ESPN Widereceiver Rating",
+     "value": "3424.00",
+     "rank": "6th"
+    },
+    {
+     "section": "Receiving",
+     "category": "Long Reception",
+     "value": "38",
+     "rank": "7th"
+    },
+    {
+     "section": "Receiving",
+     "category": "Receiving First Downs",
+     "value": "104",
+     "rank": "Tied-4th"
+    },
+    {
+     "section": "Receiving",
+     "category": "Receiving Fumbles",
+     "value": "2",
+     "rank": "Tied-4th"
+    },
+    {
+     "section": "Receiving",
+     "category": "Receiving Fumbles Lost",
+     "value": "1",
+     "rank": "Tied-2nd"
+    },
+    {
+     "section": "Receiving",
+     "category": "Receiving Targets",
+     "value": "313",
+     "rank": "1st"
+    },
+    {
+     "section": "Receiving",
+     "category": "Receiving Touchdowns",
+     "value": "13",
+     "rank": "3rd"
+    },
+    {
+     "section": "Receiving",
+     "category": "Receiving Yards",
+     "value": "1,914",
+     "rank": "3rd"
+    },
+    {
+     "section": "Receiving",
+     "category": "Receiving Yards Per Game",
+     "value": "239.3",
+     "rank": "4th"
+    },
+    {
+     "section": "Receiving",
+     "category": "Receptions",
+     "value": "211",
+     "rank": "1st"
+    },
+    {
+     "section": "Receiving",
+     "category": "Two Point Receiving Conversion",
+     "value": "315",
+     "rank": "1st"
+    },
+    {
+     "section": "Receiving",
+     "category": "Yards Per Game",
+     "value": "348.5",
+     "rank": "5th"
+    },
+    {
+     "section": "Receiving",
+     "category": "Yards Per Reception",
+     "value": "9.1",
+     "rank": "7th"
+    },
+    {
+     "section": "Defense",
+     "category": "Assist Tackles",
+     "value": "272",
+     "rank": "Tied-5th"
+    },
+    {
+     "section": "Defense",
+     "category": "Average Sack Yards",
+     "value": "7.2",
+     "rank": "4th"
+    },
+    {
+     "section": "Defense",
+     "category": "Kicks Blocked",
+     "value": "1",
+     "rank": "Tied-2nd"
+    },
+    {
+     "section": "Defensive Interceptions",
+     "category": "Interceptions",
+     "value": "3",
+     "rank": "Tied-5th"
+    },
+    {
+     "section": "Kicking",
+     "category": "Average Kickoff Return Yards",
+     "value": "25.3",
+     "rank": "1st"
+    },
+    {
+     "section": "Kicking",
+     "category": "Average Kickoff Yards",
+     "value": "60.7",
+     "rank": "3rd"
+    },
+    {
+     "section": "Kicking",
+     "category": "Extra Point Attempts",
+     "value": "17",
+     "rank": "Tied-4th"
+    },
+    {
+     "section": "Kicking",
+     "category": "Extra Point Percentage",
+     "value": "94.1",
+     "rank": "7th"
+    },
+    {
+     "section": "Kicking",
+     "category": "Extra Points Made",
+     "value": "16",
+     "rank": "Tied-5th"
+    },
+    {
+     "section": "Kicking",
+     "category": "Field Goal Attempts",
+     "value": "21",
+     "rank": "1st"
+    },
+    {
+     "section": "Kicking",
+     "category": "Field Goal Attempts 20-29",
+     "value": "5",
+     "rank": "Tied-1st"
+    },
+    {
+     "section": "Kicking",
+     "category": "Field Goal Attempts 30-39",
+     "value": "6",
+     "rank": "Tied-1st"
+    },
+    {
+     "section": "Kicking",
+     "category": "Field Goal Attempts 40-49",
+     "value": "7",
+     "rank": "Tied-1st"
+    },
+    {
+     "section": "Kicking",
+     "category": "Field Goal Attempts 50-59",
+     "value": "2",
+     "rank": "3rd"
+    },
+    {
+     "section": "Kicking",
+     "category": "Field Goal Attempts 60-99",
+     "value": "1",
+     "rank": "1st"
+    },
+    {
+     "section": "Kicking",
+     "category": "Field Goal Attempts 50+",
+     "value": "3",
+     "rank": "6th"
+    },
+    {
+     "section": "Kicking",
+     "category": "Field Goal Attempt Yards",
+     "value": "807",
+     "rank": "1st"
+    },
+    {
+     "section": "Kicking",
+     "category": "Field Goal Percentage",
+     "value": "90.5",
+     "rank": "4th"
+    },
+    {
+     "section": "Kicking",
+     "category": "Field Goal Made",
+     "value": "19",
+     "rank": "Tied-1st"
+    },
+    {
+     "section": "Kicking",
+     "category": "Field Goals Made 20-29",
+     "value": "5",
+     "rank": "Tied-1st"
+    },
+    {
+     "section": "Kicking",
+     "category": "Field Goals Made 30-39",
+     "value": "6",
+     "rank": "Tied-1st"
+    },
+    {
+     "section": "Kicking",
+     "category": "Field Goals Made 40-49",
+     "value": "7",
+     "rank": "Tied-1st"
+    },
+    {
+     "section": "Kicking",
+     "category": "Field Goals Made 60-99",
+     "value": "1",
+     "rank": "1st"
+    },
+    {
+     "section": "Kicking",
+     "category": "Field Goals Made 50+",
+     "value": "1",
+     "rank": "6th"
+    },
+    {
+     "section": "Kicking",
+     "category": "Kickoff Returns",
+     "value": "30",
+     "rank": "3rd"
+    },
+    {
+     "section": "Kicking",
+     "category": "Kickoff Return Yards",
+     "value": "758",
+     "rank": "1st"
+    },
+    {
+     "section": "Kicking",
+     "category": "Kickoffs",
+     "value": "40",
+     "rank": "Tied-2nd"
+    },
+    {
+     "section": "Kicking",
+     "category": "Kickoff Yards",
+     "value": "2,426",
+     "rank": "2nd"
+    },
+    {
+     "section": "Kicking",
+     "category": "Long Field Goal Made",
+     "value": "60",
+     "rank": "Tied-2nd"
+    },
+    {
+     "section": "Kicking",
+     "category": "Total Kicking Points",
+     "value": "73",
+     "rank": "1st"
+    },
+    {
+     "section": "Kicking",
+     "category": "Touchback Percentage",
+     "value": "23",
+     "rank": "2nd"
+    },
+    {
+     "section": "Kicking",
+     "category": "Touchbacks",
+     "value": "9",
+     "rank": "2nd"
+    },
+    {
+     "section": "Returning",
+     "category": "Kick Returns",
+     "value": "39",
+     "rank": "1st"
+    },
+    {
+     "section": "Returning",
+     "category": "Kick Return Yards",
+     "value": "1,031",
+     "rank": "1st"
+    },
+    {
+     "section": "Returning",
+     "category": "Long Kick Return",
+     "value": "40",
+     "rank": "6th"
+    },
+    {
+     "section": "Returning",
+     "category": "Long Punt Return",
+     "value": "12",
+     "rank": "7th"
+    },
+    {
+     "section": "Returning",
+     "category": "Punt Return Fair Catches",
+     "value": "10",
+     "rank": "Tied-1st"
+    },
+    {
+     "section": "Returning",
+     "category": "Punt Returns",
+     "value": "8",
+     "rank": "6th"
+    },
+    {
+     "section": "Returning",
+     "category": "Punt Return Yards",
+     "value": "58",
+     "rank": "6th"
+    },
+    {
+     "section": "Returning",
+     "category": "Yards Per Kick Return",
+     "value": "26.4",
+     "rank": "3rd"
+    },
+    {
+     "section": "Returning",
+     "category": "Yards Per Punt Return",
+     "value": "7.3",
+     "rank": "6th"
+    },
+    {
+     "section": "Punting",
+     "category": "Average Punt Return Yards",
+     "value": "7.2",
+     "rank": "2nd"
+    },
+    {
+     "section": "Punting",
+     "category": "Fair Catches",
+     "value": "9",
+     "rank": "Tied-4th"
+    },
+    {
+     "section": "Punting",
+     "category": "Gross Average Punt Yards",
+     "value": "43.7",
+     "rank": "6th"
+    },
+    {
+     "section": "Punting",
+     "category": "Long Punt",
+     "value": "63",
+     "rank": "3rd"
+    },
+    {
+     "section": "Punting",
+     "category": "Net Average Punt Yards",
+     "value": "39.8",
+     "rank": "6th"
+    },
+    {
+     "section": "Punting",
+     "category": "Punt Returns",
+     "value": "20",
+     "rank": "7th"
+    },
+    {
+     "section": "Punting",
+     "category": "Punt Return Yards",
+     "value": "144",
+     "rank": "7th"
+    },
+    {
+     "section": "Punting",
+     "category": "Punts",
+     "value": "37",
+     "rank": "1st"
+    },
+    {
+     "section": "Punting",
+     "category": "Punts Blocked Percentage",
+     "value": "0.00",
+     "rank": "Tied-3rd"
+    },
+    {
+     "section": "Punting",
+     "category": "Punts Inside 20",
+     "value": "11",
+     "rank": "Tied-3rd"
+    },
+    {
+     "section": "Punting",
+     "category": "Punt Yards",
+     "value": "1,618",
+     "rank": "1st"
+    },
+    {
+     "section": "Punting",
+     "category": "Touchbacks",
+     "value": "3",
+     "rank": "Tied-5th"
+    },
+    {
+     "section": "Miscellaneous",
+     "category": "Total 1st downs",
+     "value": "169",
+     "rank": "2nd"
+    },
+    {
+     "section": "Miscellaneous",
+     "category": "Passing 1st downs",
+     "value": "104",
+     "rank": "Tied-2nd"
+    },
+    {
+     "section": "Miscellaneous",
+     "category": "1st downs by penalty",
+     "value": "20",
+     "rank": "Tied-2nd"
+    },
+    {
+     "section": "Miscellaneous",
+     "category": "Rushing 1st downs",
+     "value": "45",
+     "rank": "4th"
+    },
+    {
+     "section": "Miscellaneous",
+     "category": "First Downs Attempts",
+     "value": "13",
+     "rank": "1st"
+    },
+    {
+     "section": "Miscellaneous",
+     "category": "4th down %",
+     "value": "61.54",
+     "rank": "1st"
+    },
+    {
+     "section": "Miscellaneous",
+     "category": "Fourth Down Conversions",
+     "value": "8",
+     "rank": "1st"
+    },
+    {
+     "section": "Miscellaneous",
+     "category": "Possession Time Seconds",
+     "value": "15540",
+     "rank": "3rd"
+    },
+    {
+     "section": "Miscellaneous",
+     "category": "Red Zone Field Goal Percentage",
+     "value": "42.42",
+     "rank": "2nd"
+    },
+    {
+     "section": "Miscellaneous",
+     "category": "Third Down Attempts",
+     "value": "124",
+     "rank": "1st"
+    },
+    {
+     "section": "Miscellaneous",
+     "category": "3rd down %",
+     "value": "38.71",
+     "rank": "4th"
+    },
+    {
+     "section": "Miscellaneous",
+     "category": "Third Down Conversions",
+     "value": "48",
+     "rank": "Tied-1st"
+    },
+    {
+     "section": "Miscellaneous",
+     "category": "Total Giveaways",
+     "value": "8",
+     "rank": "Tied-3rd"
+    },
+    {
+     "section": "Miscellaneous",
+     "category": "Total Penalties",
+     "value": "59",
+     "rank": "5th"
+    },
+    {
+     "section": "Miscellaneous",
+     "category": "Total Penalty Yards",
+     "value": "532",
+     "rank": "7th"
+    },
+    {
+     "section": "Miscellaneous",
+     "category": "Total Takeaways",
+     "value": "8",
+     "rank": "Tied-4th"
+    }
+   ]
+  },
+  {
+   "sport": "NCAAF",
+   "teamId": "333",
+   "core": "core_team_stats_NCAAF_333_2025.json",
+   "byteam": "byteam_NCAAF_2025.json",
+   "rows": [
+    {
+     "section": "General",
+     "category": "Fumbles",
+     "value": "10",
+     "rank": "Tied-98th"
+    },
+    {
+     "section": "General",
+     "category": "Fumbles Lost",
+     "value": "7",
+     "rank": "Tied-38th"
+    },
+    {
+     "section": "General",
+     "category": "Forced Fumbles",
+     "value": "15",
+     "rank": "Tied-5th"
+    },
+    {
+     "section": "General",
+     "category": "Defensive Forced Fumbles",
+     "value": "15",
+     "rank": "Tied-3rd"
+    },
+    {
+     "section": "General",
+     "category": "Fumbles Recovered",
+     "value": "9",
+     "rank": "Tied-15th"
+    },
+    {
+     "section": "Passing",
+     "category": "Average Gain",
+     "value": "5.9",
+     "rank": "65th"
+    },
+    {
+     "section": "Passing",
+     "category": "Completion Percentage",
+     "value": "65.3",
+     "rank": "38th"
+    },
+    {
+     "section": "Passing",
+     "category": "Completions",
+     "value": "301",
+     "rank": "Tied-8th"
+    },
+    {
+     "section": "Passing",
+     "category": "ESPN Quarterback Rating",
+     "value": "5501.0",
+     "rank": "8th"
+    },
+    {
+     "section": "Passing",
+     "category": "Interception Percentage",
+     "value": "1.09",
+     "rank": "4th"
+    },
+    {
+     "section": "Passing",
+     "category": "Interceptions",
+     "value": "5",
+     "rank": "Tied-7th"
+    },
+    {
+     "section": "Passing",
+     "category": "Longest Pass",
+     "value": "75",
+     "rank": "Tied-46th"
+    },
+    {
+     "section": "Passing",
+     "category": "Net Passing Yards",
+     "value": "3,551",
+     "rank": "11th"
+    },
+    {
+     "section": "Passing",
+     "category": "Net Passing Yards Per Game",
+     "value": "273.2",
+     "rank": "23rd"
+    },
+    {
+     "section": "Passing",
+     "category": "Net Total Yards",
+     "value": "5,062",
+     "rank": "Tied-37th"
+    },
+    {
+     "section": "Passing",
+     "category": "Net Yards Per Game",
+     "value": "389.4",
+     "rank": "69th"
+    },
+    {
+     "section": "Passing",
+     "category": "Passing Attempts",
+     "value": "461",
+     "rank": "13th"
+    },
+    {
+     "section": "Passing",
+     "category": "Passing Touchdown %",
+     "value": "6.51",
+     "rank": "28th"
+    },
+    {
+     "section": "Passing",
+     "category": "Passing Touchdowns",
+     "value": "30",
+     "rank": "Tied-8th"
+    },
+    {
+     "section": "Passing",
+     "category": "Passing Yards",
+     "value": "3,551",
+     "rank": "11th"
+    },
+    {
+     "section": "Passing",
+     "category": "Passing Yards At Catch",
+     "value": "3,551",
+     "rank": "11th"
+    },
+    {
+     "section": "Passing",
+     "category": "Passing Yards Per Game",
+     "value": "273.2",
+     "rank": "23rd"
+    },
+    {
+     "section": "Passing",
+     "category": "Passer Rating",
+     "value": "149.3",
+     "rank": "230th"
+    },
+    {
+     "section": "Passing",
+     "category": "Total Sacks",
+     "value": "26",
+     "rank": "Tied-45th"
+    },
+    {
+     "section": "Passing",
+     "category": "Sack Yards Lost",
+     "value": "-188",
+     "rank": "Tied-36th"
+    },
+    {
+     "section": "Passing",
+     "category": "Total Offensive Plays",
+     "value": "911",
+     "rank": "Tied-106th"
+    },
+    {
+     "section": "Passing",
+     "category": "Total Points",
+     "value": "406",
+     "rank": "26th"
+    },
+    {
+     "section": "Passing",
+     "category": "Total Points Per Game",
+     "value": "31.2",
+     "rank": "41st"
+    },
+    {
+     "section": "Passing",
+     "category": "Total Touchdowns",
+     "value": "80",
+     "rank": "Tied-13th"
+    },
+    {
+     "section": "Passing",
+     "category": "Total Yards",
+     "value": "5,062",
+     "rank": "Tied-37th"
+    },
+    {
+     "section": "Passing",
+     "category": "Yards From Scrimmage Per Game",
+     "value": "389",
+     "rank": "69th"
+    },
+    {
+     "section": "Passing",
+     "category": "Yards Per Completion",
+     "value": "11.8",
+     "rank": "65th"
+    },
+    {
+     "section": "Passing",
+     "category": "Yards Per Game",
+     "value": "389.4",
+     "rank": "69th"
+    },
+    {
+     "section": "Passing",
+     "category": "Yards Per Pass Attempt",
+     "value": "7.7",
+     "rank": "48th"
+    },
+    {
+     "section": "Passing",
+     "category": "Net Yards Per Pass Attempt",
+     "value": "7.3",
+     "rank": "44th"
+    },
+    {
+     "section": "Rushing",
+     "category": "Average Gain",
+     "value": "5.9",
+     "rank": "65th"
+    },
+    {
+     "section": "Rushing",
+     "category": "ESPN RB Rating",
+     "value": "2106.00",
+     "rank": "92nd"
+    },
+    {
+     "section": "Rushing",
+     "category": "Long Rushing",
+     "value": "56",
+     "rank": "Tied-102nd"
+    },
+    {
+     "section": "Rushing",
+     "category": "Net Total Yards",
+     "value": "5,062",
+     "rank": "Tied-37th"
+    },
+    {
+     "section": "Rushing",
+     "category": "Net Yards Per Game",
+     "value": "389.4",
+     "rank": "69th"
+    },
+    {
+     "section": "Rushing",
+     "category": "Rushing Attempts",
+     "value": "424",
+     "rank": "Tied-74th"
+    },
+    {
+     "section": "Rushing",
+     "category": "Rushing Touchdowns",
+     "value": "20",
+     "rank": "Tied-61st"
+    },
+    {
+     "section": "Rushing",
+     "category": "Rushing Yards",
+     "value": "1,511",
+     "rank": "104th"
+    },
+    {
+     "section": "Rushing",
+     "category": "Rushing Yards Per Game",
+     "value": "116.2",
+     "rank": "117th"
+    },
+    {
+     "section": "Rushing",
+     "category": "Total Offensive Plays",
+     "value": "911",
+     "rank": "Tied-106th"
+    },
+    {
+     "section": "Rushing",
+     "category": "Total Points",
+     "value": "406",
+     "rank": "26th"
+    },
+    {
+     "section": "Rushing",
+     "category": "Total Points Per Game",
+     "value": "31.2",
+     "rank": "41st"
+    },
+    {
+     "section": "Rushing",
+     "category": "Total Touchdowns",
+     "value": "80",
+     "rank": "Tied-13th"
+    },
+    {
+     "section": "Rushing",
+     "category": "Total Yards",
+     "value": "5,062",
+     "rank": "Tied-37th"
+    },
+    {
+     "section": "Rushing",
+     "category": "Yards From Scrimmage Per Game",
+     "value": "389.4",
+     "rank": "69th"
+    },
+    {
+     "section": "Rushing",
+     "category": "Yards Per Game",
+     "value": "389.4",
+     "rank": "69th"
+    },
+    {
+     "section": "Rushing",
+     "category": "Yards Per Rush Attempt",
+     "value": "3.6",
+     "rank": "120th"
+    },
+    {
+     "section": "Receiving",
+     "category": "Average Gain",
+     "value": "5.9",
+     "rank": "65th"
+    },
+    {
+     "section": "Receiving",
+     "category": "ESPN Widereceiver Rating",
+     "value": "6106.00",
+     "rank": "7th"
+    },
+    {
+     "section": "Receiving",
+     "category": "Long Reception",
+     "value": "75",
+     "rank": "Tied-46th"
+    },
+    {
+     "section": "Receiving",
+     "category": "Net Total Yards",
+     "value": "5,062",
+     "rank": "Tied-37th"
+    },
+    {
+     "section": "Receiving",
+     "category": "Net Yards Per Game",
+     "value": "389.4",
+     "rank": "69th"
+    },
+    {
+     "section": "Receiving",
+     "category": "Receiving Touchdowns",
+     "value": "30",
+     "rank": "Tied-8th"
+    },
+    {
+     "section": "Receiving",
+     "category": "Receiving Yards",
+     "value": "3,551",
+     "rank": "11th"
+    },
+    {
+     "section": "Receiving",
+     "category": "Receiving Yards At Catch",
+     "value": "3551",
+     "rank": "11th"
+    },
+    {
+     "section": "Receiving",
+     "category": "Receiving Yards Per Game",
+     "value": "273.2",
+     "rank": "23rd"
+    },
+    {
+     "section": "Receiving",
+     "category": "Receptions",
+     "value": "301",
+     "rank": "Tied-8th"
+    },
+    {
+     "section": "Receiving",
+     "category": "Total Offensive Plays",
+     "value": "911",
+     "rank": "Tied-106th"
+    },
+    {
+     "section": "Receiving",
+     "category": "Total Points",
+     "value": "406",
+     "rank": "26th"
+    },
+    {
+     "section": "Receiving",
+     "category": "Total Points Per Game",
+     "value": "31.2",
+     "rank": "41st"
+    },
+    {
+     "section": "Receiving",
+     "category": "Total Touchdowns",
+     "value": "80",
+     "rank": "Tied-13th"
+    },
+    {
+     "section": "Receiving",
+     "category": "Total Yards",
+     "value": "5,062",
+     "rank": "Tied-37th"
+    },
+    {
+     "section": "Receiving",
+     "category": "Yards From Scrimmage Per Game",
+     "value": "389.4",
+     "rank": "69th"
+    },
+    {
+     "section": "Receiving",
+     "category": "Yards Per Game",
+     "value": "389.4",
+     "rank": "69th"
+    },
+    {
+     "section": "Receiving",
+     "category": "Yards Per Reception",
+     "value": "11.8",
+     "rank": "65th"
+    },
+    {
+     "section": "Defense",
+     "category": "Assist Tackles",
+     "value": "296",
+     "rank": "Tied-109th"
+    },
+    {
+     "section": "Defense",
+     "category": "Average Interception Yards",
+     "value": "17.2",
+     "rank": "28th"
+    },
+    {
+     "section": "Defense",
+     "category": "Average Sack Yards",
+     "value": "7.6",
+     "rank": "16th"
+    },
+    {
+     "section": "Defense",
+     "category": "Defensive Touchdown",
+     "value": "2",
+     "rank": "Tied-30th"
+    },
+    {
+     "section": "Defense",
+     "category": "Hurries",
+     "value": "31",
+     "rank": "78th"
+    },
+    {
+     "section": "Defense",
+     "category": "Kicks Blocked",
+     "value": "1",
+     "rank": "Tied-52nd"
+    },
+    {
+     "section": "Defense",
+     "category": "Long Interception",
+     "value": "99",
+     "rank": "Tied-5th"
+    },
+    {
+     "section": "Defense",
+     "category": "Passes Defended",
+     "value": "41",
+     "rank": "Tied-55th"
+    },
+    {
+     "section": "Defense",
+     "category": "Sacks",
+     "value": "25",
+     "rank": "Tied-63rd"
+    },
+    {
+     "section": "Defense",
+     "category": "Sack Yards",
+     "value": "189",
+     "rank": "Tied-42nd"
+    },
+    {
+     "section": "Defense",
+     "category": "Safeties",
+     "value": "1",
+     "rank": "Tied-9th"
+    },
+    {
+     "section": "Defense",
+     "category": "Solo Tackles",
+     "value": "407",
+     "rank": "83rd"
+    },
+    {
+     "section": "Defense",
+     "category": "Tackles For Loss",
+     "value": "74",
+     "rank": "Tied-38th"
+    },
+    {
+     "section": "Defense",
+     "category": "Total Tackles",
+     "value": "703",
+     "rank": "Tied-26th"
+    },
+    {
+     "section": "Defensive Interceptions",
+     "category": "Interceptions",
+     "value": "10",
+     "rank": "Tied-56th"
+    },
+    {
+     "section": "Defensive Interceptions",
+     "category": "Interception Touchdowns",
+     "value": "2",
+     "rank": "Tied-16th"
+    },
+    {
+     "section": "Defensive Interceptions",
+     "category": "Interception Yards",
+     "value": "172",
+     "rank": "30th"
+    },
+    {
+     "section": "Kicking",
+     "category": "Average Kickoff Return Yards",
+     "value": "17.4",
+     "rank": "5th"
+    },
+    {
+     "section": "Kicking",
+     "category": "Average Kickoff Yards",
+     "value": "3.7",
+     "rank": "12th"
+    },
+    {
+     "section": "Kicking",
+     "category": "Extra Point Attempts",
+     "value": "51",
+     "rank": "Tied-4th"
+    },
+    {
+     "section": "Kicking",
+     "category": "Extra Points Made",
+     "value": "51",
+     "rank": "Tied-4th"
+    },
+    {
+     "section": "Kicking",
+     "category": "Field Goal Attempts",
+     "value": "20",
+     "rank": "Tied-8th"
+    },
+    {
+     "section": "Kicking",
+     "category": "Field Goal Attempts 20-29",
+     "value": "5",
+     "rank": "Tied-6th"
+    },
+    {
+     "section": "Kicking",
+     "category": "Field Goal Attempts 30-39",
+     "value": "5",
+     "rank": "Tied-6th"
+    },
+    {
+     "section": "Kicking",
+     "category": "Field Goal Attempts 40-49",
+     "value": "9",
+     "rank": "Tied-2nd"
+    },
+    {
+     "section": "Kicking",
+     "category": "Field Goal Attempts 50-59",
+     "value": "1",
+     "rank": "Tied-14th"
+    },
+    {
+     "section": "Kicking",
+     "category": "Field Goal Attempts 50+",
+     "value": "1",
+     "rank": "Tied-14th"
+    },
+    {
+     "section": "Kicking",
+     "category": "Field Goal Attempt Yards",
+     "value": "756",
+     "rank": "8th"
+    },
+    {
+     "section": "Kicking",
+     "category": "Field Goal Percentage",
+     "value": "65.0",
+     "rank": "15th"
+    },
+    {
+     "section": "Kicking",
+     "category": "Field Goal Made",
+     "value": "13",
+     "rank": "Tied-12th"
+    },
+    {
+     "section": "Kicking",
+     "category": "Field Goals Made 20-29",
+     "value": "3",
+     "rank": "Tied-11th"
+    },
+    {
+     "section": "Kicking",
+     "category": "Field Goals Made 30-39",
+     "value": "4",
+     "rank": "Tied-7th"
+    },
+    {
+     "section": "Kicking",
+     "category": "Field Goals Made 40-49",
+     "value": "6",
+     "rank": "Tied-3rd"
+    },
+    {
+     "section": "Kicking",
+     "category": "Field Goals Made Yards",
+     "value": "474",
+     "rank": "14th"
+    },
+    {
+     "section": "Kicking",
+     "category": "Field Goals Missed Yards",
+     "value": "282",
+     "rank": "2nd"
+    },
+    {
+     "section": "Kicking",
+     "category": "Kickoff Returns",
+     "value": "18",
+     "rank": "11th"
+    },
+    {
+     "section": "Kicking",
+     "category": "Kickoff Return Yards",
+     "value": "314",
+     "rank": "10th"
+    },
+    {
+     "section": "Kicking",
+     "category": "Kickoffs",
+     "value": "77",
+     "rank": "6th"
+    },
+    {
+     "section": "Kicking",
+     "category": "Kickoff Yards",
+     "value": "283",
+     "rank": "12th"
+    },
+    {
+     "section": "Kicking",
+     "category": "Long Field Goal Attempt",
+     "value": "53",
+     "rank": "Tied-8th"
+    },
+    {
+     "section": "Kicking",
+     "category": "Long Field Goal Made",
+     "value": "48",
+     "rank": "16th"
+    },
+    {
+     "section": "Kicking",
+     "category": "Long Kickoff",
+     "value": "65",
+     "rank": "Tied-8th"
+    },
+    {
+     "section": "Kicking",
+     "category": "Total Kicking Points",
+     "value": "90",
+     "rank": "10th"
+    },
+    {
+     "section": "Kicking",
+     "category": "Touchback Percentage",
+     "value": "49",
+     "rank": "13th"
+    },
+    {
+     "section": "Kicking",
+     "category": "Touchbacks",
+     "value": "38",
+     "rank": "Tied-12th"
+    },
+    {
+     "section": "Returning",
+     "category": "Kick Return Fair Catch Percentage",
+     "value": "0.00",
+     "rank": "1st"
+    },
+    {
+     "section": "Returning",
+     "category": "Kick Returns",
+     "value": "18",
+     "rank": "Tied-77th"
+    },
+    {
+     "section": "Returning",
+     "category": "Kick Return Yards",
+     "value": "314",
+     "rank": "87th"
+    },
+    {
+     "section": "Returning",
+     "category": "Long Kick Return",
+     "value": "25",
+     "rank": "Tied-127th"
+    },
+    {
+     "section": "Returning",
+     "category": "Long Punt Return",
+     "value": "36",
+     "rank": "Tied-57th"
+    },
+    {
+     "section": "Returning",
+     "category": "Punt Return Fair Catch Percentage",
+     "value": "0.00",
+     "rank": "4th"
+    },
+    {
+     "section": "Returning",
+     "category": "Punt Returns",
+     "value": "21",
+     "rank": "Tied-23rd"
+    },
+    {
+     "section": "Returning",
+     "category": "Punt Return Yards",
+     "value": "180",
+     "rank": "43rd"
+    },
+    {
+     "section": "Punting",
+     "category": "Average Punt Return Yards",
+     "value": "4.3",
+     "rank": "125th"
+    },
+    {
+     "section": "Punting",
+     "category": "Gross Average Punt Yards",
+     "value": "41.9",
+     "rank": "95th"
+    },
+    {
+     "section": "Punting",
+     "category": "Long Punt",
+     "value": "60",
+     "rank": "Tied-82nd"
+    },
+    {
+     "section": "Punting",
+     "category": "Net Average Punt Yards",
+     "value": "38.9",
+     "rank": "78th"
+    },
+    {
+     "section": "Punting",
+     "category": "Punt Returns",
+     "value": "12",
+     "rank": "Tied-86th"
+    },
+    {
+     "section": "Punting",
+     "category": "Punt Return Yards",
+     "value": "52",
+     "rank": "Tied-119th"
+    },
+    {
+     "section": "Punting",
+     "category": "Punts",
+     "value": "42",
+     "rank": "Tied-95th"
+    },
+    {
+     "section": "Punting",
+     "category": "Punts Inside 20",
+     "value": "15",
+     "rank": "Tied-70th"
+    },
+    {
+     "section": "Punting",
+     "category": "Punts Inside 20 Percentage",
+     "value": "35.71",
+     "rank": "57th"
+    },
+    {
+     "section": "Punting",
+     "category": "Punt Yards",
+     "value": "1,759",
+     "rank": "94th"
+    },
+    {
+     "section": "Punting",
+     "category": "Touchback Percentage",
+     "value": "2.38",
+     "rank": "123rd"
+    },
+    {
+     "section": "Punting",
+     "category": "Touchbacks",
+     "value": "1",
+     "rank": "Tied-112th"
+    },
+    {
+     "section": "Scoring",
+     "category": "Defensive Points",
+     "value": "2",
+     "rank": "Tied-9th"
+    },
+    {
+     "section": "Scoring",
+     "category": "Field Goals",
+     "value": "13",
+     "rank": "Tied-85th"
+    },
+    {
+     "section": "Scoring",
+     "category": "Kick Extra Points",
+     "value": "51",
+     "rank": "Tied-15th"
+    },
+    {
+     "section": "Scoring",
+     "category": "Kick Extra Points Made",
+     "value": "51",
+     "rank": "Tied-15th"
+    },
+    {
+     "section": "Scoring",
+     "category": "Passing Touchdowns",
+     "value": "32",
+     "rank": "Tied-5th"
+    },
+    {
+     "section": "Scoring",
+     "category": "Receiving Touchdowns",
+     "value": "30",
+     "rank": "Tied-8th"
+    },
+    {
+     "section": "Scoring",
+     "category": "Return Touchdowns",
+     "value": "2",
+     "rank": "Tied-56th"
+    },
+    {
+     "section": "Scoring",
+     "category": "Rushing Touchdowns",
+     "value": "20",
+     "rank": "Tied-61st"
+    },
+    {
+     "section": "Scoring",
+     "category": "Total Points",
+     "value": "406",
+     "rank": "26th"
+    },
+    {
+     "section": "Scoring",
+     "category": "Total Points Per Game",
+     "value": "31.2",
+     "rank": "41st"
+    },
+    {
+     "section": "Scoring",
+     "category": "Total Scoring Points",
+     "value": "404",
+     "rank": "Tied-273rd"
+    },
+    {
+     "section": "Scoring",
+     "category": "Total Scoring Touchdowns",
+     "value": "52",
+     "rank": "Tied-125th"
+    },
+    {
+     "section": "Scoring",
+     "category": "Total Touchdowns",
+     "value": "52",
+     "rank": "Tied-23rd"
+    },
+    {
+     "section": "Scoring",
+     "category": "Total Two Point Conversions",
+     "value": "1",
+     "rank": "Tied-42nd"
+    },
+    {
+     "section": "Scoring",
+     "category": "Two Point Pass Conversions",
+     "value": "1",
+     "rank": "Tied-73rd"
+    },
+    {
+     "section": "Scoring",
+     "category": "Two Point Receiving Conversion",
+     "value": "1",
+     "rank": "Tied-27th"
+    },
+    {
+     "section": "Miscellaneous",
+     "category": "Total 1st downs",
+     "value": "282",
+     "rank": "Tied-24th"
+    },
+    {
+     "section": "Miscellaneous",
+     "category": "Passing 1st downs",
+     "value": "173",
+     "rank": "3rd"
+    },
+    {
+     "section": "Miscellaneous",
+     "category": "1st downs by penalty",
+     "value": "27",
+     "rank": "Tied-24th"
+    },
+    {
+     "section": "Miscellaneous",
+     "category": "First Downs Per Game",
+     "value": "21.69",
+     "rank": "Tied-45th"
+    },
+    {
+     "section": "Miscellaneous",
+     "category": "Rushing 1st downs",
+     "value": "82",
+     "rank": "111th"
+    },
+    {
+     "section": "Miscellaneous",
+     "category": "First Downs Attempts",
+     "value": "33",
+     "rank": "Tied-16th"
+    },
+    {
+     "section": "Miscellaneous",
+     "category": "4th down %",
+     "value": "63.64",
+     "rank": "Tied-22nd"
+    },
+    {
+     "section": "Miscellaneous",
+     "category": "Fourth Down Conversions",
+     "value": "21",
+     "rank": "Tied-8th"
+    },
+    {
+     "section": "Miscellaneous",
+     "category": "Fumbles Lost",
+     "value": "7",
+     "rank": "Tied-79th"
+    },
+    {
+     "section": "Miscellaneous",
+     "category": "Possession Time Seconds",
+     "value": "25271",
+     "rank": "8th"
+    },
+    {
+     "section": "Miscellaneous",
+     "category": "Third Down Attempts",
+     "value": "181",
+     "rank": "Tied-11th"
+    },
+    {
+     "section": "Miscellaneous",
+     "category": "3rd down %",
+     "value": "44.20",
+     "rank": "35th"
+    },
+    {
+     "section": "Miscellaneous",
+     "category": "Third Down Conversions",
+     "value": "80",
+     "rank": "Tied-11th"
+    },
+    {
+     "section": "Miscellaneous",
+     "category": "Total Giveaways",
+     "value": "12",
+     "rank": "Tied-21st"
+    },
+    {
+     "section": "Miscellaneous",
+     "category": "Total Penalties",
+     "value": "62",
+     "rank": "Tied-106th"
+    },
+    {
+     "section": "Miscellaneous",
+     "category": "Total Penalty Yards",
+     "value": "545",
+     "rank": "108th"
+    },
+    {
+     "section": "Miscellaneous",
+     "category": "Total Takeaways",
+     "value": "19",
+     "rank": "Tied-36th"
+    },
+    {
+     "section": "Miscellaneous",
+     "category": "Turnover Ratio",
+     "value": "7",
+     "rank": "Tied-15th"
+    }
+   ]
+  },
+  {
+   "sport": "NCAAF",
+   "teamId": "149",
+   "core": "core_team_stats_NCAAF_149.json",
+   "byteam": "byteam_NCAAF.json",
+   "rows": [
+    {
+     "section": "General",
+     "category": "Fumbles",
+     "value": "7",
+     "rank": "Tied-97th"
+    },
+    {
+     "section": "General",
+     "category": "Forced Fumbles",
+     "value": "7",
+     "rank": "Tied-42nd"
+    },
+    {
+     "section": "General",
+     "category": "Defensive Forced Fumbles",
+     "value": "7",
+     "rank": "Tied-40th"
+    },
+    {
+     "section": "General",
+     "category": "Fumbles Recovered",
+     "value": "7",
+     "rank": "Tied-37th"
+    },
+    {
+     "section": "Passing",
+     "category": "Average Gain",
+     "value": "7.0",
+     "rank": "3rd"
+    },
+    {
+     "section": "Passing",
+     "category": "Completion Percentage",
+     "value": "69.8",
+     "rank": "4th"
+    },
+    {
+     "section": "Passing",
+     "category": "Completions",
+     "value": "217",
+     "rank": "7th"
+    },
+    {
+     "section": "Passing",
+     "category": "ESPN Quarterback Rating",
+     "value": "4313.0",
+     "rank": "7th"
+    },
+    {
+     "section": "Passing",
+     "category": "Interception Percentage",
+     "value": "1.60",
+     "rank": "Tied-19th"
+    },
+    {
+     "section": "Passing",
+     "category": "Interceptions",
+     "value": "5",
+     "rank": "Tied-23rd"
+    },
+    {
+     "section": "Passing",
+     "category": "Longest Pass",
+     "value": "85",
+     "rank": "Tied-13th"
+    },
+    {
+     "section": "Passing",
+     "category": "Net Passing Yards",
+     "value": "2,643",
+     "rank": "6th"
+    },
+    {
+     "section": "Passing",
+     "category": "Net Passing Yards Per Game",
+     "value": "293.7",
+     "rank": "16th"
+    },
+    {
+     "section": "Passing",
+     "category": "Net Total Yards",
+     "value": "4,245",
+     "rank": "5th"
+    },
+    {
+     "section": "Passing",
+     "category": "Net Yards Per Game",
+     "value": "471.7",
+     "rank": "15th"
+    },
+    {
+     "section": "Passing",
+     "category": "Passing Attempts",
+     "value": "311",
+     "rank": "Tied-22nd"
+    },
+    {
+     "section": "Passing",
+     "category": "Passing 1st downs",
+     "value": "110",
+     "rank": "11th"
+    },
+    {
+     "section": "Passing",
+     "category": "Passing Touchdown %",
+     "value": "8.40",
+     "rank": "Tied-6th"
+    },
+    {
+     "section": "Passing",
+     "category": "Passing Touchdowns",
+     "value": "26",
+     "rank": "4th"
+    },
+    {
+     "section": "Passing",
+     "category": "Passing Yards",
+     "value": "2,643",
+     "rank": "6th"
+    },
+    {
+     "section": "Passing",
+     "category": "Passing Yards At Catch",
+     "value": "2,372",
+     "rank": "14th"
+    },
+    {
+     "section": "Passing",
+     "category": "Passing Yards Per Game",
+     "value": "293.7",
+     "rank": "6th"
+    },
+    {
+     "section": "Passing",
+     "category": "Passer Rating",
+     "value": "165.6",
+     "rank": "Tied-102nd"
+    },
+    {
+     "section": "Passing",
+     "category": "Total Sacks",
+     "value": "9",
+     "rank": "Tied-114th"
+    },
+    {
+     "section": "Passing",
+     "category": "Sack Yards Lost",
+     "value": "72",
+     "rank": "29th"
+    },
+    {
+     "section": "Passing",
+     "category": "Total Offensive Plays",
+     "value": "604",
+     "rank": "Tied-44th"
+    },
+    {
+     "section": "Passing",
+     "category": "Total Points",
+     "value": "344",
+     "rank": "Tied-10th"
+    },
+    {
+     "section": "Passing",
+     "category": "Total Points Per Game",
+     "value": "38.2",
+     "rank": "Tied-8th"
+    },
+    {
+     "section": "Passing",
+     "category": "Total Touchdowns",
+     "value": "46",
+     "rank": "Tied-10th"
+    },
+    {
+     "section": "Passing",
+     "category": "Total Yards",
+     "value": "4,245",
+     "rank": "5th"
+    },
+    {
+     "section": "Passing",
+     "category": "Yards From Scrimmage Per Game",
+     "value": "472",
+     "rank": "15th"
+    },
+    {
+     "section": "Passing",
+     "category": "Yards Per Completion",
+     "value": "12.2",
+     "rank": "Tied-37th"
+    },
+    {
+     "section": "Passing",
+     "category": "Yards Per Game",
+     "value": "471.7",
+     "rank": "4th"
+    },
+    {
+     "section": "Passing",
+     "category": "Yards Per Pass Attempt",
+     "value": "8.5",
+     "rank": "Tied-10th"
+    },
+    {
+     "section": "Passing",
+     "category": "Net Yards Per Pass Attempt",
+     "value": "8.3",
+     "rank": "28th"
+    },
+    {
+     "section": "Passing",
+     "category": "Quarterback Rating",
+     "value": "116.8",
+     "rank": "5th"
+    },
+    {
+     "section": "Rushing",
+     "category": "Average Gain",
+     "value": "7.0",
+     "rank": "3rd"
+    },
+    {
+     "section": "Rushing",
+     "category": "ESPN RB Rating",
+     "value": "2227.00",
+     "rank": "48th"
+    },
+    {
+     "section": "Rushing",
+     "category": "Long Rushing",
+     "value": "75",
+     "rank": "Tied-30th"
+    },
+    {
+     "section": "Rushing",
+     "category": "Net Total Yards",
+     "value": "4,245",
+     "rank": "5th"
+    },
+    {
+     "section": "Rushing",
+     "category": "Net Yards Per Game",
+     "value": "471.7",
+     "rank": "15th"
+    },
+    {
+     "section": "Rushing",
+     "category": "Rushing Attempts",
+     "value": "284",
+     "rank": "92nd"
+    },
+    {
+     "section": "Rushing",
+     "category": "Rushing 1st downs",
+     "value": "81",
+     "rank": "Tied-39th"
+    },
+    {
+     "section": "Rushing",
+     "category": "Rushing Touchdowns",
+     "value": "20",
+     "rank": "Tied-18th"
+    },
+    {
+     "section": "Rushing",
+     "category": "Rushing Yards",
+     "value": "1,602",
+     "rank": "29th"
+    },
+    {
+     "section": "Rushing",
+     "category": "Rushing Yards Per Game",
+     "value": "178.0",
+     "rank": "30th"
+    },
+    {
+     "section": "Rushing",
+     "category": "Total Offensive Plays",
+     "value": "604",
+     "rank": "Tied-44th"
+    },
+    {
+     "section": "Rushing",
+     "category": "Total Points",
+     "value": "344",
+     "rank": "Tied-10th"
+    },
+    {
+     "section": "Rushing",
+     "category": "Total Points Per Game",
+     "value": "38.2",
+     "rank": "Tied-8th"
+    },
+    {
+     "section": "Rushing",
+     "category": "Total Touchdowns",
+     "value": "46",
+     "rank": "Tied-10th"
+    },
+    {
+     "section": "Rushing",
+     "category": "Total Yards",
+     "value": "4,245",
+     "rank": "5th"
+    },
+    {
+     "section": "Rushing",
+     "category": "Yards From Scrimmage Per Game",
+     "value": "471.7",
+     "rank": "15th"
+    },
+    {
+     "section": "Rushing",
+     "category": "Yards Per Game",
+     "value": "471.7",
+     "rank": "4th"
+    },
+    {
+     "section": "Rushing",
+     "category": "Yards Per Rush Attempt",
+     "value": "5.6",
+     "rank": "Tied-9th"
+    },
+    {
+     "section": "Receiving",
+     "category": "Average Gain",
+     "value": "7.0",
+     "rank": "3rd"
+    },
+    {
+     "section": "Receiving",
+     "category": "ESPN Widereceiver Rating",
+     "value": "4638.00",
+     "rank": "6th"
+    },
+    {
+     "section": "Receiving",
+     "category": "Long Reception",
+     "value": "85",
+     "rank": "Tied-13th"
+    },
+    {
+     "section": "Receiving",
+     "category": "Net Total Yards",
+     "value": "4,245",
+     "rank": "5th"
+    },
+    {
+     "section": "Receiving",
+     "category": "Net Yards Per Game",
+     "value": "471.7",
+     "rank": "15th"
+    },
+    {
+     "section": "Receiving",
+     "category": "Receiving First Downs",
+     "value": "110",
+     "rank": "11th"
+    },
+    {
+     "section": "Receiving",
+     "category": "Receiving Touchdowns",
+     "value": "26",
+     "rank": "4th"
+    },
+    {
+     "section": "Receiving",
+     "category": "Receiving Yards",
+     "value": "2,643",
+     "rank": "6th"
+    },
+    {
+     "section": "Receiving",
+     "category": "Receiving Yards After Catch",
+     "value": "271",
+     "rank": "3rd"
+    },
+    {
+     "section": "Receiving",
+     "category": "Receiving Yards At Catch",
+     "value": "2372",
+     "rank": "14th"
+    },
+    {
+     "section": "Receiving",
+     "category": "Receiving Yards Per Game",
+     "value": "293.7",
+     "rank": "6th"
+    },
+    {
+     "section": "Receiving",
+     "category": "Receptions",
+     "value": "217",
+     "rank": "7th"
+    },
+    {
+     "section": "Receiving",
+     "category": "Total Offensive Plays",
+     "value": "604",
+     "rank": "Tied-44th"
+    },
+    {
+     "section": "Receiving",
+     "category": "Total Points",
+     "value": "344",
+     "rank": "Tied-10th"
+    },
+    {
+     "section": "Receiving",
+     "category": "Total Points Per Game",
+     "value": "38.2",
+     "rank": "Tied-8th"
+    },
+    {
+     "section": "Receiving",
+     "category": "Total Touchdowns",
+     "value": "46",
+     "rank": "Tied-10th"
+    },
+    {
+     "section": "Receiving",
+     "category": "Total Yards",
+     "value": "4,245",
+     "rank": "5th"
+    },
+    {
+     "section": "Receiving",
+     "category": "Yards From Scrimmage Per Game",
+     "value": "471.7",
+     "rank": "15th"
+    },
+    {
+     "section": "Receiving",
+     "category": "Yards Per Game",
+     "value": "471.7",
+     "rank": "4th"
+    },
+    {
+     "section": "Receiving",
+     "category": "Yards Per Reception",
+     "value": "12.2",
+     "rank": "Tied-37th"
+    },
+    {
+     "section": "Defense",
+     "category": "Assist Tackles",
+     "value": "306",
+     "rank": "Tied-179th"
+    },
+    {
+     "section": "Defense",
+     "category": "Average Sack Yards",
+     "value": "6.9",
+     "rank": "44th"
+    },
+    {
+     "section": "Defense",
+     "category": "Kicks Blocked",
+     "value": "2",
+     "rank": "Tied-26th"
+    },
+    {
+     "section": "Defense",
+     "category": "Long Interception",
+     "value": "2",
+     "rank": "Tied-126th"
+    },
+    {
+     "section": "Defense",
+     "category": "Passes Defended",
+     "value": "34",
+     "rank": "Tied-29th"
+    },
+    {
+     "section": "Defense",
+     "category": "Sacks",
+     "value": "25",
+     "rank": "Tied-6th"
+    },
+    {
+     "section": "Defense",
+     "category": "Sack Yards",
+     "value": "172",
+     "rank": "Tied-8th"
+    },
+    {
+     "section": "Defense",
+     "category": "Solo Tackles",
+     "value": "325",
+     "rank": "Tied-184th"
+    },
+    {
+     "section": "Defense",
+     "category": "Stuffs",
+     "value": "72",
+     "rank": "Tied-54th"
+    },
+    {
+     "section": "Defense",
+     "category": "Stuff Yards",
+     "value": "227",
+     "rank": "23rd"
+    },
+    {
+     "section": "Defense",
+     "category": "Tackles For Loss",
+     "value": "46",
+     "rank": "Tied-22nd"
+    },
+    {
+     "section": "Defense",
+     "category": "Total Tackles",
+     "value": "631",
+     "rank": "Tied-363rd"
+    },
+    {
+     "section": "Defensive Interceptions",
+     "category": "Interceptions",
+     "value": "6",
+     "rank": "Tied-74th"
+    },
+    {
+     "section": "Defensive Interceptions",
+     "category": "Interception Yards",
+     "value": "-3",
+     "rank": "128th"
+    },
+    {
+     "section": "Kicking",
+     "category": "Extra Point Attempts",
+     "value": "44",
+     "rank": "2nd"
+    },
+    {
+     "section": "Kicking",
+     "category": "Extra Point Blocked",
+     "value": "1",
+     "rank": "Tied-8th"
+    },
+    {
+     "section": "Kicking",
+     "category": "Extra Points Made",
+     "value": "44",
+     "rank": "2nd"
+    },
+    {
+     "section": "Kicking",
+     "category": "Field Goal Attempts",
+     "value": "10",
+     "rank": "Tied-10th"
+    },
+    {
+     "section": "Kicking",
+     "category": "Field Goal Attempts 30-39",
+     "value": "6",
+     "rank": "2nd"
+    },
+    {
+     "section": "Kicking",
+     "category": "Field Goals Blocked",
+     "value": "1",
+     "rank": "Tied-9th"
+    },
+    {
+     "section": "Kicking",
+     "category": "Field Goal Made",
+     "value": "6",
+     "rank": "Tied-12th"
+    },
+    {
+     "section": "Kicking",
+     "category": "Field Goals Made 30-39",
+     "value": "4",
+     "rank": "Tied-2nd"
+    },
+    {
+     "section": "Kicking",
+     "category": "Field Goals Made 50-59",
+     "value": "2",
+     "rank": "Tied-2nd"
+    },
+    {
+     "section": "Kicking",
+     "category": "Field Goals Made 50+",
+     "value": "2",
+     "rank": "Tied-2nd"
+    },
+    {
+     "section": "Kicking",
+     "category": "Kickoffs",
+     "value": "59",
+     "rank": "3rd"
+    },
+    {
+     "section": "Kicking",
+     "category": "Kickoff Yards",
+     "value": "3,778",
+     "rank": "3rd"
+    },
+    {
+     "section": "Kicking",
+     "category": "Long Field Goal Made",
+     "value": "50",
+     "rank": "Tied-5th"
+    },
+    {
+     "section": "Kicking",
+     "category": "Total Kicking Points",
+     "value": "62",
+     "rank": "6th"
+    },
+    {
+     "section": "Kicking",
+     "category": "Touchbacks",
+     "value": "38",
+     "rank": "4th"
+    },
+    {
+     "section": "Returning",
+     "category": "Kick Return Fair Catch Percentage",
+     "value": "0.00",
+     "rank": "1st"
+    },
+    {
+     "section": "Returning",
+     "category": "Kick Returns",
+     "value": "16",
+     "rank": "Tied-87th"
+    },
+    {
+     "section": "Returning",
+     "category": "Kick Return Yards",
+     "value": "313",
+     "rank": "91st"
+    },
+    {
+     "section": "Returning",
+     "category": "Long Kick Return",
+     "value": "35",
+     "rank": "Tied-96th"
+    },
+    {
+     "section": "Returning",
+     "category": "Long Punt Return",
+     "value": "31",
+     "rank": "Tied-66th"
+    },
+    {
+     "section": "Returning",
+     "category": "Punt Return Fair Catch Percentage",
+     "value": "0.00",
+     "rank": "2nd"
+    },
+    {
+     "section": "Returning",
+     "category": "Punt Returns",
+     "value": "14",
+     "rank": "Tied-37th"
+    },
+    {
+     "section": "Returning",
+     "category": "Punt Return Yards",
+     "value": "162",
+     "rank": "37th"
+    },
+    {
+     "section": "Punting",
+     "category": "Fair Catches",
+     "value": "8",
+     "rank": "Tied-83rd"
+    },
+    {
+     "section": "Punting",
+     "category": "Long Punt",
+     "value": "68",
+     "rank": "Tied-31st"
+    },
+    {
+     "section": "Punting",
+     "category": "Punt Returns",
+     "value": "12",
+     "rank": "Tied-67th"
+    },
+    {
+     "section": "Punting",
+     "category": "Punts",
+     "value": "33",
+     "rank": "Tied-97th"
+    },
+    {
+     "section": "Punting",
+     "category": "Punts Inside 10",
+     "value": "6",
+     "rank": "Tied-14th"
+    },
+    {
+     "section": "Punting",
+     "category": "Punts Inside 20",
+     "value": "13",
+     "rank": "Tied-37th"
+    },
+    {
+     "section": "Punting",
+     "category": "Punts Inside 20 Percentage",
+     "value": "39.39",
+     "rank": "Tied-16th"
+    },
+    {
+     "section": "Punting",
+     "category": "Punt Yards",
+     "value": "1,455",
+     "rank": "80th"
+    },
+    {
+     "section": "Punting",
+     "category": "Touchbacks",
+     "value": "1",
+     "rank": "Tied-79th"
+    },
+    {
+     "section": "Scoring",
+     "category": "Field Goals",
+     "value": "6",
+     "rank": "Tied-84th"
+    },
+    {
+     "section": "Scoring",
+     "category": "Kick Extra Points",
+     "value": "44",
+     "rank": "Tied-6th"
+    },
+    {
+     "section": "Scoring",
+     "category": "Kick Extra Points Made",
+     "value": "44",
+     "rank": "Tied-6th"
+    },
+    {
+     "section": "Scoring",
+     "category": "Passing Touchdowns",
+     "value": "26",
+     "rank": "4th"
+    },
+    {
+     "section": "Scoring",
+     "category": "Receiving Touchdowns",
+     "value": "26",
+     "rank": "4th"
+    },
+    {
+     "section": "Scoring",
+     "category": "Rushing Touchdowns",
+     "value": "20",
+     "rank": "Tied-18th"
+    },
+    {
+     "section": "Scoring",
+     "category": "Total Points",
+     "value": "344",
+     "rank": "Tied-10th"
+    },
+    {
+     "section": "Scoring",
+     "category": "Total Points Per Game",
+     "value": "38.2",
+     "rank": "Tied-8th"
+    },
+    {
+     "section": "Scoring",
+     "category": "Total Scoring Points",
+     "value": "342",
+     "rank": "Tied-170th"
+    },
+    {
+     "section": "Scoring",
+     "category": "Total Scoring Touchdowns",
+     "value": "46",
+     "rank": "Tied-70th"
+    },
+    {
+     "section": "Scoring",
+     "category": "Total Touchdowns",
+     "value": "46",
+     "rank": "Tied-7th"
+    },
+    {
+     "section": "Scoring",
+     "category": "Total Two Point Conversions",
+     "value": "2",
+     "rank": "Tied-10th"
+    },
+    {
+     "section": "Scoring",
+     "category": "Two Point Receiving Conversion",
+     "value": "1",
+     "rank": "Tied-16th"
+    },
+    {
+     "section": "Scoring",
+     "category": "Two Point Rush Conversion",
+     "value": "1",
+     "rank": "Tied-4th"
+    },
+    {
+     "section": "Miscellaneous",
+     "category": "Total 1st downs",
+     "value": "202",
+     "rank": "19th"
+    },
+    {
+     "section": "Miscellaneous",
+     "category": "Passing 1st downs",
+     "value": "110",
+     "rank": "11th"
+    },
+    {
+     "section": "Miscellaneous",
+     "category": "1st downs by penalty",
+     "value": "11",
+     "rank": "Tied-114th"
+    },
+    {
+     "section": "Miscellaneous",
+     "category": "Rushing 1st downs",
+     "value": "81",
+     "rank": "Tied-39th"
+    },
+    {
+     "section": "Miscellaneous",
+     "category": "First Downs Attempts",
+     "value": "17",
+     "rank": "Tied-44th"
+    },
+    {
+     "section": "Miscellaneous",
+     "category": "Fourth Down Conversions",
+     "value": "11",
+     "rank": "Tied-18th"
+    },
+    {
+     "section": "Miscellaneous",
+     "category": "Possession Time Seconds",
+     "value": "14926",
+     "rank": "94th"
+    },
+    {
+     "section": "Miscellaneous",
+     "category": "Third Down Attempts",
+     "value": "104",
+     "rank": "Tied-110th"
+    },
+    {
+     "section": "Miscellaneous",
+     "category": "Third Down Conversions",
+     "value": "42",
+     "rank": "Tied-76th"
+    },
+    {
+     "section": "Miscellaneous",
+     "category": "Total Giveaways",
+     "value": "10",
+     "rank": "Tied-30th"
+    },
+    {
+     "section": "Miscellaneous",
+     "category": "Total Penalties",
+     "value": "57",
+     "rank": "Tied-45th"
+    },
+    {
+     "section": "Miscellaneous",
+     "category": "Total Penalty Yards",
+     "value": "545",
+     "rank": "39th"
+    },
+    {
+     "section": "Miscellaneous",
+     "category": "Total Takeaways",
+     "value": "12",
+     "rank": "Tied-79th"
+    },
+    {
+     "section": "Miscellaneous",
+     "category": "Turnover Ratio",
+     "value": "2",
+     "rank": "Tied-49th"
+    }
+   ]
+  }
+ ]
+}

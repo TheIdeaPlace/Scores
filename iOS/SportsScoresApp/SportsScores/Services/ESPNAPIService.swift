@@ -1030,7 +1030,8 @@ class ESPNAPIService {
     /// Player Efficiency Rating, where the leaders all read 0.0: that isn't a list of leaders.
     /// On Windows this is `_parse_leaders`, and tests/fixtures/leader_lists_grid.json holds both.
     ///
-    /// `oneTeam` is an answer for one team, which Windows has no screen for. It has qualified
+    /// `oneTeam` is an answer for one team, for Team Hub (Windows: `_parse_leaders(one_team=True)`, and
+    /// tests/fixtures/team_hub_stats_grid.json holds both). It has qualified
     /// players first and then everyone else, and a team's tab shows them all, so its list isn't
     /// cut where the numbers turn back up: that would lose a real player, such as Tyler Herro on
     /// 20.5 points, listed after a teammate on 5.6.
