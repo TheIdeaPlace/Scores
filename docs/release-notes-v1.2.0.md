@@ -58,6 +58,7 @@ and the CFL. Both apps now read the same data in more places, and a lot of thing
 
 **Fixed**
 - Every menu the app builds is announced as it opens, on its first item, instead of waiting for an arrow key.
+- Live Scores headings say how many games they hold, as the iPhone's do: "LIVE GAMES, 5", "NHL, 3".
 - Enter on an upcoming or finished game in Live Scores opens it.
 - Pitch audio: Alt+S on an at-bat plays its pitches, a new Alt+S replaces one still playing, and closing the
   plays stops it.
