@@ -163,6 +163,9 @@ Examples:
 
     error_log.install()
     app = QApplication(sys.argv)
+    # mac-build branch only (#246): Return opens a row on macOS as it does on Windows.
+    import mac_keys
+    app._mac_keys = mac_keys.install(app)
     # Held for the life of the process so the installer can detect a running copy.
     app._scores_mutex = updater.hold_app_mutex()
     window = SportsScoresApp(startup_params=startup_params)

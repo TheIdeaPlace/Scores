@@ -35,6 +35,9 @@ jobs:
           QT_QPA_PLATFORM: offscreen
         run: python -m pytest tests/unit/ tests/integration/test_play_audio_wiring.py -q -p no:cacheprovider
 
+      - name: Check that Return opens a row on macOS
+        run: python tools/mac_keys_check.py
+
       - name: Build Scores.app
         run: |
           set -euo pipefail
