@@ -162,7 +162,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     group table says ESPN's words, such as "(Advance to Round of 32)", instead of a check mark.
   - A poll's Previous column says "5 (up 3)", "7 (down 1)" or "4 (same)" instead of arrows.
   - Game details' news, odds and box score lines lose their bullets; the Game Wrap Up page's headings
-    lose their emoji.
+    lose their emoji. MLB substitutions lose the ">>" in front, and Home loses the line-drawing separator
+    rows, which screen readers counted as items.
 - **iPhone: VoiceOver no longer reads emoji names in Live Scores' headings,** such as the golf flag or a
   sport's icon. They still show.
 - **Windows: Live Scores headings say how many games they hold,** as the iPhone's do: "Live games, 5",
