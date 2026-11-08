@@ -1,0 +1,102 @@
+{
+ "about": "The season series, from an MLB summary. season_series.py (tests/unit/test_season_series.py) and the iPhone's Models/SeasonSeries.swift (SeasonSeriesGridTests.swift) must both give these answers. The record is counted from the finished games' winner flags, never ESPN's summary sentence. Order: playoff, season, current, preseason, then the rest as sent; a series with the same games as one before it is left out. `names` is team id to the name shown; a team not in it falls back to the game's displayName. A case reads a real summary from tests/fixtures/<fixture> or the summary written out here.",
+ "cases": [
+  {
+   "name": "regular season game 12 of 13: ESPN says NYM lead 7-5, the games say Mets won 7-6",
+   "fixture": "espn/summary_final_MLB_401817091.json",
+   "names": {"20": "Nationals", "21": "Mets"},
+   "expected": [
+    {"label": "Regular Season Series", "text": "Mets won 7-6", "games": 13},
+    {"label": "Current Series", "text": "Nationals won 2-1", "games": 3},
+    {"label": "Preseason Series", "text": "Nationals won 4-1", "games": 5}
+   ],
+   "expected_line": "Regular Season Series: Mets won 7-6"
+  },
+  {
+   "name": "World Series game 4: ESPN's current series says TB leads 3-2 and is the playoff's games, so it is left out",
+   "fixture": "espn/summary_final_MLB_401908045_WS.json",
+   "names": {"30": "Rays", "8": "Brewers"},
+   "expected": [
+    {"label": "World Series", "text": "Brewers won 4-1", "games": 7},
+    {"label": "Regular Season Series", "text": "Brewers won 2-1", "games": 3}
+   ],
+   "expected_line": "World Series: Brewers won 4-1"
+  },
+  {
+   "name": "in progress, a lead; a winner flag on a game not finished doesn't count; status post counts as finished",
+   "names": {"1": "Cubs", "2": "Reds"},
+   "summary": {"seasonseries": [
+    {"type": "season", "title": "Regular Season Series", "totalCompetitions": 13, "events": [
+     {"id": "a", "statusType": {"completed": true}, "competitors": [{"homeAway": "home", "winner": true, "team": {"id": "1"}}, {"homeAway": "away", "winner": false, "team": {"id": "2"}}]},
+     {"id": "b", "status": "post", "competitors": [{"homeAway": "home", "winner": true, "team": {"id": "1"}}, {"homeAway": "away", "winner": false, "team": {"id": "2"}}]},
+     {"id": "c", "statusType": {"completed": true}, "competitors": [{"homeAway": "home", "winner": false, "team": {"id": "1"}}, {"homeAway": "away", "winner": true, "team": {"id": "2"}}]},
+     {"id": "d", "statusType": {"completed": false, "state": "in"}, "competitors": [{"homeAway": "home", "winner": true, "team": {"id": "1"}}, {"homeAway": "away", "winner": false, "team": {"id": "2"}}]}
+    ]}
+   ]},
+   "expected": [{"label": "Regular Season Series", "text": "Cubs lead 2-1", "games": 13}],
+   "expected_line": "Regular Season Series: Cubs lead 2-1"
+  },
+  {
+   "name": "tied with games to come, and split once all are played",
+   "names": {"1": "Cubs", "2": "Reds"},
+   "summary": {"seasonseries": [
+    {"type": "current", "title": "Current Series", "totalCompetitions": 4, "events": [
+     {"id": "a", "statusType": {"completed": true}, "competitors": [{"winner": true, "team": {"id": "1"}}, {"winner": false, "team": {"id": "2"}}]},
+     {"id": "b", "statusType": {"completed": true}, "competitors": [{"winner": false, "team": {"id": "1"}}, {"winner": true, "team": {"id": "2"}}]},
+     {"id": "c", "statusType": {"completed": false, "state": "pre"}, "competitors": [{"team": {"id": "1"}}, {"team": {"id": "2"}}]},
+     {"id": "d", "statusType": {"completed": false, "state": "pre"}, "competitors": [{"team": {"id": "1"}}, {"team": {"id": "2"}}]}
+    ]},
+    {"type": "preseason", "title": "Preseason Series", "events": [
+     {"id": "e", "statusType": {"completed": true}, "competitors": [{"winner": true, "team": {"id": "1"}}, {"winner": false, "team": {"id": "2"}}]},
+     {"id": "f", "statusType": {"completed": true}, "competitors": [{"winner": false, "team": {"id": "1"}}, {"winner": true, "team": {"id": "2"}}]}
+    ]}
+   ]},
+   "expected": [
+    {"label": "Current Series", "text": "Tied 1-1", "games": 4},
+    {"label": "Preseason Series", "text": "Split 1-1", "games": 2}
+   ],
+   "expected_line": "Current Series: Tied 1-1"
+  },
+  {
+   "name": "a best of seven decided at 4-2 with a game it never needed; a team not in names uses the game's displayName",
+   "names": {"1": "Cubs"},
+   "summary": {"seasonseries": [
+    {"type": "playoff", "title": "Playoff Series", "totalCompetitions": 7, "events": [
+     {"id": "1", "statusType": {"completed": true}, "competitors": [{"winner": false, "team": {"id": "1"}}, {"winner": true, "team": {"id": "2", "displayName": "Cincinnati Reds"}}]},
+     {"id": "2", "statusType": {"completed": true}, "competitors": [{"winner": false, "team": {"id": "1"}}, {"winner": true, "team": {"id": "2", "displayName": "Cincinnati Reds"}}]},
+     {"id": "3", "statusType": {"completed": true}, "competitors": [{"winner": true, "team": {"id": "1"}}, {"winner": false, "team": {"id": "2", "displayName": "Cincinnati Reds"}}]},
+     {"id": "4", "statusType": {"completed": true}, "competitors": [{"winner": false, "team": {"id": "1"}}, {"winner": true, "team": {"id": "2", "displayName": "Cincinnati Reds"}}]},
+     {"id": "5", "statusType": {"completed": true}, "competitors": [{"winner": true, "team": {"id": "1"}}, {"winner": false, "team": {"id": "2", "displayName": "Cincinnati Reds"}}]},
+     {"id": "6", "statusType": {"completed": true}, "competitors": [{"winner": false, "team": {"id": "1"}}, {"winner": true, "team": {"id": "2", "displayName": "Cincinnati Reds"}}]}
+    ]}
+   ]},
+   "expected": [{"label": "Playoff Series", "text": "Cincinnati Reds won 4-2", "games": 7}],
+   "expected_line": "Playoff Series: Cincinnati Reds won 4-2"
+  },
+  {
+   "name": "nothing played yet; an unknown type goes last, after preseason; no title says Series",
+   "names": {"1": "Cubs", "2": "Reds"},
+   "summary": {"seasonseries": [
+    {"type": "exhibition", "events": [
+     {"id": "x", "statusType": {"completed": true}, "competitors": [{"winner": true, "team": {"id": "1"}}, {"winner": false, "team": {"id": "2"}}]}
+    ]},
+    {"type": "preseason", "title": "Preseason Series", "totalCompetitions": 2, "events": [
+     {"id": "y", "statusType": {"completed": false, "state": "pre"}, "competitors": [{"team": {"id": "1"}}, {"team": {"id": "2"}}]},
+     {"id": "z", "statusType": {"completed": false, "state": "pre"}, "competitors": [{"team": {"id": "1"}}, {"team": {"id": "2"}}]}
+    ]}
+   ]},
+   "expected": [
+    {"label": "Preseason Series", "text": "No games played yet", "games": 2},
+    {"label": "Series", "text": "Cubs won 1-0", "games": 1}
+   ],
+   "expected_line": "Preseason Series: No games played yet"
+  },
+  {
+   "name": "no block at all",
+   "names": {},
+   "summary": {},
+   "expected": [],
+   "expected_line": ""
+  }
+ ]
+}

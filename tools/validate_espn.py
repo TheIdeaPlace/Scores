@@ -575,6 +575,40 @@ def on_ice_problems(summary):
     return problems
 
 
+def mlb_extras_problems(summary):
+    """What's wrong with an MLB summary's winprobability and seasonseries blocks. Both apps
+    show them: the home team's chance as a fraction per play, each play joined to `plays` by
+    id on Windows, and each series' record counted from its games' winner flags."""
+    problems = []
+    points = [p for p in summary.get("winprobability") or [] if isinstance(p, dict)]
+    if not points:
+        problems.append("no winprobability block")
+    else:
+        fractions = [p.get("homeWinPercentage") for p in points]
+        if not all(isinstance(f, (int, float)) and not isinstance(f, bool) and 0 <= f <= 1 for f in fractions):
+            problems.append("a homeWinPercentage isn't a fraction from 0 to 1")
+        plays = {str(p.get("id")) for p in summary.get("plays") or [] if isinstance(p, dict)}
+        missing = [p for p in points if str(p.get("playId")) not in plays]
+        if plays and missing:
+            problems.append(f"{len(missing)} of {len(points)} winprobability playIds aren't in plays")
+    series = [s for s in summary.get("seasonseries") or [] if isinstance(s, dict)]
+    if not series:
+        problems.append("no seasonseries block")
+    for entry in series:
+        events = [e for e in entry.get("events") or [] if isinstance(e, dict)]
+        if not events:
+            problems.append(f"series {entry.get('type')} lists no games")
+            continue
+        finished = [e for e in events if (e.get("statusType") or {}).get("completed") is True]
+        unflagged = [e for e in finished
+                     if sum(1 for c in e.get("competitors") or [] if (c or {}).get("winner") is True) != 1]
+        if unflagged:
+            problems.append(f"series {entry.get('type')}: {len(unflagged)} finished games without one winner")
+        if any(not ((c or {}).get("team") or {}).get("id") for e in events for c in e.get("competitors") or []):
+            problems.append(f"series {entry.get('type')}: a team without an id")
+    return problems
+
+
 def game_problems(summary, league):
     """Everything wrong with one game's summary, by the check it belongs to."""
     return {"Game summary": summary_header_problems(summary),
@@ -895,6 +929,13 @@ def check_games(http, report, league, finals, in_season):
             report.ok(league.key, "On the ice", "onIce ids all named in the box score", url)
     elif league.family == HOCKEY and summary.get("onIce"):
         report.warn(league.key, "On the ice", "ESPN now sends onIce here. The apps could show it", url)
+    if league.key == "MLB":
+        problems = mlb_extras_problems(summary)
+        if problems:
+            report.warn(league.key, "Win probability and series", "; ".join(problems), url)
+        else:
+            report.ok(league.key, "Win probability and series",
+                      f"{len(summary['winprobability'])} points, {len(summary['seasonseries'])} series", url)
     http.save("summary", league.key, summary)
     return event, summary
 

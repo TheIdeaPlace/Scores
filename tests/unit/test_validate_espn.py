@@ -2568,3 +2568,23 @@ def test_on_ice_problems_on_a_real_live_summary():
     assert v.on_ice_problems(broken) == ["onIce ids not in the box score: 1", "an onIce block has no teamId"]
     assert v.on_ice_problems({"onIce": []}) == ["no onIce block"]
     assert v.on_ice_problems({}) == ["no onIce block"]
+
+
+def test_mlb_extras_problems_on_real_summaries():
+    summary = load("summary_final_MLB_401817091.json")
+    assert v.mlb_extras_problems(summary) == []
+    assert v.mlb_extras_problems(load("summary_final_MLB_401908045_WS.json")) == []
+    broken = copy.deepcopy(summary)
+    broken["winprobability"][0]["homeWinPercentage"] = 69.8
+    broken["winprobability"][1]["playId"] = "nope"
+    broken["seasonseries"][0]["events"][0]["competitors"][0]["winner"] = False
+    del broken["seasonseries"][1]["events"][0]["competitors"][0]["team"]["id"]
+    broken["seasonseries"][2]["events"] = []
+    assert v.mlb_extras_problems(broken) == [
+        "a homeWinPercentage isn't a fraction from 0 to 1",
+        "1 of 74 winprobability playIds aren't in plays",
+        "series current: 1 finished games without one winner",
+        "series preseason: a team without an id",
+        "series season lists no games",
+    ]
+    assert v.mlb_extras_problems({}) == ["no winprobability block", "no seasonseries block"]

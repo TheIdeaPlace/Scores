@@ -1,0 +1,55 @@
+{
+ "about": "Win probability, from an MLB summary. win_probability.py (tests/unit/test_win_probability.py) and the iPhone's Models/WinProbability.swift (WinProbabilityGridTests.swift) must both give these answers. A percent is floor(fraction * 100 + 0.5), kept in 0 to 100; the away percent is 100 minus the home one. A summary case reads a real summary from tests/fixtures/<fixture> or the summary written out here.",
+ "percent_cases": [
+  {"fraction": 0.698, "percent": 70},
+  {"fraction": 0.0, "percent": 0},
+  {"fraction": 1.0, "percent": 100},
+  {"fraction": 0.5, "percent": 50},
+  {"fraction": 0.005, "percent": 1},
+  {"fraction": 0.994, "percent": 99},
+  {"fraction": 0.996, "percent": 100},
+  {"fraction": 0.001, "percent": 0},
+  {"fraction": 1.2, "percent": 100},
+  {"fraction": -0.1, "percent": 0}
+ ],
+ "leader_cases": [
+  {"home_fraction": 0.698, "home": "Nationals", "away": "Mets", "text": "Nationals 70%"},
+  {"home_fraction": 0.3, "home": "Nationals", "away": "Mets", "text": "Mets 70%"},
+  {"home_fraction": 0.0, "home": "Nationals", "away": "Mets", "text": "Mets 100%"},
+  {"home_fraction": 0.5, "home": "Nationals", "away": "Mets", "text": "Even, 50%"},
+  {"home_fraction": 0.4951, "home": "Nationals", "away": "Mets", "text": "Even, 50%"},
+  {"home_fraction": 0.504, "home": "Nationals", "away": "Mets", "text": "Even, 50%"},
+  {"home_fraction": 0.506, "home": "Nationals", "away": "Mets", "text": "Nationals 51%"}
+ ],
+ "summary_cases": [
+  {
+   "name": "final, Mets at Nationals",
+   "fixture": "espn/summary_final_MLB_401817091.json",
+   "home": "Nationals", "away": "Mets",
+   "expected_count": 74, "expected_first_home_percent": 70, "expected_leader": "Mets 100%"
+  },
+  {
+   "name": "World Series game 4, Brewers at Rays, no plays in the fixture",
+   "fixture": "espn/summary_final_MLB_401908045_WS.json",
+   "home": "Rays", "away": "Brewers",
+   "expected_count": 92, "expected_first_home_percent": 58, "expected_leader": "Rays 100%"
+  },
+  {
+   "name": "an entry without a number for the home team is left out; one without a tie or play id is kept",
+   "summary": {"winprobability": [
+    {"homeWinPercentage": 0.6, "tiePercentage": 0.0, "playId": "1"},
+    {"homeWinPercentage": "0.7", "tiePercentage": 0.0, "playId": "2"},
+    {"tiePercentage": 0.0, "playId": "3"},
+    {"homeWinPercentage": 0.25}
+   ]},
+   "home": "Home", "away": "Away",
+   "expected_count": 2, "expected_first_home_percent": 60, "expected_leader": "Away 75%"
+  },
+  {
+   "name": "no block at all",
+   "summary": {},
+   "home": "Home", "away": "Away",
+   "expected_count": 0, "expected_first_home_percent": null, "expected_leader": null
+  }
+ ]
+}
