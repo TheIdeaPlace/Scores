@@ -1,5 +1,5 @@
 {
- "note": "What a real racing answer reads as, on both apps. tests/unit/test_racing.py checks Windows (racing.py) and RacingGridTests.swift the iPhone (ESPNAPIService.fetchRaceEvent and fetchRacingStandings). An event is the scoreboard's first; its date, status and field are the race's own competition, not the event's or the first session's. A position is empty before the race starts, when the field is an entry list. Dates are UTC. `first` is the first three of `count`: position, driver, nationality for a race; rank, name, nationality, points for standings, where a constructor has no nationality.",
+ "note": "What a real racing answer reads as, on both apps. tests/unit/test_racing.py checks Windows (racing.py) and RacingGridTests.swift the iPhone (ESPNAPIService.fetchRaceEvent and fetchRacingStandings). An event is the scoreboard's first; its date, status and field are the race's own competition, not the event's or the first session's. A position is empty before the race starts, when the field is an entry list. Dates are UTC. `first` is the first three of `count`. The _running and _canceled fixtures are real answers with a status changed or an event moved in, for the cases no live answer had: position, driver, nationality for a race; rank, name, nationality, points for standings, where a constructor has no nationality.",
  "events": [
   {
    "fixture": "racing_scoreboard_f1.json",
@@ -43,6 +43,36 @@
    "status": "Scheduled",
    "completed": false,
    "broadcasts": ["NBC", "HBO Max"],
+   "kind": "",
+   "winner": "",
+   "count": 0,
+   "first": []
+  },
+  {
+   "fixture": "racing_scoreboard_irl_running.json",
+   "name": "Grand Prix of Monterey",
+   "date": "2026-09-06T18:30:00Z",
+   "state": "in",
+   "status": "In Progress",
+   "completed": false,
+   "broadcasts": ["FOX"],
+   "kind": "Running Order",
+   "winner": "",
+   "count": 25,
+   "first": [
+    ["1", "Scott McLaughlin", "New Zealand"],
+    ["2", "Kyle Kirkwood", "USA"],
+    ["3", "Alexander Rossi", "USA"]
+   ]
+  },
+  {
+   "fixture": "racing_scoreboard_f1_canceled.json",
+   "name": "Gulf Air Bahrain Grand Prix",
+   "date": "2026-04-12T15:00:00Z",
+   "state": "post",
+   "status": "Canceled",
+   "completed": false,
+   "broadcasts": [],
    "kind": "",
    "winner": "",
    "count": 0,

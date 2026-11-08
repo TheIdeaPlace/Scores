@@ -22,11 +22,11 @@ from typing import Any, Dict, List, Optional
 
 from game_labels import broadcast_names, local_schedule_datetime
 
-# key: (ESPN path, name, full name, whether it has constructors and practice sessions)
+# key: (ESPN path, name, full name, a constructors' championship, sessions listed before the race)
 RACING_SERIES = {
-    "F1": ("racing/f1", "Formula 1", "FIA Formula One World Championship", True),
-    "IndyCar": ("racing/irl", "IndyCar Series", "NTT IndyCar Series", False),
-    "NASCAR": ("racing/nascar-premier", "NASCAR Cup Series", "NASCAR Cup Series", False),
+    "F1": ("racing/f1", "Formula 1", "FIA Formula One World Championship", True, True),
+    "IndyCar": ("racing/irl", "IndyCar Series", "NTT IndyCar Series", False, False),
+    "NASCAR": ("racing/nascar-premier", "NASCAR Cup Series", "NASCAR Cup Series", False, False),
 }
 
 # ESPN's session abbreviations, as Formula 1 names them.
@@ -61,12 +61,16 @@ def series_full_name(key: str) -> str:
 
 
 def has_constructors(key: str) -> bool:
-    """Formula 1: a constructors' championship, and a weekend of sessions before the race."""
+    """Formula 1's constructors' championship, beside the drivers'."""
     entry = RACING_SERIES.get(key)
     return bool(entry and entry[3])
 
 
-has_sessions = has_constructors
+def has_sessions(key: str) -> bool:
+    """Whether ESPN lists practice and qualifying as competitions of their own (Formula 1). The
+    others list only the race, which a Sessions tab would repeat."""
+    entry = RACING_SERIES.get(key)
+    return bool(entry and entry[4])
 
 
 def _dict(value: Any) -> Dict[str, Any]:

@@ -164,3 +164,5 @@ racing_standings_irl.json	38 KB	one Standings group, championshipPts; per-race c
 racing_standings_nascar-premier.json	44 KB	one Standings group, championshipPts; per-race columns unnamed, trimmed to two
 racing_news_f1.json	9 KB	news limit=25, trimmed to 3 articles
 racing_news_nascar-premier.json	1 KB	news: articles empty, as ESPN has had it since at least November 2026
+racing_scoreboard_irl_running.json	13 KB	made from racing_scoreboard_irl: the event and race set In Progress, winner flags cleared, for a running order
+racing_scoreboard_f1_canceled.json	9 KB	made from racing_scoreboard_f1 with its event swapped for the canceled Bahrain GP from racing_season_f1_2026

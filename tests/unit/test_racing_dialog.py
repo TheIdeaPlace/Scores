@@ -13,13 +13,14 @@ import pytest
 pytest.importorskip("PyQt6")
 
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-CHECKS = 24
+CHECKS = 28
 
 
 def run_checks():
     import json
 
     from PyQt6.QtCore import QElapsedTimer, Qt
+    from PyQt6.QtTest import QTest
     from PyQt6.QtWidgets import QApplication, QListWidget
 
     app = QApplication.instance() or QApplication([])  # noqa: F841 (kept alive)
@@ -89,6 +90,18 @@ def run_checks():
     results["the hub lists the three series"] = [
         hub.series_list.item(i).text() for i in range(hub.series_list.count())] == [
         "Formula 1", "IndyCar Series", "NASCAR Cup Series"]
+    # Enter on a series opens it, and closing that leaves the hub open for the next one.
+    opened = []
+    real_series = scores.RacingSeriesDialog
+    scores.RacingSeriesDialog = lambda key, parent: type("Stub", (), {"exec": lambda self: opened.append(key)})()
+    hub.show()
+    wait_for(lambda: hub.isVisible())
+    hub.series_list.setFocus()
+    QTest.keyClick(hub.series_list, Qt.Key.Key_Return)
+    wait_for(lambda: False, ms=200)
+    results["Enter on a series opens it and leaves the hub open"] = opened == ["F1"] and hub.isVisible()
+    scores.RacingSeriesDialog = real_series
+    hub.close()
     hub.deleteLater()
 
     f1 = scores.RacingSeriesDialog("F1")
@@ -103,7 +116,8 @@ def run_checks():
     race = f1.race_page.content
     results["an entry list has no position column"] = (
         headers(race) == ["Driver", "Nationality"] and race.rowCount() == 22)
-    results["the entry list says what it is"] = race.accessible_name == "MSC Cruises São Paulo Grand Prix entry list"
+    results["the entry list says what it is, and when"] = race.accessible_name.startswith(
+        "Entry List: MSC Cruises São Paulo Grand Prix. Autodromo Jose Carlos Pace. Sunday, November 8, ")
     results["all three views are filled"] = race.quick_list.count() == 22 and race.full_list.count() == 22
     results["sessions start on the race"] = f1.sessions_page.content.table_widget.currentRow() == 4
     schedule = f1.schedule_page.content
@@ -114,6 +128,33 @@ def run_checks():
         "Pos", "Constructor", "Points"]
     results["the race label says it"] = f1.race_label.text().startswith("MSC Cruises São Paulo Grand Prix.")
     results["news headlines"] = f1.news_page.content.count() == 3
+
+    # Enter in a table mustn't press Refresh: a reload would make a new table.
+    f1.tab_widget.setCurrentWidget(f1.drivers_page)
+    drivers = f1.drivers_page.content
+    QTest.keyClick(drivers.table_widget, Qt.Key.Key_Return)
+    wait_for(lambda: False, ms=200)
+    results["Enter in a table doesn't refresh"] = f1.drivers_page.content is drivers
+
+    # Tab from the tabs reaches the table before the buttons.
+    # (Other pages' content sits between them too, but it's hidden, which Tab skips.)
+    chain, widget = [], f1.tab_widget.tabBar().nextInFocusChain()
+    while widget is not f1.tab_widget.tabBar() and len(chain) < 500:
+        chain.append(widget)
+        widget = widget.nextInFocusChain()
+    buttons = [i for i, w in enumerate(chain) if isinstance(w, scores.QPushButton)]
+    results["the loaded table comes after the tabs, before the buttons"] = (
+        drivers.table_widget in chain and buttons and chain.index(drivers.table_widget) < min(buttons))
+
+    # A refresh keeps the row and column someone was on.
+    drivers.table_widget.setCurrentCell(5, 2)
+    drivers.table_widget.setFocus()
+    f1._load_all()
+    wait_for(lambda: f1.drivers_page.content is not drivers)
+    wait_for(lambda: False, ms=200)
+    again = f1.drivers_page.content
+    results["a refresh keeps the place in the table"] = (
+        again is not drivers and again.table_widget.currentRow() == 5 and again.table_widget.currentColumn() == 2)
 
     # A refresh that fails keeps what's on show and says so once.
     failing["event"] = failing["standings"] = True

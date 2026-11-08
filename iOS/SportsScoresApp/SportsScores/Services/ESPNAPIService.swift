@@ -1844,7 +1844,7 @@ class ESPNAPIService {
 
         // By order, anyone without one after in ESPN's order. Before the race there's no order at
         // all, and the field is an entry list with no positions.
-        let competitors = canceled ? [] : (competition?.competitors ?? [])
+        let competitors: [RaceCompetitor] = canceled ? [] : (competition?.competitors ?? [])
             .enumerated()
             .sorted { ($0.element.order ?? Int.max, $0.offset) < ($1.element.order ?? Int.max, $1.offset) }
             .map { pair -> RaceCompetitor in
@@ -1852,7 +1852,7 @@ class ESPNAPIService {
                 return RaceCompetitor(
                     id: c.id,
                     position: status.state == "pre" ? nil : c.order,
-                    driverName: c.athlete?.displayName ?? "Unknown driver",
+                    driverName: c.athlete?.displayName ?? c.athlete?.fullName ?? "Unknown driver",
                     shortName: c.athlete?.shortName ?? "—",
                     nationality: c.athlete?.flag?.alt ?? ""
                 )
@@ -1918,13 +1918,15 @@ class ESPNAPIService {
                 )
                 guard let rankStr = stats["rank"], let rank = Int(rankStr) else { return nil }
 
-                let points = stats["championshipPts"] ?? stats["points"] ?? "—"
+                // The first that says something, as racing.py reads it.
+                let points = [stats["championshipPts"], stats["points"]].compactMap { $0 }
+                    .first { !$0.isEmpty } ?? "Not given"
 
                 if isConstructors, let team = entry.team {
                     return RacingStandingsEntry(
                         id: team.id ?? "\(index)-\(rank)",
                         rank: rank,
-                        name: team.displayName ?? team.abbreviation ?? "—",
+                        name: team.displayName ?? team.abbreviation ?? "Unknown",
                         shortName: team.abbreviation ?? "—",
                         nationality: "",
                         points: points
@@ -1933,7 +1935,7 @@ class ESPNAPIService {
                     return RacingStandingsEntry(
                         id: athlete.id ?? "\(index)-\(rank)",
                         rank: rank,
-                        name: athlete.displayName ?? "—",
+                        name: athlete.displayName ?? "Unknown",
                         shortName: athlete.shortName ?? "—",
                         nationality: athlete.flag?.alt ?? "",
                         points: points

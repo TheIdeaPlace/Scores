@@ -58,7 +58,8 @@ def test_the_grid_covers_every_series_and_every_kind_of_field():
         slug = path.split("/")[1]
         assert f"racing_scoreboard_{slug}.json" in fixtures
         assert f"racing_standings_{slug}.json" in fixtures
-    assert {c["kind"] for c in GRID["events"]} == {racing.ENTRY_LIST, racing.RESULTS, ""}
+    assert {c["kind"] for c in GRID["events"]} == {racing.ENTRY_LIST, racing.RUNNING_ORDER, racing.RESULTS, ""}
+    assert any(c["status"] == "Canceled" for c in GRID["events"])
 
 
 # ------------------------------------------------------------------ the race weekend

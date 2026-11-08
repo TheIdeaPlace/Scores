@@ -59,6 +59,7 @@ struct RacingCompetitorAPI: Decodable {
 
 struct RacingAthleteAPI: Decodable {
     let displayName: String?
+    let fullName: String?
     let shortName: String?
     let flag: RacingFlagAPI?
 }

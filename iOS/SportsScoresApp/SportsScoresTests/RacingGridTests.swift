@@ -87,7 +87,7 @@ final class RacingGridTests: XCTestCase {
 
     func testEveryRaceReadsAsTheSharedGridSays() async throws {
         let cases = try grid().events
-        XCTAssertEqual(cases.count, 3)
+        XCTAssertEqual(cases.count, 5)
         for item in cases {
             let found = try await service(answering: item.fixture).fetchRaceEvent(for: series(item.fixture))
             let event = try XCTUnwrap(found, item.fixture)

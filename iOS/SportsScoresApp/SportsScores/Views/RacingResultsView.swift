@@ -6,7 +6,7 @@
 //  Supports three view modes (Quick List / Full List / Table) for the driver order list.
 //
 //  States:
-//   - Scheduled: race info card — no driver list yet
+//   - Scheduled: race info card, and the entry list (no positions) once ESPN has one
 //   - In Progress / Final: driver finishing / running order in the selected view mode
 //   - No event: off-season placeholder
 //
@@ -23,11 +23,12 @@ struct RacingResultsView: View {
     private func tableHeaders(_ event: RaceEvent) -> [String] {
         event.kind == "Entry List" ? ["Driver", "Nat"] : ["Pos", "Driver", "Nat"]
     }
-    private func tableRow(_ c: RaceCompetitor) -> [String] {
-        if let position = c.position {
-            return [String(position), c.driverName, c.nationality]
+    private func tableRow(_ c: RaceCompetitor, kind: String) -> [String] {
+        if kind == "Entry List" {
+            return [c.driverName, c.nationality]
         }
-        return [c.driverName, c.nationality]
+        // A driver ESPN gives no order mid-race still gets a cell under Pos, as on Windows.
+        return [c.position.map(String.init) ?? "-", c.driverName, c.nationality]
     }
 
     var body: some View {
@@ -145,7 +146,8 @@ struct RacingResultsView: View {
             // Data rows — hidden from VoiceOver; UIKit overlay handles navigation
             VStack(spacing: 0) {
                 ForEach(Array(event.competitors.enumerated()), id: \.element.id) { idx, comp in
-                    tableRow(comp, isWinner: event.isCompleted && comp.position == 1, idx: idx)
+                    tableRow(comp, isWinner: event.isCompleted && comp.position == 1,
+                             isEntryList: event.kind == "Entry List", idx: idx)
                     if idx < event.competitors.count - 1 {
                         Divider().padding(.leading, 16)
                     }
@@ -155,19 +157,19 @@ struct RacingResultsView: View {
             .overlay(
                 AccessibleDataTable(
                     headers: tableHeaders(event),
-                    rows: event.competitors.map { tableRow($0) }
+                    rows: event.competitors.map { tableRow($0, kind: event.kind) }
                 )
                 .allowsHitTesting(false)
             )
         }
     }
 
-    private func tableRow(_ comp: RaceCompetitor, isWinner: Bool, idx: Int) -> some View {
+    private func tableRow(_ comp: RaceCompetitor, isWinner: Bool, isEntryList: Bool, idx: Int) -> some View {
         HStack(spacing: 0) {
-            if let position = comp.position {
-                Text(String(position))
+            if !isEntryList {
+                Text(comp.position.map(String.init) ?? "-")
                     .font(.system(.body, design: .monospaced).bold())
-                    .foregroundColor(podiumColor(position))
+                    .foregroundColor(podiumColor(comp.position ?? 0))
                     .frame(width: 36, alignment: .trailing)
             }
 
@@ -211,6 +213,7 @@ struct RacingResultsView: View {
                     competitorListRow(
                         comp,
                         isWinner: event.isCompleted && comp.position == 1,
+                        isEntryList: event.kind == "Entry List",
                         fullLabels: fullLabels
                     )
                     Divider().padding(.leading, 16)
@@ -219,12 +222,13 @@ struct RacingResultsView: View {
         }
     }
 
-    private func competitorListRow(_ comp: RaceCompetitor, isWinner: Bool, fullLabels: Bool) -> some View {
+    private func competitorListRow(_ comp: RaceCompetitor, isWinner: Bool, isEntryList: Bool,
+                                   fullLabels: Bool) -> some View {
         HStack(spacing: 12) {
-            if let position = comp.position {
-                Text(String(position))
+            if !isEntryList {
+                Text(comp.position.map(String.init) ?? "-")
                     .font(.system(.subheadline, design: .monospaced).bold())
-                    .foregroundColor(podiumColor(position))
+                    .foregroundColor(podiumColor(comp.position ?? 0))
                     .frame(width: 28, alignment: .trailing)
             }
 
