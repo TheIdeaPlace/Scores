@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### In Progress
+- **Game Wrap Up Feature**: ESPN text processing and game story extraction (under construction)
+  - Core infrastructure implemented, text processing being refined
+  - Game story text placeholders currently under investigation
+
+## [1.2.0] - 2026-11-07
+
 ### Added
 - **Windows: a Stats tab in Team Hub, and golf news (#196).** Two things the iPhone had.
   - Team Hub's new **Stats** tab (Alt+A), after Roster as on the iPhone, has a **Show** box (Alt+W) with
@@ -251,11 +258,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   sends as plain games, have their own heading instead of sitting among the bowls. The headings and
   their order (first round, quarterfinals, semifinals, championship, then the bowls, each by kickoff)
   match the iPhone's Bowls & Playoffs list.
-
-### In Progress
-- **Game Wrap Up Feature**: ESPN text processing and game story extraction (under construction)
-  - Core infrastructure implemented, text processing being refined
-  - Game story text placeholders currently under investigation
 
 ## [1.1.1] - 2026-11-05
 
