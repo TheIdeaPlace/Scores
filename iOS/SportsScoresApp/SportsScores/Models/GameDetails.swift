@@ -85,6 +85,9 @@ struct GameDetails: Codable {
     let scoringPlays: [ScoringPlay]?
     /// The division or conference tables the two teams are in.
     let standings: GameStandings?
+    /// NHL, while the game is being played: who is on the ice, away team first.
+    /// Read from `onIce`, the box score and the header together; empty otherwise.
+    let onIceTeams: [OnIceTeam]
 
     /// Each section decodes on its own: ESPN's summary varies by sport, league
     /// and game state, and something unreadable in one section must never take
@@ -108,6 +111,7 @@ struct GameDetails: Codable {
         article = try? container.decodeIfPresent(GameNewsContainer.GameArticle.self, forKey: .article)
         scoringPlays = container.lossyArray(forKey: .scoringPlays)
         standings = try? container.decodeIfPresent(GameStandings.self, forKey: .standings)
+        onIceTeams = (try? OnIceLineup(from: decoder))?.teams ?? []
     }
 
     /// The betting line to show: the first with something in it, `odds` before
