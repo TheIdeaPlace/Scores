@@ -399,6 +399,46 @@ def step_week(league_key, season, season_type, week, delta):
     return season_type, week
 
 
+# The first season each league's season picker offers, as the iPhone's
+# Sport.earliestSeason has it.
+EARLIEST_SEASON = {"NFL": 2001, "NCAAF": 2005}
+
+
+def season_choices(league_key, live_season=None, today=None):
+    """The seasons to offer in the season picker, newest first.
+
+    The iPhone's earliest season through the season ESPN serves now, so the top
+    row is always the way back to the current week. The iPhone tops its list
+    with the calendar's year (`get_football_season_year`), which from March to
+    late July is a season ESPN has no games for yet; that year is used here only
+    when ESPN's season isn't known.
+    """
+    earliest = EARLIEST_SEASON.get(league_key)
+    if earliest is None:
+        return []
+    newest = live_season if live_season is not None else get_football_season_year(league_key, today)
+    return list(range(newest, earliest - 1, -1))
+
+
+def served_season(league_key):
+    """The season ESPN's scoreboard calendar last said it serves, or None if it
+    hasn't answered. Reads a cache only."""
+    return _SERVED_SEASON.get(league_key)
+
+
+def season_start(season, live_season):
+    """Where choosing `season` in the picker lands.
+
+    None for the season ESPN serves now: back to its current week, which the
+    calendar resolves (the iPhone does that only from the live view; from a past
+    season it opens the live season's Week 1). Any other season opens on
+    regular season Week 1, as on the iPhone.
+    """
+    if live_season is not None and season == live_season:
+        return None
+    return season, SEASON_TYPE_REGULAR, 1
+
+
 def get_football_season_year(league_key="NFL", today=None):
     """Return the ESPN season year for the given date and league.
 

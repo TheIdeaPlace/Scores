@@ -4,14 +4,16 @@ import time
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
 from exceptions import ApiError
+import racing
 import favorite_card
 from game_labels import (best_odds, broadcast_names, format_height, format_weight,
                          injured_player_count, leader_display_value, local_schedule_datetime,
                          schedule_game_label)
 import golf
-from soccer import (NAME_UNAVAILABLE, SOCCER_LEAGUES, _stat_number, core_leader_lists, parse_soccer_standings,
-                    parse_team_list)
+from soccer import NAME_UNAVAILABLE, SOCCER_LEAGUES, _stat_number, core_leader_lists, parse_soccer_standings
 import stat_glossary
+from team_list import STANDINGS as TEAM_LIST_FROM_STANDINGS, parse_team_list, with_standings
+from team_list import source as team_list_source
 import team_stats
 from team_stats import needs_team_list, parse_team_stats
 from timezone_utils import convert_espn_time_to_local
@@ -56,6 +58,7 @@ TRANSACTIONS_UNAVAILABLE = _unavailable("transactions")
 DRAFT_UNAVAILABLE = _unavailable("the draft")
 LEADERBOARD_UNAVAILABLE = _unavailable("the leaderboard")
 FANTASY_UNAVAILABLE = _unavailable("the draft board")
+RACE_UNAVAILABLE = _unavailable("this race")
 
 
 def _espn_answer(unavailable, url, **kwargs):
@@ -1379,7 +1382,7 @@ def get_news(league_key, limit=10):
         league_key: The league to get news for (e.g., 'MLB', 'NFL')
         limit: Maximum number of articles to retrieve (default: 10, ESPN default is 6)
     """
-    league_path = LEAGUES.get(league_key)
+    league_path = LEAGUES.get(league_key) or racing.series_path(league_key)
     if not league_path:
         return []
     url = f"{BASE_URL}/{league_path}/news"
@@ -2432,12 +2435,9 @@ def _standings_or_nothing(league, path, query="", parse=parse_college_standings)
 TEAMS_UNAVAILABLE = "ESPN isn't providing teams right now. Try again in a minute."
 
 
-def get_soccer_teams(league_key):
-    """The rows for a soccer league's Teams section: its table's, with their records. A competition
-    with no table still has teams, from one request for the list of them."""
-    rows = get_standings(league_key)
-    if rows:
-        return rows
+def _team_list(league_key):
+    """A league's /teams?limit=1000 as rows, [] if ESPN answered with none. ESPN's list stops at
+    50 unless told otherwise, and college leagues run past that."""
     try:
         resp = _http_get(f"{BASE_URL}/{LEAGUES[league_key]}/teams", params={"limit": 1000}, timeout=20)
         if resp.status_code != 200:
@@ -2448,6 +2448,24 @@ def get_soccer_teams(league_key):
     except (requests.RequestException, ValueError) as e:
         print(f"Error in {league_key} teams: {e}")
         raise ApiError(TEAMS_UNAVAILABLE) from e
+
+
+def get_teams(league_key):
+    """Every team in a league, for the Teams screen and the Transactions team filter, as the
+    iPhone lists them: see team_list for where each league's come from.
+
+    A team in the standings is its standings row, with its division and record. The standings
+    failing doesn't lose the list: its teams come back with no group or record, each marked
+    `records_unavailable`, so the screen can say so rather than show them 0-0. The list failing,
+    or the standings where they are the list, raises ApiError."""
+    if team_list_source(LEAGUES[league_key]) == TEAM_LIST_FROM_STANDINGS:
+        return get_standings(league_key)
+    listed = _team_list(league_key)
+    try:
+        standings = get_standings(league_key)
+    except ApiError:
+        return [{**team, "records_unavailable": True} for team in listed]
+    return with_standings(listed, standings)
 
 
 def _get_ncaaf_standings_fast():
@@ -3148,7 +3166,7 @@ def _with_every_team(league_path, year, data):
     return {**data, "teams": list(every.values())}
 
 
-def _team_list(key, league_path, data):
+def _division_one_list(key, league_path, data):
     """ESPN's team list, for a college basketball answer that needs it to tell Division I teams
     apart (see team_stats.qualified_teams), or None."""
     if key not in TEAM_STATS_NEEDS_TEAM_LIST or not needs_team_list(data):
@@ -3209,7 +3227,7 @@ def _latest_team_stats(key, league_path):
         if answer is not None:
             answer = _with_every_team(league_path, season_year, answer)
             preseason = _as_dict(_as_dict(answer.get("requestedSeason")).get("type")).get("type") == PRESEASON
-            team_list = None if preseason else _team_list(key, league_path, answer)
+            team_list = None if preseason else _division_one_list(key, league_path, answer)
             result = _parse_team_stats(key, league_path, answer, team_list)
             if result["team_stats"]:
                 return result, answer, team_list
@@ -3821,6 +3839,53 @@ def get_golf_schedule(tour_key):
             "winner": golf.winner_text(golf.winner(event)),
         })
     return result
+
+
+# ─────────────────────────── Racing ──────────────────────────────────────────
+# Formula 1, IndyCar and NASCAR Cup, from the same requests the iPhone makes. racing.py reads
+# the answers; these only fetch them and say when ESPN didn't answer.
+
+def get_race_event(series_key):
+    """The series' current or next race weekend, and the season ESPN says it's in.
+
+    Returns {"event": racing.parse_race_event(...) or None, "season": year or None}. No event
+    is the off-season; a request that fails raises ApiError(RACE_UNAVAILABLE).
+    """
+    path = racing.series_path(series_key)
+    if not path:
+        return {"event": None, "season": None}
+    answer = _espn_answer(RACE_UNAVAILABLE, f"{BASE_URL}/{path}/scoreboard")
+    if answer is None:
+        return {"event": None, "season": None}
+    _listed(answer, "events", RACE_UNAVAILABLE)
+    return {"event": racing.parse_race_event(answer), "season": racing.season_year(answer)}
+
+
+def get_racing_schedule(series_key, year):
+    """Every race of the season, with its winner, from the season's scoreboard. The year comes
+    from get_race_event, which has it from ESPN, rather than from the calendar."""
+    path = racing.series_path(series_key)
+    if not path or not year:
+        return []
+    # A bare year, never a START-END range, which ESPN rejects.
+    answer = _espn_answer(SCHEDULE_UNAVAILABLE, f"{BASE_URL}/{path}/scoreboard",
+                          params={"dates": str(year)})
+    if answer is None:
+        return []
+    _listed(answer, "events", SCHEDULE_UNAVAILABLE)
+    return racing.parse_schedule(answer)
+
+
+def get_racing_standings(series_key):
+    """Championship standings: drivers, and constructors for Formula 1."""
+    path = racing.series_path(series_key)
+    if not path:
+        return []
+    answer = _espn_answer(STANDINGS_UNAVAILABLE, f"https://site.api.espn.com/apis/v2/sports/{path}/standings")
+    if answer is None:
+        return []
+    _listed(answer, "children", STANDINGS_UNAVAILABLE)
+    return racing.parse_standings(answer)
 
 
 # ─────────────────────────── World Cup ───────────────────────────────────────

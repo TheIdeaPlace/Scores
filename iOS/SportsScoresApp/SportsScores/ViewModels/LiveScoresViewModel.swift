@@ -94,7 +94,7 @@ class LiveScoresViewModel: ObservableObject {
         // previous day's games (observed consistently for MLB spring training), which
         // then get filtered out by the day check below.
         // Soccer leagues are included here so they appear in the all-sports view.
-        let allLeagues = Sport.allCases + Sport.soccerLeagues
+        let allLeagues = Sport.liveScoresLeagues
         // Golf at the same time: its scoreboards list golfers, not games.
         async let golfAnswers = fetchGolf(golf)
         // nil is a league that failed, which isn't the same as one with no games.

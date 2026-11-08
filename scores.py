@@ -55,8 +55,8 @@ except ImportError:
 
 # New separated modules
 from exceptions import ApiError, DataModelError, plain_message
-from espn_api import (LEADER_LEAGUES, NCAAF_CONFERENCE_ORDER, TEAMS_UNAVAILABLE, league_sport, live_scores_failure_text,
-                      standings_cache_key, stop_core_lookups, with_failed_leagues_kept)
+from espn_api import (LEADER_LEAGUES, NCAAF_CONFERENCE_ORDER, SCHEDULE_UNAVAILABLE, TEAMS_UNAVAILABLE, league_sport,
+                      live_scores_failure_text, standings_cache_key, stop_core_lookups, with_failed_leagues_kept)
 import stat_glossary
 from services.api_service import ApiService
 from services.venue_service import venue_service, venue_summary
@@ -64,6 +64,8 @@ from models.game import GameData
 from models.news import NewsData
 import favorite_card
 import live_play_format
+import on_ice
+import racing
 import radio_links
 from popup_menu import exec_menu as _exec_menu
 from models.standings import StandingsData
@@ -73,6 +75,7 @@ from accessible_table import AccessibleTable, StandingsTable, WildCardTable, Lea
 from tab_keys import group_noun
 from box_score import build_box_tables
 from soccer import SOCCER_LEAGUES, TEAM_NAME_ONLY_HEADERS, no_table_message, soccer_teams_table
+from team_list import OTHER_TEAMS, RECORDS_UNAVAILABLE, TEAMS_WITH_NO_GROUP, has_records
 from team_stats import (HUB_HEADERS, RANKING_HEADERS, hub_player_rows, hub_team_rows, ranking_rows,
                         team_stat_lists)
 from drive_results import (
@@ -659,13 +662,64 @@ class DatePickerDialog(QDialog):
         except ValueError:
             # Invalid date, return current date
             return self.selected_date
-    
+
     def keyPressEvent(self, event):
         """Handle Escape key to close dialog"""
         if event.key() == Qt.Key.Key_Escape:
             self.reject()
         else:
             super().keyPressEvent(event)
+
+
+class SeasonPickerDialog(QDialog):
+    """Ctrl+G in an NFL or NCAAF league list: choose the season to look at.
+
+    A list in a dialog rather than a combo box beside the week buttons: arrowing
+    through a closed combo box changes its value on every key, which would load
+    a season's scoreboard (several MB on a college Saturday) and announce its
+    week at each one. Here nothing loads until Enter. It opens on the season
+    shown; the season under way is first and says so, so Home and Enter go back
+    to the current week.
+    """
+
+    def __init__(self, league, seasons, live_season, shown_season, parent=None):
+        super().__init__(parent)
+        self.setWindowTitle(f"Go to Season - {league}")
+        self.setModal(True)
+        layout = QVBoxLayout(self)
+        label = QLabel("&Season:")
+        layout.addWidget(label)
+        self.season_list = QListWidget()
+        self.season_list.setAccessibleName("Season")
+        self.season_list.setAccessibleDescription(
+            "Opens on regular season Week 1. The current season returns to the current week.")
+        label.setBuddy(self.season_list)
+        for season in seasons:
+            text = f"{season}, current season" if season == live_season else str(season)
+            item = QListWidgetItem(text)
+            item.setData(Qt.ItemDataRole.UserRole, season)
+            self.season_list.addItem(item)
+        row = seasons.index(shown_season) if shown_season in seasons else 0
+        self.season_list.setCurrentRow(row)
+        self.season_list.itemActivated.connect(lambda _item: self.accept())
+        layout.addWidget(self.season_list)
+
+        buttons = QHBoxLayout()
+        go_btn = QPushButton("Go to Season")
+        go_btn.setDefault(True)
+        go_btn.clicked.connect(self.accept)
+        buttons.addWidget(go_btn)
+        cancel_btn = QPushButton("Cancel")
+        cancel_btn.clicked.connect(self.reject)
+        buttons.addWidget(cancel_btn)
+        layout.addLayout(buttons)
+        _focus_once_active(self, self.season_list.setFocus)
+        self.season_list.setFocus()
+
+    def selected_season(self):
+        item = self.season_list.currentItem()
+        return item.data(Qt.ItemDataRole.UserRole) if item else None
+
 
 class BaseView(QWidget):
     def __init__(self, parent=None):
@@ -774,6 +828,14 @@ class HomeView(BaseView):
                 self.parent_app.check_for_updates(manual=True)
             return
 
+        if user_data == "__racing__":
+            if self.parent_app:
+                self.parent_app.update_window_title(["Racing"])
+            RacingHubDialog(self).exec()
+            if self.parent_app:
+                self.parent_app.update_window_title()
+            return
+
         # Golf tours open a dedicated tournament dialog instead of a standard league view
         if league in ("PGA", "LPGA"):
             tour_name = "PGA Tour" if league == "PGA" else "LPGA Tour"
@@ -876,6 +938,10 @@ class HomeView(BaseView):
 
         Called from both setup_ui and refresh so the two paths cannot drift.
         """
+        racing_item = QListWidgetItem("Racing - F1, IndyCar, NASCAR")
+        racing_item.setData(Qt.ItemDataRole.UserRole, "__racing__")
+        self.league_list.addItem(racing_item)
+
         footer_sep = QListWidgetItem("─" * 30)
         footer_sep.setFlags(Qt.ItemFlag.NoItemFlags)
         self.league_list.addItem(footer_sep)
@@ -1857,6 +1923,9 @@ class LeagueView(BaseView):
         # For football leagues, the season (and, unless one was asked for, the
         # week) comes from ESPN's calendar. That is a network request, so the
         # first load fetches it on its thread; until then these are placeholders.
+        # The football season ESPN's calendar serves now, once known: a season
+        # chosen with Ctrl+G that isn't this one is named in the week's label.
+        self._live_season = None
         if self.is_football_league():
             self._calendar_pending = True
             self._requested_week = week
@@ -1878,6 +1947,7 @@ class LeagueView(BaseView):
                 self.current_season = state["season"]
                 self.current_week = state["week"]
                 self.current_season_type = state["season_type"]
+                self._live_season = state.get("live_season")
             else:
                 self.current_date = state["date"]
 
@@ -1955,7 +2025,7 @@ class LeagueView(BaseView):
     def capture_state(self):
         item = self.scores_list.currentItem()
         return {'date': self.current_date, 'week': self.current_week, 'season': self.current_season,
-                'season_type': self.current_season_type,
+                'season_type': self.current_season_type, 'live_season': self._live_season,
                 'selected': item.data(Qt.ItemDataRole.UserRole) if item else None,
                 'row': self.scores_list.currentRow()}
 
@@ -2080,6 +2150,9 @@ class LeagueView(BaseView):
             self.scores_list.setFocus()
         if self._calendar_pending:
             self.date_label.clear()  # "Finding the current week..." isn't going on any more.
+            if self.parent_app and self.league:
+                # Nothing is showing for the week the title named (a past season's, say).
+                self.parent_app.update_window_title(self._title_items())
         else:
             self._say_date_shown()
 
@@ -2101,6 +2174,10 @@ class LeagueView(BaseView):
     def _show_loaded_scores(self, calendar, scores_data, news):
         if calendar is not None:
             self.current_season, self.current_season_type, self.current_week = calendar
+            # ESPN's season, not the calendar-year guess used when its calendar failed.
+            from services.football_calendar import served_season
+            served = served_season(self.league)
+            self._live_season = served if served is not None else self.current_season
             self._calendar_pending = False
         if self.is_football_league():
             self.date_label.setText(self._week_label())
@@ -2430,28 +2507,23 @@ class LeagueView(BaseView):
             if self.parent_app:
                 self.parent_app.update_window_title(["Teams", self.league])
             
-            fetch = ApiService.get_soccer_teams if self.league in SOCCER_LEAGUES else ApiService.get_standings
-            self._fetch_then("Teams", lambda: fetch(self.league), self._open_teams_dialog)
+            self._fetch_then("Teams", lambda: ApiService.get_teams(self.league), self._open_teams_dialog)
         except Exception as e:
             QMessageBox.critical(self, "Error", f"Failed to show teams: {_said(e)}")
             if self.parent_app:
                 self.parent_app.update_window_title(self._title_items())
 
-    def _open_teams_dialog(self, standings_data):
+    def _open_teams_dialog(self, teams):
         try:
-            if not standings_data:
-                QMessageBox.information(self, "Teams", 
+            if not teams:
+                QMessageBox.information(self, "Teams",
                                       f"No teams data available for {self.league}.")
                 # Restore original title
                 if self.parent_app:
                     self.parent_app.update_window_title(self._title_items())
                 return
-            
-            # Filter data by league to avoid MLB/NFL mixing
-            filtered_data = [team for team in standings_data 
-                           if self._is_team_for_league(team, self.league)]
-            
-            dialog = SimpleTeamsDialog(filtered_data, self.league, self)
+
+            dialog = SimpleTeamsDialog(teams, self.league, self)
             dialog.exec()
             
             # Restore original title when dialog closes
@@ -2606,17 +2678,6 @@ class LeagueView(BaseView):
         except Exception as e:
             QMessageBox.critical(self, "Error", f"Failed to show bowls & playoffs: {_said(e)}")
 
-    def _is_team_for_league(self, team_data: Dict, league: str) -> bool:
-        """Check if team belongs to the specified league"""
-        team_name = team_data.get('team_name', '')
-        logo_url = team_data.get('logo', '')
-        
-        if league == "MLB":
-            return '/mlb/' in logo_url
-        elif league == "NFL":
-            return '/nfl/' in logo_url
-        return True  # Default to include if uncertain
-    
     def previous_day(self):
         """Navigate to previous day"""
         self.current_date -= timedelta(days=1)
@@ -2675,6 +2736,11 @@ class LeagueView(BaseView):
             next_week_btn.clicked.connect(self.next_week)
             btn_layout.addWidget(next_week_btn)
 
+            go_to_season_btn = QPushButton("Go to Season (Ctrl+G)")
+            go_to_season_btn.setShortcut("Ctrl+G")
+            go_to_season_btn.clicked.connect(self.go_to_season)
+            btn_layout.addWidget(go_to_season_btn)
+
         else:
             prev_btn = QPushButton("Previous Day (Alt+P)")
             prev_btn.setShortcut("Alt+P")
@@ -2720,6 +2786,10 @@ class LeagueView(BaseView):
         # what they are, "Hall of Fame Weekend" and "Wild Card" do not.
         if "week" not in label.lower():
             label = f"Week: {label}"
+        # A season chosen with Ctrl+G is named, so "Week 1" isn't taken for this
+        # season's, and choosing it from the same week elsewhere is still heard.
+        if self._live_season is not None and self.current_season != self._live_season:
+            label = f"{label}, {self.current_season} season"
         return f"{label}{suffix}"
 
     def _step_week(self, delta: int):
@@ -2753,7 +2823,47 @@ class LeagueView(BaseView):
     def next_week(self):
         if self.current_week and not self._calendar_pending:
             self._step_week(+1)
-    
+
+    def go_to_season(self):
+        """Ctrl+G in NFL and NCAAF: choose a season, as the iPhone's season menu does."""
+        if not self.is_football_league():
+            return
+        if self._calendar_pending and self._live_season is None:
+            # The season under way isn't known until the calendar has loaded.
+            announce("Seasons can be chosen once the current week has loaded")
+            return
+        from services.football_calendar import season_choices, get_football_season_year
+        live = self._live_season
+        if live is None:
+            live = get_football_season_year(self.league)
+        seasons = season_choices(self.league, live)
+        dialog = SeasonPickerDialog(self.league, seasons, live, self.current_season, self)
+        if dialog.exec() == QDialog.DialogCode.Accepted and dialog.selected_season() is not None:
+            self.show_season(dialog.selected_season(), live)
+
+    def show_season(self, season, live_season):
+        """Show a season's regular season Week 1, or, for the season under way, its
+        current week. The games, the week's name and the season's weeks load on
+        the LeagueScoresLoader thread; the week's label is announced when they land."""
+        from services.football_calendar import season_start
+        start = season_start(season, live_season)
+        if start is None:
+            # Back to now: the calendar picks the week, as when the league opened.
+            self._calendar_pending = True
+            self._requested_week = None
+            self._requested_season_type = None
+            # A failure here isn't a refresh of the season shown, so it says so in
+            # the list rather than keeping that season's games under this label.
+            self._last_loaded = None
+        else:
+            self.current_season, self.current_season_type, self.current_week = start
+            # A failed return to now leaves the calendar pending; this week is chosen.
+            self._calendar_pending = False
+        # Said even when it's the week already shown, so the choice is heard to land.
+        self._spoken_date_label = None
+        self.load_scores()
+        self.set_focus_and_select_first(self.scores_list)
+
     def keyPressEvent(self, event):
         """Handle key press events for league view"""
         if event.key() == Qt.Key.Key_G and event.modifiers() == Qt.KeyboardModifier.ControlModifier:
@@ -2788,7 +2898,8 @@ class GameDetailsView(BaseView):
         self.current_raw_details = None  # the game summary, once loaded
         self._shown_details = None  # (raw summary, details) as last shown, for a refresh that fails
         self._details_generation = 0  # newest load_game_details; older results are dropped
-        
+        self._game_title = ""  # "Away at Home", once the summary has said
+
         # Initialize audio pitch mapper
         self.audio_mapper = None
         if AUDIO_AVAILABLE:
@@ -2870,6 +2981,9 @@ class GameDetailsView(BaseView):
         field_data = data.get("data")
         if field_name == "listen":
             self._listen_to_game()
+            return
+        if field_name == "on_ice":
+            OnIceDialog(self.league, self.game_id, self._game_title, field_data, self).exec()
             return
 
         if not field_name or not field_data:
@@ -3295,7 +3409,8 @@ class GameDetailsView(BaseView):
                 game_title_parts.append(f"{sorted_names[0]} at {sorted_names[1]}")
             elif len(sorted_names) == 1:
                 game_title_parts.append(sorted_names[0])
-        
+        self._game_title = game_title_parts[0] if game_title_parts else ""
+
         # Update window title with game-specific information
         if self.parent_app and self.league:
             title_context = game_title_parts + [self.league] if game_title_parts else ["Game Details", self.league]
@@ -3312,7 +3427,14 @@ class GameDetailsView(BaseView):
         
         if 'detailed_status' in details and details['detailed_status'] != 'N/A':
             self.details_list.addItem(f"Game Time: {details['detailed_status']}")
-        
+
+        # Live NHL: who is on the ice. Enter opens each team's players.
+        on_ice_teams = on_ice.lineup(raw_details) if self.league == "NHL" else []
+        if on_ice_teams:
+            on_ice_item = QListWidgetItem(on_ice.summary_line(on_ice_teams))
+            on_ice_item.setData(Qt.ItemDataRole.UserRole, {"field": "on_ice", "data": raw_details})
+            self.details_list.addItem(on_ice_item)
+
         # Venue information
         if 'venue' in details:
             venue_info = details['venue']
@@ -8704,7 +8826,8 @@ class TeamHubDialog(QDialog):
         self.stats_table = AccessibleTable(accessible_name=f"{self.team_name} Player Stats",
                                            accessible_description="Alt+V to cycle view modes.")
         stats_layout.addWidget(self.stats_table)
-        self.stats_choice.currentIndexChanged.connect(lambda _index: self._show_stats())
+        # A bound method, not a lambda holding self, which would keep a closed hub alive.
+        self.stats_choice.currentIndexChanged.connect(self._on_stats_choice)
         self.tab_widget.addTab(stats_w, "St&ats")
 
         # Tab 3 — Schedule
@@ -8886,6 +9009,9 @@ class TeamHubDialog(QDialog):
         self._stats[kind] = {"error": message}
         self._tabs_loaded.discard(self.STATS_TAB)  # So coming back to the tab asks again.
         self._show_stats(kind)
+
+    def _on_stats_choice(self, _index):
+        self._show_stats()
 
     def _show_stats(self, changed=None):
         """The list Show is on. `changed` is the list that just came or failed: the other one's
@@ -9865,8 +9991,7 @@ class TransactionsDialog(QDialog):
         self.setLayout(layout)
 
     def _load_teams(self):
-        # Not StandingsLoader, whose error signal also carries a league having no standings.
-        loader = CallLoader(lambda: ApiService.get_standings(self.league))
+        loader = CallLoader(lambda: ApiService.get_teams(self.league))
         loader.data_loaded.connect(self._on_teams_loaded)
         loader.error_occurred.connect(self._on_teams_failed)
         self._loaders.append(loader)
@@ -9878,10 +10003,10 @@ class TransactionsDialog(QDialog):
         self._teams_retried = False
         announce(TEAMS_UNAVAILABLE)
 
-    def _on_teams_loaded(self, standings_data):
+    def _on_teams_loaded(self, rows):
         teams = sorted(
             {(t.get('team_name', ''), t.get('team_id', ''))
-             for t in standings_data or [] if t.get('team_name') and t.get('team_id')},
+             for t in rows or [] if t.get('team_name') and t.get('team_id')},
             key=lambda x: x[0],
         )
         self.team_combo.blockSignals(True)
@@ -11236,6 +11361,394 @@ class GolfTournamentDialog(QDialog):
             super().keyPressEvent(event)
 
 
+# ─────────────────────────── Racing ──────────────────────────────────────────
+# Formula 1, IndyCar and NASCAR Cup, reached from Racing on the home list. racing.py reads
+# ESPN's answers; these only show them.
+
+class RacingTable(AccessibleTable):
+    """A racing table. The column saying whose row it is, the driver, team, session or race, is
+    repeated on every other cell: "Lando Norris, Nationality, Britain"."""
+
+    def __init__(self, name: str, description: str, context_column: int, parent=None):
+        super().__init__(parent=parent, accessible_name=name, accessible_description=description)
+        self.ROW_CONTEXT_COLUMN = context_column
+
+    def start_at(self, row: int, column: int = 0) -> None:
+        """Every view on the row, so switching views doesn't move back to the top."""
+        if not 0 <= row < self.table_widget.rowCount():
+            return
+        self.table_widget.setCurrentCell(row, min(column, self.table_widget.columnCount() - 1))
+        self.quick_list.setCurrentRow(row)
+        self.full_list.setCurrentRow(row)
+
+
+class _RacingPage(QWidget):
+    """One tab of a racing series: a row saying it's loading, failed or has nothing, or what it
+    shows once there's something. Only one of them is ever a child, so the tab keys, which look
+    for a table on the page, never land on a table that isn't on show."""
+
+    def __init__(self, name: str, retry, parent=None):
+        super().__init__(parent)
+        self.name = name
+        self._retry = retry
+        self.tab_area = None  # set once the page is in its dialog's tabs
+        self._layout = QVBoxLayout(self)
+        self._layout.setContentsMargins(0, 0, 0, 0)
+        self.content = None
+        self.has_data = False
+        self.show_message("Loading…")
+
+    def _set_content(self, widget, has_data: bool):
+        old = self.content
+        focused = QApplication.focusWidget()
+        had_focus = old is not None and focused is not None and (focused is old or old.isAncestorOf(focused))
+        self.content = widget
+        self.has_data = has_data
+        self._layout.addWidget(widget)
+        if self.tab_area is not None:
+            # Right after the tabs, not after Close, where a widget added later would sit.
+            keep_in_tab_order(self.tab_area, widget)
+        # The new one takes focus before the old one goes. Removing a widget with focus in it sends
+        # focus on to the next control, Close, and a screen reader would say so first.
+        if had_focus:
+            widget.show()
+            widget.setFocus()
+        if old is not None:
+            self._layout.removeWidget(old)
+            old.setParent(None)
+            old.deleteLater()
+
+    def show_message(self, text: str, failed: bool = False):
+        """A row, since a label can't take focus. A failed load's row tries again on Enter."""
+        row = _message_row(text, self.name)
+        if failed:
+            row.clear()
+            row.addItem(_failure_row(text))
+            row.setCurrentRow(0)
+            row.itemActivated.connect(self._activated)
+        self._set_content(row, has_data=False)
+
+    def _activated(self, item):
+        if item is not None and item.data(Qt.ItemDataRole.UserRole) == RETRY_ROW:
+            self.show_message("Loading…")
+            self._retry()
+
+    def show_table(self, headers, rows, context_column: int, name: str, description: str = "",
+                   start_row: int = 0):
+        """A refresh of the same table keeps the row and column someone was on; a new one starts
+        on `start_row`."""
+        old = self.content
+        same = isinstance(old, RacingTable) and old._headers == list(headers)
+        table = RacingTable(name, description, context_column)
+        table.setup_columns(headers, stretch_column=context_column)
+        table.populate_data(rows, set_focus=False)
+        if same:
+            table.start_at(min(old._get_current_row(), len(rows) - 1),
+                           max(0, old.table_widget.currentColumn()))
+        elif start_row:
+            table.start_at(start_row)
+        self._set_content(table, has_data=True)
+
+    def show_widget(self, widget):
+        self._set_content(widget, has_data=True)
+
+    def focus(self):
+        if self.content is not None:
+            self.content.setFocus()
+
+
+class RacingHubDialog(QDialog):
+    """Racing on the home list: Formula 1, IndyCar and NASCAR Cup. The iPhone's RacingHubView."""
+
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setWindowTitle("Racing - Sports Scores")
+        self.resize(500, 300)
+        layout = QVBoxLayout(self)
+        layout.addWidget(QLabel("Choose a series:"))
+        self.series_list = QListWidget()
+        self.series_list.setAccessibleName("Racing series")
+        self.series_list.setAccessibleDescription("Press Enter to open a series.")
+        for key in racing.RACING_SERIES:
+            item = QListWidgetItem(racing.series_name(key))
+            item.setData(Qt.ItemDataRole.UserRole, key)
+            self.series_list.addItem(item)
+        self.series_list.setCurrentRow(0)
+        self.series_list.itemActivated.connect(self._open_series)
+        layout.addWidget(self.series_list)
+        btn_row = QHBoxLayout()
+        btn_row.addStretch()
+        close_btn = QPushButton("&Close")
+        close_btn.setAutoDefault(False)  # Enter on a series mustn't also close the hub
+        close_btn.clicked.connect(self.accept)
+        btn_row.addWidget(close_btn)
+        layout.addLayout(btn_row)
+        _focus_once_active(self, self.series_list.setFocus)
+
+    def _open_series(self, item):
+        key = item.data(Qt.ItemDataRole.UserRole) if item is not None else None
+        if key in racing.RACING_SERIES:
+            RacingSeriesDialog(key, self).exec()
+            self.series_list.setFocus()
+
+
+class RacingSeriesDialog(QDialog):
+    """One racing series: the race weekend on now or next, its sessions (Formula 1), the season's
+    races and who won them, the standings, and news. F5 or Refresh loads it all again."""
+
+    def __init__(self, series: str, parent=None):
+        super().__init__(parent)
+        self.series = series
+        self.series_name = racing.series_name(series)
+        self.setWindowTitle(f"{self.series_name} - Racing - Sports Scores")
+        self.resize(DIALOG_WIDTH, DIALOG_HEIGHT)
+        self._season = None
+        self._said_refresh_failed = False
+        self._latest = {}
+        self._setup_ui()
+        self._load_all()
+        _focus_once_active(self, self._focus_current_page)
+
+    def _setup_ui(self):
+        layout = QVBoxLayout(self)
+        header = QLabel(racing.series_full_name(self.series))
+        font = header.font()
+        font.setBold(True)
+        header.setFont(font)
+        layout.addWidget(header)
+        self.race_label = QLabel("Loading the race…")
+        self.race_label.setWordWrap(True)
+        layout.addWidget(self.race_label)
+
+        self.race_page = _RacingPage("Race", self._load_event)
+        self.sessions_page = _RacingPage("Sessions", self._load_event) if racing.has_sessions(self.series) else None
+        self.schedule_page = _RacingPage("Schedule", self._retry_schedule)
+        if racing.has_constructors(self.series):
+            self.drivers_page = _RacingPage("Driver Standings", self._load_standings)
+            self.constructors_page = _RacingPage("Constructor Standings", self._load_standings)
+            standings = [(self.drivers_page, "Drivers"), (self.constructors_page, "Constructors")]
+        else:
+            self.drivers_page = _RacingPage("Standings", self._load_standings)
+            self.constructors_page = None
+            standings = [(self.drivers_page, "Standings")]
+        self.news_page = _RacingPage(f"{self.series_name} News", self._load_news)
+
+        pages = [(self.race_page, "Race")]
+        if self.sessions_page:
+            pages.append((self.sessions_page, "Sessions"))
+        pages += [(self.schedule_page, "Schedule")] + standings + [(self.news_page, "News")]
+        self.tab_widget = make_tab_area(len(pages), f"{self.series_name} sections")
+        for page, label in pages:
+            self.tab_widget.addTab(page, label)
+            page.tab_area = self.tab_widget
+        layout.addWidget(self.tab_widget)
+
+        btn_row = QHBoxLayout()
+        btn_row.addStretch()
+        refresh_btn = QPushButton("&Refresh")
+        refresh_btn.setToolTip("F5")
+        refresh_btn.setAutoDefault(False)  # Enter in a table or list mustn't press it
+        refresh_btn.clicked.connect(self._load_all)
+        btn_row.addWidget(refresh_btn)
+        close_btn = QPushButton("&Close")
+        close_btn.setAutoDefault(False)
+        close_btn.clicked.connect(self.accept)
+        btn_row.addWidget(close_btn)
+        layout.addLayout(btn_row)
+
+    def _focus_current_page(self):
+        page = self.tab_widget.currentWidget()
+        if isinstance(page, _RacingPage):
+            page.focus()
+
+    def _pages(self):
+        return [p for p in (self.race_page, self.sessions_page, self.schedule_page, self.drivers_page,
+                            self.constructors_page, self.news_page) if p is not None]
+
+    # ── loading ──
+
+    def _load_all(self):
+        self._said_refresh_failed = False
+        self._load_event()
+        self._load_standings()
+        self._load_news()
+
+    def _start(self, kind, fn, loaded, failed):
+        """Only the latest request of each kind is shown: F5 twice, or a retry while a refresh is
+        out, could otherwise have an older answer land last."""
+        loader = CallLoader(fn)
+        self._latest[kind] = loader
+        loader.data_loaded.connect(partial(self._deliver, loader, kind, loaded))
+        loader.error_occurred.connect(partial(self._deliver, loader, kind, failed))
+        _start_detached_thread(loader)
+
+    def _deliver(self, loader, kind, slot, value):
+        if self._latest.get(kind) is loader:
+            slot(value)
+
+    def _load_event(self):
+        series = self.series
+        self._start("event", lambda: ApiService.get_race_event(series),
+                    self._on_event_loaded, self._on_event_failed)
+
+    def _load_schedule(self):
+        series, season = self.series, self._season
+        self._start("schedule", lambda: ApiService.get_racing_schedule(series, season),
+                    self._on_schedule_loaded, self._on_schedule_failed)
+
+    def _retry_schedule(self):
+        """The schedule asks for the season the race's request said, so without one it asks again."""
+        if self._season:
+            self._load_schedule()
+        else:
+            self._load_event()
+
+    def _load_standings(self):
+        series = self.series
+        self._start("standings", lambda: ApiService.get_racing_standings(series),
+                    self._on_standings_loaded, self._on_standings_failed)
+
+    def _load_news(self):
+        series = self.series
+        self._start("news", lambda: ApiService.get_news(series, 25), self._on_news_loaded, self._on_news_failed)
+
+    def _failed(self, page, message: str):
+        """What's on show stays when a refresh fails, and that's said once for the refresh, unless
+        the dialog has closed since. With nothing on show, the page says so, and Enter tries again."""
+        if page is None:
+            return
+        if page.has_data:
+            if not self._said_refresh_failed and self.isVisible():
+                self._said_refresh_failed = True
+                announce(message)
+        else:
+            page.show_message(message, failed=True)
+
+    # ── the race and its sessions ──
+
+    def _on_event_loaded(self, answer):
+        answer = answer if isinstance(answer, dict) else {}
+        event = answer.get("event")
+        self._season = answer.get("season")
+        if self._season:
+            self._load_schedule()
+        else:
+            self.schedule_page.show_message(f"No {self.series_name} schedule right now.")
+        if not event:
+            text = f"No {self.series_name} race scheduled. Check back during the season."
+            self.race_label.setText(text)
+            self.race_page.show_message(text)
+            if self.sessions_page:
+                self.sessions_page.show_message(text)
+            return
+        summary = racing.race_summary(event)
+        self.race_label.setText(summary)
+        rows = racing.race_rows(event)
+        if rows:
+            kind = event["kind"]
+            # The summary is in the name, which every screen reader says on arriving: JAWS may
+            # not read a table's description, and the label above can't take focus.
+            self.race_page.show_table(
+                racing.race_headers(event), rows,
+                context_column=0 if kind == racing.ENTRY_LIST else 1,
+                name=f"{kind}: {summary}")
+        elif event.get("state") == "pre":
+            self.race_page.show_message(f"{summary} The entry list isn't out yet.")
+        else:
+            self.race_page.show_message(summary)
+        if self.sessions_page:
+            sessions = event.get("sessions") or []
+            if sessions:
+                self.sessions_page.show_table(
+                    racing.SESSION_HEADERS, racing.session_rows(event), context_column=0,
+                    name=f"{event['name']} sessions",
+                    description="Each session's start in your time zone, and how it stands.",
+                    start_row=racing.current_row(sessions))
+            else:
+                self.sessions_page.show_message(f"No sessions listed for {event['name']}.")
+
+    def _on_event_failed(self, message: str):
+        if not self.race_page.has_data:
+            self.race_label.setText(message)
+        self._failed(self.race_page, message)
+        self._failed(self.sessions_page, message)
+        # The schedule asks for the season this request says; it hasn't been asked for at all.
+        self._failed(self.schedule_page, SCHEDULE_UNAVAILABLE)
+
+    # ── the season ──
+
+    def _on_schedule_loaded(self, races):
+        races = races if isinstance(races, list) else []
+        if not races:
+            self.schedule_page.show_message(f"No {self.series_name} races listed for {self._season}.")
+            return
+        self.schedule_page.show_table(
+            racing.schedule_headers(races), racing.schedule_rows(races), context_column=0,
+            name=f"{self._season} {self.series_name} schedule",
+            description="Every race of the season, and who won the ones that have been run.",
+            start_row=racing.current_row(races))
+
+    def _on_schedule_failed(self, message: str):
+        self._failed(self.schedule_page, message)
+
+    # ── standings ──
+
+    def _on_standings_loaded(self, groups):
+        groups = groups if isinstance(groups, list) else []
+        drivers = next((g for g in groups if not g.get("constructors")), None)
+        constructors = next((g for g in groups if g.get("constructors")), None)
+        for page, group in ((self.drivers_page, drivers), (self.constructors_page, constructors)):
+            if page is None:
+                continue
+            if not group:
+                page.show_message(f"No {self.series_name} {page.name.lower()} yet.")
+                continue
+            page.show_table(racing.standings_headers(group), racing.standings_rows(group),
+                            context_column=1, name=f"{self.series_name} {page.name}",
+                            description=group.get("name", ""))
+
+    def _on_standings_failed(self, message: str):
+        self._failed(self.drivers_page, message)
+        self._failed(self.constructors_page, message)
+
+    # ── news ──
+
+    def _on_news_loaded(self, news):
+        news = news if isinstance(news, list) else []
+        if not news:
+            self.news_page.show_message(f"No {self.series_name} news right now.")
+            return
+        news_list = QListWidget()
+        news_list.setAccessibleName(f"{self.series_name} News")
+        news_list.setAccessibleDescription("Press Enter to open a story in your browser.")
+        for article in news:
+            item = QListWidgetItem(article.get("headline") or "No headline")
+            item.setData(Qt.ItemDataRole.UserRole, article)
+            news_list.addItem(item)
+        news_list.setCurrentRow(0)
+        news_list.itemActivated.connect(self._open_story)
+        self.news_page.show_widget(news_list)
+
+    def _on_news_failed(self, message: str):
+        self._failed(self.news_page, message)
+
+    def _open_story(self, item):
+        article = item.data(Qt.ItemDataRole.UserRole) if item is not None else None
+        url = article.get("web_url", "") if isinstance(article, dict) else ""
+        if url.startswith(("http://", "https://")):
+            webbrowser.open(url)
+        else:
+            announce("This story has no web link.")
+
+    def keyPressEvent(self, event):
+        if event.key() == Qt.Key.Key_Escape:
+            self.accept()
+        elif event.key() == Qt.Key.Key_F5:
+            self._load_all()
+        else:
+            super().keyPressEvent(event)
+
+
 # ─────────────────────────── World Cup ───────────────────────────────────────
 
 # Tournament phase definitions: (id, label, start_date, end_date)
@@ -12402,7 +12915,10 @@ class SimpleTeamsDialog(QDialog):
         self.league = league
         # A soccer table can be last season's until the new one has teams, and these are its records.
         season = next((team.get("season") for team in teams_data if team.get("season")), None)
-        self.setWindowTitle(f"{league} Teams - {season}" if season else f"{league} Teams")
+        # The standings failed and the team list didn't: the teams, and a word on why no records.
+        self.records_unavailable = any(team.get("records_unavailable") for team in teams_data)
+        title = f"{league} Teams - {season}" if season else f"{league} Teams"
+        self.setWindowTitle(f"{title} - records unavailable" if self.records_unavailable else title)
         self.resize(800, 500)  # Room for a table with several columns.
         self.setup_ui()
         _focus_once_active(self, lambda: _focus_first_table(self))
@@ -12486,8 +13002,8 @@ class SimpleTeamsDialog(QDialog):
             accessible_description=f"Teams in {division_name} with wins, losses, and other statistics"
         )
 
-        if self.league in SOCCER_LEAGUES:
-            self._fill_soccer_teams(teams_table, teams, division_name)
+        if self.league in SOCCER_LEAGUES or not has_records(teams):
+            self._fill_by_table_or_name(teams_table, teams, division_name)
             layout.addWidget(teams_table)
             widget.setLayout(layout)
             widget.teams_table = teams_table
@@ -12574,14 +13090,26 @@ class SimpleTeamsDialog(QDialog):
         
         self.tab_widget.addTab(widget, division_name)
     
-    def _fill_soccer_teams(self, teams_table, teams, division_name):
-        """Draws and points rather than a win percentage, which leaves the draws out. Enter opens
-        the team from any cell of its row, and each cell says whose row it's on. A cup's team list
-        has only names, and its one group has no name worth saying."""
+    def _fill_by_table_or_name(self, teams_table, teams, division_name):
+        """A soccer table's draws and points rather than a win percentage, which leaves the draws
+        out. Enter opens the team from any cell of its row, and each cell says whose row it's on.
+        Teams from the team list alone, with no standings row, have only names: a cup with no
+        table, a league between seasons, or teams its standings leave out. Their one group, when
+        it's the only one, has no name worth saying."""
         headers, ordered, rows = soccer_teams_table(teams)
         if headers == TEAM_NAME_ONLY_HEADERS:
-            teams_table.update_accessible_name(f"{self.league} Teams")
-            teams_table.update_accessible_description(f"Teams in {self.league}. Press Enter on one to open it")
+            if division_name == OTHER_TEAMS:
+                teams_table.update_accessible_name(f"{self.league} {OTHER_TEAMS}")
+                said = "Teams not in the standings, with no record to show. Press Enter on one to open it"
+            elif self.records_unavailable:
+                teams_table.update_accessible_name(f"{self.league} Teams")
+                said = f"Teams in {self.league}. {RECORDS_UNAVAILABLE} Press Enter on one to open it"
+            else:
+                if division_name == TEAMS_WITH_NO_GROUP:
+                    teams_table.update_accessible_name(f"{self.league} Teams")
+                where = self.league if division_name == TEAMS_WITH_NO_GROUP else division_name
+                said = f"Teams in {where}, with no record to show. Press Enter on one to open it"
+            teams_table.update_accessible_description(said)
         else:
             teams_table.update_accessible_description(
                 f"Teams in {division_name} with games played, wins, draws, losses and points. Press Enter on one to open it")
@@ -12730,6 +13258,88 @@ class RadioDialog(QDialog):
             return
         _show_listen_menu(self, options, f"Listen to the {data.get('team', self.league)}",
                           _menu_position(self.radio_list, item))
+
+
+ON_ICE_NOBODY = "ESPN isn't saying who is on the ice right now."
+
+
+class OnIceDialog(QDialog):
+    """Who is on the ice in a live NHL game: each team's heading, then its forwards,
+    defense and goalie. F5 asks ESPN again and keeps the row you were on."""
+
+    def __init__(self, league: str, game_id, game_title: str, summary: dict, parent=None):
+        super().__init__(parent)
+        self.league = league
+        self.game_id = game_id
+        self._generation = 0
+        title = f"{game_title} - " if game_title else ""
+        self.setWindowTitle(f"On the Ice - {title}{league} - Sports Scores")
+        self.resize(DIALOG_WIDTH, DIALOG_HEIGHT)
+        layout = QVBoxLayout(self)
+        self.players_list = QListWidget()
+        self.players_list.setAccessibleName("On the Ice")
+        self.players_list.setAccessibleDescription("Each team, then its players on the ice. F5 updates it.")
+        layout.addWidget(self.players_list)
+        close_btn = QPushButton("Close")
+        close_btn.setAutoDefault(False)
+        close_btn.clicked.connect(self.accept)
+        layout.addWidget(close_btn)
+        self._fill(summary)
+        self.players_list.setCurrentRow(0)
+        _focus_once_active(self, self.players_list.setFocus)
+        # Lines change every minute or so, and game details don't update themselves:
+        # show what the row had at once, then ask again quietly.
+        self.refresh(quiet=True)
+
+    def _fill(self, summary):
+        self.players_list.clear()
+        teams = on_ice.lineup(summary)
+        if not teams:
+            self.players_list.addItem(ON_ICE_NOBODY)
+            return
+        for team in teams:
+            self.players_list.addItem(on_ice.team_heading(team))
+            for player in team["players"]:
+                self.players_list.addItem(on_ice.player_text(player))
+
+    def keyPressEvent(self, event):
+        if event.key() == Qt.Key.Key_F5:
+            self.refresh()
+            return
+        super().keyPressEvent(event)
+
+    def refresh(self, quiet=False):
+        """Ask ESPN again. `quiet` is the check as the dialog opens: it says nothing unless
+        the list changed, and a failure leaves what's showing without a word."""
+        self._generation += 1
+        self._quiet = quiet
+        loader = GameDetailsLoader(self._generation, self.league, self.game_id)
+        loader.data_loaded.connect(self._on_loaded)
+        loader.error_occurred.connect(self._on_error)
+        _start_detached_thread(loader)
+
+    def _rows(self):
+        return [self.players_list.item(i).text() for i in range(self.players_list.count())]
+
+    def _on_loaded(self, generation, raw, _details):
+        if generation != self._generation or not self.isVisible():
+            return
+        before = self._rows()
+        row = max(self.players_list.currentRow(), 0)
+        current = before[row] if row < len(before) else None
+        self._fill(raw)
+        after = self._rows()
+        # The same player if still on, since a penalty moves everyone below a row.
+        self.players_list.setCurrentRow(after.index(current) if current in after
+                                        else min(row, len(after) - 1))
+        if not self._quiet:
+            announce("On the ice updated")
+        elif after != before:
+            announce("On the ice changed")
+
+    def _on_error(self, generation, message):
+        if generation == self._generation and not self._quiet and self.isVisible():
+            announce(message)
 
 
 class VenueDetailsDialog(QDialog):
@@ -13100,8 +13710,8 @@ class SportsScoresApp(QWidget):
         except Exception as e:
             QMessageBox.critical(self, "Error", f"Failed to open standings for {league}: {_said(e)}")
 
-    def _fetch_standings_then(self, league: str, title: str, show):
-        """Fetch standings on a thread, then show(data) here.
+    def _load_then(self, fetch, title: str, show):
+        """Fetch on a thread, then show(data) here.
 
         Used by the --<sport>-teams / --<sport>-standings startup actions, which
         fetched on the UI thread before their dialog appeared.
@@ -13111,36 +13721,32 @@ class SportsScoresApp(QWidget):
                 show(data)
             except Exception as e:
                 QMessageBox.critical(self, "Error", f"Failed to show {title}: {_said(e)}")
-        loader = CallLoader(lambda: ApiService.get_standings(league))
+        loader = CallLoader(fetch)
         loader.data_loaded.connect(loaded)
         loader.error_occurred.connect(lambda e: QMessageBox.warning(self, title.title(), e))
         _start_detached_thread(loader)
 
     def _show_teams_dialog_directly(self, league: str):
         """Show teams dialog directly without being in a league view"""
-        self._fetch_standings_then(
-            league, "teams", lambda data: self._open_teams_dialog_directly(league, data))
+        self._load_then(lambda: ApiService.get_teams(league), "teams",
+                         lambda data: self._open_teams_dialog_directly(league, data))
 
-    def _open_teams_dialog_directly(self, league: str, standings_data):
+    def _open_teams_dialog_directly(self, league: str, teams):
         try:
-            if not standings_data:
-                QMessageBox.information(self, "Teams", 
+            if not teams:
+                QMessageBox.information(self, "Teams",
                                       f"No teams data available for {league}.")
                 return
-            
-            # Filter data by league to avoid mixing
-            filtered_data = [team for team in standings_data 
-                           if self._is_team_for_league(team, league)]
-            
-            dialog = SimpleTeamsDialog(filtered_data, league, self)
+
+            dialog = SimpleTeamsDialog(teams, league, self)
             dialog.exec()
         except Exception as e:
             QMessageBox.critical(self, "Error", f"Failed to show teams: {_said(e)}")
 
     def _show_standings_dialog_directly(self, league: str):
         """Show standings dialog directly without being in a league view"""
-        self._fetch_standings_then(
-            league, "standings", lambda data: self._open_standings_dialog_directly(league, data))
+        self._load_then(lambda: ApiService.get_standings(league), "standings",
+                        lambda data: self._open_standings_dialog_directly(league, data))
 
     def _open_standings_dialog_directly(self, league: str, standings_data):
         try:
@@ -13153,26 +13759,6 @@ class SportsScoresApp(QWidget):
             dialog.exec()
         except Exception as e:
             QMessageBox.critical(self, "Error", f"Failed to show standings: {_said(e)}")
-
-    def _is_team_for_league(self, team_data: Dict, league: str) -> bool:
-        """Check if team belongs to the specified league"""
-        # This is a helper method that should already exist in LeagueView
-        # We'll implement a simple version here
-        try:
-            # Look for league indicators in team data
-            team_league = team_data.get('league', {}).get('abbreviation', '').upper()
-            if team_league == league:
-                return True
-            
-            # Fallback: check parent group info
-            parent = team_data.get('parent', {})
-            if parent:
-                parent_name = parent.get('name', '').upper()
-                return league in parent_name
-            
-            return True  # Default to include if we can't determine
-        except:
-            return True  # Default to include on error
 
     def update_window_title(self, context_items=None):
         """Update window title with breadcrumb-style context for accessibility

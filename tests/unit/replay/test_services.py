@@ -60,7 +60,7 @@ class TestApiService:
         ("get_golf_leaderboard", "get_golf_leaderboard", ("PGA", "2026-01-15", "401811928")),
         ("get_golf_schedule", "get_golf_schedule", ("PGA",)),
         ("get_world_cup_standings", "get_world_cup_standings", ("WC2026",)),
-        ("get_soccer_teams", "get_soccer_teams", ("CONCACAF",)),
+        ("get_teams", "get_teams", ("CONCACAF",)),
         ("get_world_cup_scores_range", "get_world_cup_scores_range", ("WC2026", date(2026, 6, 20), date(2026, 6, 21))),
         ("get_fantasy_cheatsheet", "get_fantasy_cheatsheet", (2026, 100)),
     ])

@@ -123,6 +123,9 @@ core_team_stats_NFL_22.json	77 KB	core seasons/2026/types/2/teams/22/statistics:
 byteam_NCAAWB.json	60 KB	season=2027 seasontype=2 on Nov 4, 2026, 8 of 326 teams: 2 Division I schools moving up, with no opponent sections, 2 non-Division I schools, 4 others
 teams_NCAAWB.json	24 KB	teams?limit=1000, the 6 Division I teams of byteam_NCAAWB out of 362; none from outside Division I
 teams_NCAAM.json	55 KB	teams?limit=1000, the Division I teams of the byteam_NCAAM files out of 362
+teams_NCAAM_all.json	2 KB	teams?limit=1000 on Nov 7, 2026, 5 of 1000: every division now, cut off at the limit, Williams (Division III) and ALBERTUS MAGNUS in and NJIT (Division I) past the cut, so Teams comes from the standings
+teams_MLB.json	4 KB	teams?limit=1000, 10 of 30: the 8 teams of standings_MLB and 2 it leaves out, Rockies and Marlins
+teams_NCAAH.json	3 KB	teams?limit=1000, 7 of 116: the 6 teams of standings_NCAAH and Williams, a Division III school the standings leave out, which is why college hockey's Teams come from the standings
 byteam_NCAAF.json	55 KB	season=2026 seasontype=2, 5 of 138 teams, Alabama among them: every team has opponent sections
 core_team_stats_NCAAF_333_2025.json	77 KB	core seasons/2025/types/2/teams/333/statistics: Alabama, passing 3,551, 11th, which byteam's type 3 has as 3,953 through the bowls
 core_team_stats_NCAAF_149.json	71 KB	core seasons/2026/types/2/teams/149/statistics: Montana, FCS, so not in byteam; total tackles Tied-363rd
@@ -159,9 +162,23 @@ summary_final_NFL_401873036.json	84 KB	Bears at Seahawks, final; root keys heade
 summary_pre_NFL_401873037.json	45 KB	Jaguars at Ravens, not started; root keys header, gameInfo, pickcenter, odds, article, news (2 articles): weather with a temperature and no displayValue, no attendance, a Preview article
 summary_final_EPL_401879251.json	89 KB	Leeds at Bournemouth, full time; root keys header, gameInfo, pickcenter, odds, article, standings: a line in both odds and pickcenter, story in <p> and <photo> markup, 20-team table, 8 columns
 summary_final_NCAAF_401757313_2OT.json	24 KB	Kennesaw State at Liberty, the game of drives_NCAAF_2OT; root keys header, scoringPlays only: overtime scores are periods 5 and 6
+racing_scoreboard_f1.json	41 KB	Sao Paulo GP weekend, Nov 7 2026, less highlights: FP1-FP3 and Qual final, Race scheduled with 22 entrants and no order at all; the event's own status says Final; circuit set
+racing_scoreboard_irl.json	13 KB	IndyCar's last race, Monterey, final: one untyped competition, order and winner on all 25; no circuit
+racing_scoreboard_nascar-premier.json	11 KB	NASCAR at Miami, scheduled: one competition, no competitors before race day; two broadcasts
+racing_season_f1_2026.json	91 KB	dates=2026, trimmed: every event, each race's top 3 by order, other sessions' fields dropped; Bahrain and Saudi Arabia canceled (post, completed false, no field), sprint weekends SS/SR, Sao Paulo's race still to come
+racing_season_irl_2026.json	31 KB	dates=2026, trimmed the same: 18 races, Mid-Ohio's winner without winner: true, three venues named
+racing_season_nascar-premier_2026.json	67 KB	dates=2026, trimmed the same: 40 events with the Clash, Duels and All-Star Race; no circuits
+racing_standings_f1.json	47 KB	apis/v2 standings: Driver Standings (athlete, championshipPts) and Constructor Standings (team, points); per-race columns named by country, trimmed to two
+racing_standings_irl.json	38 KB	one Standings group, championshipPts; per-race columns unnamed, trimmed to two
+racing_standings_nascar-premier.json	44 KB	one Standings group, championshipPts; per-race columns unnamed, trimmed to two
+racing_news_f1.json	9 KB	news limit=25, trimmed to 3 articles
+racing_news_nascar-premier.json	1 KB	news: articles empty, as ESPN has had it since at least November 2026
+racing_scoreboard_irl_running.json	13 KB	made from racing_scoreboard_irl: the event and race set In Progress, winner flags cleared, for a running order
+racing_scoreboard_f1_canceled.json	9 KB	made from racing_scoreboard_f1 with its event swapped for the canceled Bahrain GP from racing_season_f1_2026
 schedule_MLB_10_2026_dh.json	63 KB	Yankees season=2026&seasontype=2, 4 of 165, Jul 17-19: a game postponed (STATUS_POSTPONED, state post, completed false, 0-0, note Makeup date July 19), then a doubleheader the next day, notes Doubleheader - Game 1 and Game 2; root season says the postseason
 schedule_MLB_10_2026_post.json	90 KB	Yankees season=2026&seasontype=3 in November, whole: 5 finals, ALWC and ALDS notes, the last on Oct 8; their season over, nothing to come
 schedule_NCAAF_333_live.json	99 KB	Alabama season=2026&seasontype=2, 3 of 12, captured during the LSU game: a final, the game in progress (STATUS_IN_PROGRESS, state in, no scores on either side), the next one with a note EARLY: Noon - 1pm ET start
 summary_live_NCAAF_401856740.json	12 KB	Alabama at LSU in the 3rd quarter, the game of schedule_NCAAF_333_live; root keys header only, the rest cut: scores 10 and 12 as text, detail 2:44 - 3rd Quarter, no situation
 core_weeks_NFL_2024.json	31 KB	core seasons/2024/types/{1,2,3}/weeks?limit=100 and every weeks/{n} they list, keyed by the path after leagues/nfl/: text Hall of Fame Weekend, Preseason Week 1 to 3, Week 1 to 18, Wild Card, Divisional Round, Conference Championship, Pro Bowl, Super Bowl
 core_weeks_NCAAF_2024.json	14 KB	the same for leagues/college-football/: preseason week 1 is text Week 1, regular Week 1 to 16, postseason week 1 Bowls
+summary_live_NHL_401892664.json	115 KB	Rangers at Kraken, 9:52 of the 1st, captured 2026-11-07; root keys header, boxscore, gameInfo, onIce: onIce is one block per team, teamId plus athleteid and whereabouts ROSTER_WHEREABOUTS_IN_PLAY, 6 a side; names, jerseys and positions only in the box score's forwards, defenses and goalies. College hockey summaries have no onIce, live or not

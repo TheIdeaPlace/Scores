@@ -1,0 +1,139 @@
+{
+ "note": "What a real racing answer reads as, on both apps. tests/unit/test_racing.py checks Windows (racing.py) and RacingGridTests.swift the iPhone (ESPNAPIService.fetchRaceEvent and fetchRacingStandings). An event is the scoreboard's first; its date, status and field are the race's own competition, not the event's or the first session's. A position is empty before the race starts, when the field is an entry list. Dates are UTC. `first` is the first three of `count`. The _running and _canceled fixtures are real answers with a status changed or an event moved in, for the cases no live answer had: position, driver, nationality for a race; rank, name, nationality, points for standings, where a constructor has no nationality.",
+ "events": [
+  {
+   "fixture": "racing_scoreboard_f1.json",
+   "name": "MSC Cruises São Paulo Grand Prix",
+   "date": "2026-11-08T17:00:00Z",
+   "state": "pre",
+   "status": "Scheduled",
+   "completed": false,
+   "broadcasts": ["Apple TV"],
+   "kind": "Entry List",
+   "winner": "",
+   "count": 22,
+   "first": [
+    ["", "Lando Norris", "Britain"],
+    ["", "George Russell", "Britain"],
+    ["", "Kimi Antonelli", "Italy"]
+   ]
+  },
+  {
+   "fixture": "racing_scoreboard_irl.json",
+   "name": "Grand Prix of Monterey",
+   "date": "2026-09-06T18:30:00Z",
+   "state": "post",
+   "status": "Final",
+   "completed": true,
+   "broadcasts": ["FOX"],
+   "kind": "Results",
+   "winner": "Scott McLaughlin",
+   "count": 25,
+   "first": [
+    ["1", "Scott McLaughlin", "New Zealand"],
+    ["2", "Kyle Kirkwood", "USA"],
+    ["3", "Alexander Rossi", "USA"]
+   ]
+  },
+  {
+   "fixture": "racing_scoreboard_nascar-premier.json",
+   "name": "NASCAR Cup Series at Miami",
+   "date": "2026-11-08T20:00:00Z",
+   "state": "pre",
+   "status": "Scheduled",
+   "completed": false,
+   "broadcasts": ["NBC", "HBO Max"],
+   "kind": "",
+   "winner": "",
+   "count": 0,
+   "first": []
+  },
+  {
+   "fixture": "racing_scoreboard_irl_running.json",
+   "name": "Grand Prix of Monterey",
+   "date": "2026-09-06T18:30:00Z",
+   "state": "in",
+   "status": "In Progress",
+   "completed": false,
+   "broadcasts": ["FOX"],
+   "kind": "Running Order",
+   "winner": "",
+   "count": 25,
+   "first": [
+    ["1", "Scott McLaughlin", "New Zealand"],
+    ["2", "Kyle Kirkwood", "USA"],
+    ["3", "Alexander Rossi", "USA"]
+   ]
+  },
+  {
+   "fixture": "racing_scoreboard_f1_canceled.json",
+   "name": "Gulf Air Bahrain Grand Prix",
+   "date": "2026-04-12T15:00:00Z",
+   "state": "post",
+   "status": "Canceled",
+   "completed": false,
+   "broadcasts": [],
+   "kind": "",
+   "winner": "",
+   "count": 0,
+   "first": []
+  }
+ ],
+ "standings": [
+  {
+   "fixture": "racing_standings_f1.json",
+   "groups": [
+    {
+     "name": "Driver Standings",
+     "constructors": false,
+     "count": 24,
+     "first": [
+      ["1", "Kimi Antonelli", "Italy", "380"],
+      ["2", "Max Verstappen", "Netherlands", "261"],
+      ["3", "Lewis Hamilton", "Britain", "259"]
+     ]
+    },
+    {
+     "name": "Constructor Standings",
+     "constructors": true,
+     "count": 11,
+     "first": [
+      ["1", "Mercedes", "", "630"],
+      ["2", "Ferrari", "", "504"],
+      ["3", "Red Bull", "", "382"]
+     ]
+    }
+   ]
+  },
+  {
+   "fixture": "racing_standings_irl.json",
+   "groups": [
+    {
+     "name": "Standings",
+     "constructors": false,
+     "count": 33,
+     "first": [
+      ["1", "Álex Palou", "Spain", "631"],
+      ["2", "Kyle Kirkwood", "USA", "545"],
+      ["3", "Christian Lundgaard", "Denmark", "535"]
+     ]
+    }
+   ]
+  },
+  {
+   "fixture": "racing_standings_nascar-premier.json",
+   "groups": [
+    {
+     "name": "Standings",
+     "constructors": false,
+     "count": 40,
+     "first": [
+      ["1", "Kyle Larson", "USA", "2469"],
+      ["2", "Christopher Bell", "USA", "2402"],
+      ["3", "Denny Hamlin", "USA", "2399"]
+     ]
+    }
+   ]
+  }
+ ]
+}
