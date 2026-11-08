@@ -14,7 +14,7 @@ from exceptions import ApiError, SOMETHING_WENT_WRONG, plain_message
 from services.api_service import ApiService
 from text_utils import text_processor
 
-from .support import EMPTY_JSON, HTTP_404, HTTP_500, NOT_JSON, TIMEOUT, FakeResponse
+from .support import EMPTY_JSON, HTTP_404, HTTP_500, NOT_JSON, TIMEOUT, FakeResponse, load
 
 DAY = date(2026, 6, 20)
 RAW = "HTTPSConnectionPool(host='site.api.espn.com', port=443): Max retries exceeded with url: /apis/site/v2"
@@ -128,13 +128,13 @@ def test_espn_having_nothing_reads_as_nothing(espn, call, nothing, sentence, rep
     ("/standings", {"children": None}, lambda: espn_api.get_standings("NCAAM"), espn_api.STANDINGS_UNAVAILABLE),
     ("/standings", {"children": None}, lambda: espn_api.get_standings("EPL"), espn_api.STANDINGS_UNAVAILABLE),
     ("/teams", {"sports": None}, lambda: espn_api._get_standings_original("NBA"), espn_api.STANDINGS_UNAVAILABLE),
-    (".*", {"sports": None}, lambda: espn_api.get_soccer_teams("EPL"), espn_api.TEAMS_UNAVAILABLE),
+    (".*", {"sports": None}, lambda: espn_api.get_teams("EPL"), espn_api.TEAMS_UNAVAILABLE),
     ("/draft", {"year": 2026, "picks": None}, lambda: espn_api.get_draft(2026), espn_api.DRAFT_UNAVAILABLE),
     ("/draft", {"year": 2026, "picks": None}, lambda: espn_api.get_draft_round(2026, 1), espn_api.DRAFT_UNAVAILABLE),
 ], ids=["scores", "scores_ncaaf", "news", "team_news", "schedule_nfl", "schedule_nba", "schedule_soccer", "rankings",
         "roster", "transactions", "team_transactions", "golf_leaderboard", "golf_schedule", "world_cup_standings",
         "standings_mlb", "standings_nfl", "standings_nba", "standings_nhl", "standings_wnba", "standings_ncaam",
-        "standings_soccer", "standings_slow_path", "soccer_teams", "draft", "draft_round"])
+        "standings_soccer", "standings_slow_path", "teams", "draft", "draft_round"])
 def test_a_null_list_is_told_apart_from_an_empty_one(espn, route, payload, call, sentence):
     """A null where the whole answer's list should be isn't an answer."""
     espn.on(route, payload)
@@ -155,14 +155,15 @@ def test_a_200_with_no_object_in_it_is_not_no_data(espn, call, nothing, sentence
 
 @pytest.mark.parametrize("reply", [FakeResponse(None), []], ids=["null", "a_list"])
 def test_a_soccer_league_with_a_null_body_is_not_a_league_with_no_table(espn, reply):
-    """A cup with no table says so, and that would be untrue here."""
-    espn.on("/standings", reply)
+    """A cup with no table says so, and that would be untrue here. Teams still has its teams,
+    and says their records are what's missing."""
+    espn.on("/standings", reply).on("/teams", load("teams_EPL.json"))
     with pytest.raises(ApiError) as caught:
         espn_api.get_standings("EPL")
     assert str(caught.value) == espn_api.STANDINGS_UNAVAILABLE
-    with pytest.raises(ApiError):
-        espn_api.get_soccer_teams("EPL")
-    assert not espn.urls("/teams")
+    teams = espn_api.get_teams("EPL")
+    assert len(teams) == 3
+    assert all(team["records_unavailable"] for team in teams)
 
 
 def test_a_draft_with_a_null_list_of_picks_is_not_kept(espn):
@@ -442,16 +443,17 @@ def test_a_description_that_is_not_text_costs_only_itself(description):
 @pytest.mark.parametrize("reply", [TIMEOUT, HTTP_500, NOT_JSON], ids=["timeout", "500", "not_json"])
 def test_soccer_standings_and_teams_say_so(espn, reply):
     espn.on(".*", reply)
-    for call in (espn_api.get_standings, espn_api.get_soccer_teams):
+    for call, sentence in ((espn_api.get_standings, espn_api.STANDINGS_UNAVAILABLE),
+                           (espn_api.get_teams, espn_api.TEAMS_UNAVAILABLE)):
         with pytest.raises(ApiError) as caught:
             call("EPL")
-        assert str(caught.value) == espn_api.STANDINGS_UNAVAILABLE
+        assert str(caught.value) == sentence
 
 
 def test_a_soccer_league_with_no_table_failing_its_team_list_says_so(espn):
     espn.on("/standings", {"children": []}).on("/teams", HTTP_500)
     with pytest.raises(ApiError) as caught:
-        espn_api.get_soccer_teams("EPL")
+        espn_api.get_teams("EPL")
     assert str(caught.value) == espn_api.TEAMS_UNAVAILABLE
 
 

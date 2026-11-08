@@ -1,0 +1,164 @@
+{
+ "sports": [
+  {
+   "name": "Baseball",
+   "leagues": [
+    {
+     "name": "Major League Baseball",
+     "teams": [
+      {
+       "team": {
+        "id": "11",
+        "abbreviation": "ATH",
+        "displayName": "Athletics",
+        "shortDisplayName": "Athletics",
+        "name": "Athletics",
+        "location": "Athletics",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/mlb/500/ath.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "15",
+        "abbreviation": "ATL",
+        "displayName": "Atlanta Braves",
+        "shortDisplayName": "Braves",
+        "name": "Braves",
+        "location": "Atlanta",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/mlb/500/atl.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "2",
+        "abbreviation": "BOS",
+        "displayName": "Boston Red Sox",
+        "shortDisplayName": "Red Sox",
+        "name": "Red Sox",
+        "location": "Boston",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/mlb/500/bos.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "4",
+        "abbreviation": "CHW",
+        "displayName": "Chicago White Sox",
+        "shortDisplayName": "White Sox",
+        "name": "White Sox",
+        "location": "Chicago",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/mlb/500/chw.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "27",
+        "abbreviation": "COL",
+        "displayName": "Colorado Rockies",
+        "shortDisplayName": "Rockies",
+        "name": "Rockies",
+        "location": "Colorado",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/mlb/500/col.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "19",
+        "abbreviation": "LAD",
+        "displayName": "Los Angeles Dodgers",
+        "shortDisplayName": "Dodgers",
+        "name": "Dodgers",
+        "location": "Los Angeles",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/mlb/500/lad.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "28",
+        "abbreviation": "MIA",
+        "displayName": "Miami Marlins",
+        "shortDisplayName": "Marlins",
+        "name": "Marlins",
+        "location": "Miami",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/mlb/500/mia.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "10",
+        "abbreviation": "NYY",
+        "displayName": "New York Yankees",
+        "shortDisplayName": "Yankees",
+        "name": "Yankees",
+        "location": "New York",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/mlb/500/nyy.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "22",
+        "abbreviation": "PHI",
+        "displayName": "Philadelphia Phillies",
+        "shortDisplayName": "Phillies",
+        "name": "Phillies",
+        "location": "Philadelphia",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/mlb/500/phi.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "14",
+        "abbreviation": "TOR",
+        "displayName": "Toronto Blue Jays",
+        "shortDisplayName": "Blue Jays",
+        "name": "Blue Jays",
+        "location": "Toronto",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/mlb/500/tor.png"
+         }
+        ]
+       }
+      }
+     ]
+    }
+   ]
+  }
+ ]
+}

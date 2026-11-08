@@ -1,0 +1,79 @@
+{
+ "sports": [
+  {
+   "name": "Basketball",
+   "leagues": [
+    {
+     "name": "NCAA Men's Basketball",
+     "teams": [
+      {
+       "team": {
+        "id": "440",
+        "abbreviation": "ALBM",
+        "displayName": "ALBERTUS MAGNUS",
+        "shortDisplayName": "Albertus",
+        "name": "ALBERTUS MAGNUS",
+        "location": "Albertus Magnus"
+       }
+      },
+      {
+       "team": {
+        "id": "407",
+        "abbreviation": "ARCA",
+        "displayName": "ARCADIA",
+        "shortDisplayName": "Arcadia",
+        "name": "ARCADIA",
+        "location": "Arcadia"
+       }
+      },
+      {
+       "team": {
+        "id": "2001",
+        "abbreviation": "ADSU",
+        "displayName": "Adams State Grizzlies",
+        "shortDisplayName": "Adams St",
+        "name": "Grizzlies",
+        "location": "Adams State",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/ncaa/500/2001.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "150",
+        "abbreviation": "DUKE",
+        "displayName": "Duke Blue Devils",
+        "shortDisplayName": "Duke",
+        "name": "Blue Devils",
+        "location": "Duke",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/ncaa/500/150.png"
+         }
+        ]
+       }
+      },
+      {
+       "team": {
+        "id": "2731",
+        "abbreviation": "WLM",
+        "displayName": "Williams Ephs",
+        "shortDisplayName": "Williams",
+        "name": "Ephs",
+        "location": "Williams",
+        "logos": [
+         {
+          "href": "https://a.espncdn.com/i/teamlogos/ncaa/500/2731.png"
+         }
+        ]
+       }
+      }
+     ]
+    }
+   ]
+  }
+ ]
+}

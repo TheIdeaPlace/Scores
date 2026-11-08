@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import UIKit
 import Charts
 import SafariServices
 
@@ -41,7 +42,7 @@ struct GameDetailView: View {
                 Spacer()
             } else if let error = viewModel.errorMessage {
                 Spacer()
-                ErrorStateView(message: error) { Task { await viewModel.loadDetails() } }
+                ErrorStateView(message: error) { Task { _ = await viewModel.loadDetails() } }
                 Spacer()
             } else if let details = viewModel.gameDetails {
                 TabView(selection: $selectedSection) {
@@ -111,7 +112,7 @@ struct GameDetailView: View {
                 }
             }
         }
-        .task { await viewModel.loadDetails() }
+        .task { _ = await viewModel.loadDetails() }
     }
 
     // MARK: - Game Header
@@ -382,6 +383,11 @@ struct GameDetailView: View {
 
         return ScrollView {
             VStack(spacing: 20) {
+                // A live NHL game: who is on the ice right now
+                if sport == .nhl && !details.onIceTeams.isEmpty {
+                    onIceSection(details.onIceTeams)
+                }
+
                 // The story of a game that's over, and how it was scored, come first
                 if let story = details.gameStory {
                     gameStorySection(story)
@@ -412,6 +418,8 @@ struct GameDetailView: View {
             }
             .padding()
         }
+        // Pull down for the latest, such as who is on the ice now. What's showing stays if it fails.
+        .refreshable { _ = await viewModel.loadDetails() }
     }
 
     // MARK: - Leaders section
@@ -605,6 +613,49 @@ struct GameDetailView: View {
         case "doubtful": return .orange
         case "injured reserve", "ir": return .red
         default: return .secondary
+        }
+    }
+
+    // MARK: - On the Ice section
+
+    /// Each team's heading, then one element per player: forwards, defense, goalie.
+    private func onIceSection(_ teams: [OnIceTeam]) -> some View {
+        sectionCard(title: "On the Ice") {
+            ForEach(teams, id: \.id) { team in
+                Text(team.heading)
+                    .font(.subheadline.bold())
+                    .foregroundColor(.secondary)
+                    .padding(.top, 4)
+                    .accessibilityAddTraits(.isHeader)
+                ForEach(team.players, id: \.id) { player in
+                    HStack {
+                        Text(player.name)
+                            .font(.subheadline)
+                        Spacer()
+                        Text([player.jersey.isEmpty ? "" : "#\(player.jersey)", player.position]
+                            .filter { !$0.isEmpty }.joined(separator: " "))
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                    }
+                    .padding(.vertical, 2)
+                    .accessibilityElement(children: .ignore)
+                    .accessibilityLabel(player.spokenText)
+                }
+            }
+            // Lines change every minute or so. Pulling down does the same, but says nothing.
+            Button {
+                Task {
+                    let loaded = await viewModel.loadDetails()
+                    UIAccessibility.post(notification: .announcement,
+                                         argument: loaded ? "On the ice updated"
+                                                          : APIError.unavailable("who is on the ice"))
+                }
+            } label: {
+                Label("Update", systemImage: "arrow.clockwise")
+                    .font(.subheadline)
+            }
+            .padding(.top, 4)
+            .accessibilityLabel("Update who is on the ice")
         }
     }
 

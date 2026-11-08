@@ -144,10 +144,11 @@ it needs an id→name resolve. Reads naturally as an awards-race view.
   Note the `seasons/{year}` segment: the path without it 404s. Returns
   formation groups (`Base 4-3 D`, `3WR 1TE`, `Special Teams`) with ranked
   athletes per position. Works for NFL and NBA. Unused on both platforms.
-- **NHL `onIce`** — present in every NHL `summary`, unused on both platforms.
+- **NHL `onIce`** — present in every NHL `summary`.
   Two entries (one per team) listing `athleteid` and `whereabouts`
-  (`ROSTER_WHEREABOUTS_IN_PLAY`), i.e. who is on the ice right now. Useful
-  during live games; needs a roster join for names.
+  (`ROSTER_WHEREABOUTS_IN_PLAY`), i.e. who is on the ice right now. Now used on
+  both platforms during live games (`on_ice.py`, `Models/OnIce.swift`, #102),
+  with names from the same summary's box score. College hockey sends none.
 - **Live situation** — `.../competitions/{id}/situation` gives `down`,
   `distance`, `yardLine`, `isRedZone`, `homeTimeouts` / `awayTimeouts` and
   `lastPlay` in a 393-byte response. Much cheaper to poll than the full
