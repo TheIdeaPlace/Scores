@@ -1103,6 +1103,32 @@ final class TeamScheduleFailureTests: XCTestCase {
         } catch {}
     }
 
+    /// One part failing while the rest are empty isn't an off-season, so it doesn't fall back
+    /// to last season (#191). Windows: test_a_failed_part_with_the_rest_empty_says_so...
+    func testAFavoriteWithOnePartFailingAndTheRestEmptyThrows() async {
+        let failure = timedOut
+        let empty = Data(#"{"events": []}"#.utf8)
+        StubESPN.answer { url in (url.query ?? "").contains("seasontype=2") ? failure : .body(empty) }
+        do {
+            _ = try await cardGames()
+            XCTFail("Expected an error")
+        } catch {
+            XCTAssertEqual((error as? URLError)?.code, .timedOut)
+        }
+        XCTAssertFalse(StubESPN.requests.contains {
+            ($0.query ?? "").contains("season=\(Sport.nfl.currentSeasonYear - 1)")
+        })
+    }
+
+    func testASoccerFavoriteWithNoResultsYetAndFixturesFailingThrows() async {
+        let empty = Data(#"{"events": []}"#.utf8)
+        StubESPN.answer { url in (url.query ?? "").contains("fixture=true") ? .status(500) : .body(empty) }
+        do {
+            _ = try await cardGames(.soccerEPL)
+            XCTFail("Expected an error")
+        } catch {}
+    }
+
     // MARK: Statuses ESPN means as failures
 
     func testOnly400And404MeanNothingThere() async throws {
