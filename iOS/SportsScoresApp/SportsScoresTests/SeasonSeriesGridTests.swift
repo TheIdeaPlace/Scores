@@ -19,6 +19,7 @@ private struct SeasonSeriesGrid: Decodable {
     struct Case: Decodable {
         let name: String
         let fixture: String?
+        let this_game: String
         let names: [String: String]
         let expected: [Shown]
         let expected_line: String
@@ -44,11 +45,12 @@ final class SeasonSeriesGridTests: XCTestCase {
             }
             let details = try JSONDecoder().decode(GameDetails.self, from: summary)
             let entries = details.seasonseries ?? []
-            let shown = SeasonSeries.shown(entries, names: item.names)
+            let shown = SeasonSeries.shown(entries, names: item.names, thisGame: item.this_game)
             XCTAssertEqual(shown.map(\.label), item.expected.map(\.label), item.name)
             XCTAssertEqual(shown.map(\.text), item.expected.map(\.text), item.name)
             XCTAssertEqual(shown.map(\.games), item.expected.map(\.games), item.name)
-            XCTAssertEqual(SeasonSeries.summaryLine(entries, names: item.names), item.expected_line, item.name)
+            XCTAssertEqual(SeasonSeries.summaryLine(entries, names: item.names, thisGame: item.this_game),
+                           item.expected_line, item.name)
             if item.fixture != nil {
                 XCTAssertEqual(details.teamNamesByID, item.names, item.name)
             }

@@ -2588,3 +2588,8 @@ def test_mlb_extras_problems_on_real_summaries():
         "series season lists no games",
     ]
     assert v.mlb_extras_problems({}) == ["no winprobability block", "no seasonseries block"]
+    # A spring training game that ended level has no winner, and that's fine.
+    tied = copy.deepcopy(summary)
+    for competitor in tied["seasonseries"][1]["events"][0]["competitors"]:
+        competitor["winner"], competitor["score"] = False, "3"
+    assert v.mlb_extras_problems(tied) == []

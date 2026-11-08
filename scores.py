@@ -12267,6 +12267,16 @@ class WinProbabilityDialog(QDialog):
     reader. F5 asks ESPN again and keeps the tab and row you were on."""
 
     TABS = ("By Inning", "Every Play", "Biggest Swings")
+    DESCRIPTIONS = (
+        "Each team's chance to win as each half inning ended. F5 updates it.",
+        "Each team's chance to win after every play. F5 updates it.",
+        "The plays that moved the chances most, biggest first. F5 updates it.",
+    )
+    EMPTY = (
+        "ESPN doesn't say which inning each play was in.",
+        "ESPN has no win probability for this game.",
+        "No play has changed the chances yet.",
+    )
 
     def __init__(self, league: str, game_id, game_title: str, summary: dict, parent=None):
         super().__init__(parent)
@@ -12282,11 +12292,11 @@ class WinProbabilityDialog(QDialog):
         self.tabs = make_tab_area(len(self.TABS), "Win Probability Tabs",
                                   "By inning, every play, and the biggest swings")
         self.tables = []
-        for name in self.TABS:
+        for name, description in zip(self.TABS, self.DESCRIPTIONS):
             page = QWidget()
             page_layout = QVBoxLayout(page)
             table = AccessibleTable(accessible_name=f"Win probability, {name.lower()}",
-                                    accessible_description="Each team's chance to win after each play")
+                                    accessible_description=description)
             page_layout.addWidget(table)
             self.tabs.addTab(page, name)
             self.tables.append(table)
@@ -12305,20 +12315,12 @@ class WinProbabilityDialog(QDialog):
         self.overview.setText(text)
         self.setAccessibleDescription(text)
         headers = win_probability.headers(names)
-        blank = [""] * len(headers)
-        empty = {
-            0: "ESPN doesn't say which inning each play was in.",
-            1: "ESPN has no win probability for this game.",
-            2: "No play has changed the chances yet.",
-        }
-        for index, picked in enumerate((win_probability.by_inning(rows), rows,
-                                        win_probability.biggest_swings(rows))):
-            table = self.tables[index]
+        for table, empty, picked in zip(self.tables, self.EMPTY, (win_probability.by_inning(rows), rows,
+                                                                   win_probability.biggest_swings(rows))):
             table.setup_columns(headers, stretch_column=1)
             shown = [win_probability.table_row(row) for row in picked]
-            if not shown:
-                shown = [[""] + [empty[index]] + blank[2:]]
-            table.populate_data(shown, set_focus=False)
+            # The message goes in the first cell, where focus lands, or it would read as blank.
+            table.populate_data(shown or [[empty] + [""] * (len(headers) - 1)], set_focus=False)
 
     def keyPressEvent(self, event):
         if event.key() == Qt.Key.Key_F5:
@@ -12337,13 +12339,15 @@ class WinProbabilityDialog(QDialog):
         if generation != self._generation or not self.isVisible():
             return
         had_focus = [table.hasFocus() for table in self.tables]
-        rows = [table.currentRow() for table in self.tables]
+        # The table view's column even while a list view shows, so switching back keeps it.
+        places = [(table.currentRow(), table.table_widget.currentColumn()) for table in self.tables]
         self._fill(raw)
-        for table, row, focused in zip(self.tables, rows, had_focus):
-            table.setCurrentCell(min(max(row, 0), max(table.rowCount() - 1, 0)), 0)
+        for table, (row, column), focused in zip(self.tables, places, had_focus):
+            table.setCurrentCell(min(max(row, 0), max(table.rowCount() - 1, 0)),
+                                 min(max(column, 0), max(table.columnCount() - 1, 0)))
             if focused:
                 table.setFocus()
-        announce("Win probability updated")
+        announce(f"Updated. {win_probability.standing(raw)}")
 
     def _on_error(self, generation, message):
         if generation == self._generation and self.isVisible():
@@ -12353,7 +12357,8 @@ class WinProbabilityDialog(QDialog):
 class SeasonSeriesDialog(QDialog):
     """How the two teams in an MLB game have done against each other: a tab for each
     series ESPN has (the playoff round, the regular season, this set of games, spring
-    training), each a table of its games. Each table starts on the game being looked at."""
+    training), each a table of its games. Each table starts on the game being looked at,
+    and each record is as of that game."""
 
     def __init__(self, league: str, game_id, game_title: str, summary: dict, parent=None):
         super().__init__(parent)
@@ -12370,16 +12375,15 @@ class SeasonSeriesDialog(QDialog):
             tabs = make_tab_area(len(shown), "Season Series Tabs", "One tab for each series")
             for item in shown:
                 heading = f"{item['label']}: {item['text']}"
+                games = item["games"]
                 page = QWidget()
                 page_layout = QVBoxLayout(page)
-                games = item["games"]
-                label = QLabel(f"{heading}, {games} game{'s' if games != 1 else ''}")
-                page_layout.addWidget(label)
-                table = AccessibleTable(accessible_name=heading,
+                # The tab says the record; the table's name adds the length, heard on arrival.
+                table = AccessibleTable(accessible_name=f"{heading}, {games} game{'s' if games != 1 else ''}",
                                         accessible_description="The games in this series, oldest first")
                 table.setup_columns(season_series.GAME_HEADERS, stretch_column=1)
                 rows = season_series.game_rows(item["entry"], names, str(game_id or ""))
-                table.populate_data(rows or [["", "ESPN lists no games for this series.", "", ""]],
+                table.populate_data(rows or [["ESPN lists no games for this series.", "", "", ""]],
                                     set_focus=False)
                 this_game = next((i for i, row in enumerate(rows)
                                   if row[3].lower().endswith(season_series.THIS_GAME)), None)

@@ -193,14 +193,25 @@ def table_row(row: Dict[str, Any]) -> List[str]:
             f"{row['away']}%", f"{row['home']}%", row["change"]]
 
 
+NO_DATA = "ESPN has no win probability for this game."
+
+
+def standing(summary: Any) -> str:
+    """Each team's chance now, away first: "Mets 70%, Nationals 30%"."""
+    points = entries(summary)
+    if not points:
+        return NO_DATA
+    names = team_names(summary)
+    home = percent(points[-1]["home"])
+    return f"{names['away']} {100 - home}%, {names['home']} {home}%"
+
+
 def overview(summary: Any) -> str:
     """The sentence above the tables: where it stands and the biggest swing."""
     rows = play_rows(summary)
     if not rows:
-        return "ESPN has no win probability for this game."
-    names = team_names(summary)
-    last = rows[-1]
-    text = f"{names['away']} {last['away']}%, {names['home']} {last['home']}% after the last play."
+        return NO_DATA
+    text = f"{standing(summary)} after the last play."
     swings = biggest_swings(rows, 1)
     if swings:
         swing = swings[0]

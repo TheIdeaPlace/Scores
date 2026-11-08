@@ -21,7 +21,7 @@ import scores  # noqa: E402
 FIXTURES = Path(__file__).parent.parent / "fixtures" / "espn"
 FINAL = json.loads((FIXTURES / "summary_final_MLB_401817091.json").read_text(encoding="utf-8"))
 WP_LINE = "Win probability: Mets 100%"
-SERIES_LINE = "Regular Season Series: Mets won 7-6"
+SERIES_LINE = "Regular Season Series: Mets lead 7-5"  # as of this game, the 12th of 13
 TITLE = "New York Mets at Washington Nationals"
 
 
@@ -139,15 +139,18 @@ def test_win_probability_dialog_f5_keeps_the_row(app, spoken, requests):
     assert len(requests) == 1
     dialog._on_loaded(dialog._generation - 1, {}, {})  # an older request: dropped
     assert dialog.tables[1].rowCount() == 74 and not spoken
+    dialog.tables[1].setCurrentCell(40, 5)
     dialog._on_loaded(dialog._generation, FINAL, {})
-    assert dialog.tables[1].currentRow() == 40
-    assert spoken == ["Win probability updated"]
+    assert (dialog.tables[1].currentRow(), dialog.tables[1].table_widget.currentColumn()) == (40, 5)
+    assert spoken == ["Updated. Mets 100%, Nationals 0%"]
     dialog._on_error(dialog._generation, "ESPN didn't answer. Try again.")
     assert spoken[-1] == "ESPN didn't answer. Try again."
-    # The game's block gone: each tab says so instead of an empty table.
+    # The game's block gone: each tab says so, in the first cell, where focus lands.
     dialog._on_loaded(dialog._generation, {}, {})
-    assert _cells(dialog.tables[1])[0][1] == "ESPN has no win probability for this game."
+    assert _cells(dialog.tables[1])[0][0] == "ESPN has no win probability for this game."
+    assert _cells(dialog.tables[2])[0][0] == "No play has changed the chances yet."
     assert dialog.tables[1].currentRow() == 0
+    assert spoken[-1] == "Updated. ESPN has no win probability for this game."
     dialog.close()
 
 
@@ -156,10 +159,13 @@ def test_season_series_dialog(app):
     assert dialog.windowTitle() == f"Season Series - {TITLE} - MLB - Sports Scores"
     tabs = dialog.findChildren(scores.QTabWidget)[0]
     assert [tabs.tabText(i) for i in range(tabs.count())] == [
-        "Regular Season Series: Mets won 7-6", "Current Series: Nationals won 2-1",
+        "Regular Season Series: Mets lead 7-5", "Current Series: Tied 1-1",
         "Preseason Series: Nationals won 4-1"]
     tables = dialog.findChildren(scores.AccessibleTable)
-    regular = next(t for t in tables if t.accessible_name == "Regular Season Series: Mets won 7-6")
+    assert sorted(t.accessible_name for t in tables) == [
+        "Current Series: Tied 1-1, 3 games", "Preseason Series: Nationals won 4-1, 5 games",
+        "Regular Season Series: Mets lead 7-5, 13 games"]
+    regular = next(t for t in tables if t.accessible_name.startswith("Regular Season Series"))
     rows = _cells(regular)
     assert len(rows) == 13
     assert regular.horizontalHeaderItem(1).text() == "Game"

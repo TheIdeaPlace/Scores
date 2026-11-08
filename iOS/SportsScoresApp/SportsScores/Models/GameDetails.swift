@@ -26,6 +26,13 @@ extension KeyedDecodingContainer {
         return rows.compactMap { $0.value }
     }
 
+    /// An id ESPN may send as text or as a whole number: "11" either way; nil for anything else.
+    func lenientString(forKey key: Key) -> String? {
+        if let text = try? decodeIfPresent(String.self, forKey: key) { return text }
+        if let number = try? decodeIfPresent(Int.self, forKey: key) { return String(number) }
+        return nil
+    }
+
     /// A number ESPN may send as an int, a float or text such as "64,195"; nil for
     /// anything else, so an odd value costs that value and not what's around it.
     func lenientNumber(forKey key: Key) -> Double? {
@@ -519,6 +526,15 @@ struct GameDetails: Codable {
         let homeWinPercentage: Double
         let tiePercentage: Double?
         let playId: String?
+
+        enum CodingKeys: String, CodingKey { case homeWinPercentage, tiePercentage, playId }
+
+        init(from decoder: Decoder) throws {
+            let c = try decoder.container(keyedBy: CodingKeys.self)
+            homeWinPercentage = try c.decode(Double.self, forKey: .homeWinPercentage)
+            tiePercentage = try? c.decodeIfPresent(Double.self, forKey: .tiePercentage)
+            playId = c.lenientString(forKey: .playId)
+        }
     }
 
     // MARK: - Season Series
@@ -563,14 +579,18 @@ struct GameDetails: Codable {
 
             init(from decoder: Decoder) throws {
                 let c = try decoder.container(keyedBy: CodingKeys.self)
-                id = try? c.decodeIfPresent(String.self, forKey: .id)
+                id = c.lenientString(forKey: .id)
                 status = try? c.decodeIfPresent(String.self, forKey: .status)
                 statusType = try? c.decodeIfPresent(StatusType.self, forKey: .statusType)
                 competitors = c.lossyArray(forKey: .competitors) ?? []
             }
 
-            /// Only a finished game counts toward the record.
-            var isFinished: Bool { statusType?.completed == true || status == "post" }
+            /// Only a finished game counts toward the record. `status` is read only
+            /// without a `statusType`: a postponed game can say "post" too.
+            var isFinished: Bool {
+                if let statusType = statusType { return statusType.completed == true }
+                return status?.trimmingCharacters(in: .whitespacesAndNewlines) == "post"
+            }
 
             struct StatusType: Codable {
                 let completed: Bool?
@@ -584,6 +604,15 @@ struct GameDetails: Codable {
                     let id: String?
                     let displayName: String?
                     let abbreviation: String?
+
+                    enum CodingKeys: String, CodingKey { case id, displayName, abbreviation }
+
+                    init(from decoder: Decoder) throws {
+                        let c = try decoder.container(keyedBy: CodingKeys.self)
+                        id = c.lenientString(forKey: .id)
+                        displayName = try? c.decodeIfPresent(String.self, forKey: .displayName)
+                        abbreviation = try? c.decodeIfPresent(String.self, forKey: .abbreviation)
+                    }
                 }
             }
         }

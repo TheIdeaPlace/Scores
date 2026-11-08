@@ -688,14 +688,14 @@ struct GameDetailView: View {
                 if let wp = details.winprobability, !wp.isEmpty {
                     winProbChart(
                         entries: wp,
-                        awayAbbr: game.awayTeam.abbreviation,
                         homeAbbr: game.homeTeam.abbreviation,
                         names: details.sideNames
                     )
                 }
 
-                // Season series: the record counted from the games (SeasonSeries.swift).
-                let series = SeasonSeries.shown(details.seasonseries ?? [], names: details.teamNamesByID)
+                // Season series: the record counted from the games, as of this one (SeasonSeries.swift).
+                let series = SeasonSeries.shown(details.seasonseries ?? [], names: details.teamNamesByID,
+                                                thisGame: game.id)
                 if !series.isEmpty {
                     sectionCard(title: "Season Series") {
                         ForEach(Array(series.enumerated()), id: \.offset) { _, s in
@@ -724,7 +724,7 @@ struct GameDetailView: View {
     }
 
     @ViewBuilder
-    private func winProbChart(entries: [GameDetails.WinProbEntry], awayAbbr: String, homeAbbr: String,
+    private func winProbChart(entries: [GameDetails.WinProbEntry], homeAbbr: String,
                               names: (home: String, away: String)) -> some View {
         // Build (index, homeWinPct) data points
         let data = entries.enumerated().map { (i, e) in (i, e.homeWinPercentage) }

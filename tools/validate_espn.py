@@ -600,8 +600,14 @@ def mlb_extras_problems(summary):
             problems.append(f"series {entry.get('type')} lists no games")
             continue
         finished = [e for e in events if (e.get("statusType") or {}).get("completed") is True]
-        unflagged = [e for e in finished
-                     if sum(1 for c in e.get("competitors") or [] if (c or {}).get("winner") is True) != 1]
+        def winners(event):
+            return sum(1 for c in event.get("competitors") or [] if (c or {}).get("winner") is True)
+
+        def tied(event):  # spring training games can end level, with no winner
+            scores = {str((c or {}).get("score")) for c in event.get("competitors") or []}
+            return len(scores) == 1
+
+        unflagged = [e for e in finished if winners(e) != 1 and not (winners(e) == 0 and tied(e))]
         if unflagged:
             problems.append(f"series {entry.get('type')}: {len(unflagged)} finished games without one winner")
         if any(not ((c or {}).get("team") or {}).get("id") for e in events for c in e.get("competitors") or []):

@@ -6,10 +6,13 @@
 //  summary's `seasonseries`. season_series.py is the Windows twin; both are held
 //  to tests/fixtures/season_series_grid.json. Change both together.
 //
-//  ESPN's own `summary` sentence can be wrong (in a World Series game it said
-//  "TB leads series 3-2" for five games Milwaukee won four of), so the record is
-//  counted from the finished games' winner flags. In a postseason game the
-//  `current` series is the playoff's games again and is left out.
+//  The record is counted from the finished games' winner flags, as of the game
+//  being looked at: `events` runs to the end of the series, but game 4 of a World
+//  Series says "Brewers lead 3-1", as ESPN does, not how it ended. ESPN's own
+//  `summary` sentence isn't read: in that game its `current` series said "TB leads
+//  series 3-2". In a postseason game `current` is the playoff's games again and is
+//  left out. A playoff series is won at more than half its games; any other only
+//  once every game is played.
 //
 
 import Foundation
@@ -58,9 +61,15 @@ enum SeasonSeries {
         return entry.events.count
     }
 
-    static func recordText(_ entry: Entry, names: [String: String]) -> String {
+    /// The record as of `thisGame` when it is one of the series' games; every game otherwise.
+    static func recordText(_ entry: Entry, names: [String: String], thisGame: String) -> String {
         let total = games(entry)
-        let finished = entry.events.filter(\.isFinished)
+        let ids = entry.events.map { nonBlank($0.id) ?? "" }
+        var counted = entry.events
+        if !thisGame.isEmpty, let index = ids.firstIndex(of: thisGame) {
+            counted = Array(entry.events[...index])
+        }
+        let finished = counted.filter(\.isFinished)
         var wins: [String: Int] = [:]
         var order: [String] = []
         var teams: [String: Entry.SeriesEvent.Competitor.Team] = [:]
@@ -87,7 +96,7 @@ enum SeasonSeries {
         let leadID = ranked[0]
         let leadWins = wins[leadID] ?? 0
         let trailWins = ranked.count > 1 ? (wins[ranked[1]] ?? 0) : 0
-        let decided = finished.count >= total || leadWins * 2 > total
+        let decided = finished.count >= total || (entry.type == "playoff" && leadWins * 2 > total)
         if leadWins == trailWins {
             return "\(decided ? "Split" : "Tied") \(leadWins)-\(trailWins)"
         }
@@ -96,13 +105,15 @@ enum SeasonSeries {
         return "\(name) \(decided ? "won" : "lead") \(leadWins)-\(trailWins)"
     }
 
-    static func shown(_ entries: [Entry], names: [String: String]) -> [Shown] {
-        ordered(entries).map { Shown(label: label($0), text: recordText($0, names: names), games: games($0)) }
+    static func shown(_ entries: [Entry], names: [String: String], thisGame: String) -> [Shown] {
+        ordered(entries).map {
+            Shown(label: label($0), text: recordText($0, names: names, thisGame: thisGame), games: games($0))
+        }
     }
 
-    /// "Regular Season Series: Mets won 7-6", the first series shown; empty with none.
-    static func summaryLine(_ entries: [Entry], names: [String: String]) -> String {
-        guard let first = shown(entries, names: names).first else { return "" }
+    /// "Regular Season Series: Mets lead 7-5", the first series shown; empty with none.
+    static func summaryLine(_ entries: [Entry], names: [String: String], thisGame: String) -> String {
+        guard let first = shown(entries, names: names, thisGame: thisGame).first else { return "" }
         return "\(first.label): \(first.text)"
     }
 }

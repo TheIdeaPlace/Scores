@@ -13,8 +13,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   Series: Mets lead 7-5"). Enter on the first opens the chances by inning, after every play, and the five
   biggest swings, with who gained on each play; F5 updates it during a game. Enter on the second opens a
   tab for each series (playoff round, regular season, current set, spring training) listing its games,
-  starting on the game you came from. Both apps now count each series' record from its games, since ESPN's
-  own sentence can be wrong (in one World Series game it gave the wrong team the lead), and round win
+  starting on the game you came from. Both apps count each series' record from its games, as of the game
+  you're looking at, so an old game doesn't give away how a series ended; ESPN's own sentence isn't read,
+  since it can be wrong (in one World Series game it gave the wrong team the lead). Both round win
   percentages the same way: the iPhone's chart used to cut 69.8% to 69% and called a live game's chances
   "Final". The unreachable Kitchen Sink dialog these came from is gone.
 - **Listen to the game.** For the NFL, NBA, NHL, and college football and basketball (the SEC, Big Ten,

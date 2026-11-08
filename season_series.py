@@ -10,14 +10,20 @@ ESPN's `seasonseries` block is a list of series, each with its games under `even
 "totalCompetitions": 13, "events": [...]}`. Types seen: `current` (this set of games),
 `season` (the regular season), `preseason`, and `playoff` (with `round`, "World Series").
 
-- ESPN's `summary` sentence can't be trusted. In a World Series game 4 it said
-  "TB leads series 3-2" for five games Milwaukee won four of, and in a regular season
-  game it counts only to the game being looked at while `events` lists the games
-  after it too. So the record is counted here from the games, each competitor's
-  `winner`, and only finished games count.
+- `events` runs to the end of the series, past the game being looked at, but the
+  record is as of that game, as ESPN's `summary` is: game 4 of a World Series says
+  "Brewers lead 3-1" though Milwaukee went on to win it. Games after it aren't counted,
+  so an old game doesn't give away how the series ended. A game not in `events` (a
+  spring training series seen from a regular season game) counts every game.
+- The record is counted from the games, each finished game's `winner`, rather than read
+  from ESPN's `summary`, which isn't always right: in that World Series game the
+  `current` series said "TB leads series 3-2".
+- A game is finished when `statusType.completed` says so; `status` ("post") is read
+  only without a `statusType`, since a postponed game can be "post" too.
 - In a postseason game `current` is the same games as `playoff`, and is left out.
-- A series is decided once every game in it is played, or once one team has won
-  more than half of `totalCompetitions` (a best of seven at four).
+- A series is won once every game in it is played, or, for a playoff series, once one
+  team has won more than half of `totalCompetitions` (a best of seven at four). A
+  regular season series clinched early still "leads" until its last game, as ESPN says.
 """
 
 from typing import Any, Dict, List, Optional
@@ -59,8 +65,15 @@ def team_names(summary: Any) -> Dict[str, str]:
 
 
 def _finished(event: Dict[str, Any]) -> bool:
-    status_type = _dict(event.get("statusType"))
-    return status_type.get("completed") is True or _text(event.get("status")) == "post"
+    status_type = event.get("statusType")
+    if isinstance(status_type, dict):
+        return status_type.get("completed") is True
+    return _text(event.get("status")) == "post"
+
+
+def this_game_id(summary: Any) -> str:
+    """The id of the game the summary is for."""
+    return str(_dict(_dict(summary).get("header")).get("id") or "").strip()
 
 
 def _event_ids(entry: Dict[str, Any]) -> frozenset:
@@ -88,11 +101,14 @@ def label(entry: Dict[str, Any]) -> str:
     return _text(entry.get("title")) or "Series"
 
 
-def record_text(entry: Dict[str, Any], names: Dict[str, str]) -> str:
-    """"Mets lead 7-5", "Mets won 7-6", "Tied 2-2", "Split 3-3", "No games played yet"."""
+def record_text(entry: Dict[str, Any], names: Dict[str, str], this_game: str = "") -> str:
+    """"Mets lead 7-5", "Mets won 7-6", "Tied 2-2", "Split 3-3", "No games played yet",
+    as of `this_game` when it is one of the series' games."""
     events = _events(entry)
     total = games(entry)
-    finished = [e for e in events if _finished(e)]
+    ids = [str(e.get("id") or "").strip() for e in events]
+    counted = events[:ids.index(this_game) + 1] if this_game and this_game in ids else events
+    finished = [e for e in counted if _finished(e)]
     wins: Dict[str, int] = {}
     team_by_id: Dict[str, Dict[str, Any]] = {}
     for event in events:
@@ -113,7 +129,7 @@ def record_text(entry: Dict[str, Any], names: Dict[str, str]) -> str:
     ranked = sorted(wins.items(), key=lambda pair: -pair[1])
     lead_id, lead_wins = ranked[0]
     trail_wins = ranked[1][1] if len(ranked) > 1 else 0
-    decided = len(finished) >= total or lead_wins * 2 > total
+    decided = len(finished) >= total or (_text(entry.get("type")) == "playoff" and lead_wins * 2 > total)
     if lead_wins == trail_wins:
         return f"{'Split' if decided else 'Tied'} {lead_wins}-{trail_wins}"
     name = _name(team_by_id[lead_id], names)
@@ -136,19 +152,22 @@ def ordered(summary: Any) -> List[Dict[str, Any]]:
     return shown
 
 
-def series(summary: Any, names: Optional[Dict[str, str]] = None) -> List[Dict[str, Any]]:
-    """Each series as shown: {"label", "text", "games", "entry"}."""
+def series(summary: Any, names: Optional[Dict[str, str]] = None,
+           this_game: Optional[str] = None) -> List[Dict[str, Any]]:
+    """Each series as shown: {"label", "text", "games", "entry"}, the record as of
+    `this_game`, which is the summary's own game unless given."""
     names = team_names(summary) if names is None else names
+    this_game = this_game_id(summary) if this_game is None else this_game
     return [{
         "label": label(entry),
-        "text": record_text(entry, names),
+        "text": record_text(entry, names, this_game),
         "games": games(entry),
         "entry": entry,
     } for entry in ordered(summary)]
 
 
 def summary_line(summary: Any) -> str:
-    """The game details row: "Regular Season Series: Mets won 7-6". Empty with none."""
+    """The game details row: "Regular Season Series: Mets lead 7-5". Empty with none."""
     shown = series(summary)
     if not shown:
         return ""

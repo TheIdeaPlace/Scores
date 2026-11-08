@@ -23,10 +23,11 @@ def _summary(case):
 @pytest.mark.parametrize("case", GRID["cases"], ids=lambda c: c["name"])
 def test_grid(case):
     summary = _summary(case)
-    shown = ss.series(summary, case["names"])
+    shown = ss.series(summary, case["names"], case["this_game"])
     assert [{k: s[k] for k in ("label", "text", "games")} for s in shown] == case["expected"]
     if "fixture" in case:
         assert ss.team_names(summary) == case["names"]
+        assert ss.this_game_id(summary) == case["this_game"]
         assert ss.summary_line(summary) == case["expected_line"]
     elif shown:
         assert f"{shown[0]['label']}: {shown[0]['text']}" == case["expected_line"]
@@ -70,6 +71,13 @@ def test_a_neutral_site_is_vs_and_bad_dates_are_blank():
 def test_bad_shapes_are_nothing(summary):
     assert ss.series(summary) == []
     assert ss.summary_line(summary) == ""
+
+
+def test_the_details_row_is_as_of_the_summarys_own_game():
+    summary = _load("espn/summary_final_MLB_401908045_WS.json")
+    assert ss.summary_line(summary) == "World Series: Brewers lead 3-1"
+    # Seen from no game in particular, every game counts.
+    assert ss.series(summary, this_game="")[0]["text"] == "Brewers won 4-1"
 
 
 def test_bad_events_are_no_games():
