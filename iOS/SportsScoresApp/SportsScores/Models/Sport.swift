@@ -66,6 +66,9 @@ enum Sport: String, CaseIterable, Identifiable, Codable {
          .soccerSerieA, .soccerLigue1, .soccerUCL, .soccerUEL, .soccerLigaMX, .soccerCONCACAF]
     }
 
+    /// The leagues whose games Live Scores lists, and so the only ones that can be monitored.
+    static var liveScoresLeagues: [Sport] { allCases + soccerLeagues }
+
     /// All golf tour cases. Feed these to the Golf hub.
     static var golfTours: [Sport] { [.pga, .lpga] }
 
@@ -151,6 +154,15 @@ enum Sport: String, CaseIterable, Identifiable, Codable {
     /// Callers branch on this to route fetches and to hide ESPN-only tabs
     /// (News, Stats) and the historical-season picker.
     var usesCFLSource: Bool { self == .cfl }
+
+    /// True where a league's list of teams comes from its standings rather than `/teams`,
+    /// because that list can't say which teams are the league's. College football's is every
+    /// team ESPN knows, 762 across all divisions, and its standings follow the coverage setting.
+    /// Men's college basketball's became every division in November 2026, over 1,000 teams
+    /// cut off at 1,000, with Division I teams such as NJIT past the cut. College hockey's,
+    /// men's and women's, has Division III schools and programs that no longer play.
+    /// `tests/fixtures/team_list_sources.json` holds this and `team_list.py` on Windows together.
+    var teamListFromStandings: Bool { [.ncaaf, .ncaam, .ncaah, .ncaawh].contains(self) }
 
     /// True where the standings screen offers a Divisions / Wild Card toggle.
     /// MLB only: ESPN's standings have its wild card race, with `type=1`, as on Windows.

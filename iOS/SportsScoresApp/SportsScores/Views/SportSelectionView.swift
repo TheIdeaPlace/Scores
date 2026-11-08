@@ -372,4 +372,5 @@ private struct SportRowView: View {
 #Preview {
     SportSelectionView()
         .environmentObject(AppSettings())
+        .environmentObject(MonitoringStore())
 }

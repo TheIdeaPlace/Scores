@@ -8,6 +8,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Past football seasons on Windows (#192).** In the NFL and college football scores lists, Ctrl+G (or
+  **Go to Season**) opens a list of seasons, back to 2001 for the NFL and 2005 for college football, as on
+  the iPhone. A past season opens on its regular season Week 1, and the week and season are spoken and put
+  in the window title ("Week 1, 2019 season"). Alt+P and Alt+N step through that season and say when they
+  reach its first or last week. The current season is first in the list, and choosing it goes back to this
+  week. Nothing is kept between launches.
 - **Listen to the game.** For the NFL, NBA, NHL, and college football and basketball (the SEC, Big Ten,
   ACC, Big 12 and Notre Dame), Scores lists where to hear a game: each team's radio and the services that
   carry every game, such as SiriusXM. Each opens in your browser, or on the iPhone in the service's app;
@@ -38,19 +44,44 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Windows: a tab for each poll, as before.
   - iPhone: with this many polls, a **Poll** menu chooses one, since six segments would cut their names
     short. Basketball's two polls and hockey's one keep the segmented control.
+- **Who is on the ice, during a live NHL game.** Each team's players on the ice right now: forwards,
+  then defense, then the goalie, with jersey numbers and positions. It comes from the game's own
+  summary, so it costs no extra request, and isn't shown before or after a game or in an intermission.
+  College hockey isn't included; ESPN doesn't send it.
+  - Windows: an **On the ice** row in game details, after the game time, reads every player by last
+    name. Enter opens a list of each team and its players, which checks for the latest as it opens;
+    F5 there checks again and keeps you on the same player.
+  - iPhone: an **On the Ice** section at the top of the game's Info tab, a heading per team and one
+    VoiceOver element per player, with an **Update** button that says when it's done. Pulling down
+    on the Info tab also gets the latest.
 - **iPhone: Bowls & Playoffs.** College football's Scores tab has a **Bowls & Playoffs** link below the
   week bar: every bowl and College Football Playoff game in one list, from the same ESPN request the
   Windows list makes, instead of stepping through the postseason weeks. The playoff comes first, round by
   round (first-round games included, which ESPN marks as ordinary games), then the bowls by date. Each
   game reads its name first, then the teams and the kickoff or score, and opens its details; the round
   headings are VoiceOver headings. Before ESPN lists any postseason games, the screen says so. (#197)
+- **Windows: racing.** Formula 1, the IndyCar Series and the NASCAR Cup Series, from the same ESPN feeds
+  the iPhone reads. **Racing - F1, IndyCar, NASCAR** on the home screen lists the three; each opens with
+  tabs for the race weekend on now or next (the entry list, running order or results), Formula 1's
+  sessions with their start times, the season's schedule with every winner, the drivers' standings
+  (and Formula 1's constructors'), and news. Every table has the three views, and a request ESPN doesn't
+  answer says so, with Enter to try again. The nightly data check covers all four requests. (Part of #195)
+- **iPhone: a Monitoring section at the top of Live Scores, as on Windows.** A **Monitor** VoiceOver action
+  (and context menu item) on a game in Live Scores adds it. Its row under Monitoring reads as it does below,
+  with the sport after it, and the game stays in its own section, which says it's monitored. Rows are in the
+  order added and open the game. **Stop Monitoring** on a Monitoring row takes it off and moves VoiceOver to
+  the next one, or to the section's heading when there's none after it. A sport's scores page has Monitor
+  too, for today's games only, judged by the day ESPN's scoreboard files the game under, the same rule as
+  Windows, which both apps are now tested against with one shared grid. Monitoring lasts until the app
+  quits, and nothing is read out on its own: the only speech is each action's confirmation, in the same
+  words as Windows. In the Quick List and Full List views; table rows have no actions yet (#208). (#185)
 
 ### Changed
 - **Windows: monitoring is a section at the top of Live Scores.** Alt+M on a game adds it to Monitoring,
   where its row reads as it does below with the sport after it, and the game stays in its own section too.
   Alt+M also works on today's games on a sport's page. Alt+M on a Monitoring row takes it off and moves you
   to the next one. Monitoring lasts until you quit. Scores no longer reads out score changes on its own.
-  The iPhone is to follow (#185).
+  The iPhone has the same section (see Added).
 - **iPhone builds: the TestFlight build number can't repeat.** It is now one more than the highest build
   App Store Connect already has, or the commit count if that is higher. The commit count alone could land
   on a number Apple had already seen after a squash merge, and the upload was rejected (#112).
@@ -74,6 +105,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   leaders rather than the Apertura's, and the season line names the torneo, for example "2026-27 Liga BBVA
   MX Torneo Apertura". Until anyone has played in the Clausura, it shows the Apertura. Both apps choose
   the torneo by its dates, by one rule tested against the same cases (#178).
+- **iPhone: Formula 1's race loads during a race weekend.** Until the race started, ESPN lists its field
+  with no finishing order, which failed the whole request, so Racing said it couldn't load the race. It
+  also showed the first practice session's date and the weekend's own status, which can say Final the
+  day before the race. It now shows the race itself: its start time (read as the UTC time it is), its
+  status, and before it starts, the entry list without positions. A canceled race says Canceled rather
+  than Final, and nobody is named the winner of a race still being run.
 - **Statistic definitions come from ESPN on both apps, and each is the right one.** On the iPhone, the
   definition on the MLB Strikeouts leaders was the batter's ("the number of times a player strikes out")
   on a list of pitchers, and the NFL's interception leaders had the definition of interceptions thrown.
@@ -87,6 +124,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Windows: Live Scores no longer reads the row you're on again when other games come and go.** Each
   time a game kicked off or finished, the list was rebuilt and the row you were on read out, so on a busy
   day a finished game you were resting on was read once a minute.
+- **Every team in Teams and the Transactions team filter, on both apps.** Windows built both lists
+  from the standings, so a team the standings left out was missing, as in a preseason, and if the
+  standings failed there was no list at all. Both now come from ESPN's list of the league's teams, as on
+  the iPhone (#190).
+  - Windows: Teams keeps its divisions and conferences and each team's record. A team the standings
+    don't have comes last, under **Other teams**, with its name only rather than a 0-0 record. If the
+    standings can't be had, Teams still lists every team, and its title says records are unavailable.
+  - College football's teams still come from its standings, so Teams follows the coverage setting
+    (FBS only, or all of Division I). Men's college basketball's do too, on both apps: ESPN's list for
+    it is now every division, over 1,000 teams and cut off at 1,000 before some of Division I. On the
+    iPhone, Transactions for men's college basketball listed those 1,000; it now lists Division I.
+  - College hockey's teams, men's and women's, come from their standings too, on both apps: Division I
+    alone. ESPN's list for it has Division III schools and programs that no longer play, which the
+    iPhone's Transactions listed, and its Team Hub for women's college hockey. Women's college hockey, which has no conferences, is
+    one group on the iPhone's Team Hub, named for the league.
 - **Windows: a poll's cells say which team they're for.** Moving across or down a Polls table read the
   rank as the row's context, "2, Previous, NR"; it now reads the team, "Georgia Bulldogs, Previous, NR".
   A poll with no votes, the playoff committee's or college hockey's, has no Points column any more, so

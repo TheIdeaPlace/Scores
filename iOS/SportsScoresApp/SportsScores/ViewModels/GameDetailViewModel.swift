@@ -24,20 +24,24 @@ final class GameDetailViewModel: ObservableObject {
     /// The first load shows the spinner, or the error if it fails. Coming back from a
     /// screen opened from here runs this again, and that refresh has to happen quietly: the
     /// spinner would replace the tabs, and VoiceOver would lose its place on the row it came
-    /// back to. If it fails, what's already showing stays.
-    func loadDetails() async {
+    /// back to. If it fails, what's already showing stays. Returns whether new details came,
+    /// for a caller that asked out loud and has to say how it went.
+    @discardableResult
+    func loadDetails() async -> Bool {
         // CFL has no box score / play-by-play feed. Leave details nil so the
         // view shows the game header alone rather than an error.
         guard !sport.usesCFLSource else {
             isLoading = false
-            return
+            return false
         }
         if gameDetails == nil {
             isLoading = true
             errorMessage = nil
         }
+        var loaded = false
         do {
             gameDetails = try await apiService.fetchGameDetails(for: game.id, sport: sport)
+            loaded = true
         } catch let error where error.isCancellation {
             // Left the screen. It asks again if it comes back.
         } catch {
@@ -46,5 +50,6 @@ final class GameDetailViewModel: ObservableObject {
             }
         }
         isLoading = false
+        return loaded
     }
 }

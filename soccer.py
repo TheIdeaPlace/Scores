@@ -31,7 +31,6 @@ TEAM_NAME_ONLY_HEADERS = ["Team"]
 # A blank cell would be silent in a screen reader.
 NOTHING_TO_SHOW = "N/A"
 NAME_UNAVAILABLE = "Name not available"
-TEAMS_WITH_NO_GROUP = "Teams"
 
 
 def _as_dict(value):
@@ -132,19 +131,6 @@ def soccer_teams_table(teams):
             for team in ordered]
     ordered = sorted(teams, key=lambda team: team.get("team_name", ""))
     return TEAM_NAME_ONLY_HEADERS, ordered, [[team.get("team_name", "Unknown Team")] for team in ordered]
-
-
-def parse_team_list(data):
-    """A /teams answer as rows the Teams dialog can show and open a team from."""
-    sports = _dicts(_as_dict(data).get("sports"))
-    leagues = _dicts(sports[0].get("leagues")) if sports else []
-    rows = []
-    for entry in _dicts(leagues[0].get("teams")) if leagues else []:
-        team = _as_dict(entry.get("team"))
-        if team.get("displayName"):
-            rows.append({"team_name": team["displayName"], "team_id": str(team.get("id") or ""),
-                         "abbreviation": team.get("abbreviation") or "", "division": TEAMS_WITH_NO_GROUP})
-    return rows
 
 
 def no_table_message(league):

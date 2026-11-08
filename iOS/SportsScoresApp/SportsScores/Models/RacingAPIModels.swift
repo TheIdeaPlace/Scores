@@ -32,9 +32,18 @@ struct RacingStatusTypeAPI: Decodable {
     let description: String     // "Scheduled", "In Progress", "Final"
 }
 
+/// One session of a race weekend. Formula 1 lists each (FP1, FP2, FP3, Qual, or SS and SR on a
+/// sprint weekend, then Race); IndyCar and NASCAR list one, untyped, which is the race.
 struct RacingCompetitionAPI: Decodable {
+    let date: String?
+    let type: RacingCompetitionTypeAPI?
+    let status: RacingEventStatusWrapper?
     let broadcasts: [RacingBroadcastAPI]?
     let competitors: [RacingCompetitorAPI]?
+}
+
+struct RacingCompetitionTypeAPI: Decodable {
+    let abbreviation: String?
 }
 
 struct RacingBroadcastAPI: Decodable {
@@ -43,12 +52,14 @@ struct RacingBroadcastAPI: Decodable {
 
 struct RacingCompetitorAPI: Decodable {
     let id: String
-    let order: Int
+    /// Finishing or running order. A race not yet run lists its field with none at all.
+    let order: Int?
     let athlete: RacingAthleteAPI?
 }
 
 struct RacingAthleteAPI: Decodable {
     let displayName: String?
+    let fullName: String?
     let shortName: String?
     let flag: RacingFlagAPI?
 }

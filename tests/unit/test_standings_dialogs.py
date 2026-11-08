@@ -16,6 +16,7 @@ import espn_api  # noqa: E402
 import scores  # noqa: E402
 import settings  # noqa: E402
 import soccer  # noqa: E402
+import team_list  # noqa: E402
 
 FIXTURE = os.path.join(os.path.dirname(__file__), "..", "fixtures", "espn", "standings_NCAAF_group90.json")
 
@@ -117,10 +118,13 @@ class TestCache:
         dialog.return_value.exec.assert_called_once()
 
 
+def load_fixture(name):
+    with open(os.path.join(os.path.dirname(FIXTURE), name), encoding="utf-8") as f:
+        return json.load(f)
+
+
 def soccer_rows(name):
-    path = os.path.join(os.path.dirname(FIXTURE), name)
-    with open(path, encoding="utf-8") as f:
-        return soccer.parse_soccer_standings(json.load(f))
+    return soccer.parse_soccer_standings(load_fixture(name))
 
 
 ARSENAL = ["1", "Arsenal", "9", "8", "0", "1", "14", "5", "+9", "24", "Champions League"]
@@ -226,7 +230,7 @@ class TestSoccerTeams:
 
     def test_the_title_says_which_season_the_records_are_from(self, app):
         assert scores.SimpleTeamsDialog(soccer_rows("standings_MLS.json"), "MLS").windowTitle() == "MLS Teams - 2026 MLS"
-        rows = [{"team_name": "A", "team_id": "1", "division": soccer.TEAMS_WITH_NO_GROUP}]
+        rows = [{"team_name": "A", "team_id": "1", "division": team_list.TEAMS_WITH_NO_GROUP}]
         assert scores.SimpleTeamsDialog(rows, "CONCACAF").windowTitle() == "CONCACAF Teams"
 
     def test_opening_a_team_doesnt_close_the_list_behind_it(self, app):
@@ -235,8 +239,8 @@ class TestSoccerTeams:
         assert not dialog.close_button.autoDefault()
 
     def test_a_cups_teams_are_names_and_say_so(self, app):
-        rows = [{"team_name": "B", "team_id": "2", "division": soccer.TEAMS_WITH_NO_GROUP},
-                {"team_name": "A", "team_id": "1", "division": soccer.TEAMS_WITH_NO_GROUP}]
+        rows = [{"team_name": "B", "team_id": "2", "division": team_list.TEAMS_WITH_NO_GROUP},
+                {"team_name": "A", "team_id": "1", "division": team_list.TEAMS_WITH_NO_GROUP}]
         table = scores.SimpleTeamsDialog(rows, "CONCACAF").tab_widget.widget(0).teams_table
         assert table.columnCount() == 1
         assert table.item(0, 0).text() == "A"
@@ -271,9 +275,62 @@ class TestSoccerSections:
         stats.return_value.exec.assert_called_once()
         view.parent_app.update_window_title.assert_called_with(view._title_items.return_value)
 
-    def test_teams_asks_for_the_list_that_a_cup_also_has(self, app):
-        view = MagicMock(league="CONCACAF")
-        with patch.object(scores.ApiService, "get_soccer_teams", return_value=[]) as teams:
+    @pytest.mark.parametrize("league", ["CONCACAF", "MLB", "NCAAF"])
+    def test_teams_asks_for_every_team_in_the_league(self, app, league):
+        view = MagicMock(league=league)
+        with patch.object(scores.ApiService, "get_teams", return_value=[]) as teams, \
+                patch.object(scores.ApiService, "get_standings") as standings:
             scores.LeagueView._show_teams_dialog(view)
             view._fetch_then.call_args.args[1]()
-        teams.assert_called_once_with("CONCACAF")
+        teams.assert_called_once_with(league)
+        standings.assert_not_called()
+
+
+class TestTeamsFromTheTeamList:
+    """The Teams screen with the teams the standings leave out, and with no standings at all, on
+    MLB's real team list (10 teams) and standings (8 of them)."""
+
+    def listed(self):
+        return team_list.parse_team_list(load_fixture("teams_MLB.json"))
+
+    def standings(self):
+        with patch.object(espn_api, "_espn_answer", return_value=load_fixture("standings_MLB.json")):
+            return espn_api.get_standings("MLB")
+
+    def mlb_teams(self, standings):
+        return team_list.with_standings(self.listed(), standings)
+
+    def tabs(self, dialog):
+        return [dialog.tab_widget.tabText(i) for i in range(dialog.tab_widget.count())]
+
+    def test_teams_not_in_the_standings_come_last_by_name(self, app):
+        dialog = scores.SimpleTeamsDialog(self.mlb_teams(self.standings()), "MLB")
+        assert self.tabs(dialog)[-1] == team_list.OTHER_TEAMS
+        other = dialog.tab_widget.widget(dialog.tab_widget.count() - 1).teams_table
+        assert other.columnCount() == 1
+        assert [other.item(row, 0).text() for row in range(other.rowCount())] == ["Colorado Rockies", "Miami Marlins"]
+        assert other.table_widget.accessibleName() == "MLB Other teams"
+        assert other.accessible_description.startswith("Teams not in the standings, with no record to show.")
+        assert other.item(0, 0).data(Qt.ItemDataRole.UserRole)["team_id"]
+
+    def test_a_division_keeps_its_records(self, app):
+        dialog = scores.SimpleTeamsDialog(self.mlb_teams(self.standings()), "MLB")
+        first = dialog.tab_widget.widget(0).teams_table
+        headers = [first.horizontalHeaderItem(c).text() for c in range(first.columnCount())]
+        assert headers == ["Team", "Wins", "Losses", "Win %"]
+
+    def test_with_no_standings_every_team_is_one_list(self, app):
+        dialog = scores.SimpleTeamsDialog(self.mlb_teams([]), "MLB")
+        assert self.tabs(dialog) == [team_list.TEAMS_WITH_NO_GROUP]
+        table = dialog.tab_widget.widget(0).teams_table
+        assert table.rowCount() == 10
+        assert table.table_widget.accessibleName() == "MLB Teams"
+        assert dialog.windowTitle() == "MLB Teams"
+
+    def test_standings_that_failed_are_said_in_the_title_and_the_table(self, app):
+        rows = [{**team, "records_unavailable": True} for team in self.listed()]
+        dialog = scores.SimpleTeamsDialog(rows, "MLB")
+        assert dialog.windowTitle() == "MLB Teams - records unavailable"
+        table = dialog.tab_widget.widget(0).teams_table
+        assert team_list.RECORDS_UNAVAILABLE in table.accessible_description
+        assert table.columnCount() == 1

@@ -1,0 +1,4790 @@
+{
+ "header": {
+  "id": "401892664",
+  "uid": "s:70~l:90~e:401892664",
+  "season": {
+   "year": 2027,
+   "current": true,
+   "type": 2
+  },
+  "timeValid": true,
+  "competitions": [
+   {
+    "id": "401892664",
+    "uid": "s:70~l:90~e:401892664~c:401892664",
+    "date": "2026-11-07T22:00Z",
+    "neutralSite": false,
+    "boxscoreAvailable": true,
+    "commentaryAvailable": false,
+    "liveAvailable": true,
+    "shotChartAvailable": true,
+    "onWatchESPN": true,
+    "recent": true,
+    "wallclockAvailable": true,
+    "boxscoreSource": "full",
+    "playByPlaySource": "full",
+    "competitors": [
+     {
+      "id": "124292",
+      "uid": "s:70~l:90~t:124292",
+      "order": 0,
+      "homeAway": "home",
+      "team": {
+       "id": "124292",
+       "guid": "ca912ee8-d2a3-3e84-831e-1a0ca38e7c3f",
+       "uid": "s:70~l:90~t:124292",
+       "location": "Seattle",
+       "name": "Kraken",
+       "nickname": "Kraken",
+       "abbreviation": "SEA",
+       "displayName": "Seattle Kraken",
+       "color": "000d33",
+       "alternateColor": "a3dce4",
+       "logos": [
+        {
+         "href": "https://a.espncdn.com/i/teamlogos/nhl/500/sea.png",
+         "width": 500,
+         "height": 500,
+         "alt": "",
+         "rel": [
+          "full",
+          "default"
+         ],
+         "lastUpdated": "2024-07-02T15:51Z"
+        },
+        {
+         "href": "https://a.espncdn.com/i/teamlogos/nhl/500-dark/sea.png",
+         "width": 500,
+         "height": 500,
+         "alt": "",
+         "rel": [
+          "full",
+          "dark"
+         ],
+         "lastUpdated": "2024-07-02T15:46Z"
+        },
+        {
+         "href": "https://a.espncdn.com/i/teamlogos/nhl/500/scoreboard/sea.png",
+         "width": 500,
+         "height": 500,
+         "alt": "",
+         "rel": [
+          "full",
+          "scoreboard"
+         ],
+         "lastUpdated": "2024-07-02T15:51Z"
+        },
+        {
+         "href": "https://a.espncdn.com/i/teamlogos/nhl/500-dark/scoreboard/sea.png",
+         "width": 500,
+         "height": 500,
+         "alt": "",
+         "rel": [
+          "full",
+          "scoreboard",
+          "dark"
+         ],
+         "lastUpdated": "2024-07-02T15:46Z"
+        },
+        {
+         "href": "https://a.espncdn.com/guid/ca912ee8-d2a3-3e84-831e-1a0ca38e7c3f/logos/primary_logo_on_white_color.png",
+         "width": 4096,
+         "height": 4096,
+         "alt": "",
+         "rel": [
+          "full",
+          "primary_logo_on_white_color"
+         ],
+         "lastUpdated": "2026-07-22T20:31Z"
+        },
+        {
+         "href": "https://a.espncdn.com/guid/ca912ee8-d2a3-3e84-831e-1a0ca38e7c3f/logos/primary_logo_on_black_color.png",
+         "width": 4096,
+         "height": 4096,
+         "alt": "",
+         "rel": [
+          "full",
+          "primary_logo_on_black_color"
+         ],
+         "lastUpdated": "2026-07-22T20:31Z"
+        },
+        {
+         "href": "https://a.espncdn.com/guid/ca912ee8-d2a3-3e84-831e-1a0ca38e7c3f/logos/primary_logo_on_primary_color.png",
+         "width": 4096,
+         "height": 4096,
+         "alt": "",
+         "rel": [
+          "full",
+          "primary_logo_on_primary_color"
+         ],
+         "lastUpdated": "2026-07-22T20:31Z"
+        },
+        {
+         "href": "https://a.espncdn.com/guid/ca912ee8-d2a3-3e84-831e-1a0ca38e7c3f/logos/primary_logo_on_secondary_color.png",
+         "width": 4096,
+         "height": 4096,
+         "alt": "",
+         "rel": [
+          "full",
+          "primary_logo_on_secondary_color"
+         ],
+         "lastUpdated": "2026-07-22T20:31Z"
+        },
+        {
+         "href": "https://a.espncdn.com/guid/ca912ee8-d2a3-3e84-831e-1a0ca38e7c3f/logos/primary_logo_black.png",
+         "width": 4096,
+         "height": 4096,
+         "alt": "",
+         "rel": [
+          "full",
+          "primary_logo_black"
+         ],
+         "lastUpdated": "2026-07-22T20:31Z"
+        },
+        {
+         "href": "https://a.espncdn.com/guid/ca912ee8-d2a3-3e84-831e-1a0ca38e7c3f/logos/primary_logo_white.png",
+         "width": 4096,
+         "height": 4096,
+         "alt": "",
+         "rel": [
+          "full",
+          "primary_logo_white"
+         ],
+         "lastUpdated": "2026-07-22T20:31Z"
+        },
+        {
+         "href": "https://a.espncdn.com/guid/ca912ee8-d2a3-3e84-831e-1a0ca38e7c3f/logos/secondary_logo_on_white_color.png",
+         "width": 4096,
+         "height": 4096,
+         "alt": "",
+         "rel": [
+          "full",
+          "secondary_logo_on_white_color"
+         ],
+         "lastUpdated": "2026-07-22T20:31Z"
+        },
+        {
+         "href": "https://a.espncdn.com/guid/ca912ee8-d2a3-3e84-831e-1a0ca38e7c3f/logos/secondary_logo_on_black_color.png",
+         "width": 4096,
+         "height": 4096,
+         "alt": "",
+         "rel": [
+          "full",
+          "secondary_logo_on_black_color"
+         ],
+         "lastUpdated": "2026-07-22T20:31Z"
+        },
+        {
+         "href": "https://a.espncdn.com/guid/ca912ee8-d2a3-3e84-831e-1a0ca38e7c3f/logos/secondary_logo_on_primary_color.png",
+         "width": 4096,
+         "height": 4096,
+         "alt": "",
+         "rel": [
+          "full",
+          "secondary_logo_on_primary_color"
+         ],
+         "lastUpdated": "2026-07-22T20:31Z"
+        },
+        {
+         "href": "https://a.espncdn.com/guid/ca912ee8-d2a3-3e84-831e-1a0ca38e7c3f/logos/secondary_logo_on_secondary_color.png",
+         "width": 4096,
+         "height": 4096,
+         "alt": "",
+         "rel": [
+          "full",
+          "secondary_logo_on_secondary_color"
+         ],
+         "lastUpdated": "2026-07-22T20:31Z"
+        },
+        {
+         "href": "https://a.espncdn.com/guid/ca912ee8-d2a3-3e84-831e-1a0ca38e7c3f/logos/secondary_logo_black.png",
+         "width": 4096,
+         "height": 4096,
+         "alt": "",
+         "rel": [
+          "full",
+          "secondary_logo_black"
+         ],
+         "lastUpdated": "2026-07-22T20:31Z"
+        },
+        {
+         "href": "https://a.espncdn.com/guid/ca912ee8-d2a3-3e84-831e-1a0ca38e7c3f/logos/secondary_logo_white.png",
+         "width": 4096,
+         "height": 4096,
+         "alt": "",
+         "rel": [
+          "full",
+          "secondary_logo_white"
+         ],
+         "lastUpdated": "2026-07-22T20:31Z"
+        }
+       ],
+       "links": [
+        {
+         "rel": [
+          "clubhouse",
+          "desktop",
+          "team"
+         ],
+         "href": "https://www.espn.com/nhl/team/_/name/sea/seattle-kraken",
+         "text": "Clubhouse"
+        }
+       ]
+      },
+      "score": "0",
+      "linescores": [
+       {
+        "displayValue": "0"
+       }
+      ],
+      "record": [
+       {
+        "type": "total",
+        "summary": "9-5-1",
+        "displayValue": "9-5-1, 19 PTS"
+       },
+       {
+        "type": "home",
+        "summary": "5-2-0",
+        "displayValue": "5-2-0, 0 PTS"
+       }
+      ],
+      "possession": false
+     },
+     {
+      "id": "13",
+      "uid": "s:70~l:90~t:13",
+      "order": 1,
+      "homeAway": "away",
+      "team": {
+       "id": "13",
+       "guid": "4e807ac9-f3b7-8e3b-8549-441c1e604c17",
+       "uid": "s:70~l:90~t:13",
+       "location": "New York",
+       "name": "Rangers",
+       "nickname": "Rangers",
+       "abbreviation": "NYR",
+       "displayName": "New York Rangers",
+       "color": "0056ae",
+       "alternateColor": "e51937",
+       "logos": [
+        {
+         "href": "https://a.espncdn.com/i/teamlogos/nhl/500/nyr.png",
+         "width": 500,
+         "height": 500,
+         "alt": "",
+         "rel": [
+          "full",
+          "default"
+         ],
+         "lastUpdated": "2024-07-02T15:51Z"
+        },
+        {
+         "href": "https://a.espncdn.com/i/teamlogos/nhl/500-dark/nyr.png",
+         "width": 500,
+         "height": 500,
+         "alt": "",
+         "rel": [
+          "full",
+          "dark"
+         ],
+         "lastUpdated": "2024-07-02T15:46Z"
+        },
+        {
+         "href": "https://a.espncdn.com/i/teamlogos/nhl/500/scoreboard/nyr.png",
+         "width": 500,
+         "height": 500,
+         "alt": "",
+         "rel": [
+          "full",
+          "scoreboard"
+         ],
+         "lastUpdated": "2024-07-02T15:51Z"
+        },
+        {
+         "href": "https://a.espncdn.com/i/teamlogos/nhl/500-dark/scoreboard/nyr.png",
+         "width": 500,
+         "height": 500,
+         "alt": "",
+         "rel": [
+          "full",
+          "scoreboard",
+          "dark"
+         ],
+         "lastUpdated": "2024-07-02T15:46Z"
+        },
+        {
+         "href": "https://a.espncdn.com/guid/4e807ac9-f3b7-8e3b-8549-441c1e604c17/logos/primary_logo_on_white_color.png",
+         "width": 4096,
+         "height": 4096,
+         "alt": "",
+         "rel": [
+          "full",
+          "primary_logo_on_white_color"
+         ],
+         "lastUpdated": "2026-07-22T20:31Z"
+        },
+        {
+         "href": "https://a.espncdn.com/guid/4e807ac9-f3b7-8e3b-8549-441c1e604c17/logos/primary_logo_on_black_color.png",
+         "width": 4096,
+         "height": 4096,
+         "alt": "",
+         "rel": [
+          "full",
+          "primary_logo_on_black_color"
+         ],
+         "lastUpdated": "2026-07-22T20:31Z"
+        },
+        {
+         "href": "https://a.espncdn.com/guid/4e807ac9-f3b7-8e3b-8549-441c1e604c17/logos/primary_logo_on_primary_color.png",
+         "width": 4096,
+         "height": 4096,
+         "alt": "",
+         "rel": [
+          "full",
+          "primary_logo_on_primary_color"
+         ],
+         "lastUpdated": "2026-07-22T20:31Z"
+        },
+        {
+         "href": "https://a.espncdn.com/guid/4e807ac9-f3b7-8e3b-8549-441c1e604c17/logos/primary_logo_on_secondary_color.png",
+         "width": 4096,
+         "height": 4096,
+         "alt": "",
+         "rel": [
+          "full",
+          "primary_logo_on_secondary_color"
+         ],
+         "lastUpdated": "2026-07-22T20:31Z"
+        },
+        {
+         "href": "https://a.espncdn.com/guid/4e807ac9-f3b7-8e3b-8549-441c1e604c17/logos/primary_logo_black.png",
+         "width": 4096,
+         "height": 4096,
+         "alt": "",
+         "rel": [
+          "full",
+          "primary_logo_black"
+         ],
+         "lastUpdated": "2026-07-22T20:31Z"
+        },
+        {
+         "href": "https://a.espncdn.com/guid/4e807ac9-f3b7-8e3b-8549-441c1e604c17/logos/primary_logo_white.png",
+         "width": 4096,
+         "height": 4096,
+         "alt": "",
+         "rel": [
+          "full",
+          "primary_logo_white"
+         ],
+         "lastUpdated": "2026-07-22T20:31Z"
+        },
+        {
+         "href": "https://a.espncdn.com/guid/4e807ac9-f3b7-8e3b-8549-441c1e604c17/logos/secondary_logo_on_white_color.png",
+         "width": 4096,
+         "height": 4096,
+         "alt": "",
+         "rel": [
+          "full",
+          "secondary_logo_on_white_color"
+         ],
+         "lastUpdated": "2026-07-22T20:31Z"
+        },
+        {
+         "href": "https://a.espncdn.com/guid/4e807ac9-f3b7-8e3b-8549-441c1e604c17/logos/secondary_logo_on_black_color.png",
+         "width": 4096,
+         "height": 4096,
+         "alt": "",
+         "rel": [
+          "full",
+          "secondary_logo_on_black_color"
+         ],
+         "lastUpdated": "2026-07-22T20:31Z"
+        },
+        {
+         "href": "https://a.espncdn.com/guid/4e807ac9-f3b7-8e3b-8549-441c1e604c17/logos/secondary_logo_on_primary_color.png",
+         "width": 4096,
+         "height": 4096,
+         "alt": "",
+         "rel": [
+          "full",
+          "secondary_logo_on_primary_color"
+         ],
+         "lastUpdated": "2026-07-22T20:31Z"
+        },
+        {
+         "href": "https://a.espncdn.com/guid/4e807ac9-f3b7-8e3b-8549-441c1e604c17/logos/secondary_logo_on_secondary_color.png",
+         "width": 4096,
+         "height": 4096,
+         "alt": "",
+         "rel": [
+          "full",
+          "secondary_logo_on_secondary_color"
+         ],
+         "lastUpdated": "2026-07-22T20:31Z"
+        },
+        {
+         "href": "https://a.espncdn.com/guid/4e807ac9-f3b7-8e3b-8549-441c1e604c17/logos/secondary_logo_black.png",
+         "width": 4096,
+         "height": 4096,
+         "alt": "",
+         "rel": [
+          "full",
+          "secondary_logo_black"
+         ],
+         "lastUpdated": "2026-07-22T20:31Z"
+        },
+        {
+         "href": "https://a.espncdn.com/guid/4e807ac9-f3b7-8e3b-8549-441c1e604c17/logos/secondary_logo_white.png",
+         "width": 4096,
+         "height": 4096,
+         "alt": "",
+         "rel": [
+          "full",
+          "secondary_logo_white"
+         ],
+         "lastUpdated": "2026-07-22T20:31Z"
+        }
+       ],
+       "links": [
+        {
+         "rel": [
+          "clubhouse",
+          "desktop",
+          "team"
+         ],
+         "href": "https://www.espn.com/nhl/team/_/name/nyr/new-york-rangers",
+         "text": "Clubhouse"
+        }
+       ]
+      },
+      "score": "2",
+      "linescores": [
+       {
+        "displayValue": "2"
+       }
+      ],
+      "record": [
+       {
+        "type": "total",
+        "summary": "9-7-1",
+        "displayValue": "9-7-1, 19 PTS"
+       },
+       {
+        "type": "road",
+        "summary": "1-5-1",
+        "displayValue": "1-5-1, 0 PTS"
+       }
+      ],
+      "possession": false
+     }
+    ],
+    "status": {
+     "displayClock": "9:52",
+     "period": 1,
+     "type": {
+      "id": "2",
+      "name": "STATUS_IN_PROGRESS",
+      "state": "in",
+      "completed": false,
+      "description": "In Progress",
+      "detail": "9:52 - 1st Period",
+      "shortDetail": "9:52 - 1st",
+      "statusPrimary": "9:52",
+      "statusSecondary": "1st"
+     },
+     "displayPeriod": "1st"
+    },
+    "odds": [
+     {
+      "awayTeamOdds": {
+       "favorite": true,
+       "underdog": false,
+       "moneyLine": -135,
+       "spreadOdds": 185.0,
+       "open": {
+        "favorite": true,
+        "pointSpread": {
+         "alternateDisplayValue": "-1.5",
+         "american": "-1.5"
+        },
+        "spread": {
+         "value": 2.95,
+         "displayValue": "39/20",
+         "alternateDisplayValue": "+195",
+         "decimal": 2.95,
+         "fraction": "39/20",
+         "american": "+195"
+        },
+        "moneyLine": {
+         "value": 1.84,
+         "displayValue": "50/59",
+         "alternateDisplayValue": "-118",
+         "decimal": 1.84,
+         "fraction": "50/59",
+         "american": "-118"
+        }
+       },
+       "close": {
+        "pointSpread": {
+         "alternateDisplayValue": "-1.5",
+         "american": "-1.5"
+        },
+        "spread": {
+         "value": 2.85,
+         "displayValue": "37/20",
+         "alternateDisplayValue": "+185",
+         "decimal": 2.85,
+         "fraction": "37/20",
+         "american": "+185"
+        },
+        "moneyLine": {
+         "value": 1.74,
+         "displayValue": "20/27",
+         "alternateDisplayValue": "-135",
+         "decimal": 1.74,
+         "fraction": "20/27",
+         "american": "-135"
+        }
+       },
+       "current": {
+        "pointSpread": {
+         "alternateDisplayValue": "-1.5",
+         "american": "-1.5"
+        },
+        "spread": {
+         "value": 2.85,
+         "displayValue": "37/20",
+         "alternateDisplayValue": "+185",
+         "decimal": 2.85,
+         "fraction": "37/20",
+         "american": "+185"
+        },
+        "moneyLine": {
+         "value": 1.74,
+         "displayValue": "20/27",
+         "alternateDisplayValue": "-135",
+         "decimal": 1.74,
+         "fraction": "20/27",
+         "american": "-135"
+        }
+       },
+       "team": {
+        "$ref": "http://sports.core.api.espn.pvt/v2/sports/hockey/leagues/nhl/seasons/2027/teams/13?lang=en&region=us"
+       }
+      },
+      "homeTeamOdds": {
+       "favorite": false,
+       "underdog": true,
+       "moneyLine": 114,
+       "spreadOdds": -225.0,
+       "open": {
+        "favorite": false,
+        "pointSpread": {
+         "alternateDisplayValue": "+1.5",
+         "american": "+1.5"
+        },
+        "spread": {
+         "value": 1.42,
+         "displayValue": "50/119",
+         "alternateDisplayValue": "-238",
+         "decimal": 1.42,
+         "fraction": "50/119",
+         "american": "-238"
+        },
+        "moneyLine": {
+         "value": 1.98,
+         "displayValue": "50/51",
+         "alternateDisplayValue": "-102",
+         "decimal": 1.98,
+         "fraction": "50/51",
+         "american": "-102"
+        }
+       },
+       "close": {
+        "pointSpread": {
+         "alternateDisplayValue": "+1.5",
+         "american": "+1.5"
+        },
+        "spread": {
+         "value": 1.44,
+         "displayValue": "4/9",
+         "alternateDisplayValue": "-225",
+         "decimal": 1.44,
+         "fraction": "4/9",
+         "american": "-225"
+        },
+        "moneyLine": {
+         "value": 2.14,
+         "displayValue": "57/50",
+         "alternateDisplayValue": "+114",
+         "decimal": 2.14,
+         "fraction": "57/50",
+         "american": "+114"
+        }
+       },
+       "current": {
+        "pointSpread": {
+         "alternateDisplayValue": "+1.5",
+         "american": "+1.5"
+        },
+        "spread": {
+         "value": 1.44,
+         "displayValue": "4/9",
+         "alternateDisplayValue": "-225",
+         "decimal": 1.44,
+         "fraction": "4/9",
+         "american": "-225"
+        },
+        "moneyLine": {
+         "value": 2.14,
+         "displayValue": "57/50",
+         "alternateDisplayValue": "+114",
+         "decimal": 2.14,
+         "fraction": "57/50",
+         "american": "+114"
+        }
+       },
+       "team": {
+        "$ref": "http://sports.core.api.espn.pvt/v2/sports/hockey/leagues/nhl/seasons/2027/teams/124292?lang=en&region=us"
+       }
+      },
+      "close": {
+       "over": {
+        "value": 2.02,
+        "displayValue": "51/50",
+        "alternateDisplayValue": "+102",
+        "decimal": 2.02,
+        "fraction": "51/50",
+        "american": "+102"
+       },
+       "under": {
+        "value": 1.81,
+        "displayValue": "50/61",
+        "alternateDisplayValue": "-122",
+        "decimal": 1.81,
+        "fraction": "50/61",
+        "american": "-122"
+       },
+       "total": {
+        "alternateDisplayValue": "6.5",
+        "american": "6.5"
+       }
+      },
+      "current": {
+       "over": {
+        "value": 2.02,
+        "displayValue": "51/50",
+        "alternateDisplayValue": "+102",
+        "decimal": 2.02,
+        "fraction": "51/50",
+        "american": "+102"
+       },
+       "under": {
+        "value": 1.81,
+        "displayValue": "50/61",
+        "alternateDisplayValue": "-122",
+        "decimal": 1.81,
+        "fraction": "50/61",
+        "american": "-122"
+       },
+       "total": {
+        "alternateDisplayValue": "6.5",
+        "american": "6.5"
+       }
+      },
+      "propBets": [
+       {
+        "type": {
+         "id": "1",
+         "name": "Total Points"
+        }
+       },
+       {
+        "type": {
+         "id": "1",
+         "name": "Total Points"
+        }
+       },
+       {
+        "type": {
+         "id": "1",
+         "name": "Total Points"
+        }
+       },
+       {
+        "type": {
+         "id": "1",
+         "name": "Total Points"
+        }
+       },
+       {
+        "type": {
+         "id": "1",
+         "name": "Total Points"
+        }
+       },
+       {
+        "type": {
+         "id": "1",
+         "name": "Total Points"
+        }
+       },
+       {
+        "type": {
+         "id": "1",
+         "name": "Total Points"
+        }
+       },
+       {
+        "type": {
+         "id": "1",
+         "name": "Total Points"
+        }
+       },
+       {
+        "type": {
+         "id": "1",
+         "name": "Total Points"
+        }
+       },
+       {
+        "type": {
+         "id": "1",
+         "name": "Total Points"
+        }
+       },
+       {
+        "type": {
+         "id": "1",
+         "name": "Total Points"
+        }
+       },
+       {
+        "type": {
+         "id": "1",
+         "name": "Total Points"
+        }
+       },
+       {
+        "type": {
+         "id": "1",
+         "name": "Total Points"
+        }
+       },
+       {
+        "type": {
+         "id": "1",
+         "name": "Total Points"
+        }
+       },
+       {
+        "type": {
+         "id": "1",
+         "name": "Total Points"
+        }
+       },
+       {
+        "type": {
+         "id": "1",
+         "name": "Total Points"
+        }
+       },
+       {
+        "type": {
+         "id": "1",
+         "name": "Total Points"
+        }
+       },
+       {
+        "type": {
+         "id": "1",
+         "name": "Total Points"
+        }
+       },
+       {
+        "type": {
+         "id": "1",
+         "name": "Total Points"
+        }
+       },
+       {
+        "type": {
+         "id": "1",
+         "name": "Total Points"
+        }
+       },
+       {
+        "type": {
+         "id": "1",
+         "name": "Total Points"
+        }
+       },
+       {
+        "type": {
+         "id": "1",
+         "name": "Total Points"
+        }
+       },
+       {
+        "type": {
+         "id": "1",
+         "name": "Total Points"
+        }
+       },
+       {
+        "type": {
+         "id": "1",
+         "name": "Total Points"
+        }
+       },
+       {
+        "type": {
+         "id": "1",
+         "name": "Total Points"
+        }
+       }
+      ]
+     },
+     {
+      "awayTeamOdds": {
+       "favorite": true,
+       "underdog": false,
+       "moneyLine": -280,
+       "spreadOdds": -110.0,
+       "open": {
+        "favorite": true,
+        "pointSpread": {
+         "alternateDisplayValue": "-1.5",
+         "american": "-1.5"
+        },
+        "spread": {
+         "value": 2.8,
+         "displayValue": "9/5",
+         "alternateDisplayValue": "+180",
+         "decimal": 2.8,
+         "fraction": "9/5",
+         "american": "+180"
+        },
+        "moneyLine": {
+         "value": 1.74,
+         "displayValue": "20/27",
+         "alternateDisplayValue": "-135",
+         "decimal": 1.74,
+         "fraction": "20/27",
+         "american": "-135"
+        }
+       },
+       "current": {
+        "pointSpread": {
+         "alternateDisplayValue": "-1.5",
+         "american": "-1.5"
+        },
+        "spread": {
+         "value": 1.9,
+         "displayValue": "10/11",
+         "alternateDisplayValue": "-110",
+         "decimal": 1.9,
+         "fraction": "10/11",
+         "american": "-110"
+        },
+        "moneyLine": {
+         "value": 1.35,
+         "displayValue": "5/14",
+         "alternateDisplayValue": "-280",
+         "decimal": 1.35,
+         "fraction": "5/14",
+         "american": "-280"
+        }
+       },
+       "team": {
+        "$ref": "http://sports.core.api.espn.pvt/v2/sports/hockey/leagues/nhl/seasons/2027/teams/13?lang=en&region=us"
+       }
+      },
+      "homeTeamOdds": {
+       "favorite": false,
+       "underdog": true,
+       "moneyLine": 210,
+       "spreadOdds": -120.0,
+       "open": {
+        "favorite": false,
+        "pointSpread": {
+         "alternateDisplayValue": "+1.5",
+         "american": "+1.5"
+        },
+        "spread": {
+         "value": 1.42,
+         "displayValue": "50/119",
+         "alternateDisplayValue": "-238",
+         "decimal": 1.42,
+         "fraction": "50/119",
+         "american": "-238"
+        },
+        "moneyLine": {
+         "value": 2.05,
+         "displayValue": "21/20",
+         "alternateDisplayValue": "+105",
+         "decimal": 2.05,
+         "fraction": "21/20",
+         "american": "+105"
+        }
+       },
+       "current": {
+        "pointSpread": {
+         "alternateDisplayValue": "+1.5",
+         "american": "+1.5"
+        },
+        "spread": {
+         "value": 1.83,
+         "displayValue": "5/6",
+         "alternateDisplayValue": "-120",
+         "decimal": 1.83,
+         "fraction": "5/6",
+         "american": "-120"
+        },
+        "moneyLine": {
+         "value": 3.1,
+         "displayValue": "21/10",
+         "alternateDisplayValue": "+210",
+         "decimal": 3.1,
+         "fraction": "21/10",
+         "american": "+210"
+        }
+       },
+       "team": {
+        "$ref": "http://sports.core.api.espn.pvt/v2/sports/hockey/leagues/nhl/seasons/2027/teams/124292?lang=en&region=us"
+       }
+      },
+      "current": {
+       "over": {
+        "value": 1.8,
+        "displayValue": "4/5",
+        "alternateDisplayValue": "-125",
+        "decimal": 1.8,
+        "fraction": "4/5",
+        "american": "-125"
+       },
+       "under": {
+        "value": 1.95,
+        "displayValue": "20/21",
+        "alternateDisplayValue": "-105",
+        "decimal": 1.95,
+        "fraction": "20/21",
+        "american": "-105"
+       },
+       "total": {
+        "alternateDisplayValue": "6.5",
+        "american": "6.5"
+       }
+      },
+      "propBets": [
+       {
+        "type": {
+         "id": "151",
+         "name": "Team Total Goals (Excl OT)"
+        }
+       },
+       {
+        "type": {
+         "id": "152",
+         "name": "Both Teams To Score"
+        }
+       },
+       {
+        "type": {
+         "id": "152",
+         "name": "Both Teams To Score"
+        }
+       },
+       {
+        "type": {
+         "id": "230",
+         "name": "Anytime Goalscorer"
+        }
+       },
+       {
+        "type": {
+         "id": "230",
+         "name": "Anytime Goalscorer"
+        }
+       },
+       {
+        "type": {
+         "id": "230",
+         "name": "Anytime Goalscorer"
+        }
+       },
+       {
+        "type": {
+         "id": "230",
+         "name": "Anytime Goalscorer"
+        }
+       },
+       {
+        "type": {
+         "id": "230",
+         "name": "Anytime Goalscorer"
+        }
+       },
+       {
+        "type": {
+         "id": "230",
+         "name": "Anytime Goalscorer"
+        }
+       },
+       {
+        "type": {
+         "id": "230",
+         "name": "Anytime Goalscorer"
+        }
+       },
+       {
+        "type": {
+         "id": "230",
+         "name": "Anytime Goalscorer"
+        }
+       },
+       {
+        "type": {
+         "id": "230",
+         "name": "Anytime Goalscorer"
+        }
+       },
+       {
+        "type": {
+         "id": "230",
+         "name": "Anytime Goalscorer"
+        }
+       },
+       {
+        "type": {
+         "id": "230",
+         "name": "Anytime Goalscorer"
+        }
+       },
+       {
+        "type": {
+         "id": "230",
+         "name": "Anytime Goalscorer"
+        }
+       },
+       {
+        "type": {
+         "id": "230",
+         "name": "Anytime Goalscorer"
+        }
+       },
+       {
+        "type": {
+         "id": "230",
+         "name": "Anytime Goalscorer"
+        }
+       },
+       {
+        "type": {
+         "id": "230",
+         "name": "Anytime Goalscorer"
+        }
+       },
+       {
+        "type": {
+         "id": "230",
+         "name": "Anytime Goalscorer"
+        }
+       },
+       {
+        "type": {
+         "id": "230",
+         "name": "Anytime Goalscorer"
+        }
+       },
+       {
+        "type": {
+         "id": "230",
+         "name": "Anytime Goalscorer"
+        }
+       }
+      ]
+     }
+    ],
+    "broadcasts": [
+     {
+      "type": {
+       "id": "4",
+       "shortName": "Streaming"
+      },
+      "market": {
+       "id": "1",
+       "type": "National"
+      },
+      "media": {
+       "shortName": "ESPN+"
+      },
+      "lang": "en",
+      "region": "us",
+      "isNational": true
+     },
+     {
+      "type": {
+       "id": "1",
+       "shortName": "TV"
+      },
+      "market": {
+       "id": "3",
+       "type": "Away"
+      },
+      "media": {
+       "shortName": "MSG"
+      },
+      "lang": "en",
+      "region": "us",
+      "isNational": false
+     },
+     {
+      "type": {
+       "id": "1",
+       "shortName": "TV"
+      },
+      "market": {
+       "id": "3",
+       "type": "Away"
+      },
+      "media": {
+       "shortName": "MSG2"
+      },
+      "lang": "en",
+      "region": "us",
+      "isNational": false
+     },
+     {
+      "type": {
+       "id": "1",
+       "shortName": "TV"
+      },
+      "market": {
+       "id": "2",
+       "type": "Home"
+      },
+      "media": {
+       "shortName": "KONG"
+      },
+      "lang": "en",
+      "region": "us",
+      "isNational": false
+     },
+     {
+      "type": {
+       "id": "4",
+       "shortName": "Streaming"
+      },
+      "market": {
+       "id": "2",
+       "type": "Home"
+      },
+      "media": {
+       "shortName": "Prime Video (Local)"
+      },
+      "lang": "en",
+      "region": "us",
+      "isNational": false
+     }
+    ],
+    "series": [
+     {
+      "type": "season",
+      "title": "Regular Season Series",
+      "description": "Regular Season Series",
+      "summary": "",
+      "completed": false,
+      "totalCompetitions": 2,
+      "competitors": [
+       {
+        "id": "124292",
+        "uid": "s:70~l:90~t:124292",
+        "wins": 0,
+        "ties": 0,
+        "team": {
+         "$ref": "http://sports.core.api.espn.pvt/v2/sports/hockey/leagues/nhl/seasons/2027/teams/124292?lang=en&region=us"
+        }
+       },
+       {
+        "id": "13",
+        "uid": "s:70~l:90~t:13",
+        "wins": 0,
+        "ties": 0,
+        "team": {
+         "$ref": "http://sports.core.api.espn.pvt/v2/sports/hockey/leagues/nhl/seasons/2027/teams/13?lang=en&region=us"
+        }
+       }
+      ],
+      "events": [
+       {
+        "$ref": "http://sports.core.api.espn.pvt/v2/sports/hockey/leagues/nhl/events/401892664?lang=en&region=us",
+        "id": "401892664"
+       },
+       {
+        "$ref": "http://sports.core.api.espn.pvt/v2/sports/hockey/leagues/nhl/events/401893223?lang=en&region=us",
+        "id": "401893223"
+       }
+      ],
+      "startDate": "2026-11-07T22:00Z"
+     }
+    ],
+    "boxscoreMinutes": true
+   }
+  ],
+  "standings": [
+   {
+    "team": "NY Rangers",
+    "link": "https://www.espn.com/nhl/team/_/name/nyr/new-york-rangers",
+    "id": "13",
+    "uid": "s:70~l:90~t:13",
+    "stats": [
+     {
+      "name": "otLosses",
+      "displayName": "Overtime Losses",
+      "shortDisplayName": "OTL",
+      "description": "Number of Overtime Losses",
+      "abbreviation": "OTL",
+      "type": "otlosses",
+      "value": 1.0,
+      "displayValue": "1"
+     },
+     {
+      "name": "losses",
+      "displayName": "Losses",
+      "shortDisplayName": "L",
+      "description": "Losses",
+      "abbreviation": "L",
+      "type": "losses",
+      "value": 7.0,
+      "displayValue": "7"
+     },
+     {
+      "name": "points",
+      "displayName": "Points",
+      "shortDisplayName": "PTS",
+      "description": "Total Points",
+      "abbreviation": "PTS",
+      "type": "points",
+      "value": 19.0,
+      "displayValue": "19"
+     },
+     {
+      "name": "wins",
+      "displayName": "Wins",
+      "shortDisplayName": "W",
+      "description": "Wins",
+      "abbreviation": "W",
+      "type": "wins",
+      "value": 9.0,
+      "displayValue": "9"
+     }
+    ],
+    "logo": [
+     {
+      "href": "https://a.espncdn.com/i/teamlogos/nhl/500/nyr.png",
+      "width": 500,
+      "height": 500,
+      "alt": "",
+      "rel": [
+       "full",
+       "default"
+      ],
+      "lastUpdated": "2024-07-02T15:51Z"
+     },
+     {
+      "href": "https://a.espncdn.com/i/teamlogos/nhl/500-dark/scoreboard/nyr.png",
+      "width": 500,
+      "height": 500,
+      "alt": "",
+      "rel": [
+       "full",
+       "scoreboard",
+       "dark"
+      ],
+      "lastUpdated": "2024-07-02T15:46Z"
+     }
+    ]
+   }
+  ]
+ },
+ "boxscore": {
+  "teams": [
+   {
+    "team": {
+     "id": "13",
+     "uid": "s:70~l:90~t:13",
+     "slug": "new-york-rangers",
+     "location": "New York",
+     "name": "Rangers",
+     "abbreviation": "NYR",
+     "displayName": "New York Rangers",
+     "shortDisplayName": "Rangers",
+     "color": "0056ae",
+     "alternateColor": "e51937",
+     "logo": "https://a.espncdn.com/i/teamlogos/nhl/500/nyr.png"
+    },
+    "statistics": [
+     {
+      "name": "blockedShots",
+      "abbreviation": "BS",
+      "displayValue": "3",
+      "label": "Blocked Shots"
+     },
+     {
+      "name": "hits",
+      "abbreviation": "HT",
+      "displayValue": "4",
+      "label": "Hits"
+     },
+     {
+      "name": "takeaways",
+      "abbreviation": "TK",
+      "displayValue": "0",
+      "label": "Takeaways"
+     },
+     {
+      "name": "shotsTotal",
+      "abbreviation": "S",
+      "displayValue": "8",
+      "label": "Shots"
+     },
+     {
+      "name": "powerPlayGoals",
+      "abbreviation": "PPG",
+      "displayValue": "1",
+      "label": "Power Play Goals"
+     },
+     {
+      "name": "powerPlayOpportunities",
+      "abbreviation": "PPO",
+      "displayValue": "1",
+      "label": "Power Play Opportunities"
+     },
+     {
+      "name": "powerPlayPct",
+      "abbreviation": "PCT",
+      "displayValue": "100.0",
+      "label": "Power Play Percentage"
+     },
+     {
+      "name": "shortHandedGoals",
+      "abbreviation": "SHG",
+      "displayValue": "0",
+      "label": "Short Handed Goals"
+     },
+     {
+      "name": "shootoutGoals",
+      "abbreviation": "SOG",
+      "displayValue": "0",
+      "label": "Shootout Goals"
+     },
+     {
+      "name": "faceoffsWon",
+      "abbreviation": "FW",
+      "displayValue": "5",
+      "label": "Faceoffs Won"
+     },
+     {
+      "name": "faceoffPercent",
+      "abbreviation": "FO%",
+      "displayValue": "45.5",
+      "label": "Faceoff Win Percent"
+     },
+     {
+      "name": "giveaways",
+      "abbreviation": "GV",
+      "displayValue": "5",
+      "label": "Giveaways"
+     },
+     {
+      "name": "penalties",
+      "abbreviation": "PN",
+      "displayValue": "0",
+      "label": "Total Penalties"
+     },
+     {
+      "name": "penaltyMinutes",
+      "abbreviation": "PIM",
+      "displayValue": "0",
+      "label": "Penalty Minutes"
+     }
+    ],
+    "displayOrder": 1,
+    "homeAway": "away"
+   },
+   {
+    "team": {
+     "id": "124292",
+     "uid": "s:70~l:90~t:124292",
+     "slug": "seattle-kraken",
+     "location": "Seattle",
+     "name": "Kraken",
+     "abbreviation": "SEA",
+     "displayName": "Seattle Kraken",
+     "shortDisplayName": "Kraken",
+     "color": "000d33",
+     "alternateColor": "a3dce4",
+     "logo": "https://a.espncdn.com/i/teamlogos/nhl/500/sea.png"
+    },
+    "statistics": [
+     {
+      "name": "blockedShots",
+      "abbreviation": "BS",
+      "displayValue": "3",
+      "label": "Blocked Shots"
+     },
+     {
+      "name": "hits",
+      "abbreviation": "HT",
+      "displayValue": "4",
+      "label": "Hits"
+     },
+     {
+      "name": "takeaways",
+      "abbreviation": "TK",
+      "displayValue": "2",
+      "label": "Takeaways"
+     },
+     {
+      "name": "shotsTotal",
+      "abbreviation": "S",
+      "displayValue": "4",
+      "label": "Shots"
+     },
+     {
+      "name": "powerPlayGoals",
+      "abbreviation": "PPG",
+      "displayValue": "0",
+      "label": "Power Play Goals"
+     },
+     {
+      "name": "powerPlayOpportunities",
+      "abbreviation": "PPO",
+      "displayValue": "0",
+      "label": "Power Play Opportunities"
+     },
+     {
+      "name": "powerPlayPct",
+      "abbreviation": "PCT",
+      "displayValue": "0.0",
+      "label": "Power Play Percentage"
+     },
+     {
+      "name": "shortHandedGoals",
+      "abbreviation": "SHG",
+      "displayValue": "0",
+      "label": "Short Handed Goals"
+     },
+     {
+      "name": "shootoutGoals",
+      "abbreviation": "SOG",
+      "displayValue": "0",
+      "label": "Shootout Goals"
+     },
+     {
+      "name": "faceoffsWon",
+      "abbreviation": "FW",
+      "displayValue": "6",
+      "label": "Faceoffs Won"
+     },
+     {
+      "name": "faceoffPercent",
+      "abbreviation": "FO%",
+      "displayValue": "54.5",
+      "label": "Faceoff Win Percent"
+     },
+     {
+      "name": "giveaways",
+      "abbreviation": "GV",
+      "displayValue": "1",
+      "label": "Giveaways"
+     },
+     {
+      "name": "penalties",
+      "abbreviation": "PN",
+      "displayValue": "1",
+      "label": "Total Penalties"
+     },
+     {
+      "name": "penaltyMinutes",
+      "abbreviation": "PIM",
+      "displayValue": "2",
+      "label": "Penalty Minutes"
+     }
+    ],
+    "displayOrder": 2,
+    "homeAway": "home"
+   }
+  ],
+  "players": [
+   {
+    "team": {
+     "id": "13",
+     "uid": "s:70~l:90~t:13",
+     "slug": "new-york-rangers",
+     "location": "New York",
+     "name": "Rangers",
+     "abbreviation": "NYR",
+     "displayName": "New York Rangers",
+     "shortDisplayName": "Rangers",
+     "color": "0056ae",
+     "alternateColor": "e51937",
+     "logo": "https://a.espncdn.com/i/teamlogos/nhl/500/nyr.png"
+    },
+    "statistics": [
+     {
+      "name": "forwards",
+      "keys": [
+       "blockedShots",
+       "hits",
+       "takeaways",
+       "plusMinus",
+       "timeOnIce",
+       "powerPlayTimeOnIce",
+       "shortHandedTimeOnIce",
+       "evenStrengthTimeOnIce",
+       "shifts",
+       "goals",
+       "ytdGoals",
+       "assists",
+       "shotsTotal",
+       "shotsMissed",
+       "shootoutGoals",
+       "faceoffsWon",
+       "faceoffsLost",
+       "faceoffPercent",
+       "giveaways",
+       "penalties",
+       "penaltyMinutes"
+      ],
+      "labels": [
+       "BS",
+       "HT",
+       "TK",
+       "+/-",
+       "TOI",
+       "PPTOI",
+       "SHTOI",
+       "ESTOI",
+       "SHFT",
+       "G",
+       "YTDG",
+       "A",
+       "S",
+       "SM",
+       "SOG",
+       "FW",
+       "FL",
+       "FO%",
+       "GV",
+       "PN",
+       "PIM"
+      ],
+      "descriptions": [
+       "Total shots blocked.",
+       "Total hits.",
+       "Total takeaways.",
+       "Plus/Minus Rating",
+       "Total time on ice.",
+       "Total power play time on ice.",
+       "Total short handed time on ice.",
+       "Total even strength time on ice.",
+       "Total shifts.",
+       "Total goals scored.",
+       "Year to date goals/",
+       "Total goal assists.",
+       "Total shots.",
+       "Total missed shots.",
+       "Total shootout goals.",
+       "Total faceoffs won.",
+       "Total faceoffs lost.",
+       "Percentage of faceoffs won.",
+       "Total giveaways.",
+       "Total number of penalties.",
+       "Total penalty minutes."
+      ],
+      "athletes": [
+       {
+        "athlete": {
+         "id": "3042095",
+         "uid": "s:70~l:90~a:3042095",
+         "guid": "c6ba969e-398b-9462-6005-60d9cb1aead9",
+         "lastName": "Bjorkstrand",
+         "displayName": "Oliver Bjorkstrand",
+         "shortName": "O. Bjorkstrand",
+         "links": [
+          {
+           "language": "en-US",
+           "rel": [
+            "playercard",
+            "desktop",
+            "athlete"
+           ],
+           "href": "https://www.espn.com/nhl/player/_/id/3042095",
+           "text": "Player Card",
+           "shortText": "Player Card",
+           "isExternal": false,
+           "isPremium": false
+          }
+         ],
+         "headshot": {
+          "href": "https://a.espncdn.com/i/headshots/nhl/players/full/3042095.png",
+          "alt": "Oliver Bjorkstrand"
+         },
+         "jersey": "28",
+         "position": {
+          "$ref": "http://sports.core.api.espn.pvt/v2/sports/hockey/leagues/nhl/positions/3?lang=en&region=us",
+          "id": "3",
+          "name": "Right Wing",
+          "displayName": "Right Wing",
+          "abbreviation": "RW",
+          "leaf": true,
+          "parent": {
+           "$ref": "http://sports.core.api.espn.pvt/v2/sports/hockey/leagues/nhl/positions/20?lang=en&region=us"
+          }
+         },
+         "active": true,
+         "scratched": false
+        },
+        "stats": [
+         "0",
+         "0",
+         "0",
+         "0",
+         "4:00",
+         "0:42",
+         "0:00",
+         "3:18",
+         "4",
+         "0",
+         "6",
+         "1",
+         "0",
+         "1",
+         "0",
+         "0",
+         "0",
+         "0.0",
+         "0",
+         "0",
+         "0"
+        ]
+       },
+       {
+        "athlete": {
+         "id": "5188348",
+         "uid": "s:70~l:90~a:5188348",
+         "guid": "2f3a2e91-7327-31dc-8194-e23b760196e8",
+         "lastName": "Chmelar",
+         "displayName": "Jaroslav Chmelar",
+         "shortName": "J. Chmelar",
+         "links": [
+          {
+           "language": "en-US",
+           "rel": [
+            "playercard",
+            "desktop",
+            "athlete"
+           ],
+           "href": "https://www.espn.com/nhl/player/_/id/5188348",
+           "text": "Player Card",
+           "shortText": "Player Card",
+           "isExternal": false,
+           "isPremium": false
+          }
+         ],
+         "headshot": {
+          "href": "https://a.espncdn.com/i/headshots/nhl/players/full/5188348.png",
+          "alt": "Jaroslav Chmelar"
+         },
+         "jersey": "49",
+         "position": {
+          "$ref": "http://sports.core.api.espn.pvt/v2/sports/hockey/leagues/nhl/positions/3?lang=en&region=us",
+          "id": "3",
+          "name": "Right Wing",
+          "displayName": "Right Wing",
+          "abbreviation": "RW",
+          "leaf": true,
+          "parent": {
+           "$ref": "http://sports.core.api.espn.pvt/v2/sports/hockey/leagues/nhl/positions/20?lang=en&region=us"
+          }
+         },
+         "active": true,
+         "scratched": false
+        },
+        "stats": [
+         "1",
+         "1",
+         "0",
+         "0",
+         "2:21",
+         "0:00",
+         "0:00",
+         "2:21",
+         "2",
+         "0",
+         "0",
+         "0",
+         "0",
+         "0",
+         "0",
+         "1",
+         "0",
+         "100.0",
+         "1",
+         "0",
+         "0"
+        ]
+       },
+       {
+        "athlete": {
+         "id": "4697468",
+         "uid": "s:70~l:90~a:4697468",
+         "guid": "4bccfde6-1664-349b-a37a-ef9df11daee8",
+         "lastName": "Cuylle",
+         "displayName": "Will Cuylle",
+         "shortName": "W. Cuylle",
+         "links": [
+          {
+           "language": "en-US",
+           "rel": [
+            "playercard",
+            "desktop",
+            "athlete"
+           ],
+           "href": "https://www.espn.com/nhl/player/_/id/4697468",
+           "text": "Player Card",
+           "shortText": "Player Card",
+           "isExternal": false,
+           "isPremium": false
+          }
+         ],
+         "headshot": {
+          "href": "https://a.espncdn.com/i/headshots/nhl/players/full/4697468.png",
+          "alt": "Will Cuylle"
+         },
+         "jersey": "50",
+         "position": {
+          "$ref": "http://sports.core.api.espn.pvt/v2/sports/hockey/leagues/nhl/positions/2?lang=en&region=us",
+          "id": "2",
+          "name": "Left Wing",
+          "displayName": "Left Wing",
+          "abbreviation": "LW",
+          "leaf": true,
+          "parent": {
+           "$ref": "http://sports.core.api.espn.pvt/v2/sports/hockey/leagues/nhl/positions/20?lang=en&region=us"
+          }
+         },
+         "active": true,
+         "scratched": false
+        },
+        "stats": [
+         "0",
+         "0",
+         "0",
+         "0",
+         "2:16",
+         "0:42",
+         "0:00",
+         "1:34",
+         "3",
+         "0",
+         "4",
+         "0",
+         "0",
+         "2",
+         "0",
+         "0",
+         "3",
+         "0.0",
+         "0",
+         "0",
+         "0"
+        ]
+       },
+       {
+        "athlete": {
+         "id": "4587588",
+         "uid": "s:70~l:90~a:4587588",
+         "guid": "1d3dee86-7ad6-548d-2621-5008d9c0ea5b",
+         "lastName": "Dorofeyev",
+         "displayName": "Pavel Dorofeyev",
+         "shortName": "P. Dorofeyev",
+         "links": [
+          {
+           "language": "en-US",
+           "rel": [
+            "playercard",
+            "desktop",
+            "athlete"
+           ],
+           "href": "https://www.espn.com/nhl/player/_/id/4587588",
+           "text": "Player Card",
+           "shortText": "Player Card",
+           "isExternal": false,
+           "isPremium": false
+          }
+         ],
+         "headshot": {
+          "href": "https://a.espncdn.com/i/headshots/nhl/players/full/4587588.png",
+          "alt": "Pavel Dorofeyev"
+         },
+         "jersey": "16",
+         "position": {
+          "$ref": "http://sports.core.api.espn.pvt/v2/sports/hockey/leagues/nhl/positions/3?lang=en&region=us",
+          "id": "3",
+          "name": "Right Wing",
+          "displayName": "Right Wing",
+          "abbreviation": "RW",
+          "leaf": true,
+          "parent": {
+           "$ref": "http://sports.core.api.espn.pvt/v2/sports/hockey/leagues/nhl/positions/20?lang=en&region=us"
+          }
+         },
+         "active": true,
+         "scratched": false
+        },
+        "stats": [
+         "0",
+         "0",
+         "0",
+         "0",
+         "2:42",
+         "1:08",
+         "0:00",
+         "1:34",
+         "3",
+         "0",
+         "5",
+         "0",
+         "2",
+         "0",
+         "0",
+         "0",
+         "0",
+         "0.0",
+         "1",
+         "0",
+         "0"
+        ]
+       },
+       {
+        "athlete": {
+         "id": "4588750",
+         "uid": "s:70~l:90~a:4588750",
+         "guid": "22f5baaa-4f81-1846-aa75-99f57905cea4",
+         "lastName": "Kartye",
+         "displayName": "Tye Kartye",
+         "shortName": "T. Kartye",
+         "links": [
+          {
+           "language": "en-US",
+           "rel": [
+            "playercard",
+            "desktop",
+            "athlete"
+           ],
+           "href": "https://www.espn.com/nhl/player/_/id/4588750",
+           "text": "Player Card",
+           "shortText": "Player Card",
+           "isExternal": false,
+           "isPremium": false
+          }
+         ],
+         "headshot": {
+          "href": "https://a.espncdn.com/i/headshots/nhl/players/full/4588750.png",
+          "alt": "Tye Kartye"
+         },
+         "jersey": "24",
+         "position": {
+          "$ref": "http://sports.core.api.espn.pvt/v2/sports/hockey/leagues/nhl/positions/2?lang=en&region=us",
+          "id": "2",
+          "name": "Left Wing",
+          "displayName": "Left Wing",
+          "abbreviation": "LW",
+          "leaf": true,
+          "parent": {
+           "$ref": "http://sports.core.api.espn.pvt/v2/sports/hockey/leagues/nhl/positions/20?lang=en&region=us"
+          }
+         },
+         "active": true,
+         "scratched": false
+        },
+        "stats": [
+         "0",
+         "0",
+         "0",
+         "0",
+         "3:39",
+         "0:42",
+         "0:00",
+         "2:57",
+         "4",
+         "1",
+         "6",
+         "0",
+         "1",
+         "0",
+         "0",
+         "0",
+         "0",
+         "0.0",
+         "1",
+         "0",
+         "0"
+        ]
+       },
+       {
+        "athlete": {
+         "id": "5188370",
+         "uid": "s:70~l:90~a:5188370",
+         "guid": "6c57c0da-a7ae-3b73-a4bc-80efcaa1d58c",
+         "lastName": "Laba",
+         "displayName": "Noah Laba",
+         "shortName": "N. Laba",
+         "links": [
+          {
+           "language": "en-US",
+           "rel": [
+            "playercard",
+            "desktop",
+            "athlete"
+           ],
+           "href": "https://www.espn.com/nhl/player/_/id/5188370",
+           "text": "Player Card",
+           "shortText": "Player Card",
+           "isExternal": false,
+           "isPremium": false
+          }
+         ],
+         "headshot": {
+          "href": "https://a.espncdn.com/i/headshots/nhl/players/full/5188370.png",
+          "alt": "Noah Laba"
+         },
+         "jersey": "42",
+         "position": {
+          "$ref": "http://sports.core.api.espn.pvt/v2/sports/hockey/leagues/nhl/positions/1?lang=en&region=us",
+          "id": "1",
+          "name": "Center",
+          "displayName": "Center",
+          "abbreviation": "C",
+          "leaf": true,
+          "parent": {
+           "$ref": "http://sports.core.api.espn.pvt/v2/sports/hockey/leagues/nhl/positions/20?lang=en&region=us"
+          }
+         },
+         "active": true,
+         "scratched": false
+        },
+        "stats": [
+         "1",
+         "1",
+         "0",
+         "0",
+         "2:26",
+         "0:00",
+         "0:00",
+         "2:26",
+         "2",
+         "0",
+         "0",
+         "0",
+         "0",
+         "0",
+         "0",
+         "0",
+         "0",
+         "0.0",
+         "1",
+         "0",
+         "0"
+        ]
+       },
+       {
+        "athlete": {
+         "id": "4697382",
+         "uid": "s:70~l:90~a:4697382",
+         "guid": "ed5104b2-2d35-3b72-ad49-b8e66ffc2b37",
+         "lastName": "Lafreniere",
+         "displayName": "Alexis Lafreniere",
+         "shortName": "A. Lafreniere",
+         "links": [
+          {
+           "language": "en-US",
+           "rel": [
+            "playercard",
+            "desktop",
+            "athlete"
+           ],
+           "href": "https://www.espn.com/nhl/player/_/id/4697382",
+           "text": "Player Card",
+           "shortText": "Player Card",
+           "isExternal": false,
+           "isPremium": false
+          }
+         ],
+         "headshot": {
+          "href": "https://a.espncdn.com/i/headshots/nhl/players/full/4697382.png",
+          "alt": "Alexis Lafreniere"
+         },
+         "jersey": "13",
+         "position": {
+          "$ref": "http://sports.core.api.espn.pvt/v2/sports/hockey/leagues/nhl/positions/2?lang=en&region=us",
+          "id": "2",
+          "name": "Left Wing",
+          "displayName": "Left Wing",
+          "abbreviation": "LW",
+          "leaf": true,
+          "parent": {
+           "$ref": "http://sports.core.api.espn.pvt/v2/sports/hockey/leagues/nhl/positions/20?lang=en&region=us"
+          }
+         },
+         "active": true,
+         "scratched": false
+        },
+        "stats": [
+         "0",
+         "0",
+         "0",
+         "1",
+         "2:46",
+         "1:08",
+         "0:00",
+         "1:38",
+         "3",
+         "0",
+         "9",
+         "1",
+         "2",
+         "0",
+         "0",
+         "0",
+         "0",
+         "0.0",
+         "0",
+         "0",
+         "0"
+        ]
+       },
+       {
+        "athlete": {
+         "id": "2590852",
+         "uid": "s:70~l:90~a:2590852",
+         "guid": "edddea19-8c2d-f283-933b-d0f4193c80f0",
+         "lastName": "Miller",
+         "displayName": "J.T. Miller",
+         "shortName": "J.T. Miller",
+         "links": [
+          {
+           "language": "en-US",
+           "rel": [
+            "playercard",
+            "desktop",
+            "athlete"
+           ],
+           "href": "https://www.espn.com/nhl/player/_/id/2590852",
+           "text": "Player Card",
+           "shortText": "Player Card",
+           "isExternal": false,
+           "isPremium": false
+          }
+         ],
+         "headshot": {
+          "href": "https://a.espncdn.com/i/headshots/nhl/players/full/2590852.png",
+          "alt": "J.T. Miller"
+         },
+         "jersey": "10",
+         "position": {
+          "$ref": "http://sports.core.api.espn.pvt/v2/sports/hockey/leagues/nhl/positions/2?lang=en&region=us",
+          "id": "2",
+          "name": "Left Wing",
+          "displayName": "Left Wing",
+          "abbreviation": "LW",
+          "leaf": true,
+          "parent": {
+           "$ref": "http://sports.core.api.espn.pvt/v2/sports/hockey/leagues/nhl/positions/20?lang=en&region=us"
+          }
+         },
+         "active": true,
+         "scratched": false
+        },
+        "stats": [
+         "0",
+         "0",
+         "0",
+         "0",
+         "3:40",
+         "0:42",
+         "0:00",
+         "2:58",
+         "4",
+         "0",
+         "4",
+         "0",
+         "0",
+         "0",
+         "0",
+         "3",
+         "2",
+         "60.0",
+         "0",
+         "0",
+         "0"
+        ]
+       },
+       {
+        "athlete": {
+         "id": "5149204",
+         "uid": "s:70~l:90~a:5149204",
+         "guid": "0b46c40f-b605-3c97-90d7-3f42306ea281",
+         "lastName": "Perreault",
+         "displayName": "Gabe Perreault",
+         "shortName": "G. Perreault",
+         "links": [
+          {
+           "language": "en-US",
+           "rel": [
+            "playercard",
+            "desktop",
+            "athlete"
+           ],
+           "href": "https://www.espn.com/nhl/player/_/id/5149204",
+           "text": "Player Card",
+           "shortText": "Player Card",
+           "isExternal": false,
+           "isPremium": false
+          }
+         ],
+         "headshot": {
+          "href": "https://a.espncdn.com/i/headshots/nhl/players/full/5149204.png",
+          "alt": "Gabe Perreault"
+         },
+         "jersey": "94",
+         "position": {
+          "$ref": "http://sports.core.api.espn.pvt/v2/sports/hockey/leagues/nhl/positions/3?lang=en&region=us",
+          "id": "3",
+          "name": "Right Wing",
+          "displayName": "Right Wing",
+          "abbreviation": "RW",
+          "leaf": true,
+          "parent": {
+           "$ref": "http://sports.core.api.espn.pvt/v2/sports/hockey/leagues/nhl/positions/20?lang=en&region=us"
+          }
+         },
+         "active": true,
+         "scratched": false
+        },
+        "stats": [
+         "0",
+         "0",
+         "0",
+         "1",
+         "2:45",
+         "1:08",
+         "0:00",
+         "1:37",
+         "3",
+         "1",
+         "6",
+         "0",
+         "1",
+         "1",
+         "0",
+         "0",
+         "0",
+         "0.0",
+         "0",
+         "0",
+         "0"
+        ]
+       },
+       {
+        "athlete": {
+         "id": "4697820",
+         "uid": "s:70~l:90~a:4697820",
+         "guid": "692be33a-bc3c-3036-b8fd-ac266386a601",
+         "lastName": "Rempe",
+         "displayName": "Matt Rempe",
+         "shortName": "M. Rempe",
+         "links": [
+          {
+           "language": "en-US",
+           "rel": [
+            "playercard",
+            "desktop",
+            "athlete"
+           ],
+           "href": "https://www.espn.com/nhl/player/_/id/4697820",
+           "text": "Player Card",
+           "shortText": "Player Card",
+           "isExternal": false,
+           "isPremium": false
+          }
+         ],
+         "headshot": {
+          "href": "https://a.espncdn.com/i/headshots/nhl/players/full/4697820.png",
+          "alt": "Matt Rempe"
+         },
+         "jersey": "73",
+         "position": {
+          "$ref": "http://sports.core.api.espn.pvt/v2/sports/hockey/leagues/nhl/positions/1?lang=en&region=us",
+          "id": "1",
+          "name": "Center",
+          "displayName": "Center",
+          "abbreviation": "C",
+          "leaf": true,
+          "parent": {
+           "$ref": "http://sports.core.api.espn.pvt/v2/sports/hockey/leagues/nhl/positions/20?lang=en&region=us"
+          }
+         },
+         "active": true,
+         "scratched": false
+        },
+        "stats": [
+         "0",
+         "1",
+         "0",
+         "0",
+         "1:41",
+         "0:00",
+         "0:00",
+         "1:41",
+         "1",
+         "0",
+         "0",
+         "0",
+         "0",
+         "0",
+         "0",
+         "0",
+         "0",
+         "0.0",
+         "0",
+         "0",
+         "0"
+        ]
+       },
+       {
+        "athlete": {
+         "id": "4233720",
+         "uid": "s:70~l:90~a:4233720",
+         "guid": "0e9cf19a-9bd9-7767-c020-015678e2bd95",
+         "lastName": "Tolvanen",
+         "displayName": "Eeli Tolvanen",
+         "shortName": "E. Tolvanen",
+         "links": [
+          {
+           "language": "en-US",
+           "rel": [
+            "playercard",
+            "desktop",
+            "athlete"
+           ],
+           "href": "https://www.espn.com/nhl/player/_/id/4233720",
+           "text": "Player Card",
+           "shortText": "Player Card",
+           "isExternal": false,
+           "isPremium": false
+          }
+         ],
+         "headshot": {
+          "href": "https://a.espncdn.com/i/headshots/nhl/players/full/4233720.png",
+          "alt": "Eeli Tolvanen"
+         },
+         "jersey": "17",
+         "position": {
+          "$ref": "http://sports.core.api.espn.pvt/v2/sports/hockey/leagues/nhl/positions/3?lang=en&region=us",
+          "id": "3",
+          "name": "Right Wing",
+          "displayName": "Right Wing",
+          "abbreviation": "RW",
+          "leaf": true,
+          "parent": {
+           "$ref": "http://sports.core.api.espn.pvt/v2/sports/hockey/leagues/nhl/positions/20?lang=en&region=us"
+          }
+         },
+         "active": true,
+         "scratched": false
+        },
+        "stats": [
+         "0",
+         "0",
+         "0",
+         "0",
+         "2:05",
+         "0:00",
+         "0:00",
+         "2:05",
+         "3",
+         "0",
+         "4",
+         "0",
+         "0",
+         "0",
+         "0",
+         "0",
+         "0",
+         "0.0",
+         "0",
+         "0",
+         "0"
+        ]
+       },
+       {
+        "athlete": {
+         "id": "2562637",
+         "uid": "s:70~l:90~a:2562637",
+         "guid": "f5d7992b-2354-c15c-a899-0ef26e78018d",
+         "lastName": "Zibanejad",
+         "displayName": "Mika Zibanejad",
+         "shortName": "M. Zibanejad",
+         "links": [
+          {
+           "language": "en-US",
+           "rel": [
+            "playercard",
+            "desktop",
+            "athlete"
+           ],
+           "href": "https://www.espn.com/nhl/player/_/id/2562637",
+           "text": "Player Card",
+           "shortText": "Player Card",
+           "isExternal": false,
+           "isPremium": false
+          }
+         ],
+         "headshot": {
+          "href": "https://a.espncdn.com/i/headshots/nhl/players/full/2562637.png",
+          "alt": "Mika Zibanejad"
+         },
+         "jersey": "93",
+         "position": {
+          "$ref": "http://sports.core.api.espn.pvt/v2/sports/hockey/leagues/nhl/positions/1?lang=en&region=us",
+          "id": "1",
+          "name": "Center",
+          "displayName": "Center",
+          "abbreviation": "C",
+          "leaf": true,
+          "parent": {
+           "$ref": "http://sports.core.api.espn.pvt/v2/sports/hockey/leagues/nhl/positions/20?lang=en&region=us"
+          }
+         },
+         "active": true,
+         "scratched": false
+        },
+        "stats": [
+         "0",
+         "0",
+         "0",
+         "1",
+         "2:29",
+         "1:08",
+         "0:00",
+         "1:21",
+         "3",
+         "0",
+         "3",
+         "1",
+         "0",
+         "1",
+         "0",
+         "1",
+         "1",
+         "50.0",
+         "0",
+         "0",
+         "0"
+        ]
+       }
+      ]
+     },
+     {
+      "name": "defenses",
+      "keys": [
+       "blockedShots",
+       "hits",
+       "takeaways",
+       "plusMinus",
+       "timeOnIce",
+       "powerPlayTimeOnIce",
+       "shortHandedTimeOnIce",
+       "evenStrengthTimeOnIce",
+       "shifts",
+       "goals",
+       "ytdGoals",
+       "assists",
+       "shotsTotal",
+       "shotsMissed",
+       "shootoutGoals",
+       "faceoffsWon",
+       "faceoffsLost",
+       "faceoffPercent",
+       "giveaways",
+       "penalties",
+       "penaltyMinutes"
+      ],
+      "labels": [
+       "BS",
+       "HT",
+       "TK",
+       "+/-",
+       "TOI",
+       "PPTOI",
+       "SHTOI",
+       "ESTOI",
+       "SHFT",
+       "G",
+       "YTDG",
+       "A",
+       "S",
+       "SM",
+       "SOG",
+       "FW",
+       "FL",
+       "FO%",
+       "GV",
+       "PN",
+       "PIM"
+      ],
+      "descriptions": [
+       "Total shots blocked.",
+       "Total hits.",
+       "Total takeaways.",
+       "Plus/Minus Rating",
+       "Total time on ice.",
+       "Total power play time on ice.",
+       "Total short handed time on ice.",
+       "Total even strength time on ice.",
+       "Total shifts.",
+       "Total goals scored.",
+       "Year to date goals/",
+       "Total goal assists.",
+       "Total shots.",
+       "Total missed shots.",
+       "Total shootout goals.",
+       "Total faceoffs won.",
+       "Total faceoffs lost.",
+       "Percentage of faceoffs won.",
+       "Total giveaways.",
+       "Total number of penalties.",
+       "Total penalty minutes."
+      ],
+      "athletes": [
+       {
+        "athlete": {
+         "id": "4197146",
+         "uid": "s:70~l:90~a:4197146",
+         "guid": "2424f9ee-4f36-f74b-50a7-107f6efc1159",
+         "lastName": "Fox",
+         "displayName": "Adam Fox",
+         "shortName": "A. Fox",
+         "links": [
+          {
+           "language": "en-US",
+           "rel": [
+            "playercard",
+            "desktop",
+            "athlete"
+           ],
+           "href": "https://www.espn.com/nhl/player/_/id/4197146",
+           "text": "Player Card",
+           "shortText": "Player Card",
+           "isExternal": false,
+           "isPremium": false
+          }
+         ],
+         "headshot": {
+          "href": "https://a.espncdn.com/i/headshots/nhl/players/full/4197146.png",
+          "alt": "Adam Fox"
+         },
+         "jersey": "23",
+         "position": {
+          "$ref": "http://sports.core.api.espn.pvt/v2/sports/hockey/leagues/nhl/positions/4?lang=en&region=us",
+          "id": "4",
+          "name": "Defense",
+          "displayName": "Defense",
+          "abbreviation": "D",
+          "leaf": true,
+          "parent": {
+           "$ref": "http://sports.core.api.espn.pvt/v2/sports/hockey/leagues/nhl/positions/27?lang=en&region=us"
+          }
+         },
+         "active": true,
+         "scratched": false
+        },
+        "stats": [
+         "0",
+         "0",
+         "0",
+         "0",
+         "3:57",
+         "1:50",
+         "0:00",
+         "2:07",
+         "3",
+         "0",
+         "2",
+         "1",
+         "0",
+         "0",
+         "0",
+         "0",
+         "0",
+         "0.0",
+         "0",
+         "0",
+         "0"
+        ]
+       },
+       {
+        "athlete": {
+         "id": "3942292",
+         "uid": "s:70~l:90~a:3942292",
+         "guid": "cf31a708-6c68-9479-f125-f371f6055e31",
+         "lastName": "Gavrikov",
+         "displayName": "Vladislav Gavrikov",
+         "shortName": "V. Gavrikov",
+         "links": [
+          {
+           "language": "en-US",
+           "rel": [
+            "playercard",
+            "desktop",
+            "athlete"
+           ],
+           "href": "https://www.espn.com/nhl/player/_/id/3942292",
+           "text": "Player Card",
+           "shortText": "Player Card",
+           "isExternal": false,
+           "isPremium": false
+          }
+         ],
+         "headshot": {
+          "href": "https://a.espncdn.com/i/headshots/nhl/players/full/3942292.png",
+          "alt": "Vladislav Gavrikov"
+         },
+         "jersey": "44",
+         "position": {
+          "$ref": "http://sports.core.api.espn.pvt/v2/sports/hockey/leagues/nhl/positions/4?lang=en&region=us",
+          "id": "4",
+          "name": "Defense",
+          "displayName": "Defense",
+          "abbreviation": "D",
+          "leaf": true,
+          "parent": {
+           "$ref": "http://sports.core.api.espn.pvt/v2/sports/hockey/leagues/nhl/positions/27?lang=en&region=us"
+          }
+         },
+         "active": true,
+         "scratched": false
+        },
+        "stats": [
+         "1",
+         "0",
+         "0",
+         "0",
+         "2:24",
+         "0:00",
+         "0:00",
+         "2:24",
+         "3",
+         "0",
+         "1",
+         "0",
+         "1",
+         "0",
+         "0",
+         "0",
+         "0",
+         "0.0",
+         "0",
+         "0",
+         "0"
+        ]
+       },
+       {
+        "athlete": {
+         "id": "4874882",
+         "uid": "s:70~l:90~a:4874882",
+         "guid": "5316d720-75df-3cb2-a3fa-97c931f2f06e",
+         "lastName": "Morrow",
+         "displayName": "Scott Morrow",
+         "shortName": "S. Morrow",
+         "links": [
+          {
+           "language": "en-US",
+           "rel": [
+            "playercard",
+            "desktop",
+            "athlete"
+           ],
+           "href": "https://www.espn.com/nhl/player/_/id/4874882",
+           "text": "Player Card",
+           "shortText": "Player Card",
+           "isExternal": false,
+           "isPremium": false
+          }
+         ],
+         "headshot": {
+          "href": "https://a.espncdn.com/i/headshots/nhl/players/full/4874882.png",
+          "alt": "Scott Morrow"
+         },
+         "jersey": "60",
+         "position": {
+          "$ref": "http://sports.core.api.espn.pvt/v2/sports/hockey/leagues/nhl/positions/4?lang=en&region=us",
+          "id": "4",
+          "name": "Defense",
+          "displayName": "Defense",
+          "abbreviation": "D",
+          "leaf": true,
+          "parent": {
+           "$ref": "http://sports.core.api.espn.pvt/v2/sports/hockey/leagues/nhl/positions/27?lang=en&region=us"
+          }
+         },
+         "active": true,
+         "scratched": false
+        },
+        "stats": [
+         "0",
+         "1",
+         "0",
+         "1",
+         "2:12",
+         "0:00",
+         "0:00",
+         "2:12",
+         "2",
+         "0",
+         "0",
+         "0",
+         "1",
+         "0",
+         "0",
+         "0",
+         "0",
+         "0.0",
+         "0",
+         "0",
+         "0"
+        ]
+       },
+       {
+        "athlete": {
+         "id": "3114995",
+         "uid": "s:70~l:90~a:3114995",
+         "guid": "c6a969df-5a39-12b6-748e-703272bffd31",
+         "lastName": "Pettersson",
+         "displayName": "Marcus Pettersson",
+         "shortName": "M. Pettersson",
+         "links": [
+          {
+           "language": "en-US",
+           "rel": [
+            "playercard",
+            "desktop",
+            "athlete"
+           ],
+           "href": "https://www.espn.com/nhl/player/_/id/3114995",
+           "text": "Player Card",
+           "shortText": "Player Card",
+           "isExternal": false,
+           "isPremium": false
+          }
+         ],
+         "headshot": {
+          "href": "https://a.espncdn.com/i/headshots/nhl/players/full/3114995.png",
+          "alt": "Marcus Pettersson"
+         },
+         "jersey": "26",
+         "position": {
+          "$ref": "http://sports.core.api.espn.pvt/v2/sports/hockey/leagues/nhl/positions/4?lang=en&region=us",
+          "id": "4",
+          "name": "Defense",
+          "displayName": "Defense",
+          "abbreviation": "D",
+          "leaf": true,
+          "parent": {
+           "$ref": "http://sports.core.api.espn.pvt/v2/sports/hockey/leagues/nhl/positions/27?lang=en&region=us"
+          }
+         },
+         "active": true,
+         "scratched": false
+        },
+        "stats": [
+         "0",
+         "0",
+         "0",
+         "0",
+         "3:49",
+         "0:00",
+         "0:00",
+         "3:49",
+         "4",
+         "0",
+         "0",
+         "0",
+         "0",
+         "0",
+         "0",
+         "0",
+         "0",
+         "0.0",
+         "1",
+         "0",
+         "0"
+        ]
+       },
+       {
+        "athlete": {
+         "id": "4565272",
+         "uid": "s:70~l:90~a:4565272",
+         "guid": "c55d3b49-7431-7f3c-5679-bd73d38c6faf",
+         "lastName": "Robertson",
+         "displayName": "Matthew Robertson",
+         "shortName": "M. Robertson",
+         "links": [
+          {
+           "language": "en-US",
+           "rel": [
+            "playercard",
+            "desktop",
+            "athlete"
+           ],
+           "href": "https://www.espn.com/nhl/player/_/id/4565272",
+           "text": "Player Card",
+           "shortText": "Player Card",
+           "isExternal": false,
+           "isPremium": false
+          }
+         ],
+         "headshot": {
+          "href": "https://a.espncdn.com/i/headshots/nhl/players/full/4565272.png",
+          "alt": "Matthew Robertson"
+         },
+         "jersey": "29",
+         "position": {
+          "$ref": "http://sports.core.api.espn.pvt/v2/sports/hockey/leagues/nhl/positions/4?lang=en&region=us",
+          "id": "4",
+          "name": "Defense",
+          "displayName": "Defense",
+          "abbreviation": "D",
+          "leaf": true,
+          "parent": {
+           "$ref": "http://sports.core.api.espn.pvt/v2/sports/hockey/leagues/nhl/positions/27?lang=en&region=us"
+          }
+         },
+         "active": true,
+         "scratched": false
+        },
+        "stats": [
+         "0",
+         "0",
+         "0",
+         "1",
+         "1:00",
+         "0:00",
+         "0:00",
+         "1:00",
+         "4",
+         "0",
+         "0",
+         "0",
+         "0",
+         "0",
+         "0",
+         "0",
+         "0",
+         "0.0",
+         "0",
+         "0",
+         "0"
+        ]
+       },
+       {
+        "athlete": {
+         "id": "4697402",
+         "uid": "s:70~l:90~a:4697402",
+         "guid": "29bf377d-a0b5-3a75-9a4e-901aae679199",
+         "lastName": "Schneider",
+         "displayName": "Braden Schneider",
+         "shortName": "B. Schneider",
+         "links": [
+          {
+           "language": "en-US",
+           "rel": [
+            "playercard",
+            "desktop",
+            "athlete"
+           ],
+           "href": "https://www.espn.com/nhl/player/_/id/4697402",
+           "text": "Player Card",
+           "shortText": "Player Card",
+           "isExternal": false,
+           "isPremium": false
+          }
+         ],
+         "headshot": {
+          "href": "https://a.espncdn.com/i/headshots/nhl/players/full/4697402.png",
+          "alt": "Braden Schneider"
+         },
+         "jersey": "4",
+         "position": {
+          "$ref": "http://sports.core.api.espn.pvt/v2/sports/hockey/leagues/nhl/positions/4?lang=en&region=us",
+          "id": "4",
+          "name": "Defense",
+          "displayName": "Defense",
+          "abbreviation": "D",
+          "leaf": true,
+          "parent": {
+           "$ref": "http://sports.core.api.espn.pvt/v2/sports/hockey/leagues/nhl/positions/27?lang=en&region=us"
+          }
+         },
+         "active": true,
+         "scratched": false
+        },
+        "stats": [
+         "0",
+         "0",
+         "0",
+         "0",
+         "3:31",
+         "0:00",
+         "0:00",
+         "3:31",
+         "5",
+         "0",
+         "0",
+         "0",
+         "0",
+         "0",
+         "0",
+         "0",
+         "0",
+         "0.0",
+         "0",
+         "0",
+         "0"
+        ]
+       }
+      ]
+     },
+     {
+      "name": "skaters",
+      "keys": [
+       "blockedShots",
+       "hits",
+       "takeaways",
+       "plusMinus",
+       "timeOnIce",
+       "powerPlayTimeOnIce",
+       "shortHandedTimeOnIce",
+       "evenStrengthTimeOnIce",
+       "shifts",
+       "goals",
+       "ytdGoals",
+       "assists",
+       "shotsTotal",
+       "shotsMissed",
+       "shootoutGoals",
+       "faceoffsWon",
+       "faceoffsLost",
+       "faceoffPercent",
+       "giveaways",
+       "penalties",
+       "penaltyMinutes"
+      ],
+      "labels": [
+       "BS",
+       "HT",
+       "TK",
+       "+/-",
+       "TOI",
+       "PPTOI",
+       "SHTOI",
+       "ESTOI",
+       "SHFT",
+       "G",
+       "YTDG",
+       "A",
+       "S",
+       "SM",
+       "SOG",
+       "FW",
+       "FL",
+       "FO%",
+       "GV",
+       "PN",
+       "PIM"
+      ],
+      "descriptions": [
+       "Total shots blocked.",
+       "Total hits.",
+       "Total takeaways.",
+       "Plus/Minus Rating",
+       "Total time on ice.",
+       "Total power play time on ice.",
+       "Total short handed time on ice.",
+       "Total even strength time on ice.",
+       "Total shifts.",
+       "Total goals scored.",
+       "Year to date goals/",
+       "Total goal assists.",
+       "Total shots.",
+       "Total missed shots.",
+       "Total shootout goals.",
+       "Total faceoffs won.",
+       "Total faceoffs lost.",
+       "Percentage of faceoffs won.",
+       "Total giveaways.",
+       "Total number of penalties.",
+       "Total penalty minutes."
+      ],
+      "athletes": []
+     },
+     {
+      "name": "goalies",
+      "keys": [
+       "goalsAgainst",
+       "shotsAgainst",
+       "shootoutSaves",
+       "shootoutShotsAgainst",
+       "saves",
+       "savePct",
+       "evenStrengthSaves",
+       "powerPlaySaves",
+       "shortHandedSaves",
+       "timeOnIce",
+       "ytdGoals",
+       "penaltyMinutes"
+      ],
+      "labels": [
+       "GA",
+       "SA",
+       "SOS",
+       "SOSA",
+       "SV",
+       "SV%",
+       "ESSV",
+       "PPSV",
+       "SHSV",
+       "TOI",
+       "YTDG",
+       "PIM"
+      ],
+      "descriptions": [
+       "Total goals against.",
+       "Total shots against.",
+       "Total shootout saves.",
+       "Total shootout shots against.",
+       "Total saves.",
+       "Percentage of shots saved.",
+       "Saves made at even strength.",
+       "Saves made while in a power play.",
+       "Saves made while shorthanded",
+       "Total time on ice.",
+       "Year to date goals/",
+       "Total penalty minutes."
+      ],
+      "athletes": [
+       {
+        "athlete": {
+         "id": "3069266",
+         "uid": "s:70~l:90~a:3069266",
+         "guid": "6cb64256-69d1-0caa-6891-3108c9eeb3a9",
+         "lastName": "Korpisalo",
+         "displayName": "Joonas Korpisalo",
+         "shortName": "J. Korpisalo",
+         "links": [
+          {
+           "language": "en-US",
+           "rel": [
+            "playercard",
+            "desktop",
+            "athlete"
+           ],
+           "href": "https://www.espn.com/nhl/player/_/id/3069266",
+           "text": "Player Card",
+           "shortText": "Player Card",
+           "isExternal": false,
+           "isPremium": false
+          }
+         ],
+         "headshot": {
+          "href": "https://a.espncdn.com/i/headshots/nhl/players/full/3069266.png",
+          "alt": "Joonas Korpisalo"
+         },
+         "jersey": "70",
+         "position": {
+          "$ref": "http://sports.core.api.espn.pvt/v2/sports/hockey/leagues/nhl/positions/5?lang=en&region=us",
+          "id": "5",
+          "name": "Goaltender",
+          "displayName": "Goaltender",
+          "abbreviation": "G",
+          "leaf": false
+         },
+         "active": true,
+         "scratched": false
+        },
+        "stats": [
+         "0",
+         "4",
+         "0",
+         "0",
+         "4",
+         "1.000",
+         "4",
+         "0",
+         "0",
+         "9:43",
+         "0",
+         "0"
+        ]
+       }
+      ]
+     }
+    ],
+    "displayOrder": 1
+   },
+   {
+    "team": {
+     "id": "124292",
+     "uid": "s:70~l:90~t:124292",
+     "slug": "seattle-kraken",
+     "location": "Seattle",
+     "name": "Kraken",
+     "abbreviation": "SEA",
+     "displayName": "Seattle Kraken",
+     "shortDisplayName": "Kraken",
+     "color": "000d33",
+     "alternateColor": "a3dce4",
+     "logo": "https://a.espncdn.com/i/teamlogos/nhl/500/sea.png"
+    },
+    "statistics": [
+     {
+      "name": "forwards",
+      "keys": [
+       "blockedShots",
+       "hits",
+       "takeaways",
+       "plusMinus",
+       "timeOnIce",
+       "powerPlayTimeOnIce",
+       "shortHandedTimeOnIce",
+       "evenStrengthTimeOnIce",
+       "shifts",
+       "goals",
+       "ytdGoals",
+       "assists",
+       "shotsTotal",
+       "shotsMissed",
+       "shootoutGoals",
+       "faceoffsWon",
+       "faceoffsLost",
+       "faceoffPercent",
+       "giveaways",
+       "penalties",
+       "penaltyMinutes"
+      ],
+      "labels": [
+       "BS",
+       "HT",
+       "TK",
+       "+/-",
+       "TOI",
+       "PPTOI",
+       "SHTOI",
+       "ESTOI",
+       "SHFT",
+       "G",
+       "YTDG",
+       "A",
+       "S",
+       "SM",
+       "SOG",
+       "FW",
+       "FL",
+       "FO%",
+       "GV",
+       "PN",
+       "PIM"
+      ],
+      "descriptions": [
+       "Total shots blocked.",
+       "Total hits.",
+       "Total takeaways.",
+       "Plus/Minus Rating",
+       "Total time on ice.",
+       "Total power play time on ice.",
+       "Total short handed time on ice.",
+       "Total even strength time on ice.",
+       "Total shifts.",
+       "Total goals scored.",
+       "Year to date goals/",
+       "Total goal assists.",
+       "Total shots.",
+       "Total missed shots.",
+       "Total shootout goals.",
+       "Total faceoffs won.",
+       "Total faceoffs lost.",
+       "Percentage of faceoffs won.",
+       "Total giveaways.",
+       "Total number of penalties.",
+       "Total penalty minutes."
+      ],
+      "athletes": [
+       {
+        "athlete": {
+         "id": "4781552",
+         "uid": "s:70~l:90~a:4781552",
+         "guid": "05182013-0ba0-36b1-9f52-4070732ef9fd",
+         "lastName": "Beniers",
+         "displayName": "Matty Beniers",
+         "shortName": "M. Beniers",
+         "links": [
+          {
+           "language": "en-US",
+           "rel": [
+            "playercard",
+            "desktop",
+            "athlete"
+           ],
+           "href": "https://www.espn.com/nhl/player/_/id/4781552",
+           "text": "Player Card",
+           "shortText": "Player Card",
+           "isExternal": false,
+           "isPremium": false
+          }
+         ],
+         "headshot": {
+          "href": "https://a.espncdn.com/i/headshots/nhl/players/full/4781552.png",
+          "alt": "Matty Beniers"
+         },
+         "jersey": "10",
+         "position": {
+          "$ref": "http://sports.core.api.espn.pvt/v2/sports/hockey/leagues/nhl/positions/1?lang=en&region=us",
+          "id": "1",
+          "name": "Center",
+          "displayName": "Center",
+          "abbreviation": "C",
+          "leaf": true,
+          "parent": {
+           "$ref": "http://sports.core.api.espn.pvt/v2/sports/hockey/leagues/nhl/positions/20?lang=en&region=us"
+          }
+         },
+         "active": true,
+         "scratched": false
+        },
+        "stats": [
+         "0",
+         "0",
+         "0",
+         "0",
+         "2:38",
+         "0:00",
+         "0:00",
+         "2:38",
+         "3",
+         "0",
+         "4",
+         "0",
+         "0",
+         "1",
+         "0",
+         "0",
+         "2",
+         "0.0",
+         "0",
+         "0",
+         "0"
+        ]
+       },
+       {
+        "athlete": {
+         "id": "5216877",
+         "uid": "s:70~l:90~a:5216877",
+         "guid": "e9000094-a42b-3a5b-aad6-4f48e45910c0",
+         "lastName": "Catton",
+         "displayName": "Berkly Catton",
+         "shortName": "B. Catton",
+         "links": [
+          {
+           "language": "en-US",
+           "rel": [
+            "playercard",
+            "desktop",
+            "athlete"
+           ],
+           "href": "https://www.espn.com/nhl/player/_/id/5216877",
+           "text": "Player Card",
+           "shortText": "Player Card",
+           "isExternal": false,
+           "isPremium": false
+          }
+         ],
+         "headshot": {
+          "href": "https://a.espncdn.com/i/headshots/nhl/players/full/5216877.png",
+          "alt": "Berkly Catton"
+         },
+         "jersey": "27",
+         "position": {
+          "$ref": "http://sports.core.api.espn.pvt/v2/sports/hockey/leagues/nhl/positions/1?lang=en&region=us",
+          "id": "1",
+          "name": "Center",
+          "displayName": "Center",
+          "abbreviation": "C",
+          "leaf": true,
+          "parent": {
+           "$ref": "http://sports.core.api.espn.pvt/v2/sports/hockey/leagues/nhl/positions/20?lang=en&region=us"
+          }
+         },
+         "active": true,
+         "scratched": false
+        },
+        "stats": [
+         "0",
+         "0",
+         "0",
+         "0",
+         "2:19",
+         "0:00",
+         "0:00",
+         "2:19",
+         "3",
+         "0",
+         "5",
+         "0",
+         "0",
+         "0",
+         "0",
+         "2",
+         "1",
+         "66.7",
+         "0",
+         "1",
+         "2"
+        ]
+       },
+       {
+        "athlete": {
+         "id": "5032",
+         "uid": "s:70~l:90~a:5032",
+         "guid": "cbddf469-14b7-1f59-2069-692444b2b6bc",
+         "lastName": "Eberle",
+         "displayName": "Jordan Eberle",
+         "shortName": "J. Eberle",
+         "links": [
+          {
+           "language": "en-US",
+           "rel": [
+            "playercard",
+            "desktop",
+            "athlete"
+           ],
+           "href": "https://www.espn.com/nhl/player/_/id/5032",
+           "text": "Player Card",
+           "shortText": "Player Card",
+           "isExternal": false,
+           "isPremium": false
+          }
+         ],
+         "headshot": {
+          "href": "https://a.espncdn.com/i/headshots/nhl/players/full/5032.png",
+          "alt": "Jordan Eberle"
+         },
+         "jersey": "7",
+         "position": {
+          "$ref": "http://sports.core.api.espn.pvt/v2/sports/hockey/leagues/nhl/positions/3?lang=en&region=us",
+          "id": "3",
+          "name": "Right Wing",
+          "displayName": "Right Wing",
+          "abbreviation": "RW",
+          "leaf": true,
+          "parent": {
+           "$ref": "http://sports.core.api.espn.pvt/v2/sports/hockey/leagues/nhl/positions/20?lang=en&region=us"
+          }
+         },
+         "active": true,
+         "scratched": false
+        },
+        "stats": [
+         "0",
+         "0",
+         "0",
+         "0",
+         "2:08",
+         "0:00",
+         "0:00",
+         "2:08",
+         "3",
+         "0",
+         "4",
+         "0",
+         "0",
+         "0",
+         "0",
+         "0",
+         "0",
+         "0.0",
+         "0",
+         "0",
+         "0"
+        ]
+       },
+       {
+        "athlete": {
+         "id": "3149649",
+         "uid": "s:70~l:90~a:3149649",
+         "guid": "a54e946b-4b3d-de86-de22-ce234fe0b2bd",
+         "lastName": "Gaudreau",
+         "displayName": "Frederick Gaudreau",
+         "shortName": "F. Gaudreau",
+         "links": [
+          {
+           "language": "en-US",
+           "rel": [
+            "playercard",
+            "desktop",
+            "athlete"
+           ],
+           "href": "https://www.espn.com/nhl/player/_/id/3149649",
+           "text": "Player Card",
+           "shortText": "Player Card",
+           "isExternal": false,
+           "isPremium": false
+          }
+         ],
+         "headshot": {
+          "href": "https://a.espncdn.com/i/headshots/nhl/players/full/3149649.png",
+          "alt": "Frederick Gaudreau"
+         },
+         "jersey": "89",
+         "position": {
+          "$ref": "http://sports.core.api.espn.pvt/v2/sports/hockey/leagues/nhl/positions/1?lang=en&region=us",
+          "id": "1",
+          "name": "Center",
+          "displayName": "Center",
+          "abbreviation": "C",
+          "leaf": true,
+          "parent": {
+           "$ref": "http://sports.core.api.espn.pvt/v2/sports/hockey/leagues/nhl/positions/20?lang=en&region=us"
+          }
+         },
+         "active": true,
+         "scratched": false
+        },
+        "stats": [
+         "0",
+         "0",
+         "0",
+         "-1",
+         "2:51",
+         "0:00",
+         "1:08",
+         "1:43",
+         "3",
+         "0",
+         "7",
+         "0",
+         "0",
+         "2",
+         "0",
+         "1",
+         "0",
+         "100.0",
+         "0",
+         "0",
+         "0"
+        ]
+       },
+       {
+        "athlete": {
+         "id": "4565223",
+         "uid": "s:70~l:90~a:4565223",
+         "guid": "c50ae908-dcb1-afe9-213e-b0eb6de9ca43",
+         "lastName": "Kakko",
+         "displayName": "Kaapo Kakko",
+         "shortName": "K. Kakko",
+         "links": [
+          {
+           "language": "en-US",
+           "rel": [
+            "playercard",
+            "desktop",
+            "athlete"
+           ],
+           "href": "https://www.espn.com/nhl/player/_/id/4565223",
+           "text": "Player Card",
+           "shortText": "Player Card",
+           "isExternal": false,
+           "isPremium": false
+          }
+         ],
+         "headshot": {
+          "href": "https://a.espncdn.com/i/headshots/nhl/players/full/4565223.png",
+          "alt": "Kaapo Kakko"
+         },
+         "jersey": "84",
+         "position": {
+          "$ref": "http://sports.core.api.espn.pvt/v2/sports/hockey/leagues/nhl/positions/3?lang=en&region=us",
+          "id": "3",
+          "name": "Right Wing",
+          "displayName": "Right Wing",
+          "abbreviation": "RW",
+          "leaf": true,
+          "parent": {
+           "$ref": "http://sports.core.api.espn.pvt/v2/sports/hockey/leagues/nhl/positions/20?lang=en&region=us"
+          }
+         },
+         "active": true,
+         "scratched": false
+        },
+        "stats": [
+         "0",
+         "0",
+         "0",
+         "0",
+         "2:19",
+         "0:00",
+         "0:00",
+         "2:19",
+         "3",
+         "0",
+         "2",
+         "0",
+         "0",
+         "0",
+         "0",
+         "0",
+         "0",
+         "0.0",
+         "0",
+         "0",
+         "0"
+        ]
+       },
+       {
+        "athlete": {
+         "id": "5048894",
+         "uid": "s:70~l:90~a:5048894",
+         "guid": "d893836f-c611-3cba-b6ea-d929d7cdbc32",
+         "lastName": "McMann",
+         "displayName": "Bobby McMann",
+         "shortName": "B. McMann",
+         "links": [
+          {
+           "language": "en-US",
+           "rel": [
+            "playercard",
+            "desktop",
+            "athlete"
+           ],
+           "href": "https://www.espn.com/nhl/player/_/id/5048894",
+           "text": "Player Card",
+           "shortText": "Player Card",
+           "isExternal": false,
+           "isPremium": false
+          }
+         ],
+         "headshot": {
+          "href": "https://a.espncdn.com/i/headshots/nhl/players/full/5048894.png",
+          "alt": "Bobby McMann"
+         },
+         "jersey": "74",
+         "position": {
+          "$ref": "http://sports.core.api.espn.pvt/v2/sports/hockey/leagues/nhl/positions/1?lang=en&region=us",
+          "id": "1",
+          "name": "Center",
+          "displayName": "Center",
+          "abbreviation": "C",
+          "leaf": true,
+          "parent": {
+           "$ref": "http://sports.core.api.espn.pvt/v2/sports/hockey/leagues/nhl/positions/20?lang=en&region=us"
+          }
+         },
+         "active": true,
+         "scratched": false
+        },
+        "stats": [
+         "0",
+         "0",
+         "1",
+         "0",
+         "2:12",
+         "0:00",
+         "0:00",
+         "2:12",
+         "3",
+         "0",
+         "3",
+         "0",
+         "0",
+         "0",
+         "0",
+         "0",
+         "0",
+         "0.0",
+         "0",
+         "0",
+         "0"
+        ]
+       },
+       {
+        "athlete": {
+         "id": "4755729",
+         "uid": "s:70~l:90~a:4755729",
+         "guid": "6c6b3cf0-9e15-3408-b717-dbc7822c53a3",
+         "lastName": "Meyers",
+         "displayName": "Ben Meyers",
+         "shortName": "B. Meyers",
+         "links": [
+          {
+           "language": "en-US",
+           "rel": [
+            "playercard",
+            "desktop",
+            "athlete"
+           ],
+           "href": "https://www.espn.com/nhl/player/_/id/4755729",
+           "text": "Player Card",
+           "shortText": "Player Card",
+           "isExternal": false,
+           "isPremium": false
+          }
+         ],
+         "headshot": {
+          "href": "https://a.espncdn.com/i/headshots/nhl/players/full/4755729.png",
+          "alt": "Ben Meyers"
+         },
+         "jersey": "59",
+         "position": {
+          "$ref": "http://sports.core.api.espn.pvt/v2/sports/hockey/leagues/nhl/positions/1?lang=en&region=us",
+          "id": "1",
+          "name": "Center",
+          "displayName": "Center",
+          "abbreviation": "C",
+          "leaf": true,
+          "parent": {
+           "$ref": "http://sports.core.api.espn.pvt/v2/sports/hockey/leagues/nhl/positions/20?lang=en&region=us"
+          }
+         },
+         "active": true,
+         "scratched": false
+        },
+        "stats": [
+         "0",
+         "0",
+         "0",
+         "0",
+         "2:32",
+         "0:00",
+         "1:08",
+         "1:24",
+         "3",
+         "0",
+         "1",
+         "0",
+         "0",
+         "0",
+         "0",
+         "2",
+         "0",
+         "100.0",
+         "0",
+         "0",
+         "0"
+        ]
+       },
+       {
+        "athlete": {
+         "id": "5080217",
+         "uid": "s:70~l:90~a:5080217",
+         "guid": "f3e30427-9c61-32c8-9bac-2cd92f6aedc9",
+         "lastName": "Nyman",
+         "displayName": "Jani Nyman",
+         "shortName": "J. Nyman",
+         "links": [
+          {
+           "language": "en-US",
+           "rel": [
+            "playercard",
+            "desktop",
+            "athlete"
+           ],
+           "href": "https://www.espn.com/nhl/player/_/id/5080217",
+           "text": "Player Card",
+           "shortText": "Player Card",
+           "isExternal": false,
+           "isPremium": false
+          }
+         ],
+         "headshot": {
+          "href": "https://a.espncdn.com/i/headshots/nhl/players/full/5080217.png",
+          "alt": "Jani Nyman"
+         },
+         "jersey": "38",
+         "position": {
+          "$ref": "http://sports.core.api.espn.pvt/v2/sports/hockey/leagues/nhl/positions/3?lang=en&region=us",
+          "id": "3",
+          "name": "Right Wing",
+          "displayName": "Right Wing",
+          "abbreviation": "RW",
+          "leaf": true,
+          "parent": {
+           "$ref": "http://sports.core.api.espn.pvt/v2/sports/hockey/leagues/nhl/positions/20?lang=en&region=us"
+          }
+         },
+         "active": true,
+         "scratched": false
+        },
+        "stats": [
+         "0",
+         "1",
+         "0",
+         "0",
+         "2:05",
+         "0:00",
+         "0:00",
+         "2:05",
+         "2",
+         "0",
+         "0",
+         "0",
+         "1",
+         "0",
+         "0",
+         "0",
+         "0",
+         "0.0",
+         "0",
+         "0",
+         "0"
+        ]
+       },
+       {
+        "athlete": {
+         "id": "4874741",
+         "uid": "s:70~l:90~a:4874741",
+         "guid": "94412326-0d00-3db1-8dab-ac7cfcd2141d",
+         "lastName": "Samoskevich",
+         "displayName": "Mackie Samoskevich",
+         "shortName": "M. Samoskevich",
+         "links": [
+          {
+           "language": "en-US",
+           "rel": [
+            "playercard",
+            "desktop",
+            "athlete"
+           ],
+           "href": "https://www.espn.com/nhl/player/_/id/4874741",
+           "text": "Player Card",
+           "shortText": "Player Card",
+           "isExternal": false,
+           "isPremium": false
+          }
+         ],
+         "headshot": {
+          "href": "https://a.espncdn.com/i/headshots/nhl/players/full/4874741.png",
+          "alt": "Mackie Samoskevich"
+         },
+         "jersey": "11",
+         "position": {
+          "$ref": "http://sports.core.api.espn.pvt/v2/sports/hockey/leagues/nhl/positions/3?lang=en&region=us",
+          "id": "3",
+          "name": "Right Wing",
+          "displayName": "Right Wing",
+          "abbreviation": "RW",
+          "leaf": true,
+          "parent": {
+           "$ref": "http://sports.core.api.espn.pvt/v2/sports/hockey/leagues/nhl/positions/20?lang=en&region=us"
+          }
+         },
+         "active": true,
+         "scratched": false
+        },
+        "stats": [
+         "0",
+         "0",
+         "0",
+         "0",
+         "2:28",
+         "0:00",
+         "0:00",
+         "2:28",
+         "3",
+         "0",
+         "6",
+         "0",
+         "0",
+         "0",
+         "0",
+         "0",
+         "0",
+         "0.0",
+         "0",
+         "0",
+         "0"
+        ]
+       },
+       {
+        "athlete": {
+         "id": "3067858",
+         "uid": "s:70~l:90~a:3067858",
+         "guid": "add3c357-a1ab-f5bf-6632-9c0dd94ce1e9",
+         "lastName": "Stephenson",
+         "displayName": "Chandler Stephenson",
+         "shortName": "C. Stephenson",
+         "links": [
+          {
+           "language": "en-US",
+           "rel": [
+            "playercard",
+            "desktop",
+            "athlete"
+           ],
+           "href": "https://www.espn.com/nhl/player/_/id/3067858",
+           "text": "Player Card",
+           "shortText": "Player Card",
+           "isExternal": false,
+           "isPremium": false
+          }
+         ],
+         "headshot": {
+          "href": "https://a.espncdn.com/i/headshots/nhl/players/full/3067858.png",
+          "alt": "Chandler Stephenson"
+         },
+         "jersey": "9",
+         "position": {
+          "$ref": "http://sports.core.api.espn.pvt/v2/sports/hockey/leagues/nhl/positions/1?lang=en&region=us",
+          "id": "1",
+          "name": "Center",
+          "displayName": "Center",
+          "abbreviation": "C",
+          "leaf": true,
+          "parent": {
+           "$ref": "http://sports.core.api.espn.pvt/v2/sports/hockey/leagues/nhl/positions/20?lang=en&region=us"
+          }
+         },
+         "active": true,
+         "scratched": false
+        },
+        "stats": [
+         "0",
+         "0",
+         "0",
+         "-1",
+         "2:10",
+         "0:00",
+         "0:42",
+         "1:28",
+         "3",
+         "0",
+         "2",
+         "0",
+         "1",
+         "0",
+         "0",
+         "1",
+         "2",
+         "33.3",
+         "0",
+         "0",
+         "0"
+        ]
+       },
+       {
+        "athlete": {
+         "id": "4894928",
+         "uid": "s:70~l:90~a:4894928",
+         "guid": "9ba89e8d-0883-3437-9ab1-c52c79845c1d",
+         "lastName": "Winterton",
+         "displayName": "Ryan Winterton",
+         "shortName": "R. Winterton",
+         "links": [
+          {
+           "language": "en-US",
+           "rel": [
+            "playercard",
+            "desktop",
+            "athlete"
+           ],
+           "href": "https://www.espn.com/nhl/player/_/id/4894928",
+           "text": "Player Card",
+           "shortText": "Player Card",
+           "isExternal": false,
+           "isPremium": false
+          }
+         ],
+         "headshot": {
+          "href": "https://a.espncdn.com/i/headshots/nhl/players/full/4894928.png",
+          "alt": "Ryan Winterton"
+         },
+         "jersey": "26",
+         "position": {
+          "$ref": "http://sports.core.api.espn.pvt/v2/sports/hockey/leagues/nhl/positions/1?lang=en&region=us",
+          "id": "1",
+          "name": "Center",
+          "displayName": "Center",
+          "abbreviation": "C",
+          "leaf": true,
+          "parent": {
+           "$ref": "http://sports.core.api.espn.pvt/v2/sports/hockey/leagues/nhl/positions/20?lang=en&region=us"
+          }
+         },
+         "active": true,
+         "scratched": false
+        },
+        "stats": [
+         "1",
+         "0",
+         "0",
+         "0",
+         "2:20",
+         "0:00",
+         "0:42",
+         "1:38",
+         "3",
+         "0",
+         "2",
+         "0",
+         "0",
+         "1",
+         "0",
+         "0",
+         "0",
+         "0.0",
+         "0",
+         "0",
+         "0"
+        ]
+       },
+       {
+        "athlete": {
+         "id": "5149189",
+         "uid": "s:70~l:90~a:5149189",
+         "guid": "5bcf673e-5ede-3655-af3d-196e3849d690",
+         "lastName": "Wood",
+         "displayName": "Matthew Wood",
+         "shortName": "M. Wood",
+         "links": [
+          {
+           "language": "en-US",
+           "rel": [
+            "playercard",
+            "desktop",
+            "athlete"
+           ],
+           "href": "https://www.espn.com/nhl/player/_/id/5149189",
+           "text": "Player Card",
+           "shortText": "Player Card",
+           "isExternal": false,
+           "isPremium": false
+          }
+         ],
+         "headshot": {
+          "href": "https://a.espncdn.com/i/headshots/nhl/players/full/5149189.png",
+          "alt": "Matthew Wood"
+         },
+         "jersey": "71",
+         "position": {
+          "$ref": "http://sports.core.api.espn.pvt/v2/sports/hockey/leagues/nhl/positions/3?lang=en&region=us",
+          "id": "3",
+          "name": "Right Wing",
+          "displayName": "Right Wing",
+          "abbreviation": "RW",
+          "leaf": true,
+          "parent": {
+           "$ref": "http://sports.core.api.espn.pvt/v2/sports/hockey/leagues/nhl/positions/20?lang=en&region=us"
+          }
+         },
+         "active": true,
+         "scratched": false
+        },
+        "stats": [
+         "0",
+         "1",
+         "0",
+         "-1",
+         "1:49",
+         "0:00",
+         "0:00",
+         "1:49",
+         "2",
+         "0",
+         "1",
+         "0",
+         "0",
+         "0",
+         "0",
+         "0",
+         "0",
+         "0.0",
+         "0",
+         "0",
+         "0"
+        ]
+       }
+      ]
+     },
+     {
+      "name": "defenses",
+      "keys": [
+       "blockedShots",
+       "hits",
+       "takeaways",
+       "plusMinus",
+       "timeOnIce",
+       "powerPlayTimeOnIce",
+       "shortHandedTimeOnIce",
+       "evenStrengthTimeOnIce",
+       "shifts",
+       "goals",
+       "ytdGoals",
+       "assists",
+       "shotsTotal",
+       "shotsMissed",
+       "shootoutGoals",
+       "faceoffsWon",
+       "faceoffsLost",
+       "faceoffPercent",
+       "giveaways",
+       "penalties",
+       "penaltyMinutes"
+      ],
+      "labels": [
+       "BS",
+       "HT",
+       "TK",
+       "+/-",
+       "TOI",
+       "PPTOI",
+       "SHTOI",
+       "ESTOI",
+       "SHFT",
+       "G",
+       "YTDG",
+       "A",
+       "S",
+       "SM",
+       "SOG",
+       "FW",
+       "FL",
+       "FO%",
+       "GV",
+       "PN",
+       "PIM"
+      ],
+      "descriptions": [
+       "Total shots blocked.",
+       "Total hits.",
+       "Total takeaways.",
+       "Plus/Minus Rating",
+       "Total time on ice.",
+       "Total power play time on ice.",
+       "Total short handed time on ice.",
+       "Total even strength time on ice.",
+       "Total shifts.",
+       "Total goals scored.",
+       "Year to date goals/",
+       "Total goal assists.",
+       "Total shots.",
+       "Total missed shots.",
+       "Total shootout goals.",
+       "Total faceoffs won.",
+       "Total faceoffs lost.",
+       "Percentage of faceoffs won.",
+       "Total giveaways.",
+       "Total number of penalties.",
+       "Total penalty minutes."
+      ],
+      "athletes": [
+       {
+        "athlete": {
+         "id": "3904189",
+         "uid": "s:70~l:90~a:3904189",
+         "guid": "219fdf81-f01d-d2d5-14c5-3a0b8d409c0f",
+         "lastName": "Dunn",
+         "displayName": "Vince Dunn",
+         "shortName": "V. Dunn",
+         "links": [
+          {
+           "language": "en-US",
+           "rel": [
+            "playercard",
+            "desktop",
+            "athlete"
+           ],
+           "href": "https://www.espn.com/nhl/player/_/id/3904189",
+           "text": "Player Card",
+           "shortText": "Player Card",
+           "isExternal": false,
+           "isPremium": false
+          }
+         ],
+         "headshot": {
+          "href": "https://a.espncdn.com/i/headshots/nhl/players/full/3904189.png",
+          "alt": "Vince Dunn"
+         },
+         "jersey": "29",
+         "position": {
+          "$ref": "http://sports.core.api.espn.pvt/v2/sports/hockey/leagues/nhl/positions/4?lang=en&region=us",
+          "id": "4",
+          "name": "Defense",
+          "displayName": "Defense",
+          "abbreviation": "D",
+          "leaf": true,
+          "parent": {
+           "$ref": "http://sports.core.api.espn.pvt/v2/sports/hockey/leagues/nhl/positions/27?lang=en&region=us"
+          }
+         },
+         "active": true,
+         "scratched": false
+        },
+        "stats": [
+         "0",
+         "0",
+         "0",
+         "0",
+         "2:29",
+         "0:00",
+         "0:00",
+         "2:29",
+         "3",
+         "0",
+         "2",
+         "0",
+         "1",
+         "0",
+         "0",
+         "0",
+         "0",
+         "0.0",
+         "1",
+         "0",
+         "0"
+        ]
+       },
+       {
+        "athlete": {
+         "id": "4874864",
+         "uid": "s:70~l:90~a:4874864",
+         "guid": "83fdda95-e58b-3ca3-b626-ec2187a4fb7b",
+         "lastName": "Evans",
+         "displayName": "Ryker Evans",
+         "shortName": "R. Evans",
+         "links": [
+          {
+           "language": "en-US",
+           "rel": [
+            "playercard",
+            "desktop",
+            "athlete"
+           ],
+           "href": "https://www.espn.com/nhl/player/_/id/4874864",
+           "text": "Player Card",
+           "shortText": "Player Card",
+           "isExternal": false,
+           "isPremium": false
+          }
+         ],
+         "headshot": {
+          "href": "https://a.espncdn.com/i/headshots/nhl/players/full/4874864.png",
+          "alt": "Ryker Evans"
+         },
+         "jersey": "41",
+         "position": {
+          "$ref": "http://sports.core.api.espn.pvt/v2/sports/hockey/leagues/nhl/positions/4?lang=en&region=us",
+          "id": "4",
+          "name": "Defense",
+          "displayName": "Defense",
+          "abbreviation": "D",
+          "leaf": true,
+          "parent": {
+           "$ref": "http://sports.core.api.espn.pvt/v2/sports/hockey/leagues/nhl/positions/27?lang=en&region=us"
+          }
+         },
+         "active": true,
+         "scratched": false
+        },
+        "stats": [
+         "0",
+         "0",
+         "0",
+         "-1",
+         "3:49",
+         "0:00",
+         "0:42",
+         "3:07",
+         "4",
+         "0",
+         "3",
+         "0",
+         "0",
+         "0",
+         "0",
+         "0",
+         "0",
+         "0.0",
+         "0",
+         "0",
+         "0"
+        ]
+       },
+       {
+        "athlete": {
+         "id": "2562610",
+         "uid": "s:70~l:90~a:2562610",
+         "guid": "bfd64e42-3d55-a710-6f87-678c30acaa87",
+         "lastName": "Larsson",
+         "displayName": "Adam Larsson",
+         "shortName": "A. Larsson",
+         "links": [
+          {
+           "language": "en-US",
+           "rel": [
+            "playercard",
+            "desktop",
+            "athlete"
+           ],
+           "href": "https://www.espn.com/nhl/player/_/id/2562610",
+           "text": "Player Card",
+           "shortText": "Player Card",
+           "isExternal": false,
+           "isPremium": false
+          }
+         ],
+         "headshot": {
+          "href": "https://a.espncdn.com/i/headshots/nhl/players/full/2562610.png",
+          "alt": "Adam Larsson"
+         },
+         "jersey": "6",
+         "position": {
+          "$ref": "http://sports.core.api.espn.pvt/v2/sports/hockey/leagues/nhl/positions/4?lang=en&region=us",
+          "id": "4",
+          "name": "Defense",
+          "displayName": "Defense",
+          "abbreviation": "D",
+          "leaf": true,
+          "parent": {
+           "$ref": "http://sports.core.api.espn.pvt/v2/sports/hockey/leagues/nhl/positions/27?lang=en&region=us"
+          }
+         },
+         "active": true,
+         "scratched": false
+        },
+        "stats": [
+         "2",
+         "0",
+         "1",
+         "0",
+         "3:39",
+         "0:00",
+         "1:08",
+         "2:31",
+         "4",
+         "0",
+         "0",
+         "0",
+         "0",
+         "0",
+         "0",
+         "0",
+         "0",
+         "0.0",
+         "0",
+         "0",
+         "0"
+        ]
+       },
+       {
+        "athlete": {
+         "id": "4063504",
+         "uid": "s:70~l:90~a:4063504",
+         "guid": "977f6911-5668-0d84-194a-206ccfab3e0a",
+         "lastName": "Mahura",
+         "displayName": "Joshua Mahura",
+         "shortName": "J. Mahura",
+         "links": [
+          {
+           "language": "en-US",
+           "rel": [
+            "playercard",
+            "desktop",
+            "athlete"
+           ],
+           "href": "https://www.espn.com/nhl/player/_/id/4063504",
+           "text": "Player Card",
+           "shortText": "Player Card",
+           "isExternal": false,
+           "isPremium": false
+          }
+         ],
+         "headshot": {
+          "href": "https://a.espncdn.com/i/headshots/nhl/players/full/4063504.png",
+          "alt": "Joshua Mahura"
+         },
+         "jersey": "28",
+         "position": {
+          "$ref": "http://sports.core.api.espn.pvt/v2/sports/hockey/leagues/nhl/positions/4?lang=en&region=us",
+          "id": "4",
+          "name": "Defense",
+          "displayName": "Defense",
+          "abbreviation": "D",
+          "leaf": true,
+          "parent": {
+           "$ref": "http://sports.core.api.espn.pvt/v2/sports/hockey/leagues/nhl/positions/27?lang=en&region=us"
+          }
+         },
+         "active": true,
+         "scratched": false
+        },
+        "stats": [
+         "0",
+         "0",
+         "0",
+         "0",
+         "3:32",
+         "0:00",
+         "1:08",
+         "2:24",
+         "3",
+         "0",
+         "1",
+         "0",
+         "0",
+         "0",
+         "0",
+         "0",
+         "0",
+         "0.0",
+         "0",
+         "0",
+         "0"
+        ]
+       },
+       {
+        "athlete": {
+         "id": "3115032",
+         "uid": "s:70~l:90~a:3115032",
+         "guid": "d31e3f2a-ae1f-cd08-a5bb-2bbede93ea3b",
+         "lastName": "Montour",
+         "displayName": "Brandon Montour",
+         "shortName": "B. Montour",
+         "links": [
+          {
+           "language": "en-US",
+           "rel": [
+            "playercard",
+            "desktop",
+            "athlete"
+           ],
+           "href": "https://www.espn.com/nhl/player/_/id/3115032",
+           "text": "Player Card",
+           "shortText": "Player Card",
+           "isExternal": false,
+           "isPremium": false
+          }
+         ],
+         "headshot": {
+          "href": "https://a.espncdn.com/i/headshots/nhl/players/full/3115032.png",
+          "alt": "Brandon Montour"
+         },
+         "jersey": "62",
+         "position": {
+          "$ref": "http://sports.core.api.espn.pvt/v2/sports/hockey/leagues/nhl/positions/4?lang=en&region=us",
+          "id": "4",
+          "name": "Defense",
+          "displayName": "Defense",
+          "abbreviation": "D",
+          "leaf": true,
+          "parent": {
+           "$ref": "http://sports.core.api.espn.pvt/v2/sports/hockey/leagues/nhl/positions/27?lang=en&region=us"
+          }
+         },
+         "active": true,
+         "scratched": false
+        },
+        "stats": [
+         "0",
+         "0",
+         "0",
+         "-1",
+         "3:52",
+         "0:00",
+         "0:42",
+         "3:10",
+         "4",
+         "0",
+         "3",
+         "0",
+         "0",
+         "0",
+         "0",
+         "0",
+         "0",
+         "0.0",
+         "0",
+         "0",
+         "0"
+        ]
+       },
+       {
+        "athlete": {
+         "id": "5103811",
+         "uid": "s:70~l:90~a:5103811",
+         "guid": "1e9b2c34-804b-357d-a453-4d481bd24c57",
+         "lastName": "Ottavainen",
+         "displayName": "Ville Ottavainen",
+         "shortName": "V. Ottavainen",
+         "links": [
+          {
+           "language": "en-US",
+           "rel": [
+            "playercard",
+            "desktop",
+            "athlete"
+           ],
+           "href": "https://www.espn.com/nhl/player/_/id/5103811",
+           "text": "Player Card",
+           "shortText": "Player Card",
+           "isExternal": false,
+           "isPremium": false
+          }
+         ],
+         "headshot": {
+          "href": "https://a.espncdn.com/i/headshots/nhl/players/full/5103811.png",
+          "alt": "Ville Ottavainen"
+         },
+         "jersey": "46",
+         "position": {
+          "$ref": "http://sports.core.api.espn.pvt/v2/sports/hockey/leagues/nhl/positions/4?lang=en&region=us",
+          "id": "4",
+          "name": "Defense",
+          "displayName": "Defense",
+          "abbreviation": "D",
+          "leaf": true,
+          "parent": {
+           "$ref": "http://sports.core.api.espn.pvt/v2/sports/hockey/leagues/nhl/positions/27?lang=en&region=us"
+          }
+         },
+         "active": true,
+         "scratched": false
+        },
+        "stats": [
+         "0",
+         "2",
+         "0",
+         "0",
+         "2:28",
+         "0:00",
+         "0:00",
+         "2:28",
+         "2",
+         "0",
+         "1",
+         "0",
+         "1",
+         "0",
+         "0",
+         "0",
+         "0",
+         "0.0",
+         "0",
+         "0",
+         "0"
+        ]
+       }
+      ]
+     },
+     {
+      "name": "skaters",
+      "keys": [
+       "blockedShots",
+       "hits",
+       "takeaways",
+       "plusMinus",
+       "timeOnIce",
+       "powerPlayTimeOnIce",
+       "shortHandedTimeOnIce",
+       "evenStrengthTimeOnIce",
+       "shifts",
+       "goals",
+       "ytdGoals",
+       "assists",
+       "shotsTotal",
+       "shotsMissed",
+       "shootoutGoals",
+       "faceoffsWon",
+       "faceoffsLost",
+       "faceoffPercent",
+       "giveaways",
+       "penalties",
+       "penaltyMinutes"
+      ],
+      "labels": [
+       "BS",
+       "HT",
+       "TK",
+       "+/-",
+       "TOI",
+       "PPTOI",
+       "SHTOI",
+       "ESTOI",
+       "SHFT",
+       "G",
+       "YTDG",
+       "A",
+       "S",
+       "SM",
+       "SOG",
+       "FW",
+       "FL",
+       "FO%",
+       "GV",
+       "PN",
+       "PIM"
+      ],
+      "descriptions": [
+       "Total shots blocked.",
+       "Total hits.",
+       "Total takeaways.",
+       "Plus/Minus Rating",
+       "Total time on ice.",
+       "Total power play time on ice.",
+       "Total short handed time on ice.",
+       "Total even strength time on ice.",
+       "Total shifts.",
+       "Total goals scored.",
+       "Year to date goals/",
+       "Total goal assists.",
+       "Total shots.",
+       "Total missed shots.",
+       "Total shootout goals.",
+       "Total faceoffs won.",
+       "Total faceoffs lost.",
+       "Percentage of faceoffs won.",
+       "Total giveaways.",
+       "Total number of penalties.",
+       "Total penalty minutes."
+      ],
+      "athletes": []
+     },
+     {
+      "name": "goalies",
+      "keys": [
+       "goalsAgainst",
+       "shotsAgainst",
+       "shootoutSaves",
+       "shootoutShotsAgainst",
+       "saves",
+       "savePct",
+       "evenStrengthSaves",
+       "powerPlaySaves",
+       "shortHandedSaves",
+       "timeOnIce",
+       "ytdGoals",
+       "penaltyMinutes"
+      ],
+      "labels": [
+       "GA",
+       "SA",
+       "SOS",
+       "SOSA",
+       "SV",
+       "SV%",
+       "ESSV",
+       "PPSV",
+       "SHSV",
+       "TOI",
+       "YTDG",
+       "PIM"
+      ],
+      "descriptions": [
+       "Total goals against.",
+       "Total shots against.",
+       "Total shootout saves.",
+       "Total shootout shots against.",
+       "Total saves.",
+       "Percentage of shots saved.",
+       "Saves made at even strength.",
+       "Saves made while in a power play.",
+       "Saves made while shorthanded",
+       "Total time on ice.",
+       "Year to date goals/",
+       "Total penalty minutes."
+      ],
+      "athletes": [
+       {
+        "athlete": {
+         "id": "3942073",
+         "uid": "s:70~l:90~a:3942073",
+         "guid": "f7a9ef82-6840-9251-b4cc-73e0341cbc92",
+         "lastName": "Daccord",
+         "displayName": "Joey Daccord",
+         "shortName": "J. Daccord",
+         "links": [
+          {
+           "language": "en-US",
+           "rel": [
+            "playercard",
+            "desktop",
+            "athlete"
+           ],
+           "href": "https://www.espn.com/nhl/player/_/id/3942073",
+           "text": "Player Card",
+           "shortText": "Player Card",
+           "isExternal": false,
+           "isPremium": false
+          }
+         ],
+         "headshot": {
+          "href": "https://a.espncdn.com/i/headshots/nhl/players/full/3942073.png",
+          "alt": "Joey Daccord"
+         },
+         "jersey": "35",
+         "position": {
+          "$ref": "http://sports.core.api.espn.pvt/v2/sports/hockey/leagues/nhl/positions/5?lang=en&region=us",
+          "id": "5",
+          "name": "Goaltender",
+          "displayName": "Goaltender",
+          "abbreviation": "G",
+          "leaf": false
+         },
+         "active": true,
+         "scratched": false
+        },
+        "stats": [
+         "2",
+         "8",
+         "0",
+         "0",
+         "6",
+         ".750",
+         "6",
+         "0",
+         "0",
+         "9:54",
+         "0",
+         "0"
+        ]
+       }
+      ]
+     }
+    ],
+    "displayOrder": 2
+   }
+  ]
+ },
+ "gameInfo": {
+  "venue": {
+   "id": "7224",
+   "fullName": "Climate Pledge Arena",
+   "address": {
+    "city": "Seattle",
+    "state": "WA",
+    "country": "USA"
+   },
+   "grass": false,
+   "images": [
+    {
+     "href": "https://a.espncdn.com/i/venues/nhl/day/7224.jpg",
+     "width": 2000,
+     "height": 1125,
+     "alt": "",
+     "rel": [
+      "full",
+      "day"
+     ]
+    }
+   ]
+  },
+  "officials": [
+   {
+    "fullName": "Ryan Gibbons",
+    "displayName": "Ryan Gibbons",
+    "position": {
+     "name": "Linesman",
+     "displayName": "Linesman",
+     "id": "25"
+    },
+    "order": 0
+   },
+   {
+    "fullName": "Scott Cherrey",
+    "displayName": "Scott Cherrey",
+    "position": {
+     "name": "Linesman",
+     "displayName": "Linesman",
+     "id": "25"
+    },
+    "order": 0
+   },
+   {
+    "fullName": "Cody Beach",
+    "displayName": "Cody Beach",
+    "position": {
+     "name": "Referee",
+     "displayName": "Referee",
+     "id": "24"
+    },
+    "order": 0
+   },
+   {
+    "fullName": "Chris Rooney",
+    "displayName": "Chris Rooney",
+    "position": {
+     "name": "Referee",
+     "displayName": "Referee",
+     "id": "24"
+    },
+    "order": 0
+   }
+  ]
+ },
+ "onIce": [
+  {
+   "entries": [
+    {
+     "whereabouts": {
+      "id": "1",
+      "description": "In Play",
+      "name": "ROSTER_WHEREABOUTS_IN_PLAY"
+     },
+     "projections": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/hockey/leagues/nhl/events/401892664/competitions/401892664/competitors/124292/roster/3942073/projections?lang=en&region=us"
+     },
+     "athleteid": "3942073"
+    },
+    {
+     "whereabouts": {
+      "id": "1",
+      "description": "In Play",
+      "name": "ROSTER_WHEREABOUTS_IN_PLAY"
+     },
+     "projections": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/hockey/leagues/nhl/events/401892664/competitions/401892664/competitors/124292/roster/4063504/projections?lang=en&region=us"
+     },
+     "athleteid": "4063504"
+    },
+    {
+     "whereabouts": {
+      "id": "1",
+      "description": "In Play",
+      "name": "ROSTER_WHEREABOUTS_IN_PLAY"
+     },
+     "projections": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/hockey/leagues/nhl/events/401892664/competitions/401892664/competitors/124292/roster/4565223/projections?lang=en&region=us"
+     },
+     "athleteid": "4565223"
+    },
+    {
+     "whereabouts": {
+      "id": "1",
+      "description": "In Play",
+      "name": "ROSTER_WHEREABOUTS_IN_PLAY"
+     },
+     "projections": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/hockey/leagues/nhl/events/401892664/competitions/401892664/competitors/124292/roster/4874741/projections?lang=en&region=us"
+     },
+     "athleteid": "4874741"
+    },
+    {
+     "whereabouts": {
+      "id": "1",
+      "description": "In Play",
+      "name": "ROSTER_WHEREABOUTS_IN_PLAY"
+     },
+     "projections": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/hockey/leagues/nhl/events/401892664/competitions/401892664/competitors/124292/roster/5103811/projections?lang=en&region=us"
+     },
+     "athleteid": "5103811"
+    },
+    {
+     "whereabouts": {
+      "id": "1",
+      "description": "In Play",
+      "name": "ROSTER_WHEREABOUTS_IN_PLAY"
+     },
+     "projections": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/hockey/leagues/nhl/events/401892664/competitions/401892664/competitors/124292/roster/5216877/projections?lang=en&region=us"
+     },
+     "athleteid": "5216877"
+    }
+   ],
+   "teamId": "124292"
+  },
+  {
+   "entries": [
+    {
+     "whereabouts": {
+      "id": "1",
+      "description": "In Play",
+      "name": "ROSTER_WHEREABOUTS_IN_PLAY"
+     },
+     "projections": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/hockey/leagues/nhl/events/401892664/competitions/401892664/competitors/13/roster/2562637/projections?lang=en&region=us"
+     },
+     "athleteid": "2562637"
+    },
+    {
+     "whereabouts": {
+      "id": "1",
+      "description": "In Play",
+      "name": "ROSTER_WHEREABOUTS_IN_PLAY"
+     },
+     "projections": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/hockey/leagues/nhl/events/401892664/competitions/401892664/competitors/13/roster/3069266/projections?lang=en&region=us"
+     },
+     "athleteid": "3069266"
+    },
+    {
+     "whereabouts": {
+      "id": "1",
+      "description": "In Play",
+      "name": "ROSTER_WHEREABOUTS_IN_PLAY"
+     },
+     "projections": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/hockey/leagues/nhl/events/401892664/competitions/401892664/competitors/13/roster/3942292/projections?lang=en&region=us"
+     },
+     "athleteid": "3942292"
+    },
+    {
+     "whereabouts": {
+      "id": "1",
+      "description": "In Play",
+      "name": "ROSTER_WHEREABOUTS_IN_PLAY"
+     },
+     "projections": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/hockey/leagues/nhl/events/401892664/competitions/401892664/competitors/13/roster/4697382/projections?lang=en&region=us"
+     },
+     "athleteid": "4697382"
+    },
+    {
+     "whereabouts": {
+      "id": "1",
+      "description": "In Play",
+      "name": "ROSTER_WHEREABOUTS_IN_PLAY"
+     },
+     "projections": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/hockey/leagues/nhl/events/401892664/competitions/401892664/competitors/13/roster/4874882/projections?lang=en&region=us"
+     },
+     "athleteid": "4874882"
+    },
+    {
+     "whereabouts": {
+      "id": "1",
+      "description": "In Play",
+      "name": "ROSTER_WHEREABOUTS_IN_PLAY"
+     },
+     "projections": {
+      "$ref": "http://sports.core.api.espn.pvt/v2/sports/hockey/leagues/nhl/events/401892664/competitions/401892664/competitors/13/roster/5149204/projections?lang=en&region=us"
+     },
+     "athleteid": "5149204"
+    }
+   ],
+   "teamId": "13"
+  }
+ ]
+}

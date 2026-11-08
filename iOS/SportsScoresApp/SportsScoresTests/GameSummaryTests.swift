@@ -541,7 +541,7 @@ final class GameDetailReloadTests: XCTestCase {
 
     /// Runs a load until its request has gone out, then gives back the unfinished load.
     private func startLoading(_ viewModel: GameDetailViewModel) async throws -> Task<Void, Never> {
-        let task = Task { await viewModel.loadDetails() }
+        let task = Task { _ = await viewModel.loadDetails() }
         for _ in 0..<500 where StubESPN.requests.isEmpty {
             try await Task.sleep(nanoseconds: 10_000_000)
         }
@@ -589,11 +589,13 @@ final class GameDetailReloadTests: XCTestCase {
         let viewModel = screen()
         let body = try summary()
         StubESPN.answer { _ in .body(body) }
-        await viewModel.loadDetails()
+        let first = await viewModel.loadDetails()
+        XCTAssertTrue(first, "a load that worked says so, for a refresh asked out loud")
 
         for failure in [StubESPN.Reply.status(500), StubESPN.Reply.failure(URLError(.notConnectedToInternet))] {
             StubESPN.answer { _ in failure }
-            await viewModel.loadDetails()
+            let loaded = await viewModel.loadDetails()
+            XCTAssertFalse(loaded, "a failed refresh says so, so the screen can")
             XCTAssertNotNil(viewModel.gameDetails)
             XCTAssertNil(viewModel.errorMessage)
             XCTAssertFalse(viewModel.isLoading)

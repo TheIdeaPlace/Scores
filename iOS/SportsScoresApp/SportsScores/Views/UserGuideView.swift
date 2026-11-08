@@ -74,7 +74,8 @@ struct UserGuideView: View {
                     Text("Select any game row to open its detail screen. The header shows both teams, the current score or start time, and the venue. Four tabs are available:")
                     BulletPoint("**Box Score** — one tab per team and stat group, then the team comparison. Tables have a Totals row wherever ESPN sends one. Before a game, the team table holds season stats and says so")
                     BulletPoint("**Plays / Drives** — pitch-by-pitch (baseball), play-by-play (basketball, hockey), or drive chart (football)")
-                    BulletPoint("**Info** — leaders, injuries, officials, venue, related news")
+                    BulletPoint("**Info** — leaders, injuries, officials, venue, related news. Pull down on it for the latest")
+                    BulletPoint("**On the Ice** — while an NHL game is being played, the Info tab starts with each team's players on the ice: a heading per team, then its forwards, defense and goalie, each with a jersey number and position. Fewer than six usually means a penalty or a pulled goalie. The **Update** button at the end gets the latest and says when it has. Not shown before or after a game, in an intermission, or for college hockey")
                     BulletPoint("**More** — win probability and season series; MLB only")
 
                     Text("**MLB game header extras:**")
@@ -93,6 +94,17 @@ struct UserGuideView: View {
                     BulletPoint("Team Hub has a radio button in the top-right corner")
                     BulletPoint("**Game Radio** in The Bench lists every team and its station")
                     Text("Each place opens in Safari, or in the service's app if you have it. Sign in or subscribe there if it asks; the app doesn't play the audio itself.")
+                }
+
+                // MARK: Monitoring Games
+                GuideSection(icon: "eye", title: "Monitoring Games", color: .blue) {
+                    Text("Live Scores starts with a **Monitoring** section, for the games you want to keep up with.")
+                    BulletPoint("On a game in Live Scores, use the **Monitor** VoiceOver action (swipe up or down), or press and hold the game and choose Monitor. The game stays in its own section, which says it's monitored, and a copy appears under Monitoring with its sport at the end")
+                    BulletPoint("Monitoring rows are in the order you added them, and opening one opens the game as anywhere else")
+                    BulletPoint("A sport's own scores page has **Monitor** too, for today's games. The game is added to Live Scores' Monitoring section, the only place it shows. Only today's games can be monitored, since Live Scores shows today")
+                    BulletPoint("To stop, use **Stop Monitoring** on the game, in either place. On a Monitoring row, VoiceOver moves to the next game there, or to the section's heading if there's none after it")
+                    BulletPoint("Monitor is in the Quick List and Full List views, not Table view")
+                    Text("Monitoring lasts until the app quits, wherever you go in the meantime. The app doesn't read out score changes: the Monitoring section is where to find them.")
                 }
 
                 // MARK: Golf
