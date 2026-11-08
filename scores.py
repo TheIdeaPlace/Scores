@@ -55,7 +55,7 @@ except ImportError:
 
 # New separated modules
 from exceptions import ApiError, DataModelError, plain_message
-from espn_api import (NCAAF_CONFERENCE_ORDER, TEAMS_UNAVAILABLE, league_sport, live_scores_failure_text,
+from espn_api import (NCAAF_CONFERENCE_ORDER, SCHEDULE_UNAVAILABLE, TEAMS_UNAVAILABLE, league_sport, live_scores_failure_text,
                       standings_cache_key, stop_core_lookups, with_failed_leagues_kept)
 import stat_glossary
 from services.api_service import ApiService
@@ -65,6 +65,7 @@ from models.news import NewsData
 import favorite_card
 import live_play_format
 import on_ice
+import racing
 import radio_links
 from popup_menu import exec_menu as _exec_menu
 from models.standings import StandingsData
@@ -826,6 +827,14 @@ class HomeView(BaseView):
                 self.parent_app.check_for_updates(manual=True)
             return
 
+        if user_data == "__racing__":
+            if self.parent_app:
+                self.parent_app.update_window_title(["Racing"])
+            RacingHubDialog(self).exec()
+            if self.parent_app:
+                self.parent_app.update_window_title()
+            return
+
         # Golf tours open a dedicated tournament dialog instead of a standard league view
         if league in ("PGA", "LPGA"):
             tour_name = "PGA Tour" if league == "PGA" else "LPGA Tour"
@@ -928,6 +937,10 @@ class HomeView(BaseView):
 
         Called from both setup_ui and refresh so the two paths cannot drift.
         """
+        racing_item = QListWidgetItem("Racing - F1, IndyCar, NASCAR")
+        racing_item.setData(Qt.ItemDataRole.UserRole, "__racing__")
+        self.league_list.addItem(racing_item)
+
         footer_sep = QListWidgetItem("─" * 30)
         footer_sep.setFlags(Qt.ItemFlag.NoItemFlags)
         self.league_list.addItem(footer_sep)
@@ -11146,6 +11159,394 @@ class GolfTournamentDialog(QDialog):
                 self._load_leaderboard()
             if self.schedule_list in failed:
                 self._load_schedule()
+        else:
+            super().keyPressEvent(event)
+
+
+# ─────────────────────────── Racing ──────────────────────────────────────────
+# Formula 1, IndyCar and NASCAR Cup, reached from Racing on the home list. racing.py reads
+# ESPN's answers; these only show them.
+
+class RacingTable(AccessibleTable):
+    """A racing table. The column saying whose row it is, the driver, team, session or race, is
+    repeated on every other cell: "Lando Norris, Nationality, Britain"."""
+
+    def __init__(self, name: str, description: str, context_column: int, parent=None):
+        super().__init__(parent=parent, accessible_name=name, accessible_description=description)
+        self.ROW_CONTEXT_COLUMN = context_column
+
+    def start_at(self, row: int, column: int = 0) -> None:
+        """Every view on the row, so switching views doesn't move back to the top."""
+        if not 0 <= row < self.table_widget.rowCount():
+            return
+        self.table_widget.setCurrentCell(row, min(column, self.table_widget.columnCount() - 1))
+        self.quick_list.setCurrentRow(row)
+        self.full_list.setCurrentRow(row)
+
+
+class _RacingPage(QWidget):
+    """One tab of a racing series: a row saying it's loading, failed or has nothing, or what it
+    shows once there's something. Only one of them is ever a child, so the tab keys, which look
+    for a table on the page, never land on a table that isn't on show."""
+
+    def __init__(self, name: str, retry, parent=None):
+        super().__init__(parent)
+        self.name = name
+        self._retry = retry
+        self.tab_area = None  # set once the page is in its dialog's tabs
+        self._layout = QVBoxLayout(self)
+        self._layout.setContentsMargins(0, 0, 0, 0)
+        self.content = None
+        self.has_data = False
+        self.show_message("Loading…")
+
+    def _set_content(self, widget, has_data: bool):
+        old = self.content
+        focused = QApplication.focusWidget()
+        had_focus = old is not None and focused is not None and (focused is old or old.isAncestorOf(focused))
+        self.content = widget
+        self.has_data = has_data
+        self._layout.addWidget(widget)
+        if self.tab_area is not None:
+            # Right after the tabs, not after Close, where a widget added later would sit.
+            keep_in_tab_order(self.tab_area, widget)
+        # The new one takes focus before the old one goes. Removing a widget with focus in it sends
+        # focus on to the next control, Close, and a screen reader would say so first.
+        if had_focus:
+            widget.show()
+            widget.setFocus()
+        if old is not None:
+            self._layout.removeWidget(old)
+            old.setParent(None)
+            old.deleteLater()
+
+    def show_message(self, text: str, failed: bool = False):
+        """A row, since a label can't take focus. A failed load's row tries again on Enter."""
+        row = _message_row(text, self.name)
+        if failed:
+            row.clear()
+            row.addItem(_failure_row(text))
+            row.setCurrentRow(0)
+            row.itemActivated.connect(self._activated)
+        self._set_content(row, has_data=False)
+
+    def _activated(self, item):
+        if item is not None and item.data(Qt.ItemDataRole.UserRole) == RETRY_ROW:
+            self.show_message("Loading…")
+            self._retry()
+
+    def show_table(self, headers, rows, context_column: int, name: str, description: str = "",
+                   start_row: int = 0):
+        """A refresh of the same table keeps the row and column someone was on; a new one starts
+        on `start_row`."""
+        old = self.content
+        same = isinstance(old, RacingTable) and old._headers == list(headers)
+        table = RacingTable(name, description, context_column)
+        table.setup_columns(headers, stretch_column=context_column)
+        table.populate_data(rows, set_focus=False)
+        if same:
+            table.start_at(min(old._get_current_row(), len(rows) - 1),
+                           max(0, old.table_widget.currentColumn()))
+        elif start_row:
+            table.start_at(start_row)
+        self._set_content(table, has_data=True)
+
+    def show_widget(self, widget):
+        self._set_content(widget, has_data=True)
+
+    def focus(self):
+        if self.content is not None:
+            self.content.setFocus()
+
+
+class RacingHubDialog(QDialog):
+    """Racing on the home list: Formula 1, IndyCar and NASCAR Cup. The iPhone's RacingHubView."""
+
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setWindowTitle("Racing - Sports Scores")
+        self.resize(500, 300)
+        layout = QVBoxLayout(self)
+        layout.addWidget(QLabel("Choose a series:"))
+        self.series_list = QListWidget()
+        self.series_list.setAccessibleName("Racing series")
+        self.series_list.setAccessibleDescription("Press Enter to open a series.")
+        for key in racing.RACING_SERIES:
+            item = QListWidgetItem(racing.series_name(key))
+            item.setData(Qt.ItemDataRole.UserRole, key)
+            self.series_list.addItem(item)
+        self.series_list.setCurrentRow(0)
+        self.series_list.itemActivated.connect(self._open_series)
+        layout.addWidget(self.series_list)
+        btn_row = QHBoxLayout()
+        btn_row.addStretch()
+        close_btn = QPushButton("&Close")
+        close_btn.setAutoDefault(False)  # Enter on a series mustn't also close the hub
+        close_btn.clicked.connect(self.accept)
+        btn_row.addWidget(close_btn)
+        layout.addLayout(btn_row)
+        _focus_once_active(self, self.series_list.setFocus)
+
+    def _open_series(self, item):
+        key = item.data(Qt.ItemDataRole.UserRole) if item is not None else None
+        if key in racing.RACING_SERIES:
+            RacingSeriesDialog(key, self).exec()
+            self.series_list.setFocus()
+
+
+class RacingSeriesDialog(QDialog):
+    """One racing series: the race weekend on now or next, its sessions (Formula 1), the season's
+    races and who won them, the standings, and news. F5 or Refresh loads it all again."""
+
+    def __init__(self, series: str, parent=None):
+        super().__init__(parent)
+        self.series = series
+        self.series_name = racing.series_name(series)
+        self.setWindowTitle(f"{self.series_name} - Racing - Sports Scores")
+        self.resize(DIALOG_WIDTH, DIALOG_HEIGHT)
+        self._season = None
+        self._said_refresh_failed = False
+        self._latest = {}
+        self._setup_ui()
+        self._load_all()
+        _focus_once_active(self, self._focus_current_page)
+
+    def _setup_ui(self):
+        layout = QVBoxLayout(self)
+        header = QLabel(racing.series_full_name(self.series))
+        font = header.font()
+        font.setBold(True)
+        header.setFont(font)
+        layout.addWidget(header)
+        self.race_label = QLabel("Loading the race…")
+        self.race_label.setWordWrap(True)
+        layout.addWidget(self.race_label)
+
+        self.race_page = _RacingPage("Race", self._load_event)
+        self.sessions_page = _RacingPage("Sessions", self._load_event) if racing.has_sessions(self.series) else None
+        self.schedule_page = _RacingPage("Schedule", self._retry_schedule)
+        if racing.has_constructors(self.series):
+            self.drivers_page = _RacingPage("Driver Standings", self._load_standings)
+            self.constructors_page = _RacingPage("Constructor Standings", self._load_standings)
+            standings = [(self.drivers_page, "Drivers"), (self.constructors_page, "Constructors")]
+        else:
+            self.drivers_page = _RacingPage("Standings", self._load_standings)
+            self.constructors_page = None
+            standings = [(self.drivers_page, "Standings")]
+        self.news_page = _RacingPage(f"{self.series_name} News", self._load_news)
+
+        pages = [(self.race_page, "Race")]
+        if self.sessions_page:
+            pages.append((self.sessions_page, "Sessions"))
+        pages += [(self.schedule_page, "Schedule")] + standings + [(self.news_page, "News")]
+        self.tab_widget = make_tab_area(len(pages), f"{self.series_name} sections")
+        for page, label in pages:
+            self.tab_widget.addTab(page, label)
+            page.tab_area = self.tab_widget
+        layout.addWidget(self.tab_widget)
+
+        btn_row = QHBoxLayout()
+        btn_row.addStretch()
+        refresh_btn = QPushButton("&Refresh")
+        refresh_btn.setToolTip("F5")
+        refresh_btn.setAutoDefault(False)  # Enter in a table or list mustn't press it
+        refresh_btn.clicked.connect(self._load_all)
+        btn_row.addWidget(refresh_btn)
+        close_btn = QPushButton("&Close")
+        close_btn.setAutoDefault(False)
+        close_btn.clicked.connect(self.accept)
+        btn_row.addWidget(close_btn)
+        layout.addLayout(btn_row)
+
+    def _focus_current_page(self):
+        page = self.tab_widget.currentWidget()
+        if isinstance(page, _RacingPage):
+            page.focus()
+
+    def _pages(self):
+        return [p for p in (self.race_page, self.sessions_page, self.schedule_page, self.drivers_page,
+                            self.constructors_page, self.news_page) if p is not None]
+
+    # ── loading ──
+
+    def _load_all(self):
+        self._said_refresh_failed = False
+        self._load_event()
+        self._load_standings()
+        self._load_news()
+
+    def _start(self, kind, fn, loaded, failed):
+        """Only the latest request of each kind is shown: F5 twice, or a retry while a refresh is
+        out, could otherwise have an older answer land last."""
+        loader = CallLoader(fn)
+        self._latest[kind] = loader
+        loader.data_loaded.connect(partial(self._deliver, loader, kind, loaded))
+        loader.error_occurred.connect(partial(self._deliver, loader, kind, failed))
+        _start_detached_thread(loader)
+
+    def _deliver(self, loader, kind, slot, value):
+        if self._latest.get(kind) is loader:
+            slot(value)
+
+    def _load_event(self):
+        series = self.series
+        self._start("event", lambda: ApiService.get_race_event(series),
+                    self._on_event_loaded, self._on_event_failed)
+
+    def _load_schedule(self):
+        series, season = self.series, self._season
+        self._start("schedule", lambda: ApiService.get_racing_schedule(series, season),
+                    self._on_schedule_loaded, self._on_schedule_failed)
+
+    def _retry_schedule(self):
+        """The schedule asks for the season the race's request said, so without one it asks again."""
+        if self._season:
+            self._load_schedule()
+        else:
+            self._load_event()
+
+    def _load_standings(self):
+        series = self.series
+        self._start("standings", lambda: ApiService.get_racing_standings(series),
+                    self._on_standings_loaded, self._on_standings_failed)
+
+    def _load_news(self):
+        series = self.series
+        self._start("news", lambda: ApiService.get_news(series, 25), self._on_news_loaded, self._on_news_failed)
+
+    def _failed(self, page, message: str):
+        """What's on show stays when a refresh fails, and that's said once for the refresh, unless
+        the dialog has closed since. With nothing on show, the page says so, and Enter tries again."""
+        if page is None:
+            return
+        if page.has_data:
+            if not self._said_refresh_failed and self.isVisible():
+                self._said_refresh_failed = True
+                announce(message)
+        else:
+            page.show_message(message, failed=True)
+
+    # ── the race and its sessions ──
+
+    def _on_event_loaded(self, answer):
+        answer = answer if isinstance(answer, dict) else {}
+        event = answer.get("event")
+        self._season = answer.get("season")
+        if self._season:
+            self._load_schedule()
+        else:
+            self.schedule_page.show_message(f"No {self.series_name} schedule right now.")
+        if not event:
+            text = f"No {self.series_name} race scheduled. Check back during the season."
+            self.race_label.setText(text)
+            self.race_page.show_message(text)
+            if self.sessions_page:
+                self.sessions_page.show_message(text)
+            return
+        summary = racing.race_summary(event)
+        self.race_label.setText(summary)
+        rows = racing.race_rows(event)
+        if rows:
+            kind = event["kind"]
+            # The summary is in the name, which every screen reader says on arriving: JAWS may
+            # not read a table's description, and the label above can't take focus.
+            self.race_page.show_table(
+                racing.race_headers(event), rows,
+                context_column=0 if kind == racing.ENTRY_LIST else 1,
+                name=f"{kind}: {summary}")
+        elif event.get("state") == "pre":
+            self.race_page.show_message(f"{summary} The entry list isn't out yet.")
+        else:
+            self.race_page.show_message(summary)
+        if self.sessions_page:
+            sessions = event.get("sessions") or []
+            if sessions:
+                self.sessions_page.show_table(
+                    racing.SESSION_HEADERS, racing.session_rows(event), context_column=0,
+                    name=f"{event['name']} sessions",
+                    description="Each session's start in your time zone, and how it stands.",
+                    start_row=racing.current_row(sessions))
+            else:
+                self.sessions_page.show_message(f"No sessions listed for {event['name']}.")
+
+    def _on_event_failed(self, message: str):
+        if not self.race_page.has_data:
+            self.race_label.setText(message)
+        self._failed(self.race_page, message)
+        self._failed(self.sessions_page, message)
+        # The schedule asks for the season this request says; it hasn't been asked for at all.
+        self._failed(self.schedule_page, SCHEDULE_UNAVAILABLE)
+
+    # ── the season ──
+
+    def _on_schedule_loaded(self, races):
+        races = races if isinstance(races, list) else []
+        if not races:
+            self.schedule_page.show_message(f"No {self.series_name} races listed for {self._season}.")
+            return
+        self.schedule_page.show_table(
+            racing.schedule_headers(races), racing.schedule_rows(races), context_column=0,
+            name=f"{self._season} {self.series_name} schedule",
+            description="Every race of the season, and who won the ones that have been run.",
+            start_row=racing.current_row(races))
+
+    def _on_schedule_failed(self, message: str):
+        self._failed(self.schedule_page, message)
+
+    # ── standings ──
+
+    def _on_standings_loaded(self, groups):
+        groups = groups if isinstance(groups, list) else []
+        drivers = next((g for g in groups if not g.get("constructors")), None)
+        constructors = next((g for g in groups if g.get("constructors")), None)
+        for page, group in ((self.drivers_page, drivers), (self.constructors_page, constructors)):
+            if page is None:
+                continue
+            if not group:
+                page.show_message(f"No {self.series_name} {page.name.lower()} yet.")
+                continue
+            page.show_table(racing.standings_headers(group), racing.standings_rows(group),
+                            context_column=1, name=f"{self.series_name} {page.name}",
+                            description=group.get("name", ""))
+
+    def _on_standings_failed(self, message: str):
+        self._failed(self.drivers_page, message)
+        self._failed(self.constructors_page, message)
+
+    # ── news ──
+
+    def _on_news_loaded(self, news):
+        news = news if isinstance(news, list) else []
+        if not news:
+            self.news_page.show_message(f"No {self.series_name} news right now.")
+            return
+        news_list = QListWidget()
+        news_list.setAccessibleName(f"{self.series_name} News")
+        news_list.setAccessibleDescription("Press Enter to open a story in your browser.")
+        for article in news:
+            item = QListWidgetItem(article.get("headline") or "No headline")
+            item.setData(Qt.ItemDataRole.UserRole, article)
+            news_list.addItem(item)
+        news_list.setCurrentRow(0)
+        news_list.itemActivated.connect(self._open_story)
+        self.news_page.show_widget(news_list)
+
+    def _on_news_failed(self, message: str):
+        self._failed(self.news_page, message)
+
+    def _open_story(self, item):
+        article = item.data(Qt.ItemDataRole.UserRole) if item is not None else None
+        url = article.get("web_url", "") if isinstance(article, dict) else ""
+        if url.startswith(("http://", "https://")):
+            webbrowser.open(url)
+        else:
+            announce("This story has no web link.")
+
+    def keyPressEvent(self, event):
+        if event.key() == Qt.Key.Key_Escape:
+            self.accept()
+        elif event.key() == Qt.Key.Key_F5:
+            self._load_all()
         else:
             super().keyPressEvent(event)
 

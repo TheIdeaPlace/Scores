@@ -60,6 +60,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   round (first-round games included, which ESPN marks as ordinary games), then the bowls by date. Each
   game reads its name first, then the teams and the kickoff or score, and opens its details; the round
   headings are VoiceOver headings. Before ESPN lists any postseason games, the screen says so. (#197)
+- **Windows: racing.** Formula 1, the IndyCar Series and the NASCAR Cup Series, from the same ESPN feeds
+  the iPhone reads. **Racing - F1, IndyCar, NASCAR** on the home screen lists the three; each opens with
+  tabs for the race weekend on now or next (the entry list, running order or results), Formula 1's
+  sessions with their start times, the season's schedule with every winner, the drivers' standings
+  (and Formula 1's constructors'), and news. Every table has the three views, and a request ESPN doesn't
+  answer says so, with Enter to try again. The nightly data check covers all four requests. (Part of #195)
 - **iPhone: a Monitoring section at the top of Live Scores, as on Windows.** A **Monitor** VoiceOver action
   (and context menu item) on a game in Live Scores adds it. Its row under Monitoring reads as it does below,
   with the sport after it, and the game stays in its own section, which says it's monitored. Rows are in the
@@ -90,6 +96,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   same cases (#191).
 
 ### Fixed
+- **iPhone: Formula 1's race loads during a race weekend.** Until the race started, ESPN lists its field
+  with no finishing order, which failed the whole request, so Racing said it couldn't load the race. It
+  also showed the first practice session's date and the weekend's own status, which can say Final the
+  day before the race. It now shows the race itself: its start time (read as the UTC time it is), its
+  status, and before it starts, the entry list without positions. A canceled race says Canceled rather
+  than Final, and nobody is named the winner of a race still being run.
 - **Statistic definitions come from ESPN on both apps, and each is the right one.** On the iPhone, the
   definition on the MLB Strikeouts leaders was the batter's ("the number of times a player strikes out")
   on a list of pitchers, and the NFL's interception leaders had the definition of interceptions thrown.

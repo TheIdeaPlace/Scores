@@ -1842,22 +1842,36 @@ class ESPNAPIService {
         let api = try JSONDecoder().decode(RacingScoreboardResponse.self, from: data)
         guard let eventAPI = api.events.first else { return nil }
 
-        let competition = eventAPI.competitions.first
-        let broadcasts = competition?.broadcasts?.flatMap(\.names) ?? []
-        let competitors = (competition?.competitors ?? [])
-            .sorted { $0.order < $1.order }
-            .map { c -> RaceCompetitor in
-                RaceCompetitor(
+        // The race itself: Formula 1's first competition is Practice 1, and its event's status
+        // can say Final the day before the race. racing.py picks the same one.
+        let competition = eventAPI.competitions.first { $0.type?.abbreviation == "Race" }
+            ?? eventAPI.competitions.last
+        let status = competition?.status?.type ?? eventAPI.status.type
+        let canceled = status.state == "post" && !status.completed
+
+        var broadcasts: [String] = []
+        for name in competition?.broadcasts?.flatMap(\.names) ?? [] where !broadcasts.contains(name) {
+            broadcasts.append(name)
+        }
+
+        // By order, anyone without one after in ESPN's order. Before the race there's no order at
+        // all, and the field is an entry list with no positions.
+        let competitors: [RaceCompetitor] = canceled ? [] : (competition?.competitors ?? [])
+            .enumerated()
+            .sorted { ($0.element.order ?? Int.max, $0.offset) < ($1.element.order ?? Int.max, $1.offset) }
+            .map { pair -> RaceCompetitor in
+                let c = pair.element
+                return RaceCompetitor(
                     id: c.id,
-                    position: c.order,
-                    driverName: c.athlete?.displayName ?? "—",
+                    position: status.state == "pre" ? nil : c.order,
+                    driverName: c.athlete?.displayName ?? c.athlete?.fullName ?? "Unknown driver",
                     shortName: c.athlete?.shortName ?? "—",
                     nationality: c.athlete?.flag?.alt ?? ""
                 )
             }
 
-        let date = parseESPNDateString(eventAPI.date) ?? Date()
-        let status = eventAPI.status.type
+        let raceDate = competition?.date ?? eventAPI.date
+        let date = Self.racingDate(raceDate) ?? parseESPNDateString(raceDate) ?? Date()
 
         return RaceEvent(
             id: eventAPI.id,
@@ -1865,9 +1879,28 @@ class ESPNAPIService {
             date: date,
             statusState: status.state,
             statusDescription: status.description,
+            completed: status.completed,
             broadcasts: broadcasts,
             competitors: competitors
         )
+    }
+
+    /// ESPN's racing times, "2026-11-08T17:00Z", as the UTC times they are. parseESPNDateString
+    /// reads that Z as a plain letter and the time as local, which would put a 1 PM Eastern race
+    /// at 5 PM wherever the phone is; golf's placeholder hours rely on that, so it stays.
+    private static let racingDateFormatters: [DateFormatter] = ["yyyy-MM-dd'T'HH:mmX", "yyyy-MM-dd'T'HH:mm:ssX"].map {
+        let df = DateFormatter()
+        df.locale = Locale(identifier: "en_US_POSIX")
+        df.timeZone = TimeZone(identifier: "UTC")
+        df.dateFormat = $0
+        return df
+    }
+
+    static func racingDate(_ s: String) -> Date? {
+        for formatter in racingDateFormatters {
+            if let date = formatter.date(from: s) { return date }
+        }
+        return nil
     }
 
     /// Fetches championship standings for a racing series.
@@ -1897,13 +1930,15 @@ class ESPNAPIService {
                 )
                 guard let rankStr = stats["rank"], let rank = Int(rankStr) else { return nil }
 
-                let points = stats["championshipPts"] ?? stats["points"] ?? "—"
+                // The first that says something, as racing.py reads it.
+                let points = [stats["championshipPts"], stats["points"]].compactMap { $0 }
+                    .first { !$0.isEmpty } ?? "Not given"
 
                 if isConstructors, let team = entry.team {
                     return RacingStandingsEntry(
                         id: team.id ?? "\(index)-\(rank)",
                         rank: rank,
-                        name: team.displayName ?? team.abbreviation ?? "—",
+                        name: team.displayName ?? team.abbreviation ?? "Unknown",
                         shortName: team.abbreviation ?? "—",
                         nationality: "",
                         points: points
@@ -1912,7 +1947,7 @@ class ESPNAPIService {
                     return RacingStandingsEntry(
                         id: athlete.id ?? "\(index)-\(rank)",
                         rank: rank,
-                        name: athlete.displayName ?? "—",
+                        name: athlete.displayName ?? "Unknown",
                         shortName: athlete.shortName ?? "—",
                         nationality: athlete.flag?.alt ?? "",
                         points: points
