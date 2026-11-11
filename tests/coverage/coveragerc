@@ -1,0 +1,43 @@
+# Test coverage of the whole Windows app, for the weekly Coverage workflow (#254).
+# Not .coveragerc at the root: coverage reads that first and would then ignore
+# pyproject.toml's [tool.coverage], which is the data layer's floor that every
+# push checks. This file is named on the command line instead:
+#
+#     python -m pytest tests/unit --cov --cov-config=tests/coverage/coveragerc
+#
+# Everything at the root plus models and services is the app. models and services
+# have no __init__.py, so include_namespace_packages (a [report] setting) is what lets a file there no
+# test imports still count, at 0%. The omit list is what isn't the app: tests,
+# build and release scripts, tools, TheBench's old scripts, the iPhone app, and
+# the scripts kept with bug-bash reports in docs.
+
+[run]
+source = .
+branch = True
+relative_files = True
+omit =
+    tests/*
+    TheBench/*
+    iOS/*
+    tools/*
+    docs/*
+    installer/*
+    build/*
+    dist/*
+    build.py
+    .venv/*
+    venv/*
+
+# Only Windows is measured today, but these let a macOS or Linux run combine
+# with it if one is ever added.
+[paths]
+models =
+    models/
+    models\
+services =
+    services/
+    services\
+
+[report]
+precision = 2
+include_namespace_packages = True

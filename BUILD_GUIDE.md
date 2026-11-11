@@ -37,6 +37,42 @@ A bare `pytest` run from the repo root collects `tests/` only (`testpaths` in
 `pyproject.toml`). `TheBench/` is an archive of old scripts and isn't part
 of the suite.
 
+## Test coverage
+
+Two checks, for two things:
+
+- **The data layer's floor**, on every push (`scores.yml`): `coverage report`
+  fails below `fail_under` in `pyproject.toml`, which covers a few pure modules.
+- **The whole app, weekly** (#254): the **Coverage** workflow runs every Monday
+  at 13:00 UTC, or by hand (Actions, Coverage, Run workflow). It runs the same
+  tests on Windows as `scores.yml`, measures lines and branches of everything at
+  the root plus `models` and `services` (the settings are in
+  `tests/coverage/coveragerc`), and `tools/coverage_check.py` compares the result
+  with `tests/coverage/baseline.json`. It flags:
+  - the whole app falling more than 1 point;
+  - a file of 50 statements or more falling more than 5 points;
+  - any file, a new one included, with 25 or more statements more that no test
+    runs.
+
+  A drop files an issue labelled `coverage-regression`, or comments on the one
+  already open. Each run's summary page shows the report, and its
+  `coverage-report` download has the per-line HTML.
+
+The baseline changes only when it's accepted, so a slow slide is still caught.
+When a drop is expected (code moved, tests removed on purpose), or coverage rose
+and the bar should rise with it, download `coverage.json` from a run's
+`coverage-report` and accept it in a pull request:
+
+```powershell
+gh run download RUN_ID -n coverage-report -D cov
+python tools/coverage_check.py cov\coverage.json --accept --measured "main at SHA, DATE, run RUN_ID"
+```
+
+To measure locally: `pip install pytest-cov`, then
+`python -m pytest tests/unit --cov --cov-config=tests/coverage/coveragerc --cov-report=term-missing`.
+The settings file is named on the command line because a `.coveragerc` at the
+root would replace `pyproject.toml`'s settings, the floor's included.
+
 ## Build the exe
 
 ```powershell

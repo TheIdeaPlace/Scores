@@ -44,6 +44,13 @@ pip install -r requirements.txt
 pytest tests/
 ```
 
+**Test coverage of the whole app** (weekly in CI, Mondays; BUILD_GUIDE.md "Test coverage" has the rules and how to accept a new baseline):
+```powershell
+gh workflow run coverage.yml                  # measure now; files a coverage-regression issue on a drop
+python tools/coverage_check.py cov\coverage.json --accept --measured "main at SHA, DATE, run RUN_ID"
+```
+`tests/coverage/coveragerc` has its settings; never add a root `.coveragerc`, which would replace the data layer floor's settings in `pyproject.toml`.
+
 **Check the live data feeds** (ESPN, MLB, CFL, fantasy; opens no windows):
 ```powershell
 python tools/validate_espn.py                 # or --league NCAAM
