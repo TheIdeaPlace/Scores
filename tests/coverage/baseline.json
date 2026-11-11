@@ -1,0 +1,240 @@
+{
+ "measured": "main at d43ffdb plus the coverage tooling, 2026-11-11, trial run 43016954632 on coverage-weekly",
+ "total": {
+  "statements": 16736,
+  "missing": 5590,
+  "percent": 64.71
+ },
+ "files": {
+  "accessible_table.py": {
+   "statements": 807,
+   "missing": 99,
+   "percent": 85.33
+  },
+  "audio_queue.py": {
+   "statements": 4,
+   "missing": 1,
+   "percent": 75.0
+  },
+  "box_score.py": {
+   "statements": 99,
+   "missing": 0,
+   "percent": 100.0
+  },
+  "cfl.py": {
+   "statements": 234,
+   "missing": 4,
+   "percent": 97.7
+  },
+  "dialog_text.py": {
+   "statements": 36,
+   "missing": 1,
+   "percent": 96.3
+  },
+  "drive_results.py": {
+   "statements": 111,
+   "missing": 3,
+   "percent": 95.71
+  },
+  "error_log.py": {
+   "statements": 34,
+   "missing": 2,
+   "percent": 90.0
+  },
+  "espn_api.py": {
+   "statements": 2241,
+   "missing": 33,
+   "percent": 97.94
+  },
+  "exceptions.py": {
+   "statements": 7,
+   "missing": 0,
+   "percent": 100.0
+  },
+  "favorite_card.py": {
+   "statements": 171,
+   "missing": 9,
+   "percent": 92.05
+  },
+  "game_labels.py": {
+   "statements": 213,
+   "missing": 1,
+   "percent": 99.36
+  },
+  "golf.py": {
+   "statements": 52,
+   "missing": 0,
+   "percent": 100.0
+  },
+  "live_play_format.py": {
+   "statements": 71,
+   "missing": 0,
+   "percent": 96.97
+  },
+  "main.py": {
+   "statements": 103,
+   "missing": 50,
+   "percent": 54.55
+  },
+  "models/game.py": {
+   "statements": 113,
+   "missing": 2,
+   "percent": 98.22
+  },
+  "models/news.py": {
+   "statements": 27,
+   "missing": 0,
+   "percent": 100.0
+  },
+  "models/standings.py": {
+   "statements": 51,
+   "missing": 0,
+   "percent": 100.0
+  },
+  "on_ice.py": {
+   "statements": 95,
+   "missing": 0,
+   "percent": 100.0
+  },
+  "pitch_exploration_dialog.py": {
+   "statements": 266,
+   "missing": 239,
+   "percent": 8.19
+  },
+  "play_audio_mapper.py": {
+   "statements": 131,
+   "missing": 15,
+   "percent": 88.02
+  },
+  "play_geometry.py": {
+   "statements": 141,
+   "missing": 0,
+   "percent": 100.0
+  },
+  "popup_menu.py": {
+   "statements": 14,
+   "missing": 2,
+   "percent": 72.22
+  },
+  "postseason.py": {
+   "statements": 57,
+   "missing": 0,
+   "percent": 100.0
+  },
+  "racing.py": {
+   "statements": 222,
+   "missing": 8,
+   "percent": 95.19
+  },
+  "radio_links.py": {
+   "statements": 69,
+   "missing": 2,
+   "percent": 95.4
+  },
+  "scores.py": {
+   "statements": 9138,
+   "missing": 4650,
+   "percent": 45.32
+  },
+  "season_series.py": {
+   "statements": 128,
+   "missing": 0,
+   "percent": 97.67
+  },
+  "services/api_service.py": {
+   "statements": 126,
+   "missing": 1,
+   "percent": 99.21
+  },
+  "services/football_calendar.py": {
+   "statements": 254,
+   "missing": 13,
+   "percent": 94.38
+  },
+  "services/updater.py": {
+   "statements": 107,
+   "missing": 10,
+   "percent": 92.81
+  },
+  "services/venue_service.py": {
+   "statements": 144,
+   "missing": 0,
+   "percent": 99.52
+  },
+  "settings.py": {
+   "statements": 47,
+   "missing": 0,
+   "percent": 98.25
+  },
+  "simple_audio_mapper.py": {
+   "statements": 162,
+   "missing": 126,
+   "percent": 17.73
+  },
+  "soccer.py": {
+   "statements": 107,
+   "missing": 0,
+   "percent": 100.0
+  },
+  "stat_glossary.py": {
+   "statements": 52,
+   "missing": 0,
+   "percent": 100.0
+  },
+  "stereo_audio_mapper.py": {
+   "statements": 164,
+   "missing": 131,
+   "percent": 16.51
+  },
+  "tab_keys.py": {
+   "statements": 54,
+   "missing": 0,
+   "percent": 100.0
+  },
+  "team_list.py": {
+   "statements": 37,
+   "missing": 0,
+   "percent": 100.0
+  },
+  "team_stats.py": {
+   "statements": 203,
+   "missing": 2,
+   "percent": 98.22
+  },
+  "text_utils.py": {
+   "statements": 97,
+   "missing": 0,
+   "percent": 100.0
+  },
+  "timezone_utils.py": {
+   "statements": 88,
+   "missing": 10,
+   "percent": 87.93
+  },
+  "transactions_paging.py": {
+   "statements": 140,
+   "missing": 1,
+   "percent": 98.51
+  },
+  "uia_notifier.py": {
+   "statements": 161,
+   "missing": 161,
+   "percent": 0.0
+  },
+  "version.py": {
+   "statements": 1,
+   "missing": 0,
+   "percent": 100.0
+  },
+  "win_probability.py": {
+   "statements": 127,
+   "missing": 1,
+   "percent": 97.08
+  },
+  "windows_notifications.py": {
+   "statements": 30,
+   "missing": 13,
+   "percent": 56.25
+  }
+ }
+}

@@ -59,6 +59,10 @@ DerivedData/
 # Test and coverage artifacts
 .pytest_cache/
 .coverage
+.coverage.*
+coverage.json
+coverage-report.md
+coverage-html/
 htmlcov/
 *.egg-info/
 
