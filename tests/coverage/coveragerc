@@ -28,8 +28,8 @@ omit =
     .venv/*
     venv/*
 
-# Only Windows is measured today, but these let a macOS or Linux run combine
-# with it if one is ever added.
+# Needed today: the Windows run stores paths like models\game.py, and these
+# map them for the compare job, which combines and reports on Linux.
 [paths]
 models =
     models/

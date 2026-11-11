@@ -1,5 +1,5 @@
 {
- "measured": "main at d43ffdb, 2026-11-11, run 43016954632",
+ "measured": "main at d43ffdb plus the coverage tooling, 2026-11-11, trial run 43016954632 on coverage-weekly",
  "total": {
   "statements": 16736,
   "missing": 5590,

@@ -69,7 +69,7 @@ python tools/coverage_check.py cov\coverage.json --accept --measured "main at SH
 ```
 
 To measure locally: `pip install pytest-cov`, then
-`python -m pytest tests/unit --cov --cov-config=tests/coverage/coveragerc --cov-report=term-missing`.
+`python -m pytest tests/unit tests/integration/test_play_audio_wiring.py --cov --cov-config=tests/coverage/coveragerc --cov-report=term-missing`.
 The settings file is named on the command line because a `.coveragerc` at the
 root would replace `pyproject.toml`'s settings, the floor's included.
 
