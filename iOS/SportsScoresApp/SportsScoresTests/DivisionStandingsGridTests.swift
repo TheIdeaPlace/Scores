@@ -77,7 +77,7 @@ final class DivisionStandingsGridTests: XCTestCase {
             DivisionGrid.Group(name: group.name, conference: group.conference,
                                teams: group.entries.map(\.team.abbreviation),
                                games_back: group.entries.map(DivisionStandings.gamesBack),
-                               shown: group.entries.map(DivisionStandings.shownGamesBack))
+                               shown: group.entries.map { DivisionStandings.shownGamesBack($0) })
         }
     }
 
