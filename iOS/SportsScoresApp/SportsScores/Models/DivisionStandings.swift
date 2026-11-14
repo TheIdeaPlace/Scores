@@ -64,12 +64,31 @@ enum DivisionStandings {
     /// ESPN's games back for a team, as it writes it ("-", "2.5", "6"): the division figure
     /// when there is one, otherwise the group's own.
     static func gamesBack(_ entry: Entry) -> String {
+        gamesBackText(entry) ?? noGamesBack
+    }
+
+    private static func gamesBackText(_ entry: Entry) -> String? {
         for name in ["divisionGamesBehind", "gamesBehind"] {
             guard let stat = entry.stats.first(where: { $0.name == name }) else { continue }
             let text = stat.displayValue.trimmingCharacters(in: .whitespacesAndNewlines)
             if !text.isEmpty { return text }
         }
-        return noGamesBack
+        return nil
+    }
+
+    /// What a team at no games back shows and says. ESPN writes a dash, which neither VoiceOver
+    /// nor NVDA speaks at their default punctuation. Teams level at the top are both leaders.
+    static let leader = "Leader"
+    /// A team ESPN gives no games back at all, which isn't the same as leading.
+    static let noFigure = "N/A"
+
+    /// Games back as both apps show and speak it: ESPN's own figure ("2.5", "6"), "Leader" for a
+    /// team at none ("-" or 0), and "N/A" when ESPN sends no figure. On Windows:
+    /// division_standings.shown_games_back.
+    static func shownGamesBack(_ entry: Entry) -> String {
+        guard let text = gamesBackText(entry) else { return noFigure }
+        if text == noGamesBack || text == "\u{2014}" || Double(text) == 0 { return leader }
+        return text
     }
 
     /// "2.5" as 2.5; ESPN's "-" (the leader) and anything unreadable as 0.

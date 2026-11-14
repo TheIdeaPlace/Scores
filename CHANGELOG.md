@@ -15,6 +15,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   and games back. Teams level on record are in ESPN's order, which applies each league's tiebreakers,
   instead of an order of the app's own: the iPhone's could vary from one load to the next, and both
   apps' NBA and MLB divisions could disagree with ESPN's. Windows's figures were already right.
+- **A leader's games back reads "Leader", on both apps.** ESPN writes a dash, which NVDA and
+  VoiceOver don't speak at their default punctuation, so a leader's games back was silent (NVDA said
+  "Minnesota Timberwolves, GB" and nothing more). Teams level at the top both read "Leader"; a team
+  ESPN gives no figure reads "N/A". Windows now shows ESPN's own figure ("6", not "6.0"), as the
+  iPhone does. The iPhone's CFL table, whose feed has no games back, reads "N/A" there too.
 - **Standings no longer rely on hard-coded division tables.** Which team is in which division comes from ESPN's answer, so a
   team that changes its abbreviation (the Athletics' ATH, Utah's UTA and UTAH) can't drop out of its
   division. On Windows the NBA and NHL divisions are now named as on the iPhone ("Atlantic", not

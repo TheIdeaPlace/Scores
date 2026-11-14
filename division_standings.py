@@ -58,9 +58,7 @@ def _stat(entry, name):
     return None
 
 
-def games_back(entry):
-    """ESPN's games back for a team, as it writes it ("-", "2.5", "6"): the division figure
-    when there is one, otherwise the group's own."""
+def _games_back_text(entry):
     for name in ("divisionGamesBehind", "gamesBehind"):
         stat = _stat(entry, name)
         if stat is None:
@@ -69,7 +67,39 @@ def games_back(entry):
         text = text.strip() if isinstance(text, str) else ""
         if text:
             return text
-    return NO_GAMES_BACK
+    return None
+
+
+def games_back(entry):
+    """ESPN's games back for a team, as it writes it ("-", "2.5", "6"): the division figure
+    when there is one, otherwise the group's own."""
+    return _games_back_text(entry) or NO_GAMES_BACK
+
+
+# What a team at no games back shows and says. ESPN writes a dash, which neither NVDA nor
+# VoiceOver speaks at their default punctuation: NVDA said "Minnesota Timberwolves, GB" and
+# nothing more. Teams level at the top are both leaders.
+LEADER = "Leader"
+# A team ESPN gives no games back at all, which isn't the same as leading.
+NO_FIGURE = "N/A"
+
+
+def shown_games_back(entry):
+    """Games back as both apps show and speak it: ESPN's own figure ("2.5", "6"), "Leader" for a
+    team at none ("-" or 0), and "N/A" when ESPN sends no figure."""
+    text = _games_back_text(entry)
+    if text is None:
+        return NO_FIGURE
+    if text in (NO_GAMES_BACK, "—") or _float_or_none(text) == 0:
+        return LEADER
+    return text
+
+
+def _float_or_none(text):
+    try:
+        return float(text)
+    except (TypeError, ValueError):
+        return None
 
 
 # What a team needs for the iPhone to read it (Standings.swift's APIStandingsEntry): these four

@@ -1777,15 +1777,6 @@ def _pro_standings_url(path):
     return f"https://site.api.espn.com/apis/v2/sports/{path}/standings?{division_standings.DIVISIONS_QUERY}"
 
 
-def _shown_games_back(text):
-    """ESPN's "-", "2.5" and "6" as the standings tables show them: "—", "2.5" and "6.0"."""
-    try:
-        value = float(text)
-    except (TypeError, ValueError):
-        return "—"
-    return f"{value:.1f}" if value > 0 else "—"
-
-
 def _stat_values(entry):
     """A standings entry's stat values by name. A null or unreadable value is left out, so the
     default applies instead of a crash."""
@@ -1818,7 +1809,7 @@ def _division_rows(data, build, games_back=True):
             row = {**_team_basics(entry), **build(entry, _stat_values(entry))}
             row.update(division=group["name"], conference=group["conference"], division_rank=place)
             if games_back:
-                row["games_back"] = _shown_games_back(division_standings.games_back(entry))
+                row["games_back"] = division_standings.shown_games_back(entry)
             rows.append(row)
     return rows
 
@@ -1996,7 +1987,7 @@ def _get_nba_fresh_standings():
                         "wins": 0,
                         "losses": 0,
                         "win_percentage": "0.000",
-                        "games_back": "—",
+                        "games_back": division_standings.LEADER,  # 0-0: everyone is level
                         "division": division,
                         "conference": conference,
                         "streak": "",
@@ -2072,12 +2063,6 @@ def _record_parts(summary):
     return tuple(parts)
 
 
-def _games_back(stat):
-    """ESPN's 0 and 2 read "-" and "2" there. These read as the NBA's do, "—" and "2.0"."""
-    value = stat.get("value")
-    return f"{value:.1f}" if isinstance(value, (int, float)) and value > 0 else "—"
-
-
 def _college_standing_row(entry, conference):
     team_info = _as_dict(entry.get("team"))
     stats = _dicts(entry.get("stats"))
@@ -2093,7 +2078,8 @@ def _college_standing_row(entry, conference):
         "losses": losses,
         "ties": ties,
         "win_percentage": f"{(wins + ties / 2) / games:.3f}" if games else "0.000",
-        "games_back": _games_back(_standing_stat(stats, "gamesbehind")),
+        # ESPN's own figure, and "Leader" rather than a dash nobody hears.
+        "games_back": division_standings.shown_games_back(entry),
         "conference_record": conf.get("summary") or conf.get("displayValue") or "",
         "division": conference,
         "streak": _standing_stat(stats, "streak").get("displayValue") or "",
@@ -2309,12 +2295,13 @@ def _parse_standings_from_teams_api(data, league_key):
                     
                     for i, team in enumerate(div_teams):
                         if i == 0:
-                            team["games_back"] = "—"  # Leader
+                            team["games_back"] = division_standings.LEADER
                         else:
                             team_wins = int(team["wins"])
                             team_losses = int(team["losses"])
                             games_back = ((leader_wins - team_wins) + (team_losses - leader_losses)) / 2
-                            team["games_back"] = f"{games_back:.1f}" if games_back > 0 else "0.0"
+                            team["games_back"] = (f"{games_back:g}" if games_back > 0
+                                                  else division_standings.LEADER)
         
     except (KeyError, IndexError, ValueError) as e:
         print(f"Error parsing teams API data: {e}")

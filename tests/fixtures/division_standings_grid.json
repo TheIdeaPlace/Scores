@@ -60,7 +60,8 @@
      }
     ]
    },
-   "games_back": "-"
+   "games_back": "-",
+   "shown": "Leader"
   },
   {
    "about": "the group's own figure",
@@ -79,7 +80,8 @@
      }
     ]
    },
-   "games_back": "2.5"
+   "games_back": "2.5",
+   "shown": "2.5"
   },
   {
    "about": "MLB's division figure first",
@@ -103,7 +105,8 @@
      }
     ]
    },
-   "games_back": "1"
+   "games_back": "1",
+   "shown": "1"
   },
   {
    "about": "a blank division figure falls to the group's",
@@ -127,7 +130,8 @@
      }
     ]
    },
-   "games_back": "3"
+   "games_back": "3",
+   "shown": "3"
   },
   {
    "about": "no figure at all",
@@ -140,7 +144,108 @@
     },
     "stats": []
    },
-   "games_back": "-"
+   "games_back": "-",
+   "shown": "N/A"
+  },
+  {
+   "about": "a leader written as 0",
+   "entry": {
+    "team": {
+     "id": "1",
+     "abbreviation": "A",
+     "name": "A",
+     "displayName": "A"
+    },
+    "stats": [
+     {
+      "name": "gamesBehind",
+      "value": 0,
+      "displayValue": "0"
+     }
+    ]
+   },
+   "games_back": "0",
+   "shown": "Leader"
+  },
+  {
+   "about": "a leader written as 0.0",
+   "entry": {
+    "team": {
+     "id": "1",
+     "abbreviation": "A",
+     "name": "A",
+     "displayName": "A"
+    },
+    "stats": [
+     {
+      "name": "gamesBehind",
+      "value": 0,
+      "displayValue": "0.0"
+     }
+    ]
+   },
+   "games_back": "0.0",
+   "shown": "Leader"
+  },
+  {
+   "about": "a leader written as an em dash",
+   "entry": {
+    "team": {
+     "id": "1",
+     "abbreviation": "A",
+     "name": "A",
+     "displayName": "A"
+    },
+    "stats": [
+     {
+      "name": "gamesBehind",
+      "value": 0,
+      "displayValue": "—"
+     }
+    ]
+   },
+   "games_back": "—",
+   "shown": "Leader"
+  },
+  {
+   "about": "ahead of the line, as the wild card writes it",
+   "entry": {
+    "team": {
+     "id": "1",
+     "abbreviation": "A",
+     "name": "A",
+     "displayName": "A"
+    },
+    "stats": [
+     {
+      "name": "gamesBehind",
+      "value": 0,
+      "displayValue": "+8.5"
+     }
+    ]
+   },
+   "games_back": "+8.5",
+   "shown": "+8.5"
+  },
+  {
+   "about": "text that isn't a number stays as ESPN wrote it",
+   "entry": {
+    "team": {
+     "id": "1",
+     "abbreviation": "A",
+     "name": "A",
+     "displayName": "A"
+    },
+    "stats": [
+     {
+      "name": "gamesBehind",
+      "value": 0,
+      "displayValue": "n/a"
+     }
+    ]
+   },
+   "games_back": "n/a",
+   "shown": "n/a"
   }
  ],
  "order": [
@@ -432,6 +537,9 @@
      ],
      "games_back": [
       "-"
+     ],
+     "shown": [
+      "Leader"
      ]
     },
     {
@@ -442,6 +550,9 @@
      ],
      "games_back": [
       "-"
+     ],
+     "shown": [
+      "Leader"
      ]
     }
    ]
@@ -526,6 +637,9 @@
      ],
      "games_back": [
       "-"
+     ],
+     "shown": [
+      "N/A"
      ]
     },
     {
@@ -536,6 +650,9 @@
      ],
      "games_back": [
       "-"
+     ],
+     "shown": [
+      "N/A"
      ]
     }
    ]
@@ -584,6 +701,9 @@
      ],
      "games_back": [
       "-"
+     ],
+     "shown": [
+      "N/A"
      ]
     }
    ]
@@ -716,6 +836,10 @@
      "games_back": [
       "-",
       "1"
+     ],
+     "shown": [
+      "Leader",
+      "1"
      ]
     }
    ]
@@ -790,6 +914,10 @@
      "games_back": [
       "2",
       "-"
+     ],
+     "shown": [
+      "2",
+      "N/A"
      ]
     }
    ]
@@ -868,6 +996,9 @@
      ],
      "games_back": [
       "-"
+     ],
+     "shown": [
+      "N/A"
      ]
     },
     {
@@ -878,6 +1009,9 @@
      ],
      "games_back": [
       "-"
+     ],
+     "shown": [
+      "N/A"
      ]
     },
     {
@@ -888,6 +1022,9 @@
      ],
      "games_back": [
       "-"
+     ],
+     "shown": [
+      "N/A"
      ]
     }
    ]
@@ -911,6 +1048,12 @@
       "2.5",
       "5.5",
       "6"
+     ],
+     "shown": [
+      "Leader",
+      "2.5",
+      "5.5",
+      "6"
      ]
     },
     {
@@ -927,6 +1070,12 @@
       "-",
       "1.5",
       "2.5"
+     ],
+     "shown": [
+      "Leader",
+      "Leader",
+      "1.5",
+      "2.5"
      ]
     },
     {
@@ -940,6 +1089,12 @@
      ],
      "games_back": [
       "-",
+      "3",
+      "4.5",
+      "5"
+     ],
+     "shown": [
+      "Leader",
       "3",
       "4.5",
       "5"
@@ -959,6 +1114,12 @@
       "0.5",
       "3",
       "6.5"
+     ],
+     "shown": [
+      "Leader",
+      "0.5",
+      "3",
+      "6.5"
      ]
     },
     {
@@ -972,6 +1133,12 @@
      ],
      "games_back": [
       "-",
+      "1.5",
+      "2",
+      "3.5"
+     ],
+     "shown": [
+      "Leader",
       "1.5",
       "2",
       "3.5"
@@ -991,6 +1158,12 @@
       "0.5",
       "0.5",
       "1"
+     ],
+     "shown": [
+      "Leader",
+      "0.5",
+      "0.5",
+      "1"
      ]
     },
     {
@@ -1007,6 +1180,12 @@
       "-",
       "0.5",
       "0.5"
+     ],
+     "shown": [
+      "Leader",
+      "Leader",
+      "0.5",
+      "0.5"
      ]
     },
     {
@@ -1020,6 +1199,12 @@
      ],
      "games_back": [
       "-",
+      "2.5",
+      "2.5",
+      "4.5"
+     ],
+     "shown": [
+      "Leader",
       "2.5",
       "2.5",
       "4.5"
@@ -1046,6 +1231,13 @@
       "3.5",
       "5",
       "6.5"
+     ],
+     "shown": [
+      "Leader",
+      "0.5",
+      "3.5",
+      "5",
+      "6.5"
      ]
     },
     {
@@ -1060,6 +1252,13 @@
      ],
      "games_back": [
       "-",
+      "2.5",
+      "4.5",
+      "6.5",
+      "7.5"
+     ],
+     "shown": [
+      "Leader",
       "2.5",
       "4.5",
       "6.5",
@@ -1082,6 +1281,13 @@
       "2.5",
       "3",
       "3.5"
+     ],
+     "shown": [
+      "Leader",
+      "1.5",
+      "2.5",
+      "3",
+      "3.5"
      ]
     },
     {
@@ -1096,6 +1302,13 @@
      ],
      "games_back": [
       "-",
+      "0.5",
+      "1",
+      "2",
+      "8"
+     ],
+     "shown": [
+      "Leader",
       "0.5",
       "1",
       "2",
@@ -1118,6 +1331,13 @@
       "5",
       "7.5",
       "9"
+     ],
+     "shown": [
+      "Leader",
+      "2.5",
+      "5",
+      "7.5",
+      "9"
      ]
     },
     {
@@ -1132,6 +1352,13 @@
      ],
      "games_back": [
       "-",
+      "1",
+      "2.5",
+      "3",
+      "6"
+     ],
+     "shown": [
+      "Leader",
       "1",
       "2.5",
       "3",
@@ -1165,6 +1392,16 @@
       "8",
       "10",
       "11"
+     ],
+     "shown": [
+      "Leader",
+      "Leader",
+      "1",
+      "2",
+      "4",
+      "8",
+      "10",
+      "11"
      ]
     },
     {
@@ -1182,6 +1419,16 @@
      ],
      "games_back": [
       "-",
+      "4",
+      "9",
+      "12",
+      "12",
+      "16",
+      "16",
+      "18"
+     ],
+     "shown": [
+      "Leader",
       "4",
       "9",
       "12",
@@ -1213,6 +1460,16 @@
       "11",
       "12",
       "21"
+     ],
+     "shown": [
+      "Leader",
+      "7",
+      "7",
+      "10",
+      "10",
+      "11",
+      "12",
+      "21"
      ]
     },
     {
@@ -1230,6 +1487,16 @@
      ],
      "games_back": [
       "-",
+      "3",
+      "10",
+      "12",
+      "13",
+      "14",
+      "19",
+      "24"
+     ],
+     "shown": [
+      "Leader",
       "3",
       "10",
       "12",
@@ -1260,6 +1527,13 @@
       "11",
       "18.5",
       "19"
+     ],
+     "shown": [
+      "Leader",
+      "4.5",
+      "11",
+      "18.5",
+      "19"
      ]
     },
     {
@@ -1274,6 +1548,13 @@
      ],
      "games_back": [
       "-",
+      "1",
+      "8",
+      "9",
+      "16"
+     ],
+     "shown": [
+      "Leader",
       "1",
       "8",
       "9",
@@ -1296,6 +1577,13 @@
       "5",
       "17",
       "19"
+     ],
+     "shown": [
+      "Leader",
+      "1",
+      "5",
+      "17",
+      "19"
      ]
     },
     {
@@ -1310,6 +1598,13 @@
      ],
      "games_back": [
       "-",
+      "6",
+      "14",
+      "17",
+      "20"
+     ],
+     "shown": [
+      "Leader",
       "6",
       "14",
       "17",
@@ -1332,6 +1627,13 @@
       "21",
       "26",
       "28"
+     ],
+     "shown": [
+      "Leader",
+      "14",
+      "21",
+      "26",
+      "28"
      ]
     },
     {
@@ -1346,6 +1648,13 @@
      ],
      "games_back": [
       "-",
+      "9",
+      "14",
+      "35",
+      "42"
+     ],
+     "shown": [
+      "Leader",
       "9",
       "14",
       "35",
@@ -1369,6 +1678,11 @@
       "-",
       "0.5",
       "0.5"
+     ],
+     "shown": [
+      "Leader",
+      "0.5",
+      "0.5"
      ]
     },
     {
@@ -1382,6 +1696,11 @@
      "games_back": [
       "-",
       "-",
+      "1"
+     ],
+     "shown": [
+      "Leader",
+      "Leader",
       "1"
      ]
     }

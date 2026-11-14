@@ -231,7 +231,7 @@ extension StandingsEntry {
             wins:          wins,
             losses:        losses,
             winPercent:    stat("winPercent")?.value ?? computedPercent,
-            gamesBack:     DivisionStandings.gamesBack(apiEntry),
+            gamesBack:     DivisionStandings.shownGamesBack(apiEntry),
             streak:        stat("streak")?.displayValue ?? "-",
             // The NBA's level=3 answer has no total, only its wins and losses.
             record:        overall ?? Self.record(wins: stat("wins"), losses: stat("losses"), ties: ties),

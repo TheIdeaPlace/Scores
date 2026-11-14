@@ -13,7 +13,8 @@ GRID = json.loads((FIXTURES / "division_standings_grid.json").read_text(encoding
 def groups(data):
     return [{"name": g["name"], "conference": g["conference"],
              "teams": [e["team"]["abbreviation"] for e in g["entries"]],
-             "games_back": [d.games_back(e) for e in g["entries"]]} for g in d.division_groups(data)]
+             "games_back": [d.games_back(e) for e in g["entries"]],
+             "shown": [d.shown_games_back(e) for e in g["entries"]]} for g in d.division_groups(data)]
 
 
 @pytest.mark.parametrize("case", GRID["labels"], ids=lambda c: repr(c["name"]))
@@ -24,6 +25,14 @@ def test_labels(case):
 @pytest.mark.parametrize("case", GRID["games_back"], ids=lambda c: c["about"])
 def test_games_back(case):
     assert d.games_back(case["entry"]) == case["games_back"]
+    assert d.shown_games_back(case["entry"]) == case["shown"]
+
+
+def test_a_leader_is_never_shown_as_a_dash():
+    """NVDA said "Minnesota Timberwolves, GB" and nothing more for ESPN's dash."""
+    shown = {s for c in GRID["fixtures"] for g in c["groups"] for s in g["shown"]}
+    assert d.LEADER in shown
+    assert not shown & {"-", "—", ""}
 
 
 @pytest.mark.parametrize("case", GRID["order"], ids=lambda c: c["about"])
