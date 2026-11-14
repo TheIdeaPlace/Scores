@@ -54,12 +54,16 @@ struct SoccerTableRow {
 /// `nil` on ordinary division standings. The playoff cut line lives in `status`
 /// rather than being drawn, so VoiceOver speaks who is in.
 struct WildCardStanding {
-    /// "-" for a division leader, otherwise MLB's official wild card rank.
+    /// "Leader" for a division leader (`DivisionStandings.leader`), otherwise MLB's official
+    /// wild card rank.
     let position: String
     /// "AL East leader", "Wild card 1", or "" for teams outside the spots.
     let status: String
-    /// Games back of the last wild card spot ("+8.5", "-", "0.5").
+    /// Games back of the last wild card spot ("+8.5", "0", "0.5"), "N/A" for a division leader.
     let gamesBack: String
+
+    /// Whether this is a division leader, which holds a spot outside the race.
+    var isDivisionLeader: Bool { position == DivisionStandings.leader || position == "-" }
 
     /// Status as words. A bare "-" is not spoken at all at the default
     /// punctuation level in either VoiceOver or NVDA, so a team outside the
@@ -69,9 +73,9 @@ struct WildCardStanding {
         status.isEmpty ? "Not in a playoff spot" : status
     }
 
-    /// Position as words, for the same reason: leaders carry "-", not a number.
+    /// Position as words, for the same reason: leaders have no number.
     var positionText: String {
-        position == "-" ? "Division leader" : position
+        isDivisionLeader ? "Division leader" : position
     }
 }
 
@@ -155,7 +159,7 @@ struct StandingsEntry: Identifiable {
     var quickListText: String {
         if let wc = wildCard {
             // Leaders have no rank, so lead with the team rather than a bare "-".
-            let lead = wc.position == "-" ? "" : "\(wc.position). "
+            let lead = wc.isDivisionLeader ? "" : "\(wc.position). "
             return "\(lead)\(team.abbreviation), \(stats.wins)-\(stats.losses), "
                 + "\(stats.displayWinPercent), WCGB: \(wc.gamesBack), \(stats.streak), "
                 + "\(wc.spokenStatus)"
@@ -204,7 +208,9 @@ struct StandingsEntry: Identifiable {
 // MARK: - Shared entry-building helper
 extension StandingsEntry {
     /// Build a StandingsEntry from a raw API entry, populating all extended fields.
-    init(fromAPIEntry apiEntry: APIStandingsGroup.APIStandings.APIStandingsEntry) {
+    /// `leaderWord` is false where ESPN's games back isn't counted from the group's leader
+    /// (college), so its dash reads "0" rather than "Leader".
+    init(fromAPIEntry apiEntry: APIStandingsGroup.APIStandings.APIStandingsEntry, leaderWord: Bool = true) {
         typealias AS = APIStandingsGroup.APIStandings.APIStandingsEntry.APIStat
         // ESPN repeats a stat once per split (home, road, conference), with the same
         // `name` and a different `type`, so the name alone doesn't say which you get.
@@ -231,7 +237,7 @@ extension StandingsEntry {
             wins:          wins,
             losses:        losses,
             winPercent:    stat("winPercent")?.value ?? computedPercent,
-            gamesBack:     DivisionStandings.gamesBack(apiEntry),
+            gamesBack:     DivisionStandings.shownGamesBack(apiEntry, leaderWord: leaderWord),
             streak:        stat("streak")?.displayValue ?? "-",
             // The NBA's level=3 answer has no total, only its wins and losses.
             record:        overall ?? Self.record(wins: stat("wins"), losses: stat("losses"), ties: ties),
@@ -274,9 +280,11 @@ extension StandingsEntry {
 
 // MARK: - API Response Models
 extension StandingsGroup {
-    init(from apiResponse: APIStandingsGroup) throws {
+    /// A conference's table. College passes `leaderWord: false`: its games back counts from
+    /// the conference's top seed, so ESPN's dash there is "0", not "Leader".
+    init(from apiResponse: APIStandingsGroup, leaderWord: Bool = true) throws {
         self.name = apiResponse.name
-        self.entries = apiResponse.standings.entries.map { StandingsEntry(fromAPIEntry: $0) }
+        self.entries = apiResponse.standings.entries.map { StandingsEntry(fromAPIEntry: $0, leaderWord: leaderWord) }
     }
 
     /// A pro league's divisions from its `level=3` answer, in standing order with each

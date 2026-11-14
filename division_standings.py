@@ -58,18 +58,66 @@ def _stat(entry, name):
     return None
 
 
-def games_back(entry):
-    """ESPN's games back for a team, as it writes it ("-", "2.5", "6"): the division figure
-    when there is one, otherwise the group's own."""
+def _games_back_stat(entry, name):
+    """The stat by name, the overall split first: college answers repeat `gamesBehind` once per
+    split (home, road, vs. conference), with the overall one typed `gamesbehind`."""
+    stats = _dicts(_as_dict(entry).get("stats"))
+    return (next((s for s in stats if s.get("name") == name and s.get("type") == name.lower()), None)
+            or _stat(entry, name))
+
+
+def _games_back_text(entry):
     for name in ("divisionGamesBehind", "gamesBehind"):
-        stat = _stat(entry, name)
+        stat = _games_back_stat(entry, name)
         if stat is None:
             continue
         text = stat.get("displayValue")
         text = text.strip() if isinstance(text, str) else ""
         if text:
             return text
-    return NO_GAMES_BACK
+    return None
+
+
+def games_back(entry):
+    """ESPN's games back for a team, as it writes it ("-", "2.5", "6"): the division figure
+    when there is one, otherwise the group's own."""
+    return _games_back_text(entry) or NO_GAMES_BACK
+
+
+# What a team at no games back shows and says. ESPN writes a dash, which neither NVDA nor
+# VoiceOver speaks at their default punctuation: NVDA said "Minnesota Timberwolves, GB" and
+# nothing more. Teams level at the top are both leaders.
+LEADER = "Leader"
+# The same dash where it means level with someone rather than leading: college games back counts
+# overall record from the conference's top seed (a team ahead of it reads "+0.5"), and the wild
+# card race's counts from the last spot.
+LEVEL = "0"
+# A team ESPN gives no games back at all, which isn't the same as leading.
+NO_FIGURE = "N/A"
+
+
+def shown_games_back_text(text, leader_word=True):
+    """ESPN's games back as both apps show and speak it: its own figure ("2.5", "6", "+8.5"),
+    "Leader" for a team at none ("-" or 0), or "0" where `leader_word` is False because the
+    figure isn't counted from the group's leader, and "N/A" when ESPN sends no figure."""
+    text = text.strip() if isinstance(text, str) else ""
+    if not text:
+        return NO_FIGURE
+    if text in (NO_GAMES_BACK, "—") or _float_or_none(text) == 0:
+        return LEADER if leader_word else LEVEL
+    return text
+
+
+def shown_games_back(entry, leader_word=True):
+    """A standings entry's games back, as shown_games_back_text says."""
+    return shown_games_back_text(_games_back_text(entry), leader_word)
+
+
+def _float_or_none(text):
+    try:
+        return float(text)
+    except (TypeError, ValueError):
+        return None
 
 
 # What a team needs for the iPhone to read it (Standings.swift's APIStandingsEntry): these four

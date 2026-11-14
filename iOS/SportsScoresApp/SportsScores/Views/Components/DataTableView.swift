@@ -271,7 +271,7 @@ struct StandingsTableView: View {
         }
         let s = entry.stats
         if let wc = entry.wildCard, isWildCard {
-            let lead = wc.position == "-" ? "" : "\(wc.position). "
+            let lead = wc.isDivisionLeader ? "" : "\(wc.position). "
             return "\(lead)\(teamName), \(s.wins)-\(s.losses), "
                 + "\(s.displayWinPercent), wild card games back: \(wc.gamesBack), "
                 + "\(s.streak), \(wc.spokenStatus)"

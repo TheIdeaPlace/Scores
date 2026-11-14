@@ -44,9 +44,9 @@ class TestMlb:
         assert row(rows, "Boston Red Sox")["streak"] == "L1"
 
     def test_games_back_is_espns_within_the_division(self, rows):
-        assert row(rows, "Tampa Bay Rays")["games_back"] == "—"
+        assert row(rows, "Tampa Bay Rays")["games_back"] == "Leader"
         assert row(rows, "New York Yankees")["games_back"] == "4.5"
-        assert row(rows, "Boston Red Sox")["games_back"] == "11.0"
+        assert row(rows, "Boston Red Sox")["games_back"] == "11"
 
     def test_divisions_come_from_the_answer(self, rows):
         """Not from a table of abbreviations: the Athletics are ATH there, OAK in the old table."""
@@ -83,8 +83,8 @@ class TestNfl:
 
     def test_a_division_leader_is_not_games_back(self, rows):
         """The bug: the conference figure had Denver 0.5 back of Buffalo while it led the AFC West."""
-        assert row(rows, "Denver Broncos")["games_back"] == "—"
-        assert row(rows, "Pittsburgh Steelers")["games_back"] == "—"
+        assert row(rows, "Denver Broncos")["games_back"] == "Leader"
+        assert row(rows, "Pittsburgh Steelers")["games_back"] == "Leader"
         assert row(rows, "Cleveland Browns")["games_back"] == "1.5"
         assert row(rows, "Kansas City Chiefs")["games_back"] == "0.5"
 
@@ -127,7 +127,7 @@ class TestNba:
         espn.on("/nba/standings", load("standings_NBA_divisions.json"))
         rows = espn_api.get_standings("NBA")
         central = [(r["abbreviation"], r["games_back"]) for r in rows if r["division"] == "Central"]
-        assert central == [("DET", "—"), ("CLE", "2.5"), ("IND", "4.5"), ("CHI", "6.5"), ("MIL", "7.5")]
+        assert central == [("DET", "Leader"), ("CLE", "2.5"), ("IND", "4.5"), ("CHI", "6.5"), ("MIL", "7.5")]
         assert list(dict.fromkeys(r["division"] for r in rows)) == [
             "Atlantic", "Central", "Southeast", "Northwest", "Pacific", "Southwest"]
 
@@ -139,7 +139,7 @@ class TestNba:
         assert [r["team_name"] for r in rows] == ["Boston Celtics", "Brooklyn Nets", "Atlanta Hawks"]
         hawks = row(rows, "Atlanta Hawks")
         assert (hawks["division"], hawks["wins"], hawks["win_percentage"], hawks["games_back"]) == (
-            "Southeast", 0, "0.000", "—")
+            "Southeast", 0, "0.000", "Leader")
         assert hawks["logo"].endswith("atl.png")
 
     @pytest.mark.parametrize("teams", [{"sports": []}, {"sports": [None]}], ids=["none", "unreadable"])
@@ -347,7 +347,7 @@ class TestFallbackFromTeamRecords:
         assert espn.urls("/teams/") == [f"{SITE}/basketball/wnba/teams/{i}" for i in ("1", "2", "17")]
         assert all((r["wins"], r["losses"], r["win_percentage"], r["streak"]) == (0, 2, "0.000", "L2") for r in rows)
         assert {r["division"] for r in rows} == {"League"}
-        assert rows[0]["games_back"] == "—"
+        assert rows[0]["games_back"] == "Leader"
         assert rows[0]["logo"]
 
     def test_games_back_in_the_division(self, espn):
@@ -362,11 +362,11 @@ class TestFallbackFromTeamRecords:
         espn.on(r"/mlb/teams/\d+$", lambda url: {"team": {"record": {"items": [
             {"type": "total", "summary": records[url.rsplit("/", 1)[1]]}]}}})
         rows = espn_api._get_standings_original("MLB")
-        assert row(rows, "Yankees")["games_back"] == "—"
-        assert row(rows, "Red Sox")["games_back"] == "5.0"
+        assert row(rows, "Yankees")["games_back"] == "Leader"
+        assert row(rows, "Red Sox")["games_back"] == "5"
         assert row(rows, "Blue Jays")["games_back"] == "0.5"
         athletics = row(rows, "Athletics")
-        assert (athletics["division"], athletics["games_back"]) == ("AL West", "—")
+        assert (athletics["division"], athletics["games_back"]) == ("AL West", "Leader")
 
     @pytest.mark.parametrize("data", [{}, {"sports": []}, {"sports": [{"leagues": []}]}])
     def test_no_teams(self, data):

@@ -786,7 +786,7 @@ class TestStandingsData:
         assert team["record"] == "5-2-1"
         assert team["points_for"] == 100
         assert team["streak"] == "N/A"
-        assert team["games_back"] == "—"
+        assert team["games_back"] == "N/A"
 
     def test_hockey_ranks_by_points_and_bad_numbers_sink(self):
         data = StandingsData([

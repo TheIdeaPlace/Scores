@@ -321,8 +321,8 @@ def test_games_back_counts_from_each_division_leader(monkeypatch, league, parser
     for row in rows:
         by_division.setdefault(row["division"], []).append(row)
     leaders = [teams[0]["games_back"] for teams in by_division.values()]
-    assert all(gb == "—" for gb in leaders), leaders
-    assert any(row["games_back"] not in ("—", "0.0", "") for row in rows)
+    assert all(gb == "Leader" for gb in leaders), leaders
+    assert any(row["games_back"] not in ("Leader", "N/A", "") for row in rows)
 
 
 def test_streak_on_pro_standings(monkeypatch):
@@ -368,14 +368,10 @@ def test_wnba_standings_are_the_regular_season_not_the_playoffs(monkeypatch):
     row = next(r for r in rows if r["team_name"] == entry["team"]["displayName"])
     assert f"{row['wins']}-{row['losses']}" == total["summary"]
 
-    # ESPN's "-" and "2" read as the NBA's do.
+    # ESPN's own figure, and "Leader" for its dash, which a screen reader doesn't speak.
     by_name = {r["team_name"]: r for r in rows}
-    assert by_name["Atlanta Dream"]["games_back"] == "—"
-    assert by_name["Washington Mystics"]["games_back"] == "2.0"
-    half = {"type": "gamesbehind", "value": 2.5, "displayValue": "2.5"}
-    assert espn_api._games_back(half) == "2.5"
-    assert espn_api._games_back({}) == "—"
-    assert espn_api._games_back({"value": "-"}) == "—"
+    assert by_name["Atlanta Dream"]["games_back"] == "Leader"
+    assert by_name["Washington Mystics"]["games_back"] == "2"
 
 
 class TestOnTodaysScoreboard:

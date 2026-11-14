@@ -13,7 +13,8 @@ GRID = json.loads((FIXTURES / "division_standings_grid.json").read_text(encoding
 def groups(data):
     return [{"name": g["name"], "conference": g["conference"],
              "teams": [e["team"]["abbreviation"] for e in g["entries"]],
-             "games_back": [d.games_back(e) for e in g["entries"]]} for g in d.division_groups(data)]
+             "games_back": [d.games_back(e) for e in g["entries"]],
+             "shown": [d.shown_games_back(e) for e in g["entries"]]} for g in d.division_groups(data)]
 
 
 @pytest.mark.parametrize("case", GRID["labels"], ids=lambda c: repr(c["name"]))
@@ -24,6 +25,15 @@ def test_labels(case):
 @pytest.mark.parametrize("case", GRID["games_back"], ids=lambda c: c["about"])
 def test_games_back(case):
     assert d.games_back(case["entry"]) == case["games_back"]
+    assert d.shown_games_back(case["entry"]) == case["shown"]
+    assert d.shown_games_back(case["entry"], leader_word=False) == case["shown_level"]
+
+
+def test_a_leader_is_never_shown_as_a_dash():
+    """NVDA said "Minnesota Timberwolves, GB" and nothing more for ESPN's dash."""
+    shown = {s for c in GRID["fixtures"] for g in c["groups"] for s in g["shown"]}
+    assert d.LEADER in shown
+    assert not shown & {"-", "—", ""}
 
 
 @pytest.mark.parametrize("case", GRID["order"], ids=lambda c: c["about"])
@@ -71,6 +81,40 @@ def test_team_divisions_and_conference_entries():
 def test_nothing_readable_is_no_groups(data):
     assert d.division_groups(data) == []
     assert d.team_divisions(data) == {}
+
+
+def test_college_says_level_not_leader():
+    """College games back counts overall record from the conference's top seed: UAB (0-1) reads
+    "-" while Charlotte (0-0) reads "+0.5", so "Leader" would be false there."""
+    import espn_api
+    data = json.loads((FIXTURES / "espn" / "standings_NCAAM.json").read_text(encoding="utf-8"))
+    rows = espn_api.parse_college_standings(data)
+    shown = {r["games_back"] for r in rows}
+    assert d.LEVEL in shown and d.LEADER not in shown and not shown & {"-", "—", ""}
+
+
+def test_the_wnba_says_leader():
+    import espn_api
+    data = json.loads((FIXTURES / "espn" / "standings_WNBA.json").read_text(encoding="utf-8"))
+    rows = espn_api.parse_college_standings(data, leader_word=True)
+    assert d.LEADER in {r["games_back"] for r in rows}
+
+
+@pytest.mark.parametrize("college,shown", [(False, "Leader"), (True, "0")])
+def test_a_games_own_standings_read_as_the_standings_do(college, shown):
+    """A game summary's standings carry ESPN's dash too: NBA's "Boston, GB: -" was silent."""
+    from game_labels import game_standings_tables
+    standings = {"groups": [{"header": "Atlantic Standings", "standings": {"entries": [
+        {"team": "Boston", "stats": [{"name": "gamesBehind", "abbreviation": "GB", "displayValue": "-"},
+                                     {"name": "wins", "abbreviation": "W", "displayValue": "10"}]},
+        {"team": "Philadelphia", "stats": [{"name": "gamesBehind", "abbreviation": "GB", "displayValue": "0.5"},
+                                           {"name": "wins", "abbreviation": "W", "displayValue": "10"}]},
+    ]}}]}
+    table = game_standings_tables(standings, college=college)[0]
+    assert table["rows"] == [["Boston", shown, "10"], ["Philadelphia", "0.5", "10"]]
+    # A summary with no games back is left as it was.
+    nfl = {"groups": [{"standings": {"entries": [{"team": "Bears", "stats": [{"name": "wins", "displayValue": "6"}]}]}}]}
+    assert game_standings_tables(nfl)[0]["rows"] == [["Bears", "6"]]
 
 
 def test_an_unreadable_seed_counts_as_none():

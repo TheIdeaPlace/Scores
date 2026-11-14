@@ -11,13 +11,14 @@ import XCTest
 
 private struct DivisionGrid: Decodable {
     struct Label: Decodable { let name: String; let label: String }
-    struct GamesBack: Decodable { let about: String; let games_back: String }
+    struct GamesBack: Decodable { let about: String; let games_back: String; let shown: String; let shown_level: String }
     struct Order: Decodable { let about: String; let order: [String] }
     struct Group: Decodable, Equatable {
         let name: String
         let conference: String
         let teams: [String]
         let games_back: [String]
+        let shown: [String]
     }
     struct Tree: Decodable { let about: String; let groups: [Group] }
     struct Fixture: Decodable { let fixture: String; let groups: [Group] }
@@ -75,7 +76,8 @@ final class DivisionStandingsGridTests: XCTestCase {
         groups.map { group in
             DivisionGrid.Group(name: group.name, conference: group.conference,
                                teams: group.entries.map(\.team.abbreviation),
-                               games_back: group.entries.map(DivisionStandings.gamesBack))
+                               games_back: group.entries.map(DivisionStandings.gamesBack),
+                               shown: group.entries.map { DivisionStandings.shownGamesBack($0) })
         }
     }
 
@@ -94,6 +96,8 @@ final class DivisionStandingsGridTests: XCTestCase {
         for (item, input) in zip(cases, inputs) {
             let entry = try decode(Entry.self, try XCTUnwrap(input["entry"]))
             XCTAssertEqual(DivisionStandings.gamesBack(entry), item.games_back, item.about)
+            XCTAssertEqual(DivisionStandings.shownGamesBack(entry), item.shown, item.about)
+            XCTAssertEqual(DivisionStandings.shownGamesBack(entry, leaderWord: false), item.shown_level, item.about)
         }
     }
 
@@ -152,17 +156,17 @@ final class DivisionStandingsGridTests: XCTestCase {
                                             "NFC East", "NFC North", "NFC South", "NFC West"])
         let west = try XCTUnwrap(groups.first { $0.name == "AFC West" })
         XCTAssertEqual(west.entries.map(\.team.abbreviation), ["DEN", "KC", "LV", "LAC"])
-        XCTAssertEqual(west.entries.map(\.stats.gamesBack), ["-", "0.5", "3", "6.5"])
+        XCTAssertEqual(west.entries.map(\.stats.gamesBack), ["Leader", "0.5", "3", "6.5"])
         let north = try XCTUnwrap(groups.first { $0.name == "AFC North" })
         XCTAssertEqual(north.entries.map(\.team.abbreviation), ["PIT", "CIN", "CLE", "BAL"])
-        XCTAssertEqual(north.entries.map(\.stats.gamesBack), ["-", "-", "1.5", "2.5"])
+        XCTAssertEqual(north.entries.map(\.stats.gamesBack), ["Leader", "Leader", "1.5", "2.5"])
     }
 
     func testTheNBAsDivisionsAreInStandingOrder() async throws {
         let groups = try await standings("standings_NBA_divisions.json", sport: .nba)
         let central = try XCTUnwrap(groups.first { $0.name == "Central" })
         XCTAssertEqual(central.entries.map(\.team.abbreviation), ["DET", "CLE", "IND", "CHI", "MIL"])
-        XCTAssertEqual(central.entries.map(\.stats.gamesBack), ["-", "2.5", "4.5", "6.5", "7.5"])
+        XCTAssertEqual(central.entries.map(\.stats.gamesBack), ["Leader", "2.5", "4.5", "6.5", "7.5"])
         // The NBA's level=3 answer has no overall record stat, so it comes from wins and losses.
         XCTAssertEqual(central.entries.first?.stats.record, "8-3")
         XCTAssertFalse(groups.flatMap(\.entries).contains { $0.stats.record == "-" })

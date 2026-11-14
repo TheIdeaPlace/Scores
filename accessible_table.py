@@ -918,8 +918,9 @@ class WildCardTable(StandingsTable):
             str(team.get("losses", "")),
             str(team.get("win_percentage", "")),
             str(team.get("games_back", "")),
-            team.get("streak") or "-",
-            team.get("wc_status") or "-",
+            team.get("streak") or "N/A",
+            # As the iPhone's WildCardStanding.spokenStatus says it: a dash isn't spoken.
+            team.get("wc_status") or "Not in a playoff spot",
         ]
 
     def _build_expanded_row(self, position: int, team: Dict[str, Any]) -> List[str]:

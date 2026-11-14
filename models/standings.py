@@ -21,7 +21,8 @@ class StandingsData:
             losses = entry.get("losses") if isinstance(entry.get("losses"), (int, str)) else entry.get("record", "0-0").split("-")[-1]
             ties = entry.get("ties", 0)  # NFL ties
             win_pct = entry.get("win_percentage") or entry.get("win_pct") or entry.get("winPercent") or entry.get("pct") or "0.000"
-            gb = entry.get("games_back") or entry.get("games_behind") or entry.get("gb") or "—"
+            # No figure reads as such, not as a dash nobody hears (division_standings.NO_FIGURE).
+            gb = entry.get("games_back") or entry.get("games_behind") or entry.get("gb") or "N/A"
             division = entry.get("division", "League")
             streak = entry.get("streak", "")
             

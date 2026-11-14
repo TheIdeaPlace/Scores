@@ -442,7 +442,8 @@ struct CFLFeed {
             wins: squad.wins,
             losses: squad.loss,
             winPercent: winPercent,
-            gamesBack: "-",
+            // The CFL's feed has no games back; a dash would be silent in VoiceOver.
+            gamesBack: DivisionStandings.noFigure,
             streak: "-",
             record: squad.recordString,
             pointsFor: nil,

@@ -315,7 +315,12 @@ struct GameDetails: Codable {
 
         /// One table per group that has any teams. A column is every stat any team has, in
         /// the order ESPN first gives them.
-        var tables: [Table] {
+        var tables: [Table] { tables(college: false) }
+
+        /// The same, with games back read as the standings read it (DivisionStandings
+        /// .shownGamesBackText): "Leader" for ESPN's dash, or "0" in college, where it counts
+        /// overall record from the conference's top seed. On Windows: game_standings_tables.
+        func tables(college: Bool) -> [Table] {
             (groups ?? []).compactMap { group -> Table? in
                 // A row with no team would read as numbers about nobody.
                 let entries = (group.standings?.entries ?? []).filter { $0.team?.nonBlank != nil }
@@ -335,6 +340,9 @@ struct GameDetails: Codable {
                     var values: [String: String] = [:]
                     for stat in entry.stats ?? [] {
                         if let key = stat.name?.nonBlank { values[key] = stat.displayValue ?? "" }
+                    }
+                    if let behind = values["gamesBehind"] {
+                        values["gamesBehind"] = DivisionStandings.shownGamesBackText(behind, leaderWord: !college)
                     }
                     return [entry.team ?? ""] + keys.map { values[$0] ?? "" }
                 }
