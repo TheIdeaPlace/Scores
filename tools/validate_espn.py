@@ -475,8 +475,9 @@ def standings_coverage_problems(data, league):
 
 def division_problems(data, league):
     """What the app relies on in a pro league's level=3 answer: every division its own group,
-    and each one's games back counted from its own leader, so the leader reads as none and the
-    figure never falls down the table (division_standings.standing_order puts it in order)."""
+    and each one's games back counted from its own leader, so the leader reads as none. Games
+    back can rise and fall down a correct table (a 3-1 team above a 5-2 one after a bye), so
+    the order isn't checked against it."""
     if league.key not in division_standings.DIVISION_LEAGUES:
         return []
     groups = division_standings.division_groups(data)
@@ -492,8 +493,6 @@ def division_problems(data, league):
             problems.append(f"{group['name']}: can't read games back {figures}")
         elif numbers[0] != 0:
             problems.append(f"{group['name']}: the leader is {figures[0]} back, so games back isn't the division's")
-        elif numbers != sorted(numbers):
-            problems.append(f"{group['name']}: games back out of order after sorting by seed {figures}")
     return problems
 
 

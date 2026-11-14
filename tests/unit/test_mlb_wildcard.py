@@ -34,7 +34,7 @@ def entry(team_id, name, abbr, wins, losses, pct, seed=None, gb="-", streak="W1"
     if seed is not None:
         stats.append({"name": "playoffSeed", "value": seed, "displayValue": str(seed)})
     return {
-        "team": {"id": str(team_id), "displayName": name, "abbreviation": abbr},
+        "team": {"id": str(team_id), "displayName": name, "name": name.split()[-1], "abbreviation": abbr},
         "stats": stats,
     }
 

@@ -248,13 +248,16 @@ class TestStandings:
         problems = v.division_problems(data, league("NBA"))
         assert problems and problems[0].startswith("Atlantic: can't read games back")
 
-    def test_games_back_out_of_order_is_a_division_problem(self):
-        data = copy.deepcopy(load("standings_NHL_divisions.json"))
-        entries = data["children"][0]["children"][0]["standings"]["entries"]
-        last = next(s for s in entries[-1]["stats"] if s["name"] == "playoffSeed")
-        last["value"] = 4.5  # The worst team seeded between second and third.
-        problems = v.division_problems(data, league("NHL"))
-        assert problems and problems[0].startswith("Atlantic: games back out of order")
+    def test_games_back_rising_and_falling_down_a_table_is_not_a_problem(self):
+        """After a bye, a 3-1 team (.750, 1.5 back of a 6-1 leader) is above a 5-2 one (1 back)."""
+        def team(team_id, seed, gb):
+            return {"team": {"id": team_id, "name": team_id, "abbreviation": team_id, "displayName": team_id},
+                    "stats": [{"name": "playoffSeed", "value": seed}, {"name": "gamesBehind", "displayValue": gb},
+                              {"name": "overall", "type": "total", "summary": "1-0"}]}
+        divisions = [{"name": f"D{n}", "standings": {"entries": [
+            team(f"{n}a", 1, "-"), team(f"{n}b", 5, "1.5"), team(f"{n}c", 6, "1")]}} for n in range(8)]
+        data = {"children": [{"name": "C", "children": divisions}]}
+        assert v.division_problems(data, league("NFL")) == []
 
     def test_other_leagues_have_no_division_rule(self):
         assert v.division_problems(load("standings_WNBA.json"), league("WNBA")) == []

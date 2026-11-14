@@ -183,6 +183,30 @@ final class DivisionStandingsGridTests: XCTestCase {
         XCTAssertEqual(groups.flatMap(\.entries).count, 6)
     }
 
+    func testSomethingElseWhereTheConferencesBelongIsAFailureNotAnEmptyTable() async throws {
+        // As on Windows (espn_api._pro_standings): a failed answer says so.
+        for body in [#"{"children":"not a list"}"#, #"{"children":null}"#] {
+            StandInDivisions.body = Data(body.utf8)
+            let config = URLSessionConfiguration.ephemeral
+            config.protocolClasses = [StandInDivisions.self]
+            do {
+                _ = try await ESPNAPIService(session: URLSession(configuration: config)).fetchStandings(for: .nfl)
+                XCTFail("\(body) should fail")
+            } catch {}
+        }
+        // An honest empty answer is still empty, not a failure.
+        StandInDivisions.body = Data(#"{"children":[]}"#.utf8)
+        let config = URLSessionConfiguration.ephemeral
+        config.protocolClasses = [StandInDivisions.self]
+        let groups = try await ESPNAPIService(session: URLSession(configuration: config)).fetchStandings(for: .nfl)
+        XCTAssertTrue(groups.isEmpty)
+    }
+
+    func testANoteItCannotReadKeepsItsTeam() throws {
+        let json = #"{"team":{"id":"1","name":"A","abbreviation":"A","displayName":"A"},"stats":[],"note":"text"}"#
+        XCTAssertNoThrow(try JSONDecoder().decode(Entry.self, from: Data(json.utf8)))
+    }
+
     func testAStatWithNoTextKeepsItsTeam() throws {
         let json = #"{"team":{"id":"1","name":"A","abbreviation":"A","displayName":"A"},"stats":[{"name":"wins","value":3}]}"#
         let entry = try JSONDecoder().decode(Entry.self, from: Data(json.utf8))

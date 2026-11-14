@@ -44,13 +44,12 @@ def test_real_answers(case):
 
 @pytest.mark.parametrize("fixture", ["standings_NFL_divisions.json", "standings_NBA_divisions.json",
                                      "standings_NHL_divisions.json", "standings_MLB_divisions.json"])
-def test_every_division_leader_is_at_the_top_and_games_back_never_falls(fixture):
-    """What the grid's real answers show, said as a rule: no leader reads as games back."""
+def test_every_division_leader_is_at_the_top(fixture):
+    """What the grid's real answers show, said as a rule: no leader reads as games back. (Games
+    back can rise down a correct table after a bye or a rainout, so that isn't a rule.)"""
     case = next(c for c in GRID["fixtures"] if c["fixture"] == fixture)
     for group in case["groups"]:
-        figures = [0.0 if gb == "-" else float(gb) for gb in group["games_back"]]
         assert group["games_back"][0] == "-", group["name"]
-        assert figures == sorted(figures), group["name"]
 
 
 def test_the_nfl_bug_is_gone():

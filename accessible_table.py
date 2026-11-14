@@ -684,8 +684,15 @@ class StandingsTable(AccessibleTable):
             return self.NHL_BASIC_HEADERS
         return self.BASIC_HEADERS_WITH_TIES if league == "NFL" else self.BASIC_HEADERS
 
-    def __init__(self, parent=None, division_name: str = "", league: str = "", expanded: bool = False):
+    # Leagues whose division names don't say their conference: the NBA's and the NHL's Central
+    # are in different conferences, so the table's name says which.
+    NAMED_WITH_CONFERENCE = ("NBA", "NHL")
+
+    def __init__(self, parent=None, division_name: str = "", league: str = "", expanded: bool = False,
+                 conference: str = ""):
         table_name = f"{division_name} Standings" if division_name else "Standings"
+        if division_name and conference and conference != division_name and league in self.NAMED_WITH_CONFERENCE:
+            table_name = f"{division_name}, {conference}, Standings"
         super().__init__(
             parent=parent,
             accessible_name=table_name,

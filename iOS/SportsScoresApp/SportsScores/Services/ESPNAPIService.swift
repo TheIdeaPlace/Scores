@@ -732,6 +732,8 @@ class ESPNAPIService {
         if sport.isSoccer {
             return apiResponse.groupsWithEntries.map { StandingsGroup(soccerTable: $0) }
         } else if DivisionStandings.leagues.contains(sport) {
+            // A failed answer must not read as an empty table (espn_api._pro_standings).
+            if apiResponse.childrenUnreadable { throw APIError.invalidResponse }
             return StandingsGroup.divisions(from: apiResponse.root)
         } else {
             return try apiResponse.groupsWithEntries.map { try StandingsGroup(from: $0) }

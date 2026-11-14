@@ -367,6 +367,19 @@ struct APIStandingsGroup: Codable {
             /// Where a place in a soccer table leads, such as "Champions League".
             let note: APINote?
 
+            /// A team needs its team and a list of named stats, as division_standings.py's
+            /// readable_entry says on Windows; a note it can't read is no reason to lose it.
+            init(from decoder: Decoder) throws {
+                let c = try decoder.container(keyedBy: CodingKeys.self)
+                team = try c.decode(APITeam.self, forKey: .team)
+                stats = try c.decode([APIStat].self, forKey: .stats)
+                note = try? c.decodeIfPresent(APINote.self, forKey: .note)
+            }
+
+            enum CodingKeys: String, CodingKey {
+                case team, stats, note
+            }
+
             struct APINote: Codable {
                 let description: String?
             }
@@ -419,9 +432,21 @@ struct APIStandingsResponse: Codable {
     let children: [APIStandingsGroup]
     let root: APIStandingsGroup
 
+    /// Something other than a list where the conferences belong (or a null there): not an
+    /// answer, so the pro leagues' standings say they couldn't be loaded, as on Windows.
+    let childrenUnreadable: Bool
+
+    private enum RootKeys: String, CodingKey { case children }
+
     init(from decoder: Decoder) throws {
         root = try APIStandingsGroup(from: decoder)
         children = root.children ?? []
+        let keys = try? decoder.container(keyedBy: RootKeys.self)
+        if let keys, keys.contains(.children) {
+            childrenUnreadable = (try? keys.nestedUnkeyedContainer(forKey: .children)) == nil
+        } else {
+            childrenUnreadable = false
+        }
     }
 
     func encode(to encoder: Encoder) throws {

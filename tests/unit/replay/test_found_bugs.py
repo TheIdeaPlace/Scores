@@ -185,8 +185,10 @@ class TestNullIsNotTheWordNone:
         espn.on("/nhl/standings", data)
         rows = espn_api.get_standings("NHL")
         assert "Atlantic" in {row["division"] for row in rows}
-        # A division with no name has nothing to read, but its teams are still there.
+        # A division with no name or conference is still named, so its tab isn't read as just "tab".
         assert "None" not in {row["division"] for row in rows} | {row["conference"] for row in rows}
+        assert all(row["division"] for row in rows)
+        assert "Standings" in {row["division"] for row in rows}
         assert len(rows) == 32
 
 

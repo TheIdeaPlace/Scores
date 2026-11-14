@@ -587,6 +587,310 @@
      ]
     }
    ]
+  },
+  {
+   "about": "teams the iPhone can't read are left out on both apps",
+   "data": {
+    "name": "League",
+    "children": [
+     {
+      "name": "East",
+      "children": [
+       {
+        "name": "East North",
+        "standings": {
+         "entries": [
+          {
+           "team": {
+            "id": "9"
+           },
+           "stats": []
+          },
+          {
+           "team": {
+            "id": 10,
+            "name": "N",
+            "abbreviation": "N",
+            "displayName": "N"
+           },
+           "stats": []
+          },
+          {
+           "team": {
+            "id": "11",
+            "name": "S",
+            "abbreviation": "S",
+            "displayName": "S"
+           }
+          },
+          {
+           "team": {
+            "id": "12",
+            "name": "T",
+            "abbreviation": "T",
+            "displayName": "T"
+           },
+           "stats": null
+          },
+          {
+           "team": {
+            "id": "13",
+            "name": "U",
+            "abbreviation": "U",
+            "displayName": "U"
+           },
+           "stats": [
+            {
+             "value": 1,
+             "displayValue": "1"
+            }
+           ]
+          },
+          {
+           "team": {
+            "id": "14",
+            "name": "V",
+            "abbreviation": "V",
+            "displayName": "V"
+           },
+           "stats": [
+            3
+           ]
+          },
+          {
+           "team": {
+            "id": "1",
+            "abbreviation": "A",
+            "name": "A",
+            "displayName": "A"
+           },
+           "stats": [
+            {
+             "name": "playoffSeed",
+             "value": 2,
+             "displayValue": "2"
+            },
+            {
+             "name": "gamesBehind",
+             "value": 0,
+             "displayValue": "1"
+            }
+           ],
+           "note": "not an object"
+          },
+          {
+           "team": {
+            "id": "2",
+            "abbreviation": "B",
+            "name": "B",
+            "displayName": "B"
+           },
+           "stats": [
+            {
+             "name": "playoffSeed",
+             "value": 1,
+             "displayValue": "1"
+            },
+            {
+             "name": "gamesBehind",
+             "value": 0,
+             "displayValue": "-"
+            }
+           ]
+          }
+         ]
+        }
+       }
+      ]
+     }
+    ]
+   },
+   "groups": [
+    {
+     "name": "East North",
+     "conference": "East",
+     "teams": [
+      "B",
+      "A"
+     ],
+     "games_back": [
+      "-",
+      "1"
+     ]
+    }
+   ]
+  },
+  {
+   "about": "a seed sent as text is no seed, and a games back sent as a number is none",
+   "data": {
+    "name": "League",
+    "children": [
+     {
+      "name": "East",
+      "children": [
+       {
+        "name": "East North",
+        "standings": {
+         "entries": [
+          {
+           "team": {
+            "id": "1",
+            "name": "A",
+            "abbreviation": "A",
+            "displayName": "A"
+           },
+           "stats": [
+            {
+             "name": "playoffSeed",
+             "value": "1",
+             "displayValue": "1"
+            },
+            {
+             "name": "gamesBehind",
+             "value": 0,
+             "displayValue": 3
+            }
+           ]
+          },
+          {
+           "team": {
+            "id": "2",
+            "abbreviation": "B",
+            "name": "B",
+            "displayName": "B"
+           },
+           "stats": [
+            {
+             "name": "playoffSeed",
+             "value": 5,
+             "displayValue": "5"
+            },
+            {
+             "name": "gamesBehind",
+             "value": 0,
+             "displayValue": "2"
+            }
+           ]
+          }
+         ]
+        }
+       }
+      ]
+     }
+    ]
+   },
+   "groups": [
+    {
+     "name": "East North",
+     "conference": "East",
+     "teams": [
+      "B",
+      "A"
+     ],
+     "games_back": [
+      "2",
+      "-"
+     ]
+    }
+   ]
+  },
+  {
+   "about": "a nameless division takes its conference's name, and one with neither a plain word",
+   "data": {
+    "name": "League",
+    "children": [
+     {
+      "name": "East",
+      "children": [
+       {
+        "name": 7,
+        "standings": {
+         "entries": [
+          {
+           "team": {
+            "id": "1",
+            "abbreviation": "A",
+            "name": "A",
+            "displayName": "A"
+           },
+           "stats": []
+          }
+         ]
+        }
+       },
+       {
+        "name": "  ",
+        "standings": {
+         "entries": [
+          {
+           "team": {
+            "id": "2",
+            "abbreviation": "B",
+            "name": "B",
+            "displayName": "B"
+           },
+           "stats": []
+          }
+         ]
+        }
+       }
+      ]
+     },
+     {
+      "name": null,
+      "children": [
+       {
+        "name": null,
+        "standings": {
+         "entries": [
+          {
+           "team": {
+            "id": "3",
+            "abbreviation": "C",
+            "name": "C",
+            "displayName": "C"
+           },
+           "stats": []
+          }
+         ]
+        }
+       }
+      ]
+     }
+    ]
+   },
+   "groups": [
+    {
+     "name": "East",
+     "conference": "East",
+     "teams": [
+      "A"
+     ],
+     "games_back": [
+      "-"
+     ]
+    },
+    {
+     "name": "East",
+     "conference": "East",
+     "teams": [
+      "B"
+     ],
+     "games_back": [
+      "-"
+     ]
+    },
+    {
+     "name": "Standings",
+     "conference": "",
+     "teams": [
+      "C"
+     ],
+     "games_back": [
+      "-"
+     ]
+    }
+   ]
   }
  ],
  "fixtures": [

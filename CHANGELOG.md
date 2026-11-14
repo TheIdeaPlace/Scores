@@ -15,10 +15,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   and games back. Teams level on record are in ESPN's order, which applies each league's tiebreakers,
   instead of an order of the app's own: the iPhone's could vary from one load to the next, and both
   apps' NBA and MLB divisions could disagree with ESPN's. Windows's figures were already right.
-- **No hard-coded division tables.** Which team is in which division comes from ESPN's answer, so a
+- **Standings no longer rely on hard-coded division tables.** Which team is in which division comes from ESPN's answer, so a
   team that changes its abbreviation (the Athletics' ATH, Utah's UTA and UTAH) can't drop out of its
   division. On Windows the NBA and NHL divisions are now named as on the iPhone ("Atlantic", not
-  "Eastern Conference Atlantic"), in conference order. The MLB wild card labels each division leader
+  "Eastern Conference Atlantic"), in conference order, and each table's spoken name says its
+  conference ("Central, Western Conference, Standings"). The MLB wild card labels each division leader
   from the same answer. If ESPN ever stops sending divisions, both apps show its conferences rather
   than nothing, and the nightly feed check says so.
 

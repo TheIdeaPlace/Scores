@@ -32,6 +32,9 @@ enum DivisionStandings {
     /// ESPN's leader, and what a missing figure reads as.
     static let noGamesBack = "-"
 
+    /// A group whose name is missing or blank, with no conference to name it either.
+    static let unnamedGroup = "Standings"
+
     struct Group {
         /// The division's name as both apps show it: "AL East", "AFC North", "Atlantic".
         let name: String
@@ -116,13 +119,17 @@ enum DivisionStandings {
     private static func walk(_ node: APIStandingsGroup, conference: String, depth: Int) -> [Group] {
         var groups: [Group] = []
         if !node.standings.entries.isEmpty {
-            groups.append(Group(name: label(node.name), conference: conference,
-                                entries: node.standings.entries))
+            // A nameless group still needs a name to be read out: its conference's, or a plain word.
+            let named = label(node.name)
+            let name = !named.isEmpty ? named : (!conference.isEmpty ? conference : unnamedGroup)
+            groups.append(Group(name: name, conference: conference, entries: node.standings.entries))
         }
         // The root is the league; its children are the conferences, and everything below a
         // conference is in it.
         for child in node.children ?? [] {
-            groups += walk(child, conference: depth == 0 ? child.name : conference, depth: depth + 1)
+            let childConference = depth == 0
+                ? child.name.trimmingCharacters(in: .whitespacesAndNewlines) : conference
+            groups += walk(child, conference: childConference, depth: depth + 1)
         }
         return groups
     }

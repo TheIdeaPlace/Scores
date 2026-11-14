@@ -9379,7 +9379,9 @@ class StandingsDialog(WildCardTabsMixin, QDialog):
     def _create_division_table(self, division_name: str, teams: List[Dict]) -> QWidget:
         widget = QWidget()
         layout = QVBoxLayout()
-        table = StandingsTable(parent=self, division_name=division_name, league=self.league, expanded=self.expanded_view)
+        conference = next((t.get("conference") for t in teams if t.get("conference")), "")
+        table = StandingsTable(parent=self, division_name=division_name, league=self.league,
+                               expanded=self.expanded_view, conference=conference)
         table.populate_standings(teams, set_focus=True)
         layout.addWidget(table)
         widget.setLayout(layout)

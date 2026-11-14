@@ -41,7 +41,7 @@ def _dicts(value):
 def division_label(name):
     """The name a division goes by in both apps: "American League East" is "AL East",
     "Atlantic Division" is "Atlantic", and "AFC East" stays as it is."""
-    name = (name or "").strip()
+    name = name.strip() if isinstance(name, str) else ""
     for long, short in _LEAGUE_PREFIXES:
         if name.startswith(long):
             name = short + name[len(long):]
@@ -65,24 +65,45 @@ def games_back(entry):
         stat = _stat(entry, name)
         if stat is None:
             continue
-        text = str(stat.get("displayValue") or "").strip()
+        text = stat.get("displayValue")
+        text = text.strip() if isinstance(text, str) else ""
         if text:
             return text
     return NO_GAMES_BACK
 
 
+# What a team needs for the iPhone to read it (Standings.swift's APIStandingsEntry): these four
+# as text, and a list of stats that each have a name. Anything less is left out on both apps,
+# so the two never list different teams.
+_TEAM_FIELDS = ("id", "name", "abbreviation", "displayName")
+# A group whose name is missing or blank, with no conference to name it either.
+UNNAMED_GROUP = "Standings"
+
+
+def readable_entry(entry):
+    team = _as_dict(_as_dict(entry).get("team"))
+    stats = entry.get("stats") if isinstance(entry, dict) else None
+    return (all(isinstance(team.get(field), str) for field in _TEAM_FIELDS)
+            and isinstance(stats, list)
+            and all(isinstance(stat, dict) and isinstance(stat.get("name"), str) for stat in stats))
+
+
+def _text(value):
+    return value if isinstance(value, str) else ""
+
+
 def _walk(node, conference, depth):
     node = _as_dict(node)
-    name = node.get("name") or ""
-    entries = [e for e in _dicts(_as_dict(node.get("standings")).get("entries"))
-               if _as_dict(e.get("team"))]
+    entries = [e for e in _dicts(_as_dict(node.get("standings")).get("entries")) if readable_entry(e)]
     groups = []
     if entries:
-        groups.append({"name": division_label(name), "conference": conference, "entries": entries})
+        # A nameless group still needs a name to be read out: its conference's, or a plain word.
+        name = division_label(node.get("name")) or conference or UNNAMED_GROUP
+        groups.append({"name": name, "conference": conference, "entries": entries})
     # The root is the league; its children are the conferences, and everything below a
     # conference is in it.
     for child in _dicts(node.get("children")):
-        groups += _walk(child, (child.get("name") or "") if depth == 0 else conference, depth + 1)
+        groups += _walk(child, _text(child.get("name")).strip() if depth == 0 else conference, depth + 1)
     return groups
 
 
@@ -95,11 +116,11 @@ def _number(text):
 
 
 def _seed(entry):
-    stat = _stat(entry, "playoffSeed")
-    try:
-        seed = int(float((stat or {}).get("value") or 0))
-    except (TypeError, ValueError):
-        seed = 0
+    """ESPN's seed if it sent one as a number; text ("3") counts as none, as on the iPhone."""
+    value = (_stat(entry, "playoffSeed") or {}).get("value")
+    if isinstance(value, bool) or not isinstance(value, (int, float)) or value != value:
+        return None
+    seed = int(value)
     return seed if seed > 0 else None
 
 
