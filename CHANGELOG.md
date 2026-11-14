@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- **Division standings count games back from the division leader, on both apps.** The iPhone's NFL,
+  NBA and NHL standings showed games back from the conference leader under each division's heading,
+  so a division leader could read as behind (Denver 0.5 back while leading the AFC West) and others
+  read a game or more off. Both apps now ask ESPN for the standings by division and use its divisions
+  and games back. Teams level on record are in ESPN's order, which applies each league's tiebreakers,
+  instead of an order of the app's own: the iPhone's could vary from one load to the next, and both
+  apps' NBA and MLB divisions could disagree with ESPN's. Windows's figures were already right.
+- **No hard-coded division tables.** Which team is in which division comes from ESPN's answer, so a
+  team that changes its abbreviation (the Athletics' ATH, Utah's UTA and UTAH) can't drop out of its
+  division. On Windows the NBA and NHL divisions are now named as on the iPhone ("Atlantic", not
+  "Eastern Conference Atlantic"), in conference order. The MLB wild card labels each division leader
+  from the same answer. If ESPN ever stops sending divisions, both apps show its conferences rather
+  than nothing, and the nightly feed check says so.
+
 ### In Progress
 - **Game Wrap Up Feature**: ESPN text processing and game story extraction (under construction)
   - Core infrastructure implemented, text processing being refined

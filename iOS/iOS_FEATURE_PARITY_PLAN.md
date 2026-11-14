@@ -143,7 +143,7 @@ As of February 26, 2026, Phases 1–7 are complete and Phase 8.2 is done. The iO
 | Feature | Python | iOS |
 |---------|--------|-----|
 | Basic W/L/PCT/GB/Streak | ✅ | ✅ Done |
-| Division tabs (MLB: 6, NFL: 8) | ✅ | ✅ Done — DivisionMapper + grouped sections |
+| Division tabs (MLB: 6, NFL: 8) | ✅ | ✅ Done — DivisionStandings (ESPN level=3 divisions) + grouped sections |
 | MLB expanded: R/RA/Diff/Home/Road/Playoff%/Magic# | ✅ | ✅ Done — expand button in table mode |
 | NFL expanded: PF/PA/Diff/Div Rec/Seed/Ties | ✅ | ✅ Done |
 | NBA expanded: PPG/OppPPG/DivW%/Seed | ✅ | ✅ Done |

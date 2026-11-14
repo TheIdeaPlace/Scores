@@ -231,9 +231,10 @@ extension StandingsEntry {
             wins:          wins,
             losses:        losses,
             winPercent:    stat("winPercent")?.value ?? computedPercent,
-            gamesBack:     stat("divisionGamesBehind")?.displayValue ?? stat("gamesBehind")?.displayValue ?? "-",
+            gamesBack:     DivisionStandings.gamesBack(apiEntry),
             streak:        stat("streak")?.displayValue ?? "-",
-            record:        overall ?? "-",
+            // The NBA's level=3 answer has no total, only its wins and losses.
+            record:        overall ?? Self.record(wins: stat("wins"), losses: stat("losses"), ties: ties),
             pointsFor:     stat("pointsFor").map { Int($0.value) },
             pointsAgainst: stat("pointsAgainst").map { Int($0.value) },
             ties:          ties,
@@ -253,6 +254,17 @@ extension StandingsEntry {
         )
     }
 
+    /// "5-3", or "5-3-1" with ties, from the stats themselves; "-" without both. As Windows's
+    /// validator reads it: tools/validate_espn.py overall_record.
+    private static func record(wins: APIStandingsGroup.APIStandings.APIStandingsEntry.APIStat?,
+                               losses: APIStandingsGroup.APIStandings.APIStandingsEntry.APIStat?,
+                               ties: Int?) -> String {
+        guard let wins, let losses else { return "-" }
+        let record = "\(Int(wins.value))-\(Int(losses.value))"
+        if let ties, ties > 0 { return "\(record)-\(ties)" }
+        return record
+    }
+
     /// The second number of a record such as "7-1" or "5-1-0", 0 if it has none.
     private static func losses(fromRecord record: String?) -> Int {
         let parts = (record ?? "").split(separator: "-")
@@ -265,6 +277,14 @@ extension StandingsGroup {
     init(from apiResponse: APIStandingsGroup) throws {
         self.name = apiResponse.name
         self.entries = apiResponse.standings.entries.map { StandingsEntry(fromAPIEntry: $0) }
+    }
+
+    /// A pro league's divisions from its `level=3` answer, in standing order with each
+    /// division's own games back (`DivisionStandings`). On Windows: espn_api._division_rows.
+    static func divisions(from root: APIStandingsGroup) -> [StandingsGroup] {
+        DivisionStandings.groups(root).map { group in
+            StandingsGroup(name: group.name, entries: group.entries.map { StandingsEntry(fromAPIEntry: $0) })
+        }
     }
 
     /// A soccer league's table, in the order of ESPN's rank. The answer's own order won't do: in
@@ -321,7 +341,8 @@ struct APIStandingsGroup: Codable {
         name = (try? container.decodeIfPresent(String.self, forKey: .name)) ?? ""
         standings = (try? container.decodeIfPresent(APIStandings.self, forKey: .standings))
             ?? APIStandings()
-        children = try? container.decodeIfPresent([APIStandingsGroup].self, forKey: .children)
+        // One unreadable child shouldn't take its siblings with it.
+        children = container.lossyArray(forKey: .children)
     }
 
     /// This node and everything under it that actually has teams, in order.
@@ -380,7 +401,8 @@ struct APIStandingsGroup: Codable {
                     self.displayName  = try  c.decodeIfPresent(String.self, forKey: .displayName)
                     self.type         = try? c.decodeIfPresent(String.self, forKey: .type)
                     self.value        = (try? c.decodeIfPresent(Double.self, forKey: .value)) ?? 0
-                    self.displayValue = try  c.decode(String.self,         forKey: .displayValue)
+                    // A stat with no text shouldn't drop the whole team from the table.
+                    self.displayValue = (try? c.decodeIfPresent(String.self, forKey: .displayValue)) ?? ""
                 }
 
                 enum CodingKeys: String, CodingKey {

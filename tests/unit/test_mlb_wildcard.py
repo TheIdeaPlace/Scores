@@ -59,7 +59,13 @@ def league(name, entries):
 
 
 RACE_PAYLOAD = {"children": [league("American League", RACE)]}
-OVERALL_PAYLOAD = {"children": [league("American League", RACE + LEADERS)]}
+# The overall request is by division (level=3): each league holds its divisions, which hold the
+# teams, so a leader's division is the group ESPN puts it in.
+OVERALL_PAYLOAD = {"children": [{"name": "American League", "children": [
+    league("American League East", [RACE[0], RACE[1], LEADERS[0]]),
+    league("American League Central", [RACE[3], LEADERS[2]]),
+    league("American League West", [RACE[2], LEADERS[1]]),
+]}]}
 
 
 class FakeResponse:
@@ -72,7 +78,7 @@ class FakeResponse:
 
 
 def fetch(race=RACE_PAYLOAD, overall=OVERALL_PAYLOAD, status_code=200):
-    """The code issues the type=1 request first, then the default one."""
+    """The code issues the type=1 request first, then the level=3 one."""
     responses = [FakeResponse(race, status_code), FakeResponse(overall, status_code)]
     with patch("espn_api.requests.get", side_effect=responses):
         return espn_api.get_mlb_wildcard_standings()
@@ -130,6 +136,22 @@ def test_row_carries_the_fields_the_standings_table_reads():
     assert row["wins"] == 82 and row["losses"] == 55
     assert row["division"] == "AL East"
     assert row["streak"] == "W1"
+
+
+def test_the_overall_request_is_by_division_and_labels_the_race_too():
+    responses = [FakeResponse(RACE_PAYLOAD), FakeResponse(OVERALL_PAYLOAD)]
+    with patch("espn_api.requests.get", side_effect=responses) as get:
+        al = espn_api.get_mlb_wildcard_standings()["AL"]
+    assert get.call_args_list[1].kwargs["params"] == {"level": 3}
+    divisions = {t["team_name"]: t["division"] for t in al}
+    assert divisions["Seattle Mariners"] == "AL West"
+    assert divisions["Detroit Tigers"] == "AL Central"
+
+
+def test_a_leader_espn_puts_in_no_division_reads_as_a_division_leader():
+    overall = {"children": [league("American League", RACE + LEADERS)]}
+    leaders = [t for t in fetch(overall=overall)["AL"] if t["wc_position"] == "-"]
+    assert [t["wc_status"] for t in leaders] == ["American League leader"] * 3
 
 
 def test_league_with_no_race_entries_is_omitted():

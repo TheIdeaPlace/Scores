@@ -7,6 +7,7 @@ from exceptions import ApiError
 from itertools import islice
 import racing
 import cfl
+import division_standings
 import favorite_card
 from game_labels import (best_odds, broadcast_names, format_height, format_weight,
                          injured_player_count, leader_display_value, local_schedule_datetime,
@@ -290,11 +291,10 @@ def _mlb_stat_value(entry, name, default=0.0):
     return default
 
 
-def _mlb_wildcard_team(entry, status, position, games_back):
+def _mlb_wildcard_team(entry, status, position, games_back, division):
     """Normalise one ESPN standings entry into the dict the standings table wants."""
     team = entry.get("team", {}) or {}
     abbreviation = team.get("abbreviation") or ""
-    league_name = "American" if abbreviation in _MLB_AL_ABBREVIATIONS else "National"
     return {
         "team_name": team.get("displayName") or "Unknown",
         "team_id": str(team.get("id") or ""),
@@ -304,16 +304,10 @@ def _mlb_wildcard_team(entry, status, position, games_back):
         "win_percentage": _mlb_stat(entry, "winPercent", "0.000"),
         "games_back": games_back,
         "streak": _mlb_stat(entry, "streak", "-"),
-        "division": _get_team_division(abbreviation, league_name),
+        "division": division,
         "wc_position": position,
         "wc_status": status,
     }
-
-
-_MLB_AL_ABBREVIATIONS = {
-    "BAL", "BOS", "NYY", "TB", "TOR", "CHW", "CLE", "DET", "KC", "MIN",
-    "HOU", "LAA", "OAK", "ATH", "SEA", "TEX",
-}
 
 
 def get_mlb_wildcard_standings():
@@ -333,19 +327,19 @@ def get_mlb_wildcard_standings():
             params={"type": MLB_STANDINGS_TYPE_WILDCARD},
             timeout=15,
         )
-        overall_resp = _http_get(MLB_STANDINGS_URL, timeout=15)
+        # By division, so each leader is labelled with the division ESPN puts it in.
+        overall_resp = _http_get(MLB_STANDINGS_URL, params={"level": 3}, timeout=15)
         if race_resp.status_code != 200 or overall_resp.status_code != 200:
             return {}
         race_leagues = race_resp.json().get("children", [])
-        overall_leagues = overall_resp.json().get("children", [])
+        overall = overall_resp.json()
+        divisions = division_standings.team_divisions(overall)
     except Exception as e:
         print(f"[WARNING] MLB wild card standings unavailable: {e}")
         return {}
 
-    overall_by_league = {
-        lg.get("name", ""): (lg.get("standings", {}) or {}).get("entries", [])
-        for lg in overall_leagues
-    }
+    def division_of(entry):
+        return divisions.get(str((entry.get("team") or {}).get("id")), "")
 
     result = {}
     for league in race_leagues:
@@ -357,21 +351,20 @@ def get_mlb_wildcard_standings():
 
         # Division leaders are whoever the wild card table leaves out.
         race_ids = {e.get("team", {}).get("id") for e in race_entries}
-        leaders = [e for e in overall_by_league.get(league_name, [])
+        leaders = [e for e in division_standings.conference_entries(overall, league_name)
                    if e.get("team", {}).get("id") not in race_ids]
 
         ordered_leaders = []
         for entry in sorted(leaders,
                             key=lambda e: _mlb_stat_value(e, "winPercent"),
                             reverse=True):
-            division = _get_team_division(
-                entry.get("team", {}).get("abbreviation", ""),
-                "American" if key == "AL" else "National")
+            division = division_of(entry)
             ordered_leaders.append(_mlb_wildcard_team(
                 entry,
                 status=f"{division} leader" if division else "Division leader",
                 position="-",
                 games_back="-",
+                division=division,
             ))
 
         ordered_race = []
@@ -384,6 +377,7 @@ def get_mlb_wildcard_standings():
                 status=status,
                 position=str(rank) if rank else "-",
                 games_back=_mlb_stat(entry, "gamesBehind", "-"),
+                division=division_of(entry),
             ))
 
         if ordered_leaders or ordered_race:
@@ -1778,389 +1772,158 @@ def get_standings(league_key):
         # Fallback to original method for other leagues
         return _get_standings_original(league_key)
 
-def _get_mlb_standings_fast():
-    """Fast MLB standings using dedicated endpoint (0.15s vs 7s)"""
+def _pro_standings_url(path):
+    """A pro league's standings by division. See division_standings for why."""
+    return f"https://site.api.espn.com/apis/v2/sports/{path}/standings?{division_standings.DIVISIONS_QUERY}"
+
+
+def _shown_games_back(text):
+    """ESPN's "-", "2.5" and "6" as the standings tables show them: "—", "2.5" and "6.0"."""
     try:
-        # Use the fast dedicated standings endpoint
-        url = "https://site.api.espn.com/apis/v2/sports/baseball/mlb/standings"
-        data = _espn_answer(STANDINGS_UNAVAILABLE, url)
+        value = float(text)
+    except (TypeError, ValueError):
+        return "—"
+    return f"{value:.1f}" if value > 0 else "—"
+
+
+def _stat_values(entry):
+    """A standings entry's stat values by name. A null or unreadable value is left out, so the
+    default applies instead of a crash."""
+    values = {}
+    for stat in _dicts(_as_dict(entry).get("stats")):
+        value = stat.get("value")
+        if isinstance(value, (int, float)) and not isinstance(value, bool):
+            values[stat.get("name") or ""] = value
+    return values
+
+
+def _team_basics(entry):
+    team = _as_dict(_as_dict(entry).get("team"))
+    logo = next(iter(_dicts(team.get("logos"))), {}).get("href") or ""
+    return {"team_name": team.get("displayName") or "Unknown", "team_id": str(team.get("id") or ""),
+            "abbreviation": team.get("abbreviation") or "", "logo": logo}
+
+
+def _positive(value):
+    return int(value) if value and value > 0 else None
+
+
+def _division_rows(data, build, games_back=True):
+    """One row per team of a level=3 answer, group by group in standing order. Each carries its
+    group's name, the conference above it, ESPN's games back within the group and its place there
+    (`division_rank`, which StandingsData keeps rather than re-sorting)."""
+    rows = []
+    for group in division_standings.division_groups(data):
+        for place, entry in enumerate(group["entries"], start=1):
+            row = {**_team_basics(entry), **build(entry, _stat_values(entry))}
+            row.update(division=group["name"], conference=group["conference"], division_rank=place)
+            if games_back:
+                row["games_back"] = _shown_games_back(division_standings.games_back(entry))
+            rows.append(row)
+    return rows
+
+
+def _pro_standings(path):
+    data = _espn_answer(STANDINGS_UNAVAILABLE, _pro_standings_url(path))
+    if data is None:
+        return None
+    _listed(data, "children", STANDINGS_UNAVAILABLE)
+    # Something other than a list where the conferences belong isn't an answer either.
+    if "children" in data and not isinstance(data["children"], list):
+        raise ApiError(STANDINGS_UNAVAILABLE)
+    return data
+
+
+def _get_mlb_standings_fast():
+    """MLB by division: ESPN's divisions, order and games back."""
+    try:
+        data = _pro_standings("baseball/mlb")
         if data is None:
             return []
-        _listed(data, "children", STANDINGS_UNAVAILABLE)
 
-        standings = []
-        
-        # Division mapping for games back calculation
-        division_teams = {}
-        
-        # Process each league (AL/NL)
-        for league in data.get('children', []):
-            league_name = league.get('name') or ''
-            
-            # Each league contains the standings entries
-            league_standings = league.get('standings', {})
-            entries = league_standings.get('entries', [])
-            
-            for entry in entries:
-                team_info = entry.get('team', {})
-                stats = entry.get('stats', [])
-                
-                # Create stats lookup
-                stats_dict = {}
-                for stat in stats:
-                    stats_dict[stat.get('name', '')] = stat.get('value', 0)
-                
-                # Extract team data
-                team_name = team_info.get('displayName') or 'Unknown'
-                team_id = str(team_info.get('id') or '')
-                abbreviation = team_info.get('abbreviation') or ''
-                
-                # Get wins/losses from stats
-                wins = int(stats_dict.get('wins', 0))
-                losses = int(stats_dict.get('losses', 0))
-                win_pct = stats_dict.get('winPercent', 0.0)
-                
-                # Get division from team info or determine from abbreviation
-                division = _get_team_division(abbreviation, league_name)
-                
-                # Get streak (look for streak stats)
-                streak = ""
-                streak_val = stats_dict.get('streak', 0)
-                if streak_val != 0:
-                    streak_type = "W" if streak_val > 0 else "L"
-                    streak = f"{streak_type}{abs(int(streak_val))}"
-                
-                team_data = {
-                    "team_name": team_name,
-                    "team_id": team_id,
-                    "abbreviation": abbreviation,
-                    "wins": wins,
-                    "losses": losses,
-                    "win_percentage": f"{win_pct:.3f}",
-                    "games_back": "0.0",  # Will calculate after grouping
-                    "division": division,
-                    "streak": streak,
-                    "logo": team_info.get("logos", [{}])[0].get("href", "") if team_info.get("logos") else "",
-                    # Expanded MLB data
-                    "runs_for": int(stats_dict.get('pointsFor', 0)),
-                    "runs_against": int(stats_dict.get('pointsAgainst', 0)),
-                    "run_differential": int(stats_dict.get('pointDifferential', 0)),
-                    "home_wins": int(stats_dict.get('homeWins', 0)),
-                    "home_losses": int(stats_dict.get('homeLosses', 0)),
-                    "road_wins": int(stats_dict.get('roadWins', 0)),
-                    "road_losses": int(stats_dict.get('roadLosses', 0)),
-                    "playoff_percent": float(stats_dict.get('playoffPercent', 0.0)),
-                    "magic_number": int(stats_dict.get('magicNumberDivision', 0)) if stats_dict.get('magicNumberDivision', 0) > 0 else None
-                }
-                
-                standings.append(team_data)
+        def build(entry, stats):
+            streak = stats.get("streak", 0)
+            return {
+                "wins": int(stats.get("wins", 0)),
+                "losses": int(stats.get("losses", 0)),
+                "win_percentage": f"{stats.get('winPercent', 0.0):.3f}",
+                "streak": f"{'W' if streak > 0 else 'L'}{abs(int(streak))}" if streak else "",
+                "runs_for": int(stats.get("pointsFor", 0)),
+                "runs_against": int(stats.get("pointsAgainst", 0)),
+                "run_differential": int(stats.get("pointDifferential", 0)),
+                "home_wins": int(stats.get("homeWins", 0)),
+                "home_losses": int(stats.get("homeLosses", 0)),
+                "road_wins": int(stats.get("roadWins", 0)),
+                "road_losses": int(stats.get("roadLosses", 0)),
+                "playoff_percent": float(stats.get("playoffPercent", 0.0)),
+                "magic_number": _positive(stats.get("magicNumberDivision")),
+            }
 
-                if division not in division_teams:
-                    division_teams[division] = []
-                division_teams[division].append(team_data)
-                
-                # Group by division for games back calculation
-        
-        # Calculate games back for each division
-        for division, teams in division_teams.items():
-            # Sort by wins descending, then by win percentage
-            teams.sort(key=lambda x: (-x["wins"], -float(x["win_percentage"])))
-            
-            if teams:
-                leader = teams[0]
-                leader_wins = leader["wins"]
-                leader_losses = leader["losses"]
-                
-                for i, team in enumerate(teams):
-                    if i == 0:
-                        team["games_back"] = "—"  # Leader
-                    else:
-                        team_wins = team["wins"]
-                        team_losses = team["losses"]
-                        games_back = ((leader_wins - team_wins) + (team_losses - leader_losses)) / 2
-                        team["games_back"] = f"{games_back:.1f}" if games_back > 0 else "0.0"
-        
-        # Sort final standings by division, then by wins
-        standings.sort(key=lambda x: (x["division"], -x["wins"], -float(x["win_percentage"])))
-        
-        return standings
-
+        return _division_rows(data, build)
     except ApiError:
         raise
     except Exception as e:
         print(f"Error in fast MLB standings: {e}")
-        # Fallback to original method
         return _get_standings_original("MLB")
 
-def _get_team_division(abbreviation, league_name):
-    """Get team division from abbreviation and league"""
-    # MLB Division mapping
-    mlb_divisions = {
-        # American League East
-        "BAL": "AL East", "BOS": "AL East", "NYY": "AL East", "TB": "AL East", "TOR": "AL East",
-        # American League Central  
-        "CHW": "AL Central", "CLE": "AL Central", "DET": "AL Central", "KC": "AL Central", "MIN": "AL Central",
-        # American League West
-        "HOU": "AL West", "LAA": "AL West", "OAK": "AL West", "SEA": "AL West", "TEX": "AL West",
-        # National League East
-        "ATL": "NL East", "MIA": "NL East", "NYM": "NL East", "PHI": "NL East", "WSH": "NL East",
-        # National League Central
-        "CHC": "NL Central", "CIN": "NL Central", "MIL": "NL Central", "PIT": "NL Central", "STL": "NL Central",
-        # National League West
-        "ARI": "NL West", "COL": "NL West", "LAD": "NL West", "SD": "NL West", "SF": "NL West"
-    }
-    
-    # Handle Oakland abbreviation
-    if abbreviation == "ATH":
-        abbreviation = "OAK"
-    
-    return mlb_divisions.get(abbreviation, f"{league_name} League")
 
 def _get_nfl_standings_fast():
-    """Fast NFL standings using dedicated endpoint"""
+    """The NFL by division: ESPN's divisions, order (with the NFL's tiebreakers) and games back."""
     try:
-        url = "https://site.api.espn.com/apis/v2/sports/football/nfl/standings"
-        data = _espn_answer(STANDINGS_UNAVAILABLE, url)
+        data = _pro_standings("football/nfl")
         if data is None:
             return []
-        _listed(data, "children", STANDINGS_UNAVAILABLE)
 
-        standings = []
-        
-        # NFL divisions mapping
-        nfl_divisions = {
-            # AFC East
-            "BUF": "AFC East", "MIA": "AFC East", "NE": "AFC East", "NYJ": "AFC East",
-            # AFC North  
-            "BAL": "AFC North", "CIN": "AFC North", "CLE": "AFC North", "PIT": "AFC North",
-            # AFC South
-            "HOU": "AFC South", "IND": "AFC South", "JAX": "AFC South", "TEN": "AFC South",
-            # AFC West
-            "DEN": "AFC West", "KC": "AFC West", "LV": "AFC West", "LAC": "AFC West",
-            # NFC East
-            "DAL": "NFC East", "NYG": "NFC East", "PHI": "NFC East", "WSH": "NFC East",
-            # NFC North
-            "CHI": "NFC North", "DET": "NFC North", "GB": "NFC North", "MIN": "NFC North",
-            # NFC South
-            "ATL": "NFC South", "CAR": "NFC South", "NO": "NFC South", "TB": "NFC South",
-            # NFC West
-            "ARI": "NFC West", "LAR": "NFC West", "SF": "NFC West", "SEA": "NFC West"
-        }
-        
-        # Process each conference
-        division_teams = {}
-        for conference in data.get('children', []):
-            conf_standings = conference.get('standings', {})
-            entries = conf_standings.get('entries', [])
-            
-            for entry in entries:
-                team_info = entry.get('team', {})
-                stats = entry.get('stats', [])
-                
-                # Create stats lookup
-                stats_dict = {}
-                for stat in stats:
-                    stats_dict[stat.get('name', '')] = stat.get('value', 0)
-                
-                # Extract team data
-                team_name = team_info.get('displayName') or 'Unknown'
-                team_id = str(team_info.get('id') or '')
-                abbreviation = team_info.get('abbreviation') or ''
-                
-                # Get wins/losses from stats
-                wins = int(stats_dict.get('wins', 0))
-                losses = int(stats_dict.get('losses', 0))
-                ties = int(stats_dict.get('ties', 0))
-                win_pct = stats_dict.get('winPercent', 0.0)
-                
-                # Get division
-                division = nfl_divisions.get(abbreviation, "Unknown Division")
-                
-                # NFL record format includes ties
-                record_display = f"{wins}-{losses}"
-                if ties > 0:
-                    record_display += f"-{ties}"
-                
-                team_data = {
-                    "team_name": team_name,
-                    "team_id": team_id,
-                    "abbreviation": abbreviation,
-                    "wins": wins,
-                    "losses": losses,
-                    "ties": ties,
-                    "win_percentage": f"{win_pct:.3f}",
-                    "games_back": "0.0",
-                    "division": division,
-                    "streak": _standing_stat(stats, "streak").get("displayValue") or "",  # Can be enhanced later
-                    "logo": team_info.get("logos", [{}])[0].get("href", "") if team_info.get("logos") else "",
-                    "record_display": record_display,
-                    # Expanded NFL data
-                    "points_for": int(stats_dict.get('pointsFor', 0)),
-                    "points_against": int(stats_dict.get('pointsAgainst', 0)),
-                    "point_differential": int(stats_dict.get('pointDifferential', 0)),
-                    "division_wins": int(stats_dict.get('divisionWins', 0)),
-                    "division_losses": int(stats_dict.get('divisionLosses', 0)),
-                    "playoff_seed": int(stats_dict.get('playoffSeed', 0)) if stats_dict.get('playoffSeed', 0) > 0 else None
-                }
-                
-                standings.append(team_data)
+        def build(entry, stats):
+            wins, losses, ties = int(stats.get("wins", 0)), int(stats.get("losses", 0)), int(stats.get("ties", 0))
+            return {
+                "wins": wins,
+                "losses": losses,
+                "ties": ties,
+                "win_percentage": f"{stats.get('winPercent', 0.0):.3f}",
+                "streak": _standing_stat(entry.get("stats"), "streak").get("displayValue") or "",
+                "record_display": f"{wins}-{losses}-{ties}" if ties > 0 else f"{wins}-{losses}",
+                "points_for": int(stats.get("pointsFor", 0)),
+                "points_against": int(stats.get("pointsAgainst", 0)),
+                "point_differential": int(stats.get("pointDifferential", 0)),
+                "division_wins": int(stats.get("divisionWins", 0)),
+                "division_losses": int(stats.get("divisionLosses", 0)),
+                "playoff_seed": _positive(stats.get("playoffSeed")),
+            }
 
-                if division not in division_teams:
-                    division_teams[division] = []
-                division_teams[division].append(team_data)
-                
-        
-        # Calculate games back for each division
-        for division, teams in division_teams.items():
-            teams.sort(key=lambda x: (-x["wins"], x["losses"]))
-            
-            if teams:
-                leader = teams[0]
-                leader_wins = leader["wins"]
-                leader_losses = leader["losses"]
-                
-                for i, team in enumerate(teams):
-                    if i == 0:
-                        team["games_back"] = "—"
-                    else:
-                        team_wins = team["wins"]
-                        team_losses = team["losses"]
-                        games_back = ((leader_wins - team_wins) + (team_losses - leader_losses)) / 2
-                        team["games_back"] = f"{games_back:.1f}" if games_back > 0 else "0.0"
-        
-        # Sort by division, then by wins
-        standings.sort(key=lambda x: (x["division"], -x["wins"], x["losses"]))
-        
-        return standings
-
+        return _division_rows(data, build)
     except ApiError:
         raise
     except Exception as e:
         print(f"Error in fast NFL standings: {e}")
         return _get_standings_original("NFL")
 
+
 def _get_nba_standings_fast():
-    """Fast NBA standings using dedicated endpoint"""
+    """The NBA by division. The season is the one ESPN calls current, as on the iPhone: one from
+    the calendar could have no games yet, which read 0-0 for everyone from July."""
     try:
-        # The season ESPN calls current, as on the iPhone. A season from the calendar could be one
-        # with no games yet, which read 0-0 for everyone from July.
-        url = "https://site.api.espn.com/apis/v2/sports/basketball/nba/standings"
-        data = _espn_answer(STANDINGS_UNAVAILABLE, url)
+        data = _pro_standings("basketball/nba")
         if data is None:
             return []
-        _listed(data, "children", STANDINGS_UNAVAILABLE)
 
-        standings = []
-        
-        # NBA divisions mapping
-        nba_divisions = {
-            # Eastern Conference - Atlantic
-            "BOS": "Atlantic", "BKN": "Atlantic", "NYK": "Atlantic", "NY": "Atlantic", "PHI": "Atlantic", "TOR": "Atlantic",
-            # Eastern Conference - Central
-            "CHI": "Central", "CLE": "Central", "DET": "Central", "IND": "Central", "MIL": "Central",
-            # Eastern Conference - Southeast
-            "ATL": "Southeast", "CHA": "Southeast", "MIA": "Southeast", "ORL": "Southeast", "WSH": "Southeast",
-            # Western Conference - Northwest
-            "DEN": "Northwest", "MIN": "Northwest", "OKC": "Northwest", "POR": "Northwest", "UTA": "Northwest", "UTAH": "Northwest",
-            # Western Conference - Pacific
-            "GSW": "Pacific", "GS": "Pacific", "LAC": "Pacific", "LAL": "Pacific", "PHX": "Pacific", "SAC": "Pacific",
-            # Western Conference - Southwest
-            "DAL": "Southwest", "HOU": "Southwest", "MEM": "Southwest", "NO": "Southwest", "SA": "Southwest"
-        }
-        
-        # Process each conference
-        division_teams = {}
-        has_entries = False
-        
-        # Check if any conference has entries
-        for conference in data.get('children', []):
-            conf_standings = conference.get('standings', {})
-            if conf_standings.get('entries', []):
-                has_entries = True
-                break
-        
-        # If no entries (early season), create fresh 0-0 standings from teams endpoint
-        if not has_entries:
-            return _get_nba_fresh_standings()
-        
-        for conference in data.get('children', []):
-            conf_name = conference.get('name') or ''
-            conf_standings = conference.get('standings', {})
-            entries = conf_standings.get('entries', [])
-            
-            for entry in entries:
-                team_info = entry.get('team', {})
-                stats = entry.get('stats', [])
-                
-                # Create stats lookup
-                stats_dict = {}
-                for stat in stats:
-                    stats_dict[stat.get('name', '')] = stat.get('value', 0)
-                
-                # Extract team data
-                team_name = team_info.get('displayName') or 'Unknown'
-                team_id = str(team_info.get('id') or '')
-                abbreviation = team_info.get('abbreviation') or ''
-                
-                # Get wins/losses from stats
-                wins = int(stats_dict.get('wins', 0))
-                losses = int(stats_dict.get('losses', 0))
-                win_pct = stats_dict.get('winPercent', 0.0)
-                
-                # Get division with conference prefix
-                base_division = nba_divisions.get(abbreviation, "Unknown")
-                division = f"{conf_name} {base_division}".strip() if base_division != "Unknown" else conf_name
-                
-                team_data = {
-                    "team_name": team_name,
-                    "team_id": team_id,
-                    "abbreviation": abbreviation,
-                    "wins": wins,
-                    "losses": losses,
-                    "win_percentage": f"{win_pct:.3f}",
-                    "games_back": "0.0",
-                    "division": division,
-                    "streak": _standing_stat(stats, "streak").get("displayValue") or "",
-                    "logo": team_info.get("logos", [{}])[0].get("href", "") if team_info.get("logos") else "",
-                    # Expanded NBA data
-                    "avg_points_for": float(stats_dict.get('avgPointsFor', 0.0)),
-                    "avg_points_against": float(stats_dict.get('avgPointsAgainst', 0.0)),
-                    "point_differential": int(stats_dict.get('pointDifferential', 0)),
-                    "division_win_percent": float(stats_dict.get('divisionWinPercent', 0.0)),
-                    "playoff_seed": int(stats_dict.get('playoffSeed', 0)) if stats_dict.get('playoffSeed', 0) > 0 else None,
-                    "clinch_status": int(stats_dict.get('clincher', 0)) if stats_dict.get('clincher', 0) > 0 else None
-                }
-                
-                standings.append(team_data)
+        def build(entry, stats):
+            return {
+                "wins": int(stats.get("wins", 0)),
+                "losses": int(stats.get("losses", 0)),
+                "win_percentage": f"{stats.get('winPercent', 0.0):.3f}",
+                "streak": _standing_stat(entry.get("stats"), "streak").get("displayValue") or "",
+                "avg_points_for": float(stats.get("avgPointsFor", 0.0)),
+                "avg_points_against": float(stats.get("avgPointsAgainst", 0.0)),
+                "point_differential": int(stats.get("pointDifferential", 0)),
+                "division_win_percent": float(stats.get("divisionWinPercent", 0.0)),
+                "playoff_seed": _positive(stats.get("playoffSeed")),
+                "clinch_status": _positive(stats.get("clincher")),
+            }
 
-                if division not in division_teams:
-                    division_teams[division] = []
-                division_teams[division].append(team_data)
-                
-        
-        # Calculate games back for each division
-        for division, teams in division_teams.items():
-            teams.sort(key=lambda x: (-x["wins"], x["losses"]))
-            
-            if teams:
-                leader = teams[0]
-                leader_wins = leader["wins"]
-                leader_losses = leader["losses"]
-                
-                for i, team in enumerate(teams):
-                    if i == 0:
-                        team["games_back"] = "—"
-                    else:
-                        team_wins = team["wins"]
-                        team_losses = team["losses"]
-                        games_back = ((leader_wins - team_wins) + (team_losses - leader_losses)) / 2
-                        team["games_back"] = f"{games_back:.1f}" if games_back > 0 else "0.0"
-        
-        # Sort by division, then by wins
-        standings.sort(key=lambda x: (x["division"], -x["wins"], x["losses"]))
-        
-        return standings
-
+        rows = _division_rows(data, build)
+        # A new season, before ESPN has standings: every team at 0-0.
+        return rows or _get_nba_fresh_standings()
     except ApiError:
         raise
     except Exception as e:
@@ -2222,8 +1985,9 @@ def _get_nba_fresh_standings():
                     else:
                         conference = "Unknown Conference"
                     
-                    division = f"{conference} {base_division}" if base_division != "Unknown" else conference
-                    
+                    # Named as the standings name them (division_standings.division_label).
+                    division = base_division if base_division != "Unknown" else conference
+
                     # Create fresh team data with 0-0 record
                     team_data = {
                         "team_name": team_name,
@@ -2234,14 +1998,15 @@ def _get_nba_fresh_standings():
                         "win_percentage": "0.000",
                         "games_back": "—",
                         "division": division,
+                        "conference": conference,
                         "streak": "",
                         "logo": team_info.get("logos", [{}])[0].get("href", "") if team_info.get("logos") else ""
                     }
-                    
+
                     standings.append(team_data)
-        
-        # Sort by division, then by team name (since all records are 0-0)
-        standings.sort(key=lambda x: (x["division"], x["team_name"]))
+
+        # East's divisions, then the West's, each by team name (since all records are 0-0)
+        standings.sort(key=lambda x: (x["conference"], x["division"], x["team_name"]))
         
         return standings
 
@@ -2252,94 +2017,34 @@ def _get_nba_fresh_standings():
         return []
 
 def _get_nhl_standings_fast():
-    """Fast NHL standings using dedicated endpoint"""
+    """The NHL by division, ranked on points. Its games back stays empty: ESPN's figure there is
+    points, not games."""
     try:
-        url = "https://site.api.espn.com/apis/v2/sports/hockey/nhl/standings"
-        data = _espn_answer(STANDINGS_UNAVAILABLE, url)
+        data = _pro_standings("hockey/nhl")
         if data is None:
             return []
-        _listed(data, "children", STANDINGS_UNAVAILABLE)
 
-        standings = []
-        
-        # NHL divisions mapping
-        nhl_divisions = {
-            # Eastern Conference - Atlantic
-            "BOS": "Atlantic", "BUF": "Atlantic", "DET": "Atlantic", "FLA": "Atlantic", 
-            "MTL": "Atlantic", "OTT": "Atlantic", "TB": "Atlantic", "TOR": "Atlantic",
-            # Eastern Conference - Metropolitan  
-            "CAR": "Metropolitan", "CBJ": "Metropolitan", "NJ": "Metropolitan", "NYI": "Metropolitan",
-            "NYR": "Metropolitan", "PHI": "Metropolitan", "PIT": "Metropolitan", "WSH": "Metropolitan",
-            # Western Conference - Central
-            "CHI": "Central", "COL": "Central", "DAL": "Central", "MIN": "Central",
-            "NSH": "Central", "STL": "Central", "UTA": "Central", "UTAH": "Central", "WPG": "Central",
-            # Western Conference - Pacific
-            "ANA": "Pacific", "CGY": "Pacific", "EDM": "Pacific", "LA": "Pacific",
-            "SJ": "Pacific", "SEA": "Pacific", "VAN": "Pacific", "VGK": "Pacific"
-        }
-        
-        # Process each conference
-        for conference in data.get('children', []):
-            conf_name = conference.get('name') or ''
-            conf_standings = conference.get('standings', {})
-            entries = conf_standings.get('entries', [])
-            
-            for entry in entries:
-                team_info = entry.get('team', {})
-                stats = entry.get('stats', [])
-                
-                # Create stats lookup
-                stats_dict = {}
-                for stat in stats:
-                    stats_dict[stat.get('name', '')] = stat.get('value', 0)
-                
-                # Extract team data
-                team_name = team_info.get('displayName') or 'Unknown'
-                team_id = str(team_info.get('id') or '')
-                abbreviation = team_info.get('abbreviation') or ''
-                
-                # Get wins/losses from stats
-                wins = int(stats_dict.get('wins', 0))
-                losses = int(stats_dict.get('losses', 0))
-                ot_losses = int(stats_dict.get('otLosses', 0))
-                points = int(stats_dict.get('points', 0))
-                
-                # NHL uses points, not win percentage
-                games_played = wins + losses + ot_losses
-                point_pct = points / (games_played * 2) if games_played > 0 else 0.0
-                
-                # Get division with conference prefix
-                base_division = nhl_divisions.get(abbreviation, "Unknown")
-                division = f"{conf_name} {base_division}".strip() if base_division != "Unknown" else conf_name
-                
-                team_data = {
-                    "team_name": team_name,
-                    "team_id": team_id,
-                    "abbreviation": abbreviation,
-                    "wins": wins,
-                    "losses": losses,
-                    "win_percentage": f"{point_pct:.3f}",
-                    "games_back": "",
-                    "division": division,
-                    "streak": _standing_stat(stats, "streak").get("displayValue") or "",
-                    "logo": team_info.get("logos", [{}])[0].get("href", "") if team_info.get("logos") else "",
-                    # Expanded NHL data
-                    "points": points,
-                    "ot_losses": ot_losses,
-                    "goals_for": int(stats_dict.get('pointsFor', 0)),
-                    "goals_against": int(stats_dict.get('pointsAgainst', 0)),
-                    "goal_differential": int(stats_dict.get('pointDifferential', 0)),
-                    "playoff_seed": int(stats_dict.get('playoffSeed', 0)) if stats_dict.get('playoffSeed', 0) > 0 else None
-                }
-                
-                standings.append(team_data)
-                
-        
-        # Sort final standings by division, then by points
-        standings.sort(key=lambda x: (x["division"], -x["points"], -x["wins"]))
-        
-        return standings
+        def build(entry, stats):
+            wins, losses = int(stats.get("wins", 0)), int(stats.get("losses", 0))
+            ot_losses = int(stats.get("otLosses", 0))
+            points = int(stats.get("points", 0))
+            games_played = wins + losses + ot_losses
+            return {
+                "wins": wins,
+                "losses": losses,
+                # The NHL ranks on points, so this is the share of points available.
+                "win_percentage": f"{points / (games_played * 2) if games_played else 0.0:.3f}",
+                "games_back": "",
+                "streak": _standing_stat(entry.get("stats"), "streak").get("displayValue") or "",
+                "points": points,
+                "ot_losses": ot_losses,
+                "goals_for": int(stats.get("pointsFor", 0)),
+                "goals_against": int(stats.get("pointsAgainst", 0)),
+                "goal_differential": int(stats.get("pointDifferential", 0)),
+                "playoff_seed": _positive(stats.get("playoffSeed")),
+            }
 
+        return _division_rows(data, build, games_back=False)
     except ApiError:
         raise
     except Exception as e:

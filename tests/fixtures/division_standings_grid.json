@@ -1,0 +1,1087 @@
+{
+ "about": "Division standings from /standings?level=3: division_standings.py and Models/DivisionStandings.swift must give exactly these.",
+ "labels": [
+  {
+   "name": "American League East",
+   "label": "AL East"
+  },
+  {
+   "name": "National League West",
+   "label": "NL West"
+  },
+  {
+   "name": "AFC North",
+   "label": "AFC North"
+  },
+  {
+   "name": "Atlantic",
+   "label": "Atlantic"
+  },
+  {
+   "name": "Atlantic Division",
+   "label": "Atlantic"
+  },
+  {
+   "name": "Metropolitan Division",
+   "label": "Metropolitan"
+  },
+  {
+   "name": "Eastern Conference",
+   "label": "Eastern Conference"
+  },
+  {
+   "name": " Division",
+   "label": "Division"
+  },
+  {
+   "name": "",
+   "label": ""
+  },
+  {
+   "name": "Division",
+   "label": "Division"
+  }
+ ],
+ "games_back": [
+  {
+   "about": "the leader",
+   "entry": {
+    "team": {
+     "id": "1",
+     "abbreviation": "A",
+     "name": "A",
+     "displayName": "A"
+    },
+    "stats": [
+     {
+      "name": "gamesBehind",
+      "value": 0,
+      "displayValue": "-"
+     }
+    ]
+   },
+   "games_back": "-"
+  },
+  {
+   "about": "the group's own figure",
+   "entry": {
+    "team": {
+     "id": "1",
+     "abbreviation": "A",
+     "name": "A",
+     "displayName": "A"
+    },
+    "stats": [
+     {
+      "name": "gamesBehind",
+      "value": 0,
+      "displayValue": "2.5"
+     }
+    ]
+   },
+   "games_back": "2.5"
+  },
+  {
+   "about": "MLB's division figure first",
+   "entry": {
+    "team": {
+     "id": "1",
+     "abbreviation": "A",
+     "name": "A",
+     "displayName": "A"
+    },
+    "stats": [
+     {
+      "name": "gamesBehind",
+      "value": 0,
+      "displayValue": "14"
+     },
+     {
+      "name": "divisionGamesBehind",
+      "value": 0,
+      "displayValue": "1"
+     }
+    ]
+   },
+   "games_back": "1"
+  },
+  {
+   "about": "a blank division figure falls to the group's",
+   "entry": {
+    "team": {
+     "id": "1",
+     "abbreviation": "A",
+     "name": "A",
+     "displayName": "A"
+    },
+    "stats": [
+     {
+      "name": "gamesBehind",
+      "value": 0,
+      "displayValue": "3"
+     },
+     {
+      "name": "divisionGamesBehind",
+      "value": 0,
+      "displayValue": " "
+     }
+    ]
+   },
+   "games_back": "3"
+  },
+  {
+   "about": "no figure at all",
+   "entry": {
+    "team": {
+     "id": "1",
+     "abbreviation": "A",
+     "name": "A",
+     "displayName": "A"
+    },
+    "stats": []
+   },
+   "games_back": "-"
+  }
+ ],
+ "order": [
+  {
+   "about": "worst first, as the NBA's come",
+   "entries": [
+    {
+     "team": {
+      "id": "5",
+      "abbreviation": "E",
+      "name": "E",
+      "displayName": "E"
+     },
+     "stats": [
+      {
+       "name": "playoffSeed",
+       "value": 13,
+       "displayValue": "13"
+      },
+      {
+       "name": "gamesBehind",
+       "value": 0,
+       "displayValue": "6.5"
+      }
+     ]
+    },
+    {
+     "team": {
+      "id": "4",
+      "abbreviation": "D",
+      "name": "D",
+      "displayName": "D"
+     },
+     "stats": [
+      {
+       "name": "playoffSeed",
+       "value": 8,
+       "displayValue": "8"
+      },
+      {
+       "name": "gamesBehind",
+       "value": 0,
+       "displayValue": "5"
+      }
+     ]
+    },
+    {
+     "team": {
+      "id": "1",
+      "abbreviation": "A",
+      "name": "A",
+      "displayName": "A"
+     },
+     "stats": [
+      {
+       "name": "playoffSeed",
+       "value": 1,
+       "displayValue": "1"
+      },
+      {
+       "name": "gamesBehind",
+       "value": 0,
+       "displayValue": "-"
+      }
+     ]
+    }
+   ],
+   "order": [
+    "A",
+    "D",
+    "E"
+   ]
+  },
+  {
+   "about": "a team with no seed goes after, by games back",
+   "entries": [
+    {
+     "team": {
+      "id": "3",
+      "abbreviation": "C",
+      "name": "C",
+      "displayName": "C"
+     },
+     "stats": [
+      {
+       "name": "gamesBehind",
+       "value": 0,
+       "displayValue": "4"
+      }
+     ]
+    },
+    {
+     "team": {
+      "id": "2",
+      "abbreviation": "B",
+      "name": "B",
+      "displayName": "B"
+     },
+     "stats": [
+      {
+       "name": "gamesBehind",
+       "value": 0,
+       "displayValue": "1"
+      }
+     ]
+    },
+    {
+     "team": {
+      "id": "1",
+      "abbreviation": "A",
+      "name": "A",
+      "displayName": "A"
+     },
+     "stats": [
+      {
+       "name": "playoffSeed",
+       "value": 2,
+       "displayValue": "2"
+      },
+      {
+       "name": "gamesBehind",
+       "value": 0,
+       "displayValue": "-"
+      }
+     ]
+    }
+   ],
+   "order": [
+    "A",
+    "B",
+    "C"
+   ]
+  },
+  {
+   "about": "no seeds and no games back keep the answer's order",
+   "entries": [
+    {
+     "team": {
+      "id": "2",
+      "abbreviation": "B",
+      "name": "B",
+      "displayName": "B"
+     },
+     "stats": []
+    },
+    {
+     "team": {
+      "id": "1",
+      "abbreviation": "A",
+      "name": "A",
+      "displayName": "A"
+     },
+     "stats": []
+    },
+    {
+     "team": {
+      "id": "3",
+      "abbreviation": "C",
+      "name": "C",
+      "displayName": "C"
+     },
+     "stats": []
+    }
+   ],
+   "order": [
+    "B",
+    "A",
+    "C"
+   ]
+  },
+  {
+   "about": "a zero seed is no seed",
+   "entries": [
+    {
+     "team": {
+      "id": "2",
+      "abbreviation": "B",
+      "name": "B",
+      "displayName": "B"
+     },
+     "stats": [
+      {
+       "name": "playoffSeed",
+       "value": 0,
+       "displayValue": "0"
+      },
+      {
+       "name": "gamesBehind",
+       "value": 0,
+       "displayValue": "1"
+      }
+     ]
+    },
+    {
+     "team": {
+      "id": "1",
+      "abbreviation": "A",
+      "name": "A",
+      "displayName": "A"
+     },
+     "stats": [
+      {
+       "name": "playoffSeed",
+       "value": 4,
+       "displayValue": "4"
+      },
+      {
+       "name": "gamesBehind",
+       "value": 0,
+       "displayValue": "-"
+      }
+     ]
+    }
+   ],
+   "order": [
+    "A",
+    "B"
+   ]
+  }
+ ],
+ "trees": [
+  {
+   "about": "conferences only: the conferences are the groups",
+   "data": {
+    "name": "League",
+    "children": [
+     {
+      "name": "East",
+      "standings": {
+       "entries": [
+        {
+         "team": {
+          "id": "1",
+          "abbreviation": "A",
+          "name": "A",
+          "displayName": "A"
+         },
+         "stats": [
+          {
+           "name": "playoffSeed",
+           "value": 1,
+           "displayValue": "1"
+          },
+          {
+           "name": "gamesBehind",
+           "value": 0,
+           "displayValue": "-"
+          }
+         ]
+        }
+       ]
+      }
+     },
+     {
+      "name": "West",
+      "standings": {
+       "entries": [
+        {
+         "team": {
+          "id": "2",
+          "abbreviation": "B",
+          "name": "B",
+          "displayName": "B"
+         },
+         "stats": [
+          {
+           "name": "playoffSeed",
+           "value": 1,
+           "displayValue": "1"
+          },
+          {
+           "name": "gamesBehind",
+           "value": 0,
+           "displayValue": "-"
+          }
+         ]
+        }
+       ]
+      }
+     }
+    ]
+   },
+   "groups": [
+    {
+     "name": "East",
+     "conference": "East",
+     "teams": [
+      "A"
+     ],
+     "games_back": [
+      "-"
+     ]
+    },
+    {
+     "name": "West",
+     "conference": "West",
+     "teams": [
+      "B"
+     ],
+     "games_back": [
+      "-"
+     ]
+    }
+   ]
+  },
+  {
+   "about": "a team ESPN repeats stays in its first group",
+   "data": {
+    "name": "League",
+    "children": [
+     {
+      "name": "East",
+      "children": [
+       {
+        "name": "East North",
+        "standings": {
+         "entries": [
+          {
+           "team": {
+            "id": "1",
+            "abbreviation": "A",
+            "name": "A",
+            "displayName": "A"
+           },
+           "stats": [
+            {
+             "name": "playoffSeed",
+             "value": 1,
+             "displayValue": "1"
+            }
+           ]
+          }
+         ]
+        }
+       },
+       {
+        "name": "East South",
+        "standings": {
+         "entries": [
+          {
+           "team": {
+            "id": "1",
+            "abbreviation": "A",
+            "name": "A",
+            "displayName": "A"
+           },
+           "stats": [
+            {
+             "name": "playoffSeed",
+             "value": 1,
+             "displayValue": "1"
+            }
+           ]
+          },
+          {
+           "team": {
+            "id": "2",
+            "abbreviation": "B",
+            "name": "B",
+            "displayName": "B"
+           },
+           "stats": [
+            {
+             "name": "playoffSeed",
+             "value": 2,
+             "displayValue": "2"
+            }
+           ]
+          }
+         ]
+        }
+       }
+      ]
+     }
+    ]
+   },
+   "groups": [
+    {
+     "name": "East North",
+     "conference": "East",
+     "teams": [
+      "A"
+     ],
+     "games_back": [
+      "-"
+     ]
+    },
+    {
+     "name": "East South",
+     "conference": "East",
+     "teams": [
+      "B"
+     ],
+     "games_back": [
+      "-"
+     ]
+    }
+   ]
+  },
+  {
+   "about": "an entry with no team, a null name and a string where children belong",
+   "data": {
+    "name": "League",
+    "children": [
+     {
+      "name": null,
+      "children": [
+       {
+        "name": "Pacific Division",
+        "standings": {
+         "entries": [
+          {
+           "stats": []
+          },
+          {
+           "team": {
+            "id": "1",
+            "abbreviation": "A",
+            "name": "A",
+            "displayName": "A"
+           },
+           "stats": []
+          }
+         ]
+        }
+       }
+      ]
+     },
+     {
+      "name": "Odd",
+      "children": "not a list"
+     }
+    ]
+   },
+   "groups": [
+    {
+     "name": "Pacific",
+     "conference": "",
+     "teams": [
+      "A"
+     ],
+     "games_back": [
+      "-"
+     ]
+    }
+   ]
+  }
+ ],
+ "fixtures": [
+  {
+   "fixture": "standings_NFL_divisions.json",
+   "groups": [
+    {
+     "name": "AFC East",
+     "conference": "American Football Conference",
+     "teams": [
+      "BUF",
+      "NE",
+      "NYJ",
+      "MIA"
+     ],
+     "games_back": [
+      "-",
+      "2.5",
+      "5.5",
+      "6"
+     ]
+    },
+    {
+     "name": "AFC North",
+     "conference": "American Football Conference",
+     "teams": [
+      "PIT",
+      "CIN",
+      "CLE",
+      "BAL"
+     ],
+     "games_back": [
+      "-",
+      "-",
+      "1.5",
+      "2.5"
+     ]
+    },
+    {
+     "name": "AFC South",
+     "conference": "American Football Conference",
+     "teams": [
+      "JAX",
+      "HOU",
+      "IND",
+      "TEN"
+     ],
+     "games_back": [
+      "-",
+      "3",
+      "4.5",
+      "5"
+     ]
+    },
+    {
+     "name": "AFC West",
+     "conference": "American Football Conference",
+     "teams": [
+      "DEN",
+      "KC",
+      "LV",
+      "LAC"
+     ],
+     "games_back": [
+      "-",
+      "0.5",
+      "3",
+      "6.5"
+     ]
+    },
+    {
+     "name": "NFC East",
+     "conference": "National Football Conference",
+     "teams": [
+      "NYG",
+      "DAL",
+      "WSH",
+      "PHI"
+     ],
+     "games_back": [
+      "-",
+      "1.5",
+      "2",
+      "3.5"
+     ]
+    },
+    {
+     "name": "NFC North",
+     "conference": "National Football Conference",
+     "teams": [
+      "CHI",
+      "DET",
+      "MIN",
+      "GB"
+     ],
+     "games_back": [
+      "-",
+      "0.5",
+      "0.5",
+      "1"
+     ]
+    },
+    {
+     "name": "NFC South",
+     "conference": "National Football Conference",
+     "teams": [
+      "CAR",
+      "NO",
+      "TB",
+      "ATL"
+     ],
+     "games_back": [
+      "-",
+      "-",
+      "0.5",
+      "0.5"
+     ]
+    },
+    {
+     "name": "NFC West",
+     "conference": "National Football Conference",
+     "teams": [
+      "SF",
+      "SEA",
+      "LAR",
+      "ARI"
+     ],
+     "games_back": [
+      "-",
+      "2.5",
+      "2.5",
+      "4.5"
+     ]
+    }
+   ]
+  },
+  {
+   "fixture": "standings_NBA_divisions.json",
+   "groups": [
+    {
+     "name": "Atlantic",
+     "conference": "Eastern Conference",
+     "teams": [
+      "BOS",
+      "PHI",
+      "NY",
+      "TOR",
+      "BKN"
+     ],
+     "games_back": [
+      "-",
+      "0.5",
+      "3.5",
+      "5",
+      "6.5"
+     ]
+    },
+    {
+     "name": "Central",
+     "conference": "Eastern Conference",
+     "teams": [
+      "DET",
+      "CLE",
+      "IND",
+      "CHI",
+      "MIL"
+     ],
+     "games_back": [
+      "-",
+      "2.5",
+      "4.5",
+      "6.5",
+      "7.5"
+     ]
+    },
+    {
+     "name": "Southeast",
+     "conference": "Eastern Conference",
+     "teams": [
+      "ATL",
+      "MIA",
+      "ORL",
+      "CHA",
+      "WSH"
+     ],
+     "games_back": [
+      "-",
+      "1.5",
+      "2.5",
+      "3",
+      "3.5"
+     ]
+    },
+    {
+     "name": "Northwest",
+     "conference": "Western Conference",
+     "teams": [
+      "MIN",
+      "POR",
+      "OKC",
+      "DEN",
+      "UTAH"
+     ],
+     "games_back": [
+      "-",
+      "0.5",
+      "1",
+      "2",
+      "8"
+     ]
+    },
+    {
+     "name": "Pacific",
+     "conference": "Western Conference",
+     "teams": [
+      "LAL",
+      "GS",
+      "PHX",
+      "LAC",
+      "SAC"
+     ],
+     "games_back": [
+      "-",
+      "2.5",
+      "5",
+      "7.5",
+      "9"
+     ]
+    },
+    {
+     "name": "Southwest",
+     "conference": "Western Conference",
+     "teams": [
+      "SA",
+      "HOU",
+      "MEM",
+      "DAL",
+      "NO"
+     ],
+     "games_back": [
+      "-",
+      "1",
+      "2.5",
+      "3",
+      "6"
+     ]
+    }
+   ]
+  },
+  {
+   "fixture": "standings_NHL_divisions.json",
+   "groups": [
+    {
+     "name": "Atlantic",
+     "conference": "Eastern Conference",
+     "teams": [
+      "TB",
+      "MTL",
+      "BOS",
+      "OTT",
+      "FLA",
+      "BUF",
+      "TOR",
+      "DET"
+     ],
+     "games_back": [
+      "-",
+      "-",
+      "1",
+      "2",
+      "4",
+      "8",
+      "10",
+      "11"
+     ]
+    },
+    {
+     "name": "Metropolitan",
+     "conference": "Eastern Conference",
+     "teams": [
+      "CAR",
+      "NJ",
+      "NYR",
+      "WSH",
+      "NYI",
+      "PIT",
+      "PHI",
+      "CBJ"
+     ],
+     "games_back": [
+      "-",
+      "4",
+      "9",
+      "12",
+      "12",
+      "16",
+      "16",
+      "18"
+     ]
+    },
+    {
+     "name": "Central",
+     "conference": "Western Conference",
+     "teams": [
+      "MIN",
+      "NSH",
+      "COL",
+      "DAL",
+      "UTA",
+      "WPG",
+      "STL",
+      "CHI"
+     ],
+     "games_back": [
+      "-",
+      "7",
+      "7",
+      "10",
+      "10",
+      "11",
+      "12",
+      "21"
+     ]
+    },
+    {
+     "name": "Pacific",
+     "conference": "Western Conference",
+     "teams": [
+      "EDM",
+      "VGK",
+      "ANA",
+      "SEA",
+      "SJ",
+      "CGY",
+      "LA",
+      "VAN"
+     ],
+     "games_back": [
+      "-",
+      "3",
+      "10",
+      "12",
+      "13",
+      "14",
+      "19",
+      "24"
+     ]
+    }
+   ]
+  },
+  {
+   "fixture": "standings_MLB_divisions.json",
+   "groups": [
+    {
+     "name": "AL East",
+     "conference": "American League",
+     "teams": [
+      "TB",
+      "NYY",
+      "BOS",
+      "BAL",
+      "TOR"
+     ],
+     "games_back": [
+      "-",
+      "4.5",
+      "11",
+      "18.5",
+      "19"
+     ]
+    },
+    {
+     "name": "AL Central",
+     "conference": "American League",
+     "teams": [
+      "CLE",
+      "CHW",
+      "MIN",
+      "DET",
+      "KC"
+     ],
+     "games_back": [
+      "-",
+      "1",
+      "8",
+      "9",
+      "16"
+     ]
+    },
+    {
+     "name": "AL West",
+     "conference": "American League",
+     "teams": [
+      "HOU",
+      "TEX",
+      "SEA",
+      "ATH",
+      "LAA"
+     ],
+     "games_back": [
+      "-",
+      "1",
+      "5",
+      "17",
+      "19"
+     ]
+    },
+    {
+     "name": "NL East",
+     "conference": "National League",
+     "teams": [
+      "ATL",
+      "PHI",
+      "MIA",
+      "WSH",
+      "NYM"
+     ],
+     "games_back": [
+      "-",
+      "6",
+      "14",
+      "17",
+      "20"
+     ]
+    },
+    {
+     "name": "NL Central",
+     "conference": "National League",
+     "teams": [
+      "MIL",
+      "CHC",
+      "PIT",
+      "STL",
+      "CIN"
+     ],
+     "games_back": [
+      "-",
+      "14",
+      "21",
+      "26",
+      "28"
+     ]
+    },
+    {
+     "name": "NL West",
+     "conference": "National League",
+     "teams": [
+      "LAD",
+      "SD",
+      "ARI",
+      "SF",
+      "COL"
+     ],
+     "games_back": [
+      "-",
+      "9",
+      "14",
+      "35",
+      "42"
+     ]
+    }
+   ]
+  },
+  {
+   "fixture": "standings_NFL.json",
+   "groups": [
+    {
+     "name": "American Football Conference",
+     "conference": "American Football Conference",
+     "teams": [
+      "BUF",
+      "DEN",
+      "PIT"
+     ],
+     "games_back": [
+      "-",
+      "0.5",
+      "0.5"
+     ]
+    },
+    {
+     "name": "National Football Conference",
+     "conference": "National Football Conference",
+     "teams": [
+      "SF",
+      "MIN",
+      "DET"
+     ],
+     "games_back": [
+      "-",
+      "-",
+      "1"
+     ]
+    }
+   ]
+  }
+ ]
+}

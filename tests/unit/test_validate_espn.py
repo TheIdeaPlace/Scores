@@ -220,17 +220,78 @@ class TestStandings:
         problems = v.standings_coverage_problems({}, league("NCAAF"))
         assert problems == ["0 teams, expected at least 200", "no FBS conference has teams", "no FCS conference has teams"]
 
+    @pytest.mark.parametrize("key", ["NFL", "NBA", "NHL", "MLB"])
+    def test_the_pro_leagues_are_asked_by_division_and_pass(self, key):
+        assert league(key).standings_params == "level=3"
+        assert v.division_problems(load(f"standings_{key}_divisions.json"), league(key)) == []
+
+    def test_conferences_only_is_a_division_problem(self):
+        problems = v.division_problems(load("standings_NFL.json"), league("NFL"))
+        assert problems and problems[0].startswith("2 groups with teams at level=3, expected 8 divisions")
+
+    def test_a_leader_games_back_is_a_division_problem(self):
+        """What the iPhone showed: the conference figure under a division heading."""
+        data = copy.deepcopy(load("standings_NFL_divisions.json"))
+        west = data["children"][0]["children"][3]
+        for entry in west["standings"]["entries"]:
+            for stat in entry["stats"]:
+                if stat["name"] == "gamesBehind":
+                    stat["displayValue"] = "0.5" if stat["displayValue"] == "-" else stat["displayValue"]
+        assert v.division_problems(data, league("NFL")) == [
+            "AFC West: the leader is 0.5 back, so games back isn't the division's"]
+
+    def test_unreadable_games_back_is_a_division_problem(self):
+        data = copy.deepcopy(load("standings_NBA_divisions.json"))
+        data["children"][0]["children"][0]["standings"]["entries"][0]["stats"] = [
+            s if s["name"] != "gamesBehind" else {**s, "displayValue": "lots"}
+            for s in data["children"][0]["children"][0]["standings"]["entries"][0]["stats"]]
+        problems = v.division_problems(data, league("NBA"))
+        assert problems and problems[0].startswith("Atlantic: can't read games back")
+
+    def test_games_back_out_of_order_is_a_division_problem(self):
+        data = copy.deepcopy(load("standings_NHL_divisions.json"))
+        entries = data["children"][0]["children"][0]["standings"]["entries"]
+        last = next(s for s in entries[-1]["stats"] if s["name"] == "playoffSeed")
+        last["value"] = 4.5  # The worst team seeded between second and third.
+        problems = v.division_problems(data, league("NHL"))
+        assert problems and problems[0].startswith("Atlantic: games back out of order")
+
+    def test_other_leagues_have_no_division_rule(self):
+        assert v.division_problems(load("standings_WNBA.json"), league("WNBA")) == []
+
     def test_leagues_with_no_coverage_rule_have_no_coverage_problems(self):
         assert v.standings_coverage_problems(load("standings_NFL.json"), league("NFL")) == []
         assert "NCAAF" not in v.EXPECTED_DIVISIONS
 
-    def test_overall_record_stat_gone(self):
+    def test_overall_record_stat_gone_reads_wins_and_losses(self):
         data = copy.deepcopy(load("standings_NFL.json"))
         for entry in v.standings_entries(data):
             for stat in entry["stats"]:
                 if stat.get("type") == "total":
                     stat["type"] = "overall"
-        assert any("total" in p for p in v.standings_problems(data, league("NFL")))
+        assert v.standings_problems(data, league("NFL")) == []
+
+    def test_no_overall_record_at_all(self):
+        data = copy.deepcopy(load("standings_NFL.json"))
+        for entry in v.standings_entries(data):
+            entry["stats"] = [s for s in entry["stats"] if s.get("type") != "total" and s["name"] != "losses"]
+        assert any("no overall record" in p for p in v.standings_problems(data, league("NFL")))
+
+    def test_the_nbas_division_answer_has_no_total_and_passes(self):
+        """ESPN's NBA level=3 answer files the record as "Division Standings", not total."""
+        data = load("standings_NBA_divisions.json")
+        assert not any(s.get("type") == "total" for e in v.standings_entries(data) for s in e["stats"])
+        assert v.standings_problems(data, league("NBA")) == []
+
+    @pytest.mark.parametrize("stats,record", [
+        ([{"name": "overall", "type": "total", "summary": "7-1"}], "7-1"),
+        ([{"name": "wins", "value": 5}, {"name": "losses", "value": 3}, {"name": "ties", "value": 1}], "5-3-1"),
+        ([{"name": "wins", "value": 5}, {"name": "losses", "value": 3}, {"name": "ties", "value": 0}], "5-3"),
+        ([{"name": "wins", "value": 5}], None),
+        ([{"name": "wins", "value": None}, {"name": "losses", "value": 3}], None),
+    ])
+    def test_overall_record(self, stats, record):
+        assert v.overall_record({"stats": stats}) == record
 
 
 class TestPlays:
@@ -2857,7 +2918,7 @@ class TestAppTeams:
 
     def test_app_standings_lose_a_team_or_a_division(self, monkeypatch):
         import espn_api
-        data = load("standings_NFL.json")
+        data = load("standings_NFL_divisions.json")
         entries = v.standings_entries(data)
         rows = []
         for entry in entries:

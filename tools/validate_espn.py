@@ -53,6 +53,7 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if ROOT not in sys.path:
     sys.path.insert(0, ROOT)
 
+import division_standings  # noqa: E402
 from exceptions import ApiError  # noqa: E402
 
 SITE = "https://site.api.espn.com/apis/site/v2/sports"
@@ -116,25 +117,26 @@ _COLLEGE_HOCKEY = dict(box_score=False, plays=False, rankings=True, transactions
 _SOCCER = dict(plays=False, transactions=False, player_stats=False, team_stats=False, core_leaders=False, soccer_leaders=True)
 
 LEAGUES = [
-    League("NFL", "football/nfl", FOOTBALL),
+    League("NFL", "football/nfl", FOOTBALL, standings_params=division_standings.DIVISIONS_QUERY),
     League("NCAAF", "football/college-football", FOOTBALL, "groups=90&limit=400", rankings=True, transactions=False,
            standings_params="group=90", standings_min_teams=200, standings_groupings=("FBS", "FCS")),
-    League("NBA", "basketball/nba", BASKETBALL),
+    League("NBA", "basketball/nba", BASKETBALL, standings_params=division_standings.DIVISIONS_QUERY),
     League("WNBA", "basketball/wnba", BASKETBALL),
     League("NCAAM", "basketball/mens-college-basketball", BASKETBALL, "groups=50&limit=400",
            rankings=True, transactions=False),
     League("NCAAWB", "basketball/womens-college-basketball", BASKETBALL, "groups=50&limit=400",
            rankings=True, transactions=False),
-    League("NHL", "hockey/nhl", HOCKEY),
+    League("NHL", "hockey/nhl", HOCKEY, standings_params=division_standings.DIVISIONS_QUERY),
     League("NCAAH", "hockey/mens-college-hockey", HOCKEY, **_COLLEGE_HOCKEY),
     League("NCAAWH", "hockey/womens-college-hockey", HOCKEY, **_COLLEGE_HOCKEY),
-    League("MLB", "baseball/mlb", BASEBALL),
+    League("MLB", "baseball/mlb", BASEBALL, standings_params=division_standings.DIVISIONS_QUERY),
     League("EPL", "soccer/eng.1", SOCCER, **_SOCCER),
     League("MLS", "soccer/usa.1", SOCCER, **_SOCCER),
 ]
 LEAGUE_KEYS = {league.key: league for league in LEAGUES}
 
-# The app maps teams to divisions itself. A team it doesn't know lands outside them, as Utah did.
+# The divisions each league's standings have. The pro leagues' come from ESPN's level=3 groups
+# (division_standings), so fewer means ESPN stopped sending them and the app fell back to conferences.
 EXPECTED_DIVISIONS = {"NFL": 8, "NBA": 6, "NHL": 4, "MLB": 6, "WNBA": 2}
 # In Sport.swift, but the iPhone gets this league from the CFL's own feed rather than ESPN.
 NOT_FROM_ESPN = {"football/cfl"}
@@ -471,8 +473,53 @@ def standings_coverage_problems(data, league):
     return problems
 
 
+def division_problems(data, league):
+    """What the app relies on in a pro league's level=3 answer: every division its own group,
+    and each one's games back counted from its own leader, so the leader reads as none and the
+    figure never falls down the table (division_standings.standing_order puts it in order)."""
+    if league.key not in division_standings.DIVISION_LEAGUES:
+        return []
+    groups = division_standings.division_groups(data)
+    expected = EXPECTED_DIVISIONS.get(league.key)
+    if expected and len(groups) != expected:
+        return [f"{len(groups)} groups with teams at level=3, expected {expected} divisions: "
+                f"{[g['name'] for g in groups]}"]
+    problems = []
+    for group in groups:
+        figures = [division_standings.games_back(e) for e in group["entries"]]
+        numbers = [0.0 if f == division_standings.NO_GAMES_BACK else _float_or_none(f) for f in figures]
+        if None in numbers:
+            problems.append(f"{group['name']}: can't read games back {figures}")
+        elif numbers[0] != 0:
+            problems.append(f"{group['name']}: the leader is {figures[0]} back, so games back isn't the division's")
+        elif numbers != sorted(numbers):
+            problems.append(f"{group['name']}: games back out of order after sorting by seed {figures}")
+    return problems
+
+
+def _float_or_none(text):
+    try:
+        return float(text)
+    except (TypeError, ValueError):
+        return None
+
+
 def _total_stat(entry):
     return next((s for s in entry.get("stats") or [] if s.get("type") == "total"), None)
+
+
+def overall_record(entry):
+    """A team's overall record as ESPN writes it ("7-1"): the stat typed total, or failing that
+    its wins and losses. The NBA's level=3 answer has no total; both apps read wins and losses."""
+    total = _total_stat(entry)
+    if total is not None:
+        return total.get("summary") or total.get("displayValue")
+    values = {s.get("name"): s.get("value") for s in entry.get("stats") or []}
+    wins, losses, ties = values.get("wins"), values.get("losses"), values.get("ties")
+    if not all(isinstance(v, (int, float)) for v in (wins, losses)):
+        return None
+    record = f"{int(wins)}-{int(losses)}"
+    return f"{record}-{int(ties)}" if isinstance(ties, (int, float)) and ties > 0 else record
 
 
 def standings_problems(data, league):
@@ -487,11 +534,11 @@ def standings_problems(data, league):
             continue
         if league.family == SOCCER:
             continue
-        total = _total_stat(entry)
-        if total is None:
-            problems.append(f"{name}: no stat with type 'total', the overall record")
-        elif not parse_record(total.get("summary") or total.get("displayValue")):
-            problems.append(f"{name}: can't read the overall record {total.get('summary')!r}")
+        record = overall_record(entry)
+        if record is None:
+            problems.append(f"{name}: no overall record, neither a stat with type 'total' nor wins and losses")
+        elif not parse_record(record):
+            problems.append(f"{name}: can't read the overall record {record!r}")
     return problems
 
 
@@ -512,11 +559,11 @@ def standings_row_problems(entries, rows):
         if name not in by_name:
             missing.append(name)
             continue
-        total = _total_stat(entry) or {}
-        record = parse_record(total.get("summary") or total.get("displayValue"))
+        text = overall_record(entry)
+        record = parse_record(text)
         if record and (by_name[name].get("wins"), by_name[name].get("losses")) != record:
             wrong.append(f"{name} shows {by_name[name].get('wins')}-{by_name[name].get('losses')}, "
-                         f"ESPN's record is {total.get('summary')}")
+                         f"ESPN's record is {text}")
     return missing, wrong
 
 
@@ -1058,7 +1105,8 @@ def check_standings(http, report, league, in_season):
     if not entries:
         report.seasonal(in_season, league.key, "Standings", "no entries anywhere in the response", url)
         return
-    problems = standings_problems(data, league) + standings_coverage_problems(data, league)
+    problems = (standings_problems(data, league) + standings_coverage_problems(data, league)
+                + division_problems(data, league))
     if problems:
         report.fail(league.key, "Standings", first_problems(problems), url)
         return
