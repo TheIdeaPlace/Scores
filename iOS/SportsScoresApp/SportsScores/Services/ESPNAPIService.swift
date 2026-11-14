@@ -471,28 +471,29 @@ class ESPNAPIService {
     /// the top three of which hold the berths.
     func fetchMLBWildCardStandings() async throws -> [StandingsGroup] {
         let base = "\(standingsBaseURL)/\(Sport.mlb.apiPath)/standings"
+        // The overall request is by division, so each leader is labelled with the division
+        // ESPN puts it in. On Windows: get_mlb_wildcard_standings.
         guard let raceURL = URL(string: "\(base)?type=\(Self.mlbWildCardStandingsType)"),
-              let overallURL = URL(string: base) else { throw APIError.invalidURL }
+              let overallURL = URL(string: "\(base)?\(DivisionStandings.divisionsQuery)")
+        else { throw APIError.invalidURL }
 
         async let raceData = standingsPayload(from: raceURL)
         async let overallData = standingsPayload(from: overallURL)
         let (race, overall) = try await (raceData, overallData)
+        let divisions = DivisionStandings.teamDivisions(overall.root)
 
         return race.children.compactMap { raceLeague -> StandingsGroup? in
             let entries = raceLeague.standings.entries
             guard !entries.isEmpty else { return nil }
 
             let raceIDs = Set(entries.map(\.team.id))
-            let leaders = overall.children
-                .first { $0.name == raceLeague.name }?
-                .standings.entries
-                .filter { !raceIDs.contains($0.team.id) } ?? []
+            let leaders = DivisionStandings.conferenceEntries(overall.root, conference: raceLeague.name)
+                .filter { !raceIDs.contains($0.team.id) }
 
             let orderedLeaders = leaders
                 .sorted { Self.mlbStatValue($0, "winPercent") > Self.mlbStatValue($1, "winPercent") }
                 .map { entry -> StandingsEntry in
-                    let division = DivisionMapper.division(for: .mlb,
-                                                           abbreviation: entry.team.abbreviation)
+                    let division = divisions[entry.team.id]
                     return Self.mlbWildCardEntry(
                         entry,
                         position: "-",
@@ -701,8 +702,12 @@ class ESPNAPIService {
     /// The standings request for a sport. Without a group, college football is FBS alone,
     /// while the scoreboard shows FCS games too. The parameter is singular here:
     /// `/standings` ignores the scoreboard's `groups=`.
+    /// MLB, the NFL, the NBA and the NHL are asked by division (`DivisionStandings`).
     func standingsURLString(for sport: Sport, coverage: NCAAFCoverage? = nil) -> String {
         let urlString = "\(standingsBaseURL)/\(sport.apiPath)/standings"
+        if DivisionStandings.leagues.contains(sport) {
+            return "\(urlString)?\(DivisionStandings.divisionsQuery)"
+        }
         guard sport == .ncaaf else { return urlString }
         return "\(urlString)?group=\((coverage ?? NCAAFCoverage.stored).espnGroupsID)"
     }
@@ -724,64 +729,15 @@ class ESPNAPIService {
         decoder.dateDecodingStrategy = .iso8601
         let apiResponse = try decoder.decode(APIStandingsResponse.self, from: data)
 
-        // If the sport has a division mapper, sub-divide the flat conference entries
-        // into proper divisions (e.g. "AL East", "AFC North").  Otherwise fall back
-        // to the conference-level groupings from the API.
         if sport.isSoccer {
             return apiResponse.groupsWithEntries.map { StandingsGroup(soccerTable: $0) }
-        } else if DivisionMapper.hasDivisions(sport) {
-            return groupByDivision(apiResponse.groupsWithEntries, sport: sport)
+        } else if DivisionStandings.leagues.contains(sport) {
+            // A failed answer must not read as an empty table (espn_api._pro_standings).
+            if apiResponse.childrenUnreadable { throw APIError.invalidResponse }
+            return StandingsGroup.divisions(from: apiResponse.root)
         } else {
             return try apiResponse.groupsWithEntries.map { try StandingsGroup(from: $0) }
         }
-    }
-
-    /// Collect all entries from every conference child, assign each to a division
-    /// via DivisionMapper, then produce a sorted [StandingsGroup].
-    private func groupByDivision(_ children: [APIStandingsGroup], sport: Sport) -> [StandingsGroup] {
-        // Bucket entries by division name
-        var buckets: [String: [StandingsEntry]] = [:]
-
-        for child in children {
-            for apiEntry in child.standings.entries {
-                let abbr = apiEntry.team.abbreviation
-                let divisionName = DivisionMapper.division(for: sport, abbreviation: abbr)
-                                   ?? child.name   // fallback to conference name
-                let entry = StandingsEntry(fromAPIEntry: apiEntry)
-                buckets[divisionName, default: []].append(entry)
-            }
-        }
-
-        // Sort entries within each division by win% descending, then wins descending.
-        // The NHL ranks by points, which an overtime loss earns one of.
-        for key in buckets.keys {
-            buckets[key]?.sort {
-                if sport == .nhl, $0.stats.nhlPoints != $1.stats.nhlPoints {
-                    return ($0.stats.nhlPoints ?? 0) > ($1.stats.nhlPoints ?? 0)
-                }
-                if $0.stats.winPercent != $1.stats.winPercent {
-                    return $0.stats.winPercent > $1.stats.winPercent
-                }
-                return $0.stats.wins > $1.stats.wins
-            }
-        }
-
-        // Sort division groups by predefined order, unknown divisions appended last
-        let order = DivisionMapper.divisionOrder(for: sport)
-        var groups: [StandingsGroup] = []
-        for divName in order {
-            if let entries = buckets[divName], !entries.isEmpty {
-                groups.append(StandingsGroup(name: divName, entries: entries))
-            }
-        }
-        // Append any unmapped divisions alphabetically
-        let unknown = buckets.keys.filter { !order.contains($0) }.sorted()
-        for divName in unknown {
-            if let entries = buckets[divName] {
-                groups.append(StandingsGroup(name: divName, entries: entries))
-            }
-        }
-        return groups
     }
     
     // MARK: - Fetch Game Details

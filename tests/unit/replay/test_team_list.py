@@ -102,10 +102,16 @@ class TestWithStandings:
 
 class TestGetTeams:
     def test_a_pro_league_is_its_team_list_with_the_standings_records(self, espn):
-        espn.on("/baseball/mlb/standings", load("standings_MLB.json"))
+        # The standings without the Rockies and Marlins, which teams_MLB lists.
+        standings = load("standings_MLB_divisions.json")
+        for conference in standings["children"]:
+            for division in conference["children"]:
+                division["standings"]["entries"] = [e for e in division["standings"]["entries"]
+                                                    if e["team"]["abbreviation"] not in ("COL", "MIA")]
+        espn.on("/baseball/mlb/standings", standings)
         espn.on("/baseball/mlb/teams", load("teams_MLB.json"))
         teams = ApiService.get_teams("MLB")
-        assert len(teams) == 10
+        assert len(teams) == 30
         yankees = next(team for team in teams if team["team_name"] == "New York Yankees")
         assert yankees["division"] == "AL East"
         assert "wins" in yankees

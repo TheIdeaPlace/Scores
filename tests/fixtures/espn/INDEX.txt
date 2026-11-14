@@ -14,7 +14,11 @@ standings_NCAAWB.json	112 KB	same
 standings_NCAAWH.json	14 KB	entries at the root, no children: no conferences
 standings_NCAAH.json	27 KB	tiegames stat, three-part overall
 standings_NHL.json	46 KB	otLosses, streak; Utah is UTA here, UTAH on its team page
-standings_NFL.json	39 KB	streak present
+standings_NFL.json	39 KB	streak present; by conference, gamesBehind from the conference leader (Denver 0.5 back while leading its division)
+standings_NFL_divisions.json	126 KB	level=3 on Nov 13, 2026, every team: 8 divisions under AFC and NFC, gamesBehind from the division leader, PIT and CIN tied at 6-2 and both "-"
+standings_NBA_divisions.json	130 KB	level=3 on Nov 13, 2026, every team: 6 divisions, each listed worst first; no overall/total stat, the record is "Division Standings"
+standings_NHL_divisions.json	163 KB	level=3 on Nov 13, 2026, every team: 4 divisions named "Atlantic Division" and so on, TB and MTL tied on 28 points
+standings_MLB_divisions.json	231 KB	level=3, the 2026 final standings, every team: 6 divisions named "American League East" and so on, in no order (NYY before TB); divisionGamesBehind
 standings_NBA.json	43 KB	streak present
 standings_WNBA.json	42 KB	both conferences; total, not the playoff record; gamesbehind
 schedule_NBA_15.json	52 KB	evening games: UTC date is the next day

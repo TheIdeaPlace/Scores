@@ -19,18 +19,21 @@ def row(rows, name):
 
 
 class TestMlb:
+    """ESPN's real level=3 answer: the 2026 season's final standings, every division."""
+
     @pytest.fixture
     def rows(self, espn):
-        espn.on("/mlb/standings", load("standings_MLB.json"))
+        espn.on("/mlb/standings", load("standings_MLB_divisions.json"))
         return espn_api.get_standings("MLB")
 
-    def test_url(self, espn, rows):
-        assert espn.calls == [f"{V2}/baseball/mlb/standings"]
+    def test_url_asks_by_division(self, espn, rows):
+        assert espn.calls == [f"{V2}/baseball/mlb/standings?level=3"]
 
     def test_a_team(self, rows):
         yankees = row(rows, "New York Yankees")
         assert (yankees["wins"], yankees["losses"], yankees["win_percentage"]) == (93, 68, "0.578")
         assert (yankees["team_id"], yankees["abbreviation"], yankees["division"]) == ("10", "NYY", "AL East")
+        assert yankees["conference"] == "American League"
         assert (yankees["runs_for"], yankees["runs_against"], yankees["run_differential"]) == (739, 601, 138)
         assert (yankees["home_wins"], yankees["home_losses"], yankees["road_wins"], yankees["road_losses"]) == (46, 34, 47, 34)
         assert yankees["magic_number"] == 6
@@ -40,46 +43,63 @@ class TestMlb:
         assert row(rows, "New York Yankees")["streak"] == "W1"
         assert row(rows, "Boston Red Sox")["streak"] == "L1"
 
-    def test_games_back_within_a_division(self, rows):
-        assert row(rows, "New York Yankees")["games_back"] == "—"
-        assert row(rows, "Boston Red Sox")["games_back"] == "6.5"  # (93-87 + 75-68) / 2
+    def test_games_back_is_espns_within_the_division(self, rows):
+        assert row(rows, "Tampa Bay Rays")["games_back"] == "—"
+        assert row(rows, "New York Yankees")["games_back"] == "4.5"
+        assert row(rows, "Boston Red Sox")["games_back"] == "11.0"
 
-    def test_divisions_cover_the_abbreviations_espn_uses(self, rows):
+    def test_divisions_come_from_the_answer(self, rows):
+        """Not from a table of abbreviations: the Athletics are ATH there, OAK in the old table."""
         assert row(rows, "Chicago White Sox")["division"] == "AL Central"
         athletics = next(r for r in rows if r["abbreviation"] == "ATH")
         assert athletics["division"] == "AL West"
-        assert {r["division"] for r in rows} >= {"AL East", "AL Central", "AL West", "NL East", "NL West"}
+        assert list(dict.fromkeys(r["division"] for r in rows)) == [
+            "AL East", "AL Central", "AL West", "NL East", "NL Central", "NL West"]
 
-    def test_sorted_by_division_then_wins(self, rows):
-        keys = [(r["division"], -r["wins"]) for r in rows]
-        assert keys == sorted(keys)
-
-    def test_an_unknown_team_goes_to_its_league(self):
-        assert espn_api._get_team_division("XXX", "American") == "American League"
+    def test_each_division_in_standing_order(self, rows):
+        """ESPN lists MLB's divisions in no order: the Yankees came before the Rays."""
+        east = [r["abbreviation"] for r in rows if r["division"] == "AL East"]
+        assert east == ["TB", "NYY", "BOS", "BAL", "TOR"]
+        assert [r["division_rank"] for r in rows if r["division"] == "AL East"] == [1, 2, 3, 4, 5]
 
 
 class TestNfl:
+    """ESPN's real level=3 answer, mid-season, every division."""
+
     @pytest.fixture
     def rows(self, espn):
-        espn.on("/nfl/standings", load("standings_NFL.json"))
+        espn.on("/nfl/standings", load("standings_NFL_divisions.json"))
         return espn_api.get_standings("NFL")
 
-    def test_url(self, espn, rows):
-        assert espn.calls == [f"{V2}/football/nfl/standings"]
+    def test_url_asks_by_division(self, espn, rows):
+        assert espn.calls == [f"{V2}/football/nfl/standings?level=3"]
 
     def test_a_team(self, rows):
         bills = row(rows, "Buffalo Bills")
-        assert (bills["wins"], bills["losses"], bills["ties"], bills["record_display"]) == (6, 1, 0, "6-1")
-        assert (bills["win_percentage"], bills["streak"], bills["division"]) == ("0.857", "W3", "AFC East")
-        assert (bills["points_for"], bills["points_against"], bills["point_differential"]) == (233, 181, 52)
+        assert (bills["wins"], bills["losses"], bills["ties"], bills["record_display"]) == (7, 1, 0, "7-1")
+        assert (bills["win_percentage"], bills["streak"], bills["division"]) == ("0.875", "W4", "AFC East")
+        assert (bills["points_for"], bills["points_against"], bills["point_differential"]) == (256, 187, 69)
         assert bills["playoff_seed"] == 1
 
-    def test_every_real_team_has_a_division(self, rows):
-        assert rows and all(r["division"] != "Unknown Division" for r in rows)
+    def test_a_division_leader_is_not_games_back(self, rows):
+        """The bug: the conference figure had Denver 0.5 back of Buffalo while it led the AFC West."""
+        assert row(rows, "Denver Broncos")["games_back"] == "—"
+        assert row(rows, "Pittsburgh Steelers")["games_back"] == "—"
+        assert row(rows, "Cleveland Browns")["games_back"] == "1.5"
+        assert row(rows, "Kansas City Chiefs")["games_back"] == "0.5"
+
+    def test_teams_tied_on_record_keep_espns_tiebreak(self, rows):
+        north = [r["abbreviation"] for r in rows if r["division"] == "AFC North"]
+        assert north == ["PIT", "CIN", "CLE", "BAL"]
+
+    def test_the_eight_divisions_in_order(self, rows):
+        assert list(dict.fromkeys(r["division"] for r in rows)) == [
+            "AFC East", "AFC North", "AFC South", "AFC West", "NFC East", "NFC North", "NFC South", "NFC West"]
+        assert all(len([r for r in rows if r["division"] == d]) == 4 for d in {r["division"] for r in rows})
 
     def test_ties_show_in_the_record(self, espn):
-        data = load("standings_NFL.json")
-        entry = data["children"][0]["standings"]["entries"][0]
+        data = load("standings_NFL_divisions.json")
+        entry = data["children"][0]["children"][0]["standings"]["entries"][0]
         entry["stats"].append({"name": "ties", "value": 1})
         espn.on("/nfl/standings", data)
         assert any(r["record_display"].count("-") == 2 for r in espn_api.get_standings("NFL"))
@@ -88,22 +108,28 @@ class TestNfl:
 class TestNba:
     def test_the_url_leaves_the_season_to_espn(self, espn, freeze_now):
         freeze_now(datetime(2026, 11, 3))
-        espn.on("/nba/standings", load("standings_NBA.json"))
+        espn.on("/nba/standings", load("standings_NBA_divisions.json"))
         espn_api.get_standings("NBA")
-        assert espn.calls == [f"{V2}/basketball/nba/standings"]
+        assert espn.calls == [f"{V2}/basketball/nba/standings?level=3"]
 
     def test_a_team(self, espn):
-        espn.on("/nba/standings", load("standings_NBA.json"))
+        espn.on("/nba/standings", load("standings_NBA_divisions.json"))
         nets = row(espn_api.get_standings("NBA"), "Brooklyn Nets")
-        assert (nets["wins"], nets["losses"], nets["win_percentage"]) == (1, 5, "0.167")
-        assert (nets["division"], nets["streak"], nets["playoff_seed"]) == ("Eastern Conference Atlantic", "W1", 15)
-        assert nets["avg_points_for"] == pytest.approx(108.166664)
+        assert (nets["wins"], nets["losses"], nets["win_percentage"]) == (3, 8, "0.273")
+        assert (nets["division"], nets["streak"], nets["playoff_seed"]) == ("Atlantic", "W1", 13)
+        assert nets["conference"] == "Eastern Conference"
+        assert nets["avg_points_for"] == pytest.approx(110.181816)
         assert nets["clinch_status"] is None
 
-    def test_every_real_team_has_a_division(self, espn):
-        espn.on("/nba/standings", load("standings_NBA.json"))
+    def test_divisions_in_standing_order_with_their_own_games_back(self, espn):
+        """ESPN lists the NBA's divisions worst first, and its default answer counts games back
+        from the conference leader: Milwaukee read 9 back, not 7.5."""
+        espn.on("/nba/standings", load("standings_NBA_divisions.json"))
         rows = espn_api.get_standings("NBA")
-        assert rows and all(r["division"].split(" Conference ")[-1] != r["division"] for r in rows)
+        central = [(r["abbreviation"], r["games_back"]) for r in rows if r["division"] == "Central"]
+        assert central == [("DET", "—"), ("CLE", "2.5"), ("IND", "4.5"), ("CHI", "6.5"), ("MIL", "7.5")]
+        assert list(dict.fromkeys(r["division"] for r in rows)) == [
+            "Atlantic", "Central", "Southeast", "Northwest", "Pacific", "Southwest"]
 
     def test_no_entries_yet_lists_the_teams_at_0_0(self, espn):
         """A new season, before ESPN has standings."""
@@ -113,7 +139,7 @@ class TestNba:
         assert [r["team_name"] for r in rows] == ["Boston Celtics", "Brooklyn Nets", "Atlanta Hawks"]
         hawks = row(rows, "Atlanta Hawks")
         assert (hawks["division"], hawks["wins"], hawks["win_percentage"], hawks["games_back"]) == (
-            "Eastern Conference Southeast", 0, "0.000", "—")
+            "Southeast", 0, "0.000", "—")
         assert hawks["logo"].endswith("atl.png")
 
     @pytest.mark.parametrize("teams", [{"sports": []}, {"sports": [None]}], ids=["none", "unreadable"])
@@ -133,23 +159,28 @@ class TestNba:
 class TestNhl:
     @pytest.fixture
     def rows(self, espn):
-        espn.on("/nhl/standings", load("standings_NHL.json"))
+        espn.on("/nhl/standings", load("standings_NHL_divisions.json"))
         return espn_api.get_standings("NHL")
 
-    def test_url(self, espn, rows):
-        assert espn.calls == [f"{V2}/hockey/nhl/standings"]
+    def test_url_asks_by_division(self, espn, rows):
+        assert espn.calls == [f"{V2}/hockey/nhl/standings?level=3"]
 
     def test_a_team_ranks_on_points(self, rows):
         bruins = row(rows, "Boston Bruins")
-        assert (bruins["wins"], bruins["losses"], bruins["ot_losses"], bruins["points"]) == (10, 4, 1, 21)
-        assert bruins["win_percentage"] == "0.700"  # 21 of a possible 30
-        assert (bruins["goals_for"], bruins["goals_against"], bruins["goal_differential"]) == (55, 36, 19)
-        assert (bruins["division"], bruins["streak"], bruins["playoff_seed"]) == ("Eastern Conference Atlantic", "W1", 2)
+        assert (bruins["wins"], bruins["losses"], bruins["ot_losses"], bruins["points"]) == (13, 5, 1, 27)
+        assert bruins["win_percentage"] == "0.711"  # 27 of a possible 38
+        assert (bruins["goals_for"], bruins["goals_against"], bruins["goal_differential"]) == (70, 46, 24)
+        assert (bruins["division"], bruins["streak"], bruins["playoff_seed"]) == ("Atlantic", "L1", 5)
+        assert bruins["games_back"] == ""
 
-    def test_sorted_by_division_then_points(self, rows):
-        keys = [(r["division"], -r["points"]) for r in rows]
-        assert keys == sorted(keys)
-
+    def test_each_division_by_points_with_espns_tiebreak(self, rows):
+        """Tampa Bay and Montreal both have 28 points; ESPN's seed puts Tampa Bay first."""
+        atlantic = [(r["abbreviation"], r["points"]) for r in rows if r["division"] == "Atlantic"]
+        assert atlantic[:3] == [("TB", 28), ("MTL", 28), ("BOS", 27)]
+        for division in {r["division"] for r in rows}:
+            points = [r["points"] for r in rows if r["division"] == division]
+            assert points == sorted(points, reverse=True)
+        assert list(dict.fromkeys(r["division"] for r in rows)) == ["Atlantic", "Metropolitan", "Central", "Pacific"]
 
 NO_FALLBACK = [
     ("WNBA", "basketball/wnba"),
@@ -345,19 +376,35 @@ class TestFallbackFromTeamRecords:
         assert espn_api.get_standings("CRICKET") == []
         assert espn.calls == []
 
-    def test_the_fast_path_falling_over_uses_the_teams(self, espn):
-        """A bad payload in the fast path, not a failed request: it catches and falls back."""
-        espn.on("/nfl/standings", {"children": "not a list of conferences"})
-        espn.on("/nfl/teams$", {"sports": []})
-        assert espn_api.get_standings("NFL") == []
-        assert espn.calls == [f"{V2}/football/nfl/standings", f"{SITE}/football/nfl/teams"]
-
-    @pytest.mark.parametrize("league,path", [("MLB", "baseball/mlb"), ("NBA", "basketball/nba"), ("NHL", "hockey/nhl")])
-    def test_each_fast_path_falls_back(self, espn, league, path):
+    @pytest.mark.parametrize("league,path", [("MLB", "baseball/mlb"), ("NFL", "football/nfl"),
+                                             ("NBA", "basketball/nba"), ("NHL", "hockey/nhl")])
+    def test_something_else_where_the_conferences_belong_is_not_an_answer(self, espn, league, path):
+        """It says the standings couldn't be loaded, rather than one request per team."""
         espn.on(f"/{path}/standings", {"children": "not a list of conferences"})
+        with pytest.raises(ApiError) as caught:
+            espn_api.get_standings(league)
+        assert str(caught.value) == espn_api.STANDINGS_UNAVAILABLE
+        assert espn.urls("/teams") == []
+
+    @pytest.mark.parametrize("league,path", [("MLB", "baseball/mlb"), ("NFL", "football/nfl"),
+                                             ("NBA", "basketball/nba"), ("NHL", "hockey/nhl")])
+    def test_each_fast_path_falling_over_uses_the_teams(self, espn, monkeypatch, league, path):
+        """A crash while reading the answer, not a failed request: it catches and falls back."""
+        def broken(*args, **kwargs):
+            raise KeyError("boom")
+        monkeypatch.setattr(espn_api, "_division_rows", broken)
+        espn.on(f"/{path}/standings", load("standings_NFL_divisions.json"))
         espn.on(f"/{path}/teams$", {"sports": []})
         assert espn_api.get_standings(league) == []
         assert espn.calls[-1] == f"{SITE}/{path}/teams"
+
+    @pytest.mark.parametrize("league,path", [("MLB", "baseball/mlb"), ("NFL", "football/nfl"), ("NHL", "hockey/nhl")])
+    def test_conferences_only_still_list_every_team(self, espn, league, path):
+        """If ESPN ever ignores level=3, the conferences are the groups, with their own games back."""
+        espn.on(f"/{path}/standings", load("standings_NFL.json"))
+        rows = espn_api.get_standings(league)
+        assert {r["division"] for r in rows} == {"American Football Conference", "National Football Conference"}
+        assert len(rows) == 6
 
 
 class TestTeamRecord:
@@ -389,8 +436,18 @@ class TestTeamRecord:
 def test_get_standings_returns_rows_the_standings_model_accepts(espn):
     """The screen wraps these in StandingsData, so the two have to agree."""
     from models.standings import StandingsData
-    espn.on("/nfl/standings", load("standings_NFL.json"))
+    espn.on("/nfl/standings", load("standings_NFL_divisions.json"))
     data = StandingsData(espn_api.get_standings("NFL"))
     east = data.divisions["AFC East"]
     assert east[0]["team_name"] == "Buffalo Bills"
-    assert east[0]["record"] == "6-1"
+    assert east[0]["record"] == "7-1"
+    # The model keeps ESPN's order rather than sorting on record.
+    assert [t["abbreviation"] for t in data.divisions["AFC North"]] == ["PIT", "CIN", "CLE", "BAL"]
+
+
+def test_the_model_keeps_espns_order_over_the_record():
+    """Two teams tied on record stay as ESPN ranks them; a sort on percentage would swap them."""
+    from models.standings import StandingsData
+    rows = [{"team_name": "Second", "wins": 6, "losses": 2, "win_percentage": "0.750", "division": "D", "division_rank": 1},
+            {"team_name": "First", "wins": 7, "losses": 1, "win_percentage": "0.875", "division": "D", "division_rank": 2}]
+    assert [t["team_name"] for t in StandingsData(rows).divisions["D"]] == ["Second", "First"]

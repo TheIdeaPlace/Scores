@@ -179,10 +179,17 @@ class TestNullIsNotTheWordNone:
         assert self.details(change)["detailed_status"] == "N/A"
 
     def test_a_null_conference_name_in_a_division(self, espn):
-        data = load("standings_NHL.json")
+        data = load("standings_NHL_divisions.json")
         data["children"][0]["name"] = None
+        data["children"][0]["children"][1]["name"] = None
         espn.on("/nhl/standings", data)
-        assert "Atlantic" in {row["division"] for row in espn_api.get_standings("NHL")}
+        rows = espn_api.get_standings("NHL")
+        assert "Atlantic" in {row["division"] for row in rows}
+        # A division with no name or conference is still named, so its tab isn't read as just "tab".
+        assert "None" not in {row["division"] for row in rows} | {row["conference"] for row in rows}
+        assert all(row["division"] for row in rows)
+        assert "Standings" in {row["division"] for row in rows}
+        assert len(rows) == 32
 
 
 def test_team_record_without_stats_falls_back_to_the_summary(espn):

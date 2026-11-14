@@ -14,7 +14,8 @@
         {
          "href": "https://a.espncdn.com/i/teamlogos/mlb/500/nyy.png"
         }
-       ]
+       ],
+       "name": "Yankees"
       },
       "stats": [
        {
@@ -103,7 +104,8 @@
         {
          "href": "https://a.espncdn.com/i/teamlogos/mlb/500/bos.png"
         }
-       ]
+       ],
+       "name": "Red Sox"
       },
       "stats": [
        {
@@ -192,7 +194,8 @@
         {
          "href": "https://a.espncdn.com/i/teamlogos/mlb/500/chw.png"
         }
-       ]
+       ],
+       "name": "White Sox"
       },
       "stats": [
        {
@@ -281,7 +284,8 @@
         {
          "href": "https://a.espncdn.com/i/teamlogos/mlb/500/tor.png"
         }
-       ]
+       ],
+       "name": "Blue Jays"
       },
       "stats": [
        {
@@ -370,7 +374,8 @@
         {
          "href": "https://a.espncdn.com/i/teamlogos/mlb/500/ath.png"
         }
-       ]
+       ],
+       "name": "Athletics"
       },
       "stats": [
        {
@@ -466,7 +471,8 @@
         {
          "href": "https://a.espncdn.com/i/teamlogos/mlb/500/phi.png"
         }
-       ]
+       ],
+       "name": "Phillies"
       },
       "stats": [
        {
@@ -555,7 +561,8 @@
         {
          "href": "https://a.espncdn.com/i/teamlogos/mlb/500/lad.png"
         }
-       ]
+       ],
+       "name": "Dodgers"
       },
       "stats": [
        {
@@ -644,7 +651,8 @@
         {
          "href": "https://a.espncdn.com/i/teamlogos/mlb/500/atl.png"
         }
-       ]
+       ],
+       "name": "Braves"
       },
       "stats": [
        {

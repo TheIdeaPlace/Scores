@@ -311,9 +311,10 @@ class FakeResponse:
         return self._data
 
 
-@pytest.mark.parametrize("league,parser", [("NFL", "_get_nfl_standings_fast"), ("NBA", "_get_nba_standings_fast")])
-def test_games_back_is_computed(monkeypatch, league, parser):
-    monkeypatch.setattr(espn_api, "_http_get", lambda *a, **k: FakeResponse(load(f"standings_{league}.json")))
+@pytest.mark.parametrize("league,parser", [("NFL", "_get_nfl_standings_fast"), ("NBA", "_get_nba_standings_fast"),
+                                           ("MLB", "_get_mlb_standings_fast")])
+def test_games_back_counts_from_each_division_leader(monkeypatch, league, parser):
+    monkeypatch.setattr(espn_api, "_http_get", lambda *a, **k: FakeResponse(load(f"standings_{league}_divisions.json")))
     rows = getattr(espn_api, parser)()
     assert rows
     by_division = {}
@@ -331,21 +332,22 @@ def test_streak_on_pro_standings(monkeypatch):
 
 def test_nhl_utah_is_in_central(monkeypatch):
     """The real entry from ESPN's standings, which call Utah UTA."""
-    data = load("standings_NHL.json")
+    data = load("standings_NHL_divisions.json")
     monkeypatch.setattr(espn_api, "_http_get", lambda *a, **k: FakeResponse(data))
     utah = next(r for r in espn_api._get_nhl_standings_fast() if r["team_name"].startswith("Utah"))
     assert utah["abbreviation"] == "UTA"
-    assert utah["division"].endswith("Central")
+    assert utah["division"] == "Central"
 
 
 def test_nhl_utah_is_in_central_by_its_team_page_abbreviation_too(monkeypatch):
-    data = load("standings_NHL.json")
-    entry = next(e for node in data["children"] for e in node["standings"]["entries"]
-                 if e["team"]["displayName"].startswith("Utah"))
+    """The division comes from ESPN's group, so a new abbreviation can't lose a team."""
+    data = load("standings_NHL_divisions.json")
+    entry = next(e for conference in data["children"] for node in conference["children"]
+                 for e in node["standings"]["entries"] if e["team"]["displayName"].startswith("Utah"))
     entry["team"]["abbreviation"] = "UTAH"
     monkeypatch.setattr(espn_api, "_http_get", lambda *a, **k: FakeResponse(data))
     utah = next(r for r in espn_api._get_nhl_standings_fast() if r["team_name"].startswith("Utah"))
-    assert utah["division"].endswith("Central")
+    assert utah["division"] == "Central"
 
 
 def test_wnba_standings_are_the_regular_season_not_the_playoffs(monkeypatch):

@@ -94,7 +94,7 @@ def test_fresh_nba_standings_cover_the_west_and_an_unknown_team(espn):
         {"team": {"id": "2", "abbreviation": "ZZZ", "displayName": "Newcomers"}},
     ]}]}]})
     divisions = {r["team_name"]: r["division"] for r in espn_api.get_standings("NBA")}
-    assert divisions == {"Lakers": "Western Conference Pacific", "Newcomers": "Unknown Conference"}
+    assert divisions == {"Lakers": "Pacific", "Newcomers": "Unknown Conference"}
 
 
 def test_a_failed_college_football_regular_season_stops_there(espn):

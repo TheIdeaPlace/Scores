@@ -2114,8 +2114,16 @@ final class RequestShapeTests: XCTestCase {
     }
 
     func testOnlyCollegeFootballSendsAStandingsGroup() {
-        for sport in [Sport.nfl, .ncaam, .ncaawb, .ncaah] {
+        for sport in [Sport.wnba, .ncaam, .ncaawb, .ncaah] {
             XCTAssertTrue(ESPNAPIService.shared.standingsURLString(for: sport, coverage: .fbs).hasSuffix("/standings"),
+                          sport.displayName)
+        }
+    }
+
+    func testTheProLeaguesAskByDivision() {
+        // DivisionStandings: only level=3 counts games back from the division leader.
+        for sport in [Sport.nfl, .nba, .nhl, .mlb] {
+            XCTAssertTrue(ESPNAPIService.shared.standingsURLString(for: sport, coverage: .fbs).hasSuffix("/standings?level=3"),
                           sport.displayName)
         }
     }

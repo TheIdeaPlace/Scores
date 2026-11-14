@@ -19,6 +19,7 @@
 		7E57A00000000000000000C1 /* LiveScoresGolfTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E57A00000000000000000C0 /* LiveScoresGolfTests.swift */; };
 		7E57A0000000000000001931 /* StatGlossary.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E57A0000000000000001930 /* StatGlossary.swift */; };
 		7E57A0000000000000001933 /* StatGlossaryGridTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E57A0000000000000001932 /* StatGlossaryGridTests.swift */; };
+		7E57A0000000000000002001 /* DivisionStandingsGridTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E57A0000000000000002000 /* DivisionStandingsGridTests.swift */; };
 		7E57A00000000000000000D1 /* GolfRules.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E57A00000000000000000D0 /* GolfRules.swift */; };
 		7E57A00000000000000000D3 /* GolfGridTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E57A00000000000000000D2 /* GolfGridTests.swift */; };
 		7E57A00000000000000000E1 /* ViewModeDefaultTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E57A00000000000000000E0 /* ViewModeDefaultTests.swift */; };
@@ -90,7 +91,7 @@
 		4B2393188AA82F3FEFA7D8FC /* TheBenchView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 89BE97DE902E6DA78B864E54 /* TheBenchView.swift */; };
 		4C29DBE2E2D7001F23D97407 /* TransactionHubView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 929F276A5AC1D12C6ED0233B /* TransactionHubView.swift */; };
 		4EBA8B3274D13D19014A34C4 /* BoxScoreView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5DB8AE94C204A50146E9F867 /* BoxScoreView.swift */; };
-		513083EA6C93ED8413B1C342 /* DivisionMapper.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1CEE4CE2353099109FF62D72 /* DivisionMapper.swift */; };
+		513083EA6C93ED8413B1C342 /* DivisionStandings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1CEE4CE2353099109FF62D72 /* DivisionStandings.swift */; };
 		537EDE5289F5FA56EDBB33E6 /* ViewMode.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1F02454A9066804EF35F956A /* ViewMode.swift */; };
 		545F71151CBFD1675AA29CCD /* SoccerHubViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = E83EC93DC3EF01BEBDB5C228 /* SoccerHubViewModel.swift */; };
 		5818155580D3069662CD0A80 /* HomeViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 44133B2A0893E530B94863FE /* HomeViewModel.swift */; };
@@ -201,6 +202,7 @@
 		7E57A00000000000000000C0 /* LiveScoresGolfTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveScoresGolfTests.swift; sourceTree = "<group>"; };
 		7E57A0000000000000001930 /* StatGlossary.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatGlossary.swift; sourceTree = "<group>"; };
 		7E57A0000000000000001932 /* StatGlossaryGridTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatGlossaryGridTests.swift; sourceTree = "<group>"; };
+		7E57A0000000000000002000 /* DivisionStandingsGridTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DivisionStandingsGridTests.swift; sourceTree = "<group>"; };
 		7E57A00000000000000000D0 /* GolfRules.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GolfRules.swift; sourceTree = "<group>"; };
 		7E57A00000000000000000D2 /* GolfGridTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GolfGridTests.swift; sourceTree = "<group>"; };
 		7E57A00000000000000000E0 /* ViewModeDefaultTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ViewModeDefaultTests.swift; sourceTree = "<group>"; };
@@ -233,7 +235,7 @@
 		17E2EBBAD69446226C28DA4A /* CheatsheetPlayerDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CheatsheetPlayerDetailView.swift; sourceTree = "<group>"; };
 		1B8554FE9C77A1F32389D68F /* TeamTransactionsTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TeamTransactionsTabView.swift; sourceTree = "<group>"; };
 		1C3E87CD273A22E278284964 /* SportsScores.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = SportsScores.app; sourceTree = BUILT_PRODUCTS_DIR; };
-		1CEE4CE2353099109FF62D72 /* DivisionMapper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DivisionMapper.swift; sourceTree = "<group>"; };
+		1CEE4CE2353099109FF62D72 /* DivisionStandings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DivisionStandings.swift; sourceTree = "<group>"; };
 		1F02454A9066804EF35F956A /* ViewMode.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ViewMode.swift; sourceTree = "<group>"; };
 		1F50D5B47D984181FA4F50D2 /* WorldCupHubView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorldCupHubView.swift; sourceTree = "<group>"; };
 		207940DDCC75EC9FC143F083 /* ScoringSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScoringSettingsView.swift; sourceTree = "<group>"; };
@@ -554,7 +556,7 @@
 			isa = PBXGroup;
 			children = (
 				F4C66E9B2341928A5E68224F /* BoxScoreTables.swift */,
-				1CEE4CE2353099109FF62D72 /* DivisionMapper.swift */,
+				1CEE4CE2353099109FF62D72 /* DivisionStandings.swift */,
 				CF309DE2E51E7352C8748699 /* Draft.swift */,
 				AE2796BCB4469DAC7E4FFE0E /* ESPNAPIResponseModels.swift */,
 				5D03CE813404E0EBFD58F87D /* FantasyCheatsheet.swift */,
@@ -607,6 +609,7 @@
 				7E57A0000000000000001040 /* CollegePollsTests.swift */,
 				7E57A00000000000000000C0 /* LiveScoresGolfTests.swift */,
 				7E57A0000000000000001932 /* StatGlossaryGridTests.swift */,
+				7E57A0000000000000002000 /* DivisionStandingsGridTests.swift */,
 				7E57A00000000000000000D2 /* GolfGridTests.swift */,
 				7E57A00000000000000000E0 /* ViewModeDefaultTests.swift */,
 				7E57B0E15000000000000010 /* BowlsTests.swift */,
@@ -746,7 +749,7 @@
 				66941444CDF6D80C2263573F /* ContentView.swift in Sources */,
 				EDF2DE37CADCCD46B40AB0AB /* DataTableView.swift in Sources */,
 				898FBB6809528DF5A40939BE /* DatePickerView.swift in Sources */,
-				513083EA6C93ED8413B1C342 /* DivisionMapper.swift in Sources */,
+				513083EA6C93ED8413B1C342 /* DivisionStandings.swift in Sources */,
 				A1F816EAE924F8B5EF769FEE /* Draft.swift in Sources */,
 				29FAF8656BCC9C688CBF9721 /* ESPNAPIResponseModels.swift in Sources */,
 				8A2691FFB0CCF34A4FCF39AE /* ESPNAPIService.swift in Sources */,
@@ -898,6 +901,7 @@
 				7E57A0000000000000001041 /* CollegePollsTests.swift in Sources */,
 				7E57A00000000000000000C1 /* LiveScoresGolfTests.swift in Sources */,
 				7E57A0000000000000001933 /* StatGlossaryGridTests.swift in Sources */,
+				7E57A0000000000000002001 /* DivisionStandingsGridTests.swift in Sources */,
 				7E57A00000000000000000D3 /* GolfGridTests.swift in Sources */,
 				7E57A00000000000000000E1 /* ViewModeDefaultTests.swift in Sources */,
 				7E57B0E15000000000000011 /* BowlsTests.swift in Sources */,

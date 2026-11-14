@@ -75,6 +75,11 @@ class StandingsData:
             if all("table_rank" in team for team in division_teams):
                 division_teams.sort(key=lambda x: x["table_rank"])
                 continue
+            # A pro division comes in ESPN's order, which has the league's tiebreakers
+            # (division_standings.standing_order); a sort on record would undo them.
+            if all("division_rank" in team for team in division_teams):
+                division_teams.sort(key=lambda x: x["division_rank"])
+                continue
             # Hockey ranks by points; the percentage can put a team with fewer games first.
             division_teams.sort(key=lambda x: (_to_int(x.get("points", 0)), _to_float(x.get("win_pct")), _to_int(x.get("wins"))), reverse=True)
         return divisions

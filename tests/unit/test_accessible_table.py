@@ -316,6 +316,21 @@ def test_a_standings_cell_says_the_team_rather_than_its_position(app):
     assert speech[:3] == ["Yankees, Pos, 1", "Team, Yankees", "Yankees, W, 90"]
 
 
+@pytest.mark.parametrize("league,division,conference,name", [
+    ("NBA", "Central", "Eastern Conference", "Central, Eastern Conference, Standings"),
+    ("NHL", "Central", "Western Conference", "Central, Western Conference, Standings"),
+    ("NFL", "AFC East", "American Football Conference", "AFC East Standings"),
+    ("MLB", "AL East", "American League", "AL East Standings"),
+    ("NBA", "Eastern Conference", "Eastern Conference", "Eastern Conference Standings"),
+    ("NBA", "Central", "", "Central Standings"),
+])
+def test_a_division_table_says_its_conference_where_the_name_does_not(app, league, division, conference, name):
+    """The NBA's Central is in the East and the NHL's in the West; the tab says only "Central"."""
+    table = StandingsTable(division_name=division, league=league, conference=conference)
+    assert table.table_widget.accessibleName() == name
+    assert table.division_name == division
+
+
 def test_a_ranking_cell_says_the_name_rather_than_the_rank(app):
     table = RankingsTable(["Rank", "Team", "Value"])
     table.populate_data([[1, "Celtics", "120"]], set_focus=False)
