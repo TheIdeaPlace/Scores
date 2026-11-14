@@ -362,8 +362,10 @@ def get_mlb_wildcard_standings():
             ordered_leaders.append(_mlb_wildcard_team(
                 entry,
                 status=f"{division} leader" if division else "Division leader",
-                position="-",
-                games_back="-",
+                # Words, not dashes, which a screen reader doesn't speak. A leader has a
+                # place but no wild card deficit.
+                position=division_standings.LEADER,
+                games_back=division_standings.NO_FIGURE,
                 division=division,
             ))
 
@@ -375,8 +377,10 @@ def get_mlb_wildcard_standings():
             ordered_race.append(_mlb_wildcard_team(
                 entry,
                 status=status,
-                position=str(rank) if rank else "-",
-                games_back=_mlb_stat(entry, "gamesBehind", "-"),
+                position=str(rank) if rank else division_standings.NO_FIGURE,
+                # Counted from the last spot, so ESPN's dash there is "0", not a leader.
+                games_back=division_standings.shown_games_back_text(
+                    _mlb_stat(entry, "gamesBehind", ""), leader_word=False),
                 division=division_of(entry),
             ))
 
@@ -1755,7 +1759,9 @@ def get_standings(league_key):
         return _get_nhl_standings_fast()
     elif league_key == "WNBA":
         # See _standings_or_nothing: the team list would read a team's playoff record, too.
-        return _standings_or_nothing("WNBA", "basketball/wnba")
+        # A WNBA conference's games back counts from its leader, so its dash is "Leader".
+        return _standings_or_nothing("WNBA", "basketball/wnba",
+                                     parse=lambda data: parse_college_standings(data, leader_word=True))
     elif league_key == "NCAAF":
         return _get_ncaaf_standings_fast()
     elif league_key == "NCAAM":
@@ -2063,7 +2069,7 @@ def _record_parts(summary):
     return tuple(parts)
 
 
-def _college_standing_row(entry, conference):
+def _college_standing_row(entry, conference, leader_word=False):
     team_info = _as_dict(entry.get("team"))
     stats = _dicts(entry.get("stats"))
     overall = _standing_stat(stats, "total")
@@ -2078,8 +2084,9 @@ def _college_standing_row(entry, conference):
         "losses": losses,
         "ties": ties,
         "win_percentage": f"{(wins + ties / 2) / games:.3f}" if games else "0.000",
-        # ESPN's own figure, and "Leader" rather than a dash nobody hears.
-        "games_back": division_standings.shown_games_back(entry),
+        # ESPN's own figure rather than a dash nobody hears. College counts overall record from
+        # the conference's top seed, so its dash is "0", not "Leader" (division_standings.LEVEL).
+        "games_back": division_standings.shown_games_back(entry, leader_word),
         "conference_record": conf.get("summary") or conf.get("displayValue") or "",
         "division": conference,
         "streak": _standing_stat(stats, "streak").get("displayValue") or "",
@@ -2087,16 +2094,17 @@ def _college_standing_row(entry, conference):
     }
 
 
-def parse_college_standings(data):
+def parse_college_standings(data, leader_word=False):
     """Every team in a college /standings response. Conferences can nest (the Sun
     Belt does) and a league can have no conferences at all, with its entries at
-    the root (women's college hockey)."""
+    the root (women's college hockey). The WNBA's goes through here too, with
+    `leader_word` True."""
     rows = []
 
     def walk(node, conference):
         name = node.get("name") or conference
         for entry in _dicts(_as_dict(node.get("standings")).get("entries")):
-            rows.append(_college_standing_row(entry, name))
+            rows.append(_college_standing_row(entry, name, leader_word))
         for child in _dicts(node.get("children")):
             walk(child, name)
 
@@ -2300,7 +2308,10 @@ def _parse_standings_from_teams_api(data, league_key):
                             team_wins = int(team["wins"])
                             team_losses = int(team["losses"])
                             games_back = ((leader_wins - team_wins) + (team_losses - leader_losses)) / 2
+                            # This sort is by wins, so a team can be ahead of the first one
+                            # listed: "+3", as ESPN writes it, not a second "Leader".
                             team["games_back"] = (f"{games_back:g}" if games_back > 0
+                                                  else f"+{-games_back:g}" if games_back < 0
                                                   else division_standings.LEADER)
         
     except (KeyError, IndexError, ValueError) as e:

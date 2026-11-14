@@ -496,9 +496,11 @@ class ESPNAPIService {
                     let division = divisions[entry.team.id]
                     return Self.mlbWildCardEntry(
                         entry,
-                        position: "-",
+                        // Words, not dashes, which VoiceOver doesn't speak. A leader has a place
+                        // but no wild card deficit. As Windows: get_mlb_wildcard_standings.
+                        position: DivisionStandings.leader,
                         status: division.map { "\($0) leader" } ?? "Division leader",
-                        gamesBack: "-")
+                        gamesBack: DivisionStandings.noFigure)
                 }
 
             let orderedRace = entries
@@ -510,9 +512,11 @@ class ESPNAPIService {
                         ? "Wild card \(rank)" : ""
                     return Self.mlbWildCardEntry(
                         entry,
-                        position: rank > 0 ? "\(rank)" : "-",
+                        position: rank > 0 ? "\(rank)" : DivisionStandings.noFigure,
                         status: status,
-                        gamesBack: Self.mlbStat(entry, "gamesBehind") ?? "-")
+                        // Counted from the last spot, so ESPN's dash there is "0", not a leader.
+                        gamesBack: DivisionStandings.shownGamesBackText(
+                            Self.mlbStat(entry, "gamesBehind"), leaderWord: false))
                 }
 
             let label = raceLeague.name.hasPrefix("American") ? "AL Wild Card" : "NL Wild Card"
@@ -736,7 +740,8 @@ class ESPNAPIService {
             if apiResponse.childrenUnreadable { throw APIError.invalidResponse }
             return StandingsGroup.divisions(from: apiResponse.root)
         } else {
-            return try apiResponse.groupsWithEntries.map { try StandingsGroup(from: $0) }
+            let leaderWord = !sport.isCollegeSport
+            return try apiResponse.groupsWithEntries.map { try StandingsGroup(from: $0, leaderWord: leaderWord) }
         }
     }
     

@@ -11,7 +11,7 @@ import XCTest
 
 private struct DivisionGrid: Decodable {
     struct Label: Decodable { let name: String; let label: String }
-    struct GamesBack: Decodable { let about: String; let games_back: String; let shown: String }
+    struct GamesBack: Decodable { let about: String; let games_back: String; let shown: String; let shown_level: String }
     struct Order: Decodable { let about: String; let order: [String] }
     struct Group: Decodable, Equatable {
         let name: String
@@ -97,6 +97,7 @@ final class DivisionStandingsGridTests: XCTestCase {
             let entry = try decode(Entry.self, try XCTUnwrap(input["entry"]))
             XCTAssertEqual(DivisionStandings.gamesBack(entry), item.games_back, item.about)
             XCTAssertEqual(DivisionStandings.shownGamesBack(entry), item.shown, item.about)
+            XCTAssertEqual(DivisionStandings.shownGamesBack(entry, leaderWord: false), item.shown_level, item.about)
         }
     }
 

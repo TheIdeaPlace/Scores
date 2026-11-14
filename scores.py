@@ -3863,7 +3863,7 @@ class GameDetailsView(BaseView):
 
     def _add_game_standings_to_layout(self, layout, data):
         """The division or conference tables a game summary carries, one tab each."""
-        tables = game_standings_tables(data)
+        tables = game_standings_tables(data, college=str(self.league or "").startswith("NCAA"))
         if not tables:
             layout.addWidget(QLabel("No standings are available for this game."))
             return

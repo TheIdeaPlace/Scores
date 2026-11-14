@@ -3,6 +3,7 @@
 import re
 from datetime import datetime, timedelta
 from typing import Any, Dict, List, Optional
+from division_standings import shown_games_back_text
 
 # Men's college basketball is played in two halves; everything else here in four quarters.
 _HALVES_LEAGUES = {"NCAAM"}
@@ -284,9 +285,11 @@ def format_weight(weight: Any) -> str:
     return f"{pounds} lbs" if pounds > 0 else ""
 
 
-def game_standings_tables(standings: Any) -> List[Dict[str, Any]]:
+def game_standings_tables(standings: Any, college: bool = False) -> List[Dict[str, Any]]:
     """The conference or division tables a game summary carries:
-    [{title, headers, rows}], one per group, or an empty list."""
+    [{title, headers, rows}], one per group, or an empty list. Games back reads as the
+    standings do (division_standings.shown_games_back_text): "Leader" for ESPN's dash, or "0"
+    in college, where it counts overall record from the conference's top seed."""
     if not isinstance(standings, dict):
         return []
     tables = []
@@ -305,6 +308,8 @@ def game_standings_tables(standings: Any) -> List[Dict[str, Any]]:
         rows = []
         for entry in entries:
             values = {s.get("name"): s.get("displayValue", "") for s in entry.get("stats") or []}
+            if "gamesBehind" in values:
+                values["gamesBehind"] = shown_games_back_text(values["gamesBehind"], leader_word=not college)
             rows.append([str(entry.get("team", ""))] + [str(values.get(k, "")) for k in stat_keys])
         tables.append({
             "title": group.get("header") or "Standings",

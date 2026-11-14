@@ -61,7 +61,8 @@
     ]
    },
    "games_back": "-",
-   "shown": "Leader"
+   "shown": "Leader",
+   "shown_level": "0"
   },
   {
    "about": "the group's own figure",
@@ -81,7 +82,8 @@
     ]
    },
    "games_back": "2.5",
-   "shown": "2.5"
+   "shown": "2.5",
+   "shown_level": "2.5"
   },
   {
    "about": "MLB's division figure first",
@@ -106,7 +108,8 @@
     ]
    },
    "games_back": "1",
-   "shown": "1"
+   "shown": "1",
+   "shown_level": "1"
   },
   {
    "about": "a blank division figure falls to the group's",
@@ -131,7 +134,8 @@
     ]
    },
    "games_back": "3",
-   "shown": "3"
+   "shown": "3",
+   "shown_level": "3"
   },
   {
    "about": "no figure at all",
@@ -145,7 +149,8 @@
     "stats": []
    },
    "games_back": "-",
-   "shown": "N/A"
+   "shown": "N/A",
+   "shown_level": "N/A"
   },
   {
    "about": "a leader written as 0",
@@ -165,7 +170,8 @@
     ]
    },
    "games_back": "0",
-   "shown": "Leader"
+   "shown": "Leader",
+   "shown_level": "0"
   },
   {
    "about": "a leader written as 0.0",
@@ -185,7 +191,8 @@
     ]
    },
    "games_back": "0.0",
-   "shown": "Leader"
+   "shown": "Leader",
+   "shown_level": "0"
   },
   {
    "about": "a leader written as an em dash",
@@ -205,7 +212,8 @@
     ]
    },
    "games_back": "—",
-   "shown": "Leader"
+   "shown": "Leader",
+   "shown_level": "0"
   },
   {
    "about": "ahead of the line, as the wild card writes it",
@@ -225,7 +233,8 @@
     ]
    },
    "games_back": "+8.5",
-   "shown": "+8.5"
+   "shown": "+8.5",
+   "shown_level": "+8.5"
   },
   {
    "about": "text that isn't a number stays as ESPN wrote it",
@@ -245,7 +254,57 @@
     ]
    },
    "games_back": "n/a",
-   "shown": "n/a"
+   "shown": "n/a",
+   "shown_level": "n/a"
+  },
+  {
+   "about": "an en dash isn't ESPN's leader mark, so it stays",
+   "entry": {
+    "team": {
+     "id": "1",
+     "abbreviation": "A",
+     "name": "A",
+     "displayName": "A"
+    },
+    "stats": [
+     {
+      "name": "gamesBehind",
+      "value": 0,
+      "displayValue": "–"
+     }
+    ]
+   },
+   "games_back": "–",
+   "shown": "–",
+   "shown_level": "–"
+  },
+  {
+   "about": "the overall split, typed gamesbehind, even after a split's",
+   "entry": {
+    "team": {
+     "id": "1",
+     "abbreviation": "A",
+     "name": "A",
+     "displayName": "A"
+    },
+    "stats": [
+     {
+      "name": "gamesBehind",
+      "type": "vsconf_gamesbehind",
+      "value": 0,
+      "displayValue": "4"
+     },
+     {
+      "name": "gamesBehind",
+      "type": "gamesbehind",
+      "value": 0,
+      "displayValue": "-"
+     }
+    ]
+   },
+   "games_back": "-",
+   "shown": "Leader",
+   "shown_level": "0"
   }
  ],
  "order": [

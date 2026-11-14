@@ -86,7 +86,7 @@ def fetch(race=RACE_PAYLOAD, overall=OVERALL_PAYLOAD, status_code=200):
 
 def test_division_leaders_are_whoever_the_wildcard_table_omits():
     al = fetch()["AL"]
-    leaders = [t for t in al if t["wc_position"] == "-"]
+    leaders = [t for t in al if t["wc_position"] == "Leader"]
 
     # Sorted by record, best first.
     assert [t["team_name"] for t in leaders] == [
@@ -100,7 +100,7 @@ def test_division_leaders_are_whoever_the_wildcard_table_omits():
 
 def test_race_keeps_espn_seed_not_win_percentage():
     """Seeds 2 and 3 are tied on record; ESPN's order must survive."""
-    race = [t for t in fetch()["AL"] if t["wc_position"] != "-"]
+    race = [t for t in fetch()["AL"] if t["wc_position"] != "Leader"]
 
     assert [t["wc_position"] for t in race] == ["1", "2", "3", "4"]
     assert [t["team_name"] for t in race] == [
@@ -109,7 +109,7 @@ def test_race_keeps_espn_seed_not_win_percentage():
 
 
 def test_only_the_top_three_are_marked_as_holding_a_spot():
-    race = [t for t in fetch()["AL"] if t["wc_position"] != "-"]
+    race = [t for t in fetch()["AL"] if t["wc_position"] != "Leader"]
 
     assert [t["wc_status"] for t in race[:3]] == ["Wild card 1", "Wild card 2", "Wild card 3"]
     assert race[3]["wc_status"] == "", "4th place must not read as being in"
@@ -117,14 +117,14 @@ def test_only_the_top_three_are_marked_as_holding_a_spot():
 
 def test_games_back_is_the_wildcard_race_not_the_division_race():
     al = fetch()["AL"]
-    race = {t["team_name"]: t for t in al if t["wc_position"] != "-"}
+    race = {t["team_name"]: t for t in al if t["wc_position"] != "Leader"}
 
     assert race["New York Yankees"]["games_back"] == "+8.5"
-    assert race["Seattle Mariners"]["games_back"] == "-"
+    assert race["Seattle Mariners"]["games_back"] == "0"  # level with the last spot: ESPN's dash, which nobody hears
     # divisionGamesBehind is 99.0 in every fixture row; it must never leak through.
     assert all(t["games_back"] != "99.0" for t in al)
     # Division leaders have no wild card deficit to show.
-    assert all(t["games_back"] == "-" for t in al if t["wc_position"] == "-")
+    assert all(t["games_back"] == "N/A" for t in al if t["wc_position"] == "Leader")
 
 
 def test_row_carries_the_fields_the_standings_table_reads():
@@ -150,7 +150,7 @@ def test_the_overall_request_is_by_division_and_labels_the_race_too():
 
 def test_a_leader_espn_puts_in_no_division_reads_as_a_division_leader():
     overall = {"children": [league("American League", RACE + LEADERS)]}
-    leaders = [t for t in fetch(overall=overall)["AL"] if t["wc_position"] == "-"]
+    leaders = [t for t in fetch(overall=overall)["AL"] if t["wc_position"] == "Leader"]
     assert [t["wc_status"] for t in leaders] == ["American League leader"] * 3
 
 
@@ -179,4 +179,4 @@ def test_missing_leaders_still_produces_the_race():
     rather than dropping the tab entirely."""
     al = fetch(overall={"children": [league("American League", [])]})["AL"]
     assert len(al) == 4
-    assert all(t["wc_position"] != "-" for t in al)
+    assert all(t["wc_position"] != "Leader" for t in al)

@@ -18,8 +18,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **A leader's games back reads "Leader", on both apps.** ESPN writes a dash, which NVDA and
   VoiceOver don't speak at their default punctuation, so a leader's games back was silent (NVDA said
   "Minnesota Timberwolves, GB" and nothing more). Teams level at the top both read "Leader"; a team
-  ESPN gives no figure reads "N/A". Windows now shows ESPN's own figure ("6", not "6.0"), as the
-  iPhone does. The iPhone's CFL table, whose feed has no games back, reads "N/A" there too.
+  ESPN gives no figure reads "N/A". College reads "0" instead, since its games back counts overall
+  record from the conference's top seed, so a team level with it isn't necessarily leading. A game's
+  own Standings tab follows the same rule. In the MLB wild card tables, a division leader's position
+  reads "Leader" and its wild card games back "N/A", the team at the cut line reads "0", and on
+  Windows a team outside the spots reads "Not in a playoff spot", as on the iPhone. Windows now shows
+  ESPN's own figure ("6", not "6.0"), as the iPhone does. The iPhone's CFL table, whose feed has no
+  games back, reads "N/A" there too.
 - **Standings no longer rely on hard-coded division tables.** Which team is in which division comes from ESPN's answer, so a
   team that changes its abbreviation (the Athletics' ATH, Utah's UTA and UTAH) can't drop out of its
   division. On Windows the NBA and NHL divisions are now named as on the iPhone ("Atlantic", not

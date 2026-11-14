@@ -331,6 +331,18 @@ def test_a_division_table_says_its_conference_where_the_name_does_not(app, leagu
     assert table.division_name == division
 
 
+def test_a_wild_card_row_has_no_bare_dash(app):
+    """A dash isn't spoken: a team outside the spots says so, as the iPhone's spokenStatus does."""
+    from accessible_table import WildCardTable
+    table = WildCardTable(division_name="AL Wild Card")
+    leader = {"team_name": "Rays", "wins": 98, "losses": 64, "win_percentage": ".605", "games_back": "N/A",
+              "streak": "L1", "wc_position": "Leader", "wc_status": "AL East leader"}
+    outside = {"team_name": "Royals", "wins": 80, "losses": 82, "win_percentage": ".494", "games_back": "6",
+               "streak": "", "wc_position": "7", "wc_status": ""}
+    assert table._build_basic_row(1, leader) == ["Leader", "Rays", "98", "64", ".605", "N/A", "L1", "AL East leader"]
+    assert table._build_basic_row(2, outside)[-2:] == ["N/A", "Not in a playoff spot"]
+
+
 def test_a_ranking_cell_says_the_name_rather_than_the_rank(app):
     table = RankingsTable(["Rank", "Team", "Value"])
     table.populate_data([[1, "Celtics", "120"]], set_focus=False)

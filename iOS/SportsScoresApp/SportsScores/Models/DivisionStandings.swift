@@ -69,7 +69,10 @@ enum DivisionStandings {
 
     private static func gamesBackText(_ entry: Entry) -> String? {
         for name in ["divisionGamesBehind", "gamesBehind"] {
-            guard let stat = entry.stats.first(where: { $0.name == name }) else { continue }
+            // The overall split first: college answers repeat `gamesBehind` once per split
+            // (home, road, vs. conference), with the overall one typed `gamesbehind`.
+            guard let stat = entry.stats.first(where: { $0.name == name && $0.type == name.lowercased() })
+                    ?? entry.stats.first(where: { $0.name == name }) else { continue }
             let text = stat.displayValue.trimmingCharacters(in: .whitespacesAndNewlines)
             if !text.isEmpty { return text }
         }
@@ -79,16 +82,29 @@ enum DivisionStandings {
     /// What a team at no games back shows and says. ESPN writes a dash, which neither VoiceOver
     /// nor NVDA speaks at their default punctuation. Teams level at the top are both leaders.
     static let leader = "Leader"
+    /// The same dash where it means level with someone rather than leading: college games back
+    /// counts overall record from the conference's top seed (a team ahead of it reads "+0.5"),
+    /// and the wild card race's counts from the last spot.
+    static let level = "0"
     /// A team ESPN gives no games back at all, which isn't the same as leading.
     static let noFigure = "N/A"
 
-    /// Games back as both apps show and speak it: ESPN's own figure ("2.5", "6"), "Leader" for a
-    /// team at none ("-" or 0), and "N/A" when ESPN sends no figure. On Windows:
-    /// division_standings.shown_games_back.
-    static func shownGamesBack(_ entry: Entry) -> String {
-        guard let text = gamesBackText(entry) else { return noFigure }
-        if text == noGamesBack || text == "\u{2014}" || Double(text) == 0 { return leader }
+    /// ESPN's games back as both apps show and speak it: its own figure ("2.5", "6", "+8.5"),
+    /// "Leader" for a team at none ("-" or 0), or "0" where `leaderWord` is false because the
+    /// figure isn't counted from the group's leader, and "N/A" when ESPN sends no figure.
+    /// On Windows: division_standings.shown_games_back_text.
+    static func shownGamesBackText(_ raw: String?, leaderWord: Bool = true) -> String {
+        let text = (raw ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+        if text.isEmpty { return noFigure }
+        if text == noGamesBack || text == "\u{2014}" || Double(text) == 0 {
+            return leaderWord ? leader : level
+        }
         return text
+    }
+
+    /// A standings entry's games back, as `shownGamesBackText` says.
+    static func shownGamesBack(_ entry: Entry, leaderWord: Bool = true) -> String {
+        shownGamesBackText(gamesBackText(entry), leaderWord: leaderWord)
     }
 
     /// "2.5" as 2.5; ESPN's "-" (the leader) and anything unreadable as 0.

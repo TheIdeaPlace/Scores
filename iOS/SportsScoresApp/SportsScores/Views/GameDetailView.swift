@@ -378,7 +378,7 @@ struct GameDetailView: View {
     private func gameInfoTab(details: GameDetails) -> some View {
         let scoring = details.scoringSummary(isFootball: sport.isFootball)
         let articles = details.relatedArticles
-        let standings = details.standings?.tables ?? []
+        let standings = details.standings?.tables(college: sport.isCollegeSport) ?? []
         let injuredTeams = (details.injuries ?? []).filter { !$0.listedInjuries.isEmpty }
 
         return ScrollView {
