@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### In Progress
+- **Game Wrap Up Feature**: ESPN text processing and game story extraction (under construction)
+  - Core infrastructure implemented, text processing being refined
+  - Game story text placeholders currently under investigation
+
+## [1.2.1] - 2026-11-14
+
 ### Fixed
 - **Division standings count games back from the division leader, on both apps.** The iPhone's NFL,
   NBA and NHL standings showed games back from the conference leader under each division's heading,
@@ -32,11 +39,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   conference ("Central, Western Conference, Standings"). The MLB wild card labels each division leader
   from the same answer. If ESPN ever stops sending divisions, both apps show its conferences rather
   than nothing, and the nightly feed check says so.
-
-### In Progress
-- **Game Wrap Up Feature**: ESPN text processing and game story extraction (under construction)
-  - Core infrastructure implemented, text processing being refined
-  - Game story text placeholders currently under investigation
 
 ## [1.2.0] - 2026-11-07
 
